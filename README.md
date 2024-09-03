@@ -2,8 +2,9 @@
 
 ## TODO
 
-- [] Make it deploy
-- [] Scaffold basic ui
+- [x] Make it deploy
+- [x] Scaffold basic ui
+- [] Tidy up Build
 - [] Setup database
 - [] Attach database to ui
 - [] Setup auth
