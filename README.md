@@ -5,7 +5,7 @@
 - [x] Make it deploy
 - [x] Scaffold basic ui
 - [x] Tidy up Build
-- [] Setup database
+- [x] Setup database
 - [] Attach database to ui
 - [] Setup auth
 - [] Add tic-tac-toe
