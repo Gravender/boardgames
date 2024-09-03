@@ -6,8 +6,8 @@
 - [x] Scaffold basic ui
 - [x] Tidy up Build
 - [x] Setup database
-- [] Attach database to ui
-- [] Setup auth
+- [x] Attach database to ui
+- [x] Setup auth
 - [] Add tic-tac-toe
 - [] Error management (w/ Sentry)
 - [] Analytics (posthog)
