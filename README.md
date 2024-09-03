@@ -4,7 +4,7 @@
 
 - [x] Make it deploy
 - [x] Scaffold basic ui
-- [] Tidy up Build
+- [x] Tidy up Build
 - [] Setup database
 - [] Attach database to ui
 - [] Setup auth
