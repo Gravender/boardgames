@@ -8,8 +8,8 @@
 - [x] Setup database
 - [x] Attach database to ui
 - [x] Setup auth
+- [x] Error management (w/ Sentry)
 - [] Add tic-tac-toe
-- [] Error management (w/ Sentry)
 - [] Analytics (posthog)
 - [] Add connect 4
 - [] Add six
