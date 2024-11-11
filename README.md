@@ -9,11 +9,16 @@
 - [x] Attach database to ui
 - [x] Setup auth
 - [x] Error management (w/ Sentry)
-- [] Add tic-tac-toe
+- [x] Add games page
+- [] Sidebar Layout page
+- [] Adding games on games page
+- [] Browsing games on games page
+- [] Individual Game Page
+- [] Player page
+- [] Groups page
+- [] Locations page
+- [] Calender page
+- [] Settings page
+- [] BGG support
 - [] Analytics (posthog)
-- [] Add connect 4
-- [] Add six
-- [] Add AI for tic-tac-toe
-- [] Add AI for connect 4
-- [] Add AI for six
-- [] Add multiplayer
+- []
