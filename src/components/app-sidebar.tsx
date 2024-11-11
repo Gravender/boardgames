@@ -5,13 +5,17 @@ import {
   AudioWaveform,
   BookOpen,
   Bot,
+  Calendar1,
   Command,
+  Dices,
   Frame,
   GalleryVerticalEnd,
   Map,
   PieChart,
   Settings2,
   SquareTerminal,
+  User,
+  UsersRound,
 } from "lucide-react"
 
 import { NavMain } from "~/components/nav-main"
@@ -53,66 +57,54 @@ const data = {
   ],
   navMain: [
     {
-      title: "Playground",
+      title: "Games",
       url: "#",
-      icon: SquareTerminal,
+      icon: Dices,
       isActive: true,
       items: [
         {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
+          title: "Through the Ages",
           url: "#",
         },
       ],
     },
     {
-      title: "Models",
+      title: "Players",
       url: "#",
-      icon: Bot,
+      icon: User,
       items: [
         {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
+          title: "Player",
           url: "#",
         },
       ],
     },
     {
-      title: "Documentation",
+      title: "Groups",
       url: "#",
-      icon: BookOpen,
+      icon: UsersRound,
       items: [
         {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
+          title: "Mascot Lads",
           url: "#",
         },
       ],
+    },
+    {
+      title: "Locations",
+      url: "#",
+      icon: Map,
+      items: [
+        {
+          title: "Mascot",
+          url: "#",
+        },
+      ],
+    },
+    {
+      title: "Calender",
+      url: "#",
+      icon: Calendar1,
     },
     {
       title: "Settings",
@@ -120,19 +112,11 @@ const data = {
       icon: Settings2,
       items: [
         {
-          title: "General",
+          title: "App Settings",
           url: "#",
         },
         {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
+          title: "App Info",
           url: "#",
         },
       ],

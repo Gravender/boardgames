@@ -5,7 +5,6 @@ import { type Metadata } from "next";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { ClerkProvider } from "@clerk/nextjs";
-import { TopNav } from "./_components/topnav";
 import { ThemeProvider } from "~/components/theme-provider";
 
 export const metadata: Metadata = {
