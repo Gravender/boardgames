@@ -10,7 +10,7 @@
 - [x] Setup auth
 - [x] Error management (w/ Sentry)
 - [x] Add games page
-- [ ] Sidebar Layout page
+- [x] Sidebar Layout page
 - [ ] Adding games on games page
 - [ ] Browsing games on games page
 - [ ] Individual Game Page
