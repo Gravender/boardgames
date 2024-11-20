@@ -11,7 +11,7 @@
 - [x] Error management (w/ Sentry)
 - [x] Add games page
 - [x] Sidebar Layout page
-- [ ] make database schema
+- [x] make database schema
 - [ ] Adding games on games page
 - [ ] Browsing games on games page
 - [ ] Individual Game Page
