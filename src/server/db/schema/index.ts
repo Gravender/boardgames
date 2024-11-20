@@ -5,3 +5,4 @@ export { default as round } from "./round";
 export { default as scoresheet } from "./scoresheet";
 export { default as player } from "./player";
 export { default as matchPlayer } from "./matchPlayer";
+export { default as roundPlayer } from "./roundPlayer";
