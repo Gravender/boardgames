@@ -7,5 +7,3 @@ export async function register() {
     await import("../sentry.edge.config");
   }
 }
-
-console.log("427 noah is egg");
