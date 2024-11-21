@@ -1,5 +1,5 @@
 import { createTable } from "./baseTable";
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -8,8 +8,8 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
-import match from "./match";
 import game from "./game";
+import round from "./round";
 
 const scoresheets = createTable(
   "scoresheet",
@@ -19,9 +19,6 @@ const scoresheets = createTable(
     gameId: integer("game_id")
       .notNull()
       .references(() => game.id),
-    matchId: integer("matches_id")
-      .notNull()
-      .references(() => match.id),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -31,10 +28,14 @@ const scoresheets = createTable(
     isCoop: boolean("is_coop"),
     winCondition: varchar("win_condition", { length: 256 }),
     roundsScore: varchar("rounds_score", { length: 256 }),
+    is_template: boolean("is_template"),
   },
   (table) => ({
-    matchIndex: index().on(table.matchId),
     gameIndex: index().on(table.gameId),
   }),
 );
+export const scoresheetRelations = relations(scoresheets, ({ one, many }) => ({
+  game: one(game, { fields: [scoresheets.gameId], references: [game.id] }),
+  rounds: many(round),
+}));
 export default scoresheets;

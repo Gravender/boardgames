@@ -1,5 +1,5 @@
 import { createTable } from "./baseTable";
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -9,6 +9,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import scoresheet from "./scoresheet";
+import roundPlayer from "./roundPlayer";
 
 const rounds = createTable(
   "round",
@@ -36,4 +37,11 @@ const rounds = createTable(
     scoresheetIndex: index().on(table.scoresheetId),
   }),
 );
+export const roundRelations = relations(rounds, ({ one, many }) => ({
+  scoresheet: one(scoresheet, {
+    fields: [rounds.scoresheetId],
+    references: [scoresheet.id],
+  }),
+  players: many(roundPlayer),
+}));
 export default rounds;

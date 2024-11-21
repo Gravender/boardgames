@@ -1,14 +1,9 @@
 import { createTable } from "./baseTable";
-import { sql } from "drizzle-orm";
-import {
-  boolean,
-  index,
-  integer,
-  serial,
-  timestamp,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
+import { index, serial, timestamp, varchar } from "drizzle-orm/pg-core";
 import user from "./user";
+import matchPlayer from "./matchPlayer";
+import roundPlayer from "./roundPlayer";
 
 const players = createTable(
   "player",
@@ -23,8 +18,17 @@ const players = createTable(
       () => new Date(),
     ),
   },
-  (example) => ({
-    nameIndex: index("name_idx").on(example.name),
+  (table) => ({
+    nameIndex: index("name_idx").on(table.name),
   }),
 );
+
+export const playerRelations = relations(players, ({ one, many }) => ({
+  user: one(user, {
+    fields: [players.userId],
+    references: [user.id],
+  }),
+  matches: many(matchPlayer),
+  rounds: many(roundPlayer),
+}));
 export default players;

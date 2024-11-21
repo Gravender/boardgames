@@ -1,5 +1,6 @@
 import { createTable } from "./baseTable";
 import { integer, serial, unique } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import match from "./match";
 import player from "./player";
 
@@ -20,4 +21,12 @@ const matchPlayers = createTable(
     };
   },
 );
+
+export const matchPlayerRelations = relations(matchPlayers, ({ one }) => ({
+  match: one(match, { fields: [matchPlayers.matchId], references: [match.id] }),
+  player: one(player, {
+    fields: [matchPlayers.playerId],
+    references: [player.id],
+  }),
+}));
 export default matchPlayers;

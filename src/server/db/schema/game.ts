@@ -1,5 +1,5 @@
 import { createTable } from "./baseTable";
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -8,6 +8,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import user from "./user";
+import match from "./match";
 
 const games = createTable(
   "game",
@@ -35,4 +36,13 @@ const games = createTable(
     userIndex: index().on(table.userId),
   }),
 );
+
+export const gameRelations = relations(games, ({ one, many }) => ({
+  user: one(user, {
+    fields: [games.userId],
+    references: [user.id],
+  }),
+  matches: many(match),
+}));
+
 export default games;

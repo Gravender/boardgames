@@ -1,8 +1,8 @@
 export { default as user } from "./user";
-export { default as game } from "./game";
-export { default as matches } from "./match";
-export { default as round } from "./round";
-export { default as scoresheet } from "./scoresheet";
-export { default as player } from "./player";
-export { default as matchPlayer } from "./matchPlayer";
-export { default as roundPlayer } from "./roundPlayer";
+export { default as game, gameRelations } from "./game";
+export { default as matches, matchRelations } from "./match";
+export { default as round, roundRelations } from "./round";
+export { default as scoresheet, scoresheetRelations } from "./scoresheet";
+export { default as player, playerRelations } from "./player";
+export { default as matchPlayer, matchPlayerRelations } from "./matchPlayer";
+export { default as roundPlayer, roundPlayerRelations } from "./roundPlayer";
