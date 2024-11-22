@@ -1,6 +1,7 @@
 import { createTable } from "./baseTable";
 import { relations, sql } from "drizzle-orm";
 import {
+  boolean,
   index,
   integer,
   serial,
@@ -25,7 +26,7 @@ const games = createTable(
       () => new Date(),
     ),
     gameImg: varchar("game_img", { length: 256 }),
-    ownedBy: integer("owned_by"),
+    ownedBy: boolean("owned_by"),
     playersMin: integer("players_min"),
     playersMax: integer("players_max"),
     playtimeMin: integer("playtime_min"),
