@@ -12,7 +12,8 @@
 - [x] Add games page
 - [x] Sidebar Layout page
 - [x] make database schema
-- [ ] Adding games on games page
+- [x] Adding games on games page
+- [] Implement game form with backend db
 - [ ] Browsing games on games page
 - [ ] Individual Game Page
 - [ ] Player page

@@ -5,6 +5,7 @@ import { type Metadata } from "next";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "~/components/theme-provider";
+import { Toaster } from "~/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: "Games",
@@ -26,6 +27,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <TRPCReactProvider>{children}</TRPCReactProvider>
+            <Toaster />
           </ThemeProvider>
         </body>
       </html>
