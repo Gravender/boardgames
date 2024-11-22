@@ -1,12 +1,12 @@
-"use client";
+"use server";
 
 import { Dices } from "lucide-react";
-import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { api } from "~/trpc/react";
 
-export function Games() {
-  const [games] = api.game.getGames.useSuspenseQuery();
+import { api } from "~/trpc/server";
+
+export async function Games() {
+  const games = await api.game.getGames();
 
   return (
     <div className="w-full max-w-xs">

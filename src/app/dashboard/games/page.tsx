@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { Plus } from "lucide-react";
 import { AddGameForm } from "~/app/_components/addGameForm";
 import { Games } from "~/app/_components/games";
@@ -6,21 +7,23 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { api } from "~/trpc/server";
 
 export default async function Page() {
   void api.game.getGames.prefetch();
+  const { userId } = await auth();
   return (
     <Dialog>
       <div>
-        <Games />
+        {userId ? (
+          <Games />
+        ) : (
+          <span>You need to be logged in to view this page.</span>
+        )}
       </div>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
