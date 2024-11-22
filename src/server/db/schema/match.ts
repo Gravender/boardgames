@@ -1,12 +1,6 @@
 import { createTable } from "./baseTable";
 import { relations, sql } from "drizzle-orm";
-import {
-  index,
-  integer,
-  serial,
-  timestamp,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { index, integer, serial, timestamp } from "drizzle-orm/pg-core";
 import user from "./user";
 import game from "./game";
 import matchPlayer from "./matchPlayer";
@@ -16,9 +10,7 @@ const matches = createTable(
   "match",
   {
     id: serial("id").primaryKey(),
-    userId: varchar("user_id", { length: 256 })
-      .notNull()
-      .references(() => user.id),
+    userId: integer("user_id").references(() => user.id),
     gameId: integer("game_id")
       .notNull()
       .references(() => game.id),

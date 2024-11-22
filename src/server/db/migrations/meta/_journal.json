@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1732081374164,
-      "tag": "0000_special_tony_stark",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1732083519641,
-      "tag": "0001_conscious_blockbuster",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1732174257831,
-      "tag": "0002_demonic_plazm",
+      "when": 1732290602341,
+      "tag": "0000_red_katie_power",
       "breakpoints": true
     }
   ]

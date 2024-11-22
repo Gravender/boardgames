@@ -1,5 +1,5 @@
 {
-  "id": "d002dc97-66b5-4782-9a0b-b514cadd3b28",
+  "id": "0792b767-bbde-485a-9f31-29e7e5faddc5",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -18,13 +18,13 @@
           "name": "name",
           "type": "varchar(256)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "user_id": {
           "name": "user_id",
-          "type": "varchar(256)",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -47,7 +47,7 @@
         },
         "owned_by": {
           "name": "owned_by",
-          "type": "integer",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": false
         },
@@ -193,12 +193,18 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "varchar(256)",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "game_id": {
           "name": "game_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scoresheet_id": {
+          "name": "scoresheet_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -282,6 +288,19 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "boardgames_match_scoresheet_id_boardgames_scoresheet_id_fk": {
+          "name": "boardgames_match_scoresheet_id_boardgames_scoresheet_id_fk",
+          "tableFrom": "boardgames_match",
+          "tableTo": "boardgames_scoresheet",
+          "columnsFrom": [
+            "scoresheet_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -299,7 +318,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "varchar(256)",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -471,6 +490,76 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
+    "public.boardgames_round_player": {
+      "name": "boardgames_round_player",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "score": {
+          "name": "score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "round": {
+          "name": "round",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "player_id": {
+          "name": "player_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "boardgames_round_player_round_boardgames_round_id_fk": {
+          "name": "boardgames_round_player_round_boardgames_round_id_fk",
+          "tableFrom": "boardgames_round_player",
+          "tableTo": "boardgames_round",
+          "columnsFrom": [
+            "round"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "boardgames_round_player_player_id_boardgames_player_id_fk": {
+          "name": "boardgames_round_player_player_id_boardgames_player_id_fk",
+          "tableFrom": "boardgames_round_player",
+          "tableTo": "boardgames_player",
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "boardgames_round_player_round_player_id_unique": {
+          "name": "boardgames_round_player_round_player_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "round",
+            "player_id"
+          ]
+        }
+      }
+    },
     "public.boardgames_scoresheet": {
       "name": "boardgames_scoresheet",
       "schema": "",
@@ -489,12 +578,6 @@
         },
         "game_id": {
           "name": "game_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "matches_id": {
-          "name": "matches_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -529,24 +612,15 @@
           "type": "varchar(256)",
           "primaryKey": false,
           "notNull": false
+        },
+        "is_template": {
+          "name": "is_template",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
-        "boardgames_scoresheet_matches_id_index": {
-          "name": "boardgames_scoresheet_matches_id_index",
-          "columns": [
-            {
-              "expression": "matches_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "boardgames_scoresheet_game_id_index": {
           "name": "boardgames_scoresheet_game_id_index",
           "columns": [
@@ -576,19 +650,6 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "boardgames_scoresheet_matches_id_boardgames_match_id_fk": {
-          "name": "boardgames_scoresheet_matches_id_boardgames_match_id_fk",
-          "tableFrom": "boardgames_scoresheet",
-          "tableTo": "boardgames_match",
-          "columnsFrom": [
-            "matches_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -600,7 +661,7 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "varchar(255)",
+          "type": "serial",
           "primaryKey": true,
           "notNull": true
         },
@@ -614,7 +675,7 @@
           "name": "email",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

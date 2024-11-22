@@ -37,5 +37,6 @@ const scoresheets = createTable(
 export const scoresheetRelations = relations(scoresheets, ({ one, many }) => ({
   game: one(game, { fields: [scoresheets.gameId], references: [game.id] }),
   rounds: many(round),
+  matches: many(game),
 }));
 export default scoresheets;

@@ -28,6 +28,9 @@ import { useToast } from "~/hooks/use-toast";
 import { game } from "~/server/db/schema";
 import { useUploadThing } from "~/utils/uploadthing";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { api } from "~/trpc/react";
+import { utils } from "prettier/doc.js";
+import { create } from "domain";
 
 const formSchema = z
   .object({
@@ -85,6 +88,17 @@ export function AddGameForm() {
   const { toast } = useToast();
   const { startUpload } = useUploadThing("imageUploader");
 
+  const utils = api.useUtils();
+  const createGame = api.game.create.useMutation({
+    onSuccess: async () => {
+      await utils.game.invalidate();
+      toast({
+        title: "Game created successfully!",
+        description: "Your data has been uploaded.",
+      });
+    },
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -126,14 +140,22 @@ export function AddGameForm() {
         throw new Error("Image upload failed");
       }
 
+      toast({
+        title: "File Upload Successful!",
+        description: "Your File has been stored",
+      });
+
       const imageUrl = uploadResult[0] ? uploadResult[0].url : null;
 
-      // Here you would typically send the form data along with the image URL to your server
-      console.log("Form submitted:", { ...values, imageUrl });
-
-      toast({
-        title: "Form submitted successfully!",
-        description: "Your data has been uploaded.",
+      createGame.mutate({
+        name: values.name,
+        ownedBy: values.ownedBy,
+        playersMin: values.playersMin,
+        playersMax: values.playersMax,
+        playtimeMin: values.playtimeMin,
+        playtimeMax: values.playtimeMax,
+        yearPublished: values.yearPublished,
+        gameImg: imageUrl,
       });
 
       form.reset();

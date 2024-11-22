@@ -1,6 +1,12 @@
 import { createTable } from "./baseTable";
 import { relations, sql } from "drizzle-orm";
-import { index, serial, timestamp, varchar } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  serial,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core";
 import user from "./user";
 import matchPlayer from "./matchPlayer";
 import roundPlayer from "./roundPlayer";
@@ -9,7 +15,7 @@ const players = createTable(
   "player",
   {
     id: serial("id").primaryKey(),
-    userId: varchar("user_id", { length: 256 }).references(() => user.id),
+    userId: integer("user_id").references(() => user.id),
     name: varchar("name", { length: 256 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)

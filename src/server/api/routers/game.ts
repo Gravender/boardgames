@@ -1,12 +1,21 @@
+import { TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { game } from "~/server/db/schema";
+import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
+import { game, user, insertGameSchema } from "~/server/db/schema";
 
 export const gameRouter = createTRPCRouter({
-  create: publicProcedure
-    .input(z.object({ name: z.string().min(1) }))
+  create: protectedUserProcedure
+    .input(insertGameSchema.partial({ userId: true }))
     .mutation(async ({ ctx, input }) => {
-      //TODO: add insert
+      await ctx.db.insert(game).values({ ...input, userId: ctx.userId });
     }),
+  getGames: protectedUserProcedure.query(async ({ ctx }) => {
+    const games = await ctx.db
+      .select()
+      .from(game)
+      .where(eq(game.userId, ctx.userId));
+    return games;
+  }),
 });

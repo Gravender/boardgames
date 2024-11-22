@@ -1,11 +1,11 @@
 CREATE TABLE IF NOT EXISTS "boardgames_game" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"name" varchar(256),
-	"user_id" varchar(256) NOT NULL,
+	"name" varchar(256) NOT NULL,
+	"user_id" integer,
 	"created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updated_at" timestamp with time zone,
 	"game_img" varchar(256),
-	"owned_by" integer,
+	"owned_by" boolean,
 	"players_min" integer,
 	"players_max" integer,
 	"playtime_min" integer,
@@ -22,8 +22,9 @@ CREATE TABLE IF NOT EXISTS "boardgames_match_player" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "boardgames_match" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" varchar(256) NOT NULL,
+	"user_id" integer,
 	"game_id" integer NOT NULL,
+	"scoresheet_id" integer NOT NULL,
 	"created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updated_at" timestamp with time zone,
 	"date" timestamp with time zone DEFAULT CURRENT_TIMESTAMP
@@ -31,7 +32,7 @@ CREATE TABLE IF NOT EXISTS "boardgames_match" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "boardgames_player" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" varchar(256),
+	"user_id" integer,
 	"name" varchar(256),
 	"created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updated_at" timestamp with time zone
@@ -52,22 +53,30 @@ CREATE TABLE IF NOT EXISTS "boardgames_round" (
 	"updated_at" timestamp with time zone
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "boardgames_round_player" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"score" integer,
+	"round" integer NOT NULL,
+	"player_id" integer NOT NULL,
+	CONSTRAINT "boardgames_round_player_round_player_id_unique" UNIQUE("round","player_id")
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "boardgames_scoresheet" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" varchar(256),
 	"game_id" integer NOT NULL,
-	"matches_id" integer NOT NULL,
 	"created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updated_at" timestamp with time zone,
 	"is_coop" boolean,
 	"win_condition" varchar(256),
-	"rounds_score" varchar(256)
+	"rounds_score" varchar(256),
+	"is_template" boolean
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "boardgames_user" (
-	"id" varchar(255) PRIMARY KEY NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
 	"clerk_user_id" varchar(255) NOT NULL,
-	"email" varchar(255) NOT NULL,
+	"email" varchar(255),
 	"created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updated_at" timestamp with time zone
 );
@@ -103,6 +112,12 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
+ ALTER TABLE "boardgames_match" ADD CONSTRAINT "boardgames_match_scoresheet_id_boardgames_scoresheet_id_fk" FOREIGN KEY ("scoresheet_id") REFERENCES "public"."boardgames_scoresheet"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  ALTER TABLE "boardgames_player" ADD CONSTRAINT "boardgames_player_user_id_boardgames_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."boardgames_user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -115,13 +130,19 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "boardgames_scoresheet" ADD CONSTRAINT "boardgames_scoresheet_game_id_boardgames_game_id_fk" FOREIGN KEY ("game_id") REFERENCES "public"."boardgames_game"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "boardgames_round_player" ADD CONSTRAINT "boardgames_round_player_round_boardgames_round_id_fk" FOREIGN KEY ("round") REFERENCES "public"."boardgames_round"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "boardgames_scoresheet" ADD CONSTRAINT "boardgames_scoresheet_matches_id_boardgames_match_id_fk" FOREIGN KEY ("matches_id") REFERENCES "public"."boardgames_match"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "boardgames_round_player" ADD CONSTRAINT "boardgames_round_player_player_id_boardgames_player_id_fk" FOREIGN KEY ("player_id") REFERENCES "public"."boardgames_player"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "boardgames_scoresheet" ADD CONSTRAINT "boardgames_scoresheet_game_id_boardgames_game_id_fk" FOREIGN KEY ("game_id") REFERENCES "public"."boardgames_game"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -131,5 +152,4 @@ CREATE INDEX IF NOT EXISTS "boardgames_match_game_id_index" ON "boardgames_match
 CREATE INDEX IF NOT EXISTS "boardgames_match_user_id_index" ON "boardgames_match" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "name_idx" ON "boardgames_player" USING btree ("name");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "boardgames_round_scoresheet_id_index" ON "boardgames_round" USING btree ("scoresheet_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "boardgames_scoresheet_matches_id_index" ON "boardgames_scoresheet" USING btree ("matches_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "boardgames_scoresheet_game_id_index" ON "boardgames_scoresheet" USING btree ("game_id");

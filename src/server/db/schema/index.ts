@@ -1,5 +1,10 @@
-export { default as user } from "./user";
-export { default as game, gameRelations } from "./game";
+export { default as user, insertUserSchema, selectUserSchema } from "./user";
+export {
+  default as game,
+  gameRelations,
+  insertGameSchema,
+  selectGameSchema,
+} from "./game";
 export { default as matches, matchRelations } from "./match";
 export { default as round, roundRelations } from "./round";
 export { default as scoresheet, scoresheetRelations } from "./scoresheet";

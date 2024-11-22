@@ -6,8 +6,10 @@ import {
   integer,
   serial,
   timestamp,
+  uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import user from "./user";
 import match from "./match";
 
@@ -15,10 +17,8 @@ const games = createTable(
   "game",
   {
     id: serial("id").primaryKey(),
-    name: varchar("name", { length: 256 }),
-    userId: varchar("user_id", { length: 256 })
-      .notNull()
-      .references(() => user.id),
+    name: varchar("name", { length: 256 }).notNull(),
+    userId: integer("user_id").references(() => user.id),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -45,5 +45,9 @@ export const gameRelations = relations(games, ({ one, many }) => ({
   }),
   matches: many(match),
 }));
+
+export const insertGameSchema = createInsertSchema(games);
+
+export const selectGameSchema = createSelectSchema(games);
 
 export default games;
