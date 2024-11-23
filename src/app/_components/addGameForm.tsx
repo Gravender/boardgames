@@ -31,6 +31,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
 import { utils } from "prettier/doc.js";
 import { create } from "domain";
+import { useRouter } from "next/navigation";
 
 const formSchema = z
   .object({
@@ -87,11 +88,13 @@ export function AddGameForm() {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const { startUpload } = useUploadThing("imageUploader");
+  const router = useRouter();
 
   const utils = api.useUtils();
   const createGame = api.game.create.useMutation({
     onSuccess: async () => {
-      await utils.game.invalidate();
+      await utils.game.getGames.invalidate();
+      router.refresh();
       toast({
         title: "Game created successfully!",
         description: "Your data has been uploaded.",
@@ -123,17 +126,22 @@ export function AddGameForm() {
     setIsUploading(true);
     if (!values.gameImg) {
       setIsUploading(false);
-      console.log(values);
-      toast({
-        title: "Form submitted successfully!",
-        description: "Your data has been uploaded.",
+      createGame.mutate({
+        name: values.name,
+        ownedBy: values.ownedBy,
+        playersMin: values.playersMin,
+        playersMax: values.playersMax,
+        playtimeMin: values.playtimeMin,
+        playtimeMax: values.playtimeMax,
+        yearPublished: values.yearPublished,
+        gameImg: null,
       });
       return;
     }
 
     try {
       const imageFile = values.gameImg as File;
-      console.log(values);
+
       const uploadResult = await startUpload([imageFile]);
 
       if (!uploadResult) {

@@ -14,13 +14,13 @@ import {
 import { api } from "~/trpc/server";
 
 export default async function Page() {
-  void api.game.getGames.prefetch();
   const { userId } = await auth();
+  const games = userId ? await api.game.getGames() : [];
   return (
     <Dialog>
       <div>
         {userId ? (
-          <Games />
+          <Games games={games} />
         ) : (
           <span>You need to be logged in to view this page.</span>
         )}

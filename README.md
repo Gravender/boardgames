@@ -14,7 +14,7 @@
 - [x] make database schema
 - [x] Adding games on games page
 - [x] Implement game form with backend db
-- [ ] Browsing games on games page
+- [x] Browsing games on games page
 - [ ] Individual Game Page
 - [ ] Player page
 - [ ] Groups page
