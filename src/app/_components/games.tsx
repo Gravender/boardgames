@@ -1,10 +1,9 @@
 "use client";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
-import { Dices, MoreHorizontal } from "lucide-react";
+import { Dices, MoreVertical } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
 import type { Table } from "@tanstack/react-table";
-import { RouterOutput } from "../api/trpc/[trpc]/client";
 import { Separator } from "~/components/ui/separator";
 import { Button } from "~/components/ui/button";
 import {
@@ -15,14 +14,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { api, RouterOutputs } from "~/trpc/react";
 
 import { format } from "date-fns";
 import { DataTable } from "./dataTable";
 import { Card, CardContent } from "~/components/ui/card";
+import { useRouter } from "next/navigation";
+import { useToast } from "~/hooks/use-toast";
 
-export function Games({ games }: { games: RouterOutput["game"]["getGames"] }) {
+export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
+  const utils = api.useUtils();
+  const router = useRouter();
+  const { toast } = useToast();
+  const deleteGame = api.game.deleteGame.useMutation({
+    onSuccess: async () => {
+      await utils.game.getGames.invalidate();
+      router.refresh();
+      toast({
+        title: "Game deleted successfully!",
+        variant: "destructive",
+      });
+    },
+  });
   const columnHelper =
-    createColumnHelper<RouterOutput["game"]["getGames"][0]>();
+    createColumnHelper<RouterOutputs["game"]["getGames"][0]>();
   const columns = [
     columnHelper.accessor("gameImg", {
       header: "Image",
@@ -130,14 +145,19 @@ export function Games({ games }: { games: RouterOutput["game"]["getGames"] }) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
                 <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
+                <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>View customer</DropdownMenuItem>
-              <DropdownMenuItem>View payment details</DropdownMenuItem>
+              <DropdownMenuItem>Edit</DropdownMenuItem>
+              <DropdownMenuItem>Stats</DropdownMenuItem>
+              <DropdownMenuItem>Rules</DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
+                onClick={() => deleteGame.mutate({ id: row.original.id })}
+              >
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -148,7 +168,7 @@ export function Games({ games }: { games: RouterOutput["game"]["getGames"] }) {
   const renderMobile = ({
     table,
   }: {
-    table: Table<RouterOutput["game"]["getGames"][0]>;
+    table: Table<RouterOutputs["game"]["getGames"][0]>;
   }) => {
     return (
       <div className="flex flex-col gap-2">
@@ -169,7 +189,7 @@ export function Games({ games }: { games: RouterOutput["game"]["getGames"] }) {
           const lastPlayed =
             format(row.original?.lastPlayed, "d MMM yyyy") ?? null;
           return (
-            <button key={row.id} className="w-full">
+            <button key={`mobile-${row.id}`} className="w-full">
               <Card className="flex w-full items-center gap-3 border-none">
                 <Avatar className="h-12 w-12 rounded">
                   <AvatarImage
