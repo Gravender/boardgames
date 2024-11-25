@@ -1,7 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, ChevronUp, Dices, Router, Upload } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Dices,
+  Plus,
+  Router,
+  Upload,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -25,13 +32,17 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { useToast } from "~/hooks/use-toast";
-import { game } from "~/server/db/schema";
 import { useUploadThing } from "~/utils/uploadthing";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
-import { utils } from "prettier/doc.js";
-import { create } from "domain";
 import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
 
 const formSchema = z
   .object({
@@ -82,7 +93,7 @@ const formSchema = z
     }
   });
 
-export function AddGameForm() {
+export function AddGameDialog() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [openCollapse, setOpenCollapse] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -93,7 +104,7 @@ export function AddGameForm() {
   const utils = api.useUtils();
   const createGame = api.game.create.useMutation({
     onSuccess: async () => {
-      await utils.game.getGames.invalidate();
+      await utils.game.invalidate();
       router.refresh();
       toast({
         title: "Game created successfully!",
@@ -181,271 +192,297 @@ export function AddGameForm() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Game Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Game name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <Dialog>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Add Game</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Game Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Game name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="gameImg"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Image</FormLabel>
-              <FormControl>
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage
-                      src={imagePreview ? imagePreview : ""}
-                      alt="Game image"
+            <FormField
+              control={form.control}
+              name="gameImg"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image</FormLabel>
+                  <FormControl>
+                    <div className="flex items-center space-x-4">
+                      <Avatar className="h-20 w-20">
+                        <AvatarImage
+                          src={imagePreview ? imagePreview : ""}
+                          alt="Game image"
+                        />
+                        <AvatarFallback>
+                          <Dices className="h-full w-full p-2" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          field.onChange(file);
+                          if (file) {
+                            const url = URL.createObjectURL(file);
+                            setImagePreview(url);
+                          }
+                        }}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription>Upload an image (max 5MB).</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="ownedBy"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormLabel>Owned by</FormLabel>
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
                     />
-                    <AvatarFallback>
-                      <Dices className="h-full w-full p-2" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      field.onChange(file);
-                      if (file) {
-                        const url = URL.createObjectURL(file);
-                        setImagePreview(url);
-                      }
-                    }}
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <Collapsible open={openCollapse} onOpenChange={setOpenCollapse}>
+              <CollapsibleTrigger asChild>
+                <Button className="pl-0" variant="ghost" size="sm">
+                  <span>More options</span>
+                  {openCollapse ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4">
+                <div className="grid grid-cols-3 items-center gap-4">
+                  <Label>Players</Label>
+                  <FormField
+                    control={form.control}
+                    name="playersMin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Min"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value === ""
+                                  ? null
+                                  : parseInt(e.target.value),
+                              )
+                            }
+                            value={
+                              field.value !== null ? field.value : undefined
+                            }
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="playersMax"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Max"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value === ""
+                                  ? null
+                                  : parseInt(e.target.value),
+                              )
+                            }
+                            value={
+                              field.value !== null ? field.value : undefined
+                            }
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
                   />
                 </div>
-              </FormControl>
-              <FormDescription>Upload an image (max 5MB).</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="ownedBy"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-              <FormLabel>Owned by</FormLabel>
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        <Collapsible open={openCollapse} onOpenChange={setOpenCollapse}>
-          <CollapsibleTrigger asChild>
-            <Button className="pl-0" variant="ghost" size="sm">
-              <span>More options</span>
-              {openCollapse ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
+                {(form.formState.errors.playersMin ||
+                  form.formState.errors.playersMax) && (
+                  <div className="grid grid-cols-3 items-center gap-4">
+                    <div />
+                    {form.formState.errors.playersMin !== undefined ? (
+                      <FormMessage>
+                        {form.formState.errors.playersMin.message}
+                      </FormMessage>
+                    ) : (
+                      <div />
+                    )}
+                    {form.formState.errors.playersMax !== undefined ? (
+                      <FormMessage>
+                        {form.formState.errors.playersMax.message}
+                      </FormMessage>
+                    ) : (
+                      <div />
+                    )}
+                  </div>
+                )}
+                <div className="grid grid-cols-3 items-center gap-4">
+                  <Label>Playtime</Label>
+                  <FormField
+                    control={form.control}
+                    name="playtimeMin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Min"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value === ""
+                                  ? null
+                                  : parseInt(e.target.value),
+                              )
+                            }
+                            value={
+                              field.value !== null ? field.value : undefined
+                            }
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="playtimeMax"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Max"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value === ""
+                                  ? null
+                                  : parseInt(e.target.value),
+                              )
+                            }
+                            value={
+                              field.value !== null ? field.value : undefined
+                            }
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                {(form.formState.errors.playtimeMin ||
+                  form.formState.errors.playtimeMax) && (
+                  <div className="grid grid-cols-3 items-center gap-4">
+                    <div />
+                    {form.formState.errors.playtimeMin !== undefined ? (
+                      <FormMessage>
+                        {form.formState.errors.playtimeMin.message}
+                      </FormMessage>
+                    ) : (
+                      <div />
+                    )}
+                    {form.formState.errors.playtimeMax !== undefined ? (
+                      <FormMessage>
+                        {form.formState.errors.playtimeMax.message}
+                      </FormMessage>
+                    ) : (
+                      <div />
+                    )}
+                  </div>
+                )}
+                <div className="grid grid-cols-3 items-center gap-4">
+                  <Label>Year Published</Label>
+                  <FormField
+                    control={form.control}
+                    name="yearPublished"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Min"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value === ""
+                                  ? null
+                                  : parseInt(e.target.value),
+                              )
+                            }
+                            value={
+                              field.value !== null ? field.value : undefined
+                            }
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <div></div>
+                </div>
+                {form.formState.errors.yearPublished && (
+                  <div className="grid grid-cols-3 items-center gap-4">
+                    <div />
+                    {form.formState.errors.yearPublished !== undefined ? (
+                      <FormMessage>
+                        {form.formState.errors.yearPublished.message}
+                      </FormMessage>
+                    ) : (
+                      <div />
+                    )}
+                    <div />
+                  </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+              <Button type="submit" disabled={isUploading}>
+                {isUploading ? "Uploading..." : "Submit"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+      <div className="flex h-full w-full flex-col justify-between">
+        <div className="flex justify-end p-4">
+          <DialogTrigger asChild>
+            <Button variant="default" className="rounded-full" size="icon">
+              <Plus />
             </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-4">
-            <div className="grid grid-cols-3 items-center gap-4">
-              <Label>Players</Label>
-              <FormField
-                control={form.control}
-                name="playersMin"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Min"
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === ""
-                              ? null
-                              : parseInt(e.target.value),
-                          )
-                        }
-                        value={field.value !== null ? field.value : undefined}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="playersMax"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Max"
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === ""
-                              ? null
-                              : parseInt(e.target.value),
-                          )
-                        }
-                        value={field.value !== null ? field.value : undefined}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-            {(form.formState.errors.playersMin ||
-              form.formState.errors.playersMax) && (
-              <div className="grid grid-cols-3 items-center gap-4">
-                <div />
-                {form.formState.errors.playersMin !== undefined ? (
-                  <FormMessage>
-                    {form.formState.errors.playersMin.message}
-                  </FormMessage>
-                ) : (
-                  <div />
-                )}
-                {form.formState.errors.playersMax !== undefined ? (
-                  <FormMessage>
-                    {form.formState.errors.playersMax.message}
-                  </FormMessage>
-                ) : (
-                  <div />
-                )}
-              </div>
-            )}
-            <div className="grid grid-cols-3 items-center gap-4">
-              <Label>Playtime</Label>
-              <FormField
-                control={form.control}
-                name="playtimeMin"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Min"
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === ""
-                              ? null
-                              : parseInt(e.target.value),
-                          )
-                        }
-                        value={field.value !== null ? field.value : undefined}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="playtimeMax"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Max"
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === ""
-                              ? null
-                              : parseInt(e.target.value),
-                          )
-                        }
-                        value={field.value !== null ? field.value : undefined}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-            {(form.formState.errors.playtimeMin ||
-              form.formState.errors.playtimeMax) && (
-              <div className="grid grid-cols-3 items-center gap-4">
-                <div />
-                {form.formState.errors.playtimeMin !== undefined ? (
-                  <FormMessage>
-                    {form.formState.errors.playtimeMin.message}
-                  </FormMessage>
-                ) : (
-                  <div />
-                )}
-                {form.formState.errors.playtimeMax !== undefined ? (
-                  <FormMessage>
-                    {form.formState.errors.playtimeMax.message}
-                  </FormMessage>
-                ) : (
-                  <div />
-                )}
-              </div>
-            )}
-            <div className="grid grid-cols-3 items-center gap-4">
-              <Label>Year Published</Label>
-              <FormField
-                control={form.control}
-                name="yearPublished"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Min"
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === ""
-                              ? null
-                              : parseInt(e.target.value),
-                          )
-                        }
-                        value={field.value !== null ? field.value : undefined}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <div></div>
-            </div>
-            {form.formState.errors.yearPublished && (
-              <div className="grid grid-cols-3 items-center gap-4">
-                <div />
-                {form.formState.errors.yearPublished !== undefined ? (
-                  <FormMessage>
-                    {form.formState.errors.yearPublished.message}
-                  </FormMessage>
-                ) : (
-                  <div />
-                )}
-                <div />
-              </div>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-          <Button type="submit" disabled={isUploading}>
-            {isUploading ? "Uploading..." : "Submit"}
-          </Button>
+          </DialogTrigger>
         </div>
-      </form>
-    </Form>
+      </div>
+    </Dialog>
   );
 }
