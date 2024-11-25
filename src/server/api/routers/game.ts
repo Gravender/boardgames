@@ -28,7 +28,7 @@ export const gameRouter = createTRPCRouter({
         yearPublished: game.yearPublished,
         ownedBy: game.ownedBy,
         games: count(matches.id),
-        latPlayed: sql`max(${matches.createdAt})`.mapWith(matches.createdAt),
+        lastPlayed: sql`max(${matches.createdAt})`.mapWith(matches.createdAt),
       })
       .from(game)
       .where(eq(game.userId, ctx.userId))
