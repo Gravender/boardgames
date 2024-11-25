@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import game from "./game";
 import round from "./round";
+import match from "./match";
 
 const scoresheets = createTable(
   "scoresheet",
@@ -37,6 +38,6 @@ const scoresheets = createTable(
 export const scoresheetRelations = relations(scoresheets, ({ one, many }) => ({
   game: one(game, { fields: [scoresheets.gameId], references: [game.id] }),
   rounds: many(round),
-  matches: many(game),
+  matches: many(match),
 }));
 export default scoresheets;

@@ -12,6 +12,7 @@ import {
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import user from "./user";
 import match from "./match";
+import scoresheet from "./scoresheet";
 
 const games = createTable(
   "game",
@@ -32,6 +33,7 @@ const games = createTable(
     playtimeMin: integer("playtime_min"),
     playtimeMax: integer("playtime_max"),
     yearPublished: integer("year_published"),
+    deleted: boolean("deleted").default(false),
   },
   (table) => ({
     userIndex: index().on(table.userId),
@@ -44,6 +46,7 @@ export const gameRelations = relations(games, ({ one, many }) => ({
     references: [user.id],
   }),
   matches: many(match),
+  scoresheets: many(scoresheet),
 }));
 
 export const insertGameSchema = createInsertSchema(games);
