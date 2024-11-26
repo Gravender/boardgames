@@ -12,7 +12,9 @@
     "dev": "next dev",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "start": "next start"
+    "start": "next start",
+    "format": "prettier ./src --check --ignore-path .gitignore ./src",
+    "format:fix": "prettier ./src --write --ignore-path .gitignore ./src"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.4.1",

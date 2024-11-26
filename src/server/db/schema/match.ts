@@ -1,10 +1,11 @@
-import { createTable } from "./baseTable";
 import { relations, sql } from "drizzle-orm";
 import { index, integer, serial, timestamp } from "drizzle-orm/pg-core";
-import user from "./user";
+
+import { createTable } from "./baseTable";
 import game from "./game";
 import matchPlayer from "./matchPlayer";
 import scoresheet from "./scoresheet";
+import user from "./user";
 
 const matches = createTable(
   "match",

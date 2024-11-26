@@ -1,6 +1,7 @@
-import { createTable } from "./baseTable";
-import { integer, serial, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { integer, serial, unique } from "drizzle-orm/pg-core";
+
+import { createTable } from "./baseTable";
 import match from "./match";
 import player from "./player";
 

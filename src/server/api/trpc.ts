@@ -6,14 +6,14 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
+import { type getAuth } from "@clerk/nextjs/server";
 import { initTRPC, TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { db } from "~/server/db";
-import { type getAuth } from "@clerk/nextjs/server";
 import { user } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
 
 type AuthObject = ReturnType<typeof getAuth>;
 

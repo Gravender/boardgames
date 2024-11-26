@@ -1,8 +1,9 @@
-import { createTable } from "./baseTable";
-import { integer, serial, unique } from "drizzle-orm/pg-core";
-import round from "./round";
-import player from "./player";
 import { relations } from "drizzle-orm";
+import { integer, serial, unique } from "drizzle-orm/pg-core";
+
+import { createTable } from "./baseTable";
+import player from "./player";
+import round from "./round";
 
 const roundPlayers = createTable(
   "round_player",

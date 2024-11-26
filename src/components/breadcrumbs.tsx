@@ -1,13 +1,15 @@
 "use client";
 
 import { useSelectedLayoutSegments } from "next/navigation";
+
+import { CapatilizeFirstLetterOfEachWord } from "~/lib/utils";
+
 import {
   Breadcrumb,
-  BreadcrumbList,
   BreadcrumbItem,
   BreadcrumbLink,
+  BreadcrumbList,
 } from "./ui/breadcrumb";
-import { CapatilizeFirstLetterOfEachWord } from "~/lib/utils";
 
 export function BreadCrumbs() {
   const segments = useSelectedLayoutSegments();

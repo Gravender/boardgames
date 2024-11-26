@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
+import { ReactElement, useState } from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -18,12 +11,20 @@ import {
   getSortedRowModel,
   SortingState,
   useReactTable,
+  type Table as tTable,
 } from "@tanstack/react-table";
-import type { Table as tTable } from "@tanstack/react-table";
-import { ReactElement, useState } from "react";
+
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import { Card, CardContent, CardFooter } from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];

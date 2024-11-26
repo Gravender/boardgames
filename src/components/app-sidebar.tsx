@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { SignedOut, SignInButton, useUser } from "@clerk/nextjs";
 import {
   AudioWaveform,
   BookOpen,
@@ -26,7 +27,6 @@ import {
   SidebarFooter,
   SidebarRail,
 } from "~/components/ui/sidebar";
-import { SignedOut, SignInButton, useUser } from "@clerk/nextjs";
 
 // This is sample data.
 const data = {

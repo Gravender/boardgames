@@ -3,8 +3,8 @@ import { BreadCrumbs } from "~/components/breadcrumbs";
 import { ModeToggle } from "~/components/theme-toggle";
 import { Separator } from "~/components/ui/separator";
 import {
-  SidebarProvider,
   SidebarInset,
+  SidebarProvider,
   SidebarTrigger,
 } from "~/components/ui/sidebar";
 

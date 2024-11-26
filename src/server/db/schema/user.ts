@@ -1,7 +1,8 @@
-import { createTable } from "./baseTable";
 import { sql } from "drizzle-orm";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { serial, timestamp, varchar } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+
+import { createTable } from "./baseTable";
 
 const users = createTable("user", {
   id: serial("id").primaryKey(),

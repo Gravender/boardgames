@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
+
 import { AddGameDialog } from "~/app/_components/addGameDialog";
 import { Games } from "~/app/_components/games";
 import { api, HydrateClient } from "~/trpc/server";

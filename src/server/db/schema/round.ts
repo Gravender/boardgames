@@ -1,4 +1,3 @@
-import { createTable } from "./baseTable";
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
@@ -8,8 +7,10 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
-import scoresheet from "./scoresheet";
+
+import { createTable } from "./baseTable";
 import roundPlayer from "./roundPlayer";
+import scoresheet from "./scoresheet";
 
 const rounds = createTable(
   "round",
