@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ColumnDef,
@@ -12,6 +14,7 @@ import { Dices, MoreVertical } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
+import { Dialog } from "~/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,18 +25,22 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Separator } from "~/components/ui/separator";
 import { useToast } from "~/hooks/use-toast";
-import { api, RouterOutputs } from "~/trpc/react";
+import { api, RouterInputs, RouterOutputs } from "~/trpc/react";
 
 import { DataTable } from "./dataTable";
+import { EditGameDialog } from "./editGameDialog";
 
 export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
   const utils = api.useUtils();
   const router = useRouter();
   const { toast } = useToast();
+  const [isOpen, setOpen] = useState(false);
+  const [editGame, setEditGame] = useState<
+    RouterInputs["game"]["updateGame"] | null
+  >(null);
   const deleteGame = api.game.deleteGame.useMutation({
     onSuccess: async () => {
       await utils.game.getGames.invalidate();
-      router.refresh();
       toast({
         title: "Game deleted successfully!",
         variant: "destructive",
@@ -46,15 +53,18 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
     columnHelper.accessor("gameImg", {
       header: "Image",
       cell: ({ row }) => (
-        <Avatar className="h-24 w-24 rounded">
-          <AvatarImage
-            src={row.getValue("gameImg") ? row.getValue("gameImg") : ""}
-            alt="Game image"
-          />
-          <AvatarFallback>
-            <Dices className="h-full w-full p-2" />
-          </AvatarFallback>
-        </Avatar>
+        <div className="relative flex shrink-0 overflow-hidden h-24 w-24">
+          {row.getValue("gameImg") ? (
+            <Image
+              fill
+              src={row.getValue("gameImg")}
+              alt={`${row.original.name} game image`}
+              className="rounded-md aspect-square h-full w-full"
+            />
+          ) : (
+            <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
+          )}
+        </div>
       ),
     }),
     columnHelper.group({
@@ -153,7 +163,24 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>Edit</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setEditGame({
+                    id: row.original.id,
+                    gameImg: row.original.gameImg,
+                    name: row.original.name,
+                    ownedBy: row.original.ownedBy,
+                    playersMin: row.original?.players?.min ?? null,
+                    playersMax: row.original?.players?.max ?? null,
+                    playtimeMin: row.original?.playtime?.min ?? null,
+                    playtimeMax: row.original?.playtime?.max ?? null,
+                    yearPublished: row.original.yearPublished ?? null,
+                  });
+                  setOpen(true);
+                }}
+              >
+                Edit
+              </DropdownMenuItem>
               <DropdownMenuItem>Stats</DropdownMenuItem>
               <DropdownMenuItem>Rules</DropdownMenuItem>
               <DropdownMenuItem
@@ -197,15 +224,18 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
               key={`mobile-${row.id}`}
               className="flex w-full items-center gap-3 border-none"
             >
-              <Avatar className="h-12 w-12 rounded">
-                <AvatarImage
-                  src={row.getValue("gameImg") ? row.getValue("gameImg") : ""}
-                  alt="Game image"
-                />
-                <AvatarFallback>
-                  <Dices className="h-full w-full p-2" />
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative flex shrink-0 overflow-hidden h-12 w-12">
+                {row.getValue("gameImg") ? (
+                  <Image
+                    fill
+                    src={row.getValue("gameImg")}
+                    alt={`${row.original.name} game image`}
+                    className="rounded-md aspect-square h-full w-full"
+                  />
+                ) : (
+                  <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
+                )}
+              </div>
               <div className="flex flex-grow flex-col items-start">
                 <div className="flex w-full items-center justify-between">
                   <div className="flex flex-col items-start">
@@ -303,7 +333,10 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
 
   return (
     <div className="container mx-auto p-4 py-10">
-      <DataTable columns={columns} data={games} renderMobile={renderMobile} />
+      <Dialog open={isOpen} onOpenChange={setOpen}>
+        <DataTable columns={columns} data={games} renderMobile={renderMobile} />
+        {editGame && <EditGameDialog game={editGame} setOpen={setOpen} />}
+      </Dialog>
     </div>
   );
 }

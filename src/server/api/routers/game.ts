@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, count, eq, sql } from "drizzle-orm";
-import { z } from "zod";
+import { string, z } from "zod";
 
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
 import {
@@ -72,9 +72,19 @@ export const gameRouter = createTRPCRouter({
   }),
   updateGame: protectedUserProcedure
     .input(
-      selectGameSchema.omit({ createdAt: true, updatedAt: true, userId: true }),
+      z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        ownedBy: z.boolean().nullish(),
+        gameImg: z.string().nullish(),
+        playersMin: z.number().nullish(),
+        playersMax: z.number().nullish(),
+        playtimeMin: z.number().nullish(),
+        playtimeMax: z.number().nullish(),
+        yearPublished: z.number().nullish(),
+      }),
     )
-    .query(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       await ctx.db
         .update(game)
         .set({ ...input })

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -14,6 +15,7 @@ import {
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { Spinner } from "~/components/spinner";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -221,15 +223,17 @@ export function AddGameDialog() {
                   <FormLabel>Image</FormLabel>
                   <FormControl>
                     <div className="flex items-center space-x-4">
-                      <Avatar className="h-20 w-20">
-                        <AvatarImage
-                          src={imagePreview ? imagePreview : ""}
-                          alt="Game image"
-                        />
-                        <AvatarFallback>
-                          <Dices className="h-full w-full p-2" />
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="relative flex shrink-0 overflow-hidden rounded-full h-20 w-20">
+                        {imagePreview ? (
+                          <img
+                            src={imagePreview}
+                            alt="Game image"
+                            className="rounded-sm aspect-square h-full w-full"
+                          />
+                        ) : (
+                          <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-full" />
+                        )}
+                      </div>
                       <Input
                         type="file"
                         accept="image/*"
@@ -468,7 +472,14 @@ export function AddGameDialog() {
             </Collapsible>
             <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
               <Button type="submit" disabled={isUploading}>
-                {isUploading ? "Uploading..." : "Submit"}
+                {isUploading ? (
+                  <>
+                    <Spinner />
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  "Submit"
+                )}
               </Button>
             </div>
           </form>
