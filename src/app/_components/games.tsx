@@ -266,7 +266,24 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setEditGame({
+                              id: row.original.id,
+                              image: row.original.image,
+                              name: row.original.name,
+                              ownedBy: row.original.ownedBy,
+                              playersMin: row.original?.players?.min ?? null,
+                              playersMax: row.original?.players?.max ?? null,
+                              playtimeMin: row.original?.playtime?.min ?? null,
+                              playtimeMax: row.original?.playtime?.max ?? null,
+                              yearPublished: row.original.yearPublished ?? null,
+                            });
+                            setOpen(true);
+                          }}
+                        >
+                          Edit
+                        </DropdownMenuItem>
                         <DropdownMenuItem>Stats</DropdownMenuItem>
                         <DropdownMenuItem>Rules</DropdownMenuItem>
                         <DropdownMenuItem

@@ -11,15 +11,16 @@ export default async function Page() {
   const games = userId ? await api.game.getGames() : [];
   return (
     <HydrateClient>
-      <div>
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 w-full">
         {userId ? (
-          <Games games={games} />
+          <>
+            <Games games={games} />
+            <AddGameDialog />
+          </>
         ) : (
           <span>You need to be logged in to view this page.</span>
         )}
       </div>
-
-      <AddGameDialog />
     </HydrateClient>
   );
 }
