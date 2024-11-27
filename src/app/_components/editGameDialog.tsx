@@ -9,7 +9,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Spinner } from "~/components/spinner";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -93,14 +92,18 @@ const formSchema = z
 export function EditGameDialog({
   game,
   setOpen,
+  isOpen,
 }: {
   game: RouterInputs["game"]["updateGame"] & { image: string | null };
   setOpen: (isOpen: boolean) => void;
+  isOpen: boolean;
 }) {
   return (
-    <DialogContent className="sm:max-w-[425px]">
-      <Content game={game} setOpen={setOpen} />
-    </DialogContent>
+    <Dialog open={isOpen} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[425px]">
+        <Content game={game} setOpen={setOpen} />
+      </DialogContent>
+    </Dialog>
   );
 }
 

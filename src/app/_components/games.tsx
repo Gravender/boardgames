@@ -2,52 +2,24 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import {
-  ColumnDef,
-  createColumnHelper,
-  type Table,
-} from "@tanstack/react-table";
+import { createColumnHelper, type Table } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { Dices, MoreVertical } from "lucide-react";
+import { Dices } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent } from "~/components/ui/card";
-import { Dialog } from "~/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+import { Card } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
-import { useToast } from "~/hooks/use-toast";
-import { api, RouterInputs, RouterOutputs } from "~/trpc/react";
+import { RouterInputs, RouterOutputs } from "~/trpc/react";
 
 import { DataTable } from "./dataTable";
 import { EditGameDialog } from "./editGameDialog";
+import { GamesDropDown } from "./gamesDropDown";
 
 export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
-  const utils = api.useUtils();
-  const router = useRouter();
-  const { toast } = useToast();
   const [isOpen, setOpen] = useState(false);
   const [editGame, setEditGame] = useState<
     (RouterInputs["game"]["updateGame"] & { image: string | null }) | null
   >(null);
-  const deleteGame = api.game.deleteGame.useMutation({
-    onSuccess: async () => {
-      await utils.game.getGames.invalidate();
-      router.refresh();
-      toast({
-        title: "Game deleted successfully!",
-        variant: "destructive",
-      });
-    },
-  });
   const columnHelper =
     createColumnHelper<RouterOutputs["game"]["getGames"][0]>();
   const columns = [
@@ -156,42 +128,11 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
         const payment = row.original;
 
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => {
-                  setEditGame({
-                    id: row.original.id,
-                    image: row.original.image,
-                    name: row.original.name,
-                    ownedBy: row.original.ownedBy,
-                    playersMin: row.original?.players?.min ?? null,
-                    playersMax: row.original?.players?.max ?? null,
-                    playtimeMin: row.original?.playtime?.min ?? null,
-                    playtimeMax: row.original?.playtime?.max ?? null,
-                    yearPublished: row.original.yearPublished ?? null,
-                  });
-                  setOpen(true);
-                }}
-              >
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem>Stats</DropdownMenuItem>
-              <DropdownMenuItem>Rules</DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
-                onClick={() => deleteGame.mutate({ id: row.original.id })}
-              >
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <GamesDropDown
+            data={row.original}
+            setEditGame={setEditGame}
+            setOpen={setOpen}
+          />
         );
       },
     }),
@@ -258,44 +199,11 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
                     >
                       {row.original.games}
                     </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0 pr-2">
-                          <span className="sr-only">Open menu</span>
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setEditGame({
-                              id: row.original.id,
-                              image: row.original.image,
-                              name: row.original.name,
-                              ownedBy: row.original.ownedBy,
-                              playersMin: row.original?.players?.min ?? null,
-                              playersMax: row.original?.players?.max ?? null,
-                              playtimeMin: row.original?.playtime?.min ?? null,
-                              playtimeMax: row.original?.playtime?.max ?? null,
-                              yearPublished: row.original.yearPublished ?? null,
-                            });
-                            setOpen(true);
-                          }}
-                        >
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>Stats</DropdownMenuItem>
-                        <DropdownMenuItem>Rules</DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
-                          onClick={() =>
-                            deleteGame.mutate({ id: row.original.id })
-                          }
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <GamesDropDown
+                      data={row.original}
+                      setEditGame={setEditGame}
+                      setOpen={setOpen}
+                    />
                   </div>
                 </div>
 
@@ -351,10 +259,10 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
 
   return (
     <div className="container mx-auto p-4 py-10">
-      <Dialog open={isOpen} onOpenChange={setOpen}>
-        <DataTable columns={columns} data={games} renderMobile={renderMobile} />
-        {editGame && <EditGameDialog game={editGame} setOpen={setOpen} />}
-      </Dialog>
+      <DataTable columns={columns} data={games} renderMobile={renderMobile} />
+      {editGame && (
+        <EditGameDialog game={editGame} setOpen={setOpen} isOpen={isOpen} />
+      )}
     </div>
   );
 }
