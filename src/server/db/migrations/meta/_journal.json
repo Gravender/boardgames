@@ -15,6 +15,27 @@
       "when": 1732530061934,
       "tag": "0001_nasty_bedlam",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1732690284933,
+      "tag": "0002_yielding_loners",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1732690569577,
+      "tag": "0003_parallel_dakota_north",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1732690596467,
+      "tag": "0004_fearless_the_professor",
+      "breakpoints": true
     }
   ]
 }

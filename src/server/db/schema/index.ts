@@ -11,3 +11,8 @@ export { default as scoresheet, scoresheetRelations } from "./scoresheet";
 export { default as player, playerRelations } from "./player";
 export { default as matchPlayer, matchPlayerRelations } from "./matchPlayer";
 export { default as roundPlayer, roundPlayerRelations } from "./roundPlayer";
+export {
+  default as image,
+  insertImageSchema,
+  selectImageSchema,
+} from "./image";

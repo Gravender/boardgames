@@ -94,7 +94,7 @@ export function EditGameDialog({
   game,
   setOpen,
 }: {
-  game: RouterInputs["game"]["updateGame"];
+  game: RouterInputs["game"]["updateGame"] & { image: string | null };
   setOpen: (isOpen: boolean) => void;
 }) {
   return (
@@ -108,11 +108,11 @@ function Content({
   game,
   setOpen,
 }: {
-  game: RouterInputs["game"]["updateGame"];
+  game: RouterInputs["game"]["updateGame"] & { image: string | null };
   setOpen: (isOpen: boolean) => void;
 }) {
   const [imagePreview, setImagePreview] = useState<string | null>(
-    game.gameImg ?? null,
+    game.image ?? null,
   );
   const [openCollapse, setOpenCollapse] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -128,15 +128,17 @@ function Content({
       toast({
         title: "Game updated successfully!",
       });
+      form.reset();
+      setImagePreview(null);
       setOpen(false);
     },
   });
 
   const updateGame = ({
-    img,
+    imageId,
     values,
   }: {
-    img: string | null | undefined;
+    imageId: number | null | undefined;
     values: z.infer<typeof formSchema>;
   }) => {
     const nameChanged = values.name !== game.name;
@@ -146,6 +148,7 @@ function Content({
     const playtimeMinChanged = values.playtimeMin !== game.playtimeMin;
     const playtimeMaxChanged = values.playtimeMax !== game.playtimeMax;
     const yearPublishedChanged = values.yearPublished !== game.yearPublished;
+    const imageIdChanged = imageId !== undefined;
 
     if (
       nameChanged ||
@@ -154,7 +157,8 @@ function Content({
       playersMaxChanged ||
       playtimeMinChanged ||
       playtimeMaxChanged ||
-      yearPublishedChanged
+      yearPublishedChanged ||
+      imageIdChanged
     ) {
       mutation.mutate({
         id: game.id,
@@ -166,7 +170,7 @@ function Content({
         playtimeMin: playtimeMinChanged ? values.playtimeMin : undefined,
         playtimeMax: playtimeMaxChanged ? values.playtimeMax : undefined,
         yearPublished: yearPublishedChanged ? values.yearPublished : undefined,
-        gameImg: img,
+        imageId: imageId,
       });
     }
   };
@@ -176,7 +180,7 @@ function Content({
     defaultValues: {
       name: game.name,
       ownedBy: game.ownedBy ?? false,
-      gameImg: game.gameImg,
+      gameImg: game.image,
       playersMin: game.playersMin,
       playersMax: game.playersMax,
       playtimeMin: game.playtimeMin,
@@ -193,28 +197,27 @@ function Content({
   }, [imagePreview]);
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsUploading(true);
-    if (values.gameImg === game.gameImg) {
+    if (values.gameImg === game.image) {
       setIsUploading(false);
-      updateGame({ img: undefined, values });
+      updateGame({ imageId: undefined, values });
       return;
     }
     if (!values.gameImg) {
       setIsUploading(false);
-      updateGame({ img: null, values });
+      updateGame({ imageId: null, values });
       return;
     }
 
     try {
       const imageFile = values.gameImg as File;
-
       const uploadResult = await startUpload([imageFile]);
-
       if (!uploadResult) {
         throw new Error("Image upload failed");
       }
 
-      const imageUrl = uploadResult[0] ? uploadResult[0].url : null;
-
+      const imageId = uploadResult[0]
+        ? uploadResult[0].serverData.imageId
+        : null;
       updateGame({
         values: {
           name: values.name,
@@ -226,11 +229,8 @@ function Content({
           yearPublished: values.yearPublished,
           gameImg: null,
         },
-        img: imageUrl,
+        imageId: imageId,
       });
-
-      form.reset();
-      setImagePreview(null); // Clear the image preview
     } catch (error) {
       console.error("Error uploading Image:", error);
       toast({

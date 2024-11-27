@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { set } from "date-fns";
 import {
   ChevronDown,
   ChevronUp,
@@ -27,6 +28,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -99,21 +101,12 @@ export function AddGameDialog() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [openCollapse, setOpenCollapse] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const { startUpload } = useUploadThing("imageUploader");
   const router = useRouter();
 
   const utils = api.useUtils();
-  const createGame = api.game.create.useMutation({
-    onSuccess: async () => {
-      await utils.game.invalidate();
-      router.refresh();
-      toast({
-        title: "Game created successfully!",
-        description: "Your data has been uploaded.",
-      });
-    },
-  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -126,6 +119,19 @@ export function AddGameDialog() {
       playtimeMin: null,
       playtimeMax: null,
       yearPublished: null,
+    },
+  });
+
+  const createGame = api.game.create.useMutation({
+    onSuccess: async () => {
+      await utils.game.invalidate();
+      router.refresh();
+      setIsOpen(false);
+      form.reset();
+      toast({
+        title: "Game created successfully!",
+        description: "Your data has been uploaded.",
+      });
     },
   });
   useEffect(() => {
@@ -147,7 +153,7 @@ export function AddGameDialog() {
         playtimeMin: values.playtimeMin,
         playtimeMax: values.playtimeMax,
         yearPublished: values.yearPublished,
-        gameImg: null,
+        imageId: null,
       });
       return;
     }
@@ -156,7 +162,6 @@ export function AddGameDialog() {
       const imageFile = values.gameImg as File;
 
       const uploadResult = await startUpload([imageFile]);
-
       if (!uploadResult) {
         throw new Error("Image upload failed");
       }
@@ -166,7 +171,9 @@ export function AddGameDialog() {
         description: "Your File has been stored",
       });
 
-      const imageUrl = uploadResult[0] ? uploadResult[0].url : null;
+      const imageId = uploadResult[0]
+        ? uploadResult[0].serverData.imageId
+        : null;
 
       createGame.mutate({
         name: values.name,
@@ -176,9 +183,8 @@ export function AddGameDialog() {
         playtimeMin: values.playtimeMin,
         playtimeMax: values.playtimeMax,
         yearPublished: values.yearPublished,
-        gameImg: imageUrl,
+        imageId: imageId,
       });
-
       form.reset();
       setImagePreview(null); // Clear the image preview
     } catch (error) {
@@ -194,7 +200,7 @@ export function AddGameDialog() {
   }
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Game</DialogTitle>
@@ -470,7 +476,14 @@ export function AddGameDialog() {
                 )}
               </CollapsibleContent>
             </Collapsible>
-            <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+            <DialogFooter>
+              <Button
+                type="reset"
+                variant="secondary"
+                onClick={() => setIsOpen(false)}
+              >
+                Cancel
+              </Button>
               <Button type="submit" disabled={isUploading}>
                 {isUploading ? (
                   <>
@@ -481,17 +494,20 @@ export function AddGameDialog() {
                   "Submit"
                 )}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>
       <div className="flex h-full w-full flex-col justify-between">
         <div className="flex justify-end p-4">
-          <DialogTrigger asChild>
-            <Button variant="default" className="rounded-full" size="icon">
-              <Plus />
-            </Button>
-          </DialogTrigger>
+          <Button
+            variant="default"
+            className="rounded-full"
+            size="icon"
+            onClick={() => setIsOpen(true)}
+          >
+            <Plus />
+          </Button>
         </div>
       </div>
     </Dialog>

@@ -36,11 +36,12 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
   const { toast } = useToast();
   const [isOpen, setOpen] = useState(false);
   const [editGame, setEditGame] = useState<
-    RouterInputs["game"]["updateGame"] | null
+    (RouterInputs["game"]["updateGame"] & { image: string | null }) | null
   >(null);
   const deleteGame = api.game.deleteGame.useMutation({
     onSuccess: async () => {
       await utils.game.getGames.invalidate();
+      router.refresh();
       toast({
         title: "Game deleted successfully!",
         variant: "destructive",
@@ -50,14 +51,14 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
   const columnHelper =
     createColumnHelper<RouterOutputs["game"]["getGames"][0]>();
   const columns = [
-    columnHelper.accessor("gameImg", {
+    columnHelper.accessor("image", {
       header: "Image",
       cell: ({ row }) => (
         <div className="relative flex shrink-0 overflow-hidden h-24 w-24">
-          {row.getValue("gameImg") ? (
+          {row.getValue("image") ? (
             <Image
               fill
-              src={row.getValue("gameImg")}
+              src={row.getValue("image")}
               alt={`${row.original.name} game image`}
               className="rounded-md aspect-square h-full w-full"
             />
@@ -167,7 +168,7 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
                 onClick={() => {
                   setEditGame({
                     id: row.original.id,
-                    gameImg: row.original.gameImg,
+                    image: row.original.image,
                     name: row.original.name,
                     ownedBy: row.original.ownedBy,
                     playersMin: row.original?.players?.min ?? null,
@@ -225,10 +226,10 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
               className="flex w-full items-center gap-3 border-none"
             >
               <div className="relative flex shrink-0 overflow-hidden h-12 w-12">
-                {row.getValue("gameImg") ? (
+                {row.getValue("image") ? (
                   <Image
                     fill
-                    src={row.getValue("gameImg")}
+                    src={row.getValue("image")}
                     alt={`${row.original.name} game image`}
                     className="rounded-md aspect-square h-full w-full"
                   />

@@ -11,6 +11,7 @@ import {
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
+import image from "./image";
 import match from "./match";
 import scoresheet from "./scoresheet";
 import user from "./user";
@@ -27,7 +28,7 @@ const games = createTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
       () => new Date(),
     ),
-    gameImg: varchar("game_img", { length: 256 }),
+    imageId: integer("image_id").references(() => image.id),
     ownedBy: boolean("owned_by"),
     playersMin: integer("players_min"),
     playersMax: integer("players_max"),
@@ -45,6 +46,10 @@ export const gameRelations = relations(games, ({ one, many }) => ({
   user: one(user, {
     fields: [games.userId],
     references: [user.id],
+  }),
+  image: one(image, {
+    fields: [games.userId],
+    references: [image.id],
   }),
   matches: many(match),
   scoresheets: many(scoresheet),

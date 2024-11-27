@@ -5,6 +5,7 @@ import { string, z } from "zod";
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
 import {
   game,
+  image,
   insertGameSchema,
   matches,
   selectGameSchema,
@@ -23,7 +24,7 @@ export const gameRouter = createTRPCRouter({
         .select({
           id: game.id,
           name: game.name,
-          gameImg: game.gameImg,
+          imageUrl: image.url,
           players: {
             min: game.playersMin,
             max: game.playersMax,
@@ -42,14 +43,14 @@ export const gameRouter = createTRPCRouter({
             eq(game.id, input.id),
             eq(game.deleted, false),
           ),
-        );
+        )
+        .leftJoin(image, eq(game.imageId, image.id));
     }),
   getGames: protectedUserProcedure.query(async ({ ctx }) => {
     const games = await ctx.db
       .select({
         id: game.id,
         name: game.name,
-        gameImg: game.gameImg,
         players: {
           min: game.playersMin,
           max: game.playersMax,
@@ -59,15 +60,17 @@ export const gameRouter = createTRPCRouter({
           max: game.playtimeMax,
         },
         yearPublished: game.yearPublished,
+        image: image.url,
         ownedBy: game.ownedBy,
         games: count(matches.id),
         lastPlayed: sql`max(${matches.createdAt})`.mapWith(matches.createdAt),
       })
       .from(game)
       .where(and(eq(game.userId, ctx.userId), eq(game.deleted, false)))
+      .leftJoin(image, eq(game.imageId, image.id))
       .leftJoin(matches, eq(game.id, matches.gameId))
-      .groupBy(game.id)
-      .orderBy(game.name);
+      .groupBy(game.id, image.url)
+      .orderBy(game.name, image.url);
     return games;
   }),
   updateGame: protectedUserProcedure
@@ -76,7 +79,7 @@ export const gameRouter = createTRPCRouter({
         id: z.number(),
         name: z.string().optional(),
         ownedBy: z.boolean().nullish(),
-        gameImg: z.string().nullish(),
+        imageId: z.number().nullish(),
         playersMin: z.number().nullish(),
         playersMax: z.number().nullish(),
         playtimeMin: z.number().nullish(),
