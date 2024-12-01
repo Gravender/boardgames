@@ -7,15 +7,96 @@ import {
   game,
   image,
   insertGameSchema,
+  insertScoreSheetSchema,
   matches,
+  round,
+  scoresheet,
   selectGameSchema,
 } from "~/server/db/schema";
+import { insertRoundSchema } from "~/server/db/schema/round";
 
 export const gameRouter = createTRPCRouter({
   create: protectedUserProcedure
-    .input(insertGameSchema.omit({ userId: true, id: true }))
+    .input(
+      z.object({
+        game: insertGameSchema.omit({
+          userId: true,
+          id: true,
+          createdAt: true,
+          updatedAt: true,
+        }),
+        scoresheet: insertScoreSheetSchema
+          .omit({
+            id: true,
+            createdAt: true,
+            updatedAt: true,
+            userId: true,
+            is_template: true,
+            gameId: true,
+            roundsScore: true,
+          })
+          .required({ name: true })
+          .or(z.null()),
+        rounds: z.array(
+          insertRoundSchema
+            .omit({
+              id: true,
+              createdAt: true,
+              updatedAt: true,
+              scoresheetId: true,
+            })
+            .required({ name: true }),
+        ),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.insert(game).values({ ...input, userId: ctx.userId });
+      const returningGame = await ctx.db
+        .insert(game)
+        .values({ ...input.game, userId: ctx.userId })
+        .returning();
+      if (!returningGame[0]?.id) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      }
+      if (!input.scoresheet) {
+        const scoresheetId = (
+          await ctx.db
+            .insert(scoresheet)
+            .values({
+              name: "Default",
+              userId: ctx.userId,
+              gameId: returningGame[0].id,
+            })
+            .returning()
+        )?.[0]?.id;
+        if (!scoresheetId) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        }
+        await ctx.db.insert(round).values({
+          name: "Round 1",
+          scoresheetId: scoresheetId,
+          type: "Numeric",
+        });
+      } else {
+        const scoresheetId = (
+          await ctx.db
+            .insert(scoresheet)
+            .values({
+              ...input.scoresheet,
+              userId: ctx.userId,
+              gameId: returningGame[0].id,
+            })
+            .returning()
+        )?.[0]?.id;
+        if (!scoresheetId) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        }
+
+        const rounds = input.rounds.map((round) => ({
+          ...round,
+          scoresheetId: scoresheetId,
+        })) ?? [{ name: "Round 1", type: "Numeric" }];
+        await ctx.db.insert(round).values(rounds);
+      }
     }),
   getGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))

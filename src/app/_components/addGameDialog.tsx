@@ -44,11 +44,39 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Separator } from "~/components/ui/separator";
 import { useToast } from "~/hooks/use-toast";
+import { insertScoreSheetSchema } from "~/server/db/schema";
+import { insertRoundSchema } from "~/server/db/schema/round";
 import { api } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
-const formSchema = z
+import { AddScoreSheet } from "./addScoreSheet";
+
+const scoresheetSchema = insertScoreSheetSchema
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    userId: true,
+    is_template: true,
+    gameId: true,
+    roundsScore: true,
+  })
+  .required({ name: true });
+
+const roundsSchema = z.array(
+  insertRoundSchema
+    .omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true,
+      scoresheetId: true,
+    })
+    .required({ name: true }),
+);
+
+export const addGameSchema = z
   .object({
     name: z.string().min(1, {
       message: "Game name is required",
@@ -95,10 +123,17 @@ const formSchema = z
         path: ["playtimeMin"],
       });
     }
-  });
+  })
+  .and(
+    z.object({
+      scoresheet: scoresheetSchema.or(z.null()),
+      rounds: roundsSchema,
+    }),
+  );
 
 export function AddGameDialog() {
   const [isOpen, setIsOpen] = useState(false);
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[425px]">
@@ -130,8 +165,8 @@ function Content({ setOpen }: { setOpen: (isOpen: boolean) => void }) {
 
   const utils = api.useUtils();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof addGameSchema>>({
+    resolver: zodResolver(addGameSchema),
     defaultValues: {
       name: "",
       ownedBy: false,
@@ -141,11 +176,14 @@ function Content({ setOpen }: { setOpen: (isOpen: boolean) => void }) {
       playtimeMin: null,
       playtimeMax: null,
       yearPublished: null,
+      scoresheet: null,
+      rounds: [],
     },
   });
 
   const createGame = api.game.create.useMutation({
     onSuccess: async () => {
+      setIsUploading(false);
       await utils.game.invalidate();
       router.refresh();
       setOpen(false);
@@ -163,19 +201,22 @@ function Content({ setOpen }: { setOpen: (isOpen: boolean) => void }) {
       }
     };
   }, [imagePreview]);
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof addGameSchema>) {
     setIsUploading(true);
     if (!values.gameImg) {
-      setIsUploading(false);
       createGame.mutate({
-        name: values.name,
-        ownedBy: values.ownedBy,
-        playersMin: values.playersMin,
-        playersMax: values.playersMax,
-        playtimeMin: values.playtimeMin,
-        playtimeMax: values.playtimeMax,
-        yearPublished: values.yearPublished,
-        imageId: null,
+        game: {
+          name: values.name,
+          ownedBy: values.ownedBy,
+          playersMin: values.playersMin,
+          playersMax: values.playersMax,
+          playtimeMin: values.playtimeMin,
+          playtimeMax: values.playtimeMax,
+          yearPublished: values.yearPublished,
+          imageId: null,
+        },
+        scoresheet: values.scoresheet,
+        rounds: values.rounds,
       });
       return;
     }
@@ -198,14 +239,18 @@ function Content({ setOpen }: { setOpen: (isOpen: boolean) => void }) {
         : null;
 
       createGame.mutate({
-        name: values.name,
-        ownedBy: values.ownedBy,
-        playersMin: values.playersMin,
-        playersMax: values.playersMax,
-        playtimeMin: values.playtimeMin,
-        playtimeMax: values.playtimeMax,
-        yearPublished: values.yearPublished,
-        imageId: imageId,
+        game: {
+          name: values.name,
+          ownedBy: values.ownedBy,
+          playersMin: values.playersMin,
+          playersMax: values.playersMax,
+          playtimeMin: values.playtimeMin,
+          playtimeMax: values.playtimeMax,
+          yearPublished: values.yearPublished,
+          imageId: imageId,
+        },
+        scoresheet: values.scoresheet,
+        rounds: values.rounds,
       });
       form.reset();
       setImagePreview(null); // Clear the image preview
@@ -216,8 +261,6 @@ function Content({ setOpen }: { setOpen: (isOpen: boolean) => void }) {
         description: "There was a problem uploading your Image.",
         variant: "destructive",
       });
-    } finally {
-      setIsUploading(false);
     }
   }
 
@@ -487,6 +530,8 @@ function Content({ setOpen }: { setOpen: (isOpen: boolean) => void }) {
               )}
             </CollapsibleContent>
           </Collapsible>
+          <Separator className="w-full" orientation="horizontal" />
+          <AddScoreSheet form={form} />
           <DialogFooter>
             <Button
               type="reset"

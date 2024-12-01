@@ -4,9 +4,11 @@ import {
   index,
   integer,
   serial,
+  text,
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
 import roundPlayer from "./roundPlayer";
@@ -16,11 +18,13 @@ const rounds = createTable(
   "round",
   {
     id: serial("id").primaryKey(),
-    name: varchar("name", { length: 256 }),
+    name: varchar("name", { length: 256 }).notNull(),
     scoresheetId: integer("scoresheet_id")
       .notNull()
       .references(() => scoresheet.id),
-    type: varchar("type", { length: 256 }),
+    type: text("type", {
+      enum: ["Numeric", "Checkbox"],
+    }),
     color: varchar("color", { length: 256 }),
     score: integer("score"),
     winCondition: integer("win_condition"),
@@ -45,4 +49,9 @@ export const roundRelations = relations(rounds, ({ one, many }) => ({
   }),
   players: many(roundPlayer),
 }));
+
+export const insertRoundSchema = createInsertSchema(rounds);
+
+export const selectRoundSchema = createSelectSchema(rounds);
+
 export default rounds;

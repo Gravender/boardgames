@@ -1,0 +1,1 @@
+ALTER TABLE "boardgames_scoresheet" ALTER COLUMN "is_coop" SET NOT NULL;

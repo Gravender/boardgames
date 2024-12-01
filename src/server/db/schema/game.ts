@@ -29,7 +29,7 @@ const games = createTable(
       () => new Date(),
     ),
     imageId: integer("image_id").references(() => image.id),
-    ownedBy: boolean("owned_by"),
+    ownedBy: boolean("owned_by").default(false),
     playersMin: integer("players_min"),
     playersMax: integer("players_max"),
     playtimeMin: integer("playtime_min"),

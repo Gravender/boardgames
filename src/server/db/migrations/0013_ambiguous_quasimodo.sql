@@ -1,0 +1,1 @@
+ALTER TABLE "boardgames_round" ALTER COLUMN "name" SET NOT NULL;
