@@ -4,6 +4,6 @@ import { twMerge } from "tailwind-merge";
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
-export function CapatilizeFirstLetterOfEachWord(str: string) {
+export function CapitalizeFirstLetterOfEachWord(str: string) {
   return str.replace(/(?:^|\s)\w/g, (match) => match.toUpperCase());
 }

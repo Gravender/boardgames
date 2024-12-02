@@ -8,7 +8,7 @@ import {
   image,
   insertGameSchema,
   insertScoreSheetSchema,
-  matches,
+  match,
   round,
   scoresheet,
   selectGameSchema,
@@ -31,7 +31,7 @@ export const gameRouter = createTRPCRouter({
             createdAt: true,
             updatedAt: true,
             userId: true,
-            is_template: true,
+            type: true,
             gameId: true,
             roundsScore: true,
           })
@@ -101,31 +101,65 @@ export const gameRouter = createTRPCRouter({
   getGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      return ctx.db
-        .select({
-          id: game.id,
-          name: game.name,
-          imageUrl: image.url,
-          players: {
-            min: game.playersMin,
-            max: game.playersMax,
+      const result = await ctx.db.query.game.findFirst({
+        where: eq(game.id, input.id),
+        with: {
+          image: {
+            columns: {
+              url: true,
+            },
           },
-          playtime: {
-            min: game.playtimeMin,
-            max: game.playtimeMax,
+          matches: {
+            with: {
+              players: {
+                with: {
+                  player: true,
+                },
+              },
+            },
+            orderBy: (matches, { desc }) => [desc(matches.date)],
           },
-          yearPublished: game.yearPublished,
-          ownedBy: game.ownedBy,
-        })
-        .from(game)
-        .where(
-          and(
-            eq(game.userId, ctx.userId),
-            eq(game.id, input.id),
-            eq(game.deleted, false),
-          ),
-        )
-        .leftJoin(image, eq(game.imageId, image.id));
+        },
+      });
+      if (!result) return null;
+      return {
+        id: result.id,
+        name: result.name,
+        imageUrl: result?.image?.url,
+        players: {
+          min: result.playersMin,
+          max: result.playersMax,
+        },
+        playtime: {
+          min: result.playtimeMin,
+          max: result.playtimeMax,
+        },
+        yearPublished: result.yearPublished,
+        ownedBy: result.ownedBy,
+        matches: result.matches.map((match) => {
+          return {
+            id: match.id,
+            date: match.date,
+            won:
+              match.players.findIndex(
+                (player) =>
+                  player.winner && player.player.userId === ctx.userId,
+              ) !== -1,
+          };
+        }),
+      };
+    }),
+  getGameName: protectedUserProcedure
+    .input(selectGameSchema.pick({ id: true }))
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.db.query.game.findFirst({
+        where: eq(game.id, input.id),
+        columns: {
+          name: true,
+        },
+      });
+      if (!result) return null;
+      return result.name;
     }),
   getGames: protectedUserProcedure.query(async ({ ctx }) => {
     const games = await ctx.db
@@ -143,13 +177,13 @@ export const gameRouter = createTRPCRouter({
         yearPublished: game.yearPublished,
         image: image.url,
         ownedBy: game.ownedBy,
-        games: count(matches.id),
-        lastPlayed: sql`max(${matches.createdAt})`.mapWith(matches.createdAt),
+        games: count(match.id),
+        lastPlayed: sql`max(${match.createdAt})`.mapWith(match.createdAt),
       })
       .from(game)
       .where(and(eq(game.userId, ctx.userId), eq(game.deleted, false)))
       .leftJoin(image, eq(game.imageId, image.id))
-      .leftJoin(matches, eq(game.id, matches.gameId))
+      .leftJoin(match, eq(game.id, match.gameId))
       .groupBy(game.id, image.url)
       .orderBy(game.name, image.url);
     return games;

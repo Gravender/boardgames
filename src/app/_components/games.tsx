@@ -21,7 +21,7 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
     (RouterInputs["game"]["updateGame"] & { image: string | null }) | null
   >(null);
   const columnHelper =
-    createColumnHelper<RouterOutputs["game"]["getGames"][0]>();
+    createColumnHelper<RouterOutputs["game"]["getGames"][number]>();
   const columns = [
     columnHelper.accessor("image", {
       header: "Image",
@@ -61,8 +61,9 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
         const playtimeMin = playtime?.min ?? null;
         const playtimeMax = playtime?.max ?? null;
         const yearPublished = props.row.original?.yearPublished ?? "";
-        const lastPlayed =
-          format(props.row.original?.lastPlayed, "d MMM yyyy") ?? null;
+        const lastPlayed = props.row.original?.lastPlayed
+          ? format(props.row.original?.lastPlayed, "d MMM yyyy")
+          : null;
         return (
           <div className="flex flex-col gap-1 p-2">
             <h2 className="text-xl font-bold">{props.row.original?.name}</h2>
