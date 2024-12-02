@@ -23,4 +23,4 @@
 - [ ] Settings page
 - [ ] BGG support
 - [ ] Analytics (posthog)
-- [ ] Andriod Version
+- [ ] Android Version
