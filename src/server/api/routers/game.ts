@@ -102,7 +102,7 @@ export const gameRouter = createTRPCRouter({
     .input(selectGameSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.game.findFirst({
-        where: eq(game.id, input.id),
+        where: and(eq(game.id, input.id), eq(game.userId, ctx.userId)),
         with: {
           image: {
             columns: {

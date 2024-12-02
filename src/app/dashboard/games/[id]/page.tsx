@@ -13,7 +13,7 @@ export default async function Page({
 }) {
   const id = (await params).id;
   const game = await api.game.getGame({ id: Number(id) });
-  if (!game) redirect("dashboard/games");
+  if (!game) redirect("/dashboard/games");
   return (
     <HydrateClient>
       <h1>{game.name}</h1>
@@ -25,6 +25,7 @@ export default async function Page({
           matches={game.matches}
           gameName={game.name}
           imageUrl={game.imageUrl}
+          gameId={game.id}
         />
       </div>
     </HydrateClient>

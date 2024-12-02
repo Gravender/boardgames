@@ -1,5 +1,6 @@
 "use client";
 
+import { startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MoreVertical } from "lucide-react";
 
@@ -11,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { useToast } from "~/hooks/use-toast";
+import { deleteGame } from "~/server/queries";
 import { api, RouterInputs, RouterOutputs } from "~/trpc/react";
 
 export function GamesDropDown({
@@ -26,19 +28,11 @@ export function GamesDropDown({
   setOpen: (isOpen: boolean) => void;
   data: RouterOutputs["game"]["getGames"][0];
 }) {
-  const utils = api.useUtils();
-  const router = useRouter();
-  const { toast } = useToast();
-  const deleteGame = api.game.deleteGame.useMutation({
-    onSuccess: async () => {
-      await utils.game.getGames.invalidate();
-      router.refresh();
-      toast({
-        title: "Game deleted successfully!",
-        variant: "destructive",
-      });
-    },
-  });
+  const onDelete = () => {
+    startTransition(async () => {
+      await deleteGame({ id: data.id });
+    });
+  };
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -70,7 +64,7 @@ export function GamesDropDown({
         <DropdownMenuItem>Rules</DropdownMenuItem>
         <DropdownMenuItem
           className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
-          onClick={() => deleteGame.mutate({ id: data.id })}
+          onClick={onDelete}
         >
           Delete
         </DropdownMenuItem>

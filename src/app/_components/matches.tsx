@@ -2,28 +2,22 @@ import Image from "next/image";
 import { format } from "date-fns/format";
 import { Dices } from "lucide-react";
 
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
+import { Table, TableBody, TableCell, TableRow } from "~/components/ui/table";
 import { RouterOutputs } from "~/trpc/react";
 
-type Matches = NonNullable<RouterOutputs["game"]["getGame"]>["matches"];
-type GameName = NonNullable<RouterOutputs["game"]["getGame"]>["name"];
-type GameImage = NonNullable<RouterOutputs["game"]["getGame"]>["imageUrl"];
+import { MatchDropDown } from "./matchesDropDown";
+
+type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 export function Matches({
   matches,
   gameName,
   imageUrl,
+  gameId,
 }: {
-  matches: Matches;
-  gameName: GameName;
-  imageUrl: GameImage;
+  matches: Game["matches"];
+  gameName: Game["name"];
+  imageUrl: Game["imageUrl"];
+  gameId: Game["id"];
 }) {
   return (
     <Table>
@@ -57,7 +51,20 @@ export function Matches({
                 </div>
               </div>
             </TableCell>
-            <TableCell>{match.won ? "You Won" : "You Lost"}</TableCell>
+            <TableCell>
+              {match.won ? (
+                <div className="inline-flex w-12 rounded-sm font-medium p-2 text-destructive-foreground items-center justify-center bg-green-500 dark:bg-green-900">
+                  {"Won"}
+                </div>
+              ) : (
+                <div className="inline-flex w-12 rounded-sm font-medium p-2 text-destructive-foreground items-center justify-center bg-destructive">
+                  {"Lost"}
+                </div>
+              )}
+            </TableCell>
+            <TableCell>
+              <MatchDropDown gameId={gameId} matchId={match.id} />
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>

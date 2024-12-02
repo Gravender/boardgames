@@ -14,6 +14,7 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
+  BreadcrumbPage,
   BreadcrumbSeparator,
 } from "./ui/breadcrumb";
 
@@ -44,19 +45,25 @@ export function BreadCrumbs() {
     <Breadcrumb>
       <BreadcrumbList>
         {pathItems.map((item, index) =>
-          gameName || isNaN(Number(item.name)) ? (
+          typeof gameName === "string" || isNaN(Number(item.name)) ? (
             <Fragment key={item.path}>
               {index > 0 && <BreadcrumbSeparator className="hidden md:block" />}
               <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href={`/${item.path}`}>
-                    {CapitalizeFirstLetterOfEachWord(
-                      id && item.name === String(id)
-                        ? (gameName ?? item.name)
-                        : item.name,
-                    )}
-                  </Link>
-                </BreadcrumbLink>
+                {index + 1 === pathItems.length ? (
+                  <BreadcrumbPage>
+                    {CapitalizeFirstLetterOfEachWord(gameName ?? item.name)}
+                  </BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink asChild>
+                    <Link href={`/${item.path}`}>
+                      {CapitalizeFirstLetterOfEachWord(
+                        id && item.name === String(id)
+                          ? (gameName ?? item.name)
+                          : item.name,
+                      )}
+                    </Link>
+                  </BreadcrumbLink>
+                )}
               </BreadcrumbItem>
             </Fragment>
           ) : null,

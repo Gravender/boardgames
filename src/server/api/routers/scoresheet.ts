@@ -31,7 +31,7 @@ export const scoresheetRouter = createTRPCRouter({
           isCoop: scoresheet.isCoop,
           winCondition: scoresheet.winCondition,
           roundsScore: scoresheet.roundsScore,
-          is_template: scoresheet.is_template,
+          is_template: scoresheet.type,
         })
         .from(scoresheet)
         .where(eq(scoresheet.id, input.id));

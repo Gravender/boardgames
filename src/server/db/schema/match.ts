@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import { index, integer, serial, timestamp } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
 import game from "./game";
@@ -49,4 +50,9 @@ export const matchRelations = relations(matches, ({ one, many }) => ({
   }),
   players: many(matchPlayer),
 }));
+
+export const insertMatchSchema = createInsertSchema(matches);
+
+export const selectMatchSchema = createSelectSchema(matches);
+
 export default matches;
