@@ -5,7 +5,7 @@ export {
   insertGameSchema,
   selectGameSchema,
 } from "./game";
-export { default as matches, matchRelations } from "./match";
+export { default as match, matchRelations } from "./match";
 export { default as round, roundRelations } from "./round";
 export {
   default as scoresheet,

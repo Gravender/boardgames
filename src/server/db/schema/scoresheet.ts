@@ -46,7 +46,11 @@ const scoresheets = createTable(
     })
       .default("Aggregate")
       .notNull(),
-    is_template: boolean("is_template").default(false),
+    type: text("type", {
+      enum: ["Template", "Default", "Match"],
+    })
+      .default("Default")
+      .notNull(),
   },
   (table) => ({
     gameIndex: index().on(table.gameId),

@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { integer, serial, unique } from "drizzle-orm/pg-core";
+import { boolean, integer, serial, unique } from "drizzle-orm/pg-core";
 
 import { createTable } from "./baseTable";
 import match from "./match";
@@ -15,6 +15,7 @@ const matchPlayers = createTable(
     playerId: integer("player_id")
       .notNull()
       .references(() => player.id),
+    winner: boolean("winner").default(false),
   },
   (table) => {
     return {

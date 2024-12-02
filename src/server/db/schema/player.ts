@@ -9,7 +9,6 @@ import {
 
 import { createTable } from "./baseTable";
 import matchPlayer from "./matchPlayer";
-import roundPlayer from "./roundPlayer";
 import user from "./user";
 
 const players = createTable(
@@ -36,6 +35,5 @@ export const playerRelations = relations(players, ({ one, many }) => ({
     references: [user.id],
   }),
   matches: many(matchPlayer),
-  rounds: many(roundPlayer),
 }));
 export default players;

@@ -2,7 +2,7 @@ import { relations } from "drizzle-orm";
 import { integer, serial, unique } from "drizzle-orm/pg-core";
 
 import { createTable } from "./baseTable";
-import player from "./player";
+import matchPlayer from "./matchPlayer";
 import round from "./round";
 
 const roundPlayers = createTable(
@@ -15,7 +15,7 @@ const roundPlayers = createTable(
       .references(() => round.id),
     playerId: integer("player_id")
       .notNull()
-      .references(() => player.id),
+      .references(() => matchPlayer.id),
   },
   (table) => {
     return {
@@ -28,9 +28,9 @@ export const roundPlayerRelations = relations(roundPlayers, ({ one }) => ({
     fields: [roundPlayers.roundId],
     references: [round.id],
   }),
-  player: one(player, {
+  player: one(matchPlayer, {
     fields: [roundPlayers.playerId],
-    references: [player.id],
+    references: [matchPlayer.id],
   }),
 }));
 export default roundPlayers;
