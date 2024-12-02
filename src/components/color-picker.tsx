@@ -44,15 +44,11 @@ export function GradientPicker({
             className,
           )}
         >
-          <div className="w-10 h-10 flex items-center justify-center">
-            {color ? (
-              <div
-                className="w-10 h-10 min-h-1 rounded !bg-center !bg-cover transition-all"
-                style={{ background: color }}
-              />
-            ) : (
-              <Paintbrush className="h-4 w-4" />
-            )}
+          <div
+            className="w-10 h-10 flex items-center justify-center rounded"
+            style={{ background: color ?? "none" }}
+          >
+            {!color && <Paintbrush className="h-8 w-8" />}
           </div>
         </Button>
       </PopoverTrigger>

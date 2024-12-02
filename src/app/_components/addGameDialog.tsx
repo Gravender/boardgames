@@ -532,7 +532,7 @@ function Content({ setOpen }: { setOpen: (isOpen: boolean) => void }) {
           </Collapsible>
           <Separator className="w-full" orientation="horizontal" />
           <AddScoreSheet form={form} />
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button
               type="reset"
               variant="secondary"

@@ -42,7 +42,23 @@ export function AddScoreSheet({
   form: UseFormReturn<z.infer<typeof addGameSchema>>;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-
+  const openDialog = () => {
+    if (!form.getValues("scoresheet")) {
+      form.setValue("scoresheet", {
+        name: "Default",
+        winCondition: "Highest Score",
+        isCoop: false,
+      });
+      form.setValue("rounds", [
+        {
+          name: "Round 1",
+          type: "Numeric",
+          color: "#E2E2E2",
+        },
+      ]);
+    }
+    setIsOpen(true);
+  };
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[465px]">
@@ -54,21 +70,16 @@ export function AddScoreSheet({
           <Button
             variant="default"
             onClick={() => {
-              form.setValue("scoresheet", {
-                name: "Default",
-                winCondition: "Highest Score",
-                isCoop: false,
-              });
-              setIsOpen(true);
+              openDialog();
             }}
             type="button"
           >
-            Create New
+            {!form.getValues("scoresheet") ? "Create New" : "Edit Sheet"}
           </Button>
         </div>
         <button
           className="flex items-center justify-between gap-2"
-          onClick={() => setIsOpen(true)}
+          onClick={() => openDialog()}
           type="button"
         >
           <Table />
@@ -76,10 +87,25 @@ export function AddScoreSheet({
             <span className="text-lg">
               {form.getValues("scoresheet")?.name ?? "Default"}
             </span>
-            <span className="text-sm text-muted-foreground">
-              Win Condition:{" "}
-              {form.getValues("scoresheet")?.winCondition ?? "Highest Score"}
-            </span>
+            <div className="mb-2 flex w-full items-center gap-3 text-sm">
+              <div className="flex min-w-20 items-center gap-1">
+                <span>Win Condition:</span>
+                <span className="text-sm text-muted-foreground">
+                  {form.getValues("scoresheet")?.winCondition ??
+                    "Highest Score"}
+                </span>
+              </div>
+              <Separator
+                orientation="vertical"
+                className="h-4 font-semi-bold"
+              />
+              <div className="flex min-w-20 items-center gap-1">
+                <span>Rounds:</span>
+                <span className="text-sm text-muted-foreground">
+                  {form.getValues("rounds")?.length ?? "0"}
+                </span>
+              </div>
+            </div>
           </div>
         </button>
       </div>
@@ -242,12 +268,13 @@ const Content = ({
           </Button>
         </div>
       </div>
-      <DialogFooter>
+      <DialogFooter className="gap-2">
         <Button
           type="button"
           variant="secondary"
           onClick={() => {
             form.setValue("scoresheet", null);
+            form.setValue("rounds", []);
             setOpen(false);
           }}
         >
