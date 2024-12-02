@@ -118,6 +118,7 @@ export const gameRouter = createTRPCRouter({
               },
             },
             orderBy: (matches, { desc }) => [desc(matches.date)],
+            where: (matches, { eq }) => eq(matches.userId, ctx.userId),
           },
         },
       });
