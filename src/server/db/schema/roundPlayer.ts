@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import { integer, serial, unique } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
 import matchPlayer from "./matchPlayer";
@@ -33,4 +34,9 @@ export const roundPlayerRelations = relations(roundPlayers, ({ one }) => ({
     references: [matchPlayer.id],
   }),
 }));
+
+export const insertRoundPlayerSchema = createInsertSchema(roundPlayers);
+
+export const selectRoundPlayerSchema = createSelectSchema(roundPlayers);
+
 export default roundPlayers;

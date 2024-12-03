@@ -7,10 +7,12 @@ import {
   insertMatchPlayerSchema,
   insertMatchSchema,
   insertPlayerSchema,
+  insertRoundPlayerSchema,
   match,
   matchPlayer,
   player,
   round,
+  roundPlayer,
   scoresheet,
   selectMatchSchema,
 } from "~/server/db/schema";
@@ -81,7 +83,10 @@ export const matchRouter = createTRPCRouter({
         toggleScore: round.toggleScore,
         scoresheetId: scoresheetId,
       }));
-      await ctx.db.insert(round).values(returnedRounds);
+      const insertedRounds = await ctx.db
+        .insert(round)
+        .values(returnedRounds)
+        .returning();
       const returningMatch = (
         await ctx.db
           .insert(match)
@@ -92,7 +97,7 @@ export const matchRouter = createTRPCRouter({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       }
       let newPlayers: z.infer<typeof insertPlayerSchema>[] = [];
-      let oldPlayers: z.infer<typeof insertMatchPlayerSchema>[] = [];
+      let playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] = [];
       for (const player of input.players) {
         if (player.id === -1) {
           newPlayers.push({
@@ -101,21 +106,62 @@ export const matchRouter = createTRPCRouter({
             createdBy: ctx.userId,
           });
         } else {
-          oldPlayers.push({
+          playersToInsert.push({
             matchId: returningMatch,
             playerId: player.id,
           });
         }
       }
-      const newPlayersReturned = (
-        await ctx.db.insert(player).values(newPlayers).returning()
-      )?.map((player) => ({
-        matchId: returningMatch,
-        playerId: player.id,
-      }));
-      await ctx.db
+      if (newPlayers.length > 0) {
+        const newPlayersReturned = (
+          await ctx.db.insert(player).values(newPlayers).returning()
+        )?.map((player) => ({
+          matchId: returningMatch,
+          playerId: player.id,
+        }));
+        playersToInsert = [...playersToInsert, ...newPlayersReturned];
+      }
+      const returnedMatchPlayers = await ctx.db
         .insert(matchPlayer)
-        .values([...oldPlayers, ...newPlayersReturned]);
+        .values(playersToInsert)
+        .returning();
+
+      const roundPlayersToInsert: z.infer<typeof insertRoundPlayerSchema>[] =
+        insertedRounds.flatMap((round) => {
+          return returnedMatchPlayers.map((player) => ({
+            roundId: round.id,
+            playerId: player.id,
+          }));
+        });
+      console.log(roundPlayersToInsert);
+      await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);
+    }),
+  getMatch: protectedUserProcedure
+    .input(selectMatchSchema.pick({ id: true }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.query.match.findFirst({
+        where: and(eq(match.id, input.id), eq(match.userId, ctx.userId)),
+        with: {
+          scoresheet: {
+            with: {
+              rounds: {
+                with: {
+                  roundPlayers: true,
+                },
+              },
+            },
+          },
+          players: {
+            with: {
+              player: {
+                with: {
+                  image: true,
+                },
+              },
+            },
+          },
+        },
+      });
     }),
   deleteMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))

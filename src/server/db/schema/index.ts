@@ -30,7 +30,12 @@ export {
   insertMatchPlayerSchema,
   selectMatchPlayerSchema,
 } from "./matchPlayer";
-export { default as roundPlayer, roundPlayerRelations } from "./roundPlayer";
+export {
+  default as roundPlayer,
+  roundPlayerRelations,
+  insertRoundPlayerSchema,
+  selectRoundPlayerSchema,
+} from "./roundPlayer";
 export {
   default as image,
   insertImageSchema,

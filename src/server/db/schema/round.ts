@@ -47,7 +47,7 @@ export const roundRelations = relations(rounds, ({ one, many }) => ({
     fields: [rounds.scoresheetId],
     references: [scoresheet.id],
   }),
-  players: many(roundPlayer),
+  roundPlayers: many(roundPlayer),
 }));
 
 export const insertRoundSchema = createInsertSchema(rounds);

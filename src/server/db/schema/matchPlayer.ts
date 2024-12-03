@@ -18,6 +18,7 @@ const matchPlayers = createTable(
       .notNull()
       .references(() => player.id),
     winner: boolean("winner").default(false),
+    score: integer("score").default(0),
   },
   (table) => {
     return {
