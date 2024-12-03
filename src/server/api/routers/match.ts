@@ -93,7 +93,6 @@ export const matchRouter = createTRPCRouter({
       }
       let newPlayers: z.infer<typeof insertPlayerSchema>[] = [];
       let oldPlayers: z.infer<typeof insertMatchPlayerSchema>[] = [];
-      console.log(input.players);
       for (const player of input.players) {
         if (player.id === -1) {
           newPlayers.push({

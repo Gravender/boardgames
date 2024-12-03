@@ -146,6 +146,7 @@ export const gameRouter = createTRPCRouter({
                 (player) =>
                   player.winner && player.player.userId === ctx.userId,
               ) !== -1,
+            name: match.name,
           };
         }),
       };

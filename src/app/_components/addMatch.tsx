@@ -189,7 +189,6 @@ function Content({
           };
         }),
       );
-      console.log(players);
       createMatch.mutate({
         gameId: gameId,
         name: values.name,
@@ -487,7 +486,6 @@ const PlayersContent = ({
           type="button"
           onClick={() => {
             setOpen(false);
-            console.log(form.getValues("players"));
           }}
         >
           Save

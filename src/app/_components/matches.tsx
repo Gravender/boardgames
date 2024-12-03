@@ -31,10 +31,11 @@ export function Matches({
               <div className="relative flex shrink-0 overflow-hidden h-12 w-12">
                 {imageUrl ? (
                   <Image
-                    fill
                     src={imageUrl}
                     alt={`${gameName} game image`}
                     className="rounded-md aspect-square h-full w-full"
+                    width={48}
+                    height={48}
                   />
                 ) : (
                   <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
@@ -43,7 +44,7 @@ export function Matches({
               <div className="flex w-full items-center justify-between">
                 <div className="flex flex-col items-start">
                   <h2 className="text-md text-left font-semibold">
-                    {`${gameName} # ${index + 1}`}
+                    {match.name}
                   </h2>
                   <div className="flex min-w-20 items-center gap-1">
                     <span>Play Date:</span>

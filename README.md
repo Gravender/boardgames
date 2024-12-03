@@ -15,7 +15,7 @@
 - [x] Adding games on games page
 - [x] Implement game form with backend db
 - [x] Browsing games on games page
-- [ ] Individual Game Page
+- [x] Individual Game Page
 - [ ] Player page
 - [ ] Groups page
 - [ ] Locations page
