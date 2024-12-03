@@ -1,5 +1,12 @@
-import { relations } from "drizzle-orm";
-import { index, integer, serial, unique, varchar } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
+import {
+  index,
+  integer,
+  serial,
+  timestamp,
+  unique,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
@@ -12,6 +19,9 @@ const images = createTable(
     userId: integer("user_id").references(() => user.id),
     name: varchar("name", { length: 256 }).notNull(),
     url: varchar("url", { length: 1024 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
   },
   (table) => ({
     userIndex: index().on(table.userId),

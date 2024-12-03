@@ -1,0 +1,1 @@
+ALTER TABLE "boardgames_image" ADD COLUMN "created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL;

@@ -1,3 +1,4 @@
+import { create } from "domain";
 import { relations, sql } from "drizzle-orm";
 import {
   index,
@@ -6,8 +7,10 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
+import image from "./image";
 import matchPlayer from "./matchPlayer";
 import user from "./user";
 
@@ -15,8 +18,12 @@ const players = createTable(
   "player",
   {
     id: serial("id").primaryKey(),
+    createdBy: integer("created_by")
+      .references(() => user.id)
+      .notNull(),
     userId: integer("user_id").references(() => user.id),
-    name: varchar("name", { length: 256 }),
+    name: varchar("name", { length: 256 }).notNull(),
+    imageId: integer("image_id").references(() => image.id),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -34,6 +41,19 @@ export const playerRelations = relations(players, ({ one, many }) => ({
     fields: [players.userId],
     references: [user.id],
   }),
+  createdBy: one(user, {
+    fields: [players.createdBy],
+    references: [user.id],
+  }),
+  image: one(image, {
+    fields: [players.imageId],
+    references: [image.id],
+  }),
   matches: many(matchPlayer),
 }));
+
+export const insertPlayerSchema = createInsertSchema(players);
+
+export const selectPlayerSchema = createSelectSchema(players);
+
 export default players;

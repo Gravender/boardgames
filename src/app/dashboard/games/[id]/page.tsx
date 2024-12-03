@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { format } from "date-fns/format";
 import { Dices } from "lucide-react";
 
+import { AddMatchDialog } from "~/app/_components/addMatch";
 import { Matches } from "~/app/_components/matches";
 import { api, HydrateClient } from "~/trpc/server";
 
@@ -26,6 +27,13 @@ export default async function Page({
           gameName={game.name}
           imageUrl={game.imageUrl}
           gameId={game.id}
+        />
+      </div>
+      <div>
+        <AddMatchDialog
+          gameId={game.id}
+          gameName={game.name}
+          matches={game.matches.length}
         />
       </div>
     </HydrateClient>

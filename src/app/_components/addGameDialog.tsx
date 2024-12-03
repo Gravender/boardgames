@@ -59,7 +59,7 @@ const scoresheetSchema = insertScoreSheetSchema
     createdAt: true,
     updatedAt: true,
     userId: true,
-    is_template: true,
+    type: true,
     gameId: true,
     roundsScore: true,
   })

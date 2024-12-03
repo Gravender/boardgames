@@ -48,7 +48,7 @@ export const gameRelations = relations(games, ({ one, many }) => ({
     references: [user.id],
   }),
   image: one(image, {
-    fields: [games.userId],
+    fields: [games.imageId],
     references: [image.id],
   }),
   matches: many(match),

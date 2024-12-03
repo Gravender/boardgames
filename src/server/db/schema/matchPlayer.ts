@@ -1,5 +1,7 @@
+import exp from "constants";
 import { relations } from "drizzle-orm";
 import { boolean, integer, serial, unique } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
 import match from "./match";
@@ -31,4 +33,9 @@ export const matchPlayerRelations = relations(matchPlayers, ({ one }) => ({
     references: [player.id],
   }),
 }));
+
+export const insertMatchPlayerSchema = createInsertSchema(matchPlayers);
+
+export const selectMatchPlayerSchema = createSelectSchema(matchPlayers);
+
 export default matchPlayers;

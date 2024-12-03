@@ -20,11 +20,14 @@ export function Matches({
   gameId: Game["id"];
 }) {
   return (
-    <Table>
-      <TableBody>
+    <Table className="mt-4">
+      <TableBody className="flex flex-col gap-2 px-4 w-full">
         {matches.map((match, index) => (
-          <TableRow key={match.id}>
-            <TableCell className="font-medium flex items-center gap-3">
+          <TableRow
+            key={match.id}
+            className="rounded-lg border bg-card text-card-foreground shadow-sm flex w-full"
+          >
+            <TableCell className="font-medium flex items-center gap-3 w-full">
               <div className="relative flex shrink-0 overflow-hidden h-12 w-12">
                 {imageUrl ? (
                   <Image
@@ -51,7 +54,7 @@ export function Matches({
                 </div>
               </div>
             </TableCell>
-            <TableCell>
+            <TableCell className="w-24 flex items-center justify-center">
               {match.won ? (
                 <div className="inline-flex w-12 rounded-sm font-medium p-2 text-destructive-foreground items-center justify-center bg-green-500 dark:bg-green-900">
                   {"Won"}
@@ -62,7 +65,7 @@ export function Matches({
                 </div>
               )}
             </TableCell>
-            <TableCell>
+            <TableCell className="w-24 flex items-center justify-center">
               <MatchDropDown gameId={gameId} matchId={match.id} />
             </TableCell>
           </TableRow>

@@ -1,5 +1,11 @@
 import { relations, sql } from "drizzle-orm";
-import { index, integer, serial, timestamp } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  serial,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
@@ -12,6 +18,7 @@ const matches = createTable(
   "match",
   {
     id: serial("id").primaryKey(),
+    name: varchar("name", { length: 256 }).notNull().default(""),
     userId: integer("user_id").references(() => user.id),
     gameId: integer("game_id")
       .notNull()
@@ -25,9 +32,9 @@ const matches = createTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
       () => new Date(),
     ),
-    date: timestamp("date", { withTimezone: true }).default(
-      sql`CURRENT_TIMESTAMP`,
-    ),
+    date: timestamp("date", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
   },
   (table) => ({
     gameIndex: index().on(table.gameId),
