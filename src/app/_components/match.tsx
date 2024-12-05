@@ -1,22 +1,52 @@
 "use client";
 
-import { on } from "events";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ListPlus, Plus } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
+import { GradientPicker } from "~/components/color-picker";
+import { Spinner } from "~/components/spinner";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardHeader, CardTitle } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
 import { cn } from "~/lib/utils";
+import { insertRoundSchema } from "~/server/db/schema/round";
 import { api, RouterOutputs } from "~/trpc/react";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
@@ -112,10 +142,16 @@ export function Match({ match }: { match: Match }) {
             <TableHeader>
               <TableRow>
                 <TableHead scope="col" className="sm:w-36 w-20">
-                  Name:
+                  <div>
+                    <AddRoundDialog match={match} />
+                  </div>
                 </TableHead>
                 {players.map((player) => (
-                  <TableHead scope="col" key={player.id}>
+                  <TableHead
+                    className="text-center"
+                    scope="col"
+                    key={player.id}
+                  >
                     {player.name}
                   </TableHead>
                 ))}
@@ -173,7 +209,9 @@ export function Match({ match }: { match: Match }) {
                   })}
                 </TableRow>
               ))}
-              <TableRow className="border-t-4 border-slate-700">
+            </TableBody>
+            <TableFooter>
+              <TableRow>
                 <TableHead
                   scope="row"
                   className="sm:text-lg font-semibold text-muted-foreground"
@@ -218,7 +256,7 @@ export function Match({ match }: { match: Match }) {
                   );
                 })}
               </TableRow>
-            </TableBody>
+            </TableFooter>
           </>
         </Table>
       </Card>
@@ -226,3 +264,191 @@ export function Match({ match }: { match: Match }) {
     </div>
   );
 }
+
+const AddRoundDialog = ({ match }: { match: Match }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-[425px]">
+        <AddRoundDialogContent match={match} setOpen={setIsOpen} />
+      </DialogContent>
+      <Button
+        variant="ghost"
+        size="icon"
+        type="button"
+        onClick={() => setIsOpen(true)}
+      >
+        <ListPlus className="text-secondary-foreground" />
+      </Button>
+    </Dialog>
+  );
+};
+
+const RoundSchema = insertRoundSchema.pick({
+  name: true,
+  type: true,
+  color: true,
+  score: true,
+});
+const AddRoundDialogContent = ({
+  match,
+  setOpen,
+}: {
+  match: Match;
+  setOpen: (isOpen: boolean) => void;
+}) => {
+  const utils = api.useUtils();
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<z.infer<typeof RoundSchema>>({
+    resolver: zodResolver(RoundSchema),
+    defaultValues: {
+      name: `Round #${(match.players[0]?.rounds.length ?? 0) + 1}`,
+      type: "Numeric",
+      color: "#E2E2E2",
+      score: 0,
+    },
+  });
+
+  const addRound = api.round.addRound.useMutation({
+    onSuccess: async () => {
+      setIsSubmitting(false);
+      await utils.match.getMatch.invalidate({ id: match.id });
+      router.refresh();
+      setOpen(false);
+      form.reset();
+    },
+  });
+  function onSubmitForm(values: z.infer<typeof RoundSchema>) {
+    setIsSubmitting(true);
+    addRound.mutate({
+      round: {
+        ...values,
+        scoresheetId: match.scoresheet.id,
+      },
+      players: match.players.map((player) => ({
+        matchPlayerId: player.id,
+      })),
+    });
+  }
+
+  const roundsTypeOptions = insertRoundSchema.required().pick({ type: true })
+    .shape.type.options;
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Add Round</DialogTitle>
+      </DialogHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmitForm)} className="space-y-8">
+          <div className="flex gap-2 items-center w- full">
+            <FormField
+              control={form.control}
+              name="color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="hidden">Round Color</FormLabel>
+                  <FormControl>
+                    <GradientPicker
+                      color={field.value ?? null}
+                      setColor={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className="space-y-0 flex flex-grow">
+                  <FormLabel className="hidden">Round Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Round name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="flex gap-4 items-center w-ull">
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem className="w-28">
+                  <FormLabel>Scoring Type</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a win condition" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {roundsTypeOptions.map((condition) => (
+                        <SelectItem key={condition} value={condition}>
+                          {condition}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {form.getValues("type") === "Checkbox" && (
+              <FormField
+                control={form.control}
+                name={"score"}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Score</FormLabel>
+
+                    <FormControl>
+                      <Input
+                        {...field}
+                        onChange={(event) =>
+                          field.onChange(+event.target.value)
+                        }
+                        type="number"
+                        className="text-center"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              type="reset"
+              variant="secondary"
+              onClick={() => {
+                form.reset();
+                setOpen(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Spinner />
+                  <span>Submitting...</span>
+                </>
+              ) : (
+                "Submit"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </>
+  );
+};
