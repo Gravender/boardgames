@@ -24,9 +24,11 @@ const rounds = createTable(
       .references(() => scoresheet.id),
     type: text("type", {
       enum: ["Numeric", "Checkbox"],
-    }),
+    })
+      .default("Numeric")
+      .notNull(),
     color: varchar("color", { length: 256 }),
-    score: integer("score"),
+    score: integer("score").default(0).notNull(),
     winCondition: integer("win_condition"),
     toggleScore: integer("toggle_score"),
     modifier: integer("modifier"),

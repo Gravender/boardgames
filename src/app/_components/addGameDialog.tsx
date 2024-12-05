@@ -61,7 +61,6 @@ const scoresheetSchema = insertScoreSheetSchema
     userId: true,
     type: true,
     gameId: true,
-    roundsScore: true,
   })
   .required({ name: true });
 

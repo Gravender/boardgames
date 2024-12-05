@@ -33,7 +33,6 @@ export const gameRouter = createTRPCRouter({
             userId: true,
             type: true,
             gameId: true,
-            roundsScore: true,
           })
           .required({ name: true })
           .or(z.null()),

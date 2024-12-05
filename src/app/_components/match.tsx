@@ -28,6 +28,7 @@ export function Match({ match }: { match: Match }) {
       await utils.match.getMatch.invalidate({ id: match.id });
     },
   });
+  //turn into form
   const onSubmit = () => {
     const winner = players.reduce<{
       id: Match["players"][number]["id"];
@@ -157,7 +158,6 @@ export function Match({ match }: { match: Match }) {
                           <div className="flex items-center justify-center">
                             <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
                             <Checkbox
-                              className=""
                               value={roundPlayer?.score ?? 0}
                               onCheckedChange={(isChecked) => {
                                 const temp = [...players];

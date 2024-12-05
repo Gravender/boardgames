@@ -35,6 +35,7 @@ import { Separator } from "~/components/ui/separator";
 import { insertScoreSheetSchema } from "~/server/db/schema";
 
 import { addGameSchema } from "./addGameDialog";
+import { RoundPopOver } from "./roundPopOver";
 
 export function AddScoreSheet({
   form,
@@ -48,12 +49,14 @@ export function AddScoreSheet({
         name: "Default",
         winCondition: "Highest Score",
         isCoop: false,
+        roundsScore: "Aggregate",
       });
       form.setValue("rounds", [
         {
           name: "Round 1",
           type: "Numeric",
           color: "#E2E2E2",
+          score: 0,
         },
       ]);
     }
@@ -122,7 +125,10 @@ const Content = ({
   const conditions = insertScoreSheetSchema
     .required()
     .pick({ winCondition: true }).shape.winCondition.options;
-  const { fields, remove, append } = useFieldArray({
+  const roundsScoreOptions = insertScoreSheetSchema
+    .required()
+    .pick({ roundsScore: true }).shape.roundsScore.options;
+  const { fields, remove, append, update } = useFieldArray({
     name: "rounds",
     control: form.control,
   });
@@ -184,6 +190,30 @@ const Content = ({
           </FormItem>
         )}
       />
+      <FormField
+        control={form.control}
+        name="scoresheet.roundsScore"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Scoring Method</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a win condition" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {roundsScoreOptions.map((condition) => (
+                  <SelectItem key={condition} value={condition}>
+                    {condition}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
       <Separator className="w-full" orientation="horizontal" />
       <div className="flex flex-col gap-2">
         <div className="text-xl font-semibold">Rows</div>
@@ -226,9 +256,11 @@ const Content = ({
                   />
                 </div>
                 <div className="flex gap-2 items-center">
+                  <RoundPopOver index={index} form={form} />
                   <Button
                     variant="secondary"
                     size="icon"
+                    type="button"
                     onClick={() =>
                       append({ ...field, name: `Round ${index + 1}` })
                     }
@@ -238,6 +270,7 @@ const Content = ({
                   <Button
                     variant="destructive"
                     size="icon"
+                    type="button"
                     onClick={() => remove(index)}
                   >
                     <Trash />
@@ -253,7 +286,11 @@ const Content = ({
             variant="secondary"
             size={"icon"}
             onClick={() =>
-              append({ name: `Round ${fields.length + 1}`, type: "Numeric" })
+              append({
+                name: `Round ${fields.length + 1}`,
+                type: "Numeric",
+                score: 0,
+              })
             }
           >
             <Plus />
