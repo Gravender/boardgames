@@ -6,6 +6,7 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { createTable } from "./baseTable";
 import match from "./match";
 import player from "./player";
+import roundPlayers from "./roundPlayer";
 
 const matchPlayers = createTable(
   "match_player",
@@ -27,13 +28,20 @@ const matchPlayers = createTable(
   },
 );
 
-export const matchPlayerRelations = relations(matchPlayers, ({ one }) => ({
-  match: one(match, { fields: [matchPlayers.matchId], references: [match.id] }),
-  player: one(player, {
-    fields: [matchPlayers.playerId],
-    references: [player.id],
+export const matchPlayerRelations = relations(
+  matchPlayers,
+  ({ one, many }) => ({
+    match: one(match, {
+      fields: [matchPlayers.matchId],
+      references: [match.id],
+    }),
+    player: one(player, {
+      fields: [matchPlayers.playerId],
+      references: [player.id],
+    }),
+    roundPlayers: many(roundPlayers),
   }),
-}));
+);
 
 export const insertMatchPlayerSchema = createInsertSchema(matchPlayers);
 

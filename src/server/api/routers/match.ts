@@ -1,3 +1,4 @@
+import { lookup } from "dns";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -14,7 +15,9 @@ import {
   round,
   roundPlayer,
   scoresheet,
+  selectMatchPlayerSchema,
   selectMatchSchema,
+  selectRoundPlayerSchema,
 } from "~/server/db/schema";
 
 export const matchRouter = createTRPCRouter({
@@ -55,7 +58,10 @@ export const matchRouter = createTRPCRouter({
         },
       });
       if (!returnedScoresheet) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "No scoresheet found for game",
+        });
       }
       const scoresheetId = (
         await ctx.db
@@ -71,7 +77,10 @@ export const matchRouter = createTRPCRouter({
           .returning()
       )?.[0]?.id;
       if (!scoresheetId) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Scoresheet Not Created Successfully",
+        });
       }
       const returnedRounds = returnedScoresheet.rounds.map((round) => ({
         color: round.color,
@@ -94,7 +103,10 @@ export const matchRouter = createTRPCRouter({
           .returning()
       )?.[0]?.id;
       if (!returningMatch) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Match Not Created Successfully",
+        });
       }
       let newPlayers: z.infer<typeof insertPlayerSchema>[] = [];
       let playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] = [];
@@ -130,38 +142,55 @@ export const matchRouter = createTRPCRouter({
         insertedRounds.flatMap((round) => {
           return returnedMatchPlayers.map((player) => ({
             roundId: round.id,
-            playerId: player.id,
+            matchPlayerId: player.id,
           }));
         });
-      console.log(roundPlayersToInsert);
       await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);
     }),
   getMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      return ctx.db.query.match.findFirst({
+      const returnedMatch = await ctx.db.query.match.findFirst({
         where: and(eq(match.id, input.id), eq(match.userId, ctx.userId)),
         with: {
           scoresheet: {
             with: {
-              rounds: {
-                with: {
-                  roundPlayers: true,
-                },
-              },
+              rounds: true,
             },
           },
-          players: {
+          matchPlayers: {
             with: {
               player: {
                 with: {
                   image: true,
                 },
               },
+              roundPlayers: true,
             },
           },
         },
       });
+      if (!returnedMatch) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      }
+      const refinedPlayers = returnedMatch.matchPlayers.map((matchPlayer) => {
+        return {
+          name: matchPlayer.player.name,
+          imageUrl: matchPlayer.player.image?.url,
+          rounds: matchPlayer.roundPlayers,
+          score: matchPlayer.score,
+          id: matchPlayer.id,
+          roundId: matchPlayer,
+        };
+      });
+      return {
+        id: returnedMatch.id,
+        date: returnedMatch.date,
+        name: returnedMatch.name,
+        scoresheet: returnedMatch.scoresheet,
+        gameId: returnedMatch.gameId,
+        players: refinedPlayers,
+      };
     }),
   deleteMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
@@ -170,5 +199,37 @@ export const matchRouter = createTRPCRouter({
       await ctx.db
         .delete(match)
         .where(and(eq(match.id, input.id), eq(match.userId, ctx.userId)));
+    }),
+  updateMatch: protectedUserProcedure
+    .input(
+      z.object({
+        roundPlayers: z.array(selectRoundPlayerSchema),
+        matchPlayers: z.array(
+          selectMatchPlayerSchema.pick({ id: true, score: true, winner: true }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await Promise.all(
+        input.roundPlayers.map(async (player) => {
+          await ctx.db
+            .update(roundPlayer)
+            .set({
+              score: player.score,
+            })
+            .where(eq(roundPlayer.id, player.id));
+        }),
+      );
+      await Promise.all(
+        input.matchPlayers.map(async (player) => {
+          await ctx.db
+            .update(matchPlayer)
+            .set({
+              score: player.score,
+              winner: player.winner,
+            })
+            .where(eq(matchPlayer.id, player.id));
+        }),
+      );
     }),
 });

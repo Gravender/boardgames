@@ -16,6 +16,7 @@
 - [x] Implement game form with backend db
 - [x] Browsing games on games page
 - [x] Individual Game Page
+- [x] Match page
 - [ ] Player page
 - [ ] Groups page
 - [ ] Locations page

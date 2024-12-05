@@ -21,7 +21,7 @@ export default async function Page({
   return (
     <HydrateClient>
       <h1>{match.name}</h1>
-      <Match scoresheet={match.scoresheet} players={match.players} />
+      <Match match={match} />
     </HydrateClient>
   );
 }

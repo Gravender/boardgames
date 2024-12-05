@@ -55,7 +55,7 @@ export const matchRelations = relations(matches, ({ one, many }) => ({
     fields: [matches.scoresheetId],
     references: [scoresheet.id],
   }),
-  players: many(matchPlayer),
+  matchPlayers: many(matchPlayer),
 }));
 
 export const insertMatchSchema = createInsertSchema(matches);

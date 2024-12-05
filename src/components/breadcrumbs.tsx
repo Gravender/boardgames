@@ -31,10 +31,6 @@ export function BreadCrumbs() {
       }
     });
   }, [pathNames]);
-  const { data: gameName } = api.game.getGameName.useQuery(
-    { id: id ?? 0 },
-    { enabled: id !== null },
-  );
   const pathItems = pathNames.map((path, i) => {
     return {
       name: path,
@@ -46,21 +42,19 @@ export function BreadCrumbs() {
     <Breadcrumb>
       <BreadcrumbList>
         {pathItems.map((item, index) =>
-          typeof gameName === "string" || isNaN(Number(item.name)) ? (
+          isNaN(Number(item.name)) ? (
             <Fragment key={item.path}>
               {index > 0 && <BreadcrumbSeparator className="hidden md:block" />}
               <BreadcrumbItem>
                 {index + 1 === pathItems.length ? (
                   <BreadcrumbPage>
-                    {CapitalizeFirstLetterOfEachWord(gameName ?? item.name)}
+                    {CapitalizeFirstLetterOfEachWord(item.name)}
                   </BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink asChild>
                     <Link href={`/${item.path}`}>
                       {CapitalizeFirstLetterOfEachWord(
-                        id && item.name === String(id)
-                          ? (gameName ?? item.name)
-                          : item.name,
+                        id && item.name === String(id) ? item.name : item.name,
                       )}
                     </Link>
                   </BreadcrumbLink>

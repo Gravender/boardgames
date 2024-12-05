@@ -14,13 +14,13 @@ const roundPlayers = createTable(
     roundId: integer("round")
       .notNull()
       .references(() => round.id),
-    playerId: integer("player_id")
+    matchPlayerId: integer("match_player_id")
       .notNull()
       .references(() => matchPlayer.id),
   },
   (table) => {
     return {
-      uniqueRoundPlayer: unique().on(table.roundId, table.playerId),
+      uniqueRoundPlayer: unique().on(table.roundId, table.matchPlayerId),
     };
   },
 );
@@ -29,8 +29,8 @@ export const roundPlayerRelations = relations(roundPlayers, ({ one }) => ({
     fields: [roundPlayers.roundId],
     references: [round.id],
   }),
-  player: one(matchPlayer, {
-    fields: [roundPlayers.playerId],
+  matchPlayer: one(matchPlayer, {
+    fields: [roundPlayers.matchPlayerId],
     references: [matchPlayer.id],
   }),
 }));

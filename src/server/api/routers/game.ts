@@ -111,7 +111,7 @@ export const gameRouter = createTRPCRouter({
           },
           matches: {
             with: {
-              players: {
+              matchPlayers: {
                 with: {
                   player: true,
                 },
@@ -142,7 +142,7 @@ export const gameRouter = createTRPCRouter({
             id: match.id,
             date: match.date,
             won:
-              match.players.findIndex(
+              match.matchPlayers.findIndex(
                 (player) =>
                   player.winner && player.player.userId === ctx.userId,
               ) !== -1,
