@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { createColumnHelper, type Table } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Dices } from "lucide-react";
@@ -26,18 +27,20 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
     columnHelper.accessor("image", {
       header: "Image",
       cell: ({ row }) => (
-        <div className="relative flex shrink-0 overflow-hidden h-24 w-24">
-          {row.getValue("image") ? (
-            <Image
-              fill
-              src={row.getValue("image")}
-              alt={`${row.original.name} game image`}
-              className="rounded-md aspect-square h-full w-full"
-            />
-          ) : (
-            <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
-          )}
-        </div>
+        <Link href={`/dashboard/games/${row.original.id}`}>
+          <div className="relative flex shrink-0 overflow-hidden h-24 w-24">
+            {row.getValue("image") ? (
+              <Image
+                fill
+                src={row.getValue("image")}
+                alt={`${row.original.name} game image`}
+                className="rounded-md aspect-square h-full w-full"
+              />
+            ) : (
+              <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
+            )}
+          </div>
+        </Link>
       ),
     }),
     columnHelper.group({
@@ -65,62 +68,66 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
           ? format(props.row.original?.lastPlayed, "d MMM yyyy")
           : null;
         return (
-          <div className="flex flex-col gap-1 p-2">
-            <h2 className="text-xl font-bold">{props.row.original?.name}</h2>
-            <div className="flex min-w-20 items-center gap-1">
-              <span>Last Played:</span>
-              <span className="text-muted-foreground">{lastPlayed}</span>
-            </div>
-            <div className="flex max-w-96 items-center justify-between">
-              <div className="flex w-24 items-center">
-                <h4 className="font-medium">Players:</h4>
-                <div className="flex justify-between text-muted-foreground">
-                  {playerMin && playerMax ? (
-                    <>
-                      <span>{playerMin}</span>
-                      <span>-</span>
-                      <span>{playerMax}</span>
-                    </>
-                  ) : playerMin || playerMax ? (
-                    <>
-                      <span>{playerMin ?? playerMax}</span>
-                    </>
-                  ) : null}
+          <Link href={`/dashboard/games/${props.row.original.id}`}>
+            <div className="flex flex-col gap-1 p-2">
+              <h2 className="text-xl font-bold">{props.row.original?.name}</h2>
+              <div className="flex min-w-20 items-center gap-1">
+                <span>Last Played:</span>
+                <span className="text-muted-foreground">{lastPlayed}</span>
+              </div>
+              <div className="flex max-w-96 items-center justify-between">
+                <div className="flex w-24 items-center">
+                  <h4 className="font-medium">Players:</h4>
+                  <div className="flex justify-between text-muted-foreground">
+                    {playerMin && playerMax ? (
+                      <>
+                        <span>{playerMin}</span>
+                        <span>-</span>
+                        <span>{playerMax}</span>
+                      </>
+                    ) : playerMin || playerMax ? (
+                      <>
+                        <span>{playerMin ?? playerMax}</span>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+                <Separator orientation="vertical" className="h-4" />
+                <div className="flex w-24 items-center">
+                  <span>Playtime:</span>
+                  <div className="flex justify-between text-muted-foreground">
+                    {playtimeMin && playtimeMax ? (
+                      <>
+                        <span>{playtimeMin}</span>
+                        <span>-</span>
+                        <span>{playtimeMax}</span>
+                      </>
+                    ) : playtimeMin || playtimeMax ? (
+                      <>
+                        <span>{playtimeMin ?? playtimeMax}</span>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+                <Separator orientation="vertical" className="h-4" />
+                <div className="flex w-24 items-center gap-1">
+                  <span>Year:</span>
+                  <span className="text-muted-foreground">{yearPublished}</span>
                 </div>
               </div>
-              <Separator orientation="vertical" className="h-4" />
-              <div className="flex w-24 items-center">
-                <span>Playtime:</span>
-                <div className="flex justify-between text-muted-foreground">
-                  {playtimeMin && playtimeMax ? (
-                    <>
-                      <span>{playtimeMin}</span>
-                      <span>-</span>
-                      <span>{playtimeMax}</span>
-                    </>
-                  ) : playtimeMin || playtimeMax ? (
-                    <>
-                      <span>{playtimeMin ?? playtimeMax}</span>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-              <Separator orientation="vertical" className="h-4" />
-              <div className="flex w-24 items-center gap-1">
-                <span>Year:</span>
-                <span className="text-muted-foreground">{yearPublished}</span>
-              </div>
             </div>
-          </div>
+          </Link>
         );
       },
     }),
     columnHelper.accessor("games", {
       header: "Played",
       cell: (row) => (
-        <Button size={"icon"} variant={"outline"}>
-          {row.getValue()}
-        </Button>
+        <Link href={`/dashboard/games/${row.row.original.id}`}>
+          <Button size={"icon"} variant={"outline"}>
+            {row.getValue()}
+          </Button>
+        </Link>
       ),
     }),
     columnHelper.display({
