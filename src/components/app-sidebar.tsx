@@ -3,18 +3,11 @@
 import * as React from "react";
 import { SignedOut, SignInButton, useUser } from "@clerk/nextjs";
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
   Calendar1,
-  Command,
   Dices,
-  Frame,
-  GalleryVerticalEnd,
+  LucideIcon,
   Map,
-  PieChart,
   Settings2,
-  SquareTerminal,
   User,
   UsersRound,
 } from "lucide-react";
@@ -27,21 +20,29 @@ import {
   SidebarFooter,
   SidebarRail,
 } from "~/components/ui/sidebar";
+import { RouterOutputs } from "~/trpc/react";
 
 // This is sample data.
-const data = {
-  navMain: [
+
+export function AppSidebar({
+  games,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  games: RouterOutputs["game"]["getSideBarGames"];
+}) {
+  const { isLoaded, isSignedIn, user } = useUser();
+  const data = [
     {
       title: "Games",
       url: "/dashboard/games",
       icon: Dices,
       isActive: true,
-      items: [
-        {
-          title: "Through the Ages",
-          url: "#",
-        },
-      ],
+      items: games.map((game) => {
+        return {
+          title: game.name,
+          url: `/dashboard/games/${game.id}`,
+        };
+      }),
     },
     {
       title: "Players",
@@ -96,15 +97,11 @@ const data = {
         },
       ],
     },
-  ],
-};
-
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { isLoaded, isSignedIn, user } = useUser();
+  ];
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={data} />
       </SidebarContent>
       <SidebarFooter>
         {isLoaded && isSignedIn && (

@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, count, eq, sql } from "drizzle-orm";
+import { and, count, eq, max, sql } from "drizzle-orm";
 import { string, z } from "zod";
 
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
@@ -179,14 +179,29 @@ export const gameRouter = createTRPCRouter({
         image: image.url,
         ownedBy: game.ownedBy,
         games: count(match.id),
-        lastPlayed: sql`max(${match.createdAt})`.mapWith(match.createdAt),
+        lastPlayed: sql`max(${match.date})`.mapWith(match.date),
       })
       .from(game)
       .where(and(eq(game.userId, ctx.userId), eq(game.deleted, false)))
       .leftJoin(image, eq(game.imageId, image.id))
       .leftJoin(match, eq(game.id, match.gameId))
       .groupBy(game.id, image.url)
-      .orderBy(game.name, image.url);
+      .orderBy(max(match.date), game.name);
+    return games;
+  }),
+  getSideBarGames: protectedUserProcedure.query(async ({ ctx }) => {
+    const games = await ctx.db
+      .select({
+        id: game.id,
+        name: game.name,
+        lastPlayed: sql`max(${match.date})`.mapWith(match.date),
+      })
+      .from(game)
+      .where(and(eq(game.userId, ctx.userId), eq(game.deleted, false)))
+      .leftJoin(match, eq(game.id, match.gameId))
+      .groupBy(game.id)
+      .orderBy(max(match.date), game.name)
+      .limit(5);
     return games;
   }),
   updateGame: protectedUserProcedure

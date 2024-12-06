@@ -46,12 +46,12 @@ export function NavMain({
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton tooltip={item.title}>
-                  <a
-                    href={item.url}
-                    className="flex w-full items-center gap-2"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {item.icon && <item.icon />}
+                  {item.icon && (
+                    <a href={item.url} onClick={(e) => e.stopPropagation()}>
+                      <item.icon />
+                    </a>
+                  )}
+                  <a href={item.url} onClick={(e) => e.stopPropagation()}>
                     <span>{item.title}</span>
                   </a>
                   <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
