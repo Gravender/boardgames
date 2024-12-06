@@ -3,7 +3,11 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { createColumnHelper, type Table } from "@tanstack/react-table";
+import {
+  ColumnDef,
+  createColumnHelper,
+  type Table,
+} from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Dices } from "lucide-react";
 
@@ -144,7 +148,7 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
         );
       },
     }),
-  ];
+  ] as Array<ColumnDef<RouterOutputs["game"]["getGames"][number], unknown>>;
 
   const renderMobile = ({
     table,
