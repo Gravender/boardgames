@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ListPlus } from "lucide-react";
@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { GradientPicker } from "~/components/color-picker";
+import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";
 import { Button } from "~/components/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
@@ -127,28 +128,34 @@ export function Match({ match }: { match: Match }) {
     });
   };
   useEffect(() => {
+    setPlayers([...match.players]);
+  }, [match.players]);
+  useEffect(() => {
     return () => {
       onSubmit();
     };
   }, []);
   return (
-    <div className="px-4">
+    <div className="sm:px-4">
       <CardHeader>
         <CardTitle>{`${match.name}`}</CardTitle>
       </CardHeader>
       <Card>
-        <Table>
+        <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto">
           <>
             <TableHeader>
               <TableRow>
-                <TableHead scope="col" className="sm:w-36 w-20">
+                <TableHead
+                  scope="col"
+                  className="sm:w-36 w-20 sticky left-0 bg-card text-card-foreground z-20"
+                >
                   <div>
                     <AddRoundDialog match={match} />
                   </div>
                 </TableHead>
                 {players.map((player) => (
                   <TableHead
-                    className="text-center"
+                    className="text-center min-w-20 bg-card text-card-foreground"
                     scope="col"
                     key={player.id}
                   >
@@ -163,7 +170,7 @@ export function Match({ match }: { match: Match }) {
                   <TableHead
                     scope="row"
                     className={cn(
-                      "sm:text-lg font-semibold text-muted-foreground",
+                      "sm:text-lg font-semibold text-muted-foreground sticky left-0 bg-card after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border z-20",
                       round.color &&
                         "text-slate-600 hover:opacity-50 hover:dark:opacity-80",
                     )}
@@ -175,76 +182,38 @@ export function Match({ match }: { match: Match }) {
                   </TableHead>
                   {players.map((player, playerIndex) => {
                     const roundPlayer = player.rounds[index];
-                    const [internalValue, setInternalValue] = useState<string>(
-                      roundPlayer?.score?.toString() ?? "0",
-                    );
-                    const debounceTimerRef = useRef<NodeJS.Timeout | null>(
-                      null,
-                    );
-
                     return (
-                      <TableCell key={`player-${player.id}-round-${round.id}`}>
-                        {round.type === "Numeric" ? (
-                          <Input
-                            type="text"
-                            inputMode="numeric"
-                            className="text-center border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            value={internalValue}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              let validValue = value;
-                              if (value !== "-") {
-                                const numberPart = value.replace(/^-/, "");
-                                const trimmedNumber =
-                                  numberPart === "0"
-                                    ? "0"
-                                    : numberPart.replace(/^0+/, "");
-                                validValue = value.startsWith("-")
-                                  ? `-${trimmedNumber}`
-                                  : trimmedNumber;
-                              }
-
-                              // Validate the input: allow empty string, single minus, or valid number
-                              const isValid =
-                                validValue === "" ||
-                                validValue === "-" ||
-                                /^-?\d+$/.test(validValue);
-                              if (isValid) {
-                                const numericValue =
-                                  validValue === "" || validValue === "-"
-                                    ? null
-                                    : parseFloat(validValue);
-                                if ((numericValue ?? 0) > 10000000000000)
-                                  return;
-                                if ((numericValue ?? 0) < -10000000000000)
-                                  return;
-                                setInternalValue(validValue);
-                                if (debounceTimerRef.current) {
-                                  clearTimeout(debounceTimerRef.current);
-                                }
-                                debounceTimerRef.current = setTimeout(() => {
-                                  const temp = [...players];
-                                  temp[playerIndex]!.rounds[index]!.score =
-                                    numericValue ?? 0;
-                                  setPlayers(temp);
-                                }, 500);
-                              }
-                            }}
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center">
-                            <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
-                            <Checkbox
+                      <TableCell
+                        key={`player-${player.id}-round-${round.id}`}
+                        className="p-0"
+                      >
+                        <div className="flex items-center justify-center h-full min-h-[40px] w-full p-1">
+                          {round.type === "Numeric" ? (
+                            <NumberInput
                               value={roundPlayer?.score ?? 0}
-                              onCheckedChange={(isChecked) => {
+                              onValueChange={(value) => {
                                 const temp = [...players];
                                 temp[playerIndex]!.rounds[index]!.score =
-                                  isChecked ? round.score : 0;
+                                  value ?? 0;
                                 setPlayers(temp);
                               }}
+                              className="text-center border-none"
                             />
-                          </div>
-                        )}
+                          ) : (
+                            <>
+                              <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
+                              <Checkbox
+                                value={roundPlayer?.score ?? 0}
+                                onCheckedChange={(isChecked) => {
+                                  const temp = [...players];
+                                  temp[playerIndex]!.rounds[index]!.score =
+                                    isChecked ? round.score : 0;
+                                  setPlayers(temp);
+                                }}
+                              />
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     );
                   })}
@@ -255,7 +224,7 @@ export function Match({ match }: { match: Match }) {
               <TableRow>
                 <TableHead
                   scope="row"
-                  className="sm:text-lg font-semibold text-muted-foreground"
+                  className="sm:text-lg font-semibold text-muted-foreground sticky left-0 bg-muted/50 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border"
                 >
                   Total
                 </TableHead>
@@ -291,7 +260,7 @@ export function Match({ match }: { match: Match }) {
                   return (
                     <TableCell key={`${player.id}-total`}>
                       <div className="flex items-center justify-center">
-                        {total}
+                        <span className="text-center">{total}</span>
                       </div>
                     </TableCell>
                   );
@@ -302,9 +271,7 @@ export function Match({ match }: { match: Match }) {
         </Table>
       </Card>
       <CardFooter>
-        <div className="pt-6 flex justify-end w-full">
-          <Button onClick={onSubmit}>Submit</Button>
-        </div>
+        <Button onClick={onSubmit}>Submit</Button>
       </CardFooter>
     </div>
   );
@@ -455,12 +422,9 @@ const AddRoundDialogContent = ({
                     <FormLabel>Score</FormLabel>
 
                     <FormControl>
-                      <Input
-                        {...field}
-                        onChange={(event) =>
-                          field.onChange(+event.target.value)
-                        }
-                        type="number"
+                      <NumberInput
+                        value={field.value}
+                        onValueChange={field.onChange}
                         className="text-center"
                       />
                     </FormControl>
