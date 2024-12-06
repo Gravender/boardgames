@@ -174,31 +174,35 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
               key={`mobile-${row.id}`}
               className="flex w-full items-center gap-3 border-none"
             >
-              <div className="relative flex shrink-0 overflow-hidden h-12 w-12">
-                {row.getValue("image") ? (
-                  <Image
-                    fill
-                    src={row.getValue("image")}
-                    alt={`${row.original.name} game image`}
-                    className="rounded-md aspect-square h-full w-full"
-                  />
-                ) : (
-                  <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
-                )}
-              </div>
+              <Link href={`/dashboard/games/${row.original.id}`}>
+                <div className="relative flex shrink-0 overflow-hidden h-12 w-12">
+                  {row.getValue("image") ? (
+                    <Image
+                      fill
+                      src={row.getValue("image")}
+                      alt={`${row.original.name} game image`}
+                      className="rounded-md aspect-square h-full w-full"
+                    />
+                  ) : (
+                    <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
+                  )}
+                </div>
+              </Link>
               <div className="flex flex-grow flex-col items-start">
                 <div className="flex w-full items-center justify-between">
-                  <div className="flex flex-col items-start">
-                    <h2 className="text-md text-left font-semibold">
-                      {row.original.name}
-                    </h2>
-                    <div className="flex min-w-20 items-center gap-1">
-                      <span>Last Played:</span>
-                      <span className="text-muted-foreground">
-                        {lastPlayed}
-                      </span>
+                  <Link href={`/dashboard/games/${row.original.id}`}>
+                    <div className="flex flex-col items-start">
+                      <h2 className="text-md text-left font-semibold">
+                        {row.original.name}
+                      </h2>
+                      <div className="flex min-w-20 items-center gap-1">
+                        <span>Last Played:</span>
+                        <span className="text-muted-foreground">
+                          {lastPlayed}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                   <div className="flex items-center gap-2">
                     <Button
                       size={"icon"}
