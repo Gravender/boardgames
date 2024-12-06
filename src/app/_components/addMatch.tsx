@@ -90,7 +90,9 @@ export function AddMatchDialog({
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data: players } = api.player.getPlayers.useQuery();
+  const { data: players } = api.player.getPlayers.useQuery({
+    game: { id: gameId },
+  });
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[425px]">

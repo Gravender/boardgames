@@ -20,7 +20,6 @@ export default async function Page({
   if (!match) redirect(`/dashboard/games/${gameId}`);
   return (
     <HydrateClient>
-      <h1>{match.name}</h1>
       <Match match={match} />
     </HydrateClient>
   );
