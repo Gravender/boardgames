@@ -35,6 +35,7 @@ const matches = createTable(
     date: timestamp("date", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
+    duration: integer("duration").notNull().default(0),
   },
   (table) => ({
     gameIndex: index().on(table.gameId),

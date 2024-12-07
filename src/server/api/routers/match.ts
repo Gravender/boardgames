@@ -190,6 +190,7 @@ export const matchRouter = createTRPCRouter({
         scoresheet: returnedMatch.scoresheet,
         gameId: returnedMatch.gameId,
         players: refinedPlayers,
+        duration: returnedMatch.duration,
       };
     }),
   deleteMatch: protectedUserProcedure
@@ -207,9 +208,16 @@ export const matchRouter = createTRPCRouter({
         matchPlayers: z.array(
           selectMatchPlayerSchema.pick({ id: true, score: true, winner: true }),
         ),
+        match: selectMatchSchema.pick({ id: true, duration: true }),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(match)
+        .set({
+          duration: input.match.duration,
+        })
+        .where(and(eq(match.id, input.match.id), eq(match.userId, ctx.userId)));
       await Promise.all(
         input.roundPlayers.map(async (player) => {
           await ctx.db

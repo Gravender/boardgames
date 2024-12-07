@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ListPlus } from "lucide-react";
+import { ListPlus, Pause, Play, RotateCcw } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -53,6 +53,8 @@ import { api, RouterOutputs } from "~/trpc/react";
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
 export function Match({ match }: { match: Match }) {
   const [players, setPlayers] = useState(() => [...match.players]);
+  const [duration, setDuration] = useState(match.duration);
+  const [isRunning, setIsRunning] = useState(match.duration === 0);
   const utils = api.useUtils();
   const updateMatch = api.match.updateMatch.useMutation({
     onSuccess: async () => {
@@ -61,6 +63,7 @@ export function Match({ match }: { match: Match }) {
   });
   //turn into form
   const onSubmit = () => {
+    setIsRunning(false);
     const winner = players.reduce<{
       id: Match["players"][number]["id"];
       score: number;
@@ -125,6 +128,10 @@ export function Match({ match }: { match: Match }) {
           winner: matchWinner,
         };
       }),
+      match: {
+        id: match.id,
+        duration: duration,
+      },
     });
   };
   useEffect(() => {
@@ -135,19 +142,41 @@ export function Match({ match }: { match: Match }) {
       onSubmit();
     };
   }, []);
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRunning) {
+      interval = setInterval(() => {
+        setDuration((prevDuration) => prevDuration + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isRunning]);
+
+  const toggleClock = () => setIsRunning(!isRunning);
+
+  const resetClock = () => {
+    setDuration(0);
+  };
+
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
   return (
     <div className="sm:px-4">
       <CardHeader>
         <CardTitle>{`${match.name}`}</CardTitle>
       </CardHeader>
       <Card>
-        <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto">
+        <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
           <>
-            <TableHeader>
+            <TableHeader className="sticky top-0 bg-sidebar text-card-foreground shadow-lg z-20">
               <TableRow>
                 <TableHead
                   scope="col"
-                  className="sm:w-36 w-20 sticky left-0 bg-card text-card-foreground z-20"
+                  className="sm:w-36 w-20 sticky top-0 left-0 bg-sidebar"
                 >
                   <div>
                     <AddRoundDialog match={match} />
@@ -155,7 +184,7 @@ export function Match({ match }: { match: Match }) {
                 </TableHead>
                 {players.map((player) => (
                   <TableHead
-                    className="text-center min-w-20 bg-card text-card-foreground"
+                    className="text-center min-w-20"
                     scope="col"
                     key={player.id}
                   >
@@ -170,7 +199,7 @@ export function Match({ match }: { match: Match }) {
                   <TableHead
                     scope="row"
                     className={cn(
-                      "sm:text-lg font-semibold text-muted-foreground sticky left-0 bg-card after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border z-20",
+                      "sm:text-lg font-semibold text-muted-foreground sticky left-0 bg-card after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border z-10",
                       round.color &&
                         "text-slate-600 hover:opacity-50 hover:dark:opacity-80",
                     )}
@@ -270,8 +299,19 @@ export function Match({ match }: { match: Match }) {
           </>
         </Table>
       </Card>
-      <CardFooter>
-        <Button onClick={onSubmit}>Submit</Button>
+      <CardFooter className="flex justify-between pt-6 px-2">
+        <div className="flex items-center justify-center gap-2">
+          <div className="text-2xl font-bold text-center">
+            {formatDuration(duration)}
+          </div>
+          <Button onClick={toggleClock} size={"icon"} variant={"outline"}>
+            {isRunning ? <Pause /> : <Play />}
+          </Button>
+          <Button onClick={resetClock} size={"icon"} variant={"outline"}>
+            <RotateCcw />
+          </Button>
+        </div>
+        <Button onClick={onSubmit}>Finish</Button>
       </CardFooter>
     </div>
   );
@@ -316,7 +356,7 @@ const AddRoundDialogContent = ({
   const form = useForm<z.infer<typeof RoundSchema>>({
     resolver: zodResolver(RoundSchema),
     defaultValues: {
-      name: `Round #${(match.players[0]?.rounds.length ?? 0) + 1}`,
+      name: `Round ${(match.players[0]?.rounds.length ?? 0) + 1}`,
       type: "Numeric",
       color: "#E2E2E2",
       score: 0,
