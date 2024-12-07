@@ -1,10 +1,12 @@
 import { lookup } from "dns";
+import { access } from "fs";
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, not } from "drizzle-orm";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
 import {
+  game,
   insertMatchPlayerSchema,
   insertMatchSchema,
   insertPlayerSchema,
@@ -19,6 +21,7 @@ import {
   selectMatchSchema,
   selectRoundPlayerSchema,
 } from "~/server/db/schema";
+import players from "~/server/db/schema/player";
 
 export const matchRouter = createTRPCRouter({
   createMatch: protectedUserProcedure
@@ -191,6 +194,141 @@ export const matchRouter = createTRPCRouter({
         gameId: returnedMatch.gameId,
         players: refinedPlayers,
         duration: returnedMatch.duration,
+      };
+    }),
+  getSummary: protectedUserProcedure
+    .input(selectMatchSchema.pick({ id: true }))
+    .query(async ({ ctx, input }) => {
+      const returnedMatch = await ctx.db.query.match.findFirst({
+        where: and(eq(match.id, input.id), eq(match.userId, ctx.userId)),
+        with: {
+          scoresheet: true,
+          matchPlayers: {
+            with: {
+              player: {
+                with: {
+                  image: true,
+                },
+              },
+              roundPlayers: true,
+            },
+          },
+          game: {
+            with: {
+              image: true,
+            },
+          },
+        },
+      });
+      if (!returnedMatch) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      }
+      type previousMatchesType = z.infer<typeof selectMatchPlayerSchema>;
+      const previousMatches = await ctx.db.query.match.findMany({
+        columns: {
+          gameId: true,
+          id: true,
+          date: true,
+        },
+        where: and(
+          eq(match.userId, ctx.userId),
+          eq(match.gameId, returnedMatch.gameId),
+        ),
+        with: {
+          matchPlayers: {
+            with: {
+              player: true,
+            },
+          },
+        },
+        orderBy: (match) => match.date,
+      });
+      const refinedPlayers = returnedMatch.matchPlayers
+        .map((matchPlayer) => {
+          return {
+            id: matchPlayer.id,
+            name: matchPlayer.player.name,
+            imageUrl: matchPlayer.player.image?.url,
+            score: matchPlayer.score,
+            isWinner: matchPlayer.winner,
+          };
+        })
+        .sort((a, b) => {
+          if (a.isWinner && !b.isWinner) {
+            return -1;
+          }
+          if (!a.isWinner && b.isWinner) {
+            return 1;
+          }
+          if (!a.score && !b.score) {
+            return 0;
+          }
+          if (!a.score) {
+            return 1;
+          }
+          if (!b.score) {
+            return -1;
+          }
+          if (returnedMatch.scoresheet.winCondition === "Highest Score") {
+            return b.score - a.score;
+          }
+          if (returnedMatch.scoresheet.winCondition === "Lowest Score") {
+            return a.score - b.score;
+          }
+          return 0;
+        });
+      const playerStats = previousMatches
+        .flatMap((match) =>
+          match.matchPlayers.map((matchPlayer) => {
+            const player = matchPlayer.player;
+            return {
+              id: player.id,
+              name: player.name,
+              score: matchPlayer.score,
+              isWinner: matchPlayer.winner,
+            };
+          }),
+        )
+        .reduce(
+          (acc, player) => {
+            const foundPlayer = acc.find((p) => p.id === player.id);
+            if (foundPlayer) {
+              foundPlayer.scores.push(player.score ?? 0);
+              if (player.isWinner) {
+                foundPlayer.wins = foundPlayer.wins + 1;
+              }
+              foundPlayer.plays = foundPlayer.plays + 1;
+            } else {
+              acc.push({
+                name: player.name,
+                scores: [player.score ?? 0],
+                wins: player.isWinner ? 1 : 0,
+                id: player.id,
+                plays: 1,
+              });
+            }
+            return acc;
+          },
+          [] as {
+            name: string;
+            scores: number[];
+            wins: number;
+            id: number;
+            plays: number;
+          }[],
+        );
+      return {
+        id: returnedMatch.id,
+        date: returnedMatch.date,
+        name: returnedMatch.name,
+        scoresheet: returnedMatch.scoresheet,
+        gameId: returnedMatch.gameId,
+        gameName: returnedMatch.game.name,
+        gameImageUrl: returnedMatch.game.image?.url,
+        players: refinedPlayers,
+        duration: returnedMatch.duration,
+        previousMatches: previousMatches.length,
+        playerStats: playerStats,
       };
     }),
   deleteMatch: protectedUserProcedure

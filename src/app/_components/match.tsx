@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { set } from "date-fns";
 import { ListPlus, Pause, Play, RotateCcw } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -54,11 +55,18 @@ type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
 export function Match({ match }: { match: Match }) {
   const [players, setPlayers] = useState(() => [...match.players]);
   const [duration, setDuration] = useState(match.duration);
+  console.log(match.duration);
   const [isRunning, setIsRunning] = useState(match.duration === 0);
+  const [isFinished, setIsFinished] = useState(false);
+
+  const router = useRouter();
   const utils = api.useUtils();
   const updateMatch = api.match.updateMatch.useMutation({
     onSuccess: async () => {
       await utils.match.getMatch.invalidate({ id: match.id });
+      if (isFinished) {
+        router.push(`/dashboard/games/${match.gameId}/${match.id}/summary`);
+      }
     },
   });
   //turn into form
@@ -311,7 +319,14 @@ export function Match({ match }: { match: Match }) {
             <RotateCcw />
           </Button>
         </div>
-        <Button onClick={onSubmit}>Finish</Button>
+        <Button
+          onClick={() => {
+            setIsFinished(true);
+            onSubmit();
+          }}
+        >
+          Finish
+        </Button>
       </CardFooter>
     </div>
   );
