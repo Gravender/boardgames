@@ -69,7 +69,7 @@ export default async function Page({
               <div className="flex w-24 items-center gap-2">
                 <h4 className="font-medium">Plays:</h4>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>{summary.previousMatches + 1}</span>
+                  <span>{summary.previousMatches}</span>
                 </div>
               </div>
               <div className="flex w-24 items-center gap-2">
@@ -84,6 +84,9 @@ export default async function Page({
             <span>Actions:</span>
             <Link href={`/dashboard/games/${summary.gameId}/${summary.id}`}>
               <Button variant="secondary">{"Back To Score"}</Button>
+            </Link>
+            <Link href={`/dashboard/games/${summary.gameId}/`}>
+              <Button variant="secondary">{"Back To Game"}</Button>
             </Link>
             <Link href={`/dashboard/games/`}>
               <Button variant="secondary">{"Back To Games"}</Button>

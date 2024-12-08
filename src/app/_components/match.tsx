@@ -55,9 +55,9 @@ type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
 export function Match({ match }: { match: Match }) {
   const [players, setPlayers] = useState(() => [...match.players]);
   const [duration, setDuration] = useState(match.duration);
-  console.log(match.duration);
   const [isRunning, setIsRunning] = useState(match.duration === 0);
-  const [isFinished, setIsFinished] = useState(false);
+  const [isFinished, setIsFinished] = useState(match.finished);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const router = useRouter();
   const utils = api.useUtils();
@@ -70,7 +70,9 @@ export function Match({ match }: { match: Match }) {
     },
   });
   //turn into form
-  const onSubmit = () => {
+  const onSubmit = (finishing: boolean) => {
+    setIsSubmitting(true);
+    setIsFinished(finishing);
     setIsRunning(false);
     const winner = players.reduce<{
       id: Match["players"][number]["id"];
@@ -115,41 +117,39 @@ export function Match({ match }: { match: Match }) {
             : Infinity),
       },
     );
+    const submittedPlayers = players.flatMap((player) =>
+      player.rounds.map((round) => ({
+        id: round.id,
+        score: round.score,
+        roundId: round.id,
+        matchPlayerId: player.id,
+      })),
+    );
+    const matchPlayers = players.map((player) => {
+      const score = player.rounds.reduce((acc, round) => {
+        return acc + (round.score ?? 0);
+      }, 0);
+      //TODO: need to add target score for scoresheet
+      const matchWinner = winner.score === score;
+      return {
+        id: player.id,
+        score,
+        winner: matchWinner,
+      };
+    });
     updateMatch.mutate({
-      roundPlayers: players.flatMap((player) =>
-        player.rounds.map((round) => ({
-          id: round.id,
-          score: round.score,
-          roundId: round.id,
-          matchPlayerId: player.id,
-        })),
-      ),
-      matchPlayers: players.map((player) => {
-        const score = player.rounds.reduce((acc, round) => {
-          return acc + (round.score ?? 0);
-        }, 0);
-        //TODO: need to add target score for scoresheet
-        const matchWinner = winner.score === score;
-        return {
-          id: player.id,
-          score,
-          winner: matchWinner,
-        };
-      }),
       match: {
         id: match.id,
         duration: duration,
+        finished: finishing,
       },
+      roundPlayers: submittedPlayers,
+      matchPlayers: matchPlayers,
     });
   };
   useEffect(() => {
     setPlayers([...match.players]);
   }, [match.players]);
-  useEffect(() => {
-    return () => {
-      onSubmit();
-    };
-  }, []);
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isRunning) {
@@ -321,8 +321,7 @@ export function Match({ match }: { match: Match }) {
         </div>
         <Button
           onClick={() => {
-            setIsFinished(true);
-            onSubmit();
+            onSubmit(true);
           }}
         >
           Finish

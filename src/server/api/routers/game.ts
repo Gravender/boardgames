@@ -2,7 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { and, count, eq, max, sql } from "drizzle-orm";
 import { string, z } from "zod";
 
-import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedUserProcedure,
+  publicProcedure,
+} from "~/server/api/trpc";
 import {
   game,
   image,
@@ -12,6 +16,7 @@ import {
   round,
   scoresheet,
   selectGameSchema,
+  user,
 } from "~/server/db/schema";
 import { insertRoundSchema } from "~/server/db/schema/round";
 
@@ -146,6 +151,7 @@ export const gameRouter = createTRPCRouter({
                   player.winner && player.player.userId === ctx.userId,
               ) !== -1,
             name: match.name,
+            finished: match.finished,
           };
         }),
       };
@@ -189,7 +195,19 @@ export const gameRouter = createTRPCRouter({
       .orderBy(max(match.date), game.name);
     return games;
   }),
-  getSideBarGames: protectedUserProcedure.query(async ({ ctx }) => {
+  getSideBarGames: publicProcedure.query(async ({ ctx }) => {
+    if (!ctx.auth.userId) {
+      return [];
+    }
+    let returnedUser = (
+      await ctx.db
+        .selectDistinct()
+        .from(user)
+        .where(eq(user.clerkUserId, ctx.auth.userId))
+    )[0];
+    if (!returnedUser) {
+      return [];
+    }
     const games = await ctx.db
       .select({
         id: game.id,
@@ -197,7 +215,7 @@ export const gameRouter = createTRPCRouter({
         lastPlayed: sql`max(${match.date})`.mapWith(match.date),
       })
       .from(game)
-      .where(and(eq(game.userId, ctx.userId), eq(game.deleted, false)))
+      .where(and(eq(game.userId, returnedUser.id), eq(game.deleted, false)))
       .leftJoin(match, eq(game.id, match.gameId))
       .groupBy(game.id)
       .orderBy(max(match.date), game.name)

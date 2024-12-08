@@ -62,7 +62,11 @@ export function Matches({
               </Link>
             </TableCell>
             <TableCell className="w-24 flex items-center justify-center">
-              {match.won ? (
+              {!match.finished ? (
+                <div className="inline-flex w-12 rounded-sm font-semibold p-2 text-destructive-foreground items-center justify-center bg-yellow-500 dark:bg-green-900">
+                  {"-"}
+                </div>
+              ) : match.won ? (
                 <div className="inline-flex w-12 rounded-sm font-medium p-2 text-destructive-foreground items-center justify-center bg-green-500 dark:bg-green-900">
                   {"Won"}
                 </div>

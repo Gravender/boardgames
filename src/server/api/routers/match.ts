@@ -104,7 +104,7 @@ export const matchRouter = createTRPCRouter({
           .insert(match)
           .values({ ...input, userId: ctx.userId, scoresheetId })
           .returning()
-      )?.[0]?.id;
+      )?.[0];
       if (!returningMatch) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -122,7 +122,7 @@ export const matchRouter = createTRPCRouter({
           });
         } else {
           playersToInsert.push({
-            matchId: returningMatch,
+            matchId: returningMatch.id,
             playerId: player.id,
           });
         }
@@ -131,7 +131,7 @@ export const matchRouter = createTRPCRouter({
         const newPlayersReturned = (
           await ctx.db.insert(player).values(newPlayers).returning()
         )?.map((player) => ({
-          matchId: returningMatch,
+          matchId: returningMatch.id,
           playerId: player.id,
         }));
         playersToInsert = [...playersToInsert, ...newPlayersReturned];
@@ -149,6 +149,7 @@ export const matchRouter = createTRPCRouter({
           }));
         });
       await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);
+      return returningMatch;
     }),
   getMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
@@ -194,6 +195,7 @@ export const matchRouter = createTRPCRouter({
         gameId: returnedMatch.gameId,
         players: refinedPlayers,
         duration: returnedMatch.duration,
+        finished: returnedMatch.finished,
       };
     }),
   getSummary: protectedUserProcedure
@@ -346,7 +348,11 @@ export const matchRouter = createTRPCRouter({
         matchPlayers: z.array(
           selectMatchPlayerSchema.pick({ id: true, score: true, winner: true }),
         ),
-        match: selectMatchSchema.pick({ id: true, duration: true }),
+        match: selectMatchSchema.pick({
+          id: true,
+          duration: true,
+          finished: true,
+        }),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -354,6 +360,7 @@ export const matchRouter = createTRPCRouter({
         .update(match)
         .set({
           duration: input.match.duration,
+          finished: input.match.finished,
         })
         .where(and(eq(match.id, input.match.id), eq(match.userId, ctx.userId)));
       await Promise.all(

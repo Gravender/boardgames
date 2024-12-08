@@ -49,7 +49,7 @@ export const playerRelations = relations(players, ({ one, many }) => ({
     fields: [players.imageId],
     references: [image.id],
   }),
-  matches: many(matchPlayer),
+  matchesByPlayer: many(matchPlayer),
 }));
 
 export const insertPlayerSchema = createInsertSchema(players);

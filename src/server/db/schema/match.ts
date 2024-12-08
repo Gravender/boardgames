@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  boolean,
   index,
   integer,
   serial,
@@ -36,6 +37,7 @@ const matches = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
     duration: integer("duration").notNull().default(0),
+    finished: boolean("finished").notNull().default(false),
   },
   (table) => ({
     gameIndex: index().on(table.gameId),

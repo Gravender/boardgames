@@ -49,36 +49,30 @@ type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 const playerSchema = insertPlayerSchema
   .pick({ name: true, id: true })
   .required({ name: true, id: true })
-  .and(
-    z.object({
-      imageUrl: z
-        .string()
-        .or(
-          z
-            .instanceof(File)
-            .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
-            .refine(
-              (file) => file.type === "image/jpeg" || file.type === "image/png",
-              "Only .jpg and .png formats are supported.",
-            )
-            .nullable(),
+  .extend({
+    imageUrl: z.string().or(
+      z
+        .instanceof(File)
+        .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
+        .refine(
+          (file) => file.type === "image/jpeg" || file.type === "image/png",
+          "Only .jpg and .png formats are supported.",
         )
-        .optional(),
-      matches: z.number(),
-    }),
-  );
-
+        .nullable(),
+    ),
+    matches: z.preprocess((a) => parseInt(z.string().parse(a), 10), z.number()),
+  });
 const matchSchema = insertMatchSchema
   .pick({
     name: true,
     date: true,
   })
   .required({ name: true, date: true })
-  .and(
-    z.object({
-      players: z.array(playerSchema).refine((players) => players.length > 0),
+  .extend({
+    players: z.array(playerSchema).refine((players) => players.length > 0, {
+      message: "You must add at least one player",
     }),
-  );
+  });
 export function AddMatchDialog({
   gameId,
   gameName,
@@ -90,7 +84,7 @@ export function AddMatchDialog({
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data: players } = api.player.getPlayers.useQuery({
+  const { data: players, isLoading } = api.player.getPlayers.useQuery({
     game: { id: gameId },
   });
   return (
@@ -101,20 +95,22 @@ export function AddMatchDialog({
           gameId={gameId}
           gameName={gameName}
           matches={matches}
-          players={players ?? []}
+          players={players ?? ([] as RouterOutputs["player"]["getPlayers"])}
         />
       </DialogContent>
       <div className="flex h-full w-full flex-col justify-end">
         <div className="flex justify-end p-4">
-          <Button
-            variant="default"
-            className="rounded-full"
-            size="icon"
-            type="button"
-            onClick={() => setIsOpen(true)}
-          >
-            <Plus />
-          </Button>
+          {!isLoading ? (
+            <Button
+              variant="default"
+              className="rounded-full"
+              size="icon"
+              type="button"
+              onClick={() => setIsOpen(true)}
+            >
+              <Plus />
+            </Button>
+          ) : null}
         </div>
       </div>
     </Dialog>
@@ -149,13 +145,13 @@ function Content({
     },
   });
   const createMatch = api.match.createMatch.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (match) => {
       await utils.player.getPlayers.invalidate();
       await utils.game.getGame.invalidate({ id: gameId });
+      router.push(`/dashboard/games/${gameId}/${match.id}`);
       setOpen(false);
       form.reset();
       setIsSubmitting(false);
-      router.refresh();
     },
   });
   const onSubmit = async (values: z.infer<typeof matchSchema>) => {
@@ -357,6 +353,10 @@ const PlayersContent = ({
   addedPlayers: addedPlayers;
   setAddedPlayers: (players: addedPlayers) => void;
 }) => {
+  const { append, remove } = useFieldArray({
+    name: "players",
+    control: form.control,
+  });
   return (
     <>
       <DialogHeader>
@@ -400,10 +400,10 @@ const PlayersContent = ({
                             }
                             onCheckedChange={(checked) => {
                               return checked
-                                ? field.onChange([...field.value, player])
-                                : field.onChange(
-                                    field.value?.filter(
-                                      (value) => value.id !== player.id,
+                                ? append(player)
+                                : remove(
+                                    field.value?.findIndex(
+                                      (i) => i.id === player.id,
                                     ),
                                   );
                             }}
