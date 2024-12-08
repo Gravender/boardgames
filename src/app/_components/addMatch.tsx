@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DialogTrigger } from "@radix-ui/react-dialog";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, PlusIcon, Trash, User } from "lucide-react";
-import { set, useFieldArray, useForm, type UseFormReturn } from "react-hook-form";
+import { useFieldArray, useForm, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 
 import { Spinner } from "~/components/spinner";
@@ -40,7 +41,6 @@ import {
 import { useToast } from "~/hooks/use-toast";
 import { cn } from "~/lib/utils";
 import { insertMatchSchema, insertPlayerSchema } from "~/server/db/schema";
-import players from "~/server/db/schema/player";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
@@ -573,10 +573,11 @@ const PlayerContent = ({
       <div className="flex items-center space-x-4">
         <div className="relative flex shrink-0 overflow-hidden rounded-full h-20 w-20">
           {image ? (
-            <img
+            <Image
               src={image.preview}
               alt="Game image"
               className="rounded-sm aspect-square h-full w-full"
+              fill
             />
           ) : (
             <User className="h-full w-full p-2 items-center justify-center bg-muted rounded-full" />

@@ -1,12 +1,9 @@
-import { lookup } from "dns";
-import { access } from "fs";
 import { TRPCError } from "@trpc/server";
-import { and, eq, not } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
 import {
-  game,
   insertMatchSchema,
   insertPlayerSchema,
   match,
@@ -21,7 +18,6 @@ import {
   type insertMatchPlayerSchema,
   type insertRoundPlayerSchema,
 } from "~/server/db/schema";
-import players from "~/server/db/schema/player";
 
 export const matchRouter = createTRPCRouter({
   createMatch: protectedUserProcedure
@@ -223,7 +219,6 @@ export const matchRouter = createTRPCRouter({
       if (!returnedMatch) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       }
-      type previousMatchesType = z.infer<typeof selectMatchPlayerSchema>;
       const previousMatches = await ctx.db.query.match.findMany({
         columns: {
           gameId: true,

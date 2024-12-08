@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, ChevronUp, Dices, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, Dices } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -22,7 +22,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "~/components/ui/dialog";
 import {
   Form,
@@ -276,10 +275,11 @@ function Content({
                   <div className="flex items-center space-x-4">
                     <div className="relative flex shrink-0 overflow-hidden h-20 w-20">
                       {imagePreview ? (
-                        <img
+                        <Image
                           src={imagePreview}
                           alt="Game image"
                           className="rounded-sm aspect-square h-full w-full"
+                          fill
                         />
                       ) : (
                         <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-full" />

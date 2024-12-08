@@ -23,7 +23,7 @@ export function Matches({
   return (
     <Table className="mt-4">
       <TableBody className="flex flex-col gap-2 px-4 w-full">
-        {matches.map((match, index) => (
+        {matches.map((match) => (
           <TableRow
             key={match.id}
             className="rounded-lg border bg-card text-card-foreground shadow-sm flex w-full"

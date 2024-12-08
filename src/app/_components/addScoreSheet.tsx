@@ -1,6 +1,5 @@
 "use client";
 
-import { register } from "module";
 import { useState } from "react";
 import { Copy, Minus, Plus, Table, Trash } from "lucide-react";
 import { useFieldArray, type UseFormReturn } from "react-hook-form";
@@ -128,7 +127,7 @@ const Content = ({
   const roundsScoreOptions = insertScoreSheetSchema
     .required()
     .pick({ roundsScore: true }).shape.roundsScore.options;
-  const { fields, remove, append, update } = useFieldArray({
+  const { fields, remove, append } = useFieldArray({
     name: "rounds",
     control: form.control,
   });

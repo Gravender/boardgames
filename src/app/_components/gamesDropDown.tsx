@@ -1,7 +1,6 @@
 "use client";
 
 import { startTransition } from "react";
-import { useRouter } from "next/navigation";
 import { MoreVertical } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
@@ -11,9 +10,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { useToast } from "~/hooks/use-toast";
 import { deleteGame } from "~/server/queries";
-import { api, type RouterInputs, type RouterOutputs } from "~/trpc/react";
+import { type RouterInputs, type RouterOutputs } from "~/trpc/react";
 
 export function GamesDropDown({
   setEditGame,

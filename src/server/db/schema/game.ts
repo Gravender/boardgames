@@ -5,7 +5,6 @@ import {
   integer,
   serial,
   timestamp,
-  uuid,
   varchar,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";

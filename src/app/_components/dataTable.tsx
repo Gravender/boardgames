@@ -1,22 +1,21 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
+import { useState, type ReactElement } from "react";
 import {
-  type ColumnDef,
-  type ColumnFiltersState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  type SortingState,
   useReactTable,
+  type ColumnDef,
+  type ColumnFiltersState,
+  type SortingState,
   type Table as tTable,
 } from "@tanstack/react-table";
 
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardFooter } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
 import {
   Table,
   TableBody,

@@ -1,7 +1,4 @@
-import Image from "next/image";
 import { redirect } from "next/navigation";
-import { format } from "date-fns/format";
-import { Dices } from "lucide-react";
 
 import { AddMatchDialog } from "~/app/_components/addMatch";
 import { Matches } from "~/app/_components/matches";

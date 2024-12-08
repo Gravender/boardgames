@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, count, eq, max, sql } from "drizzle-orm";
-import { string, z } from "zod";
+import { z } from "zod";
 
 import {
   createTRPCRouter,

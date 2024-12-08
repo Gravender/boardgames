@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { set } from "date-fns";
 import { ListPlus, Pause, Play, RotateCcw } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { type z } from "zod";
@@ -57,7 +56,6 @@ export function Match({ match }: { match: Match }) {
   const [duration, setDuration] = useState(match.duration);
   const [isRunning, setIsRunning] = useState(match.duration === 0);
   const [isFinished, setIsFinished] = useState(match.finished);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const router = useRouter();
   const utils = api.useUtils();
@@ -71,7 +69,6 @@ export function Match({ match }: { match: Match }) {
   });
   //turn into form
   const onSubmit = (finishing: boolean) => {
-    setIsSubmitting(true);
     setIsFinished(finishing);
     setIsRunning(false);
     const winner = players.reduce<{

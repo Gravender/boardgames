@@ -4,20 +4,11 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { set } from "date-fns";
-import {
-  ChevronDown,
-  ChevronUp,
-  Dices,
-  Plus,
-  Router,
-  Upload,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, Dices, Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Spinner } from "~/components/spinner";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -31,7 +22,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "~/components/ui/dialog";
 import {
   Form,
@@ -294,10 +284,11 @@ function Content({ setOpen }: { setOpen: (isOpen: boolean) => void }) {
                   <div className="flex items-center space-x-4">
                     <div className="relative flex shrink-0 overflow-hidden rounded-full h-20 w-20">
                       {imagePreview ? (
-                        <img
+                        <Image
                           src={imagePreview}
                           alt="Game image"
                           className="rounded-sm aspect-square h-full w-full"
+                          fill
                         />
                       ) : (
                         <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-full" />

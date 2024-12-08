@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { createHydrationHelpers } from "@trpc/react-query/rsc";

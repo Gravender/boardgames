@@ -4,8 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  type ColumnDef,
   createColumnHelper,
+  type ColumnDef,
   type Table,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -137,8 +137,6 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
     columnHelper.display({
       id: "actions",
       cell: ({ row }) => {
-        const payment = row.original;
-
         return (
           <GamesDropDown
             data={row.original}

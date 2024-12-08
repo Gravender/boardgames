@@ -1,7 +1,5 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
 import { Paintbrush } from "lucide-react";
 
 import { Button } from "~/components/ui/button";

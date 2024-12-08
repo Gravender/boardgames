@@ -1,13 +1,10 @@
 "use client";
 
-import { Fragment, use, useEffect, useState } from "react";
-import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { set } from "date-fns";
 
 import { CapitalizeFirstLetterOfEachWord } from "~/lib/utils";
-import { api } from "~/trpc/react";
 
 import {
   Breadcrumb,

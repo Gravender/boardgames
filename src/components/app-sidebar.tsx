@@ -5,7 +5,6 @@ import { SignedOut, SignInButton, useUser } from "@clerk/nextjs";
 import {
   Calendar1,
   Dices,
-  LucideIcon,
   Map,
   Settings2,
   User,
