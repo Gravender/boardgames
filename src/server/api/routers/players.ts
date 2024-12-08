@@ -29,7 +29,7 @@ export const playerRouter = createTRPCRouter({
         })
         .from(player)
         .innerJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
-        .innerJoin(
+        .leftJoin(
           match,
           and(
             eq(match.id, matchPlayer.matchId),
