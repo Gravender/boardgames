@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { DialogTrigger } from "@radix-ui/react-dialog";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, PlusIcon, Trash, User } from "lucide-react";
-import { set, useFieldArray, useForm, UseFormReturn } from "react-hook-form";
+import { set, useFieldArray, useForm, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 
 import { Spinner } from "~/components/spinner";
@@ -41,7 +41,7 @@ import { useToast } from "~/hooks/use-toast";
 import { cn } from "~/lib/utils";
 import { insertMatchSchema, insertPlayerSchema } from "~/server/db/schema";
 import players from "~/server/db/schema/player";
-import { api, RouterOutputs } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
@@ -172,7 +172,7 @@ function Content({
               name: player.name,
               imageId: null,
             };
-          const imageFile = player.imageUrl as File;
+          const imageFile = player.imageUrl;
 
           const uploadResult = await startUpload([imageFile]);
           if (!uploadResult) {

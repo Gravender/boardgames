@@ -19,7 +19,7 @@ export function useDebounce<T>(value: T, delay: number) {
 export function useDebouncedInput<T>(
   defaultValue: T | undefined,
   updateValue: (value: T) => void,
-  delay?: number | undefined,
+  delay?: number  ,
 ) {
   const [value, setValue] = useState(defaultValue);
   const debouncedValue = useDebounce(value, delay ?? 500);

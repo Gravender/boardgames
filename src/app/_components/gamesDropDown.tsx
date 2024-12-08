@@ -13,7 +13,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { useToast } from "~/hooks/use-toast";
 import { deleteGame } from "~/server/queries";
-import { api, RouterInputs, RouterOutputs } from "~/trpc/react";
+import { api, type RouterInputs, type RouterOutputs } from "~/trpc/react";
 
 export function GamesDropDown({
   setEditGame,

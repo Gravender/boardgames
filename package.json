@@ -11,6 +11,8 @@
     "db:studio": "drizzle-kit studio",
     "dev": "next dev",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "preview": "next build && next start",
     "typecheck": "tsc --noEmit",
     "start": "next start",
     "format:write": "prettier --write \"**/*.{ts,tsx,mdx}\" --ignore-path .gitignore --cache",

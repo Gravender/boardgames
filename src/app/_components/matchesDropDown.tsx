@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { deleteMatch } from "~/server/queries";
-import { RouterOutputs } from "~/trpc/react";
+import { type RouterOutputs } from "~/trpc/react";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 export function MatchDropDown({

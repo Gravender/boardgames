@@ -20,7 +20,7 @@ import {
   SidebarFooter,
   SidebarRail,
 } from "~/components/ui/sidebar";
-import { RouterOutputs } from "~/trpc/react";
+import { type RouterOutputs } from "~/trpc/react";
 
 // This is sample data.
 

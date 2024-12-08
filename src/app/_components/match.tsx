@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { set } from "date-fns";
 import { ListPlus, Pause, Play, RotateCcw } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { type z } from "zod";
 
 import { GradientPicker } from "~/components/color-picker";
 import { NumberInput } from "~/components/number-input";
@@ -49,7 +49,7 @@ import {
 } from "~/components/ui/table";
 import { cn } from "~/lib/utils";
 import { insertRoundSchema } from "~/server/db/schema/round";
-import { api, RouterOutputs } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
 export function Match({ match }: { match: Match }) {

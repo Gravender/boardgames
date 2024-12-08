@@ -2,9 +2,9 @@ import { Settings } from "lucide-react";
 import {
   useFieldArray,
   UseFieldArrayUpdate,
-  UseFormReturn,
+  type UseFormReturn,
 } from "react-hook-form";
-import { z } from "zod";
+import { type z } from "zod";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -29,7 +29,7 @@ import {
 } from "~/components/ui/select";
 import { insertRoundSchema } from "~/server/db/schema/round";
 
-import { addGameSchema } from "./addGameDialog";
+import { type addGameSchema } from "./addGameDialog";
 
 type Round = z.infer<typeof addGameSchema>["rounds"][number];
 export function RoundPopOver({

@@ -4,7 +4,7 @@ import { format } from "date-fns/format";
 import { Dices } from "lucide-react";
 
 import { Table, TableBody, TableCell, TableRow } from "~/components/ui/table";
-import { RouterOutputs } from "~/trpc/react";
+import { type RouterOutputs } from "~/trpc/react";
 
 import { MatchDropDown } from "./matchesDropDown";
 

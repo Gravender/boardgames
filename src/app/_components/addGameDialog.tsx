@@ -221,7 +221,7 @@ function Content({ setOpen }: { setOpen: (isOpen: boolean) => void }) {
     }
 
     try {
-      const imageFile = values.gameImg as File;
+      const imageFile = values.gameImg;
 
       const uploadResult = await startUpload([imageFile]);
       if (!uploadResult) {

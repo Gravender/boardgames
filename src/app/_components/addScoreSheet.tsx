@@ -3,8 +3,8 @@
 import { register } from "module";
 import { useState } from "react";
 import { Copy, Minus, Plus, Table, Trash } from "lucide-react";
-import { useFieldArray, UseFormReturn } from "react-hook-form";
-import { z } from "zod";
+import { useFieldArray, type UseFormReturn } from "react-hook-form";
+import { type z } from "zod";
 
 import { GradientPicker } from "~/components/color-picker";
 import { Button } from "~/components/ui/button";
@@ -34,7 +34,7 @@ import {
 import { Separator } from "~/components/ui/separator";
 import { insertScoreSheetSchema } from "~/server/db/schema";
 
-import { addGameSchema } from "./addGameDialog";
+import { type addGameSchema } from "./addGameDialog";
 import { RoundPopOver } from "./roundPopOver";
 
 export function AddScoreSheet({

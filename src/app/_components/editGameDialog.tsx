@@ -36,7 +36,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { useToast } from "~/hooks/use-toast";
-import { api, RouterInputs } from "~/trpc/react";
+import { api, type RouterInputs } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
 const formSchema = z

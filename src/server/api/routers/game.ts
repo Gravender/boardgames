@@ -199,7 +199,7 @@ export const gameRouter = createTRPCRouter({
     if (!ctx.auth.userId) {
       return [];
     }
-    let returnedUser = (
+    const returnedUser = (
       await ctx.db
         .selectDistinct()
         .from(user)

@@ -7,10 +7,10 @@ import { z } from "zod";
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
 import {
   game,
-  insertMatchPlayerSchema,
+  type insertMatchPlayerSchema,
   insertMatchSchema,
   insertPlayerSchema,
-  insertRoundPlayerSchema,
+  type insertRoundPlayerSchema,
   match,
   matchPlayer,
   player,
@@ -111,7 +111,7 @@ export const matchRouter = createTRPCRouter({
           message: "Match Not Created Successfully",
         });
       }
-      let newPlayers: z.infer<typeof insertPlayerSchema>[] = [];
+      const newPlayers: z.infer<typeof insertPlayerSchema>[] = [];
       let playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] = [];
       for (const player of input.players) {
         if (player.id === -1) {

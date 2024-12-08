@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  ColumnDef,
+  type ColumnDef,
   createColumnHelper,
   type Table,
 } from "@tanstack/react-table";
@@ -14,7 +14,7 @@ import { Dices } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
-import { RouterInputs, RouterOutputs } from "~/trpc/react";
+import { type RouterInputs, type RouterOutputs } from "~/trpc/react";
 
 import { DataTable } from "./dataTable";
 import { EditGameDialog } from "./editGameDialog";
