@@ -7,10 +7,8 @@ import { z } from "zod";
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
 import {
   game,
-  type insertMatchPlayerSchema,
   insertMatchSchema,
   insertPlayerSchema,
-  type insertRoundPlayerSchema,
   match,
   matchPlayer,
   player,
@@ -20,6 +18,8 @@ import {
   selectMatchPlayerSchema,
   selectMatchSchema,
   selectRoundPlayerSchema,
+  type insertMatchPlayerSchema,
+  type insertRoundPlayerSchema,
 } from "~/server/db/schema";
 import players from "~/server/db/schema/player";
 
@@ -33,21 +33,19 @@ export const matchRouter = createTRPCRouter({
           gameId: true,
         })
         .required({ name: true })
-        .and(
-          z.object({
-            players: z
-              .array(
-                insertPlayerSchema
-                  .pick({
-                    name: true,
-                    imageId: true,
-                    id: true,
-                  })
-                  .required({ id: true }),
-              )
-              .min(1),
-          }),
-        ),
+        .extend({
+          players: z
+            .array(
+              insertPlayerSchema
+                .pick({
+                  name: true,
+                  imageId: true,
+                  id: true,
+                })
+                .required({ id: true }),
+            )
+            .min(1),
+        }),
     )
     .mutation(async ({ ctx, input }) => {
       const returnedScoresheet = await ctx.db.query.scoresheet.findFirst({
