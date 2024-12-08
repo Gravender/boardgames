@@ -50,17 +50,20 @@ const playerSchema = insertPlayerSchema
   .pick({ name: true, id: true })
   .required({ name: true, id: true })
   .extend({
-    imageUrl: z.string().or(
-      z
-        .instanceof(File)
-        .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
-        .refine(
-          (file) => file.type === "image/jpeg" || file.type === "image/png",
-          "Only .jpg and .png formats are supported.",
-        )
-        .nullable(),
-    ),
-    matches: z.preprocess((a) => parseInt(z.string().parse(a), 10), z.number()),
+    imageUrl: z
+      .string()
+      .or(
+        z
+          .instanceof(File)
+          .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
+          .refine(
+            (file) => file.type === "image/jpeg" || file.type === "image/png",
+            "Only .jpg and .png formats are supported.",
+          )
+          .nullable(),
+      )
+      .optional(),
+    matches: z.number(),
   });
 const matchSchema = insertMatchSchema
   .pick({
@@ -84,7 +87,7 @@ export function AddMatchDialog({
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data: players, isLoading } = api.player.getPlayers.useQuery({
+  const { data, isLoading } = api.player.getPlayers.useQuery({
     game: { id: gameId },
   });
   return (
@@ -95,7 +98,14 @@ export function AddMatchDialog({
           gameId={gameId}
           gameName={gameName}
           matches={matches}
-          players={players ?? ([] as RouterOutputs["player"]["getPlayers"])}
+          players={
+            data?.map((player) => ({
+              id: player.id,
+              name: player.name,
+              imageUrl: player.imageUrl,
+              matches: Number(player.matches),
+            })) ?? ([] as RouterOutputs["player"]["getPlayers"])
+          }
         />
       </DialogContent>
       <div className="flex h-full w-full flex-col justify-end">
@@ -146,7 +156,7 @@ function Content({
   });
   const createMatch = api.match.createMatch.useMutation({
     onSuccess: async (match) => {
-      await utils.player.getPlayers.invalidate();
+      await utils.player.getPlayers.invalidate({ game: { id: gameId } });
       await utils.game.getGame.invalidate({ id: gameId });
       router.push(`/dashboard/games/${gameId}/${match.id}`);
       setOpen(false);
@@ -353,10 +363,6 @@ const PlayersContent = ({
   addedPlayers: addedPlayers;
   setAddedPlayers: (players: addedPlayers) => void;
 }) => {
-  const { append, remove } = useFieldArray({
-    name: "players",
-    control: form.control,
-  });
   return (
     <>
       <DialogHeader>
@@ -400,10 +406,10 @@ const PlayersContent = ({
                             }
                             onCheckedChange={(checked) => {
                               return checked
-                                ? append(player)
-                                : remove(
-                                    field.value?.findIndex(
-                                      (i) => i.id === player.id,
+                                ? field.onChange([...field.value, player])
+                                : field.onChange(
+                                    field.value?.filter(
+                                      (value) => value.id !== player.id,
                                     ),
                                   );
                             }}
