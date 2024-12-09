@@ -1,9 +1,11 @@
+import { get } from "http";
 import { TRPCError } from "@trpc/server";
-import { and, count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, max, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
 import {
+  game,
   image,
   match,
   matchPlayer,
@@ -12,7 +14,7 @@ import {
 } from "~/server/db/schema";
 
 export const playerRouter = createTRPCRouter({
-  getPlayers: protectedUserProcedure
+  getPlayersByGame: protectedUserProcedure
     .input(
       z.object({
         game: selectGameSchema.pick({ id: true }),
@@ -86,4 +88,66 @@ export const playerRouter = createTRPCRouter({
         };
       });
     }),
+  getPlayers: protectedUserProcedure.query(async ({ ctx }) => {
+    const sq = ctx.db
+      .select({
+        id: player.id,
+        matches: sql<number>`count(${match.id})`.as("matches"),
+        name: player.name,
+        imageId: player.imageId,
+        created: player.createdAt,
+        lastPlayed: sql<Date>`max(${match.date})`
+          .mapWith(match.date)
+          .as("lastPlayed"),
+        gameName: sql<string>`(
+      SELECT ${game.name}
+      FROM ${match}
+      LEFT JOIN ${game} ON ${match.gameId} = ${game.id}
+      WHERE ${match.id} = (
+        SELECT ${match.id}
+        FROM ${match}
+        LEFT JOIN ${matchPlayer} ON ${match.id} = ${matchPlayer.matchId}
+        WHERE ${matchPlayer.playerId} = ${player.id} and  ${match.finished} = true
+        ORDER BY ${match.date} DESC
+        LIMIT 1
+      ) and ${match.finished} = true
+    )`.as("gameName"),
+        gameId: sql<number>`(
+      SELECT ${game.id}
+      FROM ${match}
+      LEFT JOIN ${game} ON ${match.gameId} = ${game.id}
+      WHERE ${match.id} = (
+        SELECT ${match.id}
+        FROM ${match}
+        LEFT JOIN ${matchPlayer} ON ${match.id} = ${matchPlayer.matchId}
+        WHERE ${matchPlayer.playerId} = ${player.id} and  ${match.finished} = true
+        ORDER BY ${match.date} DESC
+        LIMIT 1
+      ) and ${match.finished} = true
+    )`.as("gameId"),
+      })
+      .from(player)
+      .leftJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
+      .leftJoin(
+        match,
+        and(eq(match.id, matchPlayer.matchId), eq(match.finished, true)),
+      )
+      .where(eq(player.createdBy, ctx.userId))
+      .groupBy(player.id, player.name, player.imageId)
+      .as("sq");
+    const playersWithImages = await ctx.db
+      .select({
+        id: sq.id,
+        matches: sq.matches,
+        name: sq.name,
+        imageUrl: image.url,
+        lastPlayed: sq.lastPlayed,
+        gameName: sq.gameName,
+        gameId: sq.gameId,
+      })
+      .from(image)
+      .rightJoin(sq, eq(image.id, sq.imageId))
+      .orderBy(desc(sq.matches));
+    return playersWithImages;
+  }),
 });

@@ -87,7 +87,7 @@ export function AddMatchDialog({
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data, isLoading } = api.player.getPlayers.useQuery({
+  const { data, isLoading } = api.player.getPlayersByGame.useQuery({
     game: { id: gameId },
   });
   return (
@@ -104,7 +104,7 @@ export function AddMatchDialog({
               name: player.name,
               imageUrl: player.imageUrl,
               matches: Number(player.matches),
-            })) ?? ([] as RouterOutputs["player"]["getPlayers"])
+            })) ?? ([] as RouterOutputs["player"]["getPlayersByGame"])
           }
         />
       </DialogContent>
@@ -138,7 +138,7 @@ function Content({
   gameId: Game["id"];
   gameName: Game["name"];
   matches: number;
-  players: RouterOutputs["player"]["getPlayers"];
+  players: RouterOutputs["player"]["getPlayersByGame"];
 }) {
   const { startUpload } = useUploadThing("imageUploader");
   const { toast } = useToast();
@@ -156,7 +156,7 @@ function Content({
   });
   const createMatch = api.match.createMatch.useMutation({
     onSuccess: async (match) => {
-      await utils.player.getPlayers.invalidate({ game: { id: gameId } });
+      await utils.player.getPlayersByGame.invalidate({ game: { id: gameId } });
       await utils.game.getGame.invalidate({ id: gameId });
       router.push(`/dashboard/games/${gameId}/${match.id}`);
       setOpen(false);
@@ -320,7 +320,7 @@ const AddPlayersDialog = ({
 }: {
   form: UseFormReturn<z.infer<typeof matchSchema>>;
 
-  players: RouterOutputs["player"]["getPlayers"];
+  players: RouterOutputs["player"]["getPlayersByGame"];
   addedPlayers: addedPlayers;
   setAddedPlayers: (players: addedPlayers) => void;
 }) => {
@@ -359,7 +359,7 @@ const PlayersContent = ({
 }: {
   setOpen: (isOpen: boolean) => void;
   form: UseFormReturn<z.infer<typeof matchSchema>>;
-  players: RouterOutputs["player"]["getPlayers"];
+  players: RouterOutputs["player"]["getPlayersByGame"];
   addedPlayers: addedPlayers;
   setAddedPlayers: (players: addedPlayers) => void;
 }) => {

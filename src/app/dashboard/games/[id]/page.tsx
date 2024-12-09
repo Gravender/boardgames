@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 
 import { AddMatchDialog } from "~/app/_components/addMatch";
 import { Matches } from "~/app/_components/matches";
@@ -9,7 +10,10 @@ export default async function Page({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const { userId } = await auth();
+  if (!userId) redirect("/dashboard");
   const id = (await params).id;
+
   if (isNaN(Number(id))) redirect("/dashboard/games");
   const game = await api.game.getGame({ id: Number(id) });
   if (!game) redirect("/dashboard/games");

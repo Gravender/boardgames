@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 
 import { AddGameDialog } from "~/app/_components/addGameDialog";
@@ -8,6 +9,7 @@ import { api, HydrateClient } from "~/trpc/server";
 
 export default async function Page() {
   const { userId } = await auth();
+  if (!userId) redirect("/dashboard");
   const games = userId ? await api.game.getGames() : [];
   return (
     <HydrateClient>

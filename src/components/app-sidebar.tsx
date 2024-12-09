@@ -25,9 +25,11 @@ import { type RouterOutputs } from "~/trpc/react";
 
 export function AppSidebar({
   games,
+  players,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
-  games: RouterOutputs["game"]["getSideBarGames"];
+  games: RouterOutputs["dashboard"]["getGames"];
+  players: RouterOutputs["dashboard"]["getPlayers"];
 }) {
   const { isLoaded, isSignedIn, user } = useUser();
   const data = [
@@ -45,14 +47,14 @@ export function AppSidebar({
     },
     {
       title: "Players",
-      url: "#",
+      url: "/dashboard/players",
       icon: User,
-      items: [
-        {
-          title: "Player",
-          url: "#",
-        },
-      ],
+      items: players.map((player) => {
+        return {
+          title: player.name,
+          url: `/dashboard/players/${player.id}`,
+        };
+      }),
     },
     {
       title: "Groups",

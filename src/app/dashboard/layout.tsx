@@ -16,11 +16,12 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const games = await api.game.getSideBarGames();
+  const games = await api.dashboard.getGames();
+  const players = await api.dashboard.getPlayers();
 
   return (
     <SidebarProvider>
-      <AppSidebar games={games} />
+      <AppSidebar games={games} players={players} />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
