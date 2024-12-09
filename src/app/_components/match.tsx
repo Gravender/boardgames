@@ -56,6 +56,7 @@ export function Match({ match }: { match: Match }) {
   const [duration, setDuration] = useState(match.duration);
   const [isRunning, setIsRunning] = useState(match.duration === 0);
   const [isFinished, setIsFinished] = useState(match.finished);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const router = useRouter();
   const utils = api.useUtils();
@@ -65,10 +66,12 @@ export function Match({ match }: { match: Match }) {
       if (isFinished) {
         router.push(`/dashboard/games/${match.gameId}/${match.id}/summary`);
       }
+      setIsSubmitting(false);
     },
   });
   //turn into form
   const onSubmit = (finishing: boolean) => {
+    setIsSubmitting(true);
     setIsFinished(finishing);
     setIsRunning(false);
     const winner = players.reduce<{
@@ -76,21 +79,57 @@ export function Match({ match }: { match: Match }) {
       score: number;
     }>(
       (prev, current) => {
-        const temp = {
-          id: current.id,
-          score: current.rounds.reduce((acc, round) => {
-            return acc + (round.score ?? 0);
-          }, 0),
-        };
+        let temp: { id: Match["players"][number]["id"]; score: number };
+        if (match.scoresheet.roundsScore === "Aggregate") {
+          temp = {
+            id: current.id,
+            score: current.rounds.reduce((acc, round) => {
+              return acc + (round.score ?? 0);
+            }, 0),
+          };
+        } else if (match.scoresheet.roundsScore === "Best Of") {
+          temp = {
+            id: current.id,
+            score: current.rounds.reduce(
+              (acc, round) => {
+                if (match.scoresheet.winCondition === "Highest Score") {
+                  return acc > (round.score ?? -Infinity)
+                    ? acc
+                    : (round.score ?? acc);
+                }
+                if (match.scoresheet.winCondition === "Lowest Score") {
+                  return acc < (round.score ?? Infinity)
+                    ? acc
+                    : (round.score ?? acc);
+                }
+                if (match.scoresheet.winCondition === "Target Score") {
+                  return acc === match.scoresheet.targetScore
+                    ? acc
+                    : round.score === match.scoresheet.targetScore
+                      ? round.score
+                      : acc;
+                }
+                return acc;
+              },
+              match.scoresheet.winCondition === "Highest Score"
+                ? -Infinity
+                : match.scoresheet.winCondition === "Lowest Score"
+                  ? Infinity
+                  : 0,
+            ),
+          };
+        } else {
+          temp = {
+            id: current.id,
+            score: 0,
+          };
+        }
+
         if (match.scoresheet.winCondition === "Highest Score") {
-          return prev && (prev.score ?? 0) > (temp.score ?? -Infinity)
-            ? prev
-            : temp;
+          return prev && prev.score > (temp.score ?? -Infinity) ? prev : temp;
         }
         if (match.scoresheet.winCondition === "Lowest Score") {
-          return prev && (prev.score ?? 0) < (temp.score ?? Infinity)
-            ? prev
-            : temp;
+          return prev && prev.score < (temp.score ?? Infinity) ? prev : temp;
         }
         if (match.scoresheet.winCondition === "No Winner") {
           return { id: -1, score: -Infinity };
@@ -99,19 +138,20 @@ export function Match({ match }: { match: Match }) {
           return { id: -1, score: 0 };
         }
         if (match.scoresheet.winCondition === "Target Score") {
-          return { id: -1, score: 0 };
+          return match.scoresheet.targetScore === temp.score ? temp : prev;
         }
         return prev && (prev.score ?? 0) > (temp.score ?? -Infinity)
           ? prev
           : temp;
       },
       {
-        id: players[0]?.id ?? -1,
+        id: -1,
         score:
-          players[0]?.score ??
-          (match.scoresheet.winCondition === "Highest Score"
+          match.scoresheet.winCondition === "Highest Score"
             ? -Infinity
-            : Infinity),
+            : match.scoresheet.winCondition === "Lowest Score"
+              ? Infinity
+              : 0,
       },
     );
     const submittedPlayers = players.flatMap((player) =>
@@ -123,14 +163,48 @@ export function Match({ match }: { match: Match }) {
       })),
     );
     const matchPlayers = players.map((player) => {
-      const score = player.rounds.reduce((acc, round) => {
-        return acc + (round.score ?? 0);
-      }, 0);
-      //TODO: need to add target score for scoresheet
-      const matchWinner = winner.score === score;
+      let score: number;
+      if (match.scoresheet.roundsScore === "Aggregate") {
+        score = player.rounds.reduce((acc, round) => {
+          return acc + (round.score ?? 0);
+        }, 0);
+      }
+      if (match.scoresheet.roundsScore === "Best Of") {
+        score = player.rounds.reduce(
+          (acc, round) => {
+            if (match.scoresheet.winCondition === "Highest Score") {
+              return acc > (round.score ?? acc) ? acc : (round.score ?? acc);
+            }
+            if (match.scoresheet.winCondition === "Lowest Score") {
+              return acc < (round.score ?? acc) ? acc : (round.score ?? acc);
+            }
+            if (match.scoresheet.winCondition === "Target Score") {
+              return acc === match.scoresheet.targetScore
+                ? acc
+                : round.score === match.scoresheet.targetScore
+                  ? round.score
+                  : acc;
+            }
+            return acc;
+          },
+          match.scoresheet.winCondition === "Highest Score"
+            ? -Infinity
+            : match.scoresheet.winCondition === "Lowest Score"
+              ? Infinity
+              : 0,
+        );
+      } else {
+        score = 0;
+      }
+      const scoresheet = match.scoresheet;
+      const matchWinner =
+        scoresheet.winCondition === "Target Score" &&
+        scoresheet.targetScore === score
+          ? true
+          : winner.score === score;
       return {
         id: player.id,
-        score,
+        score: score === Infinity ? 0 : score === -Infinity ? 0 : score,
         winner: matchWinner,
       };
     });
@@ -228,7 +302,7 @@ export function Match({ match }: { match: Match }) {
                               onValueChange={(value) => {
                                 const temp = [...players];
                                 temp[playerIndex]!.rounds[index]!.score =
-                                  value ?? 0;
+                                  value ?? null;
                                 setPlayers(temp);
                               }}
                               className="text-center border-none"
@@ -280,21 +354,48 @@ export function Match({ match }: { match: Match }) {
                       </TableCell>
                     );
                   }
-                  const total = player.rounds.reduce((acc, round) => {
-                    if (match.scoresheet.roundsScore === "Aggregate") {
-                      return acc + (round.score ?? 0);
-                    }
-                    if (match.scoresheet.roundsScore === "Best Of") {
-                      return acc > (round.score ?? 0)
-                        ? acc
-                        : (round.score ?? 0);
-                    }
-                    return acc;
-                  }, 0);
+                  const total = player.rounds.reduce(
+                    (acc, round) => {
+                      if (match.scoresheet.roundsScore === "Aggregate") {
+                        return acc + (round.score ?? 0);
+                      }
+                      if (match.scoresheet.roundsScore === "Best Of") {
+                        if (match.scoresheet.winCondition === "Highest Score") {
+                          return acc > (round.score ?? -Infinity)
+                            ? acc
+                            : (round.score ?? acc);
+                        }
+                        if (match.scoresheet.winCondition === "Lowest Score") {
+                          return acc < (round.score ?? Infinity)
+                            ? acc
+                            : (round.score ?? acc);
+                        }
+                        if (match.scoresheet.winCondition === "Target Score") {
+                          return acc === match.scoresheet.targetScore
+                            ? acc
+                            : round.score === match.scoresheet.targetScore
+                              ? round.score
+                              : acc;
+                        }
+                      }
+                      return acc;
+                    },
+                    match.scoresheet.winCondition === "Highest Score"
+                      ? -Infinity
+                      : match.scoresheet.winCondition === "Lowest Score"
+                        ? Infinity
+                        : 0,
+                  );
                   return (
                     <TableCell key={`${player.id}-total`}>
                       <div className="flex items-center justify-center">
-                        <span className="text-center">{total}</span>
+                        <span className="text-center">
+                          {total === Infinity
+                            ? 0
+                            : total === -Infinity
+                              ? 0
+                              : total}
+                        </span>
                       </div>
                     </TableCell>
                   );
@@ -320,8 +421,16 @@ export function Match({ match }: { match: Match }) {
           onClick={() => {
             onSubmit(true);
           }}
+          disabled={isSubmitting}
         >
-          Finish
+          {isSubmitting ? (
+            <>
+              <Spinner />
+              <span>Submitting...</span>
+            </>
+          ) : (
+            "Finish"
+          )}
         </Button>
       </CardFooter>
     </div>

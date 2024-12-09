@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { cn } from "~/lib/utils";
 import { api } from "~/trpc/server";
 
 export default async function Page({
@@ -124,7 +125,10 @@ export default async function Page({
               const playerPerformance = calculatePerformance();
               return (
                 <div
-                  className="flex justify-between items-center p-4"
+                  className={cn(
+                    "flex justify-between items-center p-4",
+                    player.isWinner && "bg-green-500/10",
+                  )}
                   key={`match-${player.id}`}
                 >
                   <div className="flex items-center justify-center gap-2">

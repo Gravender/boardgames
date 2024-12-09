@@ -21,14 +21,24 @@ export function GradientPicker({
   className?: string;
 }) {
   const solids = [
-    "#E2E2E2",
-    "#ff75c3",
-    "#ffa647",
-    "#ffe83f",
-    "#9fff5b",
-    "#70e2ff",
-    "#cd93ff",
-    "#09203f",
+    "#64748b",
+    "#ef4444",
+    "#f97316",
+    "#f59e0b",
+    "#eab308",
+    "#84cc16",
+    "#22c55e",
+    "#10b981",
+    "#14b8a6",
+    "#06b6d4",
+    "#0ea5e9",
+    "#3b82f6",
+    "#6366f1",
+    "#8b5cf6",
+    "#a855f7",
+    "#d946ef",
+    "#ec4899",
+    "#f43f5e",
   ];
 
   return (
@@ -64,7 +74,7 @@ export function GradientPicker({
 
         <Input
           id="custom"
-          value={color ?? undefined}
+          value={color ?? ""}
           placeholder="Custom color"
           className="col-span-2 h-8 mt-4"
           onChange={(e) => setColor(e.currentTarget.value)}

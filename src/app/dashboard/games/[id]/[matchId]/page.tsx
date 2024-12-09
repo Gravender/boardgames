@@ -11,6 +11,12 @@ export default async function Page({
   const slugs = await params;
   const matchId = slugs.matchId;
   const gameId = slugs.id;
+  if (isNaN(Number(matchId))) {
+    if (isNaN(Number(gameId))) redirect("/dashboard/games");
+    else {
+      redirect(`/dashboard/games/${gameId}`);
+    }
+  }
   const match = await api.match.getMatch({ id: Number(matchId) });
   if (!match) redirect(`/dashboard/games/${gameId}`);
   return (

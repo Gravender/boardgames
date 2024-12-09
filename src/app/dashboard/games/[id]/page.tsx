@@ -10,6 +10,7 @@ export default async function Page({
   params: Promise<{ id: string }>;
 }) {
   const id = (await params).id;
+  if (isNaN(Number(id))) redirect("/dashboard/games");
   const game = await api.game.getGame({ id: Number(id) });
   if (!game) redirect("/dashboard/games");
   return (

@@ -169,6 +169,13 @@
       "when": 1733618678880,
       "tag": "0023_worthless_randall",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1733714143220,
+      "tag": "0024_stale_dreadnoughts",
+      "breakpoints": true
     }
   ]
 }

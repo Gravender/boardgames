@@ -69,6 +69,8 @@ export const matchRouter = createTRPCRouter({
             userId: ctx.userId,
             isCoop: returnedScoresheet.isCoop,
             winCondition: returnedScoresheet.winCondition,
+            targetScore: returnedScoresheet.targetScore,
+            roundsScore: returnedScoresheet.roundsScore,
             type: "Match",
           })
           .returning()
@@ -311,7 +313,8 @@ export const matchRouter = createTRPCRouter({
             id: number;
             plays: number;
           }[],
-        );
+        )
+        .sort((a, b) => b.plays - a.plays);
       return {
         id: returnedMatch.id,
         date: returnedMatch.date,
