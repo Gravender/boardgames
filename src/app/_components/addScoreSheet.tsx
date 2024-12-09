@@ -49,6 +49,7 @@ export function AddScoreSheet({
         winCondition: "Highest Score",
         isCoop: false,
         roundsScore: "Aggregate",
+        targetScore: 0,
       });
       form.setValue("rounds", [
         {
@@ -189,9 +190,29 @@ const Content = ({
           </FormItem>
         )}
       />
-      {
-        //TODO add target score if scoresheet win condition is target score
-      }
+      {form.getValues("scoresheet.winCondition") === "Target Score" && (
+        <FormField
+          control={form.control}
+          name={`scoresheet.targetScore`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Target Score</FormLabel>
+
+              <FormControl>
+                <Input
+                  {...field}
+                  value={field.value}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  type="number"
+                  className="text-center"
+                />
+              </FormControl>
+
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
       <FormField
         control={form.control}
         name="scoresheet.roundsScore"
@@ -216,6 +237,7 @@ const Content = ({
           </FormItem>
         )}
       />
+
       <Separator className="w-full" orientation="horizontal" />
       <div className="flex flex-col gap-2">
         <div className="text-xl font-semibold">Rows</div>
@@ -264,7 +286,12 @@ const Content = ({
                     size="icon"
                     type="button"
                     onClick={() =>
-                      append({ ...field, name: `Round ${index + 1}` })
+                      append({
+                        ...field,
+                        name: `Round ${fields.length + 1}`,
+                        type: fields[index]?.type,
+                        score: fields[index]?.score,
+                      })
                     }
                   >
                     <Copy />

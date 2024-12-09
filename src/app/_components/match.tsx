@@ -168,8 +168,7 @@ export function Match({ match }: { match: Match }) {
         score = player.rounds.reduce((acc, round) => {
           return acc + (round.score ?? 0);
         }, 0);
-      }
-      if (match.scoresheet.roundsScore === "Best Of") {
+      } else if (match.scoresheet.roundsScore === "Best Of") {
         score = player.rounds.reduce(
           (acc, round) => {
             if (match.scoresheet.winCondition === "Highest Score") {
@@ -198,10 +197,9 @@ export function Match({ match }: { match: Match }) {
       }
       const scoresheet = match.scoresheet;
       const matchWinner =
-        scoresheet.winCondition === "Target Score" &&
-        scoresheet.targetScore === score
-          ? true
-          : winner.score === score;
+        (scoresheet.winCondition === "Target Score" &&
+          scoresheet.targetScore === score) ??
+        winner.score === score;
       return {
         id: player.id,
         score: score === Infinity ? 0 : score === -Infinity ? 0 : score,
@@ -311,13 +309,15 @@ export function Match({ match }: { match: Match }) {
                             <>
                               <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
                               <Checkbox
-                                value={roundPlayer?.score ?? 0}
                                 onCheckedChange={(isChecked) => {
                                   const temp = [...players];
                                   temp[playerIndex]!.rounds[index]!.score =
                                     isChecked ? round.score : 0;
                                   setPlayers(temp);
                                 }}
+                                checked={
+                                  (roundPlayer?.score ?? 0) === round.score
+                                }
                               />
                             </>
                           )}
