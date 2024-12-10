@@ -46,53 +46,54 @@ export function GameDetails({ data }: { data: Games }) {
   };
 
   const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <div className="ml-2 h-4 w-4" />;
+    if (sortField !== field)
+      return <div className="sm:ml-2 sm:h-4 sm:w-4 ml-1 h-3 w-3" />;
     return sortOrder === "asc" ? (
-      <ChevronUp className="ml-2 h-4 w-4" />
+      <ChevronUp className="sm:ml-2 sm:h-4 sm:w-4 ml-1 h-3 w-3" />
     ) : (
-      <ChevronDown className="ml-2 h-4 w-4" />
+      <ChevronDown className="sm:ml-2 sm:h-4 sm:w-4 ml-1 h-3 w-3" />
     );
   };
   return (
-    <ScrollArea className="h-72">
-      <Table className="text-secondary-foreground">
-        <TableHeader>
+    <ScrollArea className="h-72 w-1 flex-1">
+      <Table>
+        <TableHeader className="text-card-foreground">
           <TableRow>
-            <TableHead>
-              <Button
-                variant="ghost"
+            <TableHead className="w-16 sm:w-full px-1 sm:px-4">
+              <button
                 onClick={() => toggleSort("name")}
-                className="font-bold"
+                className="font-bold flex items-center "
               >
-                Name <SortIcon field="name" />
-              </Button>
+                <span>Name</span>
+                <SortIcon field="name" />
+              </button>
             </TableHead>
-            <TableHead>
-              <Button
-                variant="ghost"
+            <TableHead className="w-8 px-0 sm:px-4">
+              <button
                 onClick={() => toggleSort("plays")}
-                className="font-bold"
+                className="font-bold flex items-center"
               >
-                Last Played <SortIcon field="plays" />
-              </Button>
+                <span>Plays</span>
+                <SortIcon field="plays" />
+              </button>
             </TableHead>
-            <TableHead>
-              <Button
-                variant="ghost"
+            <TableHead className="w-8 px-0 sm:px-4">
+              <button
                 onClick={() => toggleSort("wins")}
-                className="font-bold"
+                className="font-bold flex items-center"
               >
-                Wins <SortIcon field="wins" />
-              </Button>
+                <span>Wins</span>
+                <SortIcon field="wins" />
+              </button>
             </TableHead>
-            <TableHead>
-              <Button
-                variant="ghost"
+            <TableHead className="w-16 px-1 sm:px-4">
+              <button
                 onClick={() => toggleSort("winRate")}
-                className="font-bold"
+                className="font-bold flex items-center"
               >
-                Win Rate <SortIcon field="winRate" />
-              </Button>
+                <span>Win Rate</span>
+                <SortIcon field="winRate" />
+              </button>
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -100,9 +101,9 @@ export function GameDetails({ data }: { data: Games }) {
           {games.map((game) => {
             return (
               <TableRow key={game.id}>
-                <TableCell>
-                  <div className="flex gap-4 w-full items-center">
-                    <div className="relative flex shrink-0 overflow-hidden h-10 w-10">
+                <TableCell className="p-2 sm:p-4">
+                  <div className="flex gap-2 sm:gap-4 w-full items-center text-xs">
+                    <div className="relative flex shrink-0 overflow-hidden h-7 w-7  sm:h-10 sm:w-10">
                       {game.imageUrl ? (
                         <Image
                           fill
@@ -114,7 +115,9 @@ export function GameDetails({ data }: { data: Games }) {
                         <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
                       )}
                     </div>
-                    <span className="font-semibold">{game.name}</span>
+                    <span className="sm:font-semibold font-medium">
+                      {game.name}
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell>{game.plays}</TableCell>

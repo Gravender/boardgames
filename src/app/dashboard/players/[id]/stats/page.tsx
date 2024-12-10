@@ -1,16 +1,13 @@
 import Image from "next/image";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { format } from "date-fns";
 import { Dices, User } from "lucide-react";
 
-import { Button } from "~/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
@@ -42,8 +39,8 @@ export default async function Page({
   const lastPlayed = player.matches[0];
   return (
     <div className="flex w-full items-center justify-center">
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 items-center sm:grid sm:grid-cols-2 max-w-3xl sm:items-stretch">
-        <Card className="w-full sm:col-span-2">
+      <div className="flex w-full flex-col gap-4 p-2 pt-0 items-center max-w-3xl">
+        <Card className="w-full">
           <CardHeader>
             <CardTitle>Summary</CardTitle>
             <CardDescription>
@@ -108,7 +105,7 @@ export default async function Page({
           </CardFooter> */}
         </Card>
         {lastPlayed && (
-          <Card className="w-full sm:col-span-2">
+          <Card className="w-full">
             <CardHeader>
               <CardTitle>Last Play</CardTitle>
               <CardDescription>
@@ -140,14 +137,14 @@ export default async function Page({
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-between h-40">
-              <div className="flex flex-col gap-2 w-2/5 text-sm">
-                <div className="flex w-24 items-center gap-2">
+              <div className="flex flex-col gap-2 text-sm w-2/5">
+                <div className="flex items-center gap-2">
                   <h4 className="font-medium">Duration:</h4>
                   <div className="flex justify-between text-muted-foreground">
                     <span>{formatDuration(lastPlayed.duration)}</span>
                   </div>
                 </div>
-                <div className="flex w-24 items-center gap-2">
+                <div className="flex items-center gap-2">
                   <h4 className="font-medium">Players:</h4>
                   <div className="flex justify-between text-muted-foreground">
                     <span>{lastPlayed.players.length}</span>
@@ -176,8 +173,8 @@ export default async function Page({
                 </div>
               </div>
               <Separator orientation="vertical" />
-              <div className="flex flex-col gap-2 w-2/5 text-sm">
-                <div className="flex w-24 items-center gap-2">
+              <div className="flex flex-col gap-2 text-sm w-2/5">
+                <div className="flex items-center gap-2">
                   <h4 className="font-medium">Score:</h4>
                   <div className="flex justify-between text-muted-foreground">
                     <span>{lastPlayed.outcome.score}</span>
@@ -188,51 +185,57 @@ export default async function Page({
           </Card>
         )}
         {player.matches.length > 0 && (
-          <Card className="w-full sm:col-span-2">
+          <Card className="w-full">
             <CardHeader>
               <CardTitle>Plays</CardTitle>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="w-3xl">
-                <div className="flex w-max space-x-4 p-4">
-                  {player.matches.map((match) => {
-                    return (
-                      <div
-                        className="flex flex-col gap-2 shrink-0 items-center text-secondary-foreground text-sm"
-                        key={match.id}
-                      >
-                        <span className="font-semibold">{match.gameName}</span>
-                        <div className="relative flex shrink-0 overflow-hidden h-20 w-20 rounded shadow">
-                          {match.gameImageUrl ? (
-                            <Image
-                              fill
-                              src={match.gameImageUrl}
-                              alt={`${match.gameName} game image`}
-                              className="rounded-md aspect-square h-full w-full"
-                            />
-                          ) : (
-                            <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
-                          )}
+            <CardContent className="p-2 sm:p-6">
+              <div className="flex">
+                <ScrollArea className="w-1 flex-1">
+                  <div className="flex space-x-4 p-1 sm:p-4">
+                    {player.matches.map((match) => {
+                      return (
+                        <div
+                          className="flex flex-col gap-2 shrink-0 items-center text-secondary-foreground text-sm"
+                          key={match.id}
+                        >
+                          <span className="font-semibold">
+                            {match.gameName}
+                          </span>
+                          <div className="relative flex shrink-0 overflow-hidden h-20 w-20 rounded shadow">
+                            {match.gameImageUrl ? (
+                              <Image
+                                fill
+                                src={match.gameImageUrl}
+                                alt={`${match.gameName} game image`}
+                                className="rounded-md aspect-square h-full w-full"
+                              />
+                            ) : (
+                              <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
+                            )}
+                          </div>
+                          <div className="text-muted-foreground">
+                            <span>{format(match.date, "d MMM yyyy")}</span>
+                          </div>
                         </div>
-                        <div className="text-muted-foreground">
-                          <span>{format(match.date, "d MMM yyyy")}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
+                      );
+                    })}
+                  </div>
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+              </div>
             </CardContent>
           </Card>
         )}
         {player.games.length > 0 && (
-          <Card className="w-full sm:col-span-2">
+          <Card className="w-full ">
             <CardHeader>
               <CardTitle>Game Details</CardTitle>
             </CardHeader>
-            <CardContent>
-              <GameDetails data={player.games} />
+            <CardContent className="p-2 sm:p-6">
+              <div className="flex">
+                <GameDetails data={player.games} />
+              </div>
             </CardContent>
           </Card>
         )}
