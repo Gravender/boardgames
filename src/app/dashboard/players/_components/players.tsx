@@ -8,8 +8,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { RouterOutputs } from "~/trpc/react";
 
+import { AddPlayerDialog } from "./addPlayerDialog";
 import { PlayerDropDown, SortingOptions } from "./playerDropDown";
 
 export const sortFieldConst = ["matches", "name", "lastPlayed"] as const;
@@ -39,7 +41,7 @@ export function PlayersTable({
   }, [data, search, sortField, sortOrder]);
 
   return (
-    <div className="container mx-auto p-4 py-10 max-w-3xl">
+    <div className="container mx-auto p-4 py-10 max-w-3xl max-h-[90vh]">
       <div>
         <CardHeader>
           <CardTitle>Players</CardTitle>
@@ -69,57 +71,62 @@ export function PlayersTable({
             <SortingOptions sortField={sortField} setSortField={setSortField} />
           </div>
         </div>
-        <div className="flex flex-col gap-2">
-          {players.map((player) => {
-            const lastPlayed = player.lastPlayed
-              ? format(player.lastPlayed, "d MMM yyyy")
-              : null;
-            return (
-              <Card key={player.id}>
-                <CardContent className="flex items-center gap-2 justify-between w-full pt-3 p-3">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="shadow h-14 w-14">
-                      <AvatarImage
-                        src={player.imageUrl ?? ""}
-                        alt={player.name}
-                      />
-                      <AvatarFallback className="bg-slate-300">
-                        <User />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex w-full items-center justify-between">
-                        <div className="flex flex-col">
-                          <h2 className="text-md text-left font-semibold">
-                            {player.name}
-                          </h2>
-                          <div className="flex min-w-20 items-center gap-1 text-sm">
-                            <span>Game:</span>
-                            <span className="text-muted-foreground">
-                              {player.gameName}
-                            </span>
-                          </div>
-                          <div className="flex min-w-20 items-center gap-1 text-sm">
-                            <span>Last Played:</span>
-                            <span className="text-muted-foreground">
-                              {lastPlayed}
-                            </span>
+        <CardContent className="relative">
+          <ScrollArea className="flex flex-col gap-2 max-h-[80vh]">
+            {players.map((player) => {
+              const lastPlayed = player.lastPlayed
+                ? format(player.lastPlayed, "d MMM yyyy")
+                : null;
+              return (
+                <Card key={player.id}>
+                  <CardContent className="flex items-center gap-2 justify-between w-full pt-3 p-3">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="shadow h-14 w-14">
+                        <AvatarImage
+                          src={player.imageUrl ?? ""}
+                          alt={player.name}
+                        />
+                        <AvatarFallback className="bg-slate-300">
+                          <User />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex w-full items-center justify-between">
+                          <div className="flex flex-col">
+                            <h2 className="text-md text-left font-semibold">
+                              {player.name}
+                            </h2>
+                            <div className="flex min-w-20 items-center gap-1 text-sm">
+                              <span>Game:</span>
+                              <span className="text-muted-foreground">
+                                {player.gameName}
+                              </span>
+                            </div>
+                            <div className="flex min-w-20 items-center gap-1 text-sm">
+                              <span>Last Played:</span>
+                              <span className="text-muted-foreground">
+                                {lastPlayed}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-4 justify-center">
-                    <Button size={"icon"} variant={"outline"}>
-                      {player.matches}
-                    </Button>
-                    <PlayerDropDown data={player} />
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                    <div className="flex items-center gap-4 justify-center">
+                      <Button size={"icon"} variant={"outline"}>
+                        {player.matches}
+                      </Button>
+                      <PlayerDropDown data={player} />
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </ScrollArea>
+          <div className="absolute bottom-7 right-10 z-10">
+            <AddPlayerDialog />
+          </div>
+        </CardContent>
       </div>
     </div>
   );

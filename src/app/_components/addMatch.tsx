@@ -581,7 +581,7 @@ const PlayerContent = ({
           {image ? (
             <Image
               src={image.preview}
-              alt="Game image"
+              alt="Player image"
               className="rounded-sm aspect-square h-full w-full"
               fill
             />

@@ -7,6 +7,7 @@ import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
 import {
   game,
   image,
+  insertPlayerSchema,
   match,
   matchPlayer,
   player,
@@ -150,4 +151,13 @@ export const playerRouter = createTRPCRouter({
       .orderBy(desc(sq.matches));
     return playersWithImages;
   }),
+  create: protectedUserProcedure
+    .input(insertPlayerSchema.pick({ name: true, imageId: true }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.insert(player).values({
+        createdBy: ctx.userId,
+        imageId: input.imageId,
+        name: input.name,
+      });
+    }),
 });
