@@ -366,6 +366,7 @@ export function Match({ match }: { match: Match }) {
                             : (round.score ?? acc);
                         }
                         if (match.scoresheet.winCondition === "Lowest Score") {
+                          console.log(round.score, "round score");
                           return acc < (round.score ?? Infinity)
                             ? acc
                             : (round.score ?? acc);
@@ -380,11 +381,13 @@ export function Match({ match }: { match: Match }) {
                       }
                       return acc;
                     },
-                    match.scoresheet.winCondition === "Highest Score"
-                      ? -Infinity
-                      : match.scoresheet.winCondition === "Lowest Score"
-                        ? Infinity
-                        : 0,
+                    match.scoresheet.roundsScore === "Aggregate"
+                      ? 0
+                      : match.scoresheet.winCondition === "Highest Score"
+                        ? -Infinity
+                        : match.scoresheet.winCondition === "Lowest Score"
+                          ? Infinity
+                          : 0,
                   );
                   return (
                     <TableCell key={`${player.id}-total`}>
