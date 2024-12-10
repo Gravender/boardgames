@@ -12,7 +12,11 @@ import {
   matchPlayer,
   player,
   selectGameSchema,
+  selectPlayerSchema,
 } from "~/server/db/schema";
+import games from "~/server/db/schema/game";
+import matchPlayers from "~/server/db/schema/matchPlayer";
+import players from "~/server/db/schema/player";
 
 export const playerRouter = createTRPCRouter({
   getPlayersByGame: protectedUserProcedure
@@ -151,6 +155,121 @@ export const playerRouter = createTRPCRouter({
       .orderBy(desc(sq.matches));
     return playersWithImages;
   }),
+  getPlayer: protectedUserProcedure
+    .input(selectPlayerSchema.pick({ id: true }))
+    .query(async ({ ctx, input }) => {
+      const returnedPlayer = await ctx.db.query.player.findFirst({
+        where: eq(player.id, input.id),
+        with: {
+          image: true,
+          matchesByPlayer: {
+            with: {
+              match: {
+                with: {
+                  game: {
+                    with: {
+                      image: true,
+                    },
+                  },
+                  matchPlayers: {
+                    with: {
+                      player: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!returnedPlayer) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      }
+      const matches = returnedPlayer.matchesByPlayer.map((matchPlayer) => {
+        return {
+          id: matchPlayer.match.id,
+          name: matchPlayer.match.name,
+          date: matchPlayer.match.date,
+          duration: matchPlayer.match.duration,
+          finished: matchPlayer.match.finished,
+          gameId: matchPlayer.match.game.id,
+          gameName: matchPlayer.match.game.name,
+          gameImageUrl: matchPlayer.match.game.image?.url,
+          players: matchPlayer.match.matchPlayers.map((matchPlayer) => {
+            return {
+              id: matchPlayer.id,
+              name: matchPlayer.player.name,
+              score: matchPlayer.score,
+              isWinner: matchPlayer.winner,
+              playerId: matchPlayer.player.id,
+            };
+          }),
+          outcome: {
+            score: matchPlayer.score,
+            isWinner: matchPlayer.winner,
+          },
+        };
+      });
+      matches.sort((a, b) => b.date.valueOf() - a.date.valueOf());
+      const processedPlayer = {
+        id: returnedPlayer.id,
+        name: returnedPlayer.name,
+        imageUrl: returnedPlayer.image?.url,
+        matches: matches,
+        duration: matches.reduce((acc, match) => {
+          return acc + match.duration;
+        }, 0),
+        players: matches.reduce<number[]>((acc, match) => {
+          match.players.forEach((player) => {
+            if (!acc.find((p) => p === player.playerId)) {
+              acc.push(player.playerId);
+            }
+          });
+          return acc;
+        }, []).length,
+        winRate:
+          matches.length > 0
+            ? matches.reduce((acc, match) => {
+                if (match.outcome.isWinner) {
+                  return acc + 1;
+                }
+                return acc;
+              }, 0) / matches.length
+            : 0,
+        games: matches
+          .reduce<
+            {
+              id: number;
+              name: string;
+              imageUrl: string;
+              wins: number;
+              plays: number;
+              winRate: number;
+            }[]
+          >((acc, match) => {
+            const foundGame = acc.find((g) => g.id === match.gameId);
+            if (foundGame) {
+              foundGame.plays = foundGame.plays + 1;
+              foundGame.wins =
+                foundGame.wins + (match.outcome.isWinner ? 1 : 0);
+              foundGame.winRate = foundGame.wins / foundGame.plays;
+            } else {
+              acc.push({
+                id: match.gameId,
+                name: match.gameName,
+                imageUrl: match.gameImageUrl ?? "",
+                wins: match.outcome.isWinner ? 1 : 0,
+                plays: 1,
+                winRate: (match.outcome.isWinner ? 1 : 0) / 1,
+              });
+            }
+            return acc;
+          }, [])
+          .sort((a, b) => b.plays - a.plays),
+      };
+      return processedPlayer;
+    }),
   create: protectedUserProcedure
     .input(insertPlayerSchema.pick({ name: true, imageId: true }))
     .mutation(async ({ ctx, input }) => {
