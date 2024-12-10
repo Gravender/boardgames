@@ -41,7 +41,7 @@ export const AddPlayerDialog = () => {
         <PlayerContent setOpen={setIsOpen} />
       </DialogContent>
       <div className="flex h-full w-full flex-col justify-end">
-        <div className="flex justify-end p-4">
+        <div className="flex justify-end">
           <DialogTrigger asChild>
             <Button
               variant="default"
