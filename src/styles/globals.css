@@ -80,3 +80,55 @@
     @apply bg-background text-foreground;
   }
 }
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-track-transparent {
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+
+  .scrollbar-thumb-muted-foreground\/20 {
+    --scrollbar-thumb: hsl(var(--muted-foreground) / 0.2);
+  }
+
+  .hover\:scrollbar-thumb-muted-foreground\/30:hover {
+    --scrollbar-thumb: hsl(var(--muted-foreground) / 0.3);
+  }
+
+  .dark .dark\:scrollbar-thumb-muted-foreground\/60 {
+    --scrollbar-thumb: hsl(var(--muted-foreground) / 0.6);
+  }
+
+  .dark .dark\:hover\:scrollbar-thumb-muted-foreground\/70:hover {
+    --scrollbar-thumb: hsl(var(--muted-foreground) / 0.7);
+  }
+
+  /* WebKit-specific styles */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-track-transparent::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thumb-muted-foreground\/20::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border-radius: 4px;
+  }
+
+  .hover\:scrollbar-thumb-muted-foreground\/30:hover::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+  }
+
+  .dark .dark\:scrollbar-thumb-muted-foreground\/60::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+  }
+
+  .dark .dark\:hover\:scrollbar-thumb-muted-foreground\/70:hover::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+  }
+}
