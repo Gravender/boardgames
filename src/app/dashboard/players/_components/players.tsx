@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { format } from "date-fns";
 import { ChevronDown, ChevronUp, Search, User } from "lucide-react";
 
@@ -79,38 +80,40 @@ export function PlayersTable({
             return (
               <Card key={player.id}>
                 <CardContent className="flex items-center gap-2 justify-between w-full pt-3 p-3">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="shadow h-14 w-14">
-                      <AvatarImage
-                        src={player.imageUrl ?? ""}
-                        alt={player.name}
-                      />
-                      <AvatarFallback className="bg-slate-300">
-                        <User />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex w-full items-center justify-between">
-                        <div className="flex flex-col">
-                          <h2 className="text-md text-left font-semibold">
-                            {player.name}
-                          </h2>
-                          <div className="flex min-w-20 items-center gap-1 text-sm">
-                            <span>Game:</span>
-                            <span className="text-muted-foreground">
-                              {player.gameName}
-                            </span>
-                          </div>
-                          <div className="flex min-w-20 items-center gap-1 text-sm">
-                            <span>Last Played:</span>
-                            <span className="text-muted-foreground">
-                              {lastPlayed}
-                            </span>
+                  <Link href={`/dashboard/players/${player.id}/stats`}>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="shadow h-14 w-14">
+                        <AvatarImage
+                          src={player.imageUrl ?? ""}
+                          alt={player.name}
+                        />
+                        <AvatarFallback className="bg-slate-300">
+                          <User />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex w-full items-center justify-between">
+                          <div className="flex flex-col">
+                            <h2 className="text-md text-left font-semibold">
+                              {player.name}
+                            </h2>
+                            <div className="flex min-w-20 items-center gap-1 text-sm">
+                              <span>Game:</span>
+                              <span className="text-muted-foreground">
+                                {player.gameName}
+                              </span>
+                            </div>
+                            <div className="flex min-w-20 items-center gap-1 text-sm">
+                              <span>Last Played:</span>
+                              <span className="text-muted-foreground">
+                                {lastPlayed}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                   <div className="flex items-center gap-4 justify-center">
                     <Button size={"icon"} variant={"outline"}>
                       {player.matches}

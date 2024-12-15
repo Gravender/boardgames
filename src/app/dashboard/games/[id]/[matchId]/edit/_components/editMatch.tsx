@@ -122,6 +122,7 @@ export function EditMatchForm({
         game: { id: match.gameId },
       });
       await utils.game.getGame.invalidate({ id: match.gameId });
+      await utils.match.getMatch.invalidate({ id: match.id });
       router.push(`/dashboard/games/${match.gameId}/${match.id}`);
       form.reset();
       setIsSubmitting(false);

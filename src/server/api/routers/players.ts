@@ -276,4 +276,20 @@ export const playerRouter = createTRPCRouter({
         name: input.name,
       });
     }),
+  update: protectedUserProcedure
+    .input(
+      insertPlayerSchema
+        .pick({ id: true, imageId: true })
+        .required({ id: true })
+        .extend({ name: z.string().optional() }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(player)
+        .set({
+          name: input.name,
+          imageId: input.imageId,
+        })
+        .where(eq(player.id, input.id));
+    }),
 });
