@@ -146,7 +146,7 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Add Game</DialogTitle>
+        <DialogTitle>Add Player</DialogTitle>
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -155,7 +155,7 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Game Name</FormLabel>
+                <FormLabel>Player Name</FormLabel>
                 <FormControl>
                   <Input placeholder="Player name" {...field} />
                 </FormControl>
