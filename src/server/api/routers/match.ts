@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { add } from "date-fns";
+import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
@@ -180,6 +181,7 @@ export const matchRouter = createTRPCRouter({
           rounds: matchPlayer.roundPlayers,
           score: matchPlayer.score,
           id: matchPlayer.id,
+          playerId: matchPlayer.player.id,
           roundId: matchPlayer,
         };
       });
@@ -380,5 +382,134 @@ export const matchRouter = createTRPCRouter({
             .where(eq(matchPlayer.id, player.id));
         }),
       );
+    }),
+  editMatch: protectedUserProcedure
+    .input(
+      z.object({
+        match: insertMatchSchema
+          .pick({
+            id: true,
+            scoresheetId: true,
+            date: true,
+            name: true,
+          })
+          .required({ id: true, scoresheetId: true }),
+        addPlayers: z.array(
+          insertPlayerSchema
+            .pick({
+              id: true,
+            })
+            .required({ id: true }),
+        ),
+        removePlayers: z.array(
+          insertPlayerSchema
+            .pick({
+              id: true,
+            })
+            .required({ id: true }),
+        ),
+        newPlayers: z.array(
+          insertPlayerSchema
+            .pick({
+              name: true,
+              imageId: true,
+            })
+            .required({ name: true }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      //Update Match Details
+      if (input.match.name || input.match.date) {
+        await ctx.db
+          .update(match)
+          .set({
+            name: input.match.name,
+            date: input.match.date,
+          })
+          .where(eq(match.id, input.match.id));
+      }
+      //Add players to match
+      if (input.newPlayers.length > 0 || input.addPlayers.length > 0) {
+        let playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] = [];
+        //Create New Players
+        if (input.newPlayers.length > 0) {
+          const newPlayersReturned = (
+            await ctx.db
+              .insert(player)
+              .values(
+                input.newPlayers.map((player) => ({
+                  createdBy: ctx.userId,
+                  imageId: player.imageId,
+                  name: player.name,
+                })),
+              )
+              .returning()
+          )?.map((player) => ({
+            matchId: input.match.id,
+            playerId: player.id,
+          }));
+          playersToInsert = [...newPlayersReturned];
+        }
+        //Players to insert
+        if (input.addPlayers.length > 0) {
+          playersToInsert = [
+            ...playersToInsert,
+            ...input.addPlayers.map((player) => ({
+              matchId: input.match.id,
+              playerId: player.id,
+            })),
+          ];
+        }
+        //Insert players into match
+        const returnedMatchPlayers = await ctx.db
+          .insert(matchPlayer)
+          .values(playersToInsert)
+          .returning();
+        const rounds = await ctx.db
+          .select({
+            id: round.id,
+          })
+          .from(round)
+          .innerJoin(scoresheet, eq(round.scoresheetId, scoresheet.id));
+        const roundPlayersToInsert: z.infer<typeof insertRoundPlayerSchema>[] =
+          rounds.flatMap((round) => {
+            return returnedMatchPlayers.map((player) => ({
+              roundId: round.id,
+              matchPlayerId: player.id,
+            }));
+          });
+        await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);
+      }
+      //Remove Players from Match
+      if (input.removePlayers.length > 0) {
+        const matchPlayers = await ctx.db
+          .select({ id: matchPlayer.id })
+          .from(matchPlayer)
+          .where(
+            and(
+              eq(matchPlayer.matchId, input.match.id),
+              inArray(
+                matchPlayer.playerId,
+                input.removePlayers.map((player) => player.id),
+              ),
+            ),
+          );
+        await ctx.db.delete(roundPlayer).where(
+          inArray(
+            roundPlayer.matchPlayerId,
+            matchPlayers.map((player) => player.id),
+          ),
+        );
+        await ctx.db.delete(matchPlayer).where(
+          and(
+            eq(matchPlayer.matchId, input.match.id),
+            inArray(
+              matchPlayer.playerId,
+              input.removePlayers.map((player) => player.id),
+            ),
+          ),
+        );
+      }
     }),
 });

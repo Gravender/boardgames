@@ -14,9 +14,6 @@ import {
   selectGameSchema,
   selectPlayerSchema,
 } from "~/server/db/schema";
-import games from "~/server/db/schema/game";
-import matchPlayers from "~/server/db/schema/matchPlayer";
-import players from "~/server/db/schema/player";
 
 export const playerRouter = createTRPCRouter({
   getPlayersByGame: protectedUserProcedure

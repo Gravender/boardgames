@@ -5,14 +5,21 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, isSameDay } from "date-fns";
-import { CalendarIcon, Plus, PlusIcon, Trash, User } from "lucide-react";
-import { useFieldArray, useForm, type UseFormReturn } from "react-hook-form";
+import { CalendarIcon, PlusIcon, Trash, User } from "lucide-react";
+import { useFieldArray, useForm, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 
 import { Spinner } from "~/components/spinner";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Calendar } from "~/components/ui/calendar";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
   Dialog,
@@ -41,10 +48,8 @@ import {
 import { useToast } from "~/hooks/use-toast";
 import { cn } from "~/lib/utils";
 import { insertMatchSchema, insertPlayerSchema } from "~/server/db/schema";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { api, RouterOutputs } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
-
-type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 
 const playerSchema = insertPlayerSchema
   .pick({ name: true, id: true })
@@ -72,72 +77,23 @@ const matchSchema = insertMatchSchema
   })
   .required({ name: true, date: true })
   .extend({
-    players: z.array(playerSchema).refine((players) => players.length > 0, {
-      message: "You must add at least one player",
-    }),
+    players: z
+      .array(playerSchema.extend({ playerId: z.number().optional() }))
+      .refine((players) => players.length > 0, {
+        message: "You must add at least one player",
+      }),
   });
-export function AddMatchDialog({
-  gameId,
-  gameName,
-  matches,
-}: {
-  gameId: Game["id"];
-  gameName: Game["name"];
+type addedPlayers = {
+  id: number;
+  name: string;
+  imageUrl: string;
   matches: number;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const { data, isLoading } = api.player.getPlayersByGame.useQuery({
-    game: { id: gameId },
-  });
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[425px]">
-        <Content
-          setOpen={setIsOpen}
-          gameId={gameId}
-          gameName={gameName}
-          matches={matches}
-          players={
-            data?.map((player) => ({
-              id: player.id,
-              name: player.name,
-              imageUrl: player.imageUrl,
-              matches: Number(player.matches),
-            })) ?? ([] as RouterOutputs["player"]["getPlayersByGame"])
-          }
-        />
-      </DialogContent>
-      <div className="flex h-full w-full flex-col justify-end">
-        <div className="flex justify-end p-4">
-          {!isLoading ? (
-            <Button
-              variant="default"
-              className="rounded-full"
-              size="icon"
-              type="button"
-              onClick={() => setIsOpen(true)}
-            >
-              <Plus />
-            </Button>
-          ) : null}
-        </div>
-      </div>
-    </Dialog>
-  );
-}
-
-function Content({
-  setOpen,
-  matches,
-  gameId,
-  gameName,
+}[];
+export function EditMatchForm({
+  match,
   players,
 }: {
-  setOpen: (isOpen: boolean) => void;
-  gameId: Game["id"];
-  gameName: Game["name"];
-  matches: number;
+  match: RouterOutputs["match"]["getMatch"];
   players: RouterOutputs["player"]["getPlayersByGame"];
 }) {
   const { startUpload } = useUploadThing("imageUploader");
@@ -149,33 +105,44 @@ function Content({
   const form = useForm<z.infer<typeof matchSchema>>({
     resolver: zodResolver(matchSchema),
     defaultValues: {
-      name: `${gameName} #${matches + 1}`,
-      date: new Date(),
-      players: [],
+      name: match.name,
+      date: match.date,
+      players: match.players.map((player) => ({
+        id: player.id,
+        name: player.name,
+        imageUrl: player.imageUrl ?? "",
+        matches: Number(players.find((p) => p.id === player.id)?.matches ?? 0),
+        playerId: player.playerId,
+      })),
     },
   });
-  const createMatch = api.match.createMatch.useMutation({
-    onSuccess: async (match) => {
-      await utils.player.getPlayersByGame.invalidate({ game: { id: gameId } });
-      await utils.game.getGame.invalidate({ id: gameId });
-      router.push(`/dashboard/games/${gameId}/${match.id}`);
-      setOpen(false);
+  const editMatch = api.match.editMatch.useMutation({
+    onSuccess: async () => {
+      await utils.player.getPlayersByGame.invalidate({
+        game: { id: match.gameId },
+      });
+      await utils.game.getGame.invalidate({ id: match.gameId });
+      router.push(`/dashboard/games/${match.gameId}/${match.id}`);
       form.reset();
       setIsSubmitting(false);
     },
   });
   const onSubmit = async (values: z.infer<typeof matchSchema>) => {
     setIsSubmitting(true);
+    const playersToRemove = match.players.filter(
+      (player) =>
+        values.players.findIndex(
+          (p) => p.playerId && p.playerId === player.playerId,
+        ) === -1,
+    );
+    const playersToAdd = values.players.filter(
+      (player) => player.playerId === undefined && player.matches !== -1,
+    );
+    const newPlayers = values.players.filter((player) => player.matches === -1);
     try {
-      const players = await Promise.all(
-        values.players.map(async (player) => {
+      const newPlayersWithImage = await Promise.all(
+        newPlayers.map(async (player) => {
           let imageId: number | null = null;
-          if (player.matches > -1)
-            return {
-              id: player.id,
-              name: player.name,
-              imageId: null,
-            };
           if (!player.imageUrl || typeof player.imageUrl === "string")
             return {
               id: -1,
@@ -197,11 +164,24 @@ function Content({
           };
         }),
       );
-      createMatch.mutate({
-        gameId: gameId,
-        name: values.name,
-        date: values.date,
-        players,
+      editMatch.mutate({
+        match: {
+          id: match.id,
+          scoresheetId: match.scoresheet.id,
+          name: values.name === match.name ? undefined : values.name,
+          date:
+            values.date.getTime() === match.date.getTime()
+              ? undefined
+              : values.date,
+        },
+        addPlayers: playersToAdd.map((player) => ({ id: player.id })),
+        removePlayers: playersToRemove.map((player) => ({
+          id: player.playerId,
+        })),
+        newPlayers: newPlayersWithImage.map((player) => ({
+          name: player.name,
+          imageId: player.imageId,
+        })),
       });
     } catch (error) {
       console.error("Error uploading Image:", error);
@@ -213,84 +193,101 @@ function Content({
     }
   };
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>Add Match</DialogTitle>
-      </DialogHeader>
+    <Card className="max-w-xl w-full">
+      <CardHeader>
+        <CardTitle>Edit {match.name}</CardTitle>
+      </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Match Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Match name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Date</FormLabel>
-                <Popover modal={true}>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-[240px] pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground",
-                        )}
-                        type="button"
-                      >
-                        {field.value ? (
-                          isSameDay(field.value, new Date()) ? (
-                            <span>Today</span>
-                          ) : (
-                            format(field.value, "PPP")
-                          )
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <AddPlayersDialog
-            form={form}
-            players={players}
-            addedPlayers={addedPlayers}
-            setAddedPlayers={setAddedPlayers}
-          />
-          <DialogFooter className="gap-2">
+          <CardContent className="gap-2">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Match Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Match name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex gap-2 justify-between w-full items-end">
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Date</FormLabel>
+                    <Popover modal={true}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-[240px] pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground",
+                            )}
+                            type="button"
+                          >
+                            {field.value ? (
+                              isSameDay(field.value, new Date()) ? (
+                                <span>Today</span>
+                              ) : (
+                                format(field.value, "PPP")
+                              )
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <AddPlayersDialog
+                form={form}
+                players={players.map((player) => ({
+                  id: player.id,
+                  name: player.name,
+                  imageUrl: player.imageUrl,
+                  matches: Number(player.matches),
+                }))}
+                addedPlayers={addedPlayers}
+                setAddedPlayers={setAddedPlayers}
+                data={match.players.map((player) => ({
+                  id: player.id,
+                  name: player.name,
+                  imageUrl: player.imageUrl ?? "",
+                  matches: Number(
+                    players.find((p) => p.id === player.id)?.matches ?? 0,
+                  ),
+                }))}
+              />
+            </div>
+          </CardContent>
+
+          <CardFooter className="gap-2 justify-end">
             <Button
               type="reset"
               variant="secondary"
               onClick={() => {
                 form.reset();
-                setOpen(false);
               }}
             >
               Cancel
@@ -305,10 +302,10 @@ function Content({
                 "Submit"
               )}
             </Button>
-          </DialogFooter>
+          </CardFooter>
         </form>
       </Form>
-    </>
+    </Card>
   );
 }
 
@@ -317,9 +314,10 @@ const AddPlayersDialog = ({
   players,
   addedPlayers,
   setAddedPlayers,
+  data,
 }: {
   form: UseFormReturn<z.infer<typeof matchSchema>>;
-
+  data: RouterOutputs["player"]["getPlayersByGame"];
   players: RouterOutputs["player"]["getPlayersByGame"];
   addedPlayers: addedPlayers;
   setAddedPlayers: (players: addedPlayers) => void;
@@ -334,6 +332,7 @@ const AddPlayersDialog = ({
           players={players}
           addedPlayers={addedPlayers}
           setAddedPlayers={setAddedPlayers}
+          data={data}
         />
       </DialogContent>
       <DialogTrigger asChild>
@@ -344,24 +343,21 @@ const AddPlayersDialog = ({
     </Dialog>
   );
 };
-type addedPlayers = {
-  id: number;
-  name: string;
-  imageUrl: string;
-  matches: number;
-}[];
+
 const PlayersContent = ({
   setOpen,
   form,
   players,
   addedPlayers,
   setAddedPlayers,
+  data,
 }: {
   setOpen: (isOpen: boolean) => void;
   form: UseFormReturn<z.infer<typeof matchSchema>>;
   players: RouterOutputs["player"]["getPlayersByGame"];
   addedPlayers: addedPlayers;
   setAddedPlayers: (players: addedPlayers) => void;
+  data: RouterOutputs["player"]["getPlayersByGame"];
 }) => {
   return (
     <>
@@ -391,7 +387,13 @@ const PlayersContent = ({
                         key={player.id}
                         className={cn(
                           "flex flex-row space-x-3 space-y-0 items-center p-2 rounded-sm",
-                          field.value?.findIndex((i) => i.id === player.id) > -1
+                          form
+                            .getValues("players")
+                            .findIndex((i) =>
+                              i.playerId
+                                ? i.playerId === player.id
+                                : i.id === player.id,
+                            ) > -1
                             ? "bg-violet-400"
                             : "bg-border",
                         )}
@@ -400,16 +402,22 @@ const PlayersContent = ({
                           <Checkbox
                             className="hidden"
                             checked={
-                              field.value?.findIndex(
-                                (i) => i.id === player.id,
-                              ) > -1
+                              form
+                                .getValues("players")
+                                .findIndex((i) =>
+                                  i.playerId
+                                    ? i.playerId === player.id
+                                    : i.id === player.id,
+                                ) > -1
                             }
                             onCheckedChange={(checked) => {
                               return checked
                                 ? field.onChange([...field.value, player])
                                 : field.onChange(
-                                    field.value?.filter(
-                                      (value) => value.id !== player.id,
+                                    field.value?.filter((value) =>
+                                      value.playerId
+                                        ? value.playerId !== player.id
+                                        : value.id !== player.id,
                                     ),
                                   );
                             }}
@@ -453,8 +461,10 @@ const PlayersContent = ({
                                     ),
                                   );
                                   field.onChange(
-                                    field.value?.filter(
-                                      (value) => value.id !== player.id,
+                                    field.value?.filter((value) =>
+                                      value.playerId
+                                        ? value.playerId !== player.id
+                                        : value.id !== player.id,
                                     ),
                                   );
                                 }
@@ -484,7 +494,7 @@ const PlayersContent = ({
           type="button"
           variant="secondary"
           onClick={() => {
-            form.setValue("players", []);
+            form.setValue("players", data);
             setOpen(false);
           }}
         >
