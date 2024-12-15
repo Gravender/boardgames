@@ -1,7 +1,15 @@
-import { redirect } from "next/navigation";
+"use server";
 
-export default function Home() {
-  redirect("/dashboard");
+import { redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
+
+export default async function Home() {
+  const { userId } = await auth();
+
+  if (userId) {
+    redirect("/dashboard");
+  }
+  redirect("/signin");
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white">
       <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
