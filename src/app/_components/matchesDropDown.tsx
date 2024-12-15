@@ -1,6 +1,7 @@
 "use client";
 
 import { startTransition } from "react";
+import Link from "next/link";
 import { MoreVertical } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
@@ -35,7 +36,9 @@ export function MatchDropDown({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem>Edit</DropdownMenuItem>
+        <Link href={`/dashboard/games/${gameId}/${matchId}/edit`}>
+          <DropdownMenuItem>Edit</DropdownMenuItem>
+        </Link>
         <DropdownMenuItem
           className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
           onClick={onDelete}
