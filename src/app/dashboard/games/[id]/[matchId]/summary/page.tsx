@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
 import { Dices, User } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -30,8 +29,6 @@ export default async function Page({
 }: {
   params: Promise<{ matchId: string; id: string }>;
 }) {
-  const { userId } = await auth();
-  if (!userId) redirect("/dashboard");
   const slugs = await params;
   const matchId = slugs.matchId;
   if (isNaN(Number(matchId))) redirect("/dashboard/games");

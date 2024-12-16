@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
 
 import { api, HydrateClient } from "~/trpc/server";
 
@@ -10,8 +9,6 @@ export default async function Page({
 }: {
   params: Promise<{ matchId: string; id: string }>;
 }) {
-  const { userId } = await auth();
-  if (!userId) redirect("/dashboard");
   const slugs = await params;
   const matchId = slugs.matchId;
   const gameId = slugs.id;

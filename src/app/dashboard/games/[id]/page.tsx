@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
 
-import { AddMatchDialog } from "~/app/_components/addMatch";
 import { Matches } from "~/app/_components/matches";
 import { api, HydrateClient } from "~/trpc/server";
 
@@ -10,8 +8,6 @@ export default async function Page({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { userId } = await auth();
-  if (!userId) redirect("/dashboard");
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/games");

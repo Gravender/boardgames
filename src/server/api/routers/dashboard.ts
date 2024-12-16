@@ -1,32 +1,13 @@
 import { format, subMonths } from "date-fns";
 import { and, count, desc, eq, gte, lte, max, sql } from "drizzle-orm";
 
-import {
-  game,
-  image,
-  match,
-  matchPlayer,
-  player,
-  user,
-} from "~/server/db/schema";
-import matches from "~/server/db/schema/match";
+import { game, image, match, matchPlayer, player } from "~/server/db/schema";
 
-import { protectedUserProcedure, publicProcedure } from "../trpc";
+import { protectedUserProcedure } from "../trpc";
 
 export const dashboardRouter = {
-  getGames: publicProcedure.query(async ({ ctx }) => {
-    if (!ctx.auth.userId) {
-      return [];
-    }
-    const returnedUser = (
-      await ctx.db
-        .selectDistinct()
-        .from(user)
-        .where(eq(user.clerkUserId, ctx.auth.userId))
-    )[0];
-    if (!returnedUser) {
-      return [];
-    }
+  //fix to be protected
+  getGames: protectedUserProcedure.query(async ({ ctx }) => {
     const games = await ctx.db
       .select({
         id: game.id,
@@ -34,33 +15,21 @@ export const dashboardRouter = {
         lastPlayed: sql`max(${match.date})`.mapWith(match.date),
       })
       .from(game)
-      .where(and(eq(game.userId, returnedUser.id), eq(game.deleted, false)))
+      .where(and(eq(game.userId, ctx.userId), eq(game.deleted, false)))
       .leftJoin(match, eq(game.id, match.gameId))
       .groupBy(game.id)
       .orderBy(max(match.date), game.name)
       .limit(5);
     return games;
   }),
-  getPlayers: publicProcedure.query(async ({ ctx }) => {
-    if (!ctx.auth.userId) {
-      return [];
-    }
-    const returnedUser = (
-      await ctx.db
-        .selectDistinct()
-        .from(user)
-        .where(eq(user.clerkUserId, ctx.auth.userId))
-    )[0];
-    if (!returnedUser) {
-      return [];
-    }
+  getPlayers: protectedUserProcedure.query(async ({ ctx }) => {
     const players = await ctx.db
       .select({
         id: player.id,
         name: player.name,
       })
       .from(player)
-      .where(eq(player.createdBy, returnedUser.id))
+      .where(eq(player.createdBy, ctx.userId))
       .leftJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
       .groupBy(player.id)
       .orderBy(desc(count(matchPlayer)), player.name)

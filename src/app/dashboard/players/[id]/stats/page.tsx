@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
 import { format } from "date-fns";
 import { Dices, User } from "lucide-react";
 
@@ -22,8 +21,6 @@ export default async function Page({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { userId } = await auth();
-  if (!userId) redirect("/dashboard");
   const slugs = await params;
   const playerId = slugs.id;
   if (isNaN(Number(playerId))) redirect("/dashboard/players");
