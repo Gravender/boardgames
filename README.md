@@ -17,7 +17,7 @@
 - [x] Browsing games on games page
 - [x] Individual Game Page
 - [x] Match page
-- [ ] Player page
+- [x] Player page
 - [ ] Groups page
 - [ ] Locations page
 - [ ] Calender page

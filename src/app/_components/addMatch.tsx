@@ -158,6 +158,7 @@ function Content({
     onSuccess: async (match) => {
       await utils.player.getPlayersByGame.invalidate({ game: { id: gameId } });
       await utils.game.getGame.invalidate({ id: gameId });
+      await utils.dashboard.invalidate();
       router.push(`/dashboard/games/${gameId}/${match.id}`);
       setOpen(false);
       form.reset();
@@ -212,6 +213,7 @@ function Content({
       });
     }
   };
+  //TODO add better feedback when 0 players selected
   return (
     <>
       <DialogHeader>
