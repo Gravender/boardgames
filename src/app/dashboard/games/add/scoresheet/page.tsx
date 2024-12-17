@@ -45,6 +45,8 @@ const formSchema = z.object({
 export type formSchemaType = z.infer<typeof formSchema>;
 export default function Page() {
   const router = useRouter();
+
+  router.prefetch(`/dashboard/games/`);
   const { scoresheet, rounds, setRounds, setScoreSheet } = useAddGameStore(
     (state) => state,
   );

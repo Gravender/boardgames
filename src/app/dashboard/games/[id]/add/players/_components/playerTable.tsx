@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Search } from "lucide-react";
 
-import { SortingOptions } from "~/app/_components/playerSorting";
+import { SortingOptions } from "~/app/_components/sortingDropDown";
 import { Button } from "~/components/ui/button";
 import { CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";

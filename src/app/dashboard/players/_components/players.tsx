@@ -5,7 +5,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { ChevronDown, ChevronUp, Search, User } from "lucide-react";
 
-import { SortingOptions } from "~/app/_components/playerSorting";
+import { SortingOptions } from "~/app/_components/sortingDropDown";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";

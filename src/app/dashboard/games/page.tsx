@@ -9,9 +9,11 @@ export default async function Page() {
   const games = await api.game.getGames();
   return (
     <HydrateClient>
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 w-full">
-        <Games games={games} />
-        <AddGameDialog />
+      <div className="flex w-full items-center justify-center">
+        <div className="flex flex-col gap-1 p-4 pt-0 w-full max-w-5xl">
+          <Games games={games} />
+          <AddGameDialog />
+        </div>
       </div>
     </HydrateClient>
   );
