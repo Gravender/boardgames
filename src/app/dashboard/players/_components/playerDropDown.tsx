@@ -2,13 +2,12 @@
 
 import { startTransition, useState } from "react";
 import Link from "next/link";
-import { AlignLeft, MoreVertical } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogTrigger } from "~/components/ui/dialog";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
@@ -16,7 +15,6 @@ import {
 import { type RouterOutputs } from "~/trpc/react";
 
 import { EditPlayerDialog } from "./editPlayerDialog";
-import { SortField, sortFieldConst } from "./players";
 
 export function PlayerDropDown({
   data,
@@ -55,36 +53,5 @@ export function PlayerDropDown({
       </DropdownMenu>
       <EditPlayerDialog player={data} setOpen={setIsOpen} />
     </Dialog>
-  );
-}
-export function SortingOptions({
-  sortField,
-  setSortField,
-}: {
-  sortField: SortField;
-  setSortField: (field: SortField) => void;
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size={"icon"}>
-          <span className="sr-only">Open menu</span>
-          <AlignLeft />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {sortFieldConst.map((field) => {
-          return (
-            <DropdownMenuCheckboxItem
-              key={field}
-              onClick={() => setSortField(field)}
-              checked={sortField === field}
-            >
-              {field}
-            </DropdownMenuCheckboxItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }

@@ -19,7 +19,7 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableRow } from "~/components/ui/table";
 import { type RouterOutputs } from "~/trpc/react";
 
-import { AddMatchDialog } from "./addMatch";
+import { AddMatchDialog } from "../dashboard/games/[id]/_components/addMatch";
 import { MatchDropDown } from "./matchesDropDown";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;

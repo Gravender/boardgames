@@ -29,16 +29,17 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { useToast } from "~/hooks/use-toast";
+import { useAddMatchStore } from "~/providers/add-match-provider";
 import { insertPlayerSchema } from "~/server/db/schema";
 import { api } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
-export const AddPlayerDialog = () => {
+export const AddPlayerDialog = ({ gameId }: { gameId: number }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[465px] min-h-80">
-        <PlayerContent setOpen={setIsOpen} />
+        <PlayerContent setOpen={setIsOpen} gameId={gameId} />
       </DialogContent>
       <div className="flex h-full w-full flex-col justify-end">
         <div className="flex justify-end">
@@ -68,7 +69,14 @@ const playerSchema = insertPlayerSchema.pick({ name: true }).extend({
     )
     .nullable(),
 });
-const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
+const PlayerContent = ({
+  setOpen,
+  gameId,
+}: {
+  setOpen: (isOpen: boolean) => void;
+  gameId: number;
+}) => {
+  const { match, setPlayers } = useAddMatchStore((state) => state);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -86,10 +94,11 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
     },
   });
   const createPlayer = api.player.create.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (player) => {
       setIsUploading(false);
+      setPlayers([...match.players, player]);
       await utils.player.getPlayers.invalidate();
-      await utils.player.getPlayersByGame.invalidate();
+      await utils.player.getPlayersByGame.invalidate({ game: { id: gameId } });
       setOpen(false);
       form.reset();
       router.refresh();

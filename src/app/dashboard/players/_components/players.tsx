@@ -5,6 +5,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { ChevronDown, ChevronUp, Search, User } from "lucide-react";
 
+import { SortingOptions } from "~/app/_components/playerSorting";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -13,7 +14,7 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { RouterOutputs } from "~/trpc/react";
 
 import { AddPlayerDialog } from "./addPlayerDialog";
-import { PlayerDropDown, SortingOptions } from "./playerDropDown";
+import { PlayerDropDown } from "./playerDropDown";
 
 export const sortFieldConst = ["matches", "name", "lastPlayed"] as const;
 export type SortField = (typeof sortFieldConst)[number];
@@ -40,7 +41,6 @@ export function PlayersTable({
 
     setPlayers(filteredPlayers);
   }, [data, search, sortField, sortOrder]);
-
   return (
     <div className="container mx-auto px-4 max-w-3xl h-[90vh] relative">
       <CardHeader>
@@ -68,7 +68,11 @@ export function PlayersTable({
               <ChevronDown className="h-4 w-4" />
             )}
           </Button>
-          <SortingOptions sortField={sortField} setSortField={setSortField} />
+          <SortingOptions
+            sortField={sortField}
+            setSortField={setSortField}
+            sortFields={sortFieldConst.map((field) => field)}
+          />
         </div>
       </div>
       <ScrollArea className="sm:h-[75vh] h-[65vh]">

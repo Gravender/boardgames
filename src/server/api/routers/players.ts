@@ -31,7 +31,7 @@ export const playerRouter = createTRPCRouter({
           imageId: player.imageId,
         })
         .from(player)
-        .innerJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
+        .leftJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
         .leftJoin(
           match,
           and(
@@ -53,6 +53,7 @@ export const playerRouter = createTRPCRouter({
         .from(image)
         .rightJoin(sq, eq(image.id, sq.imageId));
       if (players.length === 0) {
+        //TODO use clerk to get name
         await ctx.db
           .insert(player)
           .values({ createdBy: ctx.userId, userId: ctx.userId, name: "Me" });
@@ -270,11 +271,32 @@ export const playerRouter = createTRPCRouter({
   create: protectedUserProcedure
     .input(insertPlayerSchema.pick({ name: true, imageId: true }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.insert(player).values({
-        createdBy: ctx.userId,
-        imageId: input.imageId,
-        name: input.name,
+      const returnedPlayer = await ctx.db
+        .insert(player)
+        .values({
+          createdBy: ctx.userId,
+          imageId: input.imageId,
+          name: input.name,
+        })
+        .returning();
+      if (!returnedPlayer[0]) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      }
+      const returnedPlayerImage = await ctx.db.query.player.findFirst({
+        where: and(
+          eq(player.id, returnedPlayer[0].id),
+          eq(player.createdBy, ctx.userId),
+        ),
+        with: {
+          image: true,
+        },
       });
+      return {
+        id: returnedPlayer[0].id,
+        name: returnedPlayer[0].name,
+        imageUrl: returnedPlayerImage?.image?.url ?? null,
+        matches: 0,
+      };
     }),
   update: protectedUserProcedure
     .input(

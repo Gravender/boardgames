@@ -7,9 +7,5 @@ export default function Layout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <main className="w-screen h-screen flex items-center">
-      <AddGameStoreProvider>{children}</AddGameStoreProvider>
-    </main>
-  );
+  return <AddGameStoreProvider>{children}</AddGameStoreProvider>;
 }

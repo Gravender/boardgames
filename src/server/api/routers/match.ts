@@ -108,31 +108,11 @@ export const matchRouter = createTRPCRouter({
           message: "Match Not Created Successfully",
         });
       }
-      const newPlayers: z.infer<typeof insertPlayerSchema>[] = [];
-      let playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] = [];
-      for (const player of input.players) {
-        if (player.id === -1) {
-          newPlayers.push({
-            name: player.name,
-            imageId: player.imageId,
-            createdBy: ctx.userId,
-          });
-        } else {
-          playersToInsert.push({
-            matchId: returningMatch.id,
-            playerId: player.id,
-          });
-        }
-      }
-      if (newPlayers.length > 0) {
-        const newPlayersReturned = (
-          await ctx.db.insert(player).values(newPlayers).returning()
-        )?.map((player) => ({
+      const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
+        input.players.map((player) => ({
           matchId: returningMatch.id,
           playerId: player.id,
         }));
-        playersToInsert = [...playersToInsert, ...newPlayersReturned];
-      }
       const returnedMatchPlayers = await ctx.db
         .insert(matchPlayer)
         .values(playersToInsert)
