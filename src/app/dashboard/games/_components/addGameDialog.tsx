@@ -45,6 +45,9 @@ import { useUploadThing } from "~/utils/uploadthing";
 export function AddGameDialog() {
   const { isOpen, setIsOpen } = useAddGameStore((state) => state);
 
+  const router = useRouter();
+
+  router.prefetch(`/dashboard/games/add/scoresheet`);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[425px]">
