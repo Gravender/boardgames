@@ -2,6 +2,7 @@ import { Settings } from "lucide-react";
 import { useFieldArray, type UseFormReturn } from "react-hook-form";
 import { type z } from "zod";
 
+import { NumberInput } from "~/components/number-input";
 import { Button } from "~/components/ui/button";
 import {
   FormControl,
@@ -25,14 +26,14 @@ import {
 } from "~/components/ui/select";
 import { insertRoundSchema } from "~/server/db/schema/round";
 
-import { type addGameSchema } from "./addGameDialog";
+import { formSchemaType } from "../page";
 
 export function RoundPopOver({
   index,
   form,
 }: {
   index: number;
-  form: UseFormReturn<z.infer<typeof addGameSchema>>;
+  form: UseFormReturn<formSchemaType>;
 }) {
   const { fields, update } = useFieldArray({
     name: "rounds",
@@ -102,12 +103,10 @@ export function RoundPopOver({
                     <FormLabel>Score</FormLabel>
 
                     <FormControl>
-                      <Input
-                        {...field}
+                      <NumberInput
                         value={field.value}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                        type="number"
-                        className="text-center"
+                        onValueChange={field.onChange}
+                        className="text-center border-none"
                       />
                     </FormControl>
 

@@ -9,7 +9,7 @@ interface NumberInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   debounceTime?: number;
 }
 export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
-  ({ onValueChange, debounceTime = 300, value, className, ...props }, ref) => {
+  ({ onValueChange, debounceTime = 500, value, className, ...props }, ref) => {
     const [internalValue, setInternalValue] = useState<string>(
       `${value?.toString() ?? ""}`,
     );
