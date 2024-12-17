@@ -1,6 +1,7 @@
 "use client";
 
 import { startTransition } from "react";
+import Link from "next/link";
 import { MoreVertical } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
@@ -58,7 +59,9 @@ export function GamesDropDown({
         >
           Edit
         </DropdownMenuItem>
-        <DropdownMenuItem>Stats</DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href={`/dashboard/games/${data.id}/stats`}>Stats</Link>
+        </DropdownMenuItem>
         <DropdownMenuItem>Rules</DropdownMenuItem>
         <DropdownMenuItem
           className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"

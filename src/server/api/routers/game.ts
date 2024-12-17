@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, count, eq, max, sql } from "drizzle-orm";
+import { and, count, eq, is, max, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import {
@@ -18,6 +18,7 @@ import {
   selectGameSchema,
   user,
 } from "~/server/db/schema";
+import players from "~/server/db/schema/player";
 import { insertRoundSchema } from "~/server/db/schema/round";
 
 export const gameRouter = createTRPCRouter({
@@ -154,6 +155,108 @@ export const gameRouter = createTRPCRouter({
             finished: match.finished,
           };
         }),
+      };
+    }),
+  getGameStats: protectedUserProcedure
+    .input(selectGameSchema.pick({ id: true }))
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.db.query.game.findFirst({
+        where: eq(game.id, input.id),
+        with: {
+          image: true,
+          matches: {
+            with: {
+              matchPlayers: {
+                with: {
+                  player: {
+                    with: {
+                      image: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!result) throw new TRPCError({ code: "NOT_FOUND" });
+      const matches = result.matches.map((match) => {
+        const winners = match.matchPlayers.filter((player) => player.winner);
+        return {
+          id: match.id,
+          date: match.date,
+          won:
+            match.matchPlayers.findIndex(
+              (player) => player.winner && player.player.userId === ctx.userId,
+            ) !== -1,
+          name: match.name,
+          duration: match.duration,
+          finished: match.finished,
+          players: match.matchPlayers.map((player) => {
+            return {
+              id: player.player.id,
+              name: player.player.name,
+              isWinner: player.winner,
+              score: player.score,
+              imageUrl: player.player.image?.url,
+            };
+          }),
+          winners: winners.map((player) => {
+            return {
+              id: player.player.id,
+              name: player.player.name,
+              isWinner: player.winner,
+              score: player.score,
+            };
+          }),
+        };
+      });
+      matches.sort((a, b) => b.date.getTime() - a.date.getTime());
+      const players = matches.reduce(
+        (acc, match) => {
+          match.players.forEach((player) => {
+            const accPlayer = acc[player.id];
+            if (!accPlayer) {
+              acc[player.id] = {
+                id: player.id,
+                name: player.name,
+                plays: 1,
+                wins: player.isWinner ? 1 : 0,
+                winRate: player.isWinner ? 1 : 0,
+                imageUrl: player.imageUrl ?? "",
+              };
+            } else {
+              accPlayer.plays++;
+              if (player.isWinner) accPlayer.wins++;
+              accPlayer.winRate = accPlayer.wins / accPlayer.plays;
+            }
+          });
+          return acc;
+        },
+        {} as Record<
+          number,
+          {
+            id: number;
+            name: string;
+            plays: number;
+            wins: number;
+            winRate: number;
+            imageUrl: string;
+          }
+        >,
+      );
+      const duration = matches.reduce((acc, match) => {
+        return acc + match.duration;
+      }, 0);
+      return {
+        id: result.id,
+        name: result.name,
+        yearPublished: result.yearPublished,
+        imageUrl: result?.image?.url ?? "",
+        ownedBy: result.ownedBy,
+        matches: matches,
+        duration: duration,
+        players: Object.values(players),
       };
     }),
   getGameName: protectedUserProcedure
