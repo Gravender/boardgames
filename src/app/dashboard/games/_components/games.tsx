@@ -127,11 +127,11 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
     columnHelper.accessor("games", {
       header: "Played",
       cell: (row) => (
-        <Link href={`/dashboard/games/${row.row.original.id}`}>
-          <Button size={"icon"} variant={"outline"}>
+        <Button size={"icon"} variant={"outline"} asChild>
+          <Link href={`/dashboard/games/${row.row.original.id}`}>
             {row.getValue()}
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       ),
     }),
     columnHelper.display({

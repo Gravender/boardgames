@@ -80,15 +80,19 @@ export default async function Page({
           </CardContent>
           <CardFooter className="flex gap-2">
             <span>Actions:</span>
-            <Link href={`/dashboard/games/${summary.gameId}/${summary.id}`}>
-              <Button variant="secondary">{"Back To Score"}</Button>
-            </Link>
-            <Link href={`/dashboard/games/${summary.gameId}/`}>
-              <Button variant="secondary">{"Back To Game"}</Button>
-            </Link>
-            <Link href={`/dashboard/games/`}>
-              <Button variant="secondary">{"Back To Games"}</Button>
-            </Link>
+            <Button variant="secondary" asChild>
+              <Link href={`/dashboard/games/${summary.gameId}/${summary.id}`}>
+                {"Back To Score"}
+              </Link>
+            </Button>
+            <Button variant="secondary" asChild>
+              <Link href={`/dashboard/games/${summary.gameId}/`}>
+                {"Back To Game"}
+              </Link>
+            </Button>
+            <Button variant="secondary" asChild>
+              <Link href={`/dashboard/games/`}>{"Back To Games"}</Link>
+            </Button>
           </CardFooter>
         </Card>
 

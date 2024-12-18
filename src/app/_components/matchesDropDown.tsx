@@ -36,9 +36,9 @@ export function MatchDropDown({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <Link href={`/dashboard/games/${gameId}/${matchId}/edit`}>
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-        </Link>
+        <DropdownMenuItem asChild>
+          <Link href={`/dashboard/games/${gameId}/${matchId}/edit`}>Edit</Link>
+        </DropdownMenuItem>
         <DropdownMenuItem
           className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
           onClick={onDelete}

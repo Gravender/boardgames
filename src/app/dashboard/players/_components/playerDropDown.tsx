@@ -40,9 +40,9 @@ export function PlayerDropDown({
           <DialogTrigger asChild>
             <DropdownMenuItem>Edit</DropdownMenuItem>
           </DialogTrigger>
-          <Link href={`/dashboard/players/${data.id}/stats`}>
-            <DropdownMenuItem>Stats</DropdownMenuItem>
-          </Link>
+          <DropdownMenuItem asChild>
+            <Link href={`/dashboard/players/${data.id}/stats`}>Stats</Link>
+          </DropdownMenuItem>
           <DropdownMenuItem
             className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
             onClick={onDelete}
