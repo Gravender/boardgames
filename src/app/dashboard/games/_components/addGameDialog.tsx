@@ -8,7 +8,6 @@ import { ChevronDown, ChevronUp, Dices, Plus, Table } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -45,9 +44,6 @@ import { useUploadThing } from "~/utils/uploadthing";
 export function AddGameDialog() {
   const { isOpen, setIsOpen } = useAddGameStore((state) => state);
 
-  const router = useRouter();
-
-  router.prefetch(`/dashboard/games/add/scoresheet`);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[425px]">
@@ -71,6 +67,7 @@ export function AddGameDialog() {
 
 function Content() {
   const {
+    isOpen,
     scoresheet,
     rounds,
     game,
@@ -86,7 +83,7 @@ function Content() {
   const { toast } = useToast();
   const { startUpload } = useUploadThing("imageUploader");
   const router = useRouter();
-
+  router.prefetch(`/dashboard/games/add/scoresheet`);
   const utils = api.useUtils();
 
   const form = useForm<z.infer<typeof gameSchema>>({
@@ -114,6 +111,13 @@ function Content() {
       }
     };
   }, [imagePreview]);
+  useEffect(() => {
+    return () => {
+      if (!isOpen) {
+        reset();
+      }
+    };
+  }, [isOpen]);
   async function onSubmit(values: z.infer<typeof gameSchema>) {
     setIsUploading(true);
     if (!values.gameImg) {

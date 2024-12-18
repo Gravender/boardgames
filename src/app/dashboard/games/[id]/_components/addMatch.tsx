@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, isSameDay } from "date-fns";
@@ -50,8 +50,6 @@ export function AddMatchDialog({
 }) {
   const { isOpen, setIsOpen } = useAddMatchStore((state) => state);
 
-  const router = useRouter();
-  router.prefetch(`/dashboard/games/${gameId}/add/players`);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[425px]">
@@ -84,11 +82,12 @@ function Content({
   gameName: Game["name"];
   matches: number;
 }) {
-  const { match, setMatch, reset } = useAddMatchStore((state) => state);
+  const { isOpen, match, setMatch, reset } = useAddMatchStore((state) => state);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingPlayers, setIsGettingPlayers] = useState(false);
   const utils = api.useUtils();
   const router = useRouter();
+  router.prefetch(`/dashboard/games/${gameId}/add/players`);
   const form = useForm<formSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -107,6 +106,15 @@ function Content({
       setIsSubmitting(false);
     },
   });
+
+  useEffect(() => {
+    return () => {
+      if (!isOpen) {
+        reset();
+      }
+    };
+  }, [isOpen]);
+
   const onSubmit = async (values: formSchemaType) => {
     setIsSubmitting(true);
     createMatch.mutate({
