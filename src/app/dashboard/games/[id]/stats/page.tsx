@@ -12,6 +12,7 @@ import {
 } from "~/components/ui/card";
 import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 import { Separator } from "~/components/ui/separator";
+import { formatDuration } from "~/lib/utils";
 import { api } from "~/trpc/server";
 
 import { PlayerDetails } from "./_components/playerDetails";
@@ -27,12 +28,6 @@ export default async function Page({
   const game = await api.game.getGameStats({
     id: Number(gameId),
   });
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-  };
   const lastPlayed = game.matches[0];
   return (
     <div className="flex w-full items-center justify-center">

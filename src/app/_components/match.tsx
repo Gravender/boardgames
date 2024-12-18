@@ -46,7 +46,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { cn } from "~/lib/utils";
+import { cn, formatDuration } from "~/lib/utils";
 import { insertRoundSchema } from "~/server/db/schema/round";
 import { api, type RouterOutputs } from "~/trpc/react";
 
@@ -235,12 +235,6 @@ export function Match({ match }: { match: Match }) {
     setDuration(0);
   };
 
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-  };
   return (
     <div className="sm:px-4">
       <CardHeader>

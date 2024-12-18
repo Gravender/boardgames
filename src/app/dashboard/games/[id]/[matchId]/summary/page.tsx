@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { cn } from "~/lib/utils";
+import { cn, formatDuration } from "~/lib/utils";
 import { api } from "~/trpc/server";
 
 export default async function Page({
@@ -36,12 +36,6 @@ export default async function Page({
     id: Number(matchId),
   });
   if (!summary) redirect("/dashboard/games");
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-  };
   return (
     <div className="flex w-full items-center justify-center">
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0 items-center sm:grid sm:grid-cols-2 max-w-3xl sm:items-stretch">

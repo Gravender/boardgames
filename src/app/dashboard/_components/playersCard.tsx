@@ -4,6 +4,7 @@ import { User } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { formatDuration } from "~/lib/utils";
 import { RouterOutputs } from "~/trpc/react";
 
 export function PlayersCard({
@@ -11,12 +12,6 @@ export function PlayersCard({
 }: {
   data: RouterOutputs["dashboard"]["getPlayersWIthMatches"];
 }) {
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-  };
   return (
     <Card>
       <CardHeader>
