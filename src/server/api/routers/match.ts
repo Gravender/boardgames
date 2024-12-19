@@ -225,7 +225,7 @@ export const matchRouter = createTRPCRouter({
       const refinedPlayers = returnedMatch.matchPlayers
         .map((matchPlayer) => {
           return {
-            id: matchPlayer.id,
+            id: matchPlayer.player.id,
             name: matchPlayer.player.name,
             imageUrl: matchPlayer.player.image?.url,
             score: matchPlayer.score,

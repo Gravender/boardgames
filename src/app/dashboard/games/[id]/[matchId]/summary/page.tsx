@@ -200,6 +200,21 @@ export default async function Page({
                     Best = lowestScore;
                     Worst = highestScore;
                   }
+                  if (summary.scoresheet.winCondition === "Target Score") {
+                    const foundScore = player.scores.find(
+                      (score) => score === summary.scoresheet.targetScore,
+                    );
+                    Best = foundScore ? summary.scoresheet.targetScore : null;
+                    const differenceHighest =
+                      highestScore - summary.scoresheet.targetScore;
+                    const differenceLowest =
+                      lowestScore - summary.scoresheet.targetScore;
+                    if (differenceLowest == 0 && differenceHighest == 0)
+                      Worst = null;
+                    else if (differenceLowest == 0) Worst = highestScore;
+                    else if (differenceHighest == 0) Worst = lowestScore;
+                  }
+
                   return (
                     <TableRow key={player.id}>
                       <TableHead>{player.name}</TableHead>
