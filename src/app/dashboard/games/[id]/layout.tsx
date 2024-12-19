@@ -1,8 +1,8 @@
-"use client";
+"use server";
 
 import { AddMatchStoreProvider } from "~/providers/add-match-provider";
 
-export default function Layout({
+export default async function Layout({
   children,
 }: Readonly<{
   children: React.ReactNode;

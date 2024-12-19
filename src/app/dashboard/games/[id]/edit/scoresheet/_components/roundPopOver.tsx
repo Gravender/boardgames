@@ -1,6 +1,5 @@
 import { Settings } from "lucide-react";
 import { useFieldArray, type UseFormReturn } from "react-hook-form";
-import { type z } from "zod";
 
 import { NumberInput } from "~/components/number-input";
 import { Button } from "~/components/ui/button";

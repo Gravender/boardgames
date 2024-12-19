@@ -41,23 +41,8 @@ export function GamesDropDown({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          onClick={() => {
-            setEditGame({
-              id: data.id,
-              image: data.image,
-              name: data.name,
-              ownedBy: data.ownedBy,
-              playersMin: data?.players?.min ?? null,
-              playersMax: data?.players?.max ?? null,
-              playtimeMin: data?.playtime?.min ?? null,
-              playtimeMax: data?.playtime?.max ?? null,
-              yearPublished: data.yearPublished ?? null,
-            });
-            setOpen(true);
-          }}
-        >
-          Edit
+        <DropdownMenuItem asChild>
+          <Link href={`/dashboard/games/${data.id}/edit`}>Edit</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href={`/dashboard/games/${data.id}/stats`}>Stats</Link>

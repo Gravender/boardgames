@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, count, eq, is, max, sql } from "drizzle-orm";
+import { and, count, eq, inArray, is, max, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import {
@@ -19,7 +19,7 @@ import {
   user,
 } from "~/server/db/schema";
 import players from "~/server/db/schema/player";
-import { insertRoundSchema } from "~/server/db/schema/round";
+import { insertRoundSchema, selectRoundSchema } from "~/server/db/schema/round";
 
 export const gameRouter = createTRPCRouter({
   create: protectedUserProcedure
@@ -70,6 +70,7 @@ export const gameRouter = createTRPCRouter({
               name: "Default",
               userId: ctx.userId,
               gameId: returningGame[0].id,
+              type: "Default",
             })
             .returning()
         )?.[0]?.id;
@@ -89,6 +90,7 @@ export const gameRouter = createTRPCRouter({
               ...input.scoresheet,
               userId: ctx.userId,
               gameId: returningGame[0].id,
+              type: "Default",
             })
             .returning()
         )?.[0]?.id;
@@ -155,6 +157,46 @@ export const gameRouter = createTRPCRouter({
             finished: match.finished,
           };
         }),
+      };
+    }),
+  getEditGame: protectedUserProcedure
+    .input(selectGameSchema.pick({ id: true }))
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.db.query.game.findFirst({
+        where: and(eq(game.id, input.id), eq(game.userId, ctx.userId)),
+        with: {
+          image: true,
+          scoresheets: {
+            with: {
+              rounds: true,
+            },
+            where: (scoresheets, { eq }) => eq(scoresheets.type, "Default"),
+          },
+        },
+      });
+      if (!result) return null;
+      const resultScoresheet = result.scoresheets[0];
+      const resultRounds = resultScoresheet?.rounds;
+      if (!resultScoresheet) return null;
+      return {
+        id: result.id,
+        name: result.name,
+        imageUrl: result?.image?.url ?? "",
+        playersMin: result.playersMin,
+        playersMax: result.playersMax,
+        playtimeMin: result.playtimeMin,
+        playtimeMax: result.playtimeMax,
+        yearPublished: result.yearPublished,
+        ownedBy: result.ownedBy,
+        scoresheet: {
+          id: resultScoresheet.id,
+          name: resultScoresheet.name,
+          winCondition: resultScoresheet.winCondition,
+          isCoop: resultScoresheet.isCoop,
+          roundsScore: resultScoresheet.roundsScore,
+          targetScore: resultScoresheet.targetScore,
+        },
+        rounds: resultRounds ?? [],
       };
     }),
   getGameStats: protectedUserProcedure
@@ -302,22 +344,84 @@ export const gameRouter = createTRPCRouter({
   updateGame: protectedUserProcedure
     .input(
       z.object({
-        id: z.number(),
-        name: z.string().optional(),
-        ownedBy: z.boolean().nullish(),
-        imageId: z.number().nullish(),
-        playersMin: z.number().nullish(),
-        playersMax: z.number().nullish(),
-        playtimeMin: z.number().nullish(),
-        playtimeMax: z.number().nullish(),
-        yearPublished: z.number().nullish(),
+        game: z.object({
+          id: z.number(),
+          name: z.string().optional(),
+          ownedBy: z.boolean().nullish(),
+          imageId: z.number().nullish(),
+          playersMin: z.number().nullish(),
+          playersMax: z.number().nullish(),
+          playtimeMin: z.number().nullish(),
+          playtimeMax: z.number().nullish(),
+          yearPublished: z.number().nullish(),
+        }),
+        scoresheet: insertScoreSheetSchema
+          .pick({
+            id: true,
+            winCondition: true,
+            isCoop: true,
+            roundsScore: true,
+            targetScore: true,
+          })
+          .required({ id: true })
+          .extend({ name: z.string().optional() })
+          .nullable(),
+        roundsToEdit: z
+          .array(
+            insertRoundSchema
+              .pick({
+                id: true,
+                type: true,
+                score: true,
+                color: true,
+              })
+              .required({ id: true })
+              .extend({ name: z.string().optional() }),
+          )
+          .nullable(),
+        roundsToAdd: z
+          .array(
+            insertRoundSchema
+              .omit({
+                createdAt: true,
+                updatedAt: true,
+                id: true,
+              })
+              .required({ name: true }),
+          )
+          .nullable(),
+        roundsToDelete: z.array(z.number()).nullable(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       await ctx.db
         .update(game)
-        .set({ ...input })
-        .where(eq(game.id, input.id));
+        .set({ ...input.game })
+        .where(eq(game.id, input.game.id));
+      if (input.scoresheet) {
+        await ctx.db
+          .update(scoresheet)
+          .set({ ...input.scoresheet })
+          .where(eq(scoresheet.id, input.scoresheet.id));
+      }
+      if (input.roundsToEdit) {
+        Promise.all(
+          input.roundsToEdit.map(async (roundToUpdate) => {
+            await ctx.db
+              .update(round)
+              .set({ ...roundToUpdate })
+              .where(eq(round.id, roundToUpdate.id));
+          }),
+        );
+      }
+      if (input.roundsToAdd) {
+        await ctx.db.insert(round).values(input.roundsToAdd);
+      }
+      if (input.roundsToDelete) {
+        await ctx.db
+          .delete(round)
+          .where(inArray(round.id, input.roundsToDelete));
+      }
     }),
   deleteGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))
