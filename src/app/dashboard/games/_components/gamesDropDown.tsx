@@ -15,16 +15,8 @@ import { deleteGame } from "~/server/queries";
 import { type RouterInputs, type RouterOutputs } from "~/trpc/react";
 
 export function GamesDropDown({
-  setEditGame,
-  setOpen,
   data,
 }: {
-  setEditGame: (
-    editGame:
-      | (RouterInputs["game"]["updateGame"] & { image: string | null })
-      | null,
-  ) => void;
-  setOpen: (isOpen: boolean) => void;
   data: RouterOutputs["game"]["getGames"][0];
 }) {
   const onDelete = () => {

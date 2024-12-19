@@ -17,14 +17,9 @@ import { Separator } from "~/components/ui/separator";
 import { type RouterInputs, type RouterOutputs } from "~/trpc/react";
 
 import { DataTable } from "./dataTable";
-import { EditGameDialog } from "./editGameDialog";
 import { GamesDropDown } from "./gamesDropDown";
 
 export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
-  const [isOpen, setOpen] = useState(false);
-  const [editGame, setEditGame] = useState<
-    (RouterInputs["game"]["updateGame"] & { image: string | null }) | null
-  >(null);
   const columnHelper =
     createColumnHelper<RouterOutputs["game"]["getGames"][number]>();
   const columns = [
@@ -137,13 +132,7 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
     columnHelper.display({
       id: "actions",
       cell: ({ row }) => {
-        return (
-          <GamesDropDown
-            data={row.original}
-            setEditGame={setEditGame}
-            setOpen={setOpen}
-          />
-        );
+        return <GamesDropDown data={row.original} />;
       },
     }),
   ] as Array<ColumnDef<RouterOutputs["game"]["getGames"][number], unknown>>;
@@ -213,11 +202,7 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
                     >
                       {row.original.games}
                     </Button>
-                    <GamesDropDown
-                      data={row.original}
-                      setEditGame={setEditGame}
-                      setOpen={setOpen}
-                    />
+                    <GamesDropDown data={row.original} />
                   </div>
                 </div>
 
@@ -274,9 +259,6 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
   return (
     <div className="container mx-auto p-4 py-10">
       <DataTable columns={columns} data={games} renderMobile={renderMobile} />
-      {editGame && (
-        <EditGameDialog game={editGame} setOpen={setOpen} isOpen={isOpen} />
-      )}
     </div>
   );
 }

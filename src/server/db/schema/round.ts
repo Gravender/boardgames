@@ -32,6 +32,7 @@ const rounds = createTable(
     toggleScore: integer("toggle_score"),
     modifier: integer("modifier"),
     lookup: integer("lookup"),
+    order: integer("order").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

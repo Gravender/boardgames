@@ -1,0 +1,1 @@
+ALTER TABLE "boardgames_round" ADD COLUMN "order" integer;

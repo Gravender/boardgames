@@ -193,9 +193,12 @@ export function EditGameForm({
               .filter((round) => round !== undefined)
           : null;
 
+        const roundsToDelete = data.rounds
+          .map((round) => round.id)
+          .filter((id) => !rounds.find((round) => round.id === id));
         const roundsToAdd = rounds
           ? rounds
-              .map((round) => {
+              .map((round, index) => {
                 const foundRound = data.rounds.find(
                   (dataRound) => dataRound.id === round.id,
                 );
@@ -206,13 +209,11 @@ export function EditGameForm({
                   score: round.score,
                   color: round.color,
                   scoresheetId: data.scoresheet.id,
+                  order: data.rounds.length - roundsToDelete.length + index + 1,
                 };
               })
               .filter((round) => round !== undefined)
           : null;
-        const roundsToDelete = data.rounds
-          .map((round) => round.id)
-          .filter((id) => !rounds.find((round) => round.id === id));
 
         mutation.mutate({
           game: game,

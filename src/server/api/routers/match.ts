@@ -52,7 +52,9 @@ export const matchRouter = createTRPCRouter({
           eq(scoresheet.userId, ctx.userId),
         ),
         with: {
-          rounds: true,
+          rounds: {
+            orderBy: round.order,
+          },
         },
       });
       if (!returnedScoresheet) {
@@ -91,6 +93,7 @@ export const matchRouter = createTRPCRouter({
         score: round.score,
         toggleScore: round.toggleScore,
         scoresheetId: scoresheetId,
+        order: round.order,
       }));
       const insertedRounds = await ctx.db
         .insert(round)
@@ -136,7 +139,9 @@ export const matchRouter = createTRPCRouter({
         with: {
           scoresheet: {
             with: {
-              rounds: true,
+              rounds: {
+                orderBy: round.order,
+              },
             },
           },
           matchPlayers: {

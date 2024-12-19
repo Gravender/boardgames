@@ -363,6 +363,7 @@ const AddRoundDialogContent = ({
     addRound.mutate({
       round: {
         ...values,
+        order: match.scoresheet.rounds.length + 1,
         scoresheetId: match.scoresheet.id,
       },
       players: match.players.map((player) => ({

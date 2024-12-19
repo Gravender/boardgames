@@ -321,6 +321,7 @@ const AddRounds = ({ form }: { form: UseFormReturn<formSchemaType> }) => {
               name: `Round ${fields.length + 1}`,
               type: "Numeric",
               score: 0,
+              order: fields.length + 1,
             })
           }
         >

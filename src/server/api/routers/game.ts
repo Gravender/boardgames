@@ -81,6 +81,7 @@ export const gameRouter = createTRPCRouter({
           name: "Round 1",
           scoresheetId: scoresheetId,
           type: "Numeric",
+          order: 1,
         });
       } else {
         const scoresheetId = (
@@ -98,9 +99,10 @@ export const gameRouter = createTRPCRouter({
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
         }
 
-        const rounds = input.rounds.map((round) => ({
+        const rounds = input.rounds.map((round, index) => ({
           ...round,
           scoresheetId: scoresheetId,
+          order: index + 1,
         })) ?? [{ name: "Round 1", type: "Numeric" }];
         await ctx.db.insert(round).values(rounds);
       }
@@ -168,7 +170,9 @@ export const gameRouter = createTRPCRouter({
           image: true,
           scoresheets: {
             with: {
-              rounds: true,
+              rounds: {
+                orderBy: round.order,
+              },
             },
             where: (scoresheets, { eq }) => eq(scoresheets.type, "Default"),
           },

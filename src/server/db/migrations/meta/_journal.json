@@ -176,6 +176,20 @@
       "when": 1733714143220,
       "tag": "0024_stale_dreadnoughts",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1734602444849,
+      "tag": "0025_slow_tiger_shark",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1734603475708,
+      "tag": "0026_faithful_famine",
+      "breakpoints": true
     }
   ]
 }
