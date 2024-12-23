@@ -319,10 +319,35 @@ export const matchRouter = createTRPCRouter({
   deleteMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.delete(matchPlayer).where(eq(matchPlayer.matchId, input.id));
+      const deletedMatch = await ctx.db.query.match.findFirst({
+        where: and(eq(match.id, input.id), eq(match.userId, ctx.userId)),
+      });
+      if (!deletedMatch)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
+      const deletedMatchPlayers = await ctx.db
+        .select()
+        .from(matchPlayer)
+        .where(eq(matchPlayer.matchId, deletedMatch.id));
+      await ctx.db.delete(roundPlayer).where(
+        inArray(
+          roundPlayer.matchPlayerId,
+          deletedMatchPlayers.map(
+            (deletedMatchPlayer) => deletedMatchPlayer.id,
+          ),
+        ),
+      );
       await ctx.db
-        .delete(match)
-        .where(and(eq(match.id, input.id), eq(match.userId, ctx.userId)));
+        .delete(matchPlayer)
+        .where(eq(matchPlayer.matchId, deletedMatch.id));
+
+      await ctx.db.delete(match).where(eq(match.id, deletedMatch.id));
+      await ctx.db
+        .delete(round)
+        .where(eq(round.scoresheetId, deletedMatch.scoresheetId));
+      await ctx.db
+        .delete(scoresheet)
+        .where(eq(scoresheet.id, deletedMatch.scoresheetId))
+        .returning();
     }),
   updateMatch: protectedUserProcedure
     .input(
