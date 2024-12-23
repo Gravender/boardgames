@@ -3,8 +3,10 @@
 import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { z } from "zod";
 
 import { CapitalizeFirstLetterOfEachWord } from "~/lib/utils";
+import { api } from "~/trpc/react";
 
 import {
   Breadcrumb,
@@ -16,25 +18,85 @@ import {
 } from "./ui/breadcrumb";
 
 export function BreadCrumbs() {
-  //TODO: fix for match page
   const paths = usePathname();
-  const [id, setId] = useState<number | null>(null);
 
   const pathNames = paths.split("/").filter((path) => path);
-  useEffect(() => {
-    pathNames.forEach((path, i) => {
-      if (!isNaN(Number(path)) && pathNames[i - 1] === "games") {
-        setId(Number(path));
-      }
-    });
-  }, [pathNames]);
-  const pathItems = pathNames.map((path, i) => {
+  const pathItems = pathNames.slice(0, 2).map((path, i) => {
     return {
       name: path,
       path: pathNames.slice(0, i + 1).join("/"),
     };
   });
+  const pathsSchema = z.enum(["games", "players"]);
+  if (pathNames.length > 2) {
+    const pathType = pathsSchema.safeParse(pathNames[1]);
+    const id =
+      pathNames.length > 3 && pathType.data === "games"
+        ? Number(pathNames[3])
+        : Number(pathNames[2]);
+    if (pathType.success && !isNaN(id)) {
+      const { data } = api.dashboard.getBreadCrumbs.useQuery({
+        type:
+          pathNames.length > 3 && pathType.data === "games"
+            ? "match"
+            : pathType.data,
+        path: id,
+      });
+      if (pathType.data === "games" && data) {
+        if (pathNames.length > 3) {
+          return (
+            <RenderBreadCrumbs
+              pathItems={[
+                ...pathItems,
+                {
+                  name: data.game.name,
+                  path: pathNames.slice(0, 3).join("/"),
+                },
+                {
+                  name: data.name,
+                  path: pathNames.slice(0, 2).join("/"),
+                },
+              ]}
+            />
+          );
+        }
+        return (
+          <RenderBreadCrumbs
+            pathItems={[
+              ...pathItems,
+              {
+                name: data.name,
+                path: pathNames.slice(0, 3).join("/"),
+              },
+            ]}
+          />
+        );
+      }
+      if (pathType.data === "players" && data) {
+        return (
+          <RenderBreadCrumbs
+            pathItems={[
+              ...pathItems,
+              {
+                name: data.name,
+                path: pathNames.slice(0, 3).join("/"),
+              },
+            ]}
+          />
+        );
+      }
 
+      return <RenderBreadCrumbs pathItems={pathItems} />;
+    }
+  }
+  return <RenderBreadCrumbs pathItems={pathItems} />;
+}
+
+const RenderBreadCrumbs = ({
+  pathItems,
+}: {
+  pathItems: { name: string; path: string }[];
+}) => {
   return (
     <Breadcrumb>
       <BreadcrumbList>
@@ -44,16 +106,10 @@ export function BreadCrumbs() {
               {index > 0 && <BreadcrumbSeparator className="hidden md:block" />}
               <BreadcrumbItem>
                 {index + 1 === pathItems.length ? (
-                  <BreadcrumbPage>
-                    {CapitalizeFirstLetterOfEachWord(item.name)}
-                  </BreadcrumbPage>
+                  <BreadcrumbPage>{item.name}</BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink asChild>
-                    <Link href={`/${item.path}`}>
-                      {CapitalizeFirstLetterOfEachWord(
-                        id && item.name === String(id) ? item.name : item.name,
-                      )}
-                    </Link>
+                    <Link href={`/${item.path}`}>{item.name}</Link>
                   </BreadcrumbLink>
                 )}
               </BreadcrumbItem>
@@ -63,4 +119,4 @@ export function BreadCrumbs() {
       </BreadcrumbList>
     </Breadcrumb>
   );
-}
+};

@@ -1,12 +1,51 @@
 import { format, subMonths } from "date-fns";
 import { and, count, desc, eq, gte, lte, max, sql } from "drizzle-orm";
+import { z } from "zod";
 
 import { game, image, match, matchPlayer, player } from "~/server/db/schema";
 
 import { protectedUserProcedure } from "../trpc";
 
 export const dashboardRouter = {
-  //fix to be protected
+  getBreadCrumbs: protectedUserProcedure
+    .input(
+      z.object({
+        type: z.enum(["games", "players", "match"]),
+        path: z.number(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      if (input.type === "games") {
+        const result = await ctx.db.query.game.findFirst({
+          where: eq(game.id, input.path),
+          columns: {
+            id: true,
+            name: true,
+          },
+        });
+        if (result) return result;
+      }
+      if (input.type === "players") {
+        const result = await ctx.db.query.player.findFirst({
+          where: eq(player.id, input.path),
+          columns: {
+            id: true,
+            name: true,
+          },
+        });
+        if (result) return result;
+      }
+      if (input.type === "match") {
+        const result = await ctx.db.query.match.findFirst({
+          where: eq(match.id, input.path),
+          with: {
+            game: true,
+          },
+        });
+        if (result) return result;
+      }
+      return null;
+    }),
   getGames: protectedUserProcedure.query(async ({ ctx }) => {
     const games = await ctx.db
       .select({
