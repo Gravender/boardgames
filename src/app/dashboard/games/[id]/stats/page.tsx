@@ -126,7 +126,7 @@ export default async function Page({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex gap-2">
                   <h4 className="font-medium">Participants:</h4>
                   <div className="flex justify-between text-muted-foreground">
                     <span>
@@ -139,7 +139,7 @@ export default async function Page({
               </div>
               <Separator orientation="vertical" />
               <div className="flex flex-col gap-2 text-sm w-2/5">
-                <div className="flex items-center gap-2">
+                <div className="flex gap-2">
                   <h4 className="font-medium">
                     {lastPlayed.winners.length > 0 ? "Winners:" : "Winner"}
                   </h4>
@@ -170,14 +170,14 @@ export default async function Page({
             <CardContent className="p-2 sm:p-6">
               <div className="flex">
                 <ScrollArea className="w-1 flex-1">
-                  <div className="flex space-x-4 p-1 sm:p-4">
+                  <div className="flex space-x-4 p-1 sm:p-4 items-center">
                     {game.matches.map((match) => {
                       return (
                         <div
                           className="flex flex-col gap-2 shrink-0 items-center text-secondary-foreground text-sm"
                           key={match.id}
                         >
-                          <span className="font-semibold">
+                          <span className="font-semibold w-28 truncate">
                             {match.finished
                               ? match.players
                                   .map((player) => player.name)

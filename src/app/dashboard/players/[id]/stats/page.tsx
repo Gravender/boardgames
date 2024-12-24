@@ -142,7 +142,7 @@ export default async function Page({
                     <span>{lastPlayed.players.length}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex gap-2">
                   <h4 className="font-medium">Winner:</h4>
                   <div className="flex justify-between text-muted-foreground">
                     <span>
@@ -153,7 +153,7 @@ export default async function Page({
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex gap-2">
                   <h4 className="font-medium">Participants:</h4>
                   <div className="flex justify-between text-muted-foreground">
                     <span>
@@ -191,7 +191,7 @@ export default async function Page({
                           className="flex flex-col gap-2 shrink-0 items-center text-secondary-foreground text-sm"
                           key={match.id}
                         >
-                          <span className="font-semibold">
+                          <span className="font-semibold  w-28 truncate">
                             {match.gameName}
                           </span>
                           <div className="relative flex shrink-0 overflow-hidden h-20 w-20 rounded shadow">
