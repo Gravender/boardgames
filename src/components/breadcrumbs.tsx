@@ -102,7 +102,7 @@ const RenderBreadCrumbs = ({
       <BreadcrumbList>
         {pathItems.map((item, index) =>
           isNaN(Number(item.name)) ? (
-            <Fragment key={item.path}>
+            <Fragment key={item.path + index}>
               {index > 0 && <BreadcrumbSeparator className="hidden md:block" />}
               <BreadcrumbItem>
                 {index + 1 === pathItems.length ? (

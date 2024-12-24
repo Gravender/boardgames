@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { finished } from "stream";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { set } from "date-fns";
+import { is } from "drizzle-orm";
 import { ListPlus, Pause, Play, RotateCcw } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { type z } from "zod";
@@ -46,6 +49,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { useDebouncedUpdateMatchData } from "~/hooks/use-debounced-update-match";
 import { calculateFinalScore, calculateWinners } from "~/lib/calcluateResults";
 import { cn, formatDuration } from "~/lib/utils";
 import { insertRoundSchema } from "~/server/db/schema/round";
@@ -54,9 +58,10 @@ import { api, type RouterOutputs } from "~/trpc/react";
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
 export function Match({ match }: { match: Match }) {
   const [players, setPlayers] = useState(() => [...match.players]);
+  const [hasPlayersChanged, setHasPlayersChanged] = useState(false);
+
   const [duration, setDuration] = useState(match.duration);
-  const [isRunning, setIsRunning] = useState(match.duration === 0);
-  const [isFinished, setIsFinished] = useState(match.finished);
+  const [isRunning, setIsRunning] = useState(match.running);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const router = useRouter();
@@ -64,17 +69,41 @@ export function Match({ match }: { match: Match }) {
   const updateMatch = api.match.updateMatch.useMutation({
     onSuccess: async () => {
       await utils.match.getMatch.invalidate({ id: match.id });
-      if (isFinished) {
-        router.push(`/dashboard/games/${match.gameId}/${match.id}/summary`);
-      }
+
+      router.push(`/dashboard/games/${match.gameId}/${match.id}/summary`);
       setIsSubmitting(false);
     },
   });
-  //turn into form
-  const onSubmit = (finishing: boolean) => {
+  const updateMatchDuration = api.match.updateMatchDuration.useMutation();
+  const { debouncedUpdate, isUpdating } = useDebouncedUpdateMatchData(match.id);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveMatch = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      if (hasPlayersChanged) {
+        debouncedUpdate(players, duration, isRunning);
+        setHasPlayersChanged(false);
+      }
+    }, 500);
+  }, [players, duration, isRunning, debouncedUpdate, hasPlayersChanged]);
+  useEffect(() => {
+    if (hasPlayersChanged) {
+      saveMatch();
+    }
+  }, [players, saveMatch, hasPlayersChanged]);
+  const onFinish = () => {
     setIsSubmitting(true);
-    setIsFinished(finishing);
     setIsRunning(false);
+    const submittedPlayers = players.flatMap((player) =>
+      player.rounds.map((round) => ({
+        id: round.id,
+        score: round.score,
+        roundId: round.id,
+        matchPlayerId: player.id,
+      })),
+    );
     const winners = calculateWinners(
       players.map((player) => ({
         id: player.id,
@@ -83,14 +112,6 @@ export function Match({ match }: { match: Match }) {
         })),
       })),
       match.scoresheet,
-    );
-    const submittedPlayers = players.flatMap((player) =>
-      player.rounds.map((round) => ({
-        id: round.id,
-        score: round.score,
-        roundId: round.id,
-        matchPlayerId: player.id,
-      })),
     );
     const matchPlayers = players.map((player) => {
       return {
@@ -108,15 +129,13 @@ export function Match({ match }: { match: Match }) {
       match: {
         id: match.id,
         duration: duration,
-        finished: finishing,
+        finished: true,
+        running: false,
       },
       roundPlayers: submittedPlayers,
       matchPlayers: matchPlayers,
     });
   };
-  useEffect(() => {
-    setPlayers([...match.players]);
-  }, [match.players]);
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isRunning) {
@@ -126,11 +145,37 @@ export function Match({ match }: { match: Match }) {
     }
     return () => clearInterval(interval);
   }, [isRunning]);
+  useEffect(() => {
+    if (isRunning && duration % 30 === 0 && match.duration !== duration) {
+      updateMatchDuration.mutate({
+        match: {
+          id: match.id,
+        },
+        duration: duration,
+      });
+    }
+  }, [isRunning, duration]);
 
-  const toggleClock = () => setIsRunning(!isRunning);
+  const toggleClock = () => {
+    setIsRunning(!isRunning);
+    setHasPlayersChanged(true);
+    saveMatch();
+  };
 
   const resetClock = () => {
     setDuration(0);
+  };
+
+  const handleScoreChange = (
+    playerIndex: number,
+    roundIndex: number,
+    value: number | null,
+  ) => {
+    const temp = [...players];
+    temp[playerIndex]!.rounds[roundIndex]!.score = value ?? null;
+    setPlayers(temp);
+
+    setHasPlayersChanged(true);
   };
 
   return (
@@ -190,10 +235,7 @@ export function Match({ match }: { match: Match }) {
                             <NumberInput
                               value={roundPlayer?.score ?? 0}
                               onValueChange={(value) => {
-                                const temp = [...players];
-                                temp[playerIndex]!.rounds[index]!.score =
-                                  value ?? null;
-                                setPlayers(temp);
+                                handleScoreChange(playerIndex, index, value);
                               }}
                               className="text-center border-none"
                             />
@@ -202,10 +244,11 @@ export function Match({ match }: { match: Match }) {
                               <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
                               <Checkbox
                                 onCheckedChange={(isChecked) => {
-                                  const temp = [...players];
-                                  temp[playerIndex]!.rounds[index]!.score =
-                                    isChecked ? round.score : 0;
-                                  setPlayers(temp);
+                                  handleScoreChange(
+                                    playerIndex,
+                                    index,
+                                    isChecked ? round.score : 0,
+                                  );
                                 }}
                                 checked={
                                   (roundPlayer?.score ?? 0) === round.score
@@ -241,6 +284,7 @@ export function Match({ match }: { match: Match }) {
                             const temp = [...players];
                             temp[index]!.score = score;
                             setPlayers(temp);
+                            setHasPlayersChanged(true);
                           }}
                         />
                       </TableCell>
@@ -285,9 +329,9 @@ export function Match({ match }: { match: Match }) {
         </div>
         <Button
           onClick={() => {
-            onSubmit(true);
+            onFinish();
           }}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isUpdating}
         >
           {isSubmitting ? (
             <>

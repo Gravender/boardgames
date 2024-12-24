@@ -38,6 +38,7 @@ const matches = createTable(
       .notNull(),
     duration: integer("duration").notNull().default(0),
     finished: boolean("finished").notNull().default(false),
+    running: boolean("running").notNull().default(true),
   },
   (table) => ({
     gameIndex: index().on(table.gameId),

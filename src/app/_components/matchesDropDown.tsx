@@ -26,15 +26,15 @@ import { type RouterOutputs } from "~/trpc/react";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 export function MatchDropDown({
-  matchId,
+  match,
   gameId,
 }: {
-  matchId: Game["matches"][number]["id"];
+  match: Game["matches"][number];
   gameId: Game["id"];
 }) {
   const onDelete = () => {
     startTransition(async () => {
-      await deleteMatch({ matchId, gameId });
+      await deleteMatch({ matchId: match.id, gameId });
     });
   };
   return (
@@ -48,10 +48,17 @@ export function MatchDropDown({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem asChild>
-            <Link href={`/dashboard/games/${gameId}/${matchId}/edit`}>
+            <Link href={`/dashboard/games/${gameId}/${match.id}/edit`}>
               Edit
             </Link>
           </DropdownMenuItem>
+          {match.finished && (
+            <DropdownMenuItem asChild>
+              <Link href={`/dashboard/games/${gameId}/${match.id}/summary`}>
+                Summary
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DialogTrigger asChild>
             <DropdownMenuItem className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground">
               Delete

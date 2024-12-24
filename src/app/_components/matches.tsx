@@ -148,7 +148,7 @@ export function Matches({
                   )}
                 </TableCell>
                 <TableCell className="w-24 flex items-center justify-center">
-                  <MatchDropDown gameId={gameId} matchId={match.id} />
+                  <MatchDropDown gameId={gameId} match={match} />
                 </TableCell>
               </TableRow>
             ))}
