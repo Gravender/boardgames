@@ -30,67 +30,74 @@ export function BreadCrumbs() {
     };
   });
   const pathsSchema = z.enum(["games", "players"]);
-  if (pathNames.length > 2) {
-    const pathType = pathsSchema.safeParse(pathNames[1]);
-    const id =
-      pathNames.length > 3 && pathType.data === "games"
-        ? Number(pathNames[3])
-        : Number(pathNames[2]);
-    if (pathType.success && !isNaN(id) && userId) {
-      const { data } = api.dashboard.getBreadCrumbs.useQuery({
-        type:
-          pathNames.length > 3 && pathType.data === "games"
-            ? "match"
-            : pathType.data,
-        path: id,
-      });
-      if (pathType.data === "games" && data) {
-        if (pathNames.length > 3) {
-          return (
-            <RenderBreadCrumbs
-              pathItems={[
-                ...pathItems,
-                {
-                  name: data.game.name,
-                  path: pathNames.slice(0, 3).join("/"),
-                },
-                {
-                  name: data.name,
-                  path: pathNames.slice(0, 2).join("/"),
-                },
-              ]}
-            />
-          );
-        }
-        return (
-          <RenderBreadCrumbs
-            pathItems={[
-              ...pathItems,
-              {
-                name: data.name,
-                path: pathNames.slice(0, 3).join("/"),
-              },
-            ]}
-          />
-        );
-      }
-      if (pathType.data === "players" && data) {
-        return (
-          <RenderBreadCrumbs
-            pathItems={[
-              ...pathItems,
-              {
-                name: data.name,
-                path: pathNames.slice(0, 3).join("/"),
-              },
-            ]}
-          />
-        );
-      }
+  const pathType = pathsSchema.safeParse(pathNames[1]);
+  const id =
+    pathNames.length > 3 && pathType.data === "games"
+      ? Number(pathNames[3])
+      : Number(pathNames[2]);
+  const enabled =
+    pathNames.length > 2 && pathType.success && !isNaN(id) && !!userId;
+  const { data } = api.dashboard.getBreadCrumbs.useQuery(
+    {
+      type:
+        pathNames.length > 3 && pathType.data === "games"
+          ? "match"
+          : (pathType.data ?? "games"),
+      path: id,
+    },
+    {
+      enabled: enabled,
+    },
+  );
 
-      return <RenderBreadCrumbs pathItems={pathItems} />;
+  if (pathNames.length > 2 && pathType.success && !isNaN(id) && userId) {
+    if (pathType.data === "games" && data) {
+      if (pathNames.length > 3) {
+        return (
+          <RenderBreadCrumbs
+            pathItems={[
+              ...pathItems,
+              {
+                name: data.game.name,
+                path: pathNames.slice(0, 3).join("/"),
+              },
+              {
+                name: data.name,
+                path: pathNames.slice(0, 2).join("/"),
+              },
+            ]}
+          />
+        );
+      }
+      return (
+        <RenderBreadCrumbs
+          pathItems={[
+            ...pathItems,
+            {
+              name: data.name,
+              path: pathNames.slice(0, 3).join("/"),
+            },
+          ]}
+        />
+      );
     }
+    if (pathType.data === "players" && data) {
+      return (
+        <RenderBreadCrumbs
+          pathItems={[
+            ...pathItems,
+            {
+              name: data.name,
+              path: pathNames.slice(0, 3).join("/"),
+            },
+          ]}
+        />
+      );
+    }
+
+    return <RenderBreadCrumbs pathItems={pathItems} />;
   }
+
   return <RenderBreadCrumbs pathItems={pathItems} />;
 }
 
