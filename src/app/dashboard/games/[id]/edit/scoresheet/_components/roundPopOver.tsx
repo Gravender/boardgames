@@ -61,7 +61,7 @@ export function RoundPopOver({
                       const safeValue = insertRoundSchema
                         .required()
                         .pick({ type: true })
-                        .parse({ type: true });
+                        .parse({ type: value });
                       update(index, {
                         ...fields[index],
                         name: fields[index]?.name ?? "",
