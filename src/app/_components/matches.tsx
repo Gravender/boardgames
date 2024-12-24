@@ -99,7 +99,11 @@ export function Matches({
               >
                 <TableCell className="font-medium flex items-center w-full">
                   <Link
-                    href={`/dashboard/games/${gameId}/${match.id}`}
+                    href={
+                      match.finished
+                        ? `/dashboard/games/${gameId}/${match.id}/summary`
+                        : `/dashboard/games/${gameId}/${match.id}`
+                    }
                     className="font-medium flex items-center gap-3 w-full"
                   >
                     <div className="relative flex shrink-0 overflow-hidden h-12 w-12">

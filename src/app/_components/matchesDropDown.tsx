@@ -52,6 +52,11 @@ export function MatchDropDown({
               Edit
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href={`/dashboard/games/${gameId}/${match.id}`}>
+              ScoreSheet
+            </Link>
+          </DropdownMenuItem>
           {match.finished && (
             <DropdownMenuItem asChild>
               <Link href={`/dashboard/games/${gameId}/${match.id}/summary`}>

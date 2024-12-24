@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { z } from "zod";
 
 import { CapitalizeFirstLetterOfEachWord } from "~/lib/utils";
@@ -18,6 +19,7 @@ import {
 } from "./ui/breadcrumb";
 
 export function BreadCrumbs() {
+  const { userId } = useAuth();
   const paths = usePathname();
 
   const pathNames = paths.split("/").filter((path) => path);
@@ -34,7 +36,7 @@ export function BreadCrumbs() {
       pathNames.length > 3 && pathType.data === "games"
         ? Number(pathNames[3])
         : Number(pathNames[2]);
-    if (pathType.success && !isNaN(id)) {
+    if (pathType.success && !isNaN(id) && userId) {
       const { data } = api.dashboard.getBreadCrumbs.useQuery({
         type:
           pathNames.length > 3 && pathType.data === "games"
