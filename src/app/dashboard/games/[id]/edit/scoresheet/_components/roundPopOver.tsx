@@ -60,13 +60,13 @@ export function RoundPopOver({
                     onValueChange={(value) => {
                       const safeValue = insertRoundSchema
                         .required()
-                        .pick({ type: true, order: true })
-                        .parse({ type: true, order: true });
+                        .pick({ type: true })
+                        .parse({ type: true });
                       update(index, {
                         ...fields[index],
                         name: fields[index]?.name ?? "",
                         type: safeValue.type,
-                        order: safeValue.order,
+                        order: fields[index]?.order ?? index,
                       });
                     }}
                     defaultValue={field.value}
