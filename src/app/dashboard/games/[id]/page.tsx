@@ -8,10 +8,7 @@ type Props = {
   params: Promise<{ id: string }>;
 };
 
-export async function generateMetadata(
-  { params }: Props,
-  parent: ResolvingMetadata,
-): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // read route params
   const id = (await params).id;
 

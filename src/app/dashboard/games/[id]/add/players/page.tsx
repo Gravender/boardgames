@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { api, HydrateClient } from "~/trpc/server";
 
 import { PlayersTable } from "./_components/playerTable";
-import SelectPlayersForm from "./_components/selectPlayersForm";
 
 export default async function Page({
   params,

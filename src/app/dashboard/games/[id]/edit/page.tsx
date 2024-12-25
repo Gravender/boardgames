@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 
-import { Matches } from "~/app/_components/matches";
 import { api, HydrateClient } from "~/trpc/server";
 
 import { EditGameForm } from "./_components/editGameForm";

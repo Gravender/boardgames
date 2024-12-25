@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -14,7 +13,7 @@ import { Dices } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
-import { type RouterInputs, type RouterOutputs } from "~/trpc/react";
+import { type RouterOutputs } from "~/trpc/react";
 
 import { DataTable } from "./dataTable";
 import { GamesDropDown } from "./gamesDropDown";
