@@ -39,9 +39,8 @@ export default function SelectPlayersForm({
   gameId: number;
 }) {
   const router = useRouter();
-  router.prefetch(`/dashboard/games/${gameId}`);
 
-  const { match, setPlayers } = useAddMatchStore((state) => state);
+  const { match, setPlayers, setIsOpen } = useAddMatchStore((state) => state);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<formSchemaType>({
@@ -54,6 +53,7 @@ export default function SelectPlayersForm({
   const onSubmit = (data: formSchemaType) => {
     setIsSubmitting(true);
     setPlayers(data.players);
+    setIsOpen(true);
     onBack();
   };
 

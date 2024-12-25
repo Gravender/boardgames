@@ -87,33 +87,30 @@ function Content({
   const [isGettingPlayers, setIsGettingPlayers] = useState(false);
   const utils = api.useUtils();
   const router = useRouter();
-  router.prefetch(`/dashboard/games/${gameId}/add/players`);
   const form = useForm<formSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: match.name !== "" ? match.name : `${gameName} #${matches + 1}`,
-      date: match.name !== "" ? match.date : new Date(),
-      players: match.players,
+      name: match.name || `${gameName} #${matches + 1}`,
+      date: match.date || new Date(),
+      players: match.players || [],
     },
   });
   const createMatch = api.match.createMatch.useMutation({
     onSuccess: async (match) => {
       reset();
-      await utils.player.getPlayersByGame.invalidate({ game: { id: gameId } });
-      await utils.game.getGame.invalidate({ id: gameId });
-      await utils.dashboard.invalidate();
-      router.push(`/dashboard/games/${gameId}/${match.id}`);
       setIsSubmitting(false);
+      router.push(`/dashboard/games/${gameId}/${match.id}`);
+      await Promise.all([
+        utils.player.getPlayersByGame.invalidate({ game: { id: gameId } }),
+        utils.game.getGame.invalidate({ id: gameId }),
+        utils.dashboard.invalidate(),
+      ]);
     },
   });
 
   useEffect(() => {
-    return () => {
-      if (!isOpen) {
-        reset();
-      }
-    };
-  });
+    if (!isOpen) reset();
+  }, [isOpen, reset]);
 
   const onSubmit = async (values: formSchemaType) => {
     setIsSubmitting(true);

@@ -1,81 +1,44 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { ChevronDown, ChevronUp, Search, User } from "lucide-react";
+import { User } from "lucide-react";
 
-import { SortingOptions } from "~/app/_components/sortingDropDown";
+import { FilterAndSearch } from "~/app/_components/filterAndSearch";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { type RouterOutputs } from "~/trpc/react";
 
 import { AddPlayerDialog } from "./addPlayerDialog";
 import { PlayerDropDown } from "./playerDropDown";
 
-export const sortFieldConst = ["matches", "name", "lastPlayed"] as const;
-export type SortField = (typeof sortFieldConst)[number];
-type SortOrder = "asc" | "desc";
 export function PlayersTable({
   data,
 }: {
   data: RouterOutputs["player"]["getPlayers"];
 }) {
-  const [search, setSearch] = useState("");
-  const [sortField, setSortField] = useState<SortField>("name");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+  const [players, setPlayers] = useState(data);
 
-  const filteredAndSortedPlayers = useMemo(() => {
-    const filteredPlayers = data.filter((player) =>
-      player.name.toLowerCase().includes(search.toLowerCase()),
-    );
-    filteredPlayers.sort((a, b) => {
-      if (a[sortField] < b[sortField]) return sortOrder === "asc" ? -1 : 1;
-      if (a[sortField] > b[sortField]) return sortOrder === "asc" ? 1 : -1;
-      return 0;
-    });
-    return filteredPlayers;
-  }, [data, search, sortField, sortOrder]);
   return (
     <div className="container mx-auto px-4 max-w-3xl h-[90vh] relative">
       <CardHeader>
         <CardTitle>Players</CardTitle>
       </CardHeader>
-      <div className="mb-4 flex items-center gap-2 justify-between px-4">
-        <div className="flex items-center gap-2 max-w-sm w-full">
-          <Search className="h-4 w-4" />
-          <Input
-            placeholder="Search players..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-          >
-            {sortOrder === "asc" ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
-          </Button>
-          <SortingOptions
-            sortField={sortField}
-            setSortField={setSortField}
-            sortFields={sortFieldConst.map((field) => field)}
-          />
-        </div>
-      </div>
+      <FilterAndSearch
+        items={data}
+        setItems={setPlayers}
+        sortFields={["matches", "name", "lastPlayed"]}
+        defaultSortField="name"
+        defaultSortOrder="asc"
+        searchField="name"
+        searchPlaceholder="Search players..."
+      />
       <ScrollArea className="sm:h-[75vh] h-[65vh]">
         <div className="flex flex-col gap-2">
-          {filteredAndSortedPlayers.map((player) => {
+          {players.map((player) => {
             const lastPlayed = player.lastPlayed
               ? format(player.lastPlayed, "d MMM yyyy")
               : null;

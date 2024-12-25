@@ -1,20 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns/format";
-import { AlignLeft, ChevronDown, ChevronUp, Dices, Search } from "lucide-react";
+import { Dices } from "lucide-react";
 
-import { Button } from "~/components/ui/button";
+import { FilterAndSearch } from "~/app/_components/filterAndSearch";
 import { CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableRow } from "~/components/ui/table";
 import { type RouterOutputs } from "~/trpc/react";
@@ -23,11 +16,9 @@ import { AddMatchDialog } from "./addMatch";
 import { MatchDropDown } from "./matchesDropDown";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
-export const sortFieldConst = ["date", "name", "won"] as const;
-export type SortField = (typeof sortFieldConst)[number];
-type SortOrder = "asc" | "desc";
+
 export function Matches({
-  matches,
+  matches: data,
   gameName,
   imageUrl,
   gameId,
@@ -37,24 +28,7 @@ export function Matches({
   imageUrl: Game["imageUrl"];
   gameId: Game["id"];
 }) {
-  const [search, setSearch] = useState("");
-  const [sortField, setSortField] = useState<SortField>("date");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
-  const [filteredAndSortedMatches, setFilteredAndSortedMatches] =
-    useState(matches);
-  useEffect(() => {
-    const filteredMatches = matches.filter((player) =>
-      player.name.toLowerCase().includes(search.toLowerCase()),
-    );
-
-    filteredMatches.sort((a, b) => {
-      if (a[sortField] < b[sortField]) return sortOrder === "asc" ? -1 : 1;
-      if (a[sortField] > b[sortField]) return sortOrder === "asc" ? 1 : -1;
-      return 0;
-    });
-
-    setFilteredAndSortedMatches(filteredMatches);
-  }, [matches, search, sortField, sortOrder, setFilteredAndSortedMatches]);
+  const [matches, setMatches] = useState(data);
   return (
     <div className="container mx-auto px-4 max-w-3xl h-[90vh] relative">
       <CardHeader>
@@ -65,35 +39,19 @@ export function Matches({
           </CardDescription>
         )}
       </CardHeader>
-      <div className="mb-4 flex items-center gap-2 justify-between px-4">
-        <div className="flex items-center gap-2 max-w-sm w-full">
-          <Search className="h-4 w-4" />
-          <Input
-            placeholder="Search matches..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-          >
-            {sortOrder === "asc" ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
-          </Button>
-          <SortingOptions sortField={sortField} setSortField={setSortField} />
-        </div>
-      </div>
+      <FilterAndSearch
+        items={data}
+        setItems={setMatches}
+        sortFields={["date", "name", "won", "finished"]}
+        defaultSortField="date"
+        defaultSortOrder="asc"
+        searchField="name"
+        searchPlaceholder="Search Matches..."
+      />
       <ScrollArea className="sm:h-[80vh] h-[75vh]">
         <Table>
           <TableBody className="flex flex-col gap-2 p-4 w-full">
-            {filteredAndSortedMatches.map((match) => (
+            {matches.map((match) => (
               <TableRow
                 key={match.id}
                 className="rounded-lg border bg-card text-card-foreground shadow-sm flex w-full"
@@ -164,41 +122,9 @@ export function Matches({
         <AddMatchDialog
           gameId={gameId}
           gameName={gameName}
-          matches={matches.length}
+          matches={data.length}
         />
       </div>
     </div>
-  );
-}
-
-function SortingOptions({
-  sortField,
-  setSortField,
-}: {
-  sortField: SortField;
-  setSortField: (field: SortField) => void;
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size={"icon"}>
-          <span className="sr-only">Open menu</span>
-          <AlignLeft />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {sortFieldConst.map((field) => {
-          return (
-            <DropdownMenuCheckboxItem
-              key={field}
-              onClick={() => setSortField(field)}
-              checked={sortField === field}
-            >
-              {field}
-            </DropdownMenuCheckboxItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }
