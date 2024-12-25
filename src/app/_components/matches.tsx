@@ -27,7 +27,7 @@ export const sortFieldConst = ["date", "name", "won"] as const;
 export type SortField = (typeof sortFieldConst)[number];
 type SortOrder = "asc" | "desc";
 export function Matches({
-  matches: data,
+  matches,
   gameName,
   imageUrl,
   gameId,
@@ -37,12 +37,13 @@ export function Matches({
   imageUrl: Game["imageUrl"];
   gameId: Game["id"];
 }) {
-  const [matches, setMatches] = useState(data);
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [filteredAndSortedMatches, setFilteredAndSortedMatches] =
+    useState(matches);
   useEffect(() => {
-    const filteredMatches = data.filter((player) =>
+    const filteredMatches = matches.filter((player) =>
       player.name.toLowerCase().includes(search.toLowerCase()),
     );
 
@@ -52,15 +53,15 @@ export function Matches({
       return 0;
     });
 
-    setMatches(filteredMatches);
-  }, [data, search, sortField, sortOrder]);
+    setFilteredAndSortedMatches(filteredMatches);
+  }, [matches, search, sortField, sortOrder, setFilteredAndSortedMatches]);
   return (
     <div className="container mx-auto px-4 max-w-3xl h-[90vh] relative">
       <CardHeader>
         <CardTitle>{gameName} Matches</CardTitle>
-        {data.length > 0 && (
+        {matches.length > 0 && (
           <CardDescription>
-            {`${data.length} ${data.length > 1 ? "games" : "game"} played`}
+            {`${matches.length} ${matches.length > 1 ? "games" : "game"} played`}
           </CardDescription>
         )}
       </CardHeader>
@@ -92,7 +93,7 @@ export function Matches({
       <ScrollArea className="sm:h-[80vh] h-[75vh]">
         <Table>
           <TableBody className="flex flex-col gap-2 p-4 w-full">
-            {matches.map((match) => (
+            {filteredAndSortedMatches.map((match) => (
               <TableRow
                 key={match.id}
                 className="rounded-lg border bg-card text-card-foreground shadow-sm flex w-full"

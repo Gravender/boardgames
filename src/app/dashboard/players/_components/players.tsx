@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { ChevronDown, ChevronUp, Search, User } from "lucide-react";
@@ -24,22 +24,20 @@ export function PlayersTable({
 }: {
   data: RouterOutputs["player"]["getPlayers"];
 }) {
-  const [players, setPlayers] = useState(data);
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
-  useEffect(() => {
+
+  const filteredAndSortedPlayers = useMemo(() => {
     const filteredPlayers = data.filter((player) =>
       player.name.toLowerCase().includes(search.toLowerCase()),
     );
-
     filteredPlayers.sort((a, b) => {
       if (a[sortField] < b[sortField]) return sortOrder === "asc" ? -1 : 1;
       if (a[sortField] > b[sortField]) return sortOrder === "asc" ? 1 : -1;
       return 0;
     });
-
-    setPlayers(filteredPlayers);
+    return filteredPlayers;
   }, [data, search, sortField, sortOrder]);
   return (
     <div className="container mx-auto px-4 max-w-3xl h-[90vh] relative">
@@ -77,7 +75,7 @@ export function PlayersTable({
       </div>
       <ScrollArea className="sm:h-[75vh] h-[65vh]">
         <div className="flex flex-col gap-2">
-          {players.map((player) => {
+          {filteredAndSortedPlayers.map((player) => {
             const lastPlayed = player.lastPlayed
               ? format(player.lastPlayed, "d MMM yyyy")
               : null;

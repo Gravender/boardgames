@@ -17,6 +17,7 @@ export default async function Page({
   const players = await api.player.getPlayersByGame({
     game: { id: Number(id) },
   });
+
   return (
     <HydrateClient>
       <PlayersTable

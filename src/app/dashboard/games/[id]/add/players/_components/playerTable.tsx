@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Search } from "lucide-react";
 
 import { SortingOptions } from "~/app/_components/sortingDropDown";
@@ -22,22 +22,20 @@ export function PlayersTable({
   data: RouterOutputs["player"]["getPlayersByGame"];
   gameId: number;
 }) {
-  const [players, setPlayers] = useState(data);
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
-  useEffect(() => {
+
+  const filteredAndSortedPlayers = useMemo(() => {
     const filteredPlayers = data.filter((player) =>
       player.name.toLowerCase().includes(search.toLowerCase()),
     );
-
     filteredPlayers.sort((a, b) => {
       if (a[sortField] < b[sortField]) return sortOrder === "asc" ? -1 : 1;
       if (a[sortField] > b[sortField]) return sortOrder === "asc" ? 1 : -1;
       return 0;
     });
-
-    setPlayers(filteredPlayers);
+    return filteredPlayers;
   }, [data, search, sortField, sortOrder]);
 
   return (
@@ -74,7 +72,7 @@ export function PlayersTable({
           />
         </div>
       </div>
-      <SelectPlayersForm gameId={gameId} players={players} />
+      <SelectPlayersForm gameId={gameId} players={filteredAndSortedPlayers} />
       <div className="absolute bottom-4 right-4 sm:right-10 z-10">
         <AddPlayerDialog gameId={gameId} />
       </div>

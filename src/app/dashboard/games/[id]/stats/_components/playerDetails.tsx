@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, User } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -19,20 +19,17 @@ type Players = NonNullable<RouterOutputs["game"]["getGameStats"]>["players"];
 type SortField = "name" | "plays" | "wins" | "winRate";
 type SortOrder = "asc" | "desc";
 export function PlayerDetails({ data }: { data: Players }) {
-  const [players, setPlayers] = useState(data);
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
-  useEffect(() => {
-    setPlayers((prev) => {
-      const temp = [...prev];
-      temp.sort((a, b) => {
-        if (a[sortField] < b[sortField]) return sortOrder === "asc" ? -1 : 1;
-        if (a[sortField] > b[sortField]) return sortOrder === "asc" ? 1 : -1;
-        return 0;
-      });
-      return temp;
+  const sortedPlayers = useMemo(() => {
+    const temp = [...data];
+    temp.sort((a, b) => {
+      if (a[sortField] < b[sortField]) return sortOrder === "asc" ? -1 : 1;
+      if (a[sortField] > b[sortField]) return sortOrder === "asc" ? 1 : -1;
+      return 0;
     });
+    return temp;
   }, [data, sortField, sortOrder]);
 
   const toggleSort = (field: SortField) => {
@@ -97,7 +94,7 @@ export function PlayerDetails({ data }: { data: Players }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {players.map((player) => {
+          {sortedPlayers.map((player) => {
             return (
               <TableRow key={player.id}>
                 <TableCell className="p-2 sm:p-4">
