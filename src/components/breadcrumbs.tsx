@@ -52,7 +52,7 @@ export function BreadCrumbs() {
 
   if (pathNames.length > 2 && pathType.success && !isNaN(id) && userId) {
     if (pathType.data === "games" && data) {
-      if (pathNames.length > 3) {
+      if (pathNames.length > 3 && data.game) {
         return (
           <RenderBreadCrumbs
             pathItems={[

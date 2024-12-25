@@ -23,7 +23,10 @@ export const dashboardRouter = {
             name: true,
           },
         });
-        if (result) return result;
+        if (result)
+          return {
+            name: result.name,
+          };
       }
       if (input.type === "players") {
         const result = await ctx.db.query.player.findFirst({
@@ -33,7 +36,10 @@ export const dashboardRouter = {
             name: true,
           },
         });
-        if (result) return result;
+        if (result)
+          return {
+            name: result.name,
+          };
       }
       if (input.type === "match") {
         const result = await ctx.db.query.match.findFirst({
@@ -42,7 +48,13 @@ export const dashboardRouter = {
             game: true,
           },
         });
-        if (result) return result;
+        if (result)
+          return {
+            name: result.name,
+            game: {
+              name: result.game.name,
+            },
+          };
       }
       return null;
     }),

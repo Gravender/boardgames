@@ -177,6 +177,7 @@ export const matchRouter = createTRPCRouter({
           score: matchPlayer.score,
           id: matchPlayer.id,
           playerId: matchPlayer.player.id,
+          imageUrl: matchPlayer.player.image?.url,
         };
       });
       return {
