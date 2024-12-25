@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
 import { CardHeader, CardTitle } from "~/components/ui/card";
-import { RouterOutputs } from "~/trpc/react";
+import { type RouterOutputs } from "~/trpc/react";
 
 import { AddPlayerDialog } from "./addPlayerDialog";
 import SelectPlayersForm from "./selectPlayersForm";

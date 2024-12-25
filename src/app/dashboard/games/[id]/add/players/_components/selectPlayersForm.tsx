@@ -25,7 +25,7 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { cn } from "~/lib/utils";
 import { useAddMatchStore } from "~/providers/add-match-provider";
 import { playersSchema } from "~/stores/add-match-store";
-import { RouterOutputs } from "~/trpc/react";
+import { type RouterOutputs } from "~/trpc/react";
 
 const formSchema = z.object({
   players: playersSchema,

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, PlusIcon, Trash, User } from "lucide-react";
-import { useFieldArray, useForm, UseFormReturn } from "react-hook-form";
+import { useFieldArray, useForm, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 
 import { Spinner } from "~/components/spinner";
@@ -48,7 +48,7 @@ import {
 import { useToast } from "~/hooks/use-toast";
 import { cn } from "~/lib/utils";
 import { insertMatchSchema, insertPlayerSchema } from "~/server/db/schema";
-import { api, RouterOutputs } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
 const playerSchema = insertPlayerSchema

@@ -357,9 +357,7 @@ function Content() {
                                   : parseInt(e.target.value),
                               )
                             }
-                            value={
-                              field.value !== null ? field.value : undefined
-                            }
+                            value={field.value ?? undefined}
                           />
                         </FormControl>
                       </FormItem>
@@ -382,9 +380,7 @@ function Content() {
                                   : parseInt(e.target.value),
                               )
                             }
-                            value={
-                              field.value !== null ? field.value : undefined
-                            }
+                            value={field.value ?? undefined}
                           />
                         </FormControl>
                       </FormItem>
