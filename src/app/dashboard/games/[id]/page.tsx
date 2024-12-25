@@ -1,8 +1,9 @@
 import type { Metadata, ResolvingMetadata } from "next";
 import { redirect } from "next/navigation";
 
-import { Matches } from "~/app/_components/matches";
 import { api, HydrateClient } from "~/trpc/server";
+
+import { Matches } from "./_components/matches";
 
 type Props = {
   params: Promise<{ id: string }>;
