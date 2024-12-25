@@ -1,13 +1,30 @@
+import type { Metadata, ResolvingMetadata } from "next";
 import { redirect } from "next/navigation";
 
 import { Match } from "~/app/_components/match";
 import { api, HydrateClient } from "~/trpc/server";
 
-export default async function Page({
-  params,
-}: {
+type Props = {
   params: Promise<{ matchId: string; id: string }>;
-}) {
+};
+export async function generateMetadata(
+  { params }: Props,
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
+  // read route params
+  const slugs = await params;
+  const matchId = slugs.matchId;
+
+  // fetch data
+  if (isNaN(Number(matchId))) return { title: "Games" };
+  const match = await api.match.getMatch({ id: Number(matchId) });
+  if (!match) return { title: "Match" };
+  return {
+    title: `${match.name} Scoresheet`,
+    description: `Scoresheet Table for ${match.name}`,
+  };
+}
+export default async function Page({ params }: Props) {
   const slugs = await params;
   const matchId = slugs.matchId;
   const gameId = slugs.id;

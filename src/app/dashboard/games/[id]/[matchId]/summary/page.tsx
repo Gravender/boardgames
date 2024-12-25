@@ -1,3 +1,4 @@
+import type { Metadata, ResolvingMetadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -24,11 +25,38 @@ import {
 import { cn, formatDuration } from "~/lib/utils";
 import { api } from "~/trpc/server";
 
-export default async function Page({
-  params,
-}: {
+type Props = {
   params: Promise<{ matchId: string; id: string }>;
-}) {
+};
+
+export async function generateMetadata(
+  { params }: Props,
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
+  // read route params
+  const slugs = await params;
+  const matchId = slugs.matchId;
+
+  // fetch data
+  if (isNaN(Number(matchId))) return { title: "Games" };
+  const summary = await api.match.getSummary({
+    id: Number(matchId),
+  });
+  if (!summary) return { title: "Games" };
+  if (!summary.gameImageUrl)
+    return {
+      title: `${summary.name} Summary`,
+      description: `Summarizing the results of ${summary.name}`,
+    };
+  return {
+    title: `${summary.name} Summary`,
+    description: `Summarizing the results of ${summary.name}`,
+    openGraph: {
+      images: [summary.gameImageUrl],
+    },
+  };
+}
+export default async function Page({ params }: Props) {
   const slugs = await params;
   const matchId = slugs.matchId;
   if (isNaN(Number(matchId))) redirect("/dashboard/games");

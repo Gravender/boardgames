@@ -1,3 +1,4 @@
+import type { Metadata, ResolvingMetadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
@@ -17,11 +18,40 @@ import { api } from "~/trpc/server";
 
 import { GameDetails } from "./_components/GameDetailsTable";
 
-export default async function Page({
-  params,
-}: {
+type Props = {
   params: Promise<{ id: string }>;
-}) {
+};
+export async function generateMetadata(
+  { params }: Props,
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
+  // read route params
+  const id = (await params).id;
+
+  // fetch data
+  if (isNaN(Number(id))) return { title: "Player" };
+  const player = await api.player.getPlayer({
+    id: Number(id),
+  });
+  if (!player) return { title: "Player" };
+  if (!player.imageUrl)
+    return {
+      title: `${player.name}'s Stats`,
+      description: `${player.name} Board Game Stats`,
+
+      icons: [{ rel: "icon", url: "/user.ico" }],
+    };
+  return {
+    title: `${player.name}'s Stats`,
+    description: `${player.name} Board Game Stats`,
+    icons: [{ rel: "icon", url: "/user.ico" }],
+    openGraph: {
+      images: [player.imageUrl],
+    },
+  };
+}
+
+export default async function Page({ params }: Props) {
   const slugs = await params;
   const playerId = slugs.id;
   if (isNaN(Number(playerId))) redirect("/dashboard/players");

@@ -1,8 +1,19 @@
 "use server";
 
+import type { Metadata, ResolvingMetadata } from "next";
+
 import { api } from "~/trpc/server";
 
 import { PlayersTable } from "./_components/players";
+
+export async function generateMetadata(
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
+  return {
+    title: "Players",
+    icons: [{ rel: "icon", url: "/users.ico" }],
+  };
+}
 
 export default async function Page() {
   const players = await api.player.getPlayers();

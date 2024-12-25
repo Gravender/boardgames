@@ -10,8 +10,8 @@ import { Toaster } from "~/components/ui/toaster";
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
-  title: "Games",
-  description: "Games created by gravender",
+  title: "Board Games Tracker",
+  description: "Board Games Tracker created by gravender",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
