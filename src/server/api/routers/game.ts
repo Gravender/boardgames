@@ -1,12 +1,8 @@
 import { TRPCError } from "@trpc/server";
-import { and, count, eq, inArray, is, max, sql } from "drizzle-orm";
+import { and, count, eq, inArray, max, sql } from "drizzle-orm";
 import { z } from "zod";
 
-import {
-  createTRPCRouter,
-  protectedUserProcedure,
-  publicProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
 import {
   game,
   image,
@@ -16,10 +12,8 @@ import {
   round,
   scoresheet,
   selectGameSchema,
-  user,
 } from "~/server/db/schema";
-import players from "~/server/db/schema/player";
-import { insertRoundSchema, selectRoundSchema } from "~/server/db/schema/round";
+import { insertRoundSchema } from "~/server/db/schema/round";
 
 export const gameRouter = createTRPCRouter({
   create: protectedUserProcedure
@@ -409,7 +403,7 @@ export const gameRouter = createTRPCRouter({
           .where(eq(scoresheet.id, input.scoresheet.id));
       }
       if (input.roundsToEdit) {
-        Promise.all(
+        await Promise.all(
           input.roundsToEdit.map(async (roundToUpdate) => {
             await ctx.db
               .update(round)

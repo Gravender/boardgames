@@ -288,7 +288,7 @@ export function EditMatchForm({
               type="reset"
               variant="secondary"
               onClick={() => {
-                form.reset();
+                router.back();
               }}
             >
               Cancel

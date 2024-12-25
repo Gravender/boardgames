@@ -1,7 +1,6 @@
 "use client";
 
 import { format } from "date-fns";
-import { TrendingDown, TrendingUp } from "lucide-react";
 import { LabelList, Pie, PieChart } from "recharts";
 
 import {

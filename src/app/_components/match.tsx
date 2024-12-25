@@ -1,11 +1,8 @@
 "use client";
 
-import { finished } from "stream";
-import { use, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { set } from "date-fns";
-import { is } from "drizzle-orm";
 import { ListPlus, Pause, Play, RotateCcw } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { type z } from "zod";
@@ -154,7 +151,7 @@ export function Match({ match }: { match: Match }) {
         duration: duration,
       });
     }
-  }, [isRunning, duration]);
+  }, [isRunning, duration, match, updateMatchDuration]);
 
   const toggleClock = () => {
     setIsRunning(!isRunning);

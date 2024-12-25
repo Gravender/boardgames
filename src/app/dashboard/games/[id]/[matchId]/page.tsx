@@ -7,10 +7,7 @@ import { api, HydrateClient } from "~/trpc/server";
 type Props = {
   params: Promise<{ matchId: string; id: string }>;
 };
-export async function generateMetadata(
-  { params }: Props,
-  parent: ResolvingMetadata,
-): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // read route params
   const slugs = await params;
   const matchId = slugs.matchId;

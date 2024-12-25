@@ -42,7 +42,7 @@ export function Matches({
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   useEffect(() => {
-    let filteredMatches = data.filter((player) =>
+    const filteredMatches = data.filter((player) =>
       player.name.toLowerCase().includes(search.toLowerCase()),
     );
 

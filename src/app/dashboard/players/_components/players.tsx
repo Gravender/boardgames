@@ -11,7 +11,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { RouterOutputs } from "~/trpc/react";
+import { type RouterOutputs } from "~/trpc/react";
 
 import { AddPlayerDialog } from "./addPlayerDialog";
 import { PlayerDropDown } from "./playerDropDown";
@@ -29,7 +29,7 @@ export function PlayersTable({
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   useEffect(() => {
-    let filteredPlayers = data.filter((player) =>
+    const filteredPlayers = data.filter((player) =>
       player.name.toLowerCase().includes(search.toLowerCase()),
     );
 

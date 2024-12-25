@@ -113,7 +113,7 @@ function Content({
         reset();
       }
     };
-  }, [isOpen]);
+  });
 
   const onSubmit = async (values: formSchemaType) => {
     setIsSubmitting(true);

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ChevronDown, ChevronUp, Dices } from "lucide-react";
 
-import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import {
   Table,
@@ -14,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { RouterOutputs } from "~/trpc/react";
+import { type RouterOutputs } from "~/trpc/react";
 
 type Games = NonNullable<RouterOutputs["player"]["getPlayer"]>["games"];
 type SortField = "name" | "plays" | "wins" | "winRate";
@@ -25,15 +24,16 @@ export function GameDetails({ data }: { data: Games }) {
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
   useEffect(() => {
-    let temp = [...games];
+    setGames((prev) => {
+      const temp = [...games];
 
-    temp.sort((a, b) => {
-      if (a[sortField] < b[sortField]) return sortOrder === "asc" ? -1 : 1;
-      if (a[sortField] > b[sortField]) return sortOrder === "asc" ? 1 : -1;
-      return 0;
+      temp.sort((a, b) => {
+        if (a[sortField] < b[sortField]) return sortOrder === "asc" ? -1 : 1;
+        if (a[sortField] > b[sortField]) return sortOrder === "asc" ? 1 : -1;
+        return 0;
+      });
+      return temp;
     });
-
-    setGames(temp);
   }, [data, sortField, sortOrder]);
 
   const toggleSort = (field: SortField) => {

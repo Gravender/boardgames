@@ -1,6 +1,5 @@
 import { Settings } from "lucide-react";
 import { useFieldArray, type UseFormReturn } from "react-hook-form";
-import { type z } from "zod";
 
 import { NumberInput } from "~/components/number-input";
 import { Button } from "~/components/ui/button";
@@ -11,7 +10,6 @@ import {
   FormLabel,
   FormMessage,
 } from "~/components/ui/form";
-import { Input } from "~/components/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -26,7 +24,7 @@ import {
 } from "~/components/ui/select";
 import { insertRoundSchema } from "~/server/db/schema/round";
 
-import { formSchemaType } from "../page";
+import { type formSchemaType } from "../page";
 
 export function RoundPopOver({
   index,

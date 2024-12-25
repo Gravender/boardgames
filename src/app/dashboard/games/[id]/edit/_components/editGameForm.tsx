@@ -24,13 +24,6 @@ import {
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
-import {
   Form,
   FormControl,
   FormDescription,
@@ -44,8 +37,8 @@ import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
 import { useToast } from "~/hooks/use-toast";
 import { useEditGameStore } from "~/providers/edit-game-provider";
-import { editGameSchema, ScoreSheetType } from "~/stores/edit-game-store";
-import { api, RouterOutputs, type RouterInputs } from "~/trpc/react";
+import { editGameSchema } from "~/stores/edit-game-store";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
 const formSchema = editGameSchema;
@@ -297,7 +290,7 @@ export function EditGameForm({
       setScoresheetChanged(false);
       setRounds(data.rounds);
     }
-  }, []);
+  });
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsUploading(true);
     if (values.gameImg === data.imageUrl) {
@@ -599,9 +592,7 @@ export function EditGameForm({
                                     : parseInt(e.target.value),
                                 )
                               }
-                              value={
-                                field.value !== null ? field.value : undefined
-                              }
+                              value={field.value ?? undefined}
                             />
                           </FormControl>
                         </FormItem>

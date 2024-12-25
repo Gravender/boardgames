@@ -1,12 +1,11 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { z } from "zod";
 
-import { CapitalizeFirstLetterOfEachWord } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
 import {

@@ -1,6 +1,5 @@
-import { get } from "http";
 import { TRPCError } from "@trpc/server";
-import { and, count, desc, eq, max, sql } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";

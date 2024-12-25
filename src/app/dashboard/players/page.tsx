@@ -6,9 +6,7 @@ import { api } from "~/trpc/server";
 
 import { PlayersTable } from "./_components/players";
 
-export async function generateMetadata(
-  parent: ResolvingMetadata,
-): Promise<Metadata> {
+export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Players",
     icons: [{ rel: "icon", url: "/users.ico" }],

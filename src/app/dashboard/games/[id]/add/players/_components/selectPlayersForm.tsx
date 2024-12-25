@@ -10,13 +10,7 @@ import { z } from "zod";
 import { Spinner } from "~/components/spinner";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { CardFooter } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
   Form,
@@ -31,7 +25,7 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { cn } from "~/lib/utils";
 import { useAddMatchStore } from "~/providers/add-match-provider";
 import { playersSchema } from "~/stores/add-match-store";
-import { api, RouterOutputs } from "~/trpc/react";
+import { RouterOutputs } from "~/trpc/react";
 
 const formSchema = z.object({
   players: playersSchema,

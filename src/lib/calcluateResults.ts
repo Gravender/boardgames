@@ -1,7 +1,7 @@
-import { z } from "zod";
+import { type z } from "zod";
 
-import { insertScoreSheetSchema } from "~/server/db/schema";
-import { insertRoundSchema } from "~/server/db/schema/round";
+import { type insertScoreSheetSchema } from "~/server/db/schema";
+import { type insertRoundSchema } from "~/server/db/schema/round";
 
 type scoreSheet = {
   roundsScore: NonNullable<

@@ -27,7 +27,7 @@ export function PlayersTable({
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   useEffect(() => {
-    let filteredPlayers = data.filter((player) =>
+    const filteredPlayers = data.filter((player) =>
       player.name.toLowerCase().includes(search.toLowerCase()),
     );
 

@@ -3,7 +3,10 @@
 import { createContext, useContext, useRef, type ReactNode } from "react";
 import { useStore } from "zustand";
 
-import { AddMatchStore, createAddMatchStore } from "~/stores/add-match-store";
+import {
+  createAddMatchStore,
+  type AddMatchStore,
+} from "~/stores/add-match-store";
 
 export type AddMatchStoreApi = ReturnType<typeof createAddMatchStore>;
 

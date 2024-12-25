@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import { ChevronDown, ChevronUp, Dices, User } from "lucide-react";
+import { ChevronDown, ChevronUp, User } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import {
   Table,
@@ -15,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { RouterOutputs } from "~/trpc/react";
+import { type RouterOutputs } from "~/trpc/react";
 
 type Players = NonNullable<RouterOutputs["game"]["getGameStats"]>["players"];
 type SortField = "name" | "plays" | "wins" | "winRate";
@@ -26,15 +24,15 @@ export function PlayerDetails({ data }: { data: Players }) {
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
   useEffect(() => {
-    let temp = [...players];
-
-    temp.sort((a, b) => {
-      if (a[sortField] < b[sortField]) return sortOrder === "asc" ? -1 : 1;
-      if (a[sortField] > b[sortField]) return sortOrder === "asc" ? 1 : -1;
-      return 0;
+    setPlayers((prev) => {
+      const temp = [...prev];
+      temp.sort((a, b) => {
+        if (a[sortField] < b[sortField]) return sortOrder === "asc" ? -1 : 1;
+        if (a[sortField] > b[sortField]) return sortOrder === "asc" ? 1 : -1;
+        return 0;
+      });
+      return temp;
     });
-
-    setPlayers(temp);
   }, [data, sortField, sortOrder]);
 
   const toggleSort = (field: SortField) => {

@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { deleteGame } from "~/server/queries";
-import { type RouterInputs, type RouterOutputs } from "~/trpc/react";
+import { type RouterOutputs } from "~/trpc/react";
 
 export function GamesDropDown({
   data,

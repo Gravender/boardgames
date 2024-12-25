@@ -28,7 +28,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { useToast } from "~/hooks/use-toast";
 import { insertPlayerSchema } from "~/server/db/schema";
-import { api, RouterOutputs } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
 export const EditPlayerDialog = ({

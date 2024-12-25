@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Copy, Minus, Plus, Trash } from "lucide-react";
-import { useFieldArray, useForm, UseFormReturn } from "react-hook-form";
+import { useFieldArray, useForm, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 
 import { GradientPicker } from "~/components/color-picker";
@@ -53,7 +53,7 @@ export default function Page() {
     if (!scoresheet) {
       router.back();
     }
-  }, []);
+  });
   const form = useForm<formSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
