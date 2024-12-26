@@ -52,7 +52,7 @@ export function AppSidebar({
       items: players.map((player) => {
         return {
           title: player.name,
-          url: `/dashboard/players/${player.id}`,
+          url: `/dashboard/players/${player.id}/stats`,
         };
       }),
     },

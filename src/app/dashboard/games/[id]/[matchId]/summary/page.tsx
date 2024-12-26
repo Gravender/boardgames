@@ -63,7 +63,7 @@ export default async function Page({ params }: Props) {
   if (!summary) redirect("/dashboard/games");
   return (
     <div className="flex w-full items-center justify-center">
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 items-center sm:grid sm:grid-cols-2 max-w-4xl sm:items-stretch">
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 items-center sm:grid sm:grid-cols-2 max-w-[54rem] sm:items-stretch">
         <Card className="w-full sm:col-span-2">
           <CardHeader>
             <CardTitle>Summary</CardTitle>
@@ -103,21 +103,23 @@ export default async function Page({ params }: Props) {
               </div>
             </div>
           </CardContent>
-          <CardFooter className="flex gap-2">
+          <CardFooter className="flex gap-2 items-start">
             <span>Actions:</span>
-            <Button variant="secondary" asChild>
-              <Link href={`/dashboard/games/${summary.gameId}/${summary.id}`}>
-                {"Back To Score"}
-              </Link>
-            </Button>
-            <Button variant="secondary" asChild>
-              <Link href={`/dashboard/games/${summary.gameId}/`}>
-                {"Back To Game"}
-              </Link>
-            </Button>
-            <Button variant="secondary" asChild>
-              <Link href={`/dashboard/games/`}>{"Back To Games"}</Link>
-            </Button>
+            <div className="flex flex-row flex-wrap max-w-sm sm:full sm:justify-end sm:space-x-2 gap-2">
+              <Button variant="secondary" asChild>
+                <Link href={`/dashboard/games/${summary.gameId}/${summary.id}`}>
+                  {"Back To Score"}
+                </Link>
+              </Button>
+              <Button variant="secondary" asChild>
+                <Link href={`/dashboard/games/${summary.gameId}/`}>
+                  {"Back To Game"}
+                </Link>
+              </Button>
+              <Button variant="secondary" asChild>
+                <Link href={`/dashboard/games/`}>{"Back To Games"}</Link>
+              </Button>
+            </div>
           </CardFooter>
         </Card>
 
