@@ -216,7 +216,7 @@ export const matchRouter = createTRPCRouter({
         },
       });
       if (!returnedMatch) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        return null;
       }
       const previousMatches = await ctx.db.query.match.findMany({
         columns: {
@@ -273,15 +273,25 @@ export const matchRouter = createTRPCRouter({
         });
       const playerStats = previousMatches
         .flatMap((match) =>
-          match.matchPlayers.map((matchPlayer) => {
-            const player = matchPlayer.player;
-            return {
-              id: player.id,
-              name: player.name,
-              score: matchPlayer.score,
-              isWinner: matchPlayer.winner,
-            };
-          }),
+          match.matchPlayers
+
+            .map((matchPlayer) => {
+              const player = matchPlayer.player;
+              if (
+                returnedMatch.matchPlayers.findIndex(
+                  (returnedMatchPlayer) =>
+                    returnedMatchPlayer.player.id === player.id,
+                ) === -1
+              )
+                return false;
+              return {
+                id: player.id,
+                name: player.name,
+                score: matchPlayer.score,
+                isWinner: matchPlayer.winner,
+              };
+            })
+            .filter((player) => player !== false),
         )
         .reduce(
           (acc, player) => {

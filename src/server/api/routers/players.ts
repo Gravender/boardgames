@@ -181,7 +181,7 @@ export const playerRouter = createTRPCRouter({
       });
 
       if (!returnedPlayer) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        return null;
       }
       const matches = returnedPlayer.matchesByPlayer.map((matchPlayer) => {
         return {
