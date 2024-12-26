@@ -1,3 +1,4 @@
+import { match } from "assert";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -5,6 +6,7 @@ import { redirect } from "next/navigation";
 import { Dices, User } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -130,23 +132,28 @@ export default async function Page({ params }: Props) {
           <CardContent className="flex flex-col divide-y">
             {summary.players.map((player, index) => {
               const calculatePerformance = () => {
-                if (!player.score) return "";
+                if (player.score === null) return "";
                 const foundPlayer = summary.playerStats.find(
                   (p) => p.id === player.id,
                 );
                 if (!foundPlayer) return "";
-                if (foundPlayer.plays === 1) return "First Game";
+                const firstGame = foundPlayer.dates.sort(
+                  (a, b) => a.getTime() - b.getTime(),
+                )[0];
+                if (
+                  foundPlayer.plays === 1 ||
+                  summary.date.getTime() === firstGame?.getTime()
+                )
+                  return "First Game";
                 const highestScore = Math.max(...foundPlayer.scores);
                 const lowestScore = Math.min(...foundPlayer.scores);
 
                 if (summary.scoresheet.winCondition === "Highest Score") {
-                  if (player.score > highestScore) return "Best Game";
-                  if (player.score === highestScore) return "Tied Best Game";
+                  if (player.score >= highestScore) return "Best Game";
                   if (player.score === lowestScore) return "Worst Game";
                 }
                 if (summary.scoresheet.winCondition === "Lowest Score") {
-                  if (player.score < lowestScore) return "Best Game";
-                  if (player.score === lowestScore) return "Tied Best Game";
+                  if (player.score <= lowestScore) return "Best Game";
                   if (player.score === highestScore) return "Worst Game";
                 }
                 if (summary.scoresheet.winCondition === "Target Score") {
@@ -175,10 +182,17 @@ export default async function Page({ params }: Props) {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="text-base">{player.name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {playerPerformance}
+                        <span className="text-foreground text-base font-semibold">
+                          {player.name}
                         </span>
+                        {playerPerformance && (
+                          <Badge
+                            variant="outline"
+                            className="text-sm text-foreground font-medium"
+                          >
+                            {playerPerformance}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>

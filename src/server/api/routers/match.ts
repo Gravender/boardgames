@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq, inArray } from "drizzle-orm";
+import { date } from "drizzle-orm/mysql-core";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
@@ -289,6 +290,7 @@ export const matchRouter = createTRPCRouter({
                 name: player.name,
                 score: matchPlayer.score,
                 isWinner: matchPlayer.winner,
+                date: match.date,
               };
             })
             .filter((player) => player !== false),
@@ -298,6 +300,7 @@ export const matchRouter = createTRPCRouter({
             const foundPlayer = acc.find((p) => p.id === player.id);
             if (foundPlayer) {
               foundPlayer.scores.push(player.score ?? 0);
+              foundPlayer.dates.push(player.date);
               if (player.isWinner) {
                 foundPlayer.wins = foundPlayer.wins + 1;
               }
@@ -306,6 +309,7 @@ export const matchRouter = createTRPCRouter({
               acc.push({
                 name: player.name,
                 scores: [player.score ?? 0],
+                dates: [player.date],
                 wins: player.isWinner ? 1 : 0,
                 id: player.id,
                 plays: 1,
@@ -316,6 +320,7 @@ export const matchRouter = createTRPCRouter({
           [] as {
             name: string;
             scores: number[];
+            dates: Date[];
             wins: number;
             id: number;
             plays: number;
