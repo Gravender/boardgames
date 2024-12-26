@@ -156,7 +156,7 @@ export const matchRouter = createTRPCRouter({
         },
       });
       if (!returnedMatch) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
+        return null;
       }
       const refinedPlayers = returnedMatch.matchPlayers.map((matchPlayer) => {
         return {

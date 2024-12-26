@@ -219,7 +219,7 @@ export const gameRouter = createTRPCRouter({
           },
         },
       });
-      if (!result) throw new TRPCError({ code: "NOT_FOUND" });
+      if (!result) return null;
       const matches = result.matches.map((match) => {
         const winners = match.matchPlayers.filter((player) => player.winner);
         return {

@@ -24,10 +24,11 @@ export default async function Page({
 }) {
   const slugs = await params;
   const gameId = slugs.id;
-  if (isNaN(Number(gameId))) redirect("/dashboard/players");
+  if (isNaN(Number(gameId))) redirect("/dashboard/games");
   const game = await api.game.getGameStats({
     id: Number(gameId),
   });
+  if (!game) redirect("/dashboard/games");
   const lastPlayed = game.matches[0];
   return (
     <div className="flex w-full items-center justify-center">
