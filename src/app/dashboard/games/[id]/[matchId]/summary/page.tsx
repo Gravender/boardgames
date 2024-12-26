@@ -63,7 +63,7 @@ export default async function Page({ params }: Props) {
   if (!summary) redirect("/dashboard/games");
   return (
     <div className="flex w-full items-center justify-center">
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 items-center sm:grid sm:grid-cols-2 max-w-3xl sm:items-stretch">
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 items-center sm:grid sm:grid-cols-2 max-w-4xl sm:items-stretch">
         <Card className="w-full sm:col-span-2">
           <CardHeader>
             <CardTitle>Summary</CardTitle>
@@ -121,7 +121,7 @@ export default async function Page({ params }: Props) {
           </CardFooter>
         </Card>
 
-        <Card className="max-w-xl w-full sm:col-span-1">
+        <Card className="max-w-2xl w-full sm:col-span-1">
           <CardHeader>
             <CardTitle>Match Results</CardTitle>
           </CardHeader>
@@ -133,19 +133,19 @@ export default async function Page({ params }: Props) {
                   (p) => p.id === player.id,
                 );
                 if (!foundPlayer) return "";
+                if (foundPlayer.plays === 1) return "First Game";
                 const highestScore = Math.max(...foundPlayer.scores);
                 const lowestScore = Math.min(...foundPlayer.scores);
-                if (foundPlayer.plays === 1) return "First Game";
 
                 if (summary.scoresheet.winCondition === "Highest Score") {
                   if (player.score > highestScore) return "Best Game";
                   if (player.score === highestScore) return "Tied Best Game";
-                  return "Worst Game";
+                  if (player.score === lowestScore) return "Worst Game";
                 }
                 if (summary.scoresheet.winCondition === "Lowest Score") {
                   if (player.score < lowestScore) return "Best Game";
                   if (player.score === lowestScore) return "Tied Best Game";
-                  return "Worst Game";
+                  if (player.score === highestScore) return "Worst Game";
                 }
                 if (summary.scoresheet.winCondition === "Target Score") {
                   if (player.score === summary.scoresheet.targetScore)
@@ -186,7 +186,7 @@ export default async function Page({ params }: Props) {
             })}
           </CardContent>
         </Card>
-        <Card className="max-w-xl w-full sm:col-span-1">
+        <Card className="max-w-2xl w-full sm:col-span-1">
           <CardHeader>
             <CardTitle>Player stats</CardTitle>
           </CardHeader>
