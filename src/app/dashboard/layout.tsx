@@ -1,5 +1,8 @@
 "use server";
 
+import { redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
+
 import { AppSidebar } from "~/components/app-sidebar";
 import { BreadCrumbs } from "~/components/breadcrumbs";
 import { ModeToggle } from "~/components/theme-toggle";
@@ -16,6 +19,11 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    redirect("/sign-up");
+  }
   const games = await api.dashboard.getGames();
   const players = await api.dashboard.getPlayers();
 
