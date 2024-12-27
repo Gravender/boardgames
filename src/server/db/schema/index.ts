@@ -25,6 +25,18 @@ export {
   selectPlayerSchema,
 } from "./player";
 export {
+  default as group,
+  groupRelations,
+  insertGroupSchema,
+  selectGroupSchema,
+} from "./group";
+export {
+  default as groupPlayer,
+  groupPlayerRelations,
+  insertGroupPlayerSchema,
+  selectGroupPlayerSchema,
+} from "./groupPlayer";
+export {
   default as matchPlayer,
   matchPlayerRelations,
   insertMatchPlayerSchema,
