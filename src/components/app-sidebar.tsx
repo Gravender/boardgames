@@ -26,10 +26,12 @@ import { type RouterOutputs } from "~/trpc/react";
 export function AppSidebar({
   games,
   players,
+  groups,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   games: RouterOutputs["dashboard"]["getGames"];
   players: RouterOutputs["dashboard"]["getPlayers"];
+  groups: RouterOutputs["dashboard"]["getGroups"];
 }) {
   const { isLoaded, isSignedIn, user } = useUser();
   const data = [

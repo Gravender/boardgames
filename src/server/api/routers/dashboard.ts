@@ -2,7 +2,15 @@ import { subMonths } from "date-fns";
 import { and, count, desc, eq, gte, lte, max, sql } from "drizzle-orm";
 import { z } from "zod";
 
-import { game, image, match, matchPlayer, player } from "~/server/db/schema";
+import {
+  game,
+  group,
+  groupPlayer,
+  image,
+  match,
+  matchPlayer,
+  player,
+} from "~/server/db/schema";
 
 import { protectedUserProcedure } from "../trpc";
 
@@ -71,6 +79,7 @@ export const dashboardRouter = {
       .groupBy(game.id)
       .orderBy(max(match.date), game.name)
       .limit(5);
+    games.sort((a, b) => a.name.localeCompare(b.name));
     return games;
   }),
   getPlayers: protectedUserProcedure.query(async ({ ctx }) => {
@@ -85,7 +94,23 @@ export const dashboardRouter = {
       .groupBy(player.id)
       .orderBy(desc(count(matchPlayer)), player.name)
       .limit(5);
+    players.sort((a, b) => a.name.localeCompare(b.name));
     return players;
+  }),
+  getGroups: protectedUserProcedure.query(async ({ ctx }) => {
+    const groups = await ctx.db
+      .select({
+        id: group.id,
+        name: group.name,
+      })
+      .from(group)
+      .where(eq(group.createdBy, ctx.userId))
+      .innerJoin(groupPlayer, eq(groupPlayer.groupId, group.id))
+      .groupBy(group.id)
+      .orderBy(desc(count(groupPlayer)), group.name)
+      .limit(5);
+    groups.sort((a, b) => a.name.localeCompare(b.name));
+    return groups;
   }),
   getMatchesByMonth: protectedUserProcedure.query(async ({ ctx }) => {
     const matches = await ctx.db
