@@ -55,6 +55,7 @@ export default async function Page({ params }: Props) {
   const player = await api.player.getPlayer({
     id: Number(playerId),
   });
+  if (player === null) redirect("/dashboard/players");
   const lastPlayed = player.matches[0];
   return (
     <div className="flex w-full items-center justify-center">
@@ -70,7 +71,7 @@ export default async function Page({ params }: Props) {
                       fill
                       src={player.imageUrl}
                       alt={`${player.name} player image`}
-                      className="rounded-md aspect-square h-full w-full"
+                      className="rounded-md aspect-square h-full w-full object-cover"
                     />
                   ) : (
                     <User className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
@@ -135,7 +136,7 @@ export default async function Page({ params }: Props) {
                         fill
                         src={lastPlayed.gameImageUrl}
                         alt={`${lastPlayed.gameName} game image`}
-                        className="rounded-md aspect-square h-full w-full"
+                        className="rounded-md aspect-square h-full w-full object-cover"
                       />
                     ) : (
                       <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
@@ -227,7 +228,7 @@ export default async function Page({ params }: Props) {
                                 fill
                                 src={match.gameImageUrl}
                                 alt={`${match.gameName} game image`}
-                                className="rounded-md aspect-square h-full w-full"
+                                className="rounded-md aspect-square h-full w-full object-cover"
                               />
                             ) : (
                               <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />

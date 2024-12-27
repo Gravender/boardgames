@@ -178,7 +178,7 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
                         <Image
                           src={imagePreview}
                           alt="Player image"
-                          className="rounded-sm aspect-square h-full w-full"
+                          className="rounded-sm aspect-square h-full w-full object-cover"
                           fill
                         />
                       ) : (

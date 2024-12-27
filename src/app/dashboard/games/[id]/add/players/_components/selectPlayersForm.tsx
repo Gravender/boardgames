@@ -119,6 +119,7 @@ export default function SelectPlayersForm({
                                   <div className="flex items-center gap-2">
                                     <Avatar>
                                       <AvatarImage
+                                        className="object-cover"
                                         src={player.imageUrl}
                                         alt={player.name}
                                       />

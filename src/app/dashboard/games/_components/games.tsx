@@ -32,7 +32,7 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
                 fill
                 src={row.getValue("image")}
                 alt={`${row.original.name} game image`}
-                className="rounded-md aspect-square h-full w-full"
+                className="rounded-md aspect-square h-full w-full object-cover"
               />
             ) : (
               <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
@@ -171,7 +171,7 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
                       fill
                       src={row.getValue("image")}
                       alt={`${row.original.name} game image`}
-                      className="rounded-md aspect-square h-full w-full"
+                      className="rounded-md aspect-square h-full w-full object-cover"
                     />
                   ) : (
                     <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />

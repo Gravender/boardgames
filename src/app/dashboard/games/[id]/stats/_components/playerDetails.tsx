@@ -100,7 +100,11 @@ export function PlayerDetails({ data }: { data: Players }) {
                 <TableCell className="p-2 sm:p-4">
                   <div className="flex gap-2 sm:gap-4 w-full items-center text-xs">
                     <Avatar className="h-7 w-7 sm:h-10 sm:w-10">
-                      <AvatarImage src={player.imageUrl} alt={player.name} />
+                      <AvatarImage
+                        className="object-cover"
+                        src={player.imageUrl}
+                        alt={player.name}
+                      />
                       <AvatarFallback className="bg-slate-300">
                         <User />
                       </AvatarFallback>

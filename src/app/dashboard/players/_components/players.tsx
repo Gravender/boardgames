@@ -49,6 +49,7 @@ export function PlayersTable({
                     <div className="flex items-center gap-2">
                       <Avatar className="shadow h-14 w-14">
                         <AvatarImage
+                          className="object-cover"
                           src={player.imageUrl ?? ""}
                           alt={player.name}
                         />

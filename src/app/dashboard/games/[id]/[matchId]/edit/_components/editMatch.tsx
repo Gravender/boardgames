@@ -93,7 +93,7 @@ export function EditMatchForm({
   match,
   players,
 }: {
-  match: RouterOutputs["match"]["getMatch"];
+  match: NonNullable<RouterOutputs["match"]["getMatch"]>;
   players: RouterOutputs["player"]["getPlayersByGame"];
 }) {
   const { startUpload } = useUploadThing("imageUploader");
@@ -428,6 +428,7 @@ const PlayersContent = ({
                           <div className="flex items-center gap-2">
                             <Avatar>
                               <AvatarImage
+                                className="object-cover"
                                 src={player.imageUrl}
                                 alt={player.name}
                               />
@@ -593,7 +594,7 @@ const PlayerContent = ({
             <Image
               src={image.preview}
               alt="Player image"
-              className="rounded-sm aspect-square h-full w-full"
+              className="rounded-sm aspect-square h-full w-full object-cover"
               fill
             />
           ) : (

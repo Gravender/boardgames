@@ -70,7 +70,7 @@ export function Matches({
                         <Image
                           src={imageUrl}
                           alt={`${gameName} game image`}
-                          className="rounded-md aspect-square h-full w-full"
+                          className="rounded-md aspect-square h-full w-full object-cover"
                           width={48}
                           height={48}
                         />

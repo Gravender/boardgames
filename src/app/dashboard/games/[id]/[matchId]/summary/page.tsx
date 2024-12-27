@@ -77,7 +77,7 @@ export default async function Page({ params }: Props) {
                       fill
                       src={summary.gameImageUrl}
                       alt={`${summary.gameName} game image`}
-                      className="rounded-md aspect-square h-full w-full"
+                      className="rounded-md aspect-square h-full w-full object-cover"
                     />
                   ) : (
                     <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
@@ -176,7 +176,11 @@ export default async function Page({ params }: Props) {
                     <span>{`${index + 1}.`}</span>
                     <div className="flex items-center gap-2">
                       <Avatar className="shadow">
-                        <AvatarImage src={player.imageUrl} alt={player.name} />
+                        <AvatarImage
+                          className="object-cover"
+                          src={player.imageUrl}
+                          alt={player.name}
+                        />
                         <AvatarFallback className="bg-slate-300">
                           <User />
                         </AvatarFallback>

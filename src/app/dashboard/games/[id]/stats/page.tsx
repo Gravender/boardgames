@@ -44,7 +44,7 @@ export default async function Page({
                       fill
                       src={game.imageUrl}
                       alt={`${game.name} game image`}
-                      className="rounded-md aspect-square h-full w-full"
+                      className="rounded-md aspect-square h-full w-full object-cover"
                     />
                   ) : (
                     <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
@@ -92,7 +92,7 @@ export default async function Page({
                         fill
                         src={game.imageUrl}
                         alt={`${game.name} game image`}
-                        className="rounded-md aspect-square h-full w-full"
+                        className="rounded-md aspect-square h-full w-full object-cover"
                       />
                     ) : (
                       <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />
@@ -191,7 +191,7 @@ export default async function Page({
                                 fill
                                 src={game.imageUrl}
                                 alt={`${game.name} game image`}
-                                className="rounded-md aspect-square h-full w-full"
+                                className="rounded-md aspect-square h-full w-full object-cover"
                               />
                             ) : (
                               <Dices className="h-full w-full p-2 items-center justify-center bg-muted rounded-md" />

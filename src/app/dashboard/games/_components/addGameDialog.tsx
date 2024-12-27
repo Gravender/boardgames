@@ -215,7 +215,7 @@ function Content() {
                         <Image
                           src={imagePreview}
                           alt="Game image"
-                          className="rounded-sm aspect-square h-full w-full"
+                          className="rounded-sm aspect-square h-full w-full object-cover"
                           fill
                         />
                       ) : (
