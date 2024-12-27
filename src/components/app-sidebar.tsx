@@ -58,7 +58,7 @@ export function AppSidebar({
     },
     {
       title: "Groups",
-      url: "#",
+      url: "/dashboard/groups",
       icon: UsersRound,
       items: [
         {
