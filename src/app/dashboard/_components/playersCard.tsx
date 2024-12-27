@@ -22,7 +22,11 @@ export function PlayersCard({
           {data.map((player) => (
             <div key={player.id} className="flex gap-2 w-full">
               <Avatar className="shadow h-10 w-10">
-                <AvatarImage src={player.imageUrl ?? ""} alt={player.name} />
+                <AvatarImage
+                  className="object-cover"
+                  src={player.imageUrl ?? ""}
+                  alt={player.name}
+                />
                 <AvatarFallback className="bg-slate-300">
                   <User />
                 </AvatarFallback>
