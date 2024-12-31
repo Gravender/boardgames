@@ -155,6 +155,24 @@ export const gameRouter = createTRPCRouter({
         }),
       };
     }),
+  getGameMetaData: protectedUserProcedure
+    .input(selectGameSchema.pick({ id: true }))
+    .query(async ({ ctx, input }) => {
+      const result = (
+        await ctx.db
+          .select({ id: game.id, name: game.name, image: image.url })
+          .from(game)
+          .where(eq(game.id, input.id))
+          .leftJoin(image, eq(game.imageId, image.id))
+          .limit(1)
+      )[0];
+      if (!result) return null;
+      return {
+        id: result.id,
+        name: result.name,
+        imageUrl: result.image,
+      };
+    }),
   getEditGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {

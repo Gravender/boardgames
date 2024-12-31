@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // fetch data
   if (isNaN(Number(id))) return { title: "Games" };
-  const game = await api.game.getGame({ id: Number(id) });
+  const game = await api.game.getGameMetaData({ id: Number(id) });
   if (!game) return { title: "Games" };
   if (!game.imageUrl)
     return { title: game.name, description: `${game.name} Match Tracker` };
@@ -35,15 +35,15 @@ export default async function Page({ params }: Props) {
   const game = await api.game.getGame({ id: Number(id) });
   if (!game) redirect("/dashboard/games");
   return (
-    <HydrateClient>
-      <div className="flex w-full items-center justify-center">
+    <div className="flex w-full items-center justify-center">
+      <HydrateClient>
         <Matches
           matches={game.matches}
           gameName={game.name}
           imageUrl={game.imageUrl}
           gameId={game.id}
         />
-      </div>
-    </HydrateClient>
+      </HydrateClient>
+    </div>
   );
 }

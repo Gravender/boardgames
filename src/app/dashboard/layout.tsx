@@ -12,18 +12,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "~/components/ui/sidebar";
-import { api } from "~/trpc/server";
+import { api, HydrateClient } from "~/trpc/server";
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { userId } = await auth();
-
-  if (!userId) {
-    redirect("/sign-up");
-  }
+async function SidebarLayout({ children }: { children: React.ReactNode }) {
   const games = await api.dashboard.getGames();
   const players = await api.dashboard.getPlayers();
   const groups = await api.dashboard.getGroups();
@@ -36,7 +27,9 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
-            <BreadCrumbs />
+            <HydrateClient>
+              <BreadCrumbs />
+            </HydrateClient>
           </div>
           <ModeToggle />
         </header>
@@ -44,4 +37,18 @@ export default async function DashboardLayout({
       </SidebarInset>
     </SidebarProvider>
   );
+}
+
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    redirect("/sign-up");
+  }
+
+  return <SidebarLayout>{children}</SidebarLayout>;
 }
