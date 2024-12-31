@@ -85,6 +85,7 @@ const PlayerContent = ({
     onSuccess: async () => {
       await utils.player.getPlayers.invalidate();
       await utils.player.getPlayer.invalidate({ id: player.id });
+      await utils.dashboard.getPlayers.invalidate();
       router.refresh();
       toast({
         title: "Player updated successfully!",

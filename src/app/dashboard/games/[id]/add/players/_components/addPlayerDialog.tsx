@@ -99,6 +99,7 @@ const PlayerContent = ({
       setPlayers([...match.players, player]);
       await utils.player.getPlayers.invalidate();
       await utils.player.getPlayersByGame.invalidate({ game: { id: gameId } });
+      await utils.dashboard.getPlayers.invalidate();
       setOpen(false);
       form.reset();
       router.refresh();

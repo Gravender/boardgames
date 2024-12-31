@@ -90,6 +90,7 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
       setIsUploading(false);
       await utils.player.getPlayers.invalidate();
       await utils.player.getPlayersByGame.invalidate();
+      await utils.dashboard.getPlayers.invalidate();
       setOpen(false);
       form.reset();
       router.refresh();

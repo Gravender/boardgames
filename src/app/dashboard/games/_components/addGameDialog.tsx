@@ -95,7 +95,11 @@ function Content() {
     onSuccess: async () => {
       setIsUploading(false);
       reset();
-      await utils.game.invalidate();
+      await Promise.all([
+        utils.game.getGames.invalidate(),
+        utils.dashboard.getGames.invalidate(),
+        utils.dashboard.getUniqueGames.invalidate(),
+      ]);
       router.refresh();
       form.reset();
       toast({

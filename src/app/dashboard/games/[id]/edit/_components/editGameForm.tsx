@@ -77,7 +77,14 @@ export function EditGameForm({
   const utils = api.useUtils();
   const mutation = api.game.updateGame.useMutation({
     onSuccess: async () => {
-      await utils.game.getGames.invalidate();
+      await Promise.all([
+        utils.game.getGames.invalidate(),
+        utils.game.getGame.invalidate({ id: gameId }),
+        utils.game.getGameMetaData.invalidate({ id: gameId }),
+        utils.game.getGameName.invalidate({ id: gameId }),
+        utils.game.getGameStats.invalidate({ id: gameId }),
+        utils.dashboard.getGames.invalidate(),
+      ]);
       reset();
       toast({
         title: "Game updated successfully!",

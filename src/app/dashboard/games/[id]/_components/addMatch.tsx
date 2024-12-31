@@ -102,6 +102,7 @@ function Content({
       router.push(`/dashboard/games/${gameId}/${match.id}`);
       await Promise.all([
         utils.player.getPlayersByGame.invalidate({ game: { id: gameId } }),
+        utils.player.getPlayers.invalidate(),
         utils.game.getGame.invalidate({ id: gameId }),
         utils.dashboard.invalidate(),
       ]);

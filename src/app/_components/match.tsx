@@ -66,6 +66,7 @@ export function Match({ match }: { match: Match }) {
   const updateMatch = api.match.updateMatch.useMutation({
     onSuccess: async () => {
       await utils.match.getMatch.invalidate({ id: match.id });
+      await utils.game.getGame.invalidate({ id: match.gameId });
 
       router.push(`/dashboard/games/${match.gameId}/${match.id}/summary`);
       setIsSubmitting(false);
