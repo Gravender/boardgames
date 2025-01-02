@@ -1,5 +1,6 @@
 "use client";
 
+import { subMonths } from "date-fns";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
 
@@ -20,9 +21,13 @@ import {
 import { RouterOutputs } from "~/trpc/react";
 
 const chartConfig = {
-  desktop: {
-    label: "Games",
+  thisYear: {
+    label: "This Years Games: ",
     color: "hsl(var(--chart-1))",
+  },
+  lastYear: {
+    label: "Last Years Games: ",
+    color: "hsl(var(--chart-2))",
   },
 } satisfies ChartConfig;
 
@@ -38,12 +43,13 @@ export function PlayedChart({
     if (secondLast <= 0) return 0;
     return ((last - secondLast) / secondLast) * 100;
   };
-  const trend = trendCalculate(data.map((month) => month.played));
+  const trend = trendCalculate(data.map((month) => month.thisYear));
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Matches Played</CardTitle>
-        <CardDescription>{`${data[0]?.month} - ${data[data.length - 1]?.month} ${new Date().getFullYear()}`}</CardDescription>
+        <CardDescription>{`${data[0]?.month} ${subMonths(new Date(), 11).getFullYear()} - ${data[data.length - 1]?.month} ${new Date().getFullYear()}`}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig}>
@@ -68,9 +74,16 @@ export function PlayedChart({
               content={<ChartTooltipContent hideLabel />}
             />
             <Line
-              dataKey="played"
+              dataKey="thisYear"
               type="natural"
-              stroke="var(--color-desktop)"
+              stroke="var(--color-thisYear)"
+              strokeWidth={2}
+              dot={false}
+            />
+            <Line
+              dataKey="lastYear"
+              type="monotone"
+              stroke="var(--color-lastYear)"
               strokeWidth={2}
               dot={false}
             />

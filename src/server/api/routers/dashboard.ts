@@ -127,76 +127,66 @@ export const dashboardRouter = {
           eq(game.deleted, false),
         ),
       );
-    const currentYear: number = new Date().getFullYear();
-    const currentMonth: number = new Date().getMonth();
-    type MatchPerMonth = {
-      January: number;
-      February: number;
-      March: number;
-      April: number;
-      May: number;
-      June: number;
-      July: number;
-      August: number;
-      September: number;
-      October: number;
-      November: number;
-      December: number;
+    type MonthName =
+      | "January"
+      | "February"
+      | "March"
+      | "April"
+      | "May"
+      | "June"
+      | "July"
+      | "August"
+      | "September"
+      | "October"
+      | "November"
+      | "December";
+
+    const monthsPlayed = (year: Date) => {
+      const last12Months: {
+        year: number;
+        month: number;
+        name: MonthName;
+      }[] = Array.from({ length: 12 }, (_, i) => {
+        const date = subMonths(year, i);
+        return {
+          year: date.getFullYear(),
+          month: date.getMonth(),
+          name: date.toLocaleString("default", { month: "long" }) as MonthName,
+        };
+      }).reverse();
+
+      const matchesPerMonth = last12Months.reduce(
+        (acc, { year, month, name }) => {
+          acc[name] = matches.filter(
+            (match) =>
+              match.date.getFullYear() === year &&
+              match.date.getMonth() === month,
+          ).length;
+          return acc;
+        },
+        {} as Record<MonthName, number>,
+      );
+      const matchesPerMonthLastYear = last12Months.reduce(
+        (acc, { year, month, name }) => {
+          acc[name] = matches.filter(
+            (match) =>
+              match.date.getFullYear() === year - 1 &&
+              match.date.getMonth() === month,
+          ).length;
+          return acc;
+        },
+        {} as Record<MonthName, number>,
+      );
+      return last12Months.map(({ name }) => ({
+        month: name,
+        thisYear: matchesPerMonth[name] || 0,
+        lastYear: matchesPerMonthLastYear[name] || 0,
+      }));
     };
-    const monthNames: string[] = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ] as const;
-    const matchesPerMonth: MatchPerMonth = matches.reduce<MatchPerMonth>(
-      (acc, match) => {
-        if (match.date.getFullYear() === currentYear) {
-          const month = monthNames[
-            match.date.getMonth()
-          ] as keyof MatchPerMonth;
-          if (match.date.getMonth() <= currentMonth) {
-            acc[month] = acc[month] + 1;
-          }
-        }
-        return acc;
-      },
-      {
-        January: 0,
-        February: 0,
-        March: 0,
-        April: 0,
-        May: 0,
-        June: 0,
-        July: 0,
-        August: 0,
-        September: 0,
-        October: 0,
-        November: 0,
-        December: 0,
-      },
-    );
+
     return {
       played: matches.length,
-      months: monthNames
-        .map((month, index) => {
-          if (index > currentMonth) {
-            return null;
-          }
-          return {
-            month,
-            played: matchesPerMonth[month as keyof MatchPerMonth],
-          };
-        })
-        .filter((month) => month !== null),
+      months: monthsPlayed(new Date()),
     };
   }),
   getUniqueGames: protectedUserProcedure.query(async ({ ctx }) => {
