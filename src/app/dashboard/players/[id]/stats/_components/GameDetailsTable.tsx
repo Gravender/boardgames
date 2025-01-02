@@ -52,9 +52,9 @@ export function GameDetails({ data }: { data: Games }) {
     );
   };
   return (
-    <ScrollArea className="h-72 w-1 flex-1">
+    <ScrollArea className="h-72 md:h-[30rem] w-1 flex-1">
       <Table>
-        <TableHeader className="text-card-foreground">
+        <TableHeader className="text-card-foreground sticky">
           <TableRow>
             <TableHead className="w-16 sm:w-full px-1 sm:px-4">
               <button
