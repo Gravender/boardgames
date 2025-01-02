@@ -4,7 +4,7 @@ import { api } from "~/trpc/server";
 
 import { PlayedChart } from "./_components/gamesPlayedChart";
 import { PlayersCard } from "./_components/playersCard";
-import { UniqueGamesChart } from "./_components/uniqueGamesCHart";
+import { UniqueGamesChart } from "./_components/uniqueGamesChart";
 
 export default async function Page() {
   const matches = await api.dashboard.getMatchesByMonth();

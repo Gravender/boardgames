@@ -1,5 +1,5 @@
-import { subMonths } from "date-fns";
-import { and, count, desc, eq, gte, lte, max, sql } from "drizzle-orm";
+import { subMonths, subYears } from "date-fns";
+import { and, asc, count, desc, eq, gte, lte, max, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import {
@@ -77,9 +77,8 @@ export const dashboardRouter = {
       .where(and(eq(game.userId, ctx.userId), eq(game.deleted, false)))
       .leftJoin(match, eq(game.id, match.gameId))
       .groupBy(game.id)
-      .orderBy(max(match.date), game.name)
+      .orderBy(desc(count(match)), asc(game.name))
       .limit(5);
-    games.sort((a, b) => a.name.localeCompare(b.name));
     return games;
   }),
   getPlayers: protectedUserProcedure.query(async ({ ctx }) => {
@@ -90,11 +89,15 @@ export const dashboardRouter = {
       })
       .from(player)
       .where(eq(player.createdBy, ctx.userId))
-      .leftJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
+      .innerJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
+      .innerJoin(
+        match,
+        and(eq(match.id, matchPlayer.matchId), eq(match.finished, true)),
+      )
+      .innerJoin(game, and(eq(game.id, match.gameId), eq(game.deleted, false)))
       .groupBy(player.id)
-      .orderBy(desc(count(matchPlayer)), player.name)
+      .orderBy(desc(count(matchPlayer)), asc(player.name))
       .limit(5);
-    players.sort((a, b) => a.name.localeCompare(b.name));
     return players;
   }),
   getGroups: protectedUserProcedure.query(async ({ ctx }) => {
@@ -123,6 +126,7 @@ export const dashboardRouter = {
         game,
         and(
           eq(match.gameId, game.id),
+          eq(match.finished, true),
           eq(game.userId, ctx.userId),
           eq(game.deleted, false),
         ),
@@ -202,7 +206,7 @@ export const dashboardRouter = {
         match,
         and(
           eq(match.gameId, game.id),
-          gte(match.date, subMonths(new Date(), 1)),
+          gte(match.date, subYears(new Date(), 1)),
         ),
       )
       .groupBy(game.id)
@@ -219,8 +223,8 @@ export const dashboardRouter = {
         match,
         and(
           eq(match.gameId, game.id),
-          gte(match.date, subMonths(new Date(), 2)),
-          lte(match.date, subMonths(new Date(), 1)),
+          gte(match.date, subYears(new Date(), 2)),
+          lte(match.date, subYears(new Date(), 1)),
         ),
       )
       .groupBy(game.id)

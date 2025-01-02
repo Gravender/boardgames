@@ -48,7 +48,7 @@ export function UniqueGamesChart({
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
         <CardTitle>Games Played</CardTitle>
-        <CardDescription>{format(new Date(), "MMMM yyyy")}</CardDescription>
+        <CardDescription>{format(new Date(), "yyyy")}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         <ChartContainer
@@ -75,10 +75,10 @@ export function UniqueGamesChart({
       </CardContent>
       <CardFooter className="flex-col gap-2 text-sm">
         <div className="flex items-center gap-2 font-medium leading-none">
-          {`Played ${data.currentMonthGames} different games this month`}
+          {`Played ${data.currentMonthGames} different games this Year`}
         </div>
         <div className="leading-none text-muted-foreground">
-          Showing top 5 games played this month
+          Showing top 5 games played this Year
         </div>
       </CardFooter>
     </Card>
