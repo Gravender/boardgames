@@ -53,3 +53,9 @@ export {
   insertImageSchema,
   selectImageSchema,
 } from "./image";
+export {
+  default as location,
+  locationRelations,
+  insertLocationSchema,
+  selectLocationSchema,
+} from "./location";

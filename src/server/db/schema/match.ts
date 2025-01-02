@@ -11,6 +11,7 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
 import game from "./game";
+import location from "./location";
 import matchPlayer from "./matchPlayer";
 import scoresheet from "./scoresheet";
 import user from "./user";
@@ -39,6 +40,7 @@ const matches = createTable(
     duration: integer("duration").notNull().default(0),
     finished: boolean("finished").notNull().default(false),
     running: boolean("running").notNull().default(true),
+    locationId: integer("location_id").references(() => location.id),
   },
   (table) => ({
     gameIndex: index().on(table.gameId),
@@ -58,6 +60,10 @@ export const matchRelations = relations(matches, ({ one, many }) => ({
   scoresheet: one(scoresheet, {
     fields: [matches.scoresheetId],
     references: [scoresheet.id],
+  }),
+  location: one(location, {
+    fields: [matches.locationId],
+    references: [location.id],
   }),
   matchPlayers: many(matchPlayer),
 }));

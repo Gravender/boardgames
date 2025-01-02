@@ -225,6 +225,13 @@
       "when": 1735803355512,
       "tag": "0031_nice_wendigo",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1735817451109,
+      "tag": "0032_opposite_lizard",
+      "breakpoints": true
     }
   ]
 }

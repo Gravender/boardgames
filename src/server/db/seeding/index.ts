@@ -10,6 +10,7 @@ import {
   insertPlayerSchema,
   insertRoundPlayerSchema,
   insertScoreSheetSchema,
+  location,
   match,
   matchPlayer,
   player,
@@ -32,6 +33,7 @@ for (const table of [
   roundPlayer,
   match,
   matchPlayer,
+  location,
 ]) {
   // await db.delete(table); // clear tables without truncating / resetting ids
   await resetTable(DrizzleDb, table);
@@ -98,6 +100,23 @@ export default async function seed(db: typeof DrizzleDb) {
     );
     await db.insert(round).values(rounds);
     for (const play of seedGame.plays) {
+      const currentLocations = await db.query.location.findMany();
+      const currentLocation =
+        "name" in play.location && play.location.name
+          ? play.location
+          : undefined;
+      let locationId = currentLocations.find(
+        (location) => location.name === currentLocation?.name,
+      )?.id;
+      if (!locationId && currentLocation?.name) {
+        const newLocation = (
+          await db
+            .insert(location)
+            .values({ createdBy: createdByID, name: currentLocation.name })
+            .returning()
+        )[0];
+        locationId = newLocation?.id;
+      }
       const scoresheetId = (
         await db
           .insert(scoresheet)
@@ -133,6 +152,7 @@ export default async function seed(db: typeof DrizzleDb) {
         date: new Date(play.dateString),
         duration: Math.round(play.duration / 1000),
         finished: play.isFinished,
+        locationId: locationId,
       };
       const returningMatch = (
         await db.insert(match).values(matchToInsert).returning()
