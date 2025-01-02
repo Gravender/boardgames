@@ -211,6 +211,20 @@
       "when": 1735280252716,
       "tag": "0029_whole_dagger",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1735799779874,
+      "tag": "0030_mute_gressill",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1735803355512,
+      "tag": "0031_nice_wendigo",
+      "breakpoints": true
     }
   ]
 }

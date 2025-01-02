@@ -4,6 +4,7 @@ import {
   index,
   integer,
   serial,
+  text,
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -34,6 +35,8 @@ const games = createTable(
     playtimeMin: integer("playtime_min"),
     playtimeMax: integer("playtime_max"),
     yearPublished: integer("year_published"),
+    description: text("description"),
+    rules: text("rules"),
     deleted: boolean("deleted").default(false),
   },
   (table) => ({
