@@ -17,6 +17,7 @@ export default async function Page({
   const matches = await api.match.getMatchesByDate({
     date: new Date(date),
   });
+  if (matches.length === 0) redirect("/dashboard/calendar");
 
   return (
     <div className="flex w-full items-center justify-center">
