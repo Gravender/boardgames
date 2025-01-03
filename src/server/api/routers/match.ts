@@ -215,6 +215,7 @@ export const matchRouter = createTRPCRouter({
               image: true,
             },
           },
+          location: true,
         },
       });
       if (!returnedMatch) {
@@ -333,6 +334,7 @@ export const matchRouter = createTRPCRouter({
         date: returnedMatch.date,
         name: returnedMatch.name,
         scoresheet: returnedMatch.scoresheet,
+        locationName: returnedMatch.location?.name,
         gameId: returnedMatch.gameId,
         gameName: returnedMatch.game.name,
         gameImageUrl: returnedMatch.game.image?.url,

@@ -7,6 +7,7 @@ import {
   group,
   groupPlayer,
   image,
+  location,
   match,
   matchPlayer,
   player,
@@ -112,8 +113,21 @@ export const dashboardRouter = {
       .groupBy(group.id)
       .orderBy(desc(count(groupPlayer)), group.name)
       .limit(5);
-    groups.sort((a, b) => a.name.localeCompare(b.name));
     return groups;
+  }),
+  getLocations: protectedUserProcedure.query(async ({ ctx }) => {
+    const locations = await ctx.db
+      .select({
+        id: location.id,
+        name: location.name,
+      })
+      .from(location)
+      .where(eq(location.createdBy, ctx.userId))
+      .innerJoin(match, eq(match.locationId, location.id))
+      .groupBy(location.id)
+      .orderBy(desc(count(match)), location.name)
+      .limit(5);
+    return locations;
   }),
   getMatchesByMonth: protectedUserProcedure.query(async ({ ctx }) => {
     const matches = await ctx.db

@@ -27,11 +27,13 @@ export function AppSidebar({
   games,
   players,
   groups,
+  locations,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   games: RouterOutputs["dashboard"]["getGames"];
   players: RouterOutputs["dashboard"]["getPlayers"];
   groups: RouterOutputs["dashboard"]["getGroups"];
+  locations: RouterOutputs["dashboard"]["getLocations"];
 }) {
   const { isLoaded, isSignedIn, user } = useUser();
   const data = [
@@ -62,23 +64,23 @@ export function AppSidebar({
       title: "Groups",
       url: "/dashboard/groups",
       icon: UsersRound,
-      items: [
-        {
-          title: "Mascot Lads",
-          url: "#",
-        },
-      ],
+      items: groups.map((group) => {
+        return {
+          title: group.name,
+          url: `/dashboard/groups/${group.id}/`,
+        };
+      }),
     },
     {
       title: "Locations",
       url: "/dashboard/locations",
       icon: Map,
-      items: [
-        {
-          title: "Mascot",
-          url: "#",
-        },
-      ],
+      items: locations.map((location) => {
+        return {
+          title: location.name,
+          url: `/dashboard/locations/${location.id}/`,
+        };
+      }),
     },
     {
       title: "Calender",
