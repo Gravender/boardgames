@@ -158,7 +158,6 @@ const PlayerContent = ({
       setIsUploading(false);
     }
   }
-  console.log(form.formState);
   return (
     <>
       <DialogHeader>

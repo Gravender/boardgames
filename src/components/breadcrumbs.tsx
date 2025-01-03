@@ -28,7 +28,7 @@ export function BreadCrumbs() {
       path: pathNames.slice(0, i + 1).join("/"),
     };
   });
-  const pathsSchema = z.enum(["games", "players"]);
+  const pathsSchema = z.enum(["games", "players", "groups"]);
   const pathType = pathsSchema.safeParse(pathNames[1]);
   const id =
     pathNames.length > 3 && pathType.data === "games"
@@ -81,6 +81,19 @@ export function BreadCrumbs() {
       );
     }
     if (pathType.data === "players" && data) {
+      return (
+        <RenderBreadCrumbs
+          pathItems={[
+            ...pathItems,
+            {
+              name: data.name,
+              path: pathNames.slice(0, 3).join("/"),
+            },
+          ]}
+        />
+      );
+    }
+    if (pathType.data === "groups" && data) {
       return (
         <RenderBreadCrumbs
           pathItems={[

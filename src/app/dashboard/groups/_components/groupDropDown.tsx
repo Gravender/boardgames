@@ -12,19 +12,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { deletePlayer } from "~/server/queries";
+import { deleteGroup } from "~/server/queries";
 import { type RouterOutputs } from "~/trpc/react";
 
-import { EditPlayerDialog } from "./editPlayerDialog";
+import { EditGroupDialog } from "./editGroupDialog";
 
-export function PlayerDropDown({
+export function GroupDropDown({
   data,
 }: {
-  data: RouterOutputs["player"]["getPlayers"][number];
+  data: RouterOutputs["group"]["getGroups"][number];
 }) {
   const onDelete = () => {
     startTransition(async () => {
-      await deletePlayer({ id: data.id });
+      await deleteGroup({ id: data.id });
     });
   };
   const [isOpen, setIsOpen] = useState(false);
@@ -41,9 +41,6 @@ export function PlayerDropDown({
           <DialogTrigger asChild>
             <DropdownMenuItem>Edit</DropdownMenuItem>
           </DialogTrigger>
-          <DropdownMenuItem asChild>
-            <Link href={`/dashboard/players/${data.id}/stats`}>Stats</Link>
-          </DropdownMenuItem>
           <DropdownMenuItem
             className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
             onClick={onDelete}
@@ -52,7 +49,7 @@ export function PlayerDropDown({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <EditPlayerDialog player={data} setOpen={setIsOpen} />
+      <EditGroupDialog group={data} setOpen={setIsOpen} />
     </Dialog>
   );
 }

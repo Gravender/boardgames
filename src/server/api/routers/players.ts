@@ -1,16 +1,19 @@
 import { TRPCError } from "@trpc/server";
-import { and, count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
 import {
   game,
+  group,
   image,
   insertPlayerSchema,
   match,
   matchPlayer,
   player,
+  roundPlayer,
   selectGameSchema,
+  selectGroupSchema,
   selectPlayerSchema,
 } from "~/server/db/schema";
 
@@ -89,6 +92,57 @@ export const playerRouter = createTRPCRouter({
           imageUrl: player?.imageUrl ?? "",
         };
       });
+    }),
+  getPlayersByGroup: protectedUserProcedure
+    .input(
+      z.object({
+        group: selectGroupSchema.pick({ id: true }),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.db.query.group.findFirst({
+        where: and(
+          eq(group.id, input.group.id),
+          eq(group.createdBy, ctx.userId),
+        ),
+        with: {
+          groupsByPlayer: {
+            with: {
+              player: {
+                with: {
+                  image: true,
+                  matchesByPlayer: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      const players = await ctx.db.query.player.findMany({
+        where: eq(player.createdBy, ctx.userId),
+        with: {
+          image: true,
+          matchesByPlayer: true,
+        },
+      });
+      const playersWithGroups = players.map((player) => {
+        const ingroup = result?.groupsByPlayer.find(
+          (group) => group.player.id === player.id,
+        );
+        return {
+          id: player.id,
+          name: player.name,
+          imageUrl: player.image?.url,
+          matches: player.matchesByPlayer.length,
+          ingroup: ingroup !== undefined,
+        };
+      });
+      playersWithGroups.sort((a, b) => {
+        if (a.ingroup && !b.ingroup) return -1;
+        if (!a.ingroup && b.ingroup) return 1;
+        return a.name.localeCompare(b.name);
+      });
+      return playersWithGroups;
     }),
   getPlayers: protectedUserProcedure.query(async ({ ctx }) => {
     const sq = ctx.db
@@ -312,5 +366,26 @@ export const playerRouter = createTRPCRouter({
           imageId: input.imageId,
         })
         .where(eq(player.id, input.id));
+    }),
+  deletePlayer: protectedUserProcedure
+    .input(selectPlayerSchema.pick({ id: true }))
+    .mutation(async ({ ctx, input }) => {
+      const matchPlayers = await ctx.db
+        .select()
+        .from(matchPlayer)
+        .where(eq(matchPlayer.playerId, input.id));
+      await ctx.db.delete(roundPlayer).where(
+        inArray(
+          roundPlayer.matchPlayerId,
+          matchPlayers.map((matchPlayer) => matchPlayer.id),
+        ),
+      );
+      await ctx.db.delete(matchPlayer).where(
+        inArray(
+          matchPlayer.id,
+          matchPlayers.map((matchPlayer) => matchPlayer.id),
+        ),
+      );
+      await ctx.db.delete(player).where(eq(player.id, input.id));
     }),
 });

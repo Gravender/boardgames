@@ -5,7 +5,13 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
-import { insertLocationSchema, location } from "~/server/db/schema";
+import {
+  insertLocationSchema,
+  location,
+  match,
+  selectLocationSchema,
+} from "~/server/db/schema";
+import { deleteLocation } from "~/server/queries";
 
 export const locationRouter = createTRPCRouter({
   getLocations: protectedUserProcedure.query(async ({ ctx }) => {
@@ -82,5 +88,14 @@ export const locationRouter = createTRPCRouter({
         .returning();
       if (!result) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       return result;
+    }),
+  deleteLocation: protectedUserProcedure
+    .input(selectLocationSchema.pick({ id: true }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(match)
+        .set({ locationId: null })
+        .where(eq(match.locationId, input.id));
+      await ctx.db.delete(location).where(eq(location.id, input.id));
     }),
 });

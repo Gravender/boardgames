@@ -11,6 +11,7 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { type RouterOutputs } from "~/trpc/react";
 
 import { AddGroupDialog } from "./addGroupDialog";
+import { GroupDropDown } from "./groupDropDown";
 
 export function GroupTable({
   data,
@@ -73,6 +74,7 @@ export function GroupTable({
                     <Button size={"icon"} variant={"outline"}>
                       {group.groupsByPlayer.length}
                     </Button>
+                    <GroupDropDown data={group} />
                   </div>
                 </CardContent>
               </Card>

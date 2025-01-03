@@ -19,7 +19,7 @@ export const dashboardRouter = {
   getBreadCrumbs: protectedUserProcedure
     .input(
       z.object({
-        type: z.enum(["games", "players", "match"]),
+        type: z.enum(["games", "players", "match", "groups"]),
         path: z.number(),
       }),
     )
@@ -63,6 +63,15 @@ export const dashboardRouter = {
             game: {
               name: result.game.name,
             },
+          };
+      }
+      if (input.type === "groups") {
+        const result = await ctx.db.query.group.findFirst({
+          where: eq(group.id, input.path),
+        });
+        if (result)
+          return {
+            name: result.name,
           };
       }
       return null;
