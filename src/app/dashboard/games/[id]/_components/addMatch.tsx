@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Router } from "next/router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, X } from "lucide-react";
@@ -53,11 +54,16 @@ export function AddMatchDialog({
   matches: number;
 }) {
   const { isOpen, setIsOpen } = useAddMatchStore((state) => state);
-
+  const { data: defaultLocation } = api.location.getDefaultLocation.useQuery();
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[425px]">
-        <Content gameId={gameId} gameName={gameName} matches={matches} />
+        <Content
+          gameId={gameId}
+          gameName={gameName}
+          matches={matches}
+          defaultLocation={defaultLocation ?? null}
+        />
       </DialogContent>
       <div className="flex h-full w-full flex-col justify-end">
         <div className="flex justify-end p-4">
@@ -84,12 +90,16 @@ function Content({
   matches,
   gameId,
   gameName,
+  defaultLocation,
 }: {
   gameId: Game["id"];
   gameName: Game["name"];
   matches: number;
+  defaultLocation: RouterOutputs["location"]["getDefaultLocation"];
 }) {
-  const { isOpen, match, setMatch, reset } = useAddMatchStore((state) => state);
+  const { isOpen, match, setMatch, setLocation, reset } = useAddMatchStore(
+    (state) => state,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingPlayers, setIsGettingPlayers] = useState(false);
   const [isGettingLocations, setIsGettingLocations] = useState(false);
@@ -101,7 +111,7 @@ function Content({
       name: match.name || `${gameName} #${matches + 1}`,
       date: match.date || new Date(),
       players: match.players || [],
-      location: match.location || null,
+      location: match.location === undefined ? defaultLocation : match.location,
     },
   });
   const createMatch = api.match.createMatch.useMutation({
@@ -269,7 +279,10 @@ function Content({
                     size={"icon"}
                     type="button"
                     className="rounded-full"
-                    onClick={() => field.onChange(null)}
+                    onClick={() => {
+                      field.onChange(null);
+                      setLocation(null);
+                    }}
                   >
                     <X />
                   </Button>

@@ -41,6 +41,19 @@ export const locationRouter = createTRPCRouter({
       if (!result) return null;
       return result;
     }),
+  getDefaultLocation: protectedUserProcedure.query(async ({ ctx }) => {
+    const result = await ctx.db.query.location.findFirst({
+      where: and(
+        eq(location.createdBy, ctx.userId),
+        eq(location.isDefault, true),
+      ),
+      with: {
+        matches: true,
+      },
+    });
+    if (!result) return null;
+    return result;
+  }),
   create: protectedUserProcedure
     .input(insertLocationSchema.pick({ name: true, isDefault: true }))
     .mutation(async ({ ctx, input }) => {

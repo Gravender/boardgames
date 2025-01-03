@@ -11,19 +11,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { deleteGroup } from "~/server/queries";
+import { deleteLocation } from "~/server/queries";
 import { type RouterOutputs } from "~/trpc/react";
 
-import { EditGroupDialog } from "./editGroupDialog";
+import { EditLocationDialog } from "./editLocationDialog";
 
-export function GroupDropDown({
+export function LocationDropDown({
   data,
 }: {
-  data: RouterOutputs["group"]["getGroups"][number];
+  data: RouterOutputs["location"]["getLocations"][number];
 }) {
   const onDelete = () => {
     startTransition(async () => {
-      await deleteGroup({ id: data.id });
+      await deleteLocation({ id: data.id });
     });
   };
   const [isOpen, setIsOpen] = useState(false);
@@ -48,7 +48,7 @@ export function GroupDropDown({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <EditGroupDialog group={data} setOpen={setIsOpen} />
+      <EditLocationDialog location={data} setOpen={setIsOpen} />
     </Dialog>
   );
 }

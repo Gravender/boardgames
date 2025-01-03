@@ -23,7 +23,7 @@ export const locationSchema = z
     id: z.number(),
     name: z.string(),
   })
-  .nullable();
+  .nullish();
 export type Location = z.infer<typeof locationSchema>;
 export const matchSchema = insertMatchSchema
   .pick({
@@ -61,7 +61,7 @@ export const defaultInitState: AddMatchState = {
     name: "",
     date: new Date(),
     players: [],
-    location: null,
+    location: undefined,
   },
 };
 export const createAddMatchStore = (

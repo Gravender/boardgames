@@ -3,19 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlusIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Spinner } from "~/components/spinner";
 import { Button } from "~/components/ui/button";
 import {
-  Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "~/components/ui/dialog";
 import {
   Form,
@@ -28,82 +25,71 @@ import {
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
 import { useToast } from "~/hooks/use-toast";
-import { insertLocationSchema } from "~/server/db/schema";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 
-export const AddLocationDialog = () => {
-  const [isOpen, setIsOpen] = useState(false);
+export const EditLocationDialog = ({
+  location,
+  setOpen,
+}: {
+  location: RouterOutputs["location"]["getLocations"][number];
+  setOpen: (isOpen: boolean) => void;
+}) => {
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[465px] min-h-80">
-        <LocationContent setIsOpen={setIsOpen} />
-      </DialogContent>
-      <div className="flex h-full w-full flex-col justify-end">
-        <div className="flex justify-end">
-          <DialogTrigger asChild>
-            <Button
-              variant="default"
-              className="rounded-full"
-              size="icon"
-              type="button"
-            >
-              <PlusIcon />
-            </Button>
-          </DialogTrigger>
-        </div>
-      </div>
-    </Dialog>
+    <DialogContent className="sm:max-w-[465px] min-h-80">
+      <LocationContent setOpen={setOpen} location={location} />
+    </DialogContent>
   );
 };
-const formSchema = z.object({
+
+const locationSchema = z.object({
   name: z.string().min(1, {
     message: "Location name is required",
   }),
   isDefault: z.boolean(),
 });
-type formSchemaType = z.infer<typeof formSchema>;
 const LocationContent = ({
-  setIsOpen,
+  setOpen,
+  location,
 }: {
-  setIsOpen: (isOpen: boolean) => void;
+  setOpen: (isOpen: boolean) => void;
+  location: RouterOutputs["location"]["getLocations"][number];
 }) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const utils = api.useUtils();
   const router = useRouter();
 
-  const form = useForm<formSchemaType>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof locationSchema>>({
+    resolver: zodResolver(locationSchema),
     defaultValues: {
-      name: "",
-      isDefault: false,
+      name: location.name,
+      isDefault: location.isDefault,
     },
   });
-  const createLocation = api.location.create.useMutation({
+  const mutation = api.location.update.useMutation({
     onSuccess: async () => {
-      await utils.location.getLocations.invalidate();
       setIsSubmitting(false);
-      form.reset();
+      await utils.location.getLocations.invalidate();
+      await utils.dashboard.getLocations.invalidate();
       router.refresh();
-      setIsOpen(false);
+      setOpen(false);
       toast({
-        title: "Location created successfully!",
+        title: "Location updated successfully!",
       });
     },
   });
-
-  async function onSubmit(values: formSchemaType) {
+  function onSubmit(values: z.infer<typeof locationSchema>) {
     setIsSubmitting(true);
-    createLocation.mutate({
+    mutation.mutate({
+      id: location.id,
       name: values.name,
       isDefault: values.isDefault,
     });
   }
-
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Add Location</DialogTitle>
+        <DialogTitle>{`Edit ${location.name}`}</DialogTitle>
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -137,12 +123,11 @@ const LocationContent = ({
               </FormItem>
             )}
           />
-
           <DialogFooter className="gap-2">
             <Button
               type="reset"
               variant="secondary"
-              onClick={() => setIsOpen(false)}
+              onClick={() => setOpen(false)}
             >
               Cancel
             </Button>

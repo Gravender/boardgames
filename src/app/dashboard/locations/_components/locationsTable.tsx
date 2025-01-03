@@ -7,9 +7,11 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { cn } from "~/lib/utils";
 import { RouterOutputs } from "~/trpc/react";
 
 import { AddLocationDialog } from "./addLocationDialog";
+import { LocationDropDown } from "./locationDropDown";
 
 export function LocationsTable({
   data,
@@ -51,7 +53,12 @@ export function LocationsTable({
         <div className="flex flex-col gap-2">
           {locations.map((location) => {
             return (
-              <Card key={location.id}>
+              <Card
+                key={location.id}
+                className={cn(
+                  location.isDefault && "bg-sidebar hover:bg-sidebar/90",
+                )}
+              >
                 <CardContent className="flex items-center gap-2 justify-between w-full pt-3 p-3">
                   <div className="flex items-center gap-2">
                     <div className="relative flex shadow h-14 w-14 shrink-0 overflow-hidden rounded-full">
@@ -72,6 +79,7 @@ export function LocationsTable({
                     <Button size={"icon"} variant={"outline"}>
                       {location.matches.length}
                     </Button>
+                    <LocationDropDown data={location} />
                   </div>
                 </CardContent>
               </Card>
