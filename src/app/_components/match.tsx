@@ -145,12 +145,13 @@ export function Match({ match }: { match: Match }) {
   }, [isRunning]);
   useEffect(() => {
     if (isRunning && duration % 30 === 0 && match.duration !== duration) {
-      updateMatchDuration.mutate({
-        match: {
-          id: match.id,
-        },
-        duration: duration,
-      });
+      const debounce = setTimeout(() => {
+        updateMatchDuration.mutate({
+          match: { id: match.id },
+          duration: duration,
+        });
+      }, 1000); // Debounce duration
+      return () => clearTimeout(debounce);
     }
   }, [isRunning, duration, match, updateMatchDuration]);
 

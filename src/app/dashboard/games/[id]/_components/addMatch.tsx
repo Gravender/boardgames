@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, isSameDay } from "date-fns";
-import { CalendarIcon, Plus } from "lucide-react";
+import { CalendarIcon, Plus, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { type z } from "zod";
 
@@ -34,7 +34,11 @@ import {
 } from "~/components/ui/popover";
 import { cn } from "~/lib/utils";
 import { useAddMatchStore } from "~/providers/add-match-provider";
-import { matchSchema, playersSchema } from "~/stores/add-match-store";
+import {
+  locationSchema,
+  matchSchema,
+  playersSchema,
+} from "~/stores/add-match-store";
 import { api, type RouterOutputs } from "~/trpc/react";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
@@ -71,7 +75,10 @@ export function AddMatchDialog({
     </Dialog>
   );
 }
-const formSchema = matchSchema.extend({ players: playersSchema });
+const formSchema = matchSchema.extend({
+  players: playersSchema,
+  location: locationSchema,
+});
 type formSchemaType = z.infer<typeof formSchema>;
 function Content({
   matches,
@@ -85,6 +92,7 @@ function Content({
   const { isOpen, match, setMatch, reset } = useAddMatchStore((state) => state);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingPlayers, setIsGettingPlayers] = useState(false);
+  const [isGettingLocations, setIsGettingLocations] = useState(false);
   const utils = api.useUtils();
   const router = useRouter();
   const form = useForm<formSchemaType>({
@@ -93,6 +101,7 @@ function Content({
       name: match.name || `${gameName} #${matches + 1}`,
       date: match.date || new Date(),
       players: match.players || [],
+      location: match.location || null,
     },
   });
   const createMatch = api.match.createMatch.useMutation({
@@ -142,80 +151,129 @@ function Content({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Date</FormLabel>
-                <Popover modal={true}>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-[240px] pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground",
-                        )}
-                        type="button"
-                      >
-                        {field.value ? (
-                          isSameDay(field.value, new Date()) ? (
-                            <span>Today</span>
+          <div className="grid grid-cols-2 gap-2 w-full">
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel className="hidden">Date</FormLabel>
+                  <Popover modal={true}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground",
+                          )}
+                          type="button"
+                        >
+                          {field.value ? (
+                            isSameDay(field.value, new Date()) ? (
+                              <span>Today</span>
+                            ) : (
+                              format(field.value, "PPP")
+                            )
                           ) : (
-                            format(field.value, "PPP")
-                          )
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="players"
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel className="hidden">Players</FormLabel>
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    type="button"
+                    disabled={isGettingPlayers || isGettingLocations}
+                    onClick={() => {
+                      setIsGettingPlayers(true);
+                      setMatch({
+                        name: form.getValues("name"),
+                        date: form.getValues("date"),
+                      });
+                      router.push(`/dashboard/games/${gameId}/add/players`);
+                    }}
+                  >
+                    {isGettingPlayers ? (
+                      <>
+                        <Spinner />
+                        <span>Navigating...</span>
+                      </>
+                    ) : (
+                      `${field.value.length} Players`
+                    )}
+                  </Button>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           <FormField
             control={form.control}
-            name="players"
+            name="location"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="hidden">Players</FormLabel>
-                <Button
-                  variant="outline"
-                  type="button"
-                  disabled={isGettingPlayers}
-                  onClick={() => {
-                    setIsGettingPlayers(true);
-                    setMatch({
-                      name: form.getValues("name"),
-                      date: form.getValues("date"),
-                    });
-                    router.push(`/dashboard/games/${gameId}/add/players`);
-                  }}
-                >
-                  {isGettingPlayers ? (
-                    <>
-                      <Spinner />
-                      <span>Navigating...</span>
-                    </>
-                  ) : (
-                    `${field.value.length} Players`
-                  )}
-                </Button>
+                <FormLabel className="hidden">Location: - (Optional)</FormLabel>
+                <div className="flex w-full gap-2">
+                  <Button
+                    variant="outline"
+                    type="button"
+                    className="flex-grow"
+                    disabled={isGettingPlayers || isGettingLocations}
+                    onClick={() => {
+                      setIsGettingLocations(true);
+                      setMatch({
+                        name: form.getValues("name"),
+                        date: form.getValues("date"),
+                      });
+                      router.push(`/dashboard/games/${gameId}/add/location`);
+                    }}
+                  >
+                    {isGettingLocations ? (
+                      <>
+                        <Spinner />
+                        <span>Navigating...</span>
+                      </>
+                    ) : field.value ? (
+                      `Location: ${field.value.name}`
+                    ) : (
+                      "Location: - (Optional)"
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size={"icon"}
+                    type="button"
+                    className="rounded-full"
+                    onClick={() => field.onChange(null)}
+                  >
+                    <X />
+                  </Button>
+                </div>
                 <FormMessage />
               </FormItem>
             )}

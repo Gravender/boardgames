@@ -28,6 +28,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
 import { useToast } from "~/hooks/use-toast";
+import { useAddMatchStore } from "~/providers/add-match-provider";
 import { insertLocationSchema } from "~/server/db/schema";
 import { api } from "~/trpc/react";
 
@@ -62,6 +63,7 @@ const LocationContent = ({
 }: {
   setIsOpen: (isOpen: boolean) => void;
 }) => {
+  const { setLocation } = useAddMatchStore((state) => state);
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const utils = api.useUtils();
@@ -75,10 +77,10 @@ const LocationContent = ({
     },
   });
   const createLocation = api.location.create.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (location) => {
+      setLocation(location);
       await utils.location.getLocations.invalidate();
       setIsSubmitting(false);
-      form.reset();
       router.refresh();
       setIsOpen(false);
       toast({
@@ -137,7 +139,7 @@ const LocationContent = ({
             <Button
               type="reset"
               variant="secondary"
-              onClick={() => setIsOpen(false)}
+              onClick={() => form.reset()}
             >
               Cancel
             </Button>

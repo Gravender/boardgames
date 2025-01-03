@@ -28,6 +28,7 @@ export const matchRouter = createTRPCRouter({
           name: true,
           date: true,
           gameId: true,
+          locationId: true,
         })
         .required({ name: true })
         .extend({
@@ -444,6 +445,7 @@ export const matchRouter = createTRPCRouter({
             scoresheetId: true,
             date: true,
             name: true,
+            locationId: true,
           })
           .required({ id: true, scoresheetId: true }),
         addPlayers: z.array(
@@ -478,6 +480,7 @@ export const matchRouter = createTRPCRouter({
           .set({
             name: input.match.name,
             date: input.match.date,
+            locationId: input.match.locationId,
           })
           .where(eq(match.id, input.match.id));
       }

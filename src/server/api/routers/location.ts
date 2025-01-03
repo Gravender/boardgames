@@ -44,14 +44,16 @@ export const locationRouter = createTRPCRouter({
           .set({ isDefault: false })
           .where(eq(location.createdBy, ctx.userId));
       }
-      const result = await ctx.db
-        .insert(location)
-        .values({
-          name: input.name,
-          isDefault: input.isDefault,
-          createdBy: ctx.userId,
-        })
-        .returning();
+      const result = (
+        await ctx.db
+          .insert(location)
+          .values({
+            name: input.name,
+            isDefault: input.isDefault,
+            createdBy: ctx.userId,
+          })
+          .returning()
+      )[0];
       if (!result) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       return result;
     }),

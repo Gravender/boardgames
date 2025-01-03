@@ -89,25 +89,35 @@ export default async function Page({ params }: Props) {
               </div>
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex w-full items-center justify-center gap-4 text-sm">
-              <div className="flex w-24 items-center gap-2">
+          <CardContent className="flex items-center justify-center ">
+            <div className="flex w-full max-w-[27rem] items-start sm:items-center justify-between gap-2 text-sm sm:flex-row flex-col">
+              <div className="flex items-center gap-2">
                 <h4 className="font-medium">Plays:</h4>
                 <div className="flex justify-between text-muted-foreground">
                   <span>{summary.previousMatches}</span>
                 </div>
               </div>
-              <div className="flex w-24 items-center gap-2">
+              <div className="flex items-center gap-2">
                 <h4 className="font-medium">Duration:</h4>
                 <div className="flex justify-between text-muted-foreground">
                   <span>{formatDuration(summary.duration)}</span>
                 </div>
               </div>
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium">Location:</h4>
+                <div className="flex justify-between text-muted-foreground">
+                  <span className="truncate max-w-36">
+                    {summary.locationName}
+                  </span>
+                </div>
+              </div>
             </div>
           </CardContent>
-          <CardFooter className="flex gap-2 items-start">
-            <span>Actions:</span>
-            <div className="flex flex-row flex-wrap max-w-sm sm:full sm:justify-end sm:space-x-2 gap-2">
+          <CardFooter className="flex gap-4 items-start justify-start">
+            <span className="flex h-10 items-center justify-center">
+              Actions:
+            </span>
+            <div className="flex flex-row flex-wrap max-w-sm sm:full sm:justify-end sm:space-x-2 gap-1">
               <Button variant="secondary" asChild>
                 <Link href={`/dashboard/games/${summary.gameId}/${summary.id}`}>
                   {"Back To Score"}

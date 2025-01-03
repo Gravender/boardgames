@@ -9,6 +9,8 @@ import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { RouterOutputs } from "~/trpc/react";
 
+import { AddLocationDialog } from "./addLocationDialog";
+
 export function LocationsTable({
   data,
 }: {
@@ -47,9 +49,9 @@ export function LocationsTable({
       </CardHeader>
       <ScrollArea className="sm:h-[75vh] h-[65vh]">
         <div className="flex flex-col gap-2">
-          {locations.map((group) => {
+          {locations.map((location) => {
             return (
-              <Card key={group.id}>
+              <Card key={location.id}>
                 <CardContent className="flex items-center gap-2 justify-between w-full pt-3 p-3">
                   <div className="flex items-center gap-2">
                     <div className="relative flex shadow h-14 w-14 shrink-0 overflow-hidden rounded-full">
@@ -60,7 +62,7 @@ export function LocationsTable({
                     <div className="flex flex-col gap-2">
                       <div className="flex w-full items-center justify-between">
                         <h2 className="text-md text-left font-semibold">
-                          {group.name}
+                          {location.name}
                         </h2>
                       </div>
                     </div>
@@ -68,7 +70,7 @@ export function LocationsTable({
 
                   <div className="flex items-center gap-4 justify-center">
                     <Button size={"icon"} variant={"outline"}>
-                      {group.matches.length}
+                      {location.matches.length}
                     </Button>
                   </div>
                 </CardContent>
@@ -78,7 +80,7 @@ export function LocationsTable({
         </div>
       </ScrollArea>
       <div className="absolute bottom-4 right-4 sm:right-10 z-10">
-        {/* <AddGroupDialog /> */}
+        <AddLocationDialog />
       </div>
     </div>
   );

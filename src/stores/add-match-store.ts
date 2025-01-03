@@ -17,6 +17,14 @@ export const playersSchema = z
     message: "You must add at least one player",
   });
 export type Players = z.infer<typeof playersSchema>;
+
+export const locationSchema = z
+  .object({
+    id: z.number(),
+    name: z.string(),
+  })
+  .nullable();
+export type Location = z.infer<typeof locationSchema>;
 export const matchSchema = insertMatchSchema
   .pick({
     name: true,
@@ -27,7 +35,10 @@ export type Match = z.infer<typeof matchSchema>;
 export const addMatchSchema = z.object({
   isOpen: z.boolean(),
   gameId: z.number(),
-  match: matchSchema.extend({ players: playersSchema }),
+  match: matchSchema.extend({
+    players: playersSchema,
+    location: locationSchema,
+  }),
 });
 
 export type AddMatchState = z.infer<typeof addMatchSchema>;
@@ -37,6 +48,7 @@ export type AddMatchActions = {
   setGameId: (gameId: number) => void;
   setMatch: (match: Match) => void;
   setPlayers: (players: Players) => void;
+  setLocation: (location: Location) => void;
   reset: () => void;
 };
 
@@ -49,6 +61,7 @@ export const defaultInitState: AddMatchState = {
     name: "",
     date: new Date(),
     players: [],
+    location: null,
   },
 };
 export const createAddMatchStore = (
@@ -67,6 +80,8 @@ export const createAddMatchStore = (
       })),
     setPlayers: (players: Players) =>
       set((state) => ({ match: { ...state.match, players: players } })),
+    setLocation: (location: Location) =>
+      set((state) => ({ match: { ...state.match, location: location } })),
     reset: () => set(defaultInitState),
   }));
 };
