@@ -4,6 +4,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 import { dashboardRouter } from "./routers/dashboard";
 import { groupRouter } from "./routers/group";
+import { locationRouter } from "./routers/location";
 import { matchRouter } from "./routers/match";
 import { playerRouter } from "./routers/players";
 import { roundRouter } from "./routers/round";
@@ -23,6 +24,7 @@ export const appRouter = createTRPCRouter({
   round: roundRouter,
   dashboard: dashboardRouter,
   group: groupRouter,
+  location: locationRouter,
 });
 
 // export type definition of API

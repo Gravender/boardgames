@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon } from "lucide-react";
@@ -26,17 +26,17 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+import { Switch } from "~/components/ui/switch";
 import { useToast } from "~/hooks/use-toast";
-import { useAddGroupStore } from "~/providers/add-group-provider";
-import { groupSchema, playersSchema } from "~/stores/add-group-store";
+import { insertLocationSchema } from "~/server/db/schema";
 import { api } from "~/trpc/react";
 
-export const AddGroupDialog = () => {
-  const { isOpen, setIsOpen } = useAddGroupStore((state) => state);
+export const AddLocationDialog = () => {
+  const [isOpen, setIsOpen] = useState(false);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[465px] min-h-80">
-        <GroupContent />
+        <LocationContent setIsOpen={setIsOpen} />
       </DialogContent>
       <div className="flex h-full w-full flex-col justify-end">
         <div className="flex justify-end">
@@ -55,55 +55,50 @@ export const AddGroupDialog = () => {
     </Dialog>
   );
 };
-
-const formSchema = groupSchema.extend({ players: playersSchema });
-
+const formSchema = insertLocationSchema.pick({ name: true, isDefault: true });
 type formSchemaType = z.infer<typeof formSchema>;
-const GroupContent = () => {
+const LocationContent = ({
+  setIsOpen,
+}: {
+  setIsOpen: (isOpen: boolean) => void;
+}) => {
   const { toast } = useToast();
-  const { isOpen, group, setGroup, reset } = useAddGroupStore((state) => state);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGettingPlayers, setIsGettingPlayers] = useState(false);
-
   const utils = api.useUtils();
   const router = useRouter();
 
   const form = useForm<formSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: group.name,
-      players: group.players,
+      name: "",
+      isDefault: false,
     },
   });
-  const createGroup = api.group.create.useMutation({
+  const createLocation = api.location.create.useMutation({
     onSuccess: async () => {
-      await utils.group.getGroups.invalidate();
-      reset();
+      await utils.location.getLocations.invalidate();
       setIsSubmitting(false);
       form.reset();
       router.refresh();
+      setIsOpen(false);
       toast({
-        title: "Group created successfully!",
+        title: "Location created successfully!",
       });
     },
   });
 
-  useEffect(() => {
-    if (!isOpen) reset();
-  }, [isOpen, reset]);
-
   async function onSubmit(values: formSchemaType) {
     setIsSubmitting(true);
-    createGroup.mutate({
+    createLocation.mutate({
       name: values.name,
-      players: values.players,
+      isDefault: values.isDefault,
     });
   }
 
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Add Group</DialogTitle>
+        <DialogTitle>Add Location</DialogTitle>
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -112,9 +107,9 @@ const GroupContent = () => {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Group Name</FormLabel>
+                <FormLabel>Location Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Group name" {...field} />
+                  <Input placeholder="Location name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -122,38 +117,29 @@ const GroupContent = () => {
           />
           <FormField
             control={form.control}
-            name="players"
+            name="isDefault"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="hidden">Players</FormLabel>
-                <Button
-                  variant="outline"
-                  type="button"
-                  disabled={isGettingPlayers}
-                  onClick={() => {
-                    setIsGettingPlayers(true);
-                    setGroup({
-                      name: form.getValues("name"),
-                    });
-                    router.push(`/dashboard/groups/add/players`);
-                  }}
-                >
-                  {isGettingPlayers ? (
-                    <>
-                      <Spinner />
-                      <span>Navigating...</span>
-                    </>
-                  ) : (
-                    `${field.value.length} Players`
-                  )}
-                </Button>
+                <FormLabel className="hidden">Is Default</FormLabel>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    disabled
+                    aria-readonly
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
           <DialogFooter className="gap-2">
-            <Button type="reset" variant="secondary" onClick={() => reset()}>
+            <Button
+              type="reset"
+              variant="secondary"
+              onClick={() => form.reset()}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>

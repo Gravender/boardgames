@@ -71,7 +71,7 @@ export function AppSidebar({
     },
     {
       title: "Locations",
-      url: "#",
+      url: "/dashboard/locations",
       icon: Map,
       items: [
         {
