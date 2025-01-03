@@ -18,9 +18,9 @@
 - [x] Individual Game Page
 - [x] Match page
 - [x] Player page
-- [ ] Groups page
-- [ ] Locations page
-- [ ] Calender page
+- [X] Groups page
+- [X] Locations page
+- [X] Calendar page
 - [ ] Settings page
 - [ ] BGG support
 - [ ] Analytics (posthog)
