@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { date } from "drizzle-orm/mysql-core";
 import { z } from "zod";
 
@@ -344,6 +344,18 @@ export const matchRouter = createTRPCRouter({
         playerStats: playerStats,
       };
     }),
+  getMatchesByCalender: protectedUserProcedure.query(async ({ ctx }) => {
+    const matches = await ctx.db
+      .select({
+        date: sql<Date>`date_trunc('day', ${match.date}) AS day`,
+        ids: sql<number[]>`array_agg(${match.id})`,
+      })
+      .from(match)
+      .where(eq(match.userId, ctx.userId))
+      .groupBy(sql`date_trunc('day', ${match.date})`)
+      .orderBy(sql`date_trunc('day', ${match.date})`);
+    return matches;
+  }),
   deleteMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {

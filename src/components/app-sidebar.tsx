@@ -83,8 +83,8 @@ export function AppSidebar({
       }),
     },
     {
-      title: "Calender",
-      url: "#",
+      title: "Calendar",
+      url: "/dashboard/calendar",
       icon: Calendar1,
     },
     {
