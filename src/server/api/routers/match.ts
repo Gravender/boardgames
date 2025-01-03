@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
 import {
+  game,
   insertMatchSchema,
   insertPlayerSchema,
   match,
@@ -356,6 +357,52 @@ export const matchRouter = createTRPCRouter({
       .orderBy(sql`date_trunc('day', ${match.date})`);
     return matches;
   }),
+  getMatchesByDate: protectedUserProcedure
+    .input(
+      z.object({
+        date: z
+          .date()
+          .min(new Date(1900, 1, 1))
+          .max(new Date()),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const matches = await ctx.db.query.match.findMany({
+        where: sql`${match.date}::date = ${input.date}::date`,
+        with: {
+          game: {
+            with: {
+              image: true,
+            },
+          },
+          matchPlayers: {
+            with: {
+              player: true,
+            },
+          },
+          location: true,
+        },
+      });
+      return matches.map((match) => ({
+        id: match.id,
+        date: match.date,
+        name: match.name,
+        finished: match.finished,
+        won:
+          match.matchPlayers.findIndex(
+            (player) => player.winner && player.player.userId === ctx.userId,
+          ) !== -1,
+        players: match.matchPlayers.map((matchPlayer) => {
+          return {
+            id: matchPlayer.player.id,
+            name: matchPlayer.player.name,
+          };
+        }),
+        gameImageUrl: match.game?.image?.url,
+        gameName: match.game.name,
+        gameId: match.game.id,
+      }));
+    }),
   deleteMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {

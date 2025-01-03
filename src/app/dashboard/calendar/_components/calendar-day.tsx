@@ -15,7 +15,7 @@ export function CalendarDay({ day, matchIds }: CalendarDayProps) {
 
   const handleClick = () => {
     if (hasMatches) {
-      router.push(`/matches/${day.toISOString().split("T")[0]}`);
+      router.push(`/dashboard/calendar/${day.toISOString().split("T")[0]}`);
     }
   };
 
