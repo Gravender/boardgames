@@ -1,1 +1,0 @@
-ALTER TABLE "boardgames_match" ADD COLUMN "duration" integer DEFAULT 0 NOT NULL;

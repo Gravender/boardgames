@@ -1,1 +1,0 @@
-ALTER TABLE "boardgames_match" ALTER COLUMN "running" SET DEFAULT true;

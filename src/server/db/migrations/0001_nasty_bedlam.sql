@@ -1,1 +1,0 @@
-ALTER TABLE "boardgames_game" ADD COLUMN "deleted" boolean DEFAULT false;

@@ -1,1 +1,0 @@
-ALTER TABLE "boardgames_match" ADD COLUMN "finished" boolean DEFAULT false NOT NULL;

@@ -1,1 +1,0 @@
-ALTER TABLE "boardgames_round" ALTER COLUMN "order" SET NOT NULL;

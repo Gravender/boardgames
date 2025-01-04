@@ -1,1 +1,0 @@
-ALTER TABLE "boardgames_scoresheet" ALTER COLUMN "game_id" DROP NOT NULL;

@@ -1,1 +1,0 @@
-ALTER TABLE "boardgames_match_player" ADD COLUMN "score" integer DEFAULT 0;

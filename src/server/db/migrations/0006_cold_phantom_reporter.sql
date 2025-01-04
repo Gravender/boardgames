@@ -1,1 +1,0 @@
-ALTER TABLE "boardgames_scoresheet" ALTER COLUMN "win_condition" SET DATA TYPE text;

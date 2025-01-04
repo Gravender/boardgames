@@ -1,4 +1,5 @@
 // Injected content via Sentry wizard below
+import { hostname } from "os";
 import { withSentryConfig } from "@sentry/nextjs";
 
 /**
@@ -10,7 +11,11 @@ await import("./src/env.js");
 /** @type {import("next").NextConfig} */
 const coreConfig = {
   images: {
-    remotePatterns: [{ hostname: "utfs.io" }],
+    remotePatterns: [
+      { hostname: "utfs.io" },
+      { hostname: "picsum.photos" },
+      { hostname: "avatars.githubusercontent.com" },
+    ],
   },
   typescript: {
     ignoreBuildErrors: true,

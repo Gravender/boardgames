@@ -1,1 +1,0 @@
-ALTER TABLE "boardgames_scoresheet" ADD COLUMN "target_score" integer DEFAULT 0 NOT NULL;

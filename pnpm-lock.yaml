@@ -11,6 +11,9 @@ dependencies:
   '@clerk/nextjs':
     specifier: ^6.9.6
     version: 6.9.6(next@15.1.2)(react-dom@18.3.1)(react@18.3.1)
+  '@faker-js/faker':
+    specifier: ^9.3.0
+    version: 9.3.0
   '@hookform/resolvers':
     specifier: ^3.9.1
     version: 3.9.1(react-hook-form@7.54.2)
@@ -113,6 +116,9 @@ dependencies:
   date-fns:
     specifier: ^4.1.0
     version: 4.1.0
+  dotenv:
+    specifier: ^16.4.7
+    version: 16.4.7
   drizzle-orm:
     specifier: ^0.33.0
     version: 0.33.0(@opentelemetry/api@1.9.0)(@types/react@18.3.18)(@vercel/postgres@0.9.0)(postgres@3.4.5)(react@18.3.1)
@@ -1189,6 +1195,11 @@ packages:
     dependencies:
       levn: 0.4.1
     dev: true
+
+  /@faker-js/faker@9.3.0:
+    resolution: {integrity: sha512-r0tJ3ZOkMd9xsu3VRfqlFR6cz0V/jFYRswAIpC+m/DIfAUXq7g8N7wTAlhSANySXYGKzGryfDXwtwsY8TxEIDw==}
+    engines: {node: '>=18.0.0', npm: '>=9.0.0'}
+    dev: false
 
   /@fastify/ajv-compiler@4.0.1:
     resolution: {integrity: sha512-DxrBdgsjNLP0YM6W5Hd6/Fmj43S8zMKiFJYgi+Ri3htTGAowPVG/tG1wpnWLMjufEnehRivUCKZ1pLDIoZdTuw==}
