@@ -13,6 +13,7 @@
 /prisma/db.sqlite-journal
 db.sqlite
 /src/server/db/seeding/data/
+/src/server/db/seeding/index.ts
 
 # next.js
 /.next/
