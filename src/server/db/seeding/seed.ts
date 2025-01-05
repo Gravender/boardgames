@@ -1,6 +1,6 @@
 import { exit } from "process";
 import { faker } from "@faker-js/faker";
-import { eq, getTableName, sql, Table } from "drizzle-orm";
+import { eq, getTableName, inArray, sql, Table } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "~/server/db";
@@ -117,7 +117,7 @@ export async function seed() {
   }
 
   const imageGameData: z.infer<typeof insertImageSchema>[] = Array.from(
-    { length: 10 },
+    { length: 30 },
     () => ({
       url: faker.image.urlPicsumPhotos(),
       userId: faker.helpers.arrayElement([user1.id, user2.id]),
@@ -128,14 +128,14 @@ export async function seed() {
   const gameImages = await db.insert(image).values(imageGameData).returning();
 
   const gameData: z.infer<typeof insertGameSchema>[] = Array.from(
-    { length: 100 },
+    { length: 30 },
     () => ({
       name: faker.commerce.productName(),
       userId: faker.helpers.arrayElement([user1.id, user2.id]),
       imageId: faker.helpers.maybe(
         () => faker.helpers.arrayElement(gameImages).id,
         {
-          probability: 0.5,
+          probability: 0.75,
         },
       ),
       playersMin: faker.helpers.maybe(
@@ -170,7 +170,7 @@ export async function seed() {
   const returnedGames = await db.insert(game).values(gameData).returning();
 
   const locationData: z.infer<typeof insertLocationSchema>[] = Array.from(
-    { length: 8 },
+    { length: 12 },
     () => ({
       name: faker.location.city(),
       createdBy: faker.helpers.arrayElement([user1.id, user2.id]),
@@ -180,7 +180,7 @@ export async function seed() {
   const locations = await db.insert(location).values(locationData).returning();
 
   const imagePlayerData: z.infer<typeof insertImageSchema>[] = Array.from(
-    { length: 20 },
+    { length: 30 },
     () => ({
       url: faker.image.avatar(),
       userId: faker.helpers.arrayElement([user1.id, user2.id]),
@@ -194,14 +194,14 @@ export async function seed() {
     .returning();
 
   const playerData: z.infer<typeof insertPlayerSchema>[] = Array.from(
-    { length: 66 },
+    { length: 40 },
     () => ({
       name: faker.person.fullName(),
       createdBy: faker.helpers.arrayElement([user1.id, user2.id]),
       userId: null,
       imageId: faker.helpers.maybe(
         () => faker.helpers.arrayElement(playerImages).id,
-        { probability: 0.5 },
+        { probability: 0.75 },
       ),
     }),
   );
@@ -234,23 +234,27 @@ export async function seed() {
   }
 
   for (const returnedGame of returnedGames) {
+    const winCondition = faker.helpers.weightedArrayElement([
+      { weight: 0.05, value: "Manual" },
+      { weight: 0.42, value: "Highest Score" },
+      { weight: 0.41, value: "Lowest Score" },
+      { weight: 0.01, value: "No Winner" },
+      { weight: 0.1, value: "Target Score" },
+    ]);
     const scoresheetData: z.infer<typeof insertScoreSheetSchema> = {
       name: `${returnedGame.name} Default`,
       gameId: returnedGame.id,
       userId: returnedGame.userId,
-      winCondition: faker.helpers.weightedArrayElement([
-        { weight: 0.05, value: "Manual" },
-        { weight: 0.4, value: "Highest Score" },
-        { weight: 0.4, value: "Lowest Score" },
-        { weight: 0.01, value: "No Winner" },
-        { weight: 0.14, value: "Target Score" },
-      ]),
+      winCondition: winCondition,
       roundsScore: faker.helpers.weightedArrayElement([
         { weight: 0.7, value: "Aggregate" },
         { weight: 0.05, value: "Manual" },
         { weight: 0.15, value: "Best Of" },
       ]),
-      targetScore: faker.number.int({ min: 10, max: 100 }),
+      targetScore:
+        winCondition === "Target Score"
+          ? faker.number.int({ min: 10, max: 100 })
+          : undefined,
       type: "Default",
       isCoop: faker.datatype.boolean(0.1),
     };
@@ -280,7 +284,7 @@ export async function seed() {
     );
     await db.insert(round).values(roundData).returning();
     let matchData: z.infer<typeof insertMatchSchema>[] = Array.from(
-      { length: faker.number.int({ min: 3, max: 50 }) },
+      { length: faker.number.int({ min: 5, max: 30 }) },
       (_, index) => {
         const finished = faker.datatype.boolean(0.85);
         return {
@@ -357,12 +361,18 @@ export async function seed() {
       .values(matchData)
       .returning();
     for (const returnedMatch of returnedMatches) {
-      let weights: number[] = [0.2, 0.2];
-      const remainingWeight = 1 - 0.2 - 0.2;
-      const randomWeights = players.slice(2).map(() =>
+      const filteredPlayers = players.filter(
+        (player) => player.createdBy === returnedMatch.userId,
+      );
+      const baseWeight = 1 / filteredPlayers.length;
+      let weights: number[] = [];
+      const remainingWeight = 1 - baseWeight;
+      const randomWeights = filteredPlayers.map((_, index) =>
         faker.number.float({
-          min: (remainingWeight / (players.length - 2)) * 0.25,
-          max: remainingWeight / (players.length - 2),
+          min:
+            (remainingWeight / (filteredPlayers.length - 2)) *
+            (baseWeight * 0.01 + index * (baseWeight * 0.01)),
+          max: remainingWeight / (filteredPlayers.length - 2),
         }),
       );
 
@@ -373,10 +383,18 @@ export async function seed() {
 
       weights = weights.concat(normalizedWeights);
 
-      const weightedPlayers = players.map((player, index) => ({
-        weight: parseFloat(weights[index]!.toFixed(4)),
-        value: player.id,
-      }));
+      const weightedPlayers = filteredPlayers.map((player, index) => {
+        if (player.createdBy === returnedMatch.userId) {
+          return {
+            weight: baseWeight,
+            value: player.id,
+          };
+        }
+        return {
+          weight: parseFloat(weights[index]!.toFixed(4)),
+          value: player.id,
+        };
+      });
 
       const minPlayers = returnedGame.playersMin ?? 2;
       const maxPlayers = returnedGame.playersMax ?? 4;
@@ -389,9 +407,6 @@ export async function seed() {
         matchPlayers.map((player, index) => ({
           matchId: returnedMatch.id,
           playerId: player,
-          winner:
-            faker.number.int({ min: 0, max: matchPlayers.length - 1 }) === 0,
-          score: faker.number.int({ min: 0, max: 100 }),
           order: index + 1,
         }));
       const matchPlayersResult = await db
@@ -416,18 +431,92 @@ export async function seed() {
           const maxScore =
             matchScoresheet.roundsScore === "Aggregate" ||
             matchScoresheet.roundsScore === "Best Of"
-              ? 100
+              ? faker.number.int({ min: 10, max: 30 })
               : 5;
           const minScore =
-            matchScoresheet.winCondition === "Lowest Score" ? -100 : 0;
+            matchScoresheet.winCondition === "Lowest Score"
+              ? faker.number.int({ min: -30, max: -1 })
+              : 0;
           return matchPlayersResult.map((matchPlayer) => ({
             roundId: round.id,
             matchPlayerId: matchPlayer.id,
-            score: faker.number.int({ min: minScore, max: maxScore }),
+            score:
+              round.type === "Checkbox"
+                ? faker.helpers.maybe(() => round.score, { probability: 0.5 })
+                : faker.number.int({ min: minScore, max: maxScore }),
           }));
         });
 
-      await db.insert(roundPlayers).values(roundPlayerData).returning();
+      const returnedRoundPlayers = await db
+        .insert(roundPlayers)
+        .values(roundPlayerData)
+        .returning();
+
+      const finalScoreSqlStatement = () => {
+        if (matchScoresheet.roundsScore === "Aggregate") {
+          return sql<number>`SUM(${roundPlayer.score})`.as("finalScore");
+        }
+        if (matchScoresheet.roundsScore === "Best Of") {
+          if (matchScoresheet.winCondition === "Highest Score") {
+            return sql<number>`MAX(${roundPlayer.score})`.as("finalScore");
+          }
+          if (matchScoresheet.winCondition === "Lowest Score") {
+            return sql<number>`MIN(${roundPlayer.score})`.as("finalScore");
+          }
+          if (matchScoresheet.winCondition === "Target Score") {
+            return sql<number>`CASE WHEN ${roundPlayer.score} = ${matchScoresheet.targetScore} THEN ${roundPlayer.score} ELSE 0 END`.as(
+              "finalScore",
+            );
+          }
+        }
+        return sql<number>`0`.as("finalScore");
+      };
+      const returnedRoundPlayersGroupByMatchPLayer = await db
+        .select({
+          matchPlayerId: roundPlayer.matchPlayerId,
+          finalScore: finalScoreSqlStatement(),
+        })
+        .from(roundPlayer)
+        .where(
+          inArray(
+            roundPlayer.matchPlayerId,
+            matchPlayersResult.map((p) => p.id),
+          ),
+        )
+        .groupBy(roundPlayer.matchPlayerId);
+      const isWinner = (score: number): boolean => {
+        const parsedScore = Number(score); // Ensure it's a number
+        if (matchScoresheet.winCondition === "Highest Score") {
+          const highestScore = Math.max(
+            ...returnedRoundPlayersGroupByMatchPLayer.map((p) =>
+              Number(p.finalScore),
+            ),
+          );
+          return parsedScore === highestScore;
+        }
+        if (matchScoresheet.winCondition === "Lowest Score") {
+          const lowestScore = Math.min(
+            ...returnedRoundPlayersGroupByMatchPLayer.map((p) =>
+              Number(p.finalScore),
+            ),
+          );
+          return parsedScore === lowestScore;
+        }
+        if (matchScoresheet.winCondition === "Target Score") {
+          return parsedScore === matchScoresheet.targetScore;
+        }
+        return false;
+      };
+
+      for (const returnedRoundPlayer of returnedRoundPlayersGroupByMatchPLayer) {
+        await db
+          .update(matchPlayer)
+          .set({
+            winner: isWinner(returnedRoundPlayer.finalScore),
+            score: returnedRoundPlayer.finalScore,
+          })
+          .where(eq(matchPlayer.id, returnedRoundPlayer.matchPlayerId));
+      }
     }
   }
 

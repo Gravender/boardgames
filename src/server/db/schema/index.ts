@@ -1,9 +1,4 @@
-export {
-  default as user,
-  userRelations,
-  insertUserSchema,
-  selectUserSchema,
-} from "./user";
+export { default as user, insertUserSchema, selectUserSchema } from "./user";
 export {
   default as game,
   gameRelations,

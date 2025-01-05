@@ -145,66 +145,47 @@ export const playerRouter = createTRPCRouter({
       return playersWithGroups;
     }),
   getPlayers: protectedUserProcedure.query(async ({ ctx }) => {
-    const sq = ctx.db
+    const latestMatchesQuery = ctx.db
+      .select({
+        playerId: matchPlayer.playerId,
+        lastPlayed: match.date,
+        matches:
+          sql<number>`COUNT(${matchPlayer.id}) OVER (PARTITION BY ${matchPlayer.playerId})`.as(
+            "matches",
+          ),
+        gameName: game.name,
+        gameId: game.id,
+        rowNumber: sql<number>`ROW_NUMBER() OVER (
+      PARTITION BY ${matchPlayer.playerId}
+      ORDER BY ${match.date} DESC
+    )`.as("rowNumber"),
+      })
+      .from(matchPlayer)
+      .leftJoin(match, eq(match.id, matchPlayer.matchId))
+      .innerJoin(game, and(eq(game.id, match.gameId), eq(game.deleted, false)))
+      .as("latestMatches");
+    const players = await ctx.db
       .select({
         id: player.id,
-        matches: sql<number>`count(${match.id})`.as("matches"),
+        matches: latestMatchesQuery.matches,
         name: player.name,
-        imageId: player.imageId,
-        created: player.createdAt,
-        lastPlayed: sql<Date>`max(${match.date})`
-          .mapWith(match.date)
-          .as("lastPlayed"),
-        gameName: sql<string>`(
-      SELECT ${game.name}
-      FROM ${match}
-      LEFT JOIN ${game} ON ${match.gameId} = ${game.id}
-      WHERE ${match.id} = (
-        SELECT ${match.id}
-        FROM ${match}
-        LEFT JOIN ${matchPlayer} ON ${match.id} = ${matchPlayer.matchId}
-        WHERE ${matchPlayer.playerId} = ${player.id} and  ${match.finished} = true
-        ORDER BY ${match.date} DESC
-        LIMIT 1
-      ) and ${match.finished} = true
-    )`.as("gameName"),
-        gameId: sql<number>`(
-      SELECT ${game.id}
-      FROM ${match}
-      LEFT JOIN ${game} ON ${match.gameId} = ${game.id}
-      WHERE ${match.id} = (
-        SELECT ${match.id}
-        FROM ${match}
-        LEFT JOIN ${matchPlayer} ON ${match.id} = ${matchPlayer.matchId}
-        WHERE ${matchPlayer.playerId} = ${player.id} and  ${match.finished} = true
-        ORDER BY ${match.date} DESC
-        LIMIT 1
-      ) and ${match.finished} = true
-    )`.as("gameId"),
+        imageUrl: image.url,
+        lastPlayed: latestMatchesQuery.lastPlayed,
+        gameName: latestMatchesQuery.gameName,
+        gameId: latestMatchesQuery.gameId,
       })
       .from(player)
-      .leftJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
+      .leftJoin(image, eq(image.id, player.imageId))
       .leftJoin(
-        match,
-        and(eq(match.id, matchPlayer.matchId), eq(match.finished, true)),
+        latestMatchesQuery,
+        and(
+          eq(latestMatchesQuery.playerId, player.id),
+          eq(latestMatchesQuery.rowNumber, 1),
+        ),
       )
       .where(eq(player.createdBy, ctx.userId))
-      .groupBy(player.id, player.name, player.imageId)
-      .as("sq");
-    const playersWithImages = await ctx.db
-      .select({
-        id: sq.id,
-        matches: sq.matches,
-        name: sq.name,
-        imageUrl: image.url,
-        lastPlayed: sq.lastPlayed,
-        gameName: sq.gameName,
-        gameId: sq.gameId,
-      })
-      .from(image)
-      .rightJoin(sq, eq(image.id, sq.imageId))
-      .orderBy(desc(sq.matches));
-    return playersWithImages;
+      .orderBy(desc(latestMatchesQuery.matches));
+    return players;
   }),
   getPlayer: protectedUserProcedure
     .input(selectPlayerSchema.pick({ id: true }))

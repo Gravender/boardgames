@@ -4,12 +4,6 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { scoresheet } from ".";
 import { createTable } from "./baseTable";
-import games from "./game";
-import groups from "./group";
-import images from "./image";
-import locations from "./location";
-import matches from "./match";
-import players from "./player";
 
 const users = createTable("user", {
   id: serial("id").primaryKey(),
@@ -22,16 +16,6 @@ const users = createTable("user", {
     () => new Date(),
   ),
 });
-
-export const userRelations = relations(users, ({ many }) => ({
-  images: many(images),
-  scoresheets: many(scoresheet),
-  players: many(players),
-  matches: many(matches),
-  location: many(locations),
-  groups: many(groups),
-  games: many(games),
-}));
 
 export const insertUserSchema = createInsertSchema(users);
 
