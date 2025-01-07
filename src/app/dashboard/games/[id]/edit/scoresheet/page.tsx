@@ -75,6 +75,7 @@ export default function Page() {
                 type: "Numeric",
                 color: "#E2E2E2",
                 score: 0,
+                order: 0,
               },
             ],
     },
