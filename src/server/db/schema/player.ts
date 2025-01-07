@@ -32,6 +32,7 @@ const players = createTable(
   },
   (table) => ({
     nameIndex: index("name_idx").on(table.name),
+    playerIndex: index().on(table.id),
   }),
 );
 

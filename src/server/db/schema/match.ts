@@ -45,6 +45,7 @@ const matches = createTable(
   (table) => ({
     gameIndex: index().on(table.gameId),
     userIndex: index().on(table.userId),
+    matchIndex: index().on(table.id),
   }),
 );
 

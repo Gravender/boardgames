@@ -1,11 +1,26 @@
+import { currentUser } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
-import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { compareAsc } from "date-fns";
+import {
+  aliasedTable,
+  and,
+  count,
+  countDistinct,
+  desc,
+  eq,
+  inArray,
+  max,
+  ne,
+  sql,
+  sumDistinct,
+} from "drizzle-orm";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
 import {
   game,
   group,
+  groupPlayer,
   image,
   insertPlayerSchema,
   match,
@@ -55,10 +70,12 @@ export const playerRouter = createTRPCRouter({
         .from(image)
         .rightJoin(sq, eq(image.id, sq.imageId));
       if (players.length === 0) {
-        //TODO use clerk to get name
-        await ctx.db
-          .insert(player)
-          .values({ createdBy: ctx.userId, userId: ctx.userId, name: "Me" });
+        const user = await currentUser();
+        await ctx.db.insert(player).values({
+          createdBy: ctx.userId,
+          userId: ctx.userId,
+          name: user?.fullName ?? "Me",
+        });
         const returnedPlayer = await ctx.db.query.player.findFirst({
           where: and(eq(player.createdBy, ctx.userId)),
           with: { image: true },
@@ -100,49 +117,46 @@ export const playerRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query.group.findFirst({
-        where: and(
-          eq(group.id, input.group.id),
-          eq(group.createdBy, ctx.userId),
-        ),
-        with: {
-          groupsByPlayer: {
-            with: {
-              player: {
-                with: {
-                  image: true,
-                  matchesByPlayer: true,
-                },
-              },
-            },
-          },
-        },
-      });
-      const players = await ctx.db.query.player.findMany({
-        where: eq(player.createdBy, ctx.userId),
-        with: {
-          image: true,
-          matchesByPlayer: true,
-        },
-      });
-      const playersWithGroups = players.map((player) => {
-        const ingroup = result?.groupsByPlayer.find(
-          (group) => group.player.id === player.id,
-        );
-        return {
+      type output = {
+        id: number;
+        name: string;
+        imageUrl: string | undefined;
+        matches: number;
+        ingroup: boolean;
+      }[];
+      const queriedGroup = ctx.db
+        .select({
+          playerId: groupPlayer.playerId,
+        })
+        .from(group)
+        .leftJoin(groupPlayer, eq(group.id, groupPlayer.groupId))
+        .where(eq(group.id, input.group.id))
+        .as("queriedGroup");
+      const playersWithMatches = await ctx.db
+        .select({
           id: player.id,
           name: player.name,
-          imageUrl: player.image?.url,
-          matches: player.matchesByPlayer.length,
-          ingroup: ingroup !== undefined,
-        };
-      });
-      playersWithGroups.sort((a, b) => {
-        if (a.ingroup && !b.ingroup) return -1;
-        if (!a.ingroup && b.ingroup) return 1;
-        return a.name.localeCompare(b.name);
-      });
-      return playersWithGroups;
+          imageUrl: max(image.url).as("imageUrl"),
+          matches: count(matchPlayer.id).as("matches"),
+          ingroup: sql<boolean>`MAX(${queriedGroup.playerId}) IS NOT NULL`.as(
+            "ingroup",
+          ),
+        })
+        .from(player)
+        .leftJoin(image, eq(image.id, player.imageId))
+        .leftJoin(queriedGroup, eq(queriedGroup.playerId, player.id))
+        .leftJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
+        .leftJoin(match, eq(match.id, matchPlayer.matchId))
+        .innerJoin(
+          game,
+          and(eq(game.id, match.gameId), eq(game.deleted, false)),
+        )
+        .groupBy(player.id)
+        .orderBy(
+          sql<boolean>`MAX(${queriedGroup.playerId}) IS NOT NULL`.as("ingroup"),
+          player.name,
+        );
+      return playersWithMatches;
     }),
   getPlayers: protectedUserProcedure.query(async ({ ctx }) => {
     const latestMatchesQuery = ctx.db
@@ -190,87 +204,152 @@ export const playerRouter = createTRPCRouter({
   getPlayer: protectedUserProcedure
     .input(selectPlayerSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      const returnedPlayer = await ctx.db.query.player.findFirst({
-        where: eq(player.id, input.id),
-        with: {
-          image: true,
-          matchesByPlayer: {
-            with: {
-              match: {
-                with: {
-                  game: {
-                    with: {
-                      image: true,
-                    },
-                  },
-                  matchPlayers: {
-                    with: {
-                      player: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-
-      if (!returnedPlayer) {
-        return null;
-      }
-      const matches = returnedPlayer.matchesByPlayer.map((matchPlayer) => {
-        return {
-          id: matchPlayer.match.id,
-          name: matchPlayer.match.name,
-          date: matchPlayer.match.date,
-          duration: matchPlayer.match.duration,
-          finished: matchPlayer.match.finished,
-          gameId: matchPlayer.match.game.id,
-          gameName: matchPlayer.match.game.name,
-          gameImageUrl: matchPlayer.match.game.image?.url,
-          players: matchPlayer.match.matchPlayers.map((matchPlayer) => {
-            return {
-              id: matchPlayer.id,
-              name: matchPlayer.player.name,
-              score: matchPlayer.score,
-              isWinner: matchPlayer.winner,
-              playerId: matchPlayer.player.id,
-            };
-          }),
-          outcome: {
-            score: matchPlayer.score,
-            isWinner: matchPlayer.winner,
-          },
-        };
-      });
-      matches.sort((a, b) => b.date.valueOf() - a.date.valueOf());
-      const processedPlayer = {
-        id: returnedPlayer.id,
-        name: returnedPlayer.name,
-        imageUrl: returnedPlayer.image?.url,
-        matches: matches,
-        duration: matches.reduce((acc, match) => {
-          return acc + match.duration;
-        }, 0),
-        players: matches.reduce<number[]>((acc, match) => {
-          match.players.forEach((player) => {
-            if (!acc.find((p) => p === player.playerId)) {
-              acc.push(player.playerId);
-            }
-          });
-          return acc;
-        }, []).length,
-        winRate:
-          matches.length > 0
-            ? matches.reduce((acc, match) => {
-                if (match.outcome.isWinner) {
-                  return acc + 1;
-                }
-                return acc;
-              }, 0) / matches.length
-            : 0,
-        games: matches
-          .reduce<
+      const matchPlayers = aliasedTable(matchPlayer, "matchPlayers");
+      const players = aliasedTable(player, "players");
+      const sq = ctx.db
+        .select({
+          matchId: sql<number>`${match.id}`.as("matchId"),
+          matchDate: match.date,
+          matchName: match.name,
+          matchDuration: match.duration,
+          matchFinished: match.finished,
+          gameId: sql`${match.gameId}`.as("matchGameId"),
+          gameName: sql<string>`${game.name}`.as("matchGameName"),
+          gameImageUrl: image.url,
+          players: sql<
+            {
+              id: number;
+              name: string;
+              score: number | null;
+              isWinner: boolean | null;
+              playerId: number;
+            }[]
+          >`
+      json_agg(
+        json_build_object(
+          'matchPlayerId', ${matchPlayers.id},
+          'name', ${players.name},
+          'score', ${matchPlayers.score},
+          'isWinner', ${matchPlayers.winner},
+          'playerId', ${players.id}
+        )
+      ) OVER (PARTITION BY ${match.id})
+    `.as("players"),
+          outcome: sql<{
+            score: number | null;
+            isWinner: boolean | null;
+          }>`
+      json_build_object(
+        'score', CASE WHEN ${matchPlayer.playerId} = ${input.id} THEN ${matchPlayer.score} END,
+        'isWinner', CASE WHEN ${matchPlayer.playerId} = ${input.id} AND ${matchPlayer.winner} THEN true ELSE false END
+      )
+    `.as("outcome"),
+          rowNumber:
+            sql<number>`ROW_NUMBER() OVER (PARTITION BY ${match.id} ORDER BY ${match.date} DESC)`.as(
+              "rowNumber",
+            ),
+        })
+        .from(match)
+        .innerJoin(
+          game,
+          and(eq(game.id, match.gameId), eq(game.deleted, false)),
+        )
+        .rightJoin(
+          matchPlayer,
+          and(
+            eq(match.id, matchPlayer.matchId),
+            eq(matchPlayer.playerId, input.id),
+          ),
+        )
+        .leftJoin(image, eq(game.imageId, image.id))
+        .leftJoin(matchPlayers, eq(match.id, matchPlayers.matchId))
+        .leftJoin(players, eq(players.id, matchPlayers.playerId))
+        .where(eq(match.finished, true))
+        .as("sq");
+      const gamesSubquery = ctx.db
+        .select({
+          id: sql<number>`${game.id}`.as("gameDistinctId"),
+          name: game.name,
+          imageUrl: max(image.url).as("gameImageUrl"),
+          wins: sql<number>`SUM(CASE WHEN ${matchPlayer.playerId} = ${input.id} AND ${matchPlayer.winner} AND ${match.finished}  THEN 1 ELSE 0 END)`.as(
+            "wins",
+          ),
+          plays:
+            sql<number>`SUM(CASE WHEN ${matchPlayer.playerId} = ${input.id} AND ${match.finished} THEN 1 ELSE 0 END)`.as(
+              "plays",
+            ),
+          winRate:
+            sql<number>`SUM(CASE WHEN ${matchPlayer.playerId} = ${input.id} AND ${matchPlayer.winner} AND ${match.finished} THEN 1 ELSE 0 END) * 1.0 / 
+            NULLIF(SUM(CASE WHEN ${matchPlayer.playerId} = ${input.id} AND ${match.finished} THEN 1 ELSE 0 END),0)`.as(
+              "winRate",
+            ),
+        })
+        .from(game)
+        .rightJoin(match, eq(match.gameId, game.id))
+        .rightJoin(
+          matchPlayer,
+          and(
+            eq(match.id, matchPlayer.matchId),
+            eq(matchPlayer.playerId, input.id),
+          ),
+        )
+        .leftJoin(image, eq(game.imageId, image.id))
+        .where(eq(game.deleted, false))
+        .groupBy(game.id, game.name)
+        .orderBy(game.name)
+        .as("gamesSubquery");
+      const outPlayer = await ctx.db
+        .select({
+          id: player.id,
+          name: player.name,
+          imageUrl: max(image.url).as("imageUrl"),
+          players: countDistinct(matchPlayers.playerId)
+            .mapWith(Number)
+            .as("players"),
+          winRate:
+            sql<number>`SUM(CASE WHEN ${matchPlayer.winner} THEN 1 ELSE 0 END)::FLOAT / COUNT(${matchPlayer.id})`.as(
+              "winRate",
+            ),
+          duration: sumDistinct(match.duration).mapWith(Number).as("duration"),
+          matches: sql<
+            {
+              id: number;
+              name: string;
+              date: Date;
+              duration: number;
+              finished: boolean;
+              gameId: number;
+              gameName: string;
+              gameImageUrl: string | undefined;
+              players: {
+                id: number;
+                name: string;
+                score: number | null;
+                isWinner: boolean | null;
+                playerId: number;
+              }[];
+              outcome: {
+                score: number | null;
+                isWinner: boolean | null;
+              };
+            }[]
+          >`
+      json_agg(
+         DISTINCT jsonb_build_object(
+          'id', ${sq.matchId},
+          'name', ${sq.matchName},
+          'date', ${sq.matchDate},
+          'duration', ${sq.matchDuration},
+          'finished', ${sq.matchFinished},
+          'gameName', ${sq.gameName},
+          'gameId', ${sq.gameId},
+          'gameImageUrl', ${sq.gameImageUrl},
+          'players', ${sq.players},
+          'outcome', ${sq.outcome}
+        )
+      )
+          `.as("matches"),
+          games: sql<
             {
               id: number;
               name: string;
@@ -279,28 +358,43 @@ export const playerRouter = createTRPCRouter({
               plays: number;
               winRate: number;
             }[]
-          >((acc, match) => {
-            const foundGame = acc.find((g) => g.id === match.gameId);
-            if (foundGame) {
-              foundGame.plays = foundGame.plays + 1;
-              foundGame.wins =
-                foundGame.wins + (match.outcome.isWinner ? 1 : 0);
-              foundGame.winRate = foundGame.wins / foundGame.plays;
-            } else {
-              acc.push({
-                id: match.gameId,
-                name: match.gameName,
-                imageUrl: match.gameImageUrl ?? "",
-                wins: match.outcome.isWinner ? 1 : 0,
-                plays: 1,
-                winRate: (match.outcome.isWinner ? 1 : 0) / 1,
-              });
-            }
-            return acc;
-          }, [])
-          .sort((a, b) => b.plays - a.plays),
-      };
-      return processedPlayer;
+          >`
+    json_agg(
+      DISTINCT jsonb_build_object(
+        'id', ${gamesSubquery.id},
+        'name', ${gamesSubquery.name},
+        'imageUrl', ${gamesSubquery.imageUrl},
+        'wins', ${gamesSubquery.wins},
+        'plays', ${gamesSubquery.plays},
+        'winRate', ${gamesSubquery.winRate}
+      )
+    )
+    `.as("games"),
+        })
+        .from(player)
+        .leftJoin(image, eq(image.id, player.imageId))
+        .leftJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
+        .leftJoin(match, eq(match.id, matchPlayer.matchId))
+        .leftJoin(
+          matchPlayers,
+          and(
+            eq(match.id, matchPlayers.matchId),
+            ne(matchPlayers.playerId, input.id),
+          ),
+        )
+        .leftJoin(game, eq(game.id, match.gameId))
+        .leftJoin(gamesSubquery, eq(game.id, gamesSubquery.id))
+        .leftJoin(
+          sq,
+          and(eq(sq.rowNumber, 1), eq(sq.matchId, matchPlayer.matchId)),
+        )
+        .where(eq(player.id, input.id))
+        .groupBy(player.id);
+      if (!outPlayer[0]) {
+        return null;
+      }
+      outPlayer[0].matches.sort((a, b) => compareAsc(b.date, a.date));
+      return outPlayer[0];
     }),
   create: protectedUserProcedure
     .input(insertPlayerSchema.pick({ name: true, imageId: true }))

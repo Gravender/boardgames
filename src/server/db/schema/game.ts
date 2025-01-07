@@ -41,6 +41,7 @@ const games = createTable(
   },
   (table) => ({
     userIndex: index().on(table.userId),
+    gameIndex: index().on(table.id),
   }),
 );
 
