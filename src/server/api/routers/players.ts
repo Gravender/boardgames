@@ -117,13 +117,6 @@ export const playerRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      type output = {
-        id: number;
-        name: string;
-        imageUrl: string | undefined;
-        matches: number;
-        ingroup: boolean;
-      }[];
       const queriedGroup = ctx.db
         .select({
           playerId: groupPlayer.playerId,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { format, set } from "date-fns";
+import { format } from "date-fns";
 
 import { Calendar } from "~/components/ui/calendar";
 
@@ -70,7 +70,7 @@ export function ClientCalendar({ matchDayMap }: ClientCalendarProps) {
               return (
                 <CalendarDay
                   day={date}
-                  matchIds={matchDayMap.get(format(date, "MM-dd-yy")) || []}
+                  matchIds={matchDayMap.get(format(date, "MM-dd-yy")) ?? []}
                   {...props}
                 />
               );

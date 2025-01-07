@@ -1,7 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
-
 import { api, HydrateClient } from "~/trpc/server";
 
 import { LocationsTable } from "./_components/locationTable";

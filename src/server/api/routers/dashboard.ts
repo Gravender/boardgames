@@ -1,5 +1,5 @@
 import { subMonths, subYears } from "date-fns";
-import { and, asc, count, desc, eq, gte, lte, max, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import {

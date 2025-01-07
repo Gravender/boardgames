@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, ChevronUp, Dices, Plus, Table } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { type z } from "zod";
 
 import { Spinner } from "~/components/spinner";
 import { Button } from "~/components/ui/button";

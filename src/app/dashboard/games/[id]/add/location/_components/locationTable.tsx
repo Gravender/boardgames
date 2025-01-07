@@ -1,15 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Select } from "@radix-ui/react-select";
-import { MapPin, Search } from "lucide-react";
+import { useState } from "react";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
-import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
-import { ScrollArea } from "~/components/ui/scroll-area";
-import { RouterOutputs } from "~/trpc/react";
+import { CardHeader, CardTitle } from "~/components/ui/card";
+import { type RouterOutputs } from "~/trpc/react";
 
 import { AddLocationDialog } from "./addLocationDialog";
 import SelectLocationForm from "./locationForm";

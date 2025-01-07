@@ -1,7 +1,7 @@
 import { exit } from "process";
 import { faker } from "@faker-js/faker";
-import { eq, getTableName, inArray, sql, Table } from "drizzle-orm";
-import { z } from "zod";
+import { eq, getTableName, inArray, sql, type Table } from "drizzle-orm";
+import { type z } from "zod";
 
 import { db } from "~/server/db";
 import {
@@ -9,16 +9,16 @@ import {
   group,
   groupPlayer,
   image,
-  insertGameSchema,
-  insertGroupPlayerSchema,
-  insertGroupSchema,
-  insertImageSchema,
-  insertLocationSchema,
-  insertMatchPlayerSchema,
-  insertMatchSchema,
-  insertPlayerSchema,
-  insertScoreSheetSchema,
-  insertUserSchema,
+  type insertGameSchema,
+  type insertGroupPlayerSchema,
+  type insertGroupSchema,
+  type insertImageSchema,
+  type insertLocationSchema,
+  type insertMatchPlayerSchema,
+  type insertMatchSchema,
+  type insertPlayerSchema,
+  type insertScoreSheetSchema,
+  type insertUserSchema,
   location,
   match,
   matchPlayer,
@@ -29,8 +29,8 @@ import {
   user,
 } from "~/server/db/schema";
 
-import { insertRoundSchema } from "../schema/round";
-import roundPlayers, { insertRoundPlayerSchema } from "../schema/roundPlayer";
+import { type insertRoundSchema } from "../schema/round";
+import roundPlayers, { type insertRoundPlayerSchema } from "../schema/roundPlayer";
 
 function weightedRandomSample<T>(
   weightedPlayers: { weight: number; value: T }[],

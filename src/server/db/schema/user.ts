@@ -1,8 +1,7 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { serial, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
-import { scoresheet } from ".";
 import { createTable } from "./baseTable";
 
 const users = createTable("user", {

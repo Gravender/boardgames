@@ -61,8 +61,8 @@ export const ourFileRouter = {
             url: file.url,
             userId: metadata.userId,
           })
-          .returning({ insertedId: image.id })
-      )[0]?.insertedId;
+          .returning()
+      )[0]?.id;
       if (!imageId) {
         throw new UploadThingError("Unauthorized");
       }

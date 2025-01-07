@@ -1,11 +1,12 @@
 // @ts-nocheck
 /** @type {import("eslint").Linter.Config} */
+
 const config = {
   parser: "@typescript-eslint/parser",
   parserOptions: {
     project: true,
   },
-  plugins: ["@typescript-eslint", "drizzle"],
+  plugins: ["@typescript-eslint", "drizzle", "react-compiler"],
   extends: [
     "next/core-web-vitals",
     "plugin:@typescript-eslint/recommended-type-checked",
@@ -48,6 +49,7 @@ const config = {
         drizzleObjectName: ["db", "ctx.db"],
       },
     ],
+    "react-compiler/react-compiler": "error",
   },
 };
 module.exports = config;

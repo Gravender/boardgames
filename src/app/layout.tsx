@@ -10,31 +10,36 @@ import { Toaster } from "~/components/ui/toaster";
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
-  title: "Board Games Tracker",
+  title: {
+    default: "Board Games Tracker",
+    template: `%s - Board Games Tracker`,
+  },
   description: "Board Games Tracker created by gravender",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  creator: "@gravender",
+  icons: [{ rel: "games", url: "/favicon.ico" }],
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+          enableColorScheme
+        >
+          <ClerkProvider>
             <TRPCReactProvider>{children}</TRPCReactProvider>
             <Toaster />
-          </ThemeProvider>
-          <Analytics />
-          <SpeedInsights />
-        </body>
-      </html>
-    </ClerkProvider>
+            <Analytics />
+            <SpeedInsights />
+          </ClerkProvider>
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }

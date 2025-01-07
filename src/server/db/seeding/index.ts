@@ -1,14 +1,10 @@
-import { and, eq, getTableName, sql, Table } from "drizzle-orm";
-import { z } from "zod";
+import { and, eq, getTableName, sql, type Table } from "drizzle-orm";
+import { type z } from "zod";
 
 import { db as DrizzleDb } from "~/server/db";
 
 import {
   game,
-  insertMatchPlayerSchema,
-  insertMatchSchema,
-  insertPlayerSchema,
-  insertRoundPlayerSchema,
   insertScoreSheetSchema,
   location,
   match,
@@ -16,8 +12,12 @@ import {
   player,
   roundPlayer,
   scoresheet,
+  type insertMatchPlayerSchema,
+  type insertMatchSchema,
+  type insertPlayerSchema,
+  type insertRoundPlayerSchema,
 } from "../schema";
-import round, { insertRoundSchema } from "../schema/round";
+import round, { type insertRoundSchema } from "../schema/round";
 import games from "./data/games.json";
 
 async function resetTable(db: typeof DrizzleDb, table: Table) {
@@ -233,7 +233,7 @@ export default async function seed(db: typeof DrizzleDb) {
             );
             if (!foundPlayer) {
               throw new Error(
-                `Error player ${player.name} not Found Game:${seedGame.name} Play:${play.name} `,
+                `Error player not Found Game:${seedGame.name} Play:${play.name} `,
               );
             }
             return {

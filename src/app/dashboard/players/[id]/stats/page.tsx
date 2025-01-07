@@ -1,4 +1,4 @@
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
@@ -172,7 +172,7 @@ export default async function Page({ params }: Props) {
                   <div className="flex flex-wrap text-muted-foreground">
                     {lastPlayed.players
                       .filter((player) => player.isWinner)
-                      .map((player, index) => (
+                      .map((player) => (
                         <span
                           key={player.name}
                           className="after:content-[',_'] last:after:content-none"
@@ -185,7 +185,7 @@ export default async function Page({ params }: Props) {
                 <div className="flex gap-2 text-wrap">
                   <h4 className="font-medium shrink-0">Participants:</h4>
                   <div className="flex flex-wrap text-muted-foreground">
-                    {lastPlayed.players.map((player, index) => (
+                    {lastPlayed.players.map((player) => (
                       <span
                         key={player.name}
                         className="after:content-[',_'] after:mr-1 last:after:content-none"

@@ -1,6 +1,4 @@
-import { get } from "http";
 import { TRPCError } from "@trpc/server";
-import { add } from "date-fns";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -11,7 +9,6 @@ import {
   match,
   selectLocationSchema,
 } from "~/server/db/schema";
-import { deleteLocation } from "~/server/queries";
 
 export const locationRouter = createTRPCRouter({
   getLocations: protectedUserProcedure.query(async ({ ctx }) => {

@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 
-import { api, RouterOutputs } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 
 const lodash = require("lodash");
 
@@ -12,41 +12,42 @@ export function useDebouncedUpdateMatchData(matchId: number, delay = 1000) {
   const saveMatchData = api.match.updateMatch.useMutation();
 
   const debouncedUpdate = useCallback(
-    lodash.debounce(
-      (players: Players, duration: Duration, running: Running) => {
-        setIsUpdating(true);
-        const submittedPlayers = players.flatMap((player) =>
-          player.rounds.map((round) => ({
-            id: round.id,
-            score: round.score,
-            roundId: round.id,
-            matchPlayerId: player.id,
-          })),
-        );
-        const matchPlayers = submittedPlayers.map((player) => ({
-          id: player.id,
-          score: player.score,
-          winner: false,
-        }));
-        saveMatchData.mutate(
-          {
-            match: {
-              id: matchId,
-              duration: duration,
-              finished: false,
-              running: running,
+    () =>
+      lodash.debounce(
+        (players: Players, duration: Duration, running: Running) => {
+          setIsUpdating(true);
+          const submittedPlayers = players.flatMap((player) =>
+            player.rounds.map((round) => ({
+              id: round.id,
+              score: round.score,
+              roundId: round.id,
+              matchPlayerId: player.id,
+            })),
+          );
+          const matchPlayers = submittedPlayers.map((player) => ({
+            id: player.id,
+            score: player.score,
+            winner: false,
+          }));
+          saveMatchData.mutate(
+            {
+              match: {
+                id: matchId,
+                duration: duration,
+                finished: false,
+                running: running,
+              },
+              roundPlayers: submittedPlayers,
+              matchPlayers: matchPlayers,
             },
-            roundPlayers: submittedPlayers,
-            matchPlayers: matchPlayers,
-          },
-          {
-            onSuccess: () => setIsUpdating(false),
-            onError: () => setIsUpdating(false),
-          },
-        );
-      },
-      delay,
-    ),
+            {
+              onSuccess: () => setIsUpdating(false),
+              onError: () => setIsUpdating(false),
+            },
+          );
+        },
+        delay,
+      ),
     [saveMatchData, delay],
   );
 

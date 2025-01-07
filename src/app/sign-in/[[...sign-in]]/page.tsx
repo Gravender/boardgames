@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import * as Clerk from "@clerk/elements/common";
 import * as SignIn from "@clerk/elements/sign-in";
 
@@ -14,9 +13,6 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Icons } from "~/components/ui/icons";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { cn } from "~/lib/utils";
 
 export default function SignInPage() {
   return (

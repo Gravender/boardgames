@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { boolean, integer, serial, unique } from "drizzle-orm/pg-core";
+import { integer, serial, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";

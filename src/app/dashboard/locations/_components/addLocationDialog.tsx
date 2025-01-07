@@ -28,7 +28,6 @@ import {
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
 import { useToast } from "~/hooks/use-toast";
-import { insertLocationSchema } from "~/server/db/schema";
 import { api } from "~/trpc/react";
 
 export const AddLocationDialog = () => {

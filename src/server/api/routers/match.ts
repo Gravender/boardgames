@@ -1,11 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { date } from "drizzle-orm/mysql-core";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedUserProcedure } from "~/server/api/trpc";
 import {
-  game,
   insertMatchSchema,
   insertPlayerSchema,
   match,

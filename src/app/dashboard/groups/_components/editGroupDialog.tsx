@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { type z } from "zod";
 
 import { Spinner } from "~/components/spinner";
 import { Button } from "~/components/ui/button";
@@ -108,6 +108,7 @@ const GroupContent = ({
             type="button"
             disabled={isGettingPlayers}
             onClick={() => {
+              setIsGettingPlayers(true);
               router.push(`/dashboard/groups/${group.id}/edit/players`);
             }}
           >
