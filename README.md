@@ -4,9 +4,16 @@ This app records your board game plays and scores, including play duration, play
 
 ## Pages
 
+
 ![Pages Slideshow](https://utfs.io/f/FArKeeZnAmUSR5cReoUmq1f2jW4odVJL7kCZbB6awPDIi5tK)
 
+
+[Boardgamedemo.webm](https://github.com/user-attachments/assets/3da18403-0c30-4795-b989-a76681531dce)
+
 ---
+
+
+
 
 ## Individual Images
 [Images](image.md)
