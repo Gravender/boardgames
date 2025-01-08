@@ -71,7 +71,12 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
               <h2 className="text-xl font-bold">{props.row.original?.name}</h2>
               <div className="flex min-w-20 items-center gap-1">
                 <span>Last Played:</span>
-                <span className="text-muted-foreground">{lastPlayed}</span>
+                <span
+                  className="text-muted-foreground"
+                  suppressHydrationWarning
+                >
+                  {lastPlayed}
+                </span>
               </div>
               <div className="flex max-w-96 items-center justify-between">
                 <div className="flex w-24 items-center">
@@ -187,7 +192,10 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
                       </h2>
                       <div className="flex min-w-20 items-center gap-1">
                         <span>Last Played:</span>
-                        <span className="text-muted-foreground">
+                        <span
+                          className="text-muted-foreground"
+                          suppressHydrationWarning
+                        >
                           {lastPlayed}
                         </span>
                       </div>

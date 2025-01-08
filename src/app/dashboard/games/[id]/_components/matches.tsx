@@ -85,7 +85,10 @@ export function Matches({
                         </h2>
                         <div className="flex min-w-20 items-center gap-1">
                           <span>Play Date:</span>
-                          <span className="text-muted-foreground">
+                          <span
+                            className="text-muted-foreground"
+                            suppressHydrationWarning
+                          >
                             {match.date
                               ? format(match.date, "d MMM yyyy")
                               : null}

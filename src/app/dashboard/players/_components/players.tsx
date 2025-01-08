@@ -71,7 +71,10 @@ export function PlayersTable({
                             </div>
                             <div className="flex min-w-20 items-center gap-1 text-sm">
                               <span>Last Played:</span>
-                              <span className="text-muted-foreground">
+                              <span
+                                className="text-muted-foreground"
+                                suppressHydrationWarning
+                              >
                                 {lastPlayed}
                               </span>
                             </div>

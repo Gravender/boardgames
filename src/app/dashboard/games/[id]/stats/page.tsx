@@ -105,7 +105,9 @@ export default async function Page({
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium">Play Date:</h4>
                       <div className="flex justify-between text-muted-foreground">
-                        <span>{format(lastPlayed.date, "d MMM yyyy")}</span>
+                        <span suppressHydrationWarning>
+                          {format(lastPlayed.date, "d MMM yyyy")}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -198,7 +200,9 @@ export default async function Page({
                             )}
                           </div>
                           <div className="text-muted-foreground">
-                            <span>{format(match.date, "d MMM yyyy")}</span>
+                            <span suppressHydrationWarning>
+                              {format(match.date, "d MMM yyyy")}
+                            </span>
                           </div>
                         </div>
                       );

@@ -19,7 +19,9 @@ export function MatchesTable({ data, date }: { data: Matches; date: string }) {
   return (
     <div className="container mx-auto px-4 max-w-3xl h-[90vh] relative">
       <CardHeader>
-        <CardTitle>{`Matches on ${format(date, "d MMM yyyy")}`}</CardTitle>
+        <CardTitle
+          suppressHydrationWarning
+        >{`Matches on ${format(date, "d MMM yyyy")}`}</CardTitle>
       </CardHeader>
       <FilterAndSearch
         items={data}

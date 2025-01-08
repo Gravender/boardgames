@@ -48,7 +48,9 @@ export function UniqueGamesChart({
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
         <CardTitle>Games Played</CardTitle>
-        <CardDescription>{format(new Date(), "yyyy")}</CardDescription>
+        <CardDescription suppressHydrationWarning>
+          {format(new Date(), "yyyy")}
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         <ChartContainer
