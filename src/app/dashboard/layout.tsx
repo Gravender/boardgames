@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 
@@ -15,13 +16,15 @@ import {
 import { api, HydrateClient } from "~/trpc/server";
 
 async function SidebarLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const defaultOpen = cookieStore.get("sidebar:state")?.value === "true";
   const games = await api.dashboard.getGames();
   const players = await api.dashboard.getPlayers();
   const groups = await api.dashboard.getGroups();
   const locations = await api.dashboard.getLocations();
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar
         games={games}
         players={players}
