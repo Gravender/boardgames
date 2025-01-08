@@ -146,14 +146,8 @@ export default async function Page({ params }: Props) {
                   (p) => p.id === player.id,
                 );
                 if (!foundPlayer) return "";
-                const firstGame = foundPlayer.dates.sort(
-                  (a, b) => a.getTime() - b.getTime(),
-                )[0];
-                if (
-                  foundPlayer.plays === 1 ||
-                  summary.date.getTime() === firstGame?.getTime()
-                )
-                  return "First Game";
+
+                if (foundPlayer.firstGame) return "First Game";
                 const highestScore = Math.max(...foundPlayer.scores);
                 const lowestScore = Math.min(...foundPlayer.scores);
 

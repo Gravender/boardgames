@@ -1,3 +1,4 @@
+import { create } from "domain";
 import { TRPCError } from "@trpc/server";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -225,6 +226,7 @@ export const matchRouter = createTRPCRouter({
           gameId: true,
           id: true,
           date: true,
+          createdAt: true,
         },
         where: and(
           eq(match.userId, ctx.userId),
@@ -292,6 +294,8 @@ export const matchRouter = createTRPCRouter({
                 score: matchPlayer.score,
                 isWinner: matchPlayer.winner,
                 date: match.date,
+                createdAt: match.createdAt,
+                matchId: match.id,
               };
             })
             .filter((player) => player !== false),
@@ -301,7 +305,11 @@ export const matchRouter = createTRPCRouter({
             const foundPlayer = acc.find((p) => p.id === player.id);
             if (foundPlayer) {
               foundPlayer.scores.push(player.score ?? 0);
-              foundPlayer.dates.push(player.date);
+              foundPlayer.dates.push({
+                matchId: player.matchId,
+                date: player.date,
+                createdAt: player.createdAt,
+              });
               if (player.isWinner) {
                 foundPlayer.wins = foundPlayer.wins + 1;
               }
@@ -310,7 +318,13 @@ export const matchRouter = createTRPCRouter({
               acc.push({
                 name: player.name,
                 scores: [player.score ?? 0],
-                dates: [player.date],
+                dates: [
+                  {
+                    matchId: player.matchId,
+                    date: player.date,
+                    createdAt: player.createdAt,
+                  },
+                ],
                 wins: player.isWinner ? 1 : 0,
                 id: player.id,
                 plays: 1,
@@ -321,13 +335,33 @@ export const matchRouter = createTRPCRouter({
           [] as {
             name: string;
             scores: number[];
-            dates: Date[];
+            dates: { matchId: number; date: Date; createdAt: Date }[];
             wins: number;
             id: number;
             plays: number;
           }[],
         )
-        .sort((a, b) => b.plays - a.plays);
+        .sort((a, b) => b.plays - a.plays)
+        .map((player) => {
+          const firstGame = () => {
+            const firstGame = player.dates.toSorted((a, b) => {
+              if (a.date.getTime() === b.date.getTime()) {
+                return a.createdAt.getTime() - b.createdAt.getTime();
+              } else {
+                return a.date.getTime() - b.date.getTime();
+              }
+            })[0];
+
+            return firstGame?.matchId === returnedMatch.id;
+          };
+          return {
+            ...player,
+            firstGame: firstGame(),
+            dates: player.dates.map((date) => {
+              return date.date;
+            }),
+          };
+        });
       return {
         id: returnedMatch.id,
         date: returnedMatch.date,
