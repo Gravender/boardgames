@@ -5,11 +5,18 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Next.js",
       "type": "node-terminal",
-      "name": "Run Script: dev",
       "request": "launch",
-      "command": "pnpm run dev",
-      "cwd": "${workspaceFolder}"
+      "command": "pnpm dev",
+      "cwd": "${workspaceFolder}/apps/nextjs",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "/turbopack/[project]/*": "${webRoot}/*" //https://github.com/vercel/next.js/issues/62008
+      }
     }
   ]
 }
