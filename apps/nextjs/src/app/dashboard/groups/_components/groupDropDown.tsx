@@ -12,8 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
+import type { RouterOutputs } from "~/trpc/react";
 import { deleteGroup } from "~/server/queries";
-import type {RouterOutputs} from "~/trpc/react";
 import { EditGroupDialog } from "./editGroupDialog";
 
 export function GroupDropDown({

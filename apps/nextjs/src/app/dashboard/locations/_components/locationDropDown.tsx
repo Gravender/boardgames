@@ -12,8 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
+import type { RouterOutputs } from "~/trpc/react";
 import { deleteLocation } from "~/server/queries";
-import type {RouterOutputs} from "~/trpc/react";
 import { EditLocationDialog } from "./editLocationDialog";
 
 export function LocationDropDown({

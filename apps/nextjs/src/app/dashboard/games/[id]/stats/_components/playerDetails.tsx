@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@board-games/ui/table";
 
-import type {RouterOutputs} from "~/trpc/react";
+import type { RouterOutputs } from "~/trpc/react";
 
 type Players = NonNullable<RouterOutputs["game"]["getGameStats"]>["players"];
 type SortField = "name" | "plays" | "wins" | "winRate";

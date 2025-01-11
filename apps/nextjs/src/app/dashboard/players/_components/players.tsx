@@ -10,8 +10,8 @@ import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 
+import type { RouterOutputs } from "~/trpc/react";
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
-import type {RouterOutputs} from "~/trpc/react";
 import { AddPlayerDialog } from "./addPlayerDialog";
 import { PlayerDropDown } from "./playerDropDown";
 

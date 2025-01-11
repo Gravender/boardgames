@@ -5,8 +5,8 @@ import { User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 
+import type { RouterOutputs } from "~/trpc/react";
 import { formatDuration } from "~/lib/utils";
-import type {RouterOutputs} from "~/trpc/react";
 
 export function PlayersCard({
   data,

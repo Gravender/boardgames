@@ -7,8 +7,8 @@ import { cva } from "class-variance-authority";
 import { PanelLeft } from "lucide-react";
 
 import { Button } from "@board-games/ui/button";
+import { useIsMobile } from "@board-games/ui/hooks/use-mobile";
 import { Input } from "@board-games/ui/input";
-import { cn } from "@board-games/ui/lib/utils";
 import { Separator } from "@board-games/ui/separator";
 import { Sheet, SheetContent } from "@board-games/ui/sheet";
 import { Skeleton } from "@board-games/ui/skeleton";
@@ -18,8 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@board-games/ui/tooltip";
-
-import { useIsMobile } from "./hooks/use-mobile";
+import { cn } from "@board-games/ui/utils";
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;

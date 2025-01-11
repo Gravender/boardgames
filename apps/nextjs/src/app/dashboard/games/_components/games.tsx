@@ -11,7 +11,7 @@ import { Button } from "@board-games/ui/button";
 import { Card } from "@board-games/ui/card";
 import { Separator } from "@board-games/ui/separator";
 
-import type {RouterOutputs} from "~/trpc/react";
+import type { RouterOutputs } from "~/trpc/react";
 import { DataTable } from "./dataTable";
 import { GamesDropDown } from "./gamesDropDown";
 

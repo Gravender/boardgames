@@ -1,4 +1,4 @@
-import { cn } from "@board-games/ui/lib/utils";
+import { cn } from "@board-games/ui/";
 
 export type SpinnerProps = JSX.IntrinsicElements["svg"];
 

@@ -10,8 +10,8 @@ import { CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
 
+import type { RouterOutputs } from "~/trpc/react";
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
-import type {RouterOutputs} from "~/trpc/react";
 
 type Matches = NonNullable<RouterOutputs["match"]["getMatchesByDate"]>;
 export function MatchesTable({ data, date }: { data: Matches; date: string }) {

@@ -6,7 +6,7 @@ import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
 import { X } from "lucide-react";
 
-import { cn } from "@board-games/ui/lib/utils";
+import { cn } from "@board-games/ui/utils";
 
 const ToastProvider = ToastPrimitives.Provider;
 

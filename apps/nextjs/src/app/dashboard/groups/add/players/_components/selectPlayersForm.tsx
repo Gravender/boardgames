@@ -23,10 +23,10 @@ import {
 import { cn } from "@board-games/ui/lib/utils";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 
+import type { RouterOutputs } from "~/trpc/react";
 import { Spinner } from "~/components/spinner";
 import { useAddGroupStore } from "~/providers/add-group-provider";
 import { playersSchema } from "~/stores/add-match-store";
-import type {RouterOutputs} from "~/trpc/react";
 
 const formSchema = z.object({
   players: playersSchema,

@@ -24,8 +24,8 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 
+import type { formSchemaType } from "../page";
 import { NumberInput } from "~/components/number-input";
-import type {formSchemaType} from "../page";
 
 export function RoundPopOver({
   index,

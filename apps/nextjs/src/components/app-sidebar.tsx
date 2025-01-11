@@ -18,9 +18,9 @@ import {
   SidebarRail,
 } from "@board-games/ui/sidebar";
 
+import type { RouterOutputs } from "~/trpc/react";
 import { NavMain } from "~/components/nav-main";
 import { NavUser } from "~/components/nav-user";
-import type {RouterOutputs} from "~/trpc/react";
 
 // This is sample data.
 

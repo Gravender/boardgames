@@ -13,8 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
+import type { RouterOutputs } from "~/trpc/react";
 import { deletePlayer } from "~/server/queries";
-import type {RouterOutputs} from "~/trpc/react";
 import { EditPlayerDialog } from "./editPlayerDialog";
 
 export function PlayerDropDown({

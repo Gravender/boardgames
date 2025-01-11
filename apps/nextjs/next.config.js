@@ -25,7 +25,6 @@ const coreConfig = {
     "@board-games/auth",
     "@board-games/db",
     "@board-games/ui",
-    "@board-games/validators",
   ],
   typescript: {
     ignoreBuildErrors: true,

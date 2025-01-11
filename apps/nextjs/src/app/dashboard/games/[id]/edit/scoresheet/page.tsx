@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Copy, Minus, Plus, Trash } from "lucide-react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { Form, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@board-games/ui/button";
@@ -18,7 +18,6 @@ import {
 } from "@board-games/ui/card";
 import { Checkbox } from "@board-games/ui/checkbox";
 import {
-  Form,
   FormControl,
   FormField,
   FormItem,
