@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
 
-import { cn } from "@board-games/ui/";
 import { Input } from "@board-games/ui/input";
+import { cn } from "@board-games/ui/utils";
 
 interface NumberInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   onValueChange?: (value: number | null) => void;

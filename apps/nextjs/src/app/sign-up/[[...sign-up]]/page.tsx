@@ -16,7 +16,7 @@ import {
 import { Icons } from "@board-games/ui/icons";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
-import { cn } from "@board-games/ui/lib/utils";
+import { cn } from "@board-games/ui/utils";
 
 export default function SignUpPage() {
   return (

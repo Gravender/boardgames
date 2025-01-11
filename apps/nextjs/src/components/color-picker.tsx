@@ -4,12 +4,12 @@ import { Paintbrush } from "lucide-react";
 
 import { Button } from "@board-games/ui/button";
 import { Input } from "@board-games/ui/input";
-import { cn } from "@board-games/ui/lib/utils";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@board-games/ui/popover";
+import { cn } from "@board-games/ui/utils";
 
 export function GradientPicker({
   color,

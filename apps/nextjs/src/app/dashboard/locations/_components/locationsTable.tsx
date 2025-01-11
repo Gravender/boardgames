@@ -6,8 +6,8 @@ import { MapPin, Search } from "lucide-react";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { Input } from "@board-games/ui/input";
-import { cn } from "@board-games/ui/lib/utils";
 import { ScrollArea } from "@board-games/ui/scroll-area";
+import { cn } from "@board-games/ui/utils";
 
 import type { RouterOutputs } from "~/trpc/react";
 import { AddLocationDialog } from "./addLocationDialog";

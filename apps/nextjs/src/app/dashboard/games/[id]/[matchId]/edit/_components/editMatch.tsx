@@ -42,12 +42,12 @@ import {
 import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
-import { cn } from "@board-games/ui/lib/utils";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@board-games/ui/popover";
+import { cn } from "@board-games/ui/utils";
 
 import type { RouterOutputs } from "~/trpc/react";
 import { Spinner } from "~/components/spinner";

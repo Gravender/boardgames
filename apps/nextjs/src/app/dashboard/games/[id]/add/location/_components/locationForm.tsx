@@ -19,8 +19,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { cn } from "@board-games/ui/lib/utils";
 import { ScrollArea } from "@board-games/ui/scroll-area";
+import { cn } from "@board-games/ui/utils";
 
 import type { RouterOutputs } from "~/trpc/react";
 import { Spinner } from "~/components/spinner";

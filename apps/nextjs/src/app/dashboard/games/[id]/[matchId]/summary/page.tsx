@@ -15,7 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@board-games/ui/card";
-import { cn } from "@board-games/ui/lib/utils";
 import {
   Table,
   TableBody,
@@ -24,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@board-games/ui/table";
+import { cn } from "@board-games/ui/utils";
 
 import { formatDuration } from "~/lib/utils";
 import { api } from "~/trpc/server";

@@ -28,7 +28,6 @@ import {
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
-import { cn } from "@board-games/ui/lib/utils";
 import {
   Select,
   SelectContent,
@@ -45,6 +44,7 @@ import {
   TableHeader,
   TableRow,
 } from "@board-games/ui/table";
+import { cn } from "@board-games/ui/utils";
 
 import type { RouterOutputs } from "~/trpc/react";
 import { GradientPicker } from "~/components/color-picker";

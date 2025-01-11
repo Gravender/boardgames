@@ -26,12 +26,12 @@ import {
   FormMessage,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
-import { cn } from "@board-games/ui/lib/utils";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@board-games/ui/popover";
+import { cn } from "@board-games/ui/utils";
 
 import type { RouterOutputs } from "~/trpc/react";
 import { Spinner } from "~/components/spinner";

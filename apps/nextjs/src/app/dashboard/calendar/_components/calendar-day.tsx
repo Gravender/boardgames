@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
-import { cn } from "@board-games/ui/lib/utils";
+import { cn } from "@board-games/ui/utils";
 
 interface CalendarDayProps {
   day: Date;

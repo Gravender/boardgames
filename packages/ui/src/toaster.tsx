@@ -1,6 +1,6 @@
 "use client";
 
-import { useToast } from "@board-games/ui/hooks";
+import { useToast } from "@board-games/ui/hooks/use-toast";
 import {
   Toast,
   ToastClose,
