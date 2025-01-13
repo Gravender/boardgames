@@ -1,18 +1,8 @@
-import { useState } from "react";
-import { Button, Pressable, Text, TextInput, View } from "react-native";
+import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link, Stack } from "expo-router";
-import { FlashList } from "@shopify/flash-list";
-
-import type { RouterOutputs } from "~/utils/api";
-import { api } from "~/utils/api";
-
-
-
+import { Stack } from "expo-router";
 
 export default function Index() {
- 
-
   return (
     <SafeAreaView className="bg-background">
       {/* Changes page title visible on the header */}
@@ -21,8 +11,6 @@ export default function Index() {
         <Text className="pb-2 text-center text-5xl font-bold text-foreground">
           Create <Text className="text-primary">T3</Text> Turbo
         </Text>
-
-
       </View>
     </SafeAreaView>
   );

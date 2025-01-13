@@ -16,7 +16,9 @@
   },
   "dependencies": {
     "@bacons/text-decoder": "^0.0.0",
+    "@clerk/clerk-expo": "^2.6.9",
     "@expo/metro-config": "^0.18.11",
+    "@react-navigation/drawer": "^7.1.1",
     "@shopify/flash-list": "1.7.1",
     "@tanstack/react-query": "catalog:",
     "@trpc/client": "catalog:",
@@ -51,6 +53,7 @@
     "@board-games/prettier-config": "workspace:*",
     "@board-games/tailwind-config": "workspace:*",
     "@board-games/tsconfig": "workspace:*",
+    "@clerk/types": "^4.40.2",
     "@types/babel__core": "^7.20.5",
     "@types/react": "catalog:react18",
     "eslint": "catalog:",
@@ -58,5 +61,5 @@
     "tailwindcss": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@acme/prettier-config"
+  "prettier": "@board-games/prettier-config"
 }

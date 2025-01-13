@@ -32,7 +32,7 @@ slug: "board-games-mobile",
   extra: {
     eas: {
       projectId: "95cb404c-d808-4ed4-b9d4-a3ff98f99559",
-    }
+    },
   },
   experiments: {
     tsconfigPaths: true,
