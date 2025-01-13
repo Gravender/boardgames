@@ -1,9 +1,9 @@
 import type { ConfigContext, ExpoConfig } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
-...config,
-name: "Board Games",
-slug: "board-games-mobile",
+  ...config,
+  name: "Board Games",
+  slug: "board-games-mobile",
   scheme: "expo",
   version: "0.1.0",
   orientation: "portrait",
@@ -38,5 +38,5 @@ slug: "board-games-mobile",
     tsconfigPaths: true,
     typedRoutes: true,
   },
-  plugins: ["expo-router"],
+  plugins: ["expo-router", "expo-secure-store"],
 });

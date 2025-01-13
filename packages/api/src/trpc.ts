@@ -6,7 +6,7 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import type {getAuth} from "@clerk/nextjs/server";
+import type { getAuth } from "@clerk/nextjs/server";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import superjson from "superjson";
@@ -107,6 +107,7 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 
 const isAuthed = t.middleware(async ({ ctx, next }) => {
   if (!ctx.auth.userId) {
+    console.log(ctx);
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({

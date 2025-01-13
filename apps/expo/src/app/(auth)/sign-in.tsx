@@ -1,14 +1,17 @@
 import React from "react";
 import { Button, Text, TextInput, View } from "react-native";
+import * as Linking from "expo-linking";
 import { Link, useRouter } from "expo-router";
 import { useOAuth, useSignIn } from "@clerk/clerk-expo";
 
 export default function Page() {
   const { startOAuthFlow: startGithubOAuthFlow } = useOAuth({
     strategy: "oauth_github",
+    redirectUrl: Linking.createURL("/", { scheme: "expo" }),
   });
   const { startOAuthFlow: startGoogleOAuthFlow } = useOAuth({
     strategy: "oauth_google",
+    redirectUrl: Linking.createURL("/", { scheme: "expo" }),
   });
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();

@@ -1,6 +1,6 @@
 import "@bacons/text-decoder/install";
 
-import { Stack } from "expo-router";
+import { Drawer } from "expo-router/drawer";
 import { StatusBar } from "expo-status-bar";
 import { ClerkLoaded, ClerkProvider } from "@clerk/clerk-expo";
 import { useColorScheme } from "nativewind";
@@ -27,16 +27,22 @@ export default function RootLayout() {
           It also allows you to configure your screens 
         */}
         <ClerkLoaded>
-          <Stack
+          <Drawer
             screenOptions={{
-              headerStyle: {
-                backgroundColor: "#f472b6",
-              },
               contentStyle: {
                 backgroundColor: colorScheme == "dark" ? "#09090B" : "#FFFFFF",
               },
             }}
-          />
+          >
+            <Drawer.Screen
+              name="(home)/index"
+              options={{ drawerLabel: "home", title: "Home" }}
+            />
+            <Drawer.Screen
+              name="games/index"
+              options={{ drawerLabel: "Games", title: "Games" }}
+            />
+          </Drawer>
         </ClerkLoaded>
         <StatusBar />
       </TRPCProvider>
