@@ -1,9 +1,9 @@
 import type { ConfigContext, ExpoConfig } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
-  ...config,
-  name: "expo",
-  slug: "expo",
+...config,
+name: "Board Games",
+slug: "board-games-mobile",
   scheme: "expo",
   version: "0.1.0",
   orientation: "portrait",
@@ -19,21 +19,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   assetBundlePatterns: ["**/*"],
   ios: {
-    bundleIdentifier: "your.bundle.identifier",
+    bundleIdentifier: "com.boardgames.mobile",
     supportsTablet: true,
   },
   android: {
-    package: "your.bundle.identifier",
+    package: "com.boardgames.mobile",
     adaptiveIcon: {
       foregroundImage: "./assets/icon.png",
       backgroundColor: "#1F104A",
     },
   },
-  // extra: {
-  //   eas: {
-  //     projectId: "your-eas-project-id",
-  //   },
-  // },
+  extra: {
+    eas: {
+      projectId: "95cb404c-d808-4ed4-b9d4-a3ff98f99559",
+    }
+  },
   experiments: {
     tsconfigPaths: true,
     typedRoutes: true,
