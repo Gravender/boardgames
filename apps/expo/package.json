@@ -18,6 +18,7 @@
     "@clerk/clerk-expo": "^2.6.9",
     "@expo/metro-config": "^0.19.9",
     "@react-navigation/drawer": "^7.1.1",
+    "@rn-primitives/dropdown-menu": "^1.1.0",
     "@rn-primitives/portal": "^1.1.0",
     "@rn-primitives/separator": "^1.1.0",
     "@rn-primitives/slot": "^1.1.0",

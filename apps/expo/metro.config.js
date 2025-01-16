@@ -17,8 +17,13 @@ const config = withTurborepoManagedCache(
 // XXX: Resolve our exports in workspace packages
 // https://github.com/expo/expo/issues/26926
 config.resolver.unstable_enablePackageExports = true;
-
-module.exports = config;
+config.resolver.unstable_conditionNames = [
+  "browser",
+  "require",
+  "react-native",
+];
+(config.resolver.sourceExts = [...config.resolver.sourceExts, "mjs", "cjs"]),
+  (module.exports = config);
 
 /**
  * Add the monorepo paths to the Metro config.

@@ -7,6 +7,7 @@ import {
   Theme,
   ThemeProvider,
 } from "@react-navigation/native";
+import { PortalHost } from "@rn-primitives/portal";
 
 import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
 import { NAV_THEME } from "~/lib/constants";
@@ -86,10 +87,10 @@ export default function RootLayout() {
                   options={{ drawerLabel: "Games", title: "Games" }}
                 />
               </Drawer>
+              <PortalHost />
             </GestureHandlerRootView>
           </ThemeProvider>
         </ClerkLoaded>
-        <StatusBar />
       </TRPCProvider>
     </ClerkProvider>
   );

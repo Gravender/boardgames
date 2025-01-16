@@ -7,6 +7,7 @@ import { FlashList } from "@shopify/flash-list";
 import { format } from "date-fns";
 
 import type { RouterOutputs } from "~/utils/api";
+import { GamesDropDown } from "~/components/gamesDropDown";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
@@ -76,9 +77,7 @@ function GamesCard({
               <Button variant="outline" size="icon">
                 <Text>{game.games}</Text>
               </Button>
-              <Button size="icon">
-                <Text>5</Text>
-              </Button>
+              <GamesDropDown data={game} />
             </View>
           </View>
           <View className="mb-2 flex w-full max-w-80 flex-row items-center justify-between">
