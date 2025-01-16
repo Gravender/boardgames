@@ -8,9 +8,6 @@
       "~/*": [
         "./src/*",
       ],
-      "~/lib/*": [
-        "./lib/*",
-      ],
     },
     "jsx": "react-native",
     "types": [
