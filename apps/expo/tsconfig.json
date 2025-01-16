@@ -6,8 +6,11 @@
     "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
-      ]
+        "./src/*",
+      ],
+      "~/lib/*": [
+        "./lib/*",
+      ],
     },
     "jsx": "react-native",
     "types": [
