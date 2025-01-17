@@ -22,6 +22,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { Text } from "~/components/ui/text";
+import { Dices } from "~/lib/icons/Dices";
 
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
@@ -68,6 +69,16 @@ export default function RootLayout() {
             <GestureHandlerRootView style={{ flex: 1 }}>
               <Drawer
                 screenOptions={{
+                  drawerStyle: {
+                    backgroundColor: isDarkColorScheme
+                      ? "hsl(240, 5.9%, 10%)"
+                      : "hsl(0, 0%, 98%)",
+                  },
+                  drawerLabelStyle: {
+                    color: isDarkColorScheme
+                      ? "hsl(240, 4.8%, 95.9%)"
+                      : "hsl(240, 5.9%, 10%)",
+                  },
                   headerTitle(props) {
                     return (
                       <Text className="text-xl font-semibold">
@@ -84,7 +95,17 @@ export default function RootLayout() {
                 />
                 <Drawer.Screen
                   name="games/index"
-                  options={{ drawerLabel: "Games", title: "Games" }}
+                  options={{
+                    drawerLabel: "Games",
+                    title: "Games",
+                    drawerIcon: () => (
+                      <Dices
+                        className="text-primary"
+                        size={25}
+                        strokeWidth={1.5}
+                      />
+                    ),
+                  }}
                 />
               </Drawer>
               <PortalHost />
