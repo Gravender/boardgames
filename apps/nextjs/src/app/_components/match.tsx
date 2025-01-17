@@ -46,7 +46,7 @@ import {
 } from "@board-games/ui/table";
 import { cn } from "@board-games/ui/utils";
 
-import type { RouterOutputs } from "~/trpc/react";
+import {RouterOutputs} from "@board-games/api";
 import { GradientPicker } from "~/components/color-picker";
 import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";

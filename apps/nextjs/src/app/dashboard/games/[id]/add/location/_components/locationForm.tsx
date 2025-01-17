@@ -22,7 +22,7 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
-import type { RouterOutputs } from "~/trpc/react";
+import {RouterOutputs} from "@board-games/api";
 import { Spinner } from "~/components/spinner";
 import { useAddMatchStore } from "~/providers/add-match-provider";
 import { locationSchema } from "~/stores/add-match-store";

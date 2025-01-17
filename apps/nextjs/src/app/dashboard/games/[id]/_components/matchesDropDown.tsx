@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import type { RouterOutputs } from "~/trpc/react";
+import {RouterOutputs} from "@board-games/api";
 import { deleteMatch } from "~/server/queries";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;

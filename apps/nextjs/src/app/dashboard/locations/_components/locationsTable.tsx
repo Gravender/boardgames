@@ -9,7 +9,7 @@ import { Input } from "@board-games/ui/input";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
-import type { RouterOutputs } from "~/trpc/react";
+import {RouterOutputs} from "@board-games/api";
 import { AddLocationDialog } from "./addLocationDialog";
 import { LocationDropDown } from "./locationDropDown";
 

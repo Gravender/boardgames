@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { CardHeader, CardTitle } from "@board-games/ui/card";
 
-import type { RouterOutputs } from "~/trpc/react";
+import {RouterOutputs} from "@board-games/api";
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
 import { AddLocationDialog } from "./addLocationDialog";
 import SelectLocationForm from "./locationForm";

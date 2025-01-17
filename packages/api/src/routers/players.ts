@@ -106,7 +106,7 @@ export const playerRouter = createTRPCRouter({
         return {
           id: player.playerId,
           name: player.name,
-          matches: player.matches ?? 0,
+          matches: player.matches,
           imageUrl: player.imageUrl ?? "",
         };
       });
@@ -126,7 +126,7 @@ export const playerRouter = createTRPCRouter({
         .leftJoin(groupPlayer, eq(group.id, groupPlayer.groupId))
         .where(eq(group.id, input.group.id))
         .as("queriedGroup");
-      const playersWithMatches = await ctx.db
+      return ctx.db
         .select({
           id: player.id,
           name: player.name,
@@ -150,7 +150,6 @@ export const playerRouter = createTRPCRouter({
           sql<boolean>`MAX(${queriedGroup.playerId}) IS NOT NULL`.as("ingroup"),
           player.name,
         );
-      return playersWithMatches;
     }),
   getPlayers: protectedUserProcedure.query(async ({ ctx }) => {
     const latestMatchesQuery = ctx.db

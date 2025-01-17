@@ -89,7 +89,7 @@ export const locationRouter = createTRPCRouter({
           .set({ isDefault: false })
           .where(eq(location.createdBy, ctx.userId));
       }
-      const result = await ctx.db
+      await ctx.db
         .update(location)
         .set({
           name: input.name,
@@ -97,8 +97,6 @@ export const locationRouter = createTRPCRouter({
         })
         .where(eq(location.id, input.id))
         .returning();
-      if (!result) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      return result;
     }),
   deleteLocation: protectedUserProcedure
     .input(selectLocationSchema.pick({ id: true }))

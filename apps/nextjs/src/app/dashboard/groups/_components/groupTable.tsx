@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { Input } from "@board-games/ui/input";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 
-import type { RouterOutputs } from "~/trpc/react";
+import {RouterOutputs} from "@board-games/api";
 import { AddGroupDialog } from "./addGroupDialog";
 import { GroupDropDown } from "./groupDropDown";
 

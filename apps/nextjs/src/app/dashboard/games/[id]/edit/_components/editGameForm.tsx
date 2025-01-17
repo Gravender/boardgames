@@ -36,7 +36,7 @@ import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
 import { Separator } from "@board-games/ui/separator";
 
-import type { RouterOutputs } from "~/trpc/react";
+import {RouterOutputs} from "@board-games/api";
 import { Spinner } from "~/components/spinner";
 import { useEditGameStore } from "~/providers/edit-game-provider";
 import { editGameSchema } from "~/stores/edit-game-store";

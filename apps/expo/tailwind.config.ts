@@ -4,7 +4,8 @@ import nativewind from "nativewind/preset";
 
 import baseConfig from "@board-games/tailwind-config/native";
 
-const { hairlineWidth } = require("nativewind/theme");
+import {hairlineWidth} from "nativewind/theme";
+
 
 export default {
   content: [

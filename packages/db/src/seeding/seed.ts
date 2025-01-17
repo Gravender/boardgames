@@ -32,8 +32,8 @@ import {
   user,
 } from "@board-games/db/schema";
 
-import type { insertRoundPlayerSchema } from "../schema/roundPlayer";
-import type {insertRoundSchema} from "../schema/round";
+import type { insertRoundPlayerSchema } from "../schema";
+import type {insertRoundSchema} from "../schema";
 import roundPlayers from "../schema/roundPlayer";
 
 function weightedRandomSample<T>(
@@ -61,14 +61,15 @@ function weightedRandomSample<T>(
   while (selectedItem.length < count) {
     const rand = faker.number.float({ min: 0, max: 1 }); // Generate a random number in [0, 1]
     for (let j = 0; j < cumulativeWeights.length; j++) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       if (rand <= cumulativeWeights[j]!) {
         const valueInSelectedItem = selectedItem.find(
-          (v) => v === weightedPlayers[j]!.value,
+          (v) => v === weightedPlayers[j]?.value,
         );
         if (valueInSelectedItem) {
           continue;
         }
-        selectedItem.push(weightedPlayers[j]!.value);
+        selectedItem.push(weightedPlayers[j]?.value as T);
         break;
       }
     }
@@ -109,7 +110,7 @@ export async function seed() {
     }),
   );
 
-  const [user1, user2, ...otherUsers] = await db
+  const [user1, user2] = await db
     .insert(user)
     .values(userData)
     .returning();
@@ -348,7 +349,7 @@ export async function seed() {
           scoresheetId: newScoreSheet.id,
           order: round.order,
         }));
-        const insertedRounds = await db
+       await db
           .insert(round)
           .values(roundsToInert)
           .returning();
@@ -395,7 +396,7 @@ export async function seed() {
           };
         }
         return {
-          weight: parseFloat(weights[index]!.toFixed(4)),
+          weight: Number(weights[index]?.toFixed(4) ?? 0),
           value: player.id,
         };
       });
@@ -451,7 +452,7 @@ export async function seed() {
           }));
         });
 
-      const returnedRoundPlayers = await db
+      await db
         .insert(roundPlayers)
         .values(roundPlayerData)
         .returning();

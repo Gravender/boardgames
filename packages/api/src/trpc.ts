@@ -29,7 +29,7 @@ type AuthObject = ReturnType<typeof getAuth>;
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = async (opts: {
+export const createTRPCContext = (opts: {
   headers: Headers;
   auth: AuthObject;
 }) => {
