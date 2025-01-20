@@ -14,6 +14,7 @@ import { Separator } from "~/components/ui/separator";
 import { Text } from "~/components/ui/text";
 import { Dices } from "~/lib/icons/Dices";
 import { api } from "~/utils/api";
+import {AddGame} from "~/components/AddGame";
 
 function GamesCard({
   game,
@@ -110,8 +111,8 @@ function GamesCard({
 
 function GamesTable({ games }: { games: RouterOutputs["game"]["getGames"] }) {
   return (
-    <View>
-      <View style={{ width: "100%", height: "100%" }}>
+    <View style={{ width: "100%", height: "100%" }}>
+      <View style={{ width: "100%", height: "95%" }}>
         <FlashList
           data={games}
           estimatedItemSize={12}
@@ -119,6 +120,10 @@ function GamesTable({ games }: { games: RouterOutputs["game"]["getGames"] }) {
           renderItem={({ item }) => <GamesCard key={item.id} game={item} />}
           showsVerticalScrollIndicator={false}
         />
+      </View>
+      <View className="flex flex-row justify-end w-full mr-4 mb-4">
+
+        <AddGame/>
       </View>
     </View>
   );
