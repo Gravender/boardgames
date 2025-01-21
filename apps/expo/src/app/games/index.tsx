@@ -7,6 +7,7 @@ import { FlashList } from "@shopify/flash-list";
 import { format } from "date-fns";
 
 import type { RouterOutputs } from "~/utils/api";
+import { AddGame } from "~/components/AddGame";
 import { GamesDropDown } from "~/components/gamesDropDown";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -14,7 +15,6 @@ import { Separator } from "~/components/ui/separator";
 import { Text } from "~/components/ui/text";
 import { Dices } from "~/lib/icons/Dices";
 import { api } from "~/utils/api";
-import {AddGame} from "~/components/AddGame";
 
 function GamesCard({
   game,
@@ -121,9 +121,8 @@ function GamesTable({ games }: { games: RouterOutputs["game"]["getGames"] }) {
           showsVerticalScrollIndicator={false}
         />
       </View>
-      <View className="flex flex-row justify-end w-full mr-4 mb-4">
-
-        <AddGame/>
+      <View className="mb-4 mr-4 flex w-full flex-row justify-end">
+        <AddGame />
       </View>
     </View>
   );
