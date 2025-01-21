@@ -66,9 +66,6 @@ importers:
 
   apps/expo:
     dependencies:
-      '@board-games/db':
-        specifier: workspace:*
-        version: link:../../packages/db
       '@clerk/clerk-expo':
         specifier: ^2.6.9
         version: 2.6.9(exbnjyiedkam4ckqcfs4zvyhpm)

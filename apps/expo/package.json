@@ -15,7 +15,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@board-games/db": "workspace:*",
     "@clerk/clerk-expo": "^2.6.9",
     "@expo/metro-config": "^0.19.9",
     "@react-navigation/drawer": "^7.1.1",

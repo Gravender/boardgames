@@ -1,6 +1,5 @@
 import { Fragment, useState } from "react";
 import { View } from "react-native";
-import { Link } from "expo-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
