@@ -1,8 +1,10 @@
 import React from "react";
-import { Image, View } from "react-native";
+import { Image, Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { FullWindowOverlay } from "react-native-screens";
 import { Link, Stack } from "expo-router";
 import { SignedIn, SignedOut, useUser } from "@clerk/clerk-expo";
+import { PortalHost } from "@rn-primitives/portal";
 import { FlashList } from "@shopify/flash-list";
 import { format } from "date-fns";
 
@@ -122,11 +124,14 @@ function GamesTable({ games }: { games: RouterOutputs["game"]["getGames"] }) {
         />
       </View>
       <View className="mb-4 mr-4 flex w-full flex-row justify-end">
-        <AddGame />
+        <AddGame portalHost={CUSTOM_PORTAL_HOST_NAME} />
       </View>
     </View>
   );
 }
+const CUSTOM_PORTAL_HOST_NAME = "modal-AddGame";
+const WindowOverlay =
+  Platform.OS === "ios" ? FullWindowOverlay : React.Fragment;
 
 export default function Index() {
   const { user } = useUser();
@@ -164,6 +169,9 @@ export default function Index() {
           </SignedOut>
         </View>
       </View>
+      <WindowOverlay>
+        <PortalHost name={CUSTOM_PORTAL_HOST_NAME} />
+      </WindowOverlay>
     </SafeAreaView>
   );
 }

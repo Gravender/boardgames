@@ -28,7 +28,7 @@ export function AddPlayersModal() {
         }}
       >
         {/* Right-side modal container */}
-        <View className="h-full w-full bg-white p-4 dark:bg-neutral-900">
+        <View className="h-full w-full bg-card">
           <CardContent></CardContent>
           <CardFooter>
             <Button
