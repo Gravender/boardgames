@@ -50,7 +50,9 @@ export default function Page() {
   const handleSIgnInWithGitHub = React.useCallback(async () => {
     try {
       const { createdSessionId, signIn, signUp, setActive } =
-        await startGithubOAuthFlow();
+        await startGithubOAuthFlow({
+          redirectUrl: Linking.createURL("/games", { scheme: "expo" }),
+        });
       if (createdSessionId) {
         setActive?.({ session: createdSessionId });
       } else {

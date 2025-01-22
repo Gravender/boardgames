@@ -46,8 +46,8 @@ export function AddGame() {
         <Button variant="default" className="h-12 w-12 rounded-full">
           <Plus
             className="text-primary-foreground"
-            size={40}
-            strokeWidth={1.25}
+            size={20}
+            strokeWidth={1.5}
           />
         </Button>
       </DialogTrigger>
