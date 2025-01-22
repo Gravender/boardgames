@@ -7,8 +7,8 @@ if (!process.env.POSTGRES_URL) {
 const postgresUrl = process.env.POSTGRES_URL;
 
 export default defineConfig({
-  schema: "./src/server/db/schema/index.ts",
-  out: "./src/server/db/migrations",
+  schema: "./src/schema/index.ts",
+  out: "./src/migrations",
   dialect: "postgresql",
   dbCredentials: {
     url: postgresUrl,
