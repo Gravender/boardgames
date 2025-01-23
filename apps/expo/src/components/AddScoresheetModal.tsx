@@ -22,6 +22,7 @@ import {
   ScoreSheetType,
 } from "./AddGame";
 import { GradientPicker } from "./color-picker";
+import { RoundPopOver } from "./RoundPopOver";
 import { Button } from "./ui/button";
 import { CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Checkbox } from "./ui/checkbox";
@@ -44,7 +45,7 @@ import {
 import { Separator } from "./ui/separator";
 import { Text } from "./ui/text";
 
-const CUSTOM_PORTAL_HOST_NAME = "modal-select";
+const CUSTOM_PORTAL_HOST_NAME = "modal-add-scoresheet-modal";
 const WindowOverlay =
   Platform.OS === "ios" ? FullWindowOverlay : React.Fragment;
 
@@ -53,7 +54,7 @@ const formSchema = z.object({
   rounds: roundsSchema,
 });
 
-type FormSchemaType = z.infer<typeof formSchema>;
+export type FormSchemaType = z.infer<typeof formSchema>;
 
 export default function AddScoresheetModal({
   isModalVisible,
@@ -281,80 +282,93 @@ export default function AddScoresheetModal({
               <Text>Rounds</Text>
               <ScrollView className="flex max-h-96 flex-col gap-2">
                 {fields.map((field, index) => (
-                  <View
-                    key={field.id}
-                    className="flex flex-row items-center justify-between py-1"
-                  >
-                    <View className="flex w-56 flex-row items-center gap-2">
-                      <FormField
-                        control={form.control}
-                        name={`rounds.${index}.color`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="hidden">
-                              Round Color
-                            </FormLabel>
-                            <FormControl>
-                              <GradientPicker
-                                color={field.value ?? undefined}
-                                setColor={field.onChange}
-                                portalHost={CUSTOM_PORTAL_HOST_NAME}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`rounds.${index}.name`}
-                        render={({ field }) => (
-                          <FormItem className="flex-grow space-y-0">
-                            <FormLabel className="hidden">Round Name</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Round Name"
-                                onChangeText={field.onChange}
-                                value={field.value}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </View>
-                    <View className="flex flex-row items-center gap-2">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        onPress={() => {
-                          const round = form.getValues("rounds")[index];
-                          append({
-                            name: `Round ${fields.length + 1}`,
-                            type: round?.type ?? "Numeric",
-                            score: round?.score,
-                            color: round?.color ?? "#E2E2E2",
-                          });
-                        }}
-                      >
-                        <Copy
-                          className="text-primary"
-                          size={20}
-                          strokeWidth={1.5}
+                  <View key={field.id} className="flex flex-col gap-2">
+                    <View className="flex flex-row items-center justify-between py-1">
+                      <View className="flex w-56 flex-row items-center gap-2">
+                        <FormField
+                          control={form.control}
+                          name={`rounds.${index}.color`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="hidden">
+                                Round Color
+                              </FormLabel>
+                              <FormControl>
+                                <GradientPicker
+                                  color={field.value ?? undefined}
+                                  setColor={field.onChange}
+                                  portalHost={CUSTOM_PORTAL_HOST_NAME}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                      </Button>
-                      <Button
-                        size="icon"
-                        onPress={() => remove(index)}
-                        variant="destructive"
-                      >
-                        <Trash
-                          className="text-primary-foreground"
-                          size={20}
-                          strokeWidth={1.5}
+                        <FormField
+                          control={form.control}
+                          name={`rounds.${index}.name`}
+                          render={({ field }) => (
+                            <FormItem className="flex-grow space-y-0">
+                              <FormLabel className="hidden">
+                                Round Name
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Round Name"
+                                  onChangeText={field.onChange}
+                                  value={field.value}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                      </Button>
+                      </View>
+                      <View className="flex flex-row items-center gap-2">
+                        <RoundPopOver
+                          index={index}
+                          form={form}
+                          portalHost={CUSTOM_PORTAL_HOST_NAME}
+                        />
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          onPress={() => {
+                            const round = form.getValues("rounds")[index];
+                            append({
+                              name: `Round ${fields.length + 1}`,
+                              type: round?.type ?? "Numeric",
+                              score: round?.score,
+                              color: round?.color ?? "#E2E2E2",
+                            });
+                          }}
+                        >
+                          <Copy
+                            className="text-primary"
+                            size={20}
+                            strokeWidth={1.5}
+                          />
+                        </Button>
+                        <Button
+                          size="icon"
+                          onPress={() => remove(index)}
+                          variant="destructive"
+                        >
+                          <Trash
+                            className="text-primary-foreground"
+                            size={20}
+                            strokeWidth={1.5}
+                          />
+                        </Button>
+                      </View>
                     </View>
+                    {/* Error Message for Round */}
+                    {form.formState.errors.rounds?.[index]?.message !==
+                      undefined && (
+                      <FormMessage>
+                        {form.formState.errors.rounds?.[index].message}
+                      </FormMessage>
+                    )}
                   </View>
                 ))}
               </ScrollView>
@@ -407,6 +421,9 @@ export default function AddScoresheetModal({
       </View>
       <WindowOverlay>
         <PortalHost name={CUSTOM_PORTAL_HOST_NAME} />
+      </WindowOverlay>
+      <WindowOverlay>
+        <PortalHost name={"modal-round-pop-over-select"} />
       </WindowOverlay>
     </Modal>
   );

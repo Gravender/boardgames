@@ -73,7 +73,7 @@ export function RoundPopOver({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a win condition" />
+                        <SelectValue placeholder="Select a scoring type" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>

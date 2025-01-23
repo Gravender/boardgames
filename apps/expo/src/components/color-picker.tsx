@@ -1,26 +1,14 @@
 import type { returnedResults } from "reanimated-color-picker";
-import React, { Fragment, useState } from "react";
+import React, { Fragment } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { FullWindowOverlay } from "react-native-screens";
-import { PortalHost } from "@rn-primitives/portal";
-import ColorPicker, {
-  colorKit,
-  HueSlider,
-  OpacitySlider,
-  Panel1,
-  PreviewText,
-  Swatches,
-} from "reanimated-color-picker";
+import ColorPicker, { Swatches } from "reanimated-color-picker";
 
 import { Paintbrush } from "~/lib/icons/Paintbrush";
 import { cn } from "~/lib/utils";
 import { Button } from "./ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-
-const WindowOverlay =
-  Platform.OS === "ios" ? FullWindowOverlay : React.Fragment;
 
 export function GradientPicker({
   color,
