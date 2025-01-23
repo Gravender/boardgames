@@ -9,10 +9,7 @@ import { PortalHost } from "@rn-primitives/portal";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import {
-  insertRoundSchema,
-  insertScoreSheetSchema,
-} from "@board-games/db/schema";
+import { insertScoreSheetSchema } from "@board-games/db/schema";
 
 import { Copy } from "~/lib/icons/Copy";
 import { Minus } from "~/lib/icons/Minus";
@@ -24,6 +21,7 @@ import {
   scoresheetSchema,
   ScoreSheetType,
 } from "./AddGame";
+import { GradientPicker } from "./color-picker";
 import { Button } from "./ui/button";
 import { CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Checkbox } from "./ui/checkbox";
@@ -46,7 +44,7 @@ import {
 import { Separator } from "./ui/separator";
 import { Text } from "./ui/text";
 
-const CUSTOM_PORTAL_HOST_NAME = "modal-Select";
+const CUSTOM_PORTAL_HOST_NAME = "modal-select";
 const WindowOverlay =
   Platform.OS === "ios" ? FullWindowOverlay : React.Fragment;
 
@@ -101,7 +99,6 @@ export default function AddScoresheetModal({
                 type: "Numeric",
                 color: "#E2E2E2",
                 score: 0,
-                order: 0,
               },
             ],
     },
@@ -113,6 +110,7 @@ export default function AddScoresheetModal({
   });
 
   const onSubmit = (data: FormSchemaType) => {
+    console.log(1);
     setRounds(data.rounds);
     setScoresheet(data.scoresheet);
     setModalVisible(false);
@@ -188,7 +186,10 @@ export default function AddScoresheetModal({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a win condition" />
+                        <SelectValue
+                          className="native:text-lg text-sm text-foreground"
+                          placeholder="Select a win condition"
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent
@@ -247,7 +248,10 @@ export default function AddScoresheetModal({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a win condition" />
+                        <SelectValue
+                          className="native:text-lg text-sm text-foreground"
+                          placeholder="Select a win condition"
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent
@@ -279,14 +283,33 @@ export default function AddScoresheetModal({
                 {fields.map((field, index) => (
                   <View
                     key={field.id}
-                    className="flex flex-row items-center justify-between gap-2"
+                    className="flex flex-row items-center justify-between py-1"
                   >
-                    <View className="flex flex-row items-center gap-2">
+                    <View className="flex w-56 flex-row items-center gap-2">
+                      <FormField
+                        control={form.control}
+                        name={`rounds.${index}.color`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="hidden">
+                              Round Color
+                            </FormLabel>
+                            <FormControl>
+                              <GradientPicker
+                                color={field.value ?? undefined}
+                                setColor={field.onChange}
+                                portalHost={CUSTOM_PORTAL_HOST_NAME}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       <FormField
                         control={form.control}
                         name={`rounds.${index}.name`}
                         render={({ field }) => (
-                          <FormItem className="min-w-28 space-y-0">
+                          <FormItem className="flex-grow space-y-0">
                             <FormLabel className="hidden">Round Name</FormLabel>
                             <FormControl>
                               <Input
@@ -307,11 +330,10 @@ export default function AddScoresheetModal({
                         onPress={() => {
                           const round = form.getValues("rounds")[index];
                           append({
-                            ...field,
                             name: `Round ${fields.length + 1}`,
                             type: round?.type ?? "Numeric",
                             score: round?.score,
-                            order: fields.length + 1,
+                            color: round?.color ?? "#E2E2E2",
                           });
                         }}
                       >
@@ -346,7 +368,6 @@ export default function AddScoresheetModal({
                       type: "Numeric",
                       score: 0,
                       color: "#E2E2E2",
-                      order: fields.length + 1,
                     })
                   }
                 >
@@ -367,7 +388,15 @@ export default function AddScoresheetModal({
             </View>
           </CardContent>
           <CardFooter className="gap-2">
-            <Button variant="secondary" onPress={() => setModalVisible(false)}>
+            <Button
+              variant="secondary"
+              onPress={() => {
+                form.reset();
+                setModalVisible(false);
+                setScoresheet(null);
+                setRounds([]);
+              }}
+            >
               <Text>Cancel</Text>
             </Button>
             <Button variant="default" onPress={form.handleSubmit(onSubmit)}>

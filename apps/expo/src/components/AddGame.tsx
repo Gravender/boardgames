@@ -44,23 +44,22 @@ import AddScoresheetModal from "./AddScoresheetModal";
 import { Separator } from "./ui/separator";
 
 export const scoresheetSchema = insertScoreSheetSchema
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    userId: true,
-    type: true,
-    gameId: true,
+  .pick({
+    name: true,
+    isCoop: true,
+    winCondition: true,
+    roundsScore: true,
+    targetScore: true,
   })
   .required({ name: true, isCoop: true, winCondition: true });
 export type ScoreSheetType = z.infer<typeof scoresheetSchema>;
 export const roundsSchema = z.array(
   insertRoundSchema
-    .omit({
-      id: true,
-      createdAt: true,
-      updatedAt: true,
-      scoresheetId: true,
+    .pick({
+      name: true,
+      type: true,
+      score: true,
+      color: true,
     })
     .required({ name: true }),
 );
@@ -284,16 +283,17 @@ function AddGameContent({
                 {/* Error Messages for Players */}
                 {(form.formState.errors.game?.playersMin ||
                   form.formState.errors.game?.playersMax) && (
-                  <View className="space-y-2">
+                  <View className="flex flex-row items-center gap-4">
+                    <View className="w-24" />
                     {form.formState.errors.game.playersMin !== undefined ? (
-                      <FormMessage>
+                      <FormMessage className="flex-1">
                         {form.formState.errors.game.playersMin.message}
                       </FormMessage>
                     ) : (
                       <View />
                     )}
                     {form.formState.errors.game.playersMax !== undefined ? (
-                      <FormMessage>
+                      <FormMessage className="flex-1">
                         {form.formState.errors.game.playersMax.message}
                       </FormMessage>
                     ) : (
@@ -353,16 +353,17 @@ function AddGameContent({
                 {/* Error Messages for Playtime */}
                 {(form.formState.errors.game?.playtimeMin ||
                   form.formState.errors.game?.playtimeMax) && (
-                  <View className="space-y-2">
+                  <View className="flex flex-row items-center gap-4">
+                    <View className="w-24" />
                     {form.formState.errors.game.playtimeMin !== undefined ? (
-                      <FormMessage>
+                      <FormMessage className="flex-1">
                         {form.formState.errors.game.playtimeMin.message}
                       </FormMessage>
                     ) : (
                       <View />
                     )}
                     {form.formState.errors.game.playtimeMax !== undefined ? (
-                      <FormMessage>
+                      <FormMessage className="flex-1">
                         {form.formState.errors.game.playtimeMax.message}
                       </FormMessage>
                     ) : (
@@ -399,9 +400,12 @@ function AddGameContent({
                 </View>
                 {/* Error Message for Year Published */}
                 {form.formState.errors.game?.yearPublished && (
-                  <FormMessage>
-                    {form.formState.errors.game.yearPublished.message}
-                  </FormMessage>
+                  <View className="flex flex-row items-center gap-4">
+                    <View className="w-24" />
+                    <FormMessage className="flex-1">
+                      {form.formState.errors.game.yearPublished.message}
+                    </FormMessage>
+                  </View>
                 )}
               </View>
               <Separator className="w-full" orientation="horizontal" />
