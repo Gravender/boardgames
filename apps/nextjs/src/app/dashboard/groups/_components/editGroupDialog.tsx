@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
+import { RouterOutputs } from "@board-games/api";
 import { insertGroupSchema } from "@board-games/db/schema";
 import { Button } from "@board-games/ui/button";
 import {
@@ -25,7 +26,6 @@ import {
 import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 
-import {RouterOutputs} from "@board-games/api";
 import { Spinner } from "~/components/spinner";
 import { api } from "~/trpc/react";
 

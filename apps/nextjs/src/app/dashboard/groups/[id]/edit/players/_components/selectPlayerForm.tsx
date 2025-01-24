@@ -7,6 +7,7 @@ import { User } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { RouterOutputs } from "@board-games/api";
 import { insertPlayerSchema } from "@board-games/db/schema";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
@@ -25,7 +26,6 @@ import { useToast } from "@board-games/ui/hooks/use-toast";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
-import {RouterOutputs} from "@board-games/api";
 import { Spinner } from "~/components/spinner";
 import { api } from "~/trpc/react";
 

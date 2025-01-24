@@ -11,16 +11,12 @@ import { z } from "zod";
 
 import { insertScoreSheetSchema } from "@board-games/db/schema";
 
+import type { RoundsType, ScoreSheetType } from "./AddGame";
 import { Copy } from "~/lib/icons/Copy";
 import { Minus } from "~/lib/icons/Minus";
 import { Plus } from "~/lib/icons/Plus";
 import { Trash } from "~/lib/icons/Trash";
-import {
-  roundsSchema,
-  RoundsType,
-  scoresheetSchema,
-  ScoreSheetType,
-} from "./AddGame";
+import { roundsSchema, scoresheetSchema } from "./AddGame";
 import { GradientPicker } from "./color-picker";
 import { RoundPopOver } from "./RoundPopOver";
 import { Button } from "./ui/button";
@@ -366,7 +362,7 @@ export default function AddScoresheetModal({
                     {form.formState.errors.rounds?.[index]?.message !==
                       undefined && (
                       <FormMessage>
-                        {form.formState.errors.rounds?.[index].message}
+                        {form.formState.errors.rounds[index].message}
                       </FormMessage>
                     )}
                   </View>

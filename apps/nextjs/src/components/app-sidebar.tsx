@@ -11,6 +11,7 @@ import {
   UsersRound,
 } from "lucide-react";
 
+import { RouterOutputs } from "@board-games/api";
 import {
   Sidebar,
   SidebarContent,
@@ -18,10 +19,8 @@ import {
   SidebarRail,
 } from "@board-games/ui/sidebar";
 
-
 import { NavMain } from "~/components/nav-main";
 import { NavUser } from "~/components/nav-user";
-import {RouterOutputs} from "@board-games/api";
 
 // This is sample data.
 

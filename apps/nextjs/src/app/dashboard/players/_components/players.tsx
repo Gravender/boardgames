@@ -5,12 +5,12 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { User } from "lucide-react";
 
+import { RouterOutputs } from "@board-games/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 
-import {RouterOutputs} from "@board-games/api";
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
 import { AddPlayerDialog } from "./addPlayerDialog";
 import { PlayerDropDown } from "./playerDropDown";

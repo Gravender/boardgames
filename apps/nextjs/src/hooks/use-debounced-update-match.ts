@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import {RouterOutputs} from "@board-games/api";
+import { RouterOutputs } from "@board-games/api";
+
 import { api } from "~/trpc/react";
 
 const lodash = require("lodash");

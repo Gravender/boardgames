@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, ChevronUp, Dices, Table } from "lucide-react";
 import { useForm } from "react-hook-form";
 
+import { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
 import {
   Card,
@@ -36,7 +37,6 @@ import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
 import { Separator } from "@board-games/ui/separator";
 
-import {RouterOutputs} from "@board-games/api";
 import { Spinner } from "~/components/spinner";
 import { useEditGameStore } from "~/providers/edit-game-provider";
 import { editGameSchema } from "~/stores/edit-game-store";

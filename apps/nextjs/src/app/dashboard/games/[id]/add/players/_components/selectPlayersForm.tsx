@@ -7,6 +7,7 @@ import { User } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { RouterOutputs } from "@board-games/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { CardFooter } from "@board-games/ui/card";
@@ -23,7 +24,6 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
-import {RouterOutputs} from "@board-games/api";
 import { Spinner } from "~/components/spinner";
 import { useAddMatchStore } from "~/providers/add-match-provider";
 import { playersSchema } from "~/stores/add-match-store";

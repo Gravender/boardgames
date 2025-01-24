@@ -1,3 +1,4 @@
+import type * as LabelPrimitive from "@rn-primitives/label";
 import type {
   SlottableTextProps,
   SlottableViewProps,
@@ -6,7 +7,6 @@ import type {
 import type { ControllerProps, FieldPath, FieldValues } from "react-hook-form";
 import * as React from "react";
 import { View } from "react-native";
-import * as LabelPrimitive from "@rn-primitives/label";
 import * as Slot from "@rn-primitives/slot";
 import { Controller, FormProvider, useFormContext } from "react-hook-form";
 
@@ -16,12 +16,12 @@ import { cn } from "~/lib/utils";
 
 const Form = FormProvider;
 
-type FormFieldContextValue<
+interface FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
-> = {
+> {
   name: TName;
-};
+}
 
 const FormFieldContext = React.createContext<FormFieldContextValue>(
   {} as FormFieldContextValue,
@@ -63,9 +63,9 @@ const useFormField = () => {
   };
 };
 
-type FormItemContextValue = {
+interface FormItemContextValue {
   id: string;
-};
+}
 
 const FormItemContext = React.createContext<FormItemContextValue>(
   {} as FormItemContextValue,
@@ -144,7 +144,7 @@ FormDescription.displayName = "FormDescription";
 const FormMessage = React.forwardRef<TextRef, SlottableTextProps>(
   ({ className, children, ...props }, ref) => {
     const { error, formMessageId } = useFormField();
-    const body = error ? String(error?.message) : children;
+    const body = error ? String(error.message) : children;
 
     if (!body) {
       return null;

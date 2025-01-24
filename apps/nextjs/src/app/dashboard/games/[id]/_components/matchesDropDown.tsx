@@ -4,6 +4,7 @@ import { startTransition } from "react";
 import Link from "next/link";
 import { MoreVertical } from "lucide-react";
 
+import { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
 import {
   Dialog,
@@ -22,7 +23,6 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import {RouterOutputs} from "@board-games/api";
 import { deleteMatch } from "~/server/queries";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;

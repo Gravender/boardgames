@@ -1,14 +1,15 @@
+import type { UseFormReturn } from "react-hook-form";
 import React, { Fragment } from "react";
 import { Platform, SafeAreaView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FullWindowOverlay } from "react-native-screens";
 import { PortalHost } from "@rn-primitives/portal";
-import { useFieldArray, UseFormReturn } from "react-hook-form";
+import { useFieldArray } from "react-hook-form";
 
 import { insertRoundSchema } from "@board-games/db/schema";
 
+import type { FormSchemaType } from "./AddScoresheetModal";
 import { Settings } from "~/lib/icons/Settings";
-import { FormSchemaType } from "./AddScoresheetModal";
 import { Button } from "./ui/button";
 import {
   Form,
@@ -123,8 +124,8 @@ function Content({
                     });
                   }}
                   defaultValue={{
-                    value: field?.value ?? "Numeric",
-                    label: field?.value ?? "Numeric",
+                    value: field.value ?? "Numeric",
+                    label: field.value ?? "Numeric",
                   }}
                 >
                   <FormControl>

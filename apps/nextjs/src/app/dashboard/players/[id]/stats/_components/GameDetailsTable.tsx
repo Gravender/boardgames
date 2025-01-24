@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import { ChevronDown, ChevronUp, Dices } from "lucide-react";
 
+import { RouterOutputs } from "@board-games/api";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import {
   Table,
@@ -13,8 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from "@board-games/ui/table";
-
-import {RouterOutputs} from "@board-games/api";
 
 type Games = NonNullable<RouterOutputs["player"]["getPlayer"]>["games"];
 type SortField = "name" | "plays" | "wins" | "winRate";

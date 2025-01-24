@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
 import {
   DialogContent,
@@ -25,7 +26,6 @@ import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 import { Switch } from "@board-games/ui/switch";
 
-import {RouterOutputs} from "@board-games/api";
 import { Spinner } from "~/components/spinner";
 import { api } from "~/trpc/react";
 

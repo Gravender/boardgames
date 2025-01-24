@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { LabelList, Pie, PieChart } from "recharts";
 
 import type { ChartConfig } from "@board-games/ui/chart";
+import { RouterOutputs } from "@board-games/api";
 import {
   Card,
   CardContent,
@@ -17,8 +18,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@board-games/ui/chart";
-
-import {RouterOutputs} from "@board-games/api";
 
 export function UniqueGamesChart({
   data,

@@ -3,6 +3,7 @@
 import { startTransition, useState } from "react";
 import { MoreVertical } from "lucide-react";
 
+import { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
 import { Dialog, DialogTrigger } from "@board-games/ui/dialog";
 import {
@@ -12,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import {RouterOutputs} from "@board-games/api";
 import { deleteGroup } from "~/server/queries";
 import { EditGroupDialog } from "./editGroupDialog";
 

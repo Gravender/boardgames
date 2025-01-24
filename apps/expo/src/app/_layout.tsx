@@ -1,10 +1,10 @@
+import type { Theme } from "@react-navigation/native";
 import { Drawer } from "expo-router/drawer";
 import { StatusBar } from "expo-status-bar";
 import { ClerkLoaded, ClerkProvider } from "@clerk/clerk-expo";
 import {
   DarkTheme,
   DefaultTheme,
-  Theme,
   ThemeProvider,
 } from "@react-navigation/native";
 import { PortalHost } from "@rn-primitives/portal";

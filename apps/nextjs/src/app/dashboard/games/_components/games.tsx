@@ -7,11 +7,11 @@ import { createColumnHelper } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Dices } from "lucide-react";
 
+import { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
 import { Card } from "@board-games/ui/card";
 import { Separator } from "@board-games/ui/separator";
 
-import {RouterOutputs} from "@board-games/api";
 import { DataTable } from "./dataTable";
 import { GamesDropDown } from "./gamesDropDown";
 

@@ -1,7 +1,9 @@
-import type {z} from "zod";
+import type { z } from "zod";
 
-import type { insertScoreSheetSchema } from "@board-games/db/schema";
-import type { insertRoundSchema } from "@board-games/db/schema";
+import type {
+  insertRoundSchema,
+  insertScoreSheetSchema,
+} from "@board-games/db/schema";
 
 interface scoreSheet {
   roundsScore: NonNullable<
@@ -14,7 +16,9 @@ interface scoreSheet {
     z.infer<typeof insertScoreSheetSchema>["targetScore"]
   >;
 }
-interface Round { score: NonNullable<z.infer<typeof insertRoundSchema>["score"]> }
+interface Round {
+  score: NonNullable<z.infer<typeof insertRoundSchema>["score"]>;
+}
 export function calculateFinalScore(rounds: Round[], scoresheet: scoreSheet) {
   if (scoresheet.roundsScore === "Aggregate") {
     return rounds.reduce((acc, round) => {

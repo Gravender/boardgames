@@ -7,6 +7,7 @@ import { MapPin } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
 import { CardFooter } from "@board-games/ui/card";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -22,7 +23,6 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
-import {RouterOutputs} from "@board-games/api";
 import { Spinner } from "~/components/spinner";
 import { useAddMatchStore } from "~/providers/add-match-provider";
 import { locationSchema } from "~/stores/add-match-store";

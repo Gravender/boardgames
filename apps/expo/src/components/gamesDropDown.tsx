@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import type { RouterOutputs } from "~/utils/api";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -13,7 +14,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Text } from "~/components/ui/text";
 import { MoreVertical } from "~/lib/icons/MoreVertical";
-import { api, RouterOutputs } from "~/utils/api";
+import { api } from "~/utils/api";
 
 export function GamesDropDown({
   data,

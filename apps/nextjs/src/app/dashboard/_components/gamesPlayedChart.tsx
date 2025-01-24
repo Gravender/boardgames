@@ -5,6 +5,7 @@ import { TrendingDown, TrendingUp } from "lucide-react";
 import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
 
 import type { ChartConfig } from "@board-games/ui/chart";
+import { RouterOutputs } from "@board-games/api";
 import {
   Card,
   CardContent,
@@ -18,8 +19,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@board-games/ui/chart";
-
-import {RouterOutputs} from "@board-games/api";
 
 const chartConfig = {
   thisYear: {

@@ -4,6 +4,7 @@ import { startTransition } from "react";
 import Link from "next/link";
 import { MoreVertical } from "lucide-react";
 
+import { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
 import {
   DropdownMenu,
@@ -12,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import {RouterOutputs} from "@board-games/api";
 import { deleteGame } from "~/server/queries";
 
 export function GamesDropDown({

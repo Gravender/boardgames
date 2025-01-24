@@ -46,16 +46,3 @@ declare module "@next/eslint-plugin-next" {
   };
   export const rules: Record<string, Rule.RuleModule>;
 }
-
-declare module "eslint-plugin-react-compiler" {
-  import type { Linter, Rule } from "eslint";
-
-  export const configs: {
-    recommended: {
-      rules: {
-        "react-compiler/react-compiler": "error";
-      };
-    };
-  };
-  export const rules: Record<string, Rule.RuleModule>;
-}

@@ -10,6 +10,7 @@ import { CalendarIcon, PlusIcon, Trash, User } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { RouterOutputs } from "@board-games/api";
 import { insertMatchSchema, insertPlayerSchema } from "@board-games/db/schema";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
@@ -49,7 +50,6 @@ import {
 } from "@board-games/ui/popover";
 import { cn } from "@board-games/ui/utils";
 
-import {RouterOutputs} from "@board-games/api";
 import { Spinner } from "~/components/spinner";
 import { api } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";

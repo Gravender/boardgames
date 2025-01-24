@@ -1,4 +1,4 @@
-import type {NextRequest} from "next/server";
+import type { NextRequest } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
