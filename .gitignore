@@ -1,27 +1,31 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
-/.pnp
+node_modules
+.pnp
 .pnp.js
 
 # testing
-/coverage
+coverage
 
 # database
-/prisma/db.sqlite
-/prisma/db.sqlite-journal
-db.sqlite
-/src/server/db/seeding/data/
-/src/server/db/seeding/index.ts
+/packages/db/src/seeding/data/
+
 
 # next.js
-/.next/
-/out/
+.next/
+out/
 next-env.d.ts
 
+# expo
+.expo/
+expo-env.d.ts
+apps/expo/.gitignore
+apps/expo/ios
+apps/expo/android
+
 # production
-/build
+build
 
 # misc
 .DS_Store
@@ -42,7 +46,8 @@ yarn-error.log*
 .vercel
 
 # typescript
-*.tsbuildinfo
+dist/
+.cache
 
 # idea files
 .idea
@@ -55,3 +60,6 @@ yarn-error.log*
 /blob-report/
 /playwright/.cache/
 playwright/.clerk
+
+# turbo
+.turbo
