@@ -50,6 +50,9 @@ export default {
       borderColor: {
         DEFAULT: "hsl(var(--border))",
       },
+      screens: {
+        xs: "475px",
+      },
     },
   },
 } satisfies Config;

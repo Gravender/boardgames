@@ -1,271 +1,282 @@
 "use client";
 
-import type { ColumnDef, Table } from "@tanstack/react-table";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { createColumnHelper } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Dices } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
-import { Card } from "@board-games/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@board-games/ui/card";
+import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
+import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
 
-import { DataTable } from "./dataTable";
+import { FilterAndSearch } from "~/app/_components/filterAndSearch";
+import { AddGameDialog } from "./addGameDialog";
 import { GamesDropDown } from "./gamesDropDown";
 
-export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
-  const columnHelper =
-    createColumnHelper<RouterOutputs["game"]["getGames"][number]>();
-  const columns = [
-    columnHelper.accessor("image", {
-      header: "Image",
-      cell: ({ row }) => (
-        <Link href={`/dashboard/games/${row.original.id}`}>
-          <div className="relative flex h-24 w-24 shrink-0 overflow-hidden">
-            {row.getValue("image") ? (
-              <Image
-                fill
-                src={row.getValue("image")}
-                alt={`${row.original.name} game image`}
-                className="aspect-square h-full w-full rounded-md object-cover"
-              />
-            ) : (
-              <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-            )}
-          </div>
-        </Link>
-      ),
-    }),
-    columnHelper.group({
-      enableGrouping: false,
-      enableSorting: false,
-      header: "Game",
-      sortingFn: (rowA, rowB) => {
-        return rowA.original.name.localeCompare(rowB.original.name);
-      },
-      cell: (props) => {
-        const players = props.row.original.players as {
-          min: number | null;
-          max: number | null;
-        } | null;
-        const playerMin = players?.min ?? null;
-        const playerMax = players?.max ?? null;
-        const playtime = props.row.original.playtime as {
-          min: number | null;
-          max: number | null;
-        } | null;
-        const playtimeMin = playtime?.min ?? null;
-        const playtimeMax = playtime?.max ?? null;
-        const yearPublished = props.row.original.yearPublished ?? "";
-        const lastPlayed =
-          props.row.original.lastPlayed !== null
-            ? format(props.row.original.lastPlayed, "d MMM yyyy")
-            : null;
-        return (
-          <Link href={`/dashboard/games/${props.row.original.id}`}>
-            <div className="flex flex-col gap-1 p-2">
-              <h2 className="text-xl font-bold">{props.row.original.name}</h2>
-              <div className="flex min-w-20 items-center gap-1">
-                <span>Last Played:</span>
-                <span
-                  className="text-muted-foreground"
-                  suppressHydrationWarning
-                >
-                  {lastPlayed}
-                </span>
-              </div>
-              <div className="flex max-w-96 items-center justify-between">
-                <div className="flex w-24 items-center">
-                  <h4 className="font-medium">Players:</h4>
-                  <div className="flex justify-between text-muted-foreground">
-                    {playerMin && playerMax ? (
-                      <>
-                        <span>{playerMin}</span>
-                        <span>-</span>
-                        <span>{playerMax}</span>
-                      </>
-                    ) : playerMin || playerMax ? (
-                      <>
-                        <span>{playerMin ?? playerMax}</span>
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-                <Separator orientation="vertical" className="h-4" />
-                <div className="flex w-24 items-center">
-                  <span>Playtime:</span>
-                  <div className="flex justify-between text-muted-foreground">
-                    {playtimeMin && playtimeMax ? (
-                      <>
-                        <span>{playtimeMin}</span>
-                        <span>-</span>
-                        <span>{playtimeMax}</span>
-                      </>
-                    ) : playtimeMin || playtimeMax ? (
-                      <>
-                        <span>{playtimeMin ?? playtimeMax}</span>
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-                <Separator orientation="vertical" className="h-4" />
-                <div className="flex w-24 items-center gap-1">
-                  <span>Year:</span>
-                  <span className="text-muted-foreground">{yearPublished}</span>
-                </div>
-              </div>
-            </div>
-          </Link>
-        );
-      },
-    }),
-    columnHelper.accessor("games", {
-      header: "Played",
-      cell: (row) => (
-        <Button size={"icon"} variant={"outline"} asChild>
-          <Link href={`/dashboard/games/${row.row.original.id}`}>
-            {row.getValue()}
-          </Link>
-        </Button>
-      ),
-    }),
-    columnHelper.display({
-      id: "actions",
-      cell: ({ row }) => {
-        return <GamesDropDown data={row.original} />;
-      },
-    }),
-  ] as ColumnDef<RouterOutputs["game"]["getGames"][number], unknown>[];
+export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
+  const [games, setGames] = useState(data);
 
-  const renderMobile = ({
-    table,
-  }: {
-    table: Table<RouterOutputs["game"]["getGames"][0]>;
-  }) => {
-    return (
-      <div className="flex flex-col gap-2">
-        {table.getRowModel().rows.map((row) => {
-          const players = row.original.players as {
-            min: number | null;
-            max: number | null;
-          } | null;
-          const playerMin = players?.min ?? null;
-          const playerMax = players?.max ?? null;
-          const playtime = row.original.playtime as {
-            min: number | null;
-            max: number | null;
-          } | null;
-          const playtimeMin = playtime?.min ?? null;
-          const playtimeMax = playtime?.max ?? null;
-          const yearPublished = row.original.yearPublished ?? "";
-          const lastPlayed =
-            row.original.lastPlayed !== null
-              ? format(row.original.lastPlayed, "d MMM yyyy")
-              : null;
-          return (
-            <Card
-              key={`mobile-${row.id}`}
-              className="flex w-full items-center gap-3 border-none"
-            >
-              <Link href={`/dashboard/games/${row.original.id}`}>
-                <div className="relative flex h-12 w-12 shrink-0 overflow-hidden">
-                  {row.getValue("image") ? (
-                    <Image
-                      fill
-                      src={row.getValue("image")}
-                      alt={`${row.original.name} game image`}
-                      className="aspect-square h-full w-full rounded-md object-cover"
-                    />
-                  ) : (
-                    <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                  )}
-                </div>
-              </Link>
-              <div className="flex flex-grow flex-col items-start">
-                <div className="flex w-full items-center justify-between">
-                  <Link href={`/dashboard/games/${row.original.id}`}>
-                    <div className="flex flex-col items-start">
-                      <h2 className="text-md text-left font-semibold">
-                        {row.original.name}
-                      </h2>
-                      <div className="flex min-w-20 items-center gap-1">
-                        <span>Last Played:</span>
-                        <span
-                          className="text-muted-foreground"
-                          suppressHydrationWarning
+  return (
+    <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
+      <CardHeader>
+        <CardTitle>Games</CardTitle>
+
+        <CardDescription>
+          {`${games.length} ${games.length > 1 ? "games" : "game"}`}
+        </CardDescription>
+      </CardHeader>
+
+      <FilterAndSearch
+        items={data}
+        setItems={setGames}
+        sortFields={["lastPlayed", "name", "games"]}
+        defaultSortField="lastPlayed"
+        defaultSortOrder="asc"
+        searchField="name"
+        searchPlaceholder="Search Games..."
+      />
+      <ScrollArea className="h-[75vh] sm:h-[80vh]">
+        <Table className="xs:block hidden">
+          <TableBody className="flex w-full flex-col gap-2 p-4">
+            {games.map((game) => {
+              const players = game.players as {
+                min: number | null;
+                max: number | null;
+              } | null;
+              const playerMin = players?.min ?? null;
+              const playerMax = players?.max ?? null;
+              const playtime = game.playtime as {
+                min: number | null;
+                max: number | null;
+              } | null;
+              const playtimeMin = playtime?.min ?? null;
+              const playtimeMax = playtime?.max ?? null;
+              const yearPublished = game.yearPublished ?? "";
+              const lastPlayed =
+                game.lastPlayed !== null
+                  ? format(game.lastPlayed, "d MMM yyyy")
+                  : null;
+              return (
+                <TableRow
+                  key={game.id}
+                  className="flex w-full rounded-lg border bg-card text-card-foreground shadow-sm"
+                >
+                  <TableCell className="flex w-full items-center p-2 font-medium sm:p-4">
+                    <Link
+                      href={`/dashboard/games/${game.id}`}
+                      className="flex w-full max-w-64 items-center gap-1 font-medium sm:max-w-96 sm:gap-3"
+                    >
+                      <div className="xs:h-16 xs:w-16 relative flex shrink-0 overflow-hidden sm:h-24 sm:w-24">
+                        {game.image ? (
+                          <Image
+                            src={game.image}
+                            alt={`${game.name} game image`}
+                            className="aspect-square h-full w-full rounded-md object-cover"
+                            fill
+                          />
+                        ) : (
+                          <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1 p-2">
+                        <h2 className="text-xl font-bold">{game.name}</h2>
+                        <div className="flex min-w-20 items-center gap-1">
+                          <span>Last Played:</span>
+                          <span
+                            className="text-muted-foreground"
+                            suppressHydrationWarning
+                          >
+                            {lastPlayed}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between pt-1">
+                          <div className="flex w-24 items-center">
+                            <h4 className="font-medium">Players:</h4>
+                            <div className="flex justify-between text-muted-foreground">
+                              {playerMin && playerMax ? (
+                                <>
+                                  <span>{playerMin}</span>
+                                  <span>-</span>
+                                  <span>{playerMax}</span>
+                                </>
+                              ) : playerMin || playerMax ? (
+                                <>
+                                  <span>{playerMin ?? playerMax}</span>
+                                </>
+                              ) : null}
+                            </div>
+                          </div>
+                          <Separator orientation="vertical" className="h-4" />
+                          <div className="flex w-24 items-center">
+                            <span>Playtime:</span>
+                            <div className="flex justify-between text-muted-foreground">
+                              {playtimeMin && playtimeMax ? (
+                                <>
+                                  <span>{playtimeMin}</span>
+                                  <span>-</span>
+                                  <span>{playtimeMax}</span>
+                                </>
+                              ) : playtimeMin || playtimeMax ? (
+                                <>
+                                  <span>{playtimeMin ?? playtimeMax}</span>
+                                </>
+                              ) : null}
+                            </div>
+                          </div>
+                          <Separator orientation="vertical" className="h-4" />
+                          <div className="flex w-24 items-center gap-1">
+                            <span>Year:</span>
+                            <span className="text-muted-foreground">
+                              {yearPublished}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  </TableCell>
+                  <TableCell className="flex w-20 items-center justify-center p-2 sm:p-4">
+                    <Button size={"icon"} variant={"outline"} asChild>
+                      <Link href={`/dashboard/games/${game.id}`}>
+                        {game.games}
+                      </Link>
+                    </Button>
+                  </TableCell>
+                  <TableCell className="flex w-20 items-center justify-center p-1 sm:p-4">
+                    <GamesDropDown data={game} />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+        <div className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/30 dark:scrollbar-thumb-muted-foreground/60 dark:hover:scrollbar-thumb-muted-foreground/70 xs:hidden relative flex w-full flex-col gap-2 overflow-auto">
+          {games.map((game) => {
+            const players = game.players as {
+              min: number | null;
+              max: number | null;
+            } | null;
+            const playerMin = players?.min ?? null;
+            const playerMax = players?.max ?? null;
+            const playtime = game.playtime as {
+              min: number | null;
+              max: number | null;
+            } | null;
+            const playtimeMin = playtime?.min ?? null;
+            const playtimeMax = playtime?.max ?? null;
+            const yearPublished = game.yearPublished ?? "";
+            const lastPlayed =
+              game.lastPlayed !== null
+                ? format(game.lastPlayed, "d MMM yyyy")
+                : null;
+            return (
+              <Card key={`mobile-${game.id}`}>
+                <CardContent className="flex w-full items-center gap-3 p-1 pt-1">
+                  <Link href={`/dashboard/games/${game.id}`}>
+                    <div className="relative flex h-12 w-12 shrink-0 overflow-hidden">
+                      {game.image ? (
+                        <Image
+                          fill
+                          src={game.image}
+                          alt={`${game.name} game image`}
+                          className="aspect-square h-full w-full rounded-md object-cover"
+                        />
+                      ) : (
+                        <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
+                      )}
+                    </div>
+                  </Link>
+                  <div className="flex flex-grow flex-col items-start">
+                    <div className="flex w-full items-center justify-between">
+                      <Link href={`/dashboard/games/${game.id}`}>
+                        <div className="flex flex-col items-start">
+                          <h2 className="text-md text-left font-semibold">
+                            {game.name}
+                          </h2>
+                          <div className="flex min-w-20 items-center gap-1">
+                            <span>Last Played:</span>
+                            <span
+                              className="text-muted-foreground"
+                              suppressHydrationWarning
+                            >
+                              {lastPlayed}
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size={"icon"}
+                          variant={"outline"}
+                          className="h-8 w-8 p-0"
                         >
-                          {lastPlayed}
+                          {game.games}
+                        </Button>
+                        <GamesDropDown data={game} />
+                      </div>
+                    </div>
+
+                    <div className="mb-2 flex w-full max-w-80 items-center justify-between text-sm">
+                      <div className="flex min-w-20 items-center gap-1">
+                        <span>Players:</span>
+                        <span className="flex justify-between text-muted-foreground">
+                          {playerMin && playerMax ? (
+                            <>
+                              <span>{playerMin}</span>
+                              <span>-</span>
+                              <span>{playerMax}</span>
+                            </>
+                          ) : playerMin || playerMax ? (
+                            <>
+                              <span>{playerMin ?? playerMax}</span>
+                            </>
+                          ) : null}
+                        </span>
+                      </div>
+                      <Separator orientation="vertical" className="h-4" />
+                      <div className="flex min-w-20 items-center gap-1">
+                        <span>Playtime:</span>
+                        <span className="flex justify-between text-muted-foreground">
+                          {playtimeMin && playtimeMax ? (
+                            <>
+                              <span>{playtimeMin}</span>
+                              <span>-</span>
+                              <span>{playtimeMax}</span>
+                            </>
+                          ) : playtimeMin || playtimeMax ? (
+                            <>
+                              <span>{playtimeMin ?? playtimeMax}</span>
+                            </>
+                          ) : null}
+                        </span>
+                      </div>
+                      <Separator orientation="vertical" className="h-4" />
+                      <div className="flex min-w-20 items-center gap-1">
+                        <span>Year:</span>
+                        <span className="text-muted-foreground">
+                          {yearPublished}
                         </span>
                       </div>
                     </div>
-                  </Link>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size={"icon"}
-                      variant={"outline"}
-                      className="h-8 w-8 p-0"
-                    >
-                      {row.original.games}
-                    </Button>
-                    <GamesDropDown data={row.original} />
                   </div>
-                </div>
-
-                <div className="mb-2 flex w-full items-center justify-between text-sm">
-                  <div className="flex min-w-20 items-center gap-1">
-                    <span>Players:</span>
-                    <span className="flex justify-between text-muted-foreground">
-                      {playerMin && playerMax ? (
-                        <>
-                          <span>{playerMin}</span>
-                          <span>-</span>
-                          <span>{playerMax}</span>
-                        </>
-                      ) : playerMin || playerMax ? (
-                        <>
-                          <span>{playerMin ?? playerMax}</span>
-                        </>
-                      ) : null}
-                    </span>
-                  </div>
-                  <Separator orientation="vertical" className="h-4" />
-                  <div className="flex min-w-20 items-center gap-1">
-                    <span>Playtime:</span>
-                    <span className="flex justify-between text-muted-foreground">
-                      {playtimeMin && playtimeMax ? (
-                        <>
-                          <span>{playtimeMin}</span>
-                          <span>-</span>
-                          <span>{playtimeMax}</span>
-                        </>
-                      ) : playtimeMin || playtimeMax ? (
-                        <>
-                          <span>{playtimeMin ?? playtimeMax}</span>
-                        </>
-                      ) : null}
-                    </span>
-                  </div>
-                  <Separator orientation="vertical" className="h-4" />
-                  <div className="flex min-w-20 items-center gap-1">
-                    <span>Year:</span>
-                    <span className="text-muted-foreground">
-                      {yearPublished}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </ScrollArea>
+      <div className="absolute bottom-4 right-6 z-10 sm:right-10">
+        <AddGameDialog />
       </div>
-    );
-  };
-
-  return (
-    <div className="container mx-auto p-4 py-10">
-      <DataTable columns={columns} data={games} renderMobile={renderMobile} />
     </div>
   );
 }
