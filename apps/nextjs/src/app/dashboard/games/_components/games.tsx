@@ -46,7 +46,7 @@ export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
         searchPlaceholder="Search Games..."
       />
       <ScrollArea className="h-[75vh] sm:h-[80vh]">
-        <Table className="xs:block hidden">
+        <Table className="hidden xs:block">
           <TableBody className="flex w-full flex-col gap-2 p-4">
             {games.map((game) => {
               const players = game.players as {
@@ -76,7 +76,7 @@ export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
                       href={`/dashboard/games/${game.id}`}
                       className="flex w-full max-w-64 items-center gap-1 font-medium sm:max-w-96 sm:gap-3"
                     >
-                      <div className="xs:h-16 xs:w-16 relative flex shrink-0 overflow-hidden sm:h-24 sm:w-24">
+                      <div className="relative flex shrink-0 overflow-hidden xs:h-16 xs:w-16 sm:h-24 sm:w-24">
                         {game.image ? (
                           <Image
                             src={game.image}
@@ -159,7 +159,7 @@ export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
             })}
           </TableBody>
         </Table>
-        <div className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/30 dark:scrollbar-thumb-muted-foreground/60 dark:hover:scrollbar-thumb-muted-foreground/70 xs:hidden relative flex w-full flex-col gap-2 overflow-auto">
+        <div className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/30 dark:scrollbar-thumb-muted-foreground/60 dark:hover:scrollbar-thumb-muted-foreground/70 relative flex w-full flex-col gap-2 overflow-auto xs:hidden">
           {games.map((game) => {
             const players = game.players as {
               min: number | null;
