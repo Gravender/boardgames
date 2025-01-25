@@ -93,7 +93,7 @@ const GroupContent = () => {
     if (!isOpen) reset();
   }, [isOpen, reset]);
 
-  async function onSubmit(values: formSchemaType) {
+  function onSubmit(values: formSchemaType) {
     setIsSubmitting(true);
     createGroup.mutate({
       name: values.name,

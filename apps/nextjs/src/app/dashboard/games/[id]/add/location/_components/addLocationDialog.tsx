@@ -90,7 +90,7 @@ const LocationContent = ({
     },
   });
 
-  async function onSubmit(values: formSchemaType) {
+  function onSubmit(values: formSchemaType) {
     setIsSubmitting(true);
     createLocation.mutate({
       name: values.name,

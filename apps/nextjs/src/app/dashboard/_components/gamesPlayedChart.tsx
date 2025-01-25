@@ -4,8 +4,8 @@ import { subMonths } from "date-fns";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
 
+import type { RouterOutputs } from "@board-games/api";
 import type { ChartConfig } from "@board-games/ui/chart";
-import { RouterOutputs } from "@board-games/api";
 import {
   Card,
   CardContent,
@@ -67,7 +67,7 @@ export function PlayedChart({
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(value) => value.slice(0, 3)}
+              tickFormatter={(value: string) => value.slice(0, 3)}
             />
             <ChartTooltip
               cursor={false}

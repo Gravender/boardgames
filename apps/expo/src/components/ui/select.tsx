@@ -148,7 +148,7 @@ SelectLabel.displayName = SelectPrimitive.Label.displayName;
 const SelectItem = React.forwardRef<
   SelectPrimitive.ItemRef,
   SelectPrimitive.ItemProps
->(({ className, children, ...props }, ref) => (
+>(({ className, ...props }, ref) => (
   <SelectPrimitive.Item
     ref={ref}
     className={cn(

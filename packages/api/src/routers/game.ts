@@ -355,7 +355,10 @@ export const gameRouter = createTRPCRouter({
       .leftJoin(match, eq(game.id, match.gameId))
       .groupBy(game.id, image.url)
       .orderBy(max(match.date), game.name);
-    return games;
+    return games.map((returnedGame) => ({
+      ...returnedGame,
+      lastPlayed: returnedGame.games < 1 ? null : returnedGame.lastPlayed,
+    }));
   }),
 
   updateGame: protectedUserProcedure

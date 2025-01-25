@@ -1,16 +1,12 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { format } from "date-fns";
-
-import { Calendar } from "@board-games/ui/calendar";
 
 import { api, HydrateClient } from "~/trpc/server";
 import { ClientCalendar } from "./_components/client-calendar";
 
 export default async function Page() {
   const dates = await api.match.getMatchesByCalender();
-  if (!dates) redirect("/dashboard/");
   const matchDayMap = new Map(
     dates.map((md) => [format(md.date, "MM-dd-yy"), md.ids]),
   );

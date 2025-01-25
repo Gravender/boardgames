@@ -21,12 +21,11 @@ export default function SignUpScreen() {
 
   const handleSIgnInWithGitHub = React.useCallback(async () => {
     try {
-      const { createdSessionId, signIn, signUp, setActive } =
-        await startGithubOAuthFlow({
-          redirectUrl: Linking.createURL("/games", { scheme: "expo" }),
-        });
+      const { createdSessionId, setActive } = await startGithubOAuthFlow({
+        redirectUrl: Linking.createURL("/games", { scheme: "expo" }),
+      });
       if (createdSessionId) {
-        setActive?.({ session: createdSessionId });
+        await setActive?.({ session: createdSessionId });
       } else {
         // Modify this code to use signIn or signUp to set this missing requirements you set in your dashboard.
         throw new Error(
@@ -37,14 +36,13 @@ export default function SignUpScreen() {
       console.log(JSON.stringify(err, null, 2));
       console.log("error signing in", err);
     }
-  }, []);
+  }, [startGithubOAuthFlow]);
 
   const handleSIgnInWithGoogle = React.useCallback(async () => {
     try {
-      const { createdSessionId, signIn, signUp, setActive } =
-        await startGoogleOAuthFlow();
+      const { createdSessionId, setActive } = await startGoogleOAuthFlow();
       if (createdSessionId) {
-        setActive?.({ session: createdSessionId });
+        await setActive?.({ session: createdSessionId });
       } else {
         // Modify this code to use signIn or signUp to set this missing requirements you set in your dashboard.
         throw new Error(
@@ -55,7 +53,7 @@ export default function SignUpScreen() {
       console.log(JSON.stringify(err, null, 2));
       console.log("error signing in", err);
     }
-  }, []);
+  }, [startGoogleOAuthFlow]);
 
   // Handle submission of sign-up form
   const onSignUpPress = async () => {

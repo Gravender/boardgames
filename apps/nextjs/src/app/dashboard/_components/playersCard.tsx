@@ -2,7 +2,7 @@
 
 import { User } from "lucide-react";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 

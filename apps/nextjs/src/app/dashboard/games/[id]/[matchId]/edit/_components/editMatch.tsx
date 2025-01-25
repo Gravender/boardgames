@@ -10,7 +10,7 @@ import { CalendarIcon, PlusIcon, Trash, User } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { insertMatchSchema, insertPlayerSchema } from "@board-games/db/schema";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
@@ -229,20 +229,13 @@ export function EditMatchForm({
                         <FormControl>
                           <Button
                             variant={"outline"}
-                            className={cn(
-                              "w-[240px] pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground",
-                            )}
+                            className="w-[240px] pl-3 text-left font-normal text-muted-foreground"
                             type="button"
                           >
-                            {field.value ? (
-                              isSameDay(field.value, new Date()) ? (
-                                <span>Today</span>
-                              ) : (
-                                format(field.value, "PPP")
-                              )
+                            {isSameDay(field.value, new Date()) ? (
+                              <span>Today</span>
                             ) : (
-                              <span>Pick a date</span>
+                              format(field.value, "PPP")
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>

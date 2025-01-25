@@ -6,7 +6,7 @@ import Link from "next/link";
 import { format } from "date-fns/format";
 import { Dices } from "lucide-react";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
@@ -71,9 +71,7 @@ export function MatchesTable({ data, date }: { data: Matches; date: string }) {
                         <div className="flex min-w-20 items-center gap-1">
                           <span>Play Date:</span>
                           <span className="text-muted-foreground">
-                            {match.date
-                              ? format(match.date, "d MMM yyyy")
-                              : null}
+                            {format(match.date, "d MMM yyyy")}
                           </span>
                         </div>
                       </div>

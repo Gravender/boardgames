@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, ChevronUp, Dices, Table } from "lucide-react";
 import { useForm } from "react-hook-form";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
 import {
   Card,
@@ -162,60 +162,51 @@ export function EditGameForm({
             }
           : null;
         const changedRounds = rounds
-          ? rounds
-              .map((round) => {
-                const foundRound = data.rounds.find(
-                  (dataRound) => dataRound.id === round.id,
-                );
-                if (!foundRound) return undefined;
-                const nameChanged =
-                  round.name !== foundRound.name ? round.name : undefined;
-                const typeChanged =
-                  round.type !== foundRound.type ? round.type : undefined;
-                const scoreChanged =
-                  round.score !== foundRound.score ? round.score : undefined;
-                const colorChanged =
-                  round.color !== foundRound.color ? round.color : undefined;
-                if (
-                  nameChanged ||
-                  typeChanged ||
-                  scoreChanged ||
-                  colorChanged
-                ) {
-                  return {
-                    id: round.id,
-                    name: nameChanged ? round.name : undefined,
-                    type: typeChanged ? round.type : undefined,
-                    score: scoreChanged ? round.score : undefined,
-                    color: colorChanged ? round.color : undefined,
-                  };
-                }
-                return undefined;
-              })
-              .filter((round) => round !== undefined)
-          : null;
+          .map((round) => {
+            const foundRound = data.rounds.find(
+              (dataRound) => dataRound.id === round.id,
+            );
+            if (!foundRound) return undefined;
+            const nameChanged =
+              round.name !== foundRound.name ? round.name : undefined;
+            const typeChanged =
+              round.type !== foundRound.type ? round.type : undefined;
+            const scoreChanged =
+              round.score !== foundRound.score ? round.score : undefined;
+            const colorChanged =
+              round.color !== foundRound.color ? round.color : undefined;
+            if (nameChanged || typeChanged || scoreChanged || colorChanged) {
+              return {
+                id: round.id,
+                name: nameChanged ? round.name : undefined,
+                type: typeChanged ? round.type : undefined,
+                score: scoreChanged ? round.score : undefined,
+                color: colorChanged ? round.color : undefined,
+              };
+            }
+            return undefined;
+          })
+          .filter((round) => round !== undefined);
 
         const roundsToDelete = data.rounds
           .map((round) => round.id)
           .filter((id) => !rounds.find((round) => round.id === id));
         const roundsToAdd = rounds
-          ? rounds
-              .map((round, index) => {
-                const foundRound = data.rounds.find(
-                  (dataRound) => dataRound.id === round.id,
-                );
-                if (foundRound) return undefined;
-                return {
-                  name: round.name,
-                  type: round.type,
-                  score: round.score,
-                  color: round.color,
-                  scoresheetId: data.scoresheet.id,
-                  order: data.rounds.length - roundsToDelete.length + index + 1,
-                };
-              })
-              .filter((round) => round !== undefined)
-          : null;
+          .map((round, index) => {
+            const foundRound = data.rounds.find(
+              (dataRound) => dataRound.id === round.id,
+            );
+            if (foundRound) return undefined;
+            return {
+              name: round.name,
+              type: round.type,
+              score: round.score,
+              color: round.color,
+              scoresheetId: data.scoresheet.id,
+              order: data.rounds.length - roundsToDelete.length + index + 1,
+            };
+          })
+          .filter((round) => round !== undefined);
 
         mutation.mutate({
           game: game,
@@ -250,7 +241,7 @@ export function EditGameForm({
     defaultValues: game
       ? {
           name: game.name,
-          ownedBy: game.ownedBy ?? false,
+          ownedBy: game.ownedBy,
           gameImg: game.gameImg,
           playersMin: game.playersMin,
           playersMax: game.playersMax,
@@ -261,7 +252,7 @@ export function EditGameForm({
       : {
           name: data.name,
           ownedBy: data.ownedBy ?? false,
-          gameImg: data.imageUrl ?? null,
+          gameImg: data.imageUrl,
           playersMin: data.playersMin,
           playersMax: data.playersMax,
           playtimeMin: data.playtimeMin,
@@ -282,7 +273,7 @@ export function EditGameForm({
       setGame({
         name: data.name,
         ownedBy: data.ownedBy ?? false,
-        gameImg: data.imageUrl ?? null,
+        gameImg: data.imageUrl,
         playersMin: data.playersMin,
         playersMax: data.playersMax,
         playtimeMin: data.playtimeMin,
@@ -290,11 +281,11 @@ export function EditGameForm({
         yearPublished: data.yearPublished,
       });
       setScoreSheet({
-        name: data.scoresheet.name ?? "Default",
-        winCondition: data.scoresheet.winCondition ?? "Highest Score",
-        isCoop: data.scoresheet.isCoop ?? false,
-        roundsScore: data.scoresheet.roundsScore ?? "Aggregate",
-        targetScore: data.scoresheet.targetScore ?? 0,
+        name: data.scoresheet.name,
+        winCondition: data.scoresheet.winCondition,
+        isCoop: data.scoresheet.isCoop,
+        roundsScore: data.scoresheet.roundsScore,
+        targetScore: data.scoresheet.targetScore,
       });
       setScoresheetChanged(false);
       setRounds(data.rounds);
@@ -485,7 +476,7 @@ export function EditGameForm({
                       )}
                     />
                   </div>
-                  {(form.formState.errors.playersMin ||
+                  {(form.formState.errors.playersMin ??
                     form.formState.errors.playersMax) && (
                     <div className="grid grid-cols-3 items-center gap-4">
                       <div />
@@ -554,7 +545,7 @@ export function EditGameForm({
                       )}
                     />
                   </div>
-                  {(form.formState.errors.playtimeMin ||
+                  {(form.formState.errors.playtimeMin ??
                     form.formState.errors.playtimeMax) && (
                     <div className="grid grid-cols-3 items-center gap-4">
                       <div />
@@ -604,7 +595,8 @@ export function EditGameForm({
                   {form.formState.errors.yearPublished && (
                     <div className="grid grid-cols-3 items-center gap-4">
                       <div />
-                      {form.formState.errors.yearPublished !== undefined ? (
+                      {form.formState.errors.yearPublished.message !==
+                      undefined ? (
                         <FormMessage>
                           {form.formState.errors.yearPublished.message}
                         </FormMessage>
@@ -652,7 +644,7 @@ export function EditGameForm({
                         <div className="flex min-w-20 items-center gap-1">
                           <span>Rounds:</span>
                           <span className="text-sm text-muted-foreground">
-                            {rounds.length ?? "1"}
+                            {rounds.length}
                           </span>
                         </div>
                       </div>

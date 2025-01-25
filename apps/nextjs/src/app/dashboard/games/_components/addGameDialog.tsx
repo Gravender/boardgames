@@ -323,7 +323,7 @@ function Content() {
                     )}
                   />
                 </div>
-                {(form.formState.errors.playersMin ||
+                {(form.formState.errors.playersMin ??
                   form.formState.errors.playersMax) && (
                   <div className="grid grid-cols-3 items-center gap-4">
                     <div />
@@ -392,7 +392,7 @@ function Content() {
                     )}
                   />
                 </div>
-                {(form.formState.errors.playtimeMin ||
+                {(form.formState.errors.playtimeMin ??
                   form.formState.errors.playtimeMax) && (
                   <div className="grid grid-cols-3 items-center gap-4">
                     <div />
@@ -442,7 +442,8 @@ function Content() {
                 {form.formState.errors.yearPublished && (
                   <div className="grid grid-cols-3 items-center gap-4">
                     <div />
-                    {form.formState.errors.yearPublished !== undefined ? (
+                    {form.formState.errors.yearPublished.message !==
+                    undefined ? (
                       <FormMessage>
                         {form.formState.errors.yearPublished.message}
                       </FormMessage>
@@ -496,7 +497,7 @@ function Content() {
                       <div className="flex min-w-20 items-center gap-1">
                         <span>Rounds:</span>
                         <span className="text-sm text-muted-foreground">
-                          {rounds.length ?? "1"}
+                          {rounds.length > 0 ? rounds.length : "1"}
                         </span>
                       </div>
                     </div>

@@ -3,7 +3,7 @@ import { Image, Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FullWindowOverlay } from "react-native-screens";
 import { Link, Stack } from "expo-router";
-import { SignedIn, SignedOut, useUser } from "@clerk/clerk-expo";
+import { SignedIn, SignedOut } from "@clerk/clerk-expo";
 import { PortalHost } from "@rn-primitives/portal";
 import { FlashList } from "@shopify/flash-list";
 import { format } from "date-fns";
@@ -12,7 +12,7 @@ import type { RouterOutputs } from "~/utils/api";
 import { AddGame } from "~/components/AddGame";
 import { GamesDropDown } from "~/components/gamesDropDown";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
 import { Text } from "~/components/ui/text";
 import { Dices } from "~/lib/icons/Dices";
@@ -24,7 +24,7 @@ function GamesCard({
   game: RouterOutputs["game"]["getGames"][number];
 }) {
   const playtimeText = () => {
-    const playtime = game.playtime || {};
+    const playtime = game.playtime;
     if (playtime.min && playtime.max) {
       return `${playtime.min} - ${playtime.max}`;
     }
@@ -34,7 +34,7 @@ function GamesCard({
     return null;
   };
   const playerText = () => {
-    const players = game.players || {};
+    const players = game.players;
     if (players.min && players.max) {
       return `${players.min} - ${players.max}`;
     }
@@ -43,8 +43,10 @@ function GamesCard({
     }
     return null;
   };
-  const lastPlayed = format(game.lastPlayed, "d MMM yyyy") || "";
-  const yearPublished = game.yearPublished || "";
+  const lastPlayed = game.lastPlayed
+    ? format(game.lastPlayed, "d MMM yyyy")
+    : "";
+  const yearPublished = game.yearPublished ?? "";
   return (
     <Card>
       <CardContent className="flex flex-row items-center gap-2 p-2 pt-2">
@@ -134,9 +136,6 @@ const WindowOverlay =
   Platform.OS === "ios" ? FullWindowOverlay : React.Fragment;
 
 export default function Index() {
-  const { user } = useUser();
-  const utils = api.useUtils();
-
   const gamesQuery = api.game.getGames.useQuery();
 
   return (

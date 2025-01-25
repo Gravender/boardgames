@@ -6,7 +6,7 @@ import { game, round, scoresheet, user } from "@board-games/db/schema";
 
 test.describe("Game Page", () => {
   test.afterAll(async () => {
-    // eslint-disable-next-line no-restricted-properties
+    // eslint-disable-next-line no-restricted-properties, @typescript-eslint/no-non-null-assertion
     const clerkUserId = process.env.E2E_CLERK_USER_ID!;
     const returnedUser = (
       await db.select().from(user).where(eq(user.clerkUserId, clerkUserId))

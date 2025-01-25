@@ -23,11 +23,12 @@ export const ourFileRouter = {
     },
   })
     // Set permissions and file types for this FileRoute
-    .middleware(async ({}) => {
+    .middleware(async () => {
       // This code runs on your server before upload
       const authUser = await auth();
 
       // If you throw, the user will not be able to upload
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
       if (!authUser.userId) throw new UploadThingError("Unauthorized");
 
       let returnedUser = (
@@ -46,6 +47,7 @@ export const ourFileRouter = {
         )[0];
       }
       if (!returnedUser) {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error
         throw new UploadThingError("Unauthorized");
       }
 
@@ -65,6 +67,7 @@ export const ourFileRouter = {
           .returning()
       )[0]?.id;
       if (!imageId) {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error
         throw new UploadThingError("Unauthorized");
       }
       // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback

@@ -7,7 +7,7 @@ import { MapPin } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
 import { CardFooter } from "@board-games/ui/card";
 import { Checkbox } from "@board-games/ui/checkbox";

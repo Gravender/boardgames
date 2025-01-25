@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { CardHeader, CardTitle } from "@board-games/ui/card";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import { ChevronDown, ChevronUp, Dices } from "lucide-react";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import {
   Table,

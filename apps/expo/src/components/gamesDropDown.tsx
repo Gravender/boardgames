@@ -8,8 +8,6 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Text } from "~/components/ui/text";
@@ -30,14 +28,16 @@ export function GamesDropDown({
   };
   const utils = api.useUtils();
   const deleteGame = api.game.deleteGame.useMutation({
-    onSuccess: () => {
-      utils.game.getGames.invalidate();
-      utils.game.getGame.invalidate({ id: data.id });
-      utils.game.getEditGame.invalidate({ id: data.id });
-      utils.game.getGameStats.invalidate({ id: data.id });
-      utils.game.getGameName.invalidate({ id: data.id });
-      utils.game.getGameMetaData.invalidate({ id: data.id });
-      utils.dashboard.invalidate();
+    onSuccess: async () => {
+      await Promise.all([
+        utils.game.getGames.invalidate(),
+        utils.game.getGame.invalidate({ id: data.id }),
+        utils.game.getEditGame.invalidate({ id: data.id }),
+        utils.game.getGameStats.invalidate({ id: data.id }),
+        utils.game.getGameName.invalidate({ id: data.id }),
+        utils.game.getGameMetaData.invalidate({ id: data.id }),
+        utils.dashboard.invalidate(),
+      ]);
     },
   });
   const onDelete = () => {

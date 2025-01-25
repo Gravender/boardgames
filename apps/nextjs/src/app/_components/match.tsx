@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ListPlus, Pause, Play, RotateCcw } from "lucide-react";
 import { useForm } from "react-hook-form";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { insertRoundSchema } from "@board-games/db/schema";
 import { Button } from "@board-games/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "@board-games/ui/card";
@@ -174,7 +174,9 @@ export function Match({ match }: { match: Match }) {
     value: number | null,
   ) => {
     const temp = [...players];
-    temp[playerIndex]!.rounds[roundIndex]!.score = value ?? null;
+    if (temp[playerIndex]?.rounds?.[roundIndex]?.score !== undefined) {
+      temp[playerIndex].rounds[roundIndex].score = value ?? null;
+    }
     setPlayers(temp);
 
     setHasPlayersChanged(true);
@@ -284,7 +286,9 @@ export function Match({ match }: { match: Match }) {
                           onChange={(e) => {
                             const score = Number(e.target.value);
                             const temp = [...players];
-                            temp[index]!.score = score;
+                            if (temp[index]?.score !== undefined) {
+                              temp[index].score = score;
+                            }
                             setPlayers(temp);
                             setHasPlayersChanged(true);
                           }}

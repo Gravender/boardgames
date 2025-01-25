@@ -7,7 +7,6 @@ import { z } from "zod";
 import {
   insertRoundSchema,
   insertScoreSheetSchema,
-  scoresheet,
 } from "@board-games/db/schema";
 
 import { Button } from "~/components/ui/button";
@@ -163,6 +162,7 @@ function AddGameContent({
     console.log(values);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onChangeNumberText = (onChange: (...event: any[]) => void) => {
     return (text: string) => {
       if (text === "") {
@@ -205,6 +205,7 @@ function AddGameContent({
                 <FormLabel>Owned by</FormLabel>
                 <FormControl>
                   <Checkbox
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                     checked={field.value ?? false}
                     onCheckedChange={field.onChange}
                   />
@@ -281,7 +282,7 @@ function AddGameContent({
                   </View>
                 </View>
                 {/* Error Messages for Players */}
-                {(form.formState.errors.game?.playersMin ||
+                {(form.formState.errors.game?.playersMin ??
                   form.formState.errors.game?.playersMax) && (
                   <View className="flex flex-row items-center gap-4">
                     <View className="w-24" />
@@ -351,7 +352,7 @@ function AddGameContent({
                   </View>
                 </View>
                 {/* Error Messages for Playtime */}
-                {(form.formState.errors.game?.playtimeMin ||
+                {(form.formState.errors.game?.playtimeMin ??
                   form.formState.errors.game?.playtimeMax) && (
                   <View className="flex flex-row items-center gap-4">
                     <View className="w-24" />
@@ -419,7 +420,9 @@ function AddGameContent({
                     }}
                   >
                     <Text>
-                      {scoresheet === null ? "Create New" : "Edit Sheet"}
+                      {form.getValues("scoresheet") === null
+                        ? "Create New"
+                        : "Edit Sheet"}
                     </Text>
                   </Button>
                 </View>
@@ -452,7 +455,9 @@ function AddGameContent({
                         <Text>Rounds:</Text>
                         <Text className="text-sm text-muted-foreground">
                           {form.getValues("scoresheet") !== null
-                            ? (form.getValues("rounds").length ?? "1")
+                            ? form.getValues("rounds").length > 0
+                              ? form.getValues("rounds").length
+                              : "1"
                             : "1"}
                         </Text>
                       </View>

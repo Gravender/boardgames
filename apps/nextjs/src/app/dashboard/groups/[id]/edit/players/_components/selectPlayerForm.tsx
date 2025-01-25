@@ -7,7 +7,7 @@ import { User } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { insertPlayerSchema } from "@board-games/db/schema";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";

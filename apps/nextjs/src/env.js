@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-properties */
 import { createEnv } from "@t3-oss/env-nextjs";
 import { vercel } from "@t3-oss/env-nextjs/presets";
 import { config } from "dotenv";
@@ -42,6 +43,7 @@ export const env = createEnv({
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
    * useful for Docker builds.
    */
+  // eslint-disable-next-line turbo/no-undeclared-env-vars
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   /**
    * Makes it so that empty strings are treated as undefined. `SOME_VAR: z.string()` and

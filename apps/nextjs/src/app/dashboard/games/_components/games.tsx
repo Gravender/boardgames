@@ -7,7 +7,7 @@ import { createColumnHelper } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Dices } from "lucide-react";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
 import { Card } from "@board-games/ui/card";
 import { Separator } from "@board-games/ui/separator";
@@ -59,9 +59,10 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
         const playtimeMin = playtime?.min ?? null;
         const playtimeMax = playtime?.max ?? null;
         const yearPublished = props.row.original.yearPublished ?? "";
-        const lastPlayed = props.row.original.lastPlayed
-          ? format(props.row.original.lastPlayed, "d MMM yyyy")
-          : null;
+        const lastPlayed =
+          props.row.original.lastPlayed !== null
+            ? format(props.row.original.lastPlayed, "d MMM yyyy")
+            : null;
         return (
           <Link href={`/dashboard/games/${props.row.original.id}`}>
             <div className="flex flex-col gap-1 p-2">
@@ -160,7 +161,9 @@ export function Games({ games }: { games: RouterOutputs["game"]["getGames"] }) {
           const playtimeMax = playtime?.max ?? null;
           const yearPublished = row.original.yearPublished ?? "";
           const lastPlayed =
-            format(row.original.lastPlayed, "d MMM yyyy") ?? null;
+            row.original.lastPlayed !== null
+              ? format(row.original.lastPlayed, "d MMM yyyy")
+              : null;
           return (
             <Card
               key={`mobile-${row.id}`}

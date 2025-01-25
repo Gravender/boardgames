@@ -214,7 +214,6 @@ export default function SignUpPage() {
                               asChild
                               resend
                               className="text-muted-foreground"
-                              // @ts-ignore eslint-disable-next-line @typescript-eslint/no-implicit-any
                               fallback={({ resendableAfter }) => (
                                 <Button variant="link" size="sm" disabled>
                                   Didn&apos;t receive a code? Resend (

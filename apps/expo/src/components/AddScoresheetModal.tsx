@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Platform, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import Modal from "react-native-modal";

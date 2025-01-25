@@ -11,7 +11,7 @@ import {
   UsersRound,
 } from "lucide-react";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import {
   Sidebar,
   SidebarContent,

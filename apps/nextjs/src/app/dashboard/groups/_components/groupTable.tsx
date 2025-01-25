@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, Users } from "lucide-react";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { Avatar, AvatarFallback } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";

@@ -22,18 +22,18 @@ interface Round {
 export function calculateFinalScore(rounds: Round[], scoresheet: scoreSheet) {
   if (scoresheet.roundsScore === "Aggregate") {
     return rounds.reduce((acc, round) => {
-      return acc + (round.score ?? 0);
+      return acc + round.score;
     }, 0);
   }
   if (scoresheet.roundsScore === "Best Of") {
     if (scoresheet.winCondition === "Highest Score") {
       return rounds.reduce((acc, round) => {
-        return acc > (round.score ?? -Infinity) ? acc : round.score;
+        return acc > round.score ? acc : round.score;
       }, -Infinity);
     }
     if (scoresheet.winCondition === "Lowest Score") {
       return rounds.reduce((acc, round) => {
-        return acc < (round.score ?? Infinity) ? acc : round.score;
+        return acc < round.score ? acc : round.score;
       }, Infinity);
     }
     if (scoresheet.winCondition === "Target Score") {

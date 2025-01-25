@@ -8,7 +8,7 @@ import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
 import { Calendar } from "@board-games/ui/calendar";
 import {
@@ -32,7 +32,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@board-games/ui/popover";
-import { cn } from "@board-games/ui/utils";
 
 import { Spinner } from "~/components/spinner";
 import { useAddMatchStore } from "~/providers/add-match-provider";
@@ -110,8 +109,8 @@ function Content({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: match.name || `${gameName} #${matches + 1}`,
-      date: match.date || new Date(),
-      players: match.players || [],
+      date: match.date,
+      players: match.players,
       location: match.location === undefined ? defaultLocation : match.location,
     },
   });
@@ -133,7 +132,7 @@ function Content({
     if (!isOpen) reset();
   }, [isOpen, reset]);
 
-  const onSubmit = async (values: formSchemaType) => {
+  const onSubmit = (values: formSchemaType) => {
     setIsSubmitting(true);
     createMatch.mutate({
       gameId: gameId,
@@ -174,20 +173,13 @@ function Content({
                       <FormControl>
                         <Button
                           variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground",
-                          )}
+                          className="w-full pl-3 text-left font-normal text-muted-foreground"
                           type="button"
                         >
-                          {field.value ? (
-                            isSameDay(field.value, new Date()) ? (
-                              <span>Today</span>
-                            ) : (
-                              format(field.value, "PPP")
-                            )
+                          {isSameDay(field.value, new Date()) ? (
+                            <span>Today</span>
                           ) : (
-                            <span>Pick a date</span>
+                            format(field.value, "PPP")
                           )}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>

@@ -1,9 +1,7 @@
 import type { UseFormReturn } from "react-hook-form";
 import React, { Fragment } from "react";
-import { Platform, SafeAreaView, View } from "react-native";
+import { Platform, SafeAreaView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { FullWindowOverlay } from "react-native-screens";
-import { PortalHost } from "@rn-primitives/portal";
 import { useFieldArray } from "react-hook-form";
 
 import { insertRoundSchema } from "@board-games/db/schema";
@@ -69,8 +67,7 @@ export function RoundPopOver({
     </Fragment>
   );
 }
-const WindowOverlay =
-  Platform.OS === "ios" ? FullWindowOverlay : React.Fragment;
+
 const CUSTOM_PORTAL_HOST_NAME = "modal-round-pop-over-select";
 function Content({
   index,
@@ -92,6 +89,7 @@ function Content({
   });
   const roundsTypeOptions = insertRoundSchema.required().pick({ type: true })
     .shape.type.options;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onChangeNumberText = (onChange: (...event: any[]) => void) => {
     return (text: string) => {
       if (text === "") {

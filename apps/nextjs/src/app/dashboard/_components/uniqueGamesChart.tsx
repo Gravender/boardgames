@@ -3,8 +3,8 @@
 import { format } from "date-fns";
 import { LabelList, Pie, PieChart } from "recharts";
 
+import type { RouterOutputs } from "@board-games/api";
 import type { ChartConfig } from "@board-games/ui/chart";
-import { RouterOutputs } from "@board-games/api";
 import {
   Card,
   CardContent,
@@ -42,7 +42,7 @@ export function UniqueGamesChart({
   const chartData = games.map((game) => ({
     game: game.name,
     matches: game.matches,
-    fill: chartConfig[game.name]!.color,
+    fill: chartConfig[game.name]?.color,
   }));
   return (
     <Card className="flex flex-col">

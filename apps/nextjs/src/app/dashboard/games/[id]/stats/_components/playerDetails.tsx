@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, User } from "lucide-react";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import {

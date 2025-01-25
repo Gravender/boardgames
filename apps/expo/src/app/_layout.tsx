@@ -39,7 +39,8 @@ export {
 } from "expo-router";
 
 export default function RootLayout() {
-  const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const publishableKey: string = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   if (!publishableKey) {
     throw new Error("Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to your .env file");
@@ -51,10 +52,10 @@ export default function RootLayout() {
     if (hasMounted.current) {
       return;
     }
-    setAndroidNavigationBar(colorScheme);
+    void setAndroidNavigationBar(colorScheme);
     setIsColorSchemeLoaded(true);
     hasMounted.current = true;
-  }, []);
+  }, [colorScheme]);
 
   if (!isColorSchemeLoaded) {
     return null;

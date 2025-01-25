@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { api } from "~/trpc/server";
 import { PlayersTable } from "./_components/players";
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Players",
