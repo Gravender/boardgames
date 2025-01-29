@@ -16,6 +16,7 @@ import {
 } from "drizzle-orm";
 import { z } from "zod";
 
+import type { selectScoreSheetSchema } from "@board-games/db/schema";
 import {
   game,
   group,
@@ -454,6 +455,71 @@ export const playerRouter = createTRPCRouter({
           matchPlayers.map((matchPlayer) => matchPlayer.id),
         ),
       );
+      const matches = await ctx.db.query.match.findMany({
+        where: inArray(
+          match.id,
+          matchPlayers.map((matchPlayer) => matchPlayer.matchId),
+        ),
+        with: {
+          matchPlayers: true,
+          scoresheet: true,
+        },
+      });
+      const calculateWinners = ({
+        scores,
+        scoresheet,
+      }: {
+        scores: { id: number; score: number }[];
+        scoresheet: z.infer<typeof selectScoreSheetSchema>;
+      }) => {
+        if (scoresheet.winCondition === "Highest Score") {
+          const maxScore = Math.max(...scores.map((player) => player.score));
+          return scores.filter((player) => player.score === maxScore);
+        }
+        if (scoresheet.winCondition === "Lowest Score") {
+          const minScore = Math.min(...scores.map((player) => player.score));
+          return scores.filter((player) => player.score === minScore);
+        }
+        if (scoresheet.winCondition === "Target Score") {
+          return scores.filter(
+            (player) => player.score === scoresheet.targetScore,
+          );
+        }
+        return [];
+      };
+      for (const returnedMatch of matches) {
+        const finalScores = returnedMatch.matchPlayers.map((mPlayer) => ({
+          id: mPlayer.id,
+          score: mPlayer.score ?? 0,
+        }));
+        const winners = calculateWinners({
+          scores: finalScores,
+          scoresheet: returnedMatch.scoresheet,
+        });
+        await ctx.db
+          .update(matchPlayer)
+          .set({ winner: true })
+          .where(
+            inArray(
+              matchPlayer.id,
+              winners.map((winner) => winner.id),
+            ),
+          );
+        const losers = returnedMatch.matchPlayers.filter(
+          (mPlayer) => !winners.find((winner) => winner.id === mPlayer.id),
+        );
+        await ctx.db
+          .update(matchPlayer)
+          .set({ winner: false })
+          .where(
+            inArray(
+              matchPlayer.id,
+              losers.map((loser) => loser.id),
+            ),
+          );
+      }
+
+      await ctx.db.delete(groupPlayer).where(eq(groupPlayer.id, input.id));
       await ctx.db.delete(player).where(eq(player.id, input.id));
     }),
 });

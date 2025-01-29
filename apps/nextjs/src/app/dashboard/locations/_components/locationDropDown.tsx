@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useState } from "react";
+import { useState } from "react";
 import { MoreVertical } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import { deleteLocation } from "~/server/queries";
+import { api } from "~/trpc/react";
 import { EditLocationDialog } from "./editLocationDialog";
 
 export function LocationDropDown({
@@ -21,10 +21,14 @@ export function LocationDropDown({
 }: {
   data: RouterOutputs["location"]["getLocations"][number];
 }) {
+  const utils = api.useUtils();
+  const deleteLocation = api.location.deleteLocation.useMutation({
+    onSuccess: async () => {
+      await Promise.all([utils.location.getLocations.invalidate()]);
+    },
+  });
   const onDelete = () => {
-    startTransition(async () => {
-      await deleteLocation({ id: data.id });
-    });
+    deleteLocation.mutate({ id: data.id });
   };
   const [isOpen, setIsOpen] = useState(false);
   return (

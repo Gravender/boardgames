@@ -1,6 +1,5 @@
 "use client";
 
-import { startTransition } from "react";
 import Link from "next/link";
 import { MoreVertical } from "lucide-react";
 
@@ -23,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import { deleteMatch } from "~/server/queries";
+import { api } from "~/trpc/react";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 export function MatchDropDown({
@@ -33,10 +32,19 @@ export function MatchDropDown({
   match: Game["matches"][number];
   gameId: Game["id"];
 }) {
+  const utils = api.useUtils();
+  const deleteMatch = api.match.deleteMatch.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.game.getGames.invalidate(),
+        utils.game.getGame.invalidate({ id: gameId }),
+        utils.player.invalidate(),
+        utils.dashboard.invalidate(),
+      ]);
+    },
+  });
   const onDelete = () => {
-    startTransition(async () => {
-      await deleteMatch({ matchId: match.id, gameId });
-    });
+    deleteMatch.mutate({ id: match.id });
   };
   return (
     <Dialog>

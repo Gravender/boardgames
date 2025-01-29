@@ -1,6 +1,5 @@
 "use client";
 
-import { startTransition } from "react";
 import Link from "next/link";
 import { MoreVertical } from "lucide-react";
 
@@ -13,17 +12,25 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import { deleteGame } from "~/server/queries";
+import { api } from "~/trpc/react";
 
 export function GamesDropDown({
   data,
 }: {
   data: RouterOutputs["game"]["getGames"][0];
 }) {
+  const utils = api.useUtils();
+  const deleteGame = api.game.deleteGame.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.game.getGames.invalidate(),
+        utils.player.invalidate(),
+        utils.dashboard.invalidate(),
+      ]);
+    },
+  });
   const onDelete = () => {
-    startTransition(async () => {
-      await deleteGame({ id: data.id });
-    });
+    deleteGame.mutate({ id: data.id });
   };
   return (
     <DropdownMenu>

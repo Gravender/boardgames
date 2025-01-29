@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { MoreVertical } from "lucide-react";
 
@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import { deletePlayer } from "~/server/queries";
+import { api } from "~/trpc/react";
 import { EditPlayerDialog } from "./editPlayerDialog";
 
 export function PlayerDropDown({
@@ -22,10 +22,20 @@ export function PlayerDropDown({
 }: {
   data: RouterOutputs["player"]["getPlayers"][number];
 }) {
+  const utils = api.useUtils();
+  const deletePlayer = api.player.deletePlayer.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.player.getPlayers.invalidate(),
+        utils.dashboard.invalidate(),
+        utils.game.invalidate(),
+        utils.group.invalidate(),
+        utils.match.invalidate(),
+      ]);
+    },
+  });
   const onDelete = () => {
-    startTransition(async () => {
-      await deletePlayer({ id: data.id });
-    });
+    deletePlayer.mutate({ id: data.id });
   };
   const [isOpen, setIsOpen] = useState(false);
   return (

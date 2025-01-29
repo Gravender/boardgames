@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useState } from "react";
+import { useState } from "react";
 import { MoreVertical } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import { deleteGroup } from "~/server/queries";
+import { api } from "~/trpc/react";
 import { EditGroupDialog } from "./editGroupDialog";
 
 export function GroupDropDown({
@@ -21,10 +21,14 @@ export function GroupDropDown({
 }: {
   data: RouterOutputs["group"]["getGroups"][number];
 }) {
+  const utils = api.useUtils();
+  const deleteGroup = api.group.deleteGroup.useMutation({
+    onSuccess: async () => {
+      await Promise.all([utils.group.getGroups.invalidate()]);
+    },
+  });
   const onDelete = () => {
-    startTransition(async () => {
-      await deleteGroup({ id: data.id });
-    });
+    deleteGroup.mutate({ id: data.id });
   };
   const [isOpen, setIsOpen] = useState(false);
   return (
