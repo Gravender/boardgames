@@ -654,7 +654,7 @@ export function EditGameForm({
               </CollapsibleContent>
             </Collapsible>
           </CardContent>
-          <CardFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+          <CardFooter className="flex flex-row justify-end gap-2">
             <Button
               type="reset"
               variant="secondary"
