@@ -47,7 +47,7 @@ export function Games() {
         searchPlaceholder="Search Games..."
       />
       <ScrollArea className="h-[75vh] sm:h-[80vh]">
-        <Table className="hidden xs:block">
+        <Table className="hidden pb-14 xs:block">
           <TableBody className="flex w-full flex-col gap-2 p-4">
             {games.map((game) => {
               const players = game.players as {
@@ -160,7 +160,7 @@ export function Games() {
             })}
           </TableBody>
         </Table>
-        <div className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/30 dark:scrollbar-thumb-muted-foreground/60 dark:hover:scrollbar-thumb-muted-foreground/70 relative flex w-full flex-col gap-2 overflow-auto xs:hidden">
+        <div className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/30 dark:scrollbar-thumb-muted-foreground/60 dark:hover:scrollbar-thumb-muted-foreground/70 relative flex w-full flex-col gap-2 overflow-auto pb-14 xs:hidden">
           {games.map((game) => {
             const players = game.players as {
               min: number | null;

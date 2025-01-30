@@ -44,7 +44,7 @@ export function Matches({ gameId }: { gameId: Game["id"] }) {
       />
       <ScrollArea className="h-[75vh] sm:h-[80vh]">
         <Table>
-          <TableBody className="flex w-full flex-col gap-2 p-4">
+          <TableBody className="flex w-full flex-col gap-2 p-4 pb-28">
             {matches.map((match) => (
               <TableRow
                 key={match.id}
