@@ -20,11 +20,13 @@ import { Separator } from "@board-games/ui/separator";
 import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
+import { api } from "~/trpc/react";
 import { AddGameDialog } from "./addGameDialog";
 import { GamesDropDown } from "./gamesDropDown";
 
-export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
-  const [games, setGames] = useState(data);
+export function Games() {
+  const [data] = api.game.getGames.useSuspenseQuery();
+  const [games, setGames] = useState<RouterOutputs["game"]["getGames"]>(data);
 
   return (
     <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
@@ -35,7 +37,6 @@ export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
           {`${games.length} ${games.length > 1 ? "games" : "game"}`}
         </CardDescription>
       </CardHeader>
-
       <FilterAndSearch
         items={data}
         setItems={setGames}
@@ -278,5 +279,33 @@ export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
         <AddGameDialog />
       </div>
     </div>
+  );
+}
+export function GameSkeleton() {
+  return (
+    <TableRow className="flex w-full rounded-lg border bg-card text-card-foreground shadow-sm">
+      <TableCell className="flex w-full items-center p-2 font-medium sm:p-4">
+        <div className="flex w-full max-w-64 items-center gap-1 font-medium sm:max-w-96 sm:gap-3">
+          <div className="bg:card-foreground relative flex h-4 shrink-0 animate-pulse overflow-hidden rounded xs:h-16 xs:w-16 sm:h-24 sm:w-24" />
+          <div className="flex flex-col gap-1 p-2">
+            <h2 className="bg:card-foreground h-4 animate-pulse rounded text-xl font-bold" />
+            <div className="bg:card-foreground/50 flex h-2 min-w-20 animate-pulse items-center gap-1 rounded" />
+            <div className="flex items-center justify-between pt-1">
+              <div className="bg:card-foreground/50 flex h-2 w-24 animate-pulse items-center rounded" />
+              <Separator orientation="vertical" className="h-4" />
+              <div className="bg:card-foreground/50 flex h-2 w-24 animate-pulse items-center rounded"></div>
+              <Separator orientation="vertical" className="h-4" />
+              <div className="bg:card-foreground/50 flex h-2 w-24 animate-pulse items-center gap-1 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="flex w-20 items-center justify-center p-2 sm:p-4">
+        <Button size={"icon"} variant={"outline"} className="animate-pulse" />
+      </TableCell>
+      <TableCell className="flex w-20 items-center justify-center p-1 sm:p-4">
+        <Button size={"icon"} variant={"outline"} className="animate-pulse" />
+      </TableCell>
+    </TableRow>
   );
 }

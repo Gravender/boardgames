@@ -12,27 +12,21 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
+import { api } from "~/trpc/react";
 import { AddMatchDialog } from "./addMatch";
 import { MatchDropDown } from "./matchesDropDown";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 
-export function Matches({
-  matches: data,
-  gameName,
-  imageUrl,
-  gameId,
-}: {
-  matches: Game["matches"];
-  gameName: Game["name"];
-  imageUrl: Game["imageUrl"];
-  gameId: Game["id"];
-}) {
-  const [matches, setMatches] = useState(data);
+export function Matches({ gameId }: { gameId: Game["id"] }) {
+  const [data] = api.game.getGame.useSuspenseQuery({ id: gameId });
+
+  const [matches, setMatches] = useState<Game["matches"]>(data?.matches ?? []);
+
   return (
     <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
       <CardHeader>
-        <CardTitle>{gameName} Matches</CardTitle>
+        <CardTitle>{data?.name ?? "Game"} Matches</CardTitle>
         {matches.length > 0 && (
           <CardDescription>
             {`${matches.length} ${matches.length > 1 ? "games" : "game"} played`}
@@ -40,7 +34,7 @@ export function Matches({
         )}
       </CardHeader>
       <FilterAndSearch
-        items={data}
+        items={data?.matches ?? []}
         setItems={setMatches}
         sortFields={["date", "name", "won", "finished"]}
         defaultSortField="date"
@@ -66,10 +60,10 @@ export function Matches({
                     className="flex w-full items-center gap-3 font-medium"
                   >
                     <div className="relative flex h-12 w-12 shrink-0 overflow-hidden">
-                      {imageUrl ? (
+                      {data?.imageUrl ? (
                         <Image
-                          src={imageUrl}
-                          alt={`${gameName} game image`}
+                          src={data.imageUrl}
+                          alt={`${data.name} game image`}
                           className="aspect-square h-full w-full rounded-md object-cover"
                           width={48}
                           height={48}
@@ -98,7 +92,7 @@ export function Matches({
                 </TableCell>
                 <TableCell className="flex w-24 items-center justify-center">
                   {!match.finished ? (
-                    <div className="inline-flex w-12 items-center justify-center rounded-sm bg-yellow-500 p-2 font-semibold text-destructive-foreground dark:bg-green-900">
+                    <div className="inline-flex w-12 items-center justify-center rounded-sm bg-yellow-500 p-2 font-semibold text-destructive-foreground dark:bg-yellow-600">
                       {"-"}
                     </div>
                   ) : match.won ? (
@@ -122,10 +116,31 @@ export function Matches({
       <div className="absolute bottom-4 right-6 z-10 sm:right-10">
         <AddMatchDialog
           gameId={gameId}
-          gameName={gameName}
-          matches={data.length}
+          gameName={data?.name ?? "Game"}
+          matches={data?.matches.length ?? 0}
         />
       </div>
     </div>
+  );
+}
+export function MatchSkeleton() {
+  return (
+    <TableRow className="flex w-full rounded-lg border bg-card text-card-foreground shadow-sm">
+      <TableCell className="flex w-full items-center font-medium">
+        <div className="flex w-full items-center gap-3 font-medium">
+          <div className="relative flex h-12 w-12 shrink-0 animate-pulse overflow-hidden rounded bg-card-foreground" />
+          <div className="flex w-full items-center justify-between">
+            <div className="flex flex-col items-start gap-2">
+              <h2 className="text-md h-3 w-36 animate-pulse rounded-lg bg-card-foreground text-left font-semibold" />
+              <div className="flex h-2 min-w-20 animate-pulse items-center gap-1 rounded-lg bg-card-foreground/50"></div>
+            </div>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="flex w-24 items-center justify-center">
+        <div className="inline-flex h-12 w-12 animate-pulse items-center justify-center rounded-sm bg-card-foreground/50 p-2 font-semibold text-destructive-foreground" />
+      </TableCell>
+      <TableCell className="flex w-24 items-center justify-center"></TableCell>
+    </TableRow>
   );
 }
