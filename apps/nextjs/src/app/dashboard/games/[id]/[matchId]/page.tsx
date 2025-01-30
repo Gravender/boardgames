@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { Match } from "~/app/_components/match";
+import { Match } from "~/app/dashboard/games/[id]/[matchId]/_components/match";
 import { api, HydrateClient } from "~/trpc/server";
 
 interface Props {
