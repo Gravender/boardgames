@@ -517,6 +517,74 @@ export const matchRouter = createTRPCRouter({
         }),
       );
     }),
+  updateMatchScores: protectedUserProcedure
+    .input(
+      z.object({
+        roundPlayers: z.array(selectRoundPlayerSchema),
+        matchPlayers: z.array(
+          selectMatchPlayerSchema.pick({ id: true, score: true }),
+        ),
+        match: selectMatchSchema.pick({
+          id: true,
+          duration: true,
+          running: true,
+        }),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(match)
+        .set({
+          duration: input.match.duration,
+          running: input.match.running,
+        })
+        .where(and(eq(match.id, input.match.id), eq(match.userId, ctx.userId)));
+      await Promise.all(
+        input.roundPlayers.map(async (player) => {
+          await ctx.db
+            .update(roundPlayer)
+            .set({
+              score: player.score,
+            })
+            .where(eq(roundPlayer.id, player.id));
+        }),
+      );
+      await Promise.all(
+        input.matchPlayers.map(async (player) => {
+          await ctx.db
+            .update(matchPlayer)
+            .set({
+              score: player.score,
+            })
+            .where(eq(matchPlayer.id, player.id));
+        }),
+      );
+    }),
+  updateMatchManualWinner: protectedUserProcedure
+    .input(
+      z.object({
+        matchId: z.number(),
+        winners: z.array(selectMatchPlayerSchema.pick({ id: true })),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(match)
+        .set({
+          finished: true,
+          running: false,
+        })
+        .where(eq(match.id, input.matchId));
+      await ctx.db
+        .update(matchPlayer)
+        .set({ winner: true })
+        .where(
+          inArray(
+            matchPlayer.id,
+            input.winners.map((winner) => winner.id),
+          ),
+        );
+    }),
   updateMatchDuration: protectedUserProcedure
     .input(
       z.object({

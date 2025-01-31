@@ -47,6 +47,7 @@ import {
 } from "@board-games/ui/table";
 import { cn } from "@board-games/ui/utils";
 
+import type { ManualWinnerPlayerSchema } from "./ManualWinnerDialog";
 import { GradientPicker } from "~/components/color-picker";
 import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";
@@ -54,10 +55,15 @@ import { useDebouncedUpdateMatchData } from "~/hooks/use-debounced-update-match"
 import { calculateFinalScore, calculateWinners } from "~/lib/calcluateResults";
 import { formatDuration } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import { ManualWinnerDialog } from "./ManualWinnerDialog";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
 export function Match({ match }: { match: Match }) {
   const [players, setPlayers] = useState(() => [...match.players]);
+  const [manualWinners, setManualWinners] = useState<
+    z.infer<typeof ManualWinnerPlayerSchema>
+  >([]);
+  const [openManualWinnerDialog, setOpenManualWinnerDialog] = useState(false);
   const [hasPlayersChanged, setHasPlayersChanged] = useState(false);
 
   const [duration, setDuration] = useState(match.duration);
@@ -75,7 +81,9 @@ export function Match({ match }: { match: Match }) {
       setIsSubmitting(false);
     },
   });
+  const updateMatchScores = api.match.updateMatchScores.useMutation();
   const updateMatchDuration = api.match.updateMatchDuration.useMutation();
+
   const { debouncedUpdate, isUpdating } = useDebouncedUpdateMatchData(match.id);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveMatch = useCallback(() => {
@@ -94,6 +102,15 @@ export function Match({ match }: { match: Match }) {
       saveMatch();
     }
   }, [players, saveMatch, hasPlayersChanged]);
+  useEffect(() => {
+    if (
+      !openManualWinnerDialog &&
+      match.scoresheet.winCondition === "Manual" &&
+      isSubmitting
+    ) {
+      setIsSubmitting(false);
+    }
+  }, [isSubmitting, match.scoresheet.winCondition, openManualWinnerDialog]);
   const onFinish = () => {
     setIsSubmitting(true);
     setIsRunning(false);
@@ -105,6 +122,44 @@ export function Match({ match }: { match: Match }) {
         matchPlayerId: player.id,
       })),
     );
+    if (match.scoresheet.winCondition === "Manual") {
+      setManualWinners(
+        players.map((player) => {
+          return {
+            id: player.id,
+            name: player.name,
+            imageUrl: player.imageUrl ?? null,
+            score: calculateFinalScore(
+              player.rounds.map((round) => ({
+                score: round.score ?? 0,
+              })),
+              match.scoresheet,
+            ),
+          };
+        }),
+      );
+      setOpenManualWinnerDialog(true);
+      updateMatchScores.mutate({
+        match: {
+          id: match.id,
+          duration: duration,
+          running: false,
+        },
+        roundPlayers: submittedPlayers,
+        matchPlayers: players.map((player) => {
+          return {
+            id: player.id,
+            score: calculateFinalScore(
+              player.rounds.map((round) => ({
+                score: round.score ?? 0,
+              })),
+              match.scoresheet,
+            ),
+          };
+        }),
+      });
+      return;
+    }
     const winners = calculateWinners(
       players.map((player) => ({
         id: player.id,
@@ -349,6 +404,13 @@ export function Match({ match }: { match: Match }) {
           )}
         </Button>
       </CardFooter>
+      <ManualWinnerDialog
+        isOpen={openManualWinnerDialog}
+        setIsOpen={setOpenManualWinnerDialog}
+        gameId={match.gameId}
+        matchId={match.id}
+        players={manualWinners}
+      />
     </div>
   );
 }
