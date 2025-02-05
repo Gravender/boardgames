@@ -36,6 +36,7 @@
     "@trpc/client": "catalog:",
     "@trpc/react-query": "catalog:",
     "@trpc/server": "catalog:",
+    "@uploadthing/expo": "^7.1.5",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -43,6 +44,7 @@
     "expo-constants": "~17.0.4",
     "expo-crypto": "~14.0.2",
     "expo-dev-client": "~5.0.9",
+    "expo-document-picker": "^13.0.2",
     "expo-image-picker": "~16.0.4",
     "expo-linking": "~7.0.4",
     "expo-navigation-bar": "~4.0.7",
@@ -69,6 +71,7 @@
     "superjson": "2.2.2",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
+    "uploadthing": "^7.4.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {
