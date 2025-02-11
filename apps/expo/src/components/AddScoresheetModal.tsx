@@ -1,7 +1,6 @@
 import React from "react";
-import { Platform, View } from "react-native";
+import { Modal, Platform, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
-import Modal from "react-native-modal";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FullWindowOverlay } from "react-native-screens";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -121,11 +120,9 @@ export default function AddScoresheetModal({
 
   return (
     <Modal
-      isVisible={isModalVisible}
-      onBackdropPress={() => setModalVisible(false)}
-      animationIn="fadeIn"
-      animationOut="fadeOut"
-      // Make sure we push it to the right side
+      visible={isModalVisible}
+      onRequestClose={() => setModalVisible(false)}
+      animationType="fade"
       style={{
         margin: 0, // no outer margin
         justifyContent: "flex-end",
