@@ -37,7 +37,7 @@ export default function ImageUploadButton() {
       // Create a file-like object that UploadThing can handle
       const fileToUpload = {
         name: media.fileName ?? "image.jpg",
-        type: "image/jpeg",
+        type: media.mimeType ?? media.type ?? "image/jpeg",
         uri: media.uri,
         size: fileInfo.size,
       } as unknown as File;
