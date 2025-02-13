@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Alert, Image } from "react-native";
+import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@clerk/clerk-expo";
 
@@ -10,7 +11,7 @@ import { useUploadThing } from "~/utils/uploadthing";
 export default function ImageUploadButton() {
   const [image, setImage] = useState<string | null>(null);
   const { getToken } = useAuth();
-  const { startUpload, routeConfig } = useUploadThing("imageUploader", {
+  const { startUpload } = useUploadThing("imageUploader", {
     /**
      * Set clerk headers for authentication
      */
@@ -23,33 +24,24 @@ export default function ImageUploadButton() {
       console.log("Error: ", error);
       Alert.alert("Upload Error", error.message);
     },
-    onUploadBegin: (fileName) => {
-      console.log("upload has begun for", fileName);
-    },
-    onUploadProgress(p) {
-      console.log("upload progress", p);
-    },
   });
   async function onMediaCaptured(media: ImagePicker.ImagePickerAsset) {
     try {
       setImage(media.uri);
       console.log("Media URI:", media.uri);
-      const response = await fetch(media.uri);
-      if (!response.ok) throw new Error("Failed to fetch media file");
+      const fileInfo = await FileSystem.getInfoAsync(media.uri);
+      if (!fileInfo.exists) {
+        throw new Error("File does not exist");
+      }
 
-      const blob = await response.blob();
-      console.log("Blob size:", blob.size);
-
-      if (blob.size === 0) throw new Error("Blob is empty");
-      const fileName =
-        media.fileName ?? media.uri.split("/").pop() ?? "unknown.jpg";
-      const file = new File([blob], fileName, {
-        type: blob.type || "image/jpeg",
-        lastModified: new Date().getTime(),
-      });
-      const rnCompatibleFile = Object.assign(file, { uri: media.uri });
-      console.log("Uploading file:", rnCompatibleFile);
-      const uploadResult = await startUpload([rnCompatibleFile]);
+      // Create a file-like object that UploadThing can handle
+      const fileToUpload = {
+        name: media.fileName ?? "image.jpg",
+        type: "image/jpeg",
+        uri: media.uri,
+        size: fileInfo.size,
+      } as unknown as File;
+      await startUpload([fileToUpload]);
     } catch (error) {
       console.error("Upload error:", error);
     }
