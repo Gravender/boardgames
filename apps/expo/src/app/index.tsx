@@ -1,6 +1,7 @@
 import { Link } from "expo-router";
 import { SignedIn, SignedOut, useClerk, useUser } from "@clerk/clerk-expo";
 
+import ImageUploadButton from "~/components/ImageUploadButton";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Text } from "~/components/ui/text";
@@ -8,6 +9,7 @@ import { Text } from "~/components/ui/text";
 export default function Index() {
   const { user } = useUser();
   const { signOut } = useClerk();
+
   return (
     <Card className="bg-card">
       <SignedIn>
@@ -24,6 +26,7 @@ export default function Index() {
           <Text>Sign up</Text>
         </Link>
       </SignedOut>
+      <ImageUploadButton />
     </Card>
   );
 }
