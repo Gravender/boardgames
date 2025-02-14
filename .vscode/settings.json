@@ -27,8 +27,14 @@
   ],
   "prettier.ignorePath": ".gitignore",
   "tailwindCSS.experimental.classRegex": [
-    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
-    ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    [
+      "cva\\(([^)]*)\\)",
+      "[\"'`]([^\"'`]*).*?[\"'`]"
+    ],
+    [
+      "cx\\(([^)]*)\\)",
+      "(?:'|\"|`)([^']*)(?:'|\"|`)"
+    ]
   ],
   "tailwindCSS.experimental.configFile": "./tooling/tailwind/web.ts",
   "typescript.enablePromptUseWorkspaceTsdk": true,
@@ -37,6 +43,13 @@
     "next/dist/client/router.d.ts"
   ],
   "typescript.tsdk": "node_modules/typescript/lib",
-  "conventionalCommits.scopes": ["api"],
-  "cSpell.words": ["nativewind", "scoresheet", "uploadthing"]
+  "conventionalCommits.scopes": [
+    "api",
+    "expo"
+  ],
+  "cSpell.words": [
+    "nativewind",
+    "scoresheet",
+    "uploadthing"
+  ]
 }
