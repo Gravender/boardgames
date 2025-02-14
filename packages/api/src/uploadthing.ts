@@ -3,7 +3,6 @@ import { getAuth } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { createUploadthing } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
-import { z } from "zod";
 
 import { db } from "@board-games/db/client";
 import { image, user } from "@board-games/db/schema";
