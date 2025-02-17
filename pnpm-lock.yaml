@@ -69,6 +69,9 @@ importers:
       '@board-games/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@board-games/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@clerk/clerk-expo':
         specifier: ^2.6.9
         version: 2.6.9(3rjk2rwbkq3pu4lszhzopu7moq)
@@ -292,6 +295,9 @@ importers:
       '@board-games/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@board-games/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@board-games/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -502,6 +508,34 @@ importers:
       drizzle-kit:
         specifier: ^0.28.1
         version: 0.28.1
+      eslint:
+        specifier: 'catalog:'
+        version: 9.18.0(jiti@1.21.7)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.4.2
+      typescript:
+        specifier: 'catalog:'
+        version: 5.7.3
+
+  packages/shared:
+    dependencies:
+      '@board-games/db':
+        specifier: workspace:*
+        version: link:../db
+      zod:
+        specifier: 'catalog:'
+        version: 3.24.1
+    devDependencies:
+      '@board-games/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@board-games/prettier-config':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@board-games/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
       eslint:
         specifier: 'catalog:'
         version: 9.18.0(jiti@1.21.7)

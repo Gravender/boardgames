@@ -9,6 +9,11 @@ import { useForm } from "react-hook-form";
 
 import type { RouterOutputs } from "@board-games/api";
 import { insertRoundSchema } from "@board-games/db/schema";
+import {
+  calculateFinalScore,
+  calculateWinners,
+  formatDuration,
+} from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "@board-games/ui/card";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -52,8 +57,6 @@ import { GradientPicker } from "~/components/color-picker";
 import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";
 import { useDebouncedUpdateMatchData } from "~/hooks/use-debounced-update-match";
-import { calculateFinalScore, calculateWinners } from "~/lib/calcluateResults";
-import { formatDuration } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { ManualWinnerDialog } from "./ManualWinnerDialog";
 

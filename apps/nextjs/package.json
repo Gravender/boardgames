@@ -16,6 +16,7 @@
   "dependencies": {
     "@board-games/api": "workspace:*",
     "@board-games/db": "workspace:*",
+    "@board-games/shared": "workspace:*",
     "@board-games/ui": "workspace:*",
     "@clerk/elements": "^0.22.5",
     "@clerk/nextjs": "^6.9.6",

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Dices, User } from "lucide-react";
 
+import { formatDuration } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
@@ -25,7 +26,6 @@ import {
 } from "@board-games/ui/table";
 import { cn } from "@board-games/ui/utils";
 
-import { formatDuration } from "~/lib/utils";
 import { api } from "~/trpc/server";
 
 interface Props {
