@@ -40,7 +40,13 @@ export function MatchCard({
         </View>
 
         <View className="flex flex-grow flex-row items-center justify-between">
-          <Link href={`/games/${gameId}/${match.id}`}>
+          <Link
+            href={
+              match.finished
+                ? `/games/${gameId}/${match.id}`
+                : `/games/${gameId}/${match.id}/scoresheet`
+            }
+          >
             <View className="flex flex-col items-start">
               <Text className="text-md text-left font-semibold">
                 {match.name}
