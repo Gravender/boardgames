@@ -1,5 +1,8 @@
 import { Fragment, useState } from "react";
-import { View } from "react-native";
+import { ActivityIndicator, Alert, Image, View } from "react-native";
+import * as FileSystem from "expo-file-system";
+import * as ImagePicker from "expo-image-picker";
+import { useAuth } from "@clerk/clerk-expo";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -37,8 +40,11 @@ import { Label } from "~/components/ui/label";
 import { Text } from "~/components/ui/text";
 import { ChevronDown } from "~/lib/icons/ChevronDown";
 import { ChevronUp } from "~/lib/icons/ChevronUp";
+import { Dices } from "~/lib/icons/Dices";
 import { Plus } from "~/lib/icons/Plus";
 import { Table } from "~/lib/icons/Table";
+import { api } from "~/utils/api";
+import { useUploadThing } from "~/utils/uploadthing";
 import AddScoresheetModal from "./AddScoresheetModal";
 import { Separator } from "./ui/separator";
 
@@ -140,8 +146,34 @@ function AddGameContent({
 }: {
   setIsOpen: (isOpen: boolean) => void;
 }) {
+  const [imagePreview, setImagePreview] =
+    useState<ImagePicker.ImagePickerAsset | null>(null);
   const [openScoresheetModal, setOpenScoresheetModal] = useState(false);
   const [moreOptions, setMoreOptions] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const utils = api.useUtils();
+
+  const { getToken } = useAuth();
+  const { startUpload } = useUploadThing("imageUploader", {
+    headers: async () => {
+      const authToken = await getToken();
+      return { Authorization: authToken ?? undefined };
+    },
+    onUploadError: (err: unknown) => {
+      let errorMessage = "Unknown error occurred";
+
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === "object" && err !== null && "message" in err) {
+        errorMessage = String(err.message);
+      }
+
+      console.log("Error: ", errorMessage);
+      Alert.alert("Upload Error", errorMessage);
+    },
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -158,9 +190,86 @@ function AddGameContent({
       rounds: [],
     },
   });
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
-  };
+
+  const createGame = api.game.create.useMutation({
+    onSuccess: async () => {
+      setIsUploading(false);
+      await Promise.all([
+        utils.game.getGames.invalidate(),
+        utils.dashboard.getGames.invalidate(),
+        utils.dashboard.getUniqueGames.invalidate(),
+      ]);
+      form.reset();
+      setIsOpen(false);
+    },
+  });
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsUploading(true);
+    if (!imagePreview) {
+      createGame.mutate({
+        game: {
+          name: values.game.name,
+          ownedBy: values.game.ownedBy,
+          playersMin: values.game.playersMin,
+          playersMax: values.game.playersMax,
+          playtimeMin: values.game.playtimeMin,
+          playtimeMax: values.game.playtimeMax,
+          yearPublished: values.game.yearPublished,
+          imageId: null,
+        },
+        scoresheet: values.scoresheet,
+        rounds: values.rounds.map((round, index) => ({
+          ...round,
+          order: index,
+        })),
+      });
+      return;
+    }
+    try {
+      console.log("Media URI:", imagePreview.uri);
+      const fileInfo = await FileSystem.getInfoAsync(imagePreview.uri);
+      if (!fileInfo.exists) {
+        throw new Error("File does not exist");
+      }
+
+      // Create a file-like object that UploadThing can handle
+      const fileToUpload = {
+        name: imagePreview.fileName ?? "image.jpg",
+        type: imagePreview.mimeType ?? imagePreview.type ?? "image/jpeg",
+        uri: imagePreview.uri,
+        size: fileInfo.size,
+      } as unknown as File;
+      const uploadResult = await startUpload([fileToUpload]);
+      if (!uploadResult) {
+        throw new Error("Image upload failed");
+      }
+      const imageId = uploadResult[0]
+        ? uploadResult[0].serverData.imageId
+        : null;
+      createGame.mutate({
+        game: {
+          name: values.game.name,
+          ownedBy: values.game.ownedBy,
+          playersMin: values.game.playersMin,
+          playersMax: values.game.playersMax,
+          playtimeMin: values.game.playtimeMin,
+          playtimeMax: values.game.playtimeMax,
+          yearPublished: values.game.yearPublished,
+          imageId: imageId,
+        },
+        scoresheet: values.scoresheet,
+        rounds: values.rounds.map((round, index) => ({
+          ...round,
+          order: index,
+        })),
+      });
+      form.reset();
+      setImagePreview(null);
+    } catch (error) {
+      console.error("Upload error:", error);
+    }
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onChangeNumberText = (onChange: (...event: any[]) => void) => {
@@ -172,6 +281,38 @@ function AddGameContent({
       }
     };
   };
+
+  async function pickImage() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission required",
+        "Camera roll permissions are required.",
+      );
+      return;
+    }
+
+    const response = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsEditing: false,
+      quality: 1,
+    });
+
+    if (!response.canceled) {
+      const [media] = response.assets;
+      if (media) {
+        if (media.fileSize && media.fileSize <= 5242880) {
+          setImagePreview(media);
+        } else {
+          Alert.alert(
+            "File size exceeds 5MB.",
+            "Please select a diffrent image.",
+          );
+        }
+      }
+    }
+  }
   return (
     <Fragment>
       <DialogHeader>
@@ -197,6 +338,36 @@ function AddGameContent({
               </FormItem>
             )}
           />
+          <View>
+            <View className="flex flex-row items-center gap-4">
+              <View className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded-full">
+                {imagePreview ? (
+                  <Image
+                    source={{ uri: imagePreview.uri }}
+                    className="aspect-square h-full w-full rounded-md object-cover"
+                  />
+                ) : (
+                  <Dices
+                    className="rounded-full bg-muted text-primary"
+                    size={60}
+                    strokeWidth={1.4}
+                  />
+                )}
+              </View>
+              <Button
+                className="flex-grow"
+                variant="outline"
+                onPress={pickImage}
+              >
+                <Text>
+                  {imagePreview ? "Change Image" : "No Image Selected"}
+                </Text>
+              </Button>
+            </View>
+            <Text className="text-muted-foreground">
+              Upload an image (max 5MB).
+            </Text>
+          </View>
           <FormField
             control={form.control}
             name="game.ownedBy"
@@ -472,8 +643,19 @@ function AddGameContent({
           <Button variant="secondary" onPress={() => setIsOpen(false)}>
             <Text>Cancel</Text>
           </Button>
-          <Button onPress={form.handleSubmit(onSubmit)}>
-            <Text>Submit</Text>
+          <Button
+            className="flex flex-row items-center gap-4"
+            onPress={form.handleSubmit(onSubmit)}
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <>
+                <ActivityIndicator className="text-secondary" />
+                <Text>Uploading...</Text>
+              </>
+            ) : (
+              <Text>Submit</Text>
+            )}
           </Button>
         </DialogFooter>
       </Form>
