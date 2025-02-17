@@ -25,24 +25,29 @@ function GamesCard({
 }) {
   const playtimeText = () => {
     const playtime = game.playtime;
-    if (playtime.min && playtime.max) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (playtime?.min && playtime?.max) {
       return `${playtime.min} - ${playtime.max}`;
     }
-    if (playtime.min || playtime.max) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (playtime?.min || playtime?.max) {
       return `${playtime.min ?? playtime.max}`;
     }
     return null;
   };
   const playerText = () => {
     const players = game.players;
-    if (players.min && players.max) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (players?.min && players?.max) {
       return `${players.min} - ${players.max}`;
     }
-    if (players.min || players.max) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (players?.min || players?.max) {
       return `${players.min ?? players.max}`;
     }
     return null;
   };
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const lastPlayed = game.lastPlayed
     ? format(game.lastPlayed, "d MMM yyyy")
     : "";
