@@ -116,7 +116,7 @@ function Content({
                       .pick({ type: true })
                       .parse({ type: value?.value });
                     update(index, {
-                      ...fields[index],
+                      color: fields[index]?.color,
                       name: fields[index]?.name ?? "",
                       type: safeValue.type,
                     });

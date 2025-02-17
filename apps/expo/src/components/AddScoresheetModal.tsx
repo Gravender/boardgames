@@ -106,7 +106,6 @@ export default function AddScoresheetModal({
   });
 
   const onSubmit = (data: FormSchemaType) => {
-    console.log(1);
     setRounds(data.rounds);
     setScoresheet(data.scoresheet);
     setModalVisible(false);
