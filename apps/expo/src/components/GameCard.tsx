@@ -40,7 +40,7 @@ export function GamesCard({
     }
     return null;
   };
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
   const lastPlayed = game.lastPlayed
     ? format(game.lastPlayed, "d MMM yyyy")
     : "";

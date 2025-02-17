@@ -1,7 +1,7 @@
 import React from "react";
 import { Platform, View } from "react-native";
 import { FullWindowOverlay } from "react-native-screens";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Redirect, Stack, useLocalSearchParams } from "expo-router";
 import { PortalHost } from "@rn-primitives/portal";
 import { FlashList } from "@shopify/flash-list";
 
@@ -49,15 +49,17 @@ const WindowOverlay =
   Platform.OS === "ios" ? FullWindowOverlay : React.Fragment;
 
 export default function GameScreen() {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{
+    id: string;
+  }>();
   const gameId = Number(id);
   if (isNaN(gameId)) {
-    return <Text>No game found</Text>;
+    return <Redirect href="/games" />;
   }
   const { data } = api.game.getGame.useQuery({ id: gameId });
 
   return (
-    <View className="bg-background">
+    <View>
       {/* Changes page title visible on the header */}
       <Stack.Screen
         options={{

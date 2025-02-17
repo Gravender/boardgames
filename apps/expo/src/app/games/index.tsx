@@ -30,7 +30,7 @@ function GamesTable({ games }: { games: RouterOutputs["game"]["getGames"] }) {
     </View>
   );
 }
-const CUSTOM_PORTAL_HOST_NAME = "modal-AddGame";
+const CUSTOM_PORTAL_HOST_NAME = "modal-AddMatch";
 const WindowOverlay =
   Platform.OS === "ios" ? FullWindowOverlay : React.Fragment;
 

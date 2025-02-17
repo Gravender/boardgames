@@ -85,7 +85,13 @@ export function MatchDropDown({
           <DropdownMenuItem>
             <Text>Edit</Text>
           </DropdownMenuItem>
-          <Link href={`/games/${gameId}/${data.id}`} asChild>
+          <Link
+            href={{
+              pathname: "/games/[id]/[matchId]/scoresheet",
+              params: { id: gameId, matchId: data.id },
+            }}
+            asChild
+          >
             <DropdownMenuItem>
               <Text>ScoreSheet</Text>
             </DropdownMenuItem>
