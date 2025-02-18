@@ -32,6 +32,7 @@ import {
 import { Text } from "./ui/text";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
+type Player = Match["players"][number];
 const ManualWinnerPlayerSchema = z
   .array(
     z.object({
@@ -43,7 +44,7 @@ const ManualWinnerPlayerSchema = z
   )
   .min(1);
 export function MatchScoresheet({ data }: { data: Match }) {
-  const [players, setPlayers] = useState(() => [...data.players]);
+  const [players, setPlayers] = useState<Player[]>(() => [...data.players]);
   const [manualWinners, setManualWinners] = useState<
     z.infer<typeof ManualWinnerPlayerSchema>
   >([]);
@@ -210,10 +211,20 @@ export function MatchScoresheet({ data }: { data: Match }) {
     setPlayers(temp);
     setHasPlayersChanged(true);
   };
+  const updatePlayerScore = (player: Player, score: number | null) => {
+    setPlayers((prevPlayers) => {
+      const foundPlayer = prevPlayers.find((p) => p.id === player.id);
+      if (foundPlayer) {
+        foundPlayer.score = score;
+      }
+      return prevPlayers;
+    });
+    setHasPlayersChanged(true);
+  };
 
   return (
     <View className="flex flex-col gap-2" style={{ height: "100%" }}>
-      <View style={{ flexDirection: "row", height: "80%" }}>
+      <ScrollView style={{ flexDirection: "row", height: "80%" }}>
         <View className="rounded-l-lg">
           <Table>
             <TableHeader>
@@ -230,27 +241,14 @@ export function MatchScoresheet({ data }: { data: Match }) {
             >
               <TableBody>
                 {data.scoresheet.rounds.map((round) => (
-                  <TableRow
-                    key={`${round.id}-name`}
-                    className="h-20 w-28 bg-accent/90"
-                  >
-                    <TableCell
-                      className={cn(
-                        "items-center justify-center font-semibold text-muted-foreground",
-                        round.color &&
-                          "text-slate-600 hover:opacity-50 hover:dark:opacity-80",
-                      )}
-                    >
-                      <Text className="text-center">{round.name}</Text>
-                    </TableCell>
+                  <TableRow key={`${round.id}-name`} className="h-20">
+                    <RoundHeaderCell round={round} />
                   </TableRow>
                 ))}
               </TableBody>
               <TableFooter className="h-14">
-                <TableRow className="h-14 bg-accent/90">
-                  <TableCell className="w-28 font-bold text-muted-foreground">
-                    <Text className="text-foreground">Total</Text>
-                  </TableCell>
+                <TableRow>
+                  <TotalCell />
                 </TableRow>
               </TableFooter>
             </ScrollView>
@@ -265,12 +263,7 @@ export function MatchScoresheet({ data }: { data: Match }) {
             <TableHeader>
               <TableRow className="h-14 bg-accent">
                 {players.map((player) => (
-                  <TableHead
-                    className="min-w-20 flex-1 items-center justify-center text-center"
-                    key={player.id}
-                  >
-                    <Text className="flex w-20 flex-wrap">{player.name}</Text>
-                  </TableHead>
+                  <PlayerHeaderCell key={player.id} player={player} />
                 ))}
               </TableRow>
             </TableHeader>
@@ -285,55 +278,23 @@ export function MatchScoresheet({ data }: { data: Match }) {
               style={{ height: "80%", marginTop: -1 }}
             >
               <TableBody>
-                {data.scoresheet.rounds.map((round, index) => {
+                {data.scoresheet.rounds.map((round, roundIndex) => {
                   return (
                     <TableRow
                       key={round.id}
-                      className={cn(
-                        "h-20 active:bg-secondary",
-                        index % 2 && "border-b-2 border-muted/40",
-                      )}
+                      className={cn("h-20 active:bg-secondary")}
                     >
                       {players.map((player, playerIndex) => {
-                        const roundPlayer = player.rounds[index];
+                        const roundPlayer = player.rounds[roundIndex];
+                        if (roundPlayer === undefined) return null;
                         return (
-                          <TableCell
-                            key={`player-${player.id}-round-${round.id}`}
-                            className="flex min-w-20 flex-1 flex-row items-center justify-center"
-                          >
-                            {round.type === "Numeric" ? (
-                              <Input
-                                value={`${roundPlayer?.score ?? ""}`}
-                                onChangeText={(text) => {
-                                  const parsed = parseInt(text);
-                                  if (!isNaN(parsed)) {
-                                    handleScoreChange(
-                                      playerIndex,
-                                      index,
-                                      parsed,
-                                    );
-                                  } else {
-                                    handleScoreChange(playerIndex, index, null);
-                                  }
-                                }}
-                                keyboardType="numeric"
-                                className="min-h-5 min-w-5 border-none bg-transparent text-center outline-none"
-                              />
-                            ) : (
-                              <Checkbox
-                                onCheckedChange={(isChecked) => {
-                                  handleScoreChange(
-                                    playerIndex,
-                                    index,
-                                    isChecked ? round.score : 0,
-                                  );
-                                }}
-                                checked={
-                                  (roundPlayer?.score ?? 0) === round.score
-                                }
-                              />
-                            )}
-                          </TableCell>
+                          <PlayerRoundCell
+                            playerIndex={playerIndex}
+                            playerRound={roundPlayer}
+                            roundIndex={roundIndex}
+                            round={round}
+                            updateScore={handleScoreChange}
+                          />
                         );
                       })}
                     </TableRow>
@@ -342,29 +303,14 @@ export function MatchScoresheet({ data }: { data: Match }) {
               </TableBody>
               <TableFooter>
                 <TableRow className="h-14">
-                  {players.map((player, index) => {
+                  {players.map((player) => {
                     if (data.scoresheet.roundsScore === "Manual") {
                       return (
-                        <TableCell
+                        <FooterManualScore
                           key={`${player.id}-total`}
-                          className="min-w-20 flex-1"
-                        >
-                          <Input
-                            value={`${player.score ?? ""}`}
-                            onChangeText={(text: string) => {
-                              const score = text === "" ? null : Number(text);
-
-                              const temp = [...players];
-                              if (temp[index]?.score !== undefined) {
-                                temp[index].score = score;
-                              }
-                              setPlayers(temp);
-                              setHasPlayersChanged(true);
-                            }}
-                            keyboardType="numeric"
-                            className="min-h-5 min-w-5 border-none bg-transparent text-center"
-                          />
-                        </TableCell>
+                          player={player}
+                          updatePlayerScore={updatePlayerScore}
+                        />
                       );
                     }
                     const total = calculateFinalScore(
@@ -374,20 +320,10 @@ export function MatchScoresheet({ data }: { data: Match }) {
                       data.scoresheet,
                     );
                     return (
-                      <TableCell
+                      <FooterTotalCell
                         key={`${player.id}-total`}
-                        className="min-w-20 flex-1"
-                      >
-                        <View className="flex flex-row items-center justify-center">
-                          <Text className="text-center">
-                            {total === Infinity
-                              ? 0
-                              : total === -Infinity
-                                ? 0
-                                : total}
-                          </Text>
-                        </View>
-                      </TableCell>
+                        total={total}
+                      />
                     );
                   })}
                 </TableRow>
@@ -395,38 +331,175 @@ export function MatchScoresheet({ data }: { data: Match }) {
             </ScrollView>
           </Table>
         </ScrollView>
-      </View>
-      <CardFooter className="flex flex-row justify-between px-2 pt-6">
-        <View className="flex flex-row items-center justify-center gap-2">
-          <Text className="text-center text-2xl font-bold">
-            {formatDuration(duration)}
-          </Text>
-          <Button onPress={toggleClock} size={"icon"} variant={"outline"}>
-            {isRunning ? (
-              <Pause className="text-foreground" size={20} strokeWidth={2} />
-            ) : (
-              <Play className="text-foreground" size={20} strokeWidth={2} />
-            )}
-          </Button>
-          <Button onPress={resetClock} size={"icon"} variant={"outline"}>
-            <RotateCcw className="text-foreground" size={20} strokeWidth={2} />
-          </Button>
-        </View>
-        <Button
-          onPress={onFinish}
-          disabled={isSubmitting}
-          className="flex flex-row items-center gap-2"
-        >
-          {isSubmitting ? (
-            <>
-              <ActivityIndicator className="text-secondary" />
-              <Text>Submitting...</Text>
-            </>
-          ) : (
-            <Text>Finish</Text>
-          )}
-        </Button>
-      </CardFooter>
+      </ScrollView>
+      <MatchFooter
+        duration={duration}
+        isRunning={isRunning}
+        isSubmitting={isSubmitting}
+        toggleClock={toggleClock}
+        resetClock={resetClock}
+        onFinish={onFinish}
+      />
     </View>
   );
 }
+const MatchFooter = ({
+  duration,
+  isRunning,
+  isSubmitting,
+  toggleClock,
+  resetClock,
+  onFinish,
+}: {
+  duration: Match["duration"];
+  isRunning: boolean;
+  isSubmitting: boolean;
+  toggleClock: () => void;
+  resetClock: () => void;
+  onFinish: () => void;
+}) => {
+  return (
+    <CardFooter className="flex flex-row justify-between px-2 pt-6">
+      <View className="flex flex-row items-center justify-center gap-2">
+        <Text className="text-center text-2xl font-bold">
+          {formatDuration(duration)}
+        </Text>
+        <Button onPress={toggleClock} size={"icon"} variant={"outline"}>
+          {isRunning ? (
+            <Pause className="text-foreground" size={20} strokeWidth={2} />
+          ) : (
+            <Play className="text-foreground" size={20} strokeWidth={2} />
+          )}
+        </Button>
+        <Button onPress={resetClock} size={"icon"} variant={"outline"}>
+          <RotateCcw className="text-foreground" size={20} strokeWidth={2} />
+        </Button>
+      </View>
+      <Button
+        onPress={onFinish}
+        disabled={isSubmitting}
+        className="flex flex-row items-center gap-2"
+      >
+        {isSubmitting ? (
+          <>
+            <ActivityIndicator className="text-secondary" />
+            <Text>Submitting...</Text>
+          </>
+        ) : (
+          <Text>Finish</Text>
+        )}
+      </Button>
+    </CardFooter>
+  );
+};
+
+const RoundHeaderCell = ({
+  round,
+}: {
+  round: Match["scoresheet"]["rounds"][number];
+}) => {
+  return (
+    <TableCell
+      className={cn(
+        "w-28 items-center justify-center bg-accent/90 font-semibold text-muted-foreground",
+        round.color && "text-slate-600 hover:opacity-50 hover:dark:opacity-80",
+      )}
+    >
+      <Text className="text-center">{round.name}</Text>
+    </TableCell>
+  );
+};
+const PlayerHeaderCell = ({ player }: { player: Match["players"][number] }) => {
+  return (
+    <TableHead className="min-w-20 flex-1 items-center justify-center text-center">
+      <Text className="flex w-20 flex-wrap">{player.name}</Text>
+    </TableHead>
+  );
+};
+const PlayerRoundCell = ({
+  playerIndex,
+  roundIndex,
+  playerRound,
+  round,
+  updateScore,
+}: {
+  playerIndex: number;
+  roundIndex: number;
+  playerRound: Player["rounds"][number];
+  round: Match["scoresheet"]["rounds"][number];
+  updateScore: (
+    PlayerRoundCell: number,
+    roundIndex: number,
+    newScore: number | null,
+  ) => void;
+}) => {
+  return (
+    <TableCell className="flex min-w-20 flex-1 flex-row items-center justify-center">
+      {round.type === "Numeric" ? (
+        <Input
+          value={`${playerRound.score ?? ""}`}
+          onChangeText={(text) => {
+            const parsed = parseInt(text);
+            if (!isNaN(parsed)) {
+              updateScore(playerIndex, roundIndex, parsed);
+            } else {
+              updateScore(playerIndex, roundIndex, null);
+            }
+          }}
+          keyboardType="numeric"
+          className="min-h-5 min-w-5 border-none bg-transparent text-center outline-none"
+        />
+      ) : (
+        <Checkbox
+          onCheckedChange={(isChecked) => {
+            updateScore(playerIndex, roundIndex, isChecked ? round.score : 0);
+          }}
+          checked={(playerRound.score ?? 0) === round.score}
+        />
+      )}
+    </TableCell>
+  );
+};
+const TotalCell = () => {
+  return (
+    <TableCell className="w-28 bg-accent/90 font-bold text-muted-foreground">
+      <Text className="text-foreground">Total</Text>
+    </TableCell>
+  );
+};
+const FooterTotalCell = ({ total }: { total: number }) => {
+  return (
+    <TableCell className="min-w-20 flex-1">
+      <View className="flex flex-row items-center justify-center">
+        <Text className="text-center">
+          {total === Infinity ? 0 : total === -Infinity ? 0 : total}
+        </Text>
+      </View>
+    </TableCell>
+  );
+};
+const FooterManualScore = ({
+  player,
+  updatePlayerScore,
+}: {
+  player: Player;
+  updatePlayerScore: (player: Player, score: number | null) => void;
+}) => {
+  return (
+    <TableCell key={`${player.id}-total`} className="min-w-20 flex-1">
+      <Input
+        value={`${player.score ?? ""}`}
+        onChangeText={(text: string) => {
+          const score = Number(text);
+          if (isNaN(score) || text === "") {
+            updatePlayerScore(player, null);
+          } else {
+            updatePlayerScore(player, score);
+          }
+        }}
+        keyboardType="numeric"
+        className="min-h-5 min-w-5 border-none bg-transparent text-center"
+      />
+    </TableCell>
+  );
+};
