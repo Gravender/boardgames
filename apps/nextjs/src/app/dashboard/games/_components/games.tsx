@@ -24,12 +24,11 @@ import { api } from "~/trpc/react";
 import { AddGameDialog } from "./addGameDialog";
 import { GamesDropDown } from "./gamesDropDown";
 
-export function Games() {
-  const [data] = api.game.getGames.useSuspenseQuery();
+export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
   const [games, setGames] = useState<RouterOutputs["game"]["getGames"]>(data);
 
   return (
-    <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
+    <>
       <CardHeader>
         <CardTitle>Games</CardTitle>
 
@@ -275,10 +274,7 @@ export function Games() {
           })}
         </div>
       </ScrollArea>
-      <div className="absolute bottom-4 right-6 z-10 sm:right-10">
-        <AddGameDialog />
-      </div>
-    </div>
+    </>
   );
 }
 export function GameSkeleton() {

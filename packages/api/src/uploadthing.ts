@@ -2,7 +2,7 @@ import type { FileRouter } from "uploadthing/next";
 import { getAuth } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { createUploadthing } from "uploadthing/next";
-import { UploadThingError } from "uploadthing/server";
+import { UploadThingError, UTApi } from "uploadthing/server";
 
 import { db } from "@board-games/db/client";
 import { image, user } from "@board-games/db/schema";
@@ -51,3 +51,5 @@ export const uploadRouter = {
     }),
 } satisfies FileRouter;
 export type uploadRouter = typeof uploadRouter;
+
+export const utapi = new UTApi({});

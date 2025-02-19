@@ -1,12 +1,12 @@
 "use client";
 
-import type { z } from "zod";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, ChevronUp, Dices, Plus, Table } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { Button } from "@board-games/ui/button";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -39,8 +39,7 @@ import { Separator } from "@board-games/ui/separator";
 import { Spinner } from "~/components/spinner";
 import { useAddGameStore } from "~/providers/add-game-provider";
 import { gameSchema } from "~/stores/add-game-store";
-import { api } from "~/trpc/react";
-import { useUploadThing } from "~/utils/uploadthing";
+import { addGameSubmitAction } from "./addGameSubmit";
 
 export function AddGameDialog() {
   const { isOpen, setIsOpen } = useAddGameStore((state) => state);
@@ -65,7 +64,6 @@ export function AddGameDialog() {
     </Dialog>
   );
 }
-
 function Content() {
   const {
     isOpen,
@@ -80,34 +78,14 @@ function Content() {
   const [imagePreview, setImagePreview] = useState<string | null>(
     game.gameImg ? URL.createObjectURL(game.gameImg) : null,
   );
-  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
-  const { startUpload } = useUploadThing("imageUploader");
+  const [pending, startTransaction] = useTransition();
   const router = useRouter();
   router.prefetch(`/dashboard/games/add/scoresheet`);
-  const utils = api.useUtils();
 
   const form = useForm<z.infer<typeof gameSchema>>({
     resolver: zodResolver(gameSchema),
     defaultValues: game,
-  });
-
-  const createGame = api.game.create.useMutation({
-    onSuccess: async () => {
-      setIsUploading(false);
-      reset();
-      await Promise.all([
-        utils.game.getGames.invalidate(),
-        utils.dashboard.getGames.invalidate(),
-        utils.dashboard.getUniqueGames.invalidate(),
-      ]);
-      router.refresh();
-      form.reset();
-      toast({
-        title: "Game created successfully!",
-        description: "Your data has been uploaded.",
-      });
-    },
   });
   useEffect(() => {
     return () => {
@@ -123,76 +101,56 @@ function Content() {
       }
     };
   }, [isOpen, reset]);
-  async function onSubmit(values: z.infer<typeof gameSchema>) {
-    setIsUploading(true);
-    if (!values.gameImg) {
-      createGame.mutate({
-        game: {
-          name: values.name,
-          ownedBy: values.ownedBy,
-          playersMin: values.playersMin,
-          playersMax: values.playersMax,
-          playtimeMin: values.playtimeMin,
-          playtimeMax: values.playtimeMax,
-          yearPublished: values.yearPublished,
-          imageId: null,
-        },
-        scoresheet: scoresheet,
-        rounds: rounds,
-      });
-      return;
-    }
 
-    try {
-      const imageFile = values.gameImg;
-
-      const uploadResult = await startUpload([imageFile]);
-      if (!uploadResult) {
-        throw new Error("Image upload failed");
+  const onSubmitForm: SubmitHandler<z.infer<typeof gameSchema>> = async (
+    data,
+  ) => {
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("ownedBy", JSON.stringify(data.ownedBy));
+    formData.append("playersMin", JSON.stringify(data.playersMin));
+    formData.append("playersMax", JSON.stringify(data.playersMax));
+    formData.append("playtimeMin", JSON.stringify(data.playtimeMin));
+    formData.append("playtimeMax", JSON.stringify(data.playtimeMax));
+    formData.append("yearPublished", JSON.stringify(data.yearPublished));
+    formData.append(
+      "gameImg",
+      data.gameImg === null ? "null" : (data.gameImg as File),
+    );
+    formData.append("scoresheet", JSON.stringify(scoresheet));
+    formData.append("rounds", JSON.stringify(rounds));
+    startTransaction(async () => {
+      // call the server action
+      const { data: success, errors } = await addGameSubmitAction(formData);
+      if (errors) {
+        if (errors === "There was a problem uploading your Image.") {
+          toast({
+            title: "Error",
+            description: "There was a problem uploading your Image.",
+            variant: "destructive",
+          });
+        } else {
+          console.error(errors);
+        }
       }
-
-      toast({
-        title: "File Upload Successful!",
-        description: "Your File has been stored",
-      });
-
-      const imageId = uploadResult[0]
-        ? uploadResult[0].serverData.imageId
-        : null;
-
-      createGame.mutate({
-        game: {
-          name: values.name,
-          ownedBy: values.ownedBy,
-          playersMin: values.playersMin,
-          playersMax: values.playersMax,
-          playtimeMin: values.playtimeMin,
-          playtimeMax: values.playtimeMax,
-          yearPublished: values.yearPublished,
-          imageId: imageId,
-        },
-        scoresheet: scoresheet,
-        rounds: rounds,
-      });
-      form.reset();
-      setImagePreview(null); // Clear the image preview
-    } catch (error) {
-      console.error("Error uploading Image:", error);
-      toast({
-        title: "Error",
-        description: "There was a problem uploading your Image.",
-        variant: "destructive",
-      });
-    }
-  }
-
+      if (success) {
+        setImagePreview(null);
+        reset();
+        form.reset();
+        toast({
+          title: "Game created successfully!",
+          description: "Your data has been uploaded.",
+        });
+      }
+    });
+  };
   return (
     <>
       <DialogHeader>
         <DialogTitle>Add Game</DialogTitle>
       </DialogHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form className="space-y-8" onSubmit={form.handleSubmit(onSubmitForm)}>
           <FormField
             control={form.control}
             name="name"
@@ -510,8 +468,8 @@ function Content() {
             <Button type="reset" variant="secondary" onClick={() => reset()}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isUploading}>
-              {isUploading ? (
+            <Button type="submit" disabled={pending}>
+              {pending ? (
                 <>
                   <Spinner />
                   <span>Uploading...</span>
