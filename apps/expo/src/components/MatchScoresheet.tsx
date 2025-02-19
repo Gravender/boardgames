@@ -55,8 +55,8 @@ export function MatchScoresheet({ data }: { data: Match }) {
   const [isRunning, setIsRunning] = useState(data.running);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const leftRef = useRef(null);
-  const rightRef = useRef(null);
+  const leftRef = useRef<ScrollView | null>(null);
+  const rightRef = useRef<ScrollView | null>(null);
 
   const utils = api.useUtils();
   const router = useRouter();
