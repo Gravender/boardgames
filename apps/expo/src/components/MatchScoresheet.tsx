@@ -183,8 +183,8 @@ export function MatchScoresheet({ data }: { data: Match }) {
   };
 
   const handleScoreChange = (
-    playerIndex: number,
-    roundIndex: number,
+    playerRound: Player["rounds"][number],
+    round: Match["scoresheet"]["rounds"][number],
     value: number | string | null,
   ) => {
     let newScore: number | null = null;
@@ -203,12 +203,20 @@ export function MatchScoresheet({ data }: { data: Match }) {
     } else {
       newScore = value;
     }
-
-    const temp = [...players];
-    if (temp[playerIndex]?.rounds?.[roundIndex]?.score !== undefined) {
-      temp[playerIndex].rounds[roundIndex].score = newScore;
-    }
-    setPlayers(temp);
+    setPlayers((prevPlayers) => {
+      const foundPlayer = prevPlayers.find(
+        (p) => p.id === playerRound.matchPlayerId,
+      );
+      if (foundPlayer) {
+        const foundRound = foundPlayer.rounds.find(
+          (r) => r.roundId === round.id,
+        );
+        if (foundRound) {
+          foundRound.score = newScore;
+        }
+      }
+      return prevPlayers;
+    });
     setHasPlayersChanged(true);
   };
   const updatePlayerScore = (player: Player, score: number | null) => {
@@ -289,9 +297,7 @@ export function MatchScoresheet({ data }: { data: Match }) {
                         if (roundPlayer === undefined) return null;
                         return (
                           <PlayerRoundCell
-                            playerIndex={playerIndex}
                             playerRound={roundPlayer}
-                            roundIndex={roundIndex}
                             round={round}
                             updateScore={handleScoreChange}
                           />
@@ -417,19 +423,15 @@ const PlayerHeaderCell = ({ player }: { player: Match["players"][number] }) => {
   );
 };
 const PlayerRoundCell = ({
-  playerIndex,
-  roundIndex,
   playerRound,
   round,
   updateScore,
 }: {
-  playerIndex: number;
-  roundIndex: number;
   playerRound: Player["rounds"][number];
   round: Match["scoresheet"]["rounds"][number];
   updateScore: (
-    PlayerRoundCell: number,
-    roundIndex: number,
+    PlayerRound: Player["rounds"][number],
+    Round: Match["scoresheet"]["rounds"][number],
     newScore: number | null,
   ) => void;
 }) => {
@@ -441,9 +443,9 @@ const PlayerRoundCell = ({
           onChangeText={(text) => {
             const parsed = parseInt(text);
             if (!isNaN(parsed)) {
-              updateScore(playerIndex, roundIndex, parsed);
+              updateScore(playerRound, round, parsed);
             } else {
-              updateScore(playerIndex, roundIndex, null);
+              updateScore(playerRound, round, null);
             }
           }}
           keyboardType="numeric"
@@ -452,7 +454,7 @@ const PlayerRoundCell = ({
       ) : (
         <Checkbox
           onCheckedChange={(isChecked) => {
-            updateScore(playerIndex, roundIndex, isChecked ? round.score : 0);
+            updateScore(playerRound, round, isChecked ? round.score : 0);
           }}
           checked={(playerRound.score ?? 0) === round.score}
         />
