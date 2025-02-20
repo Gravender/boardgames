@@ -5,23 +5,90 @@ import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 
 import { utapi } from "@board-games/api/uploadthing";
-
 import {
-  gameSchema,
-  roundsSchema,
-  scoreSheetSchema,
-} from "~/stores/add-game-store";
+  insertRoundSchema,
+  insertScoreSheetSchema,
+} from "@board-games/db/schema";
+
 import { api } from "~/trpc/server";
+import { gameSchema } from "./addGameDialog";
 
 export type FormState = {
   message: string;
   fields?: Record<string, string>;
   issues?: string[];
 };
+
 const formSchema = z.object({
-  game: gameSchema,
-  scoresheet: scoreSheetSchema.or(z.null()),
-  rounds: roundsSchema,
+  game: z
+    .object({
+      name: z.string().min(1, {
+        message: "Game name is required",
+      }),
+      ownedBy: z.boolean(),
+      gameImg: z
+        .instanceof(File)
+        .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
+        .refine(
+          (file) => file.type === "image/jpeg" || file.type === "image/png",
+          "Only .jpg and .png formats are supported.",
+        )
+        .nullable(),
+      playersMin: z.number().min(1).nullable(),
+      playersMax: z.number().positive().nullable(),
+      playtimeMin: z.number().min(1).positive().nullable(),
+      playtimeMax: z.number().positive().nullable(),
+      yearPublished: z
+        .number()
+        .min(1900)
+        .max(new Date().getFullYear())
+        .nullable(),
+    })
+    .superRefine((values, ctx) => {
+      if (
+        values.playersMin &&
+        values.playersMax &&
+        values.playersMin > values.playersMax
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Players min must be less than or equal to players max.",
+          path: ["playersMin"],
+        });
+      }
+      if (
+        values.playtimeMin &&
+        values.playtimeMax &&
+        values.playtimeMin > values.playtimeMax
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Playtime min must be less than or equal to playtime max.",
+          path: ["playtimeMin"],
+        });
+      }
+    }),
+  scoresheet: insertScoreSheetSchema
+    .omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true,
+      userId: true,
+      type: true,
+      gameId: true,
+    })
+    .required({ name: true })
+    .or(z.null()),
+  rounds: z.array(
+    insertRoundSchema
+      .omit({
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        scoresheetId: true,
+      })
+      .required({ name: true }),
+  ),
 });
 export async function addGameSubmitAction(data: FormData) {
   const formData = Object.fromEntries(data);

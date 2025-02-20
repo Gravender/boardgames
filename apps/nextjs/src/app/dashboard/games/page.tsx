@@ -32,12 +32,14 @@ function GamesContentFallback() {
 
 export default async function Page() {
   return (
-    <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
-      <Suspense fallback={<GamesContentFallback />}>
-        <GamesContent />
-      </Suspense>
-      <div className="absolute bottom-4 right-6 z-10 sm:right-10">
-        <AddGameDialog />
+    <div className="flex w-full items-center justify-center">
+      <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
+        <Suspense fallback={<GamesContentFallback />}>
+          <GamesContent />
+        </Suspense>
+        <div className="absolute bottom-4 right-6 z-10 sm:right-10">
+          <AddGameDialog />
+        </div>
       </div>
     </div>
   );

@@ -46,7 +46,7 @@ export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
         searchPlaceholder="Search Games..."
       />
       <ScrollArea className="h-[75vh] sm:h-[80vh]">
-        <Table className="hidden pb-14 xs:block">
+        <Table className="hidden pb-14 xs:table">
           <TableBody className="flex w-full flex-col gap-2 p-4">
             {games.map((game) => {
               const players = game.players as {
@@ -89,7 +89,9 @@ export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
                         )}
                       </div>
                       <div className="flex flex-col gap-1 p-2">
-                        <h2 className="text-xl font-bold">{game.name}</h2>
+                        <h2 className="w-56 truncate text-xl font-bold sm:w-72 md:w-80">
+                          {game.name}
+                        </h2>
                         <div className="flex min-w-20 items-center gap-1">
                           <span>Last Played:</span>
                           <span
@@ -199,7 +201,7 @@ export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
                     <div className="flex w-full items-center justify-between">
                       <Link href={`/dashboard/games/${game.id}`}>
                         <div className="flex flex-col items-start">
-                          <h2 className="text-md text-left font-semibold">
+                          <h2 className="text-md max-w-40 truncate text-left font-semibold">
                             {game.name}
                           </h2>
                           <div className="flex min-w-20 items-center gap-1">
