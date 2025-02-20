@@ -40,8 +40,8 @@ export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
         items={data}
         setItems={setGames}
         sortFields={["lastPlayed", "name", "games"]}
-        defaultSortField="lastPlayed"
-        defaultSortOrder="asc"
+        defaultSortField={{ primary: "lastPlayed", fallback: "createdAt" }}
+        defaultSortOrder="desc"
         searchField="name"
         searchPlaceholder="Search Games..."
       />

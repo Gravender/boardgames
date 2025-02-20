@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { CardHeader, CardTitle } from "@board-games/ui/card";
 import { Table, TableBody } from "@board-games/ui/table";
 
-import { api, HydrateClient } from "~/trpc/server";
+import { api } from "~/trpc/server";
 import { AddGameDialog } from "./_components/addGameDialog";
 import { Games, GameSkeleton } from "./_components/games";
 
@@ -32,15 +32,13 @@ function GamesContentFallback() {
 
 export default async function Page() {
   return (
-    <HydrateClient>
-      <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
-        <Suspense fallback={<GamesContentFallback />}>
-          <GamesContent />
-        </Suspense>
-        <div className="absolute bottom-4 right-6 z-10 sm:right-10">
-          <AddGameDialog />
-        </div>
+    <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
+      <Suspense fallback={<GamesContentFallback />}>
+        <GamesContent />
+      </Suspense>
+      <div className="absolute bottom-4 right-6 z-10 sm:right-10">
+        <AddGameDialog />
       </div>
-    </HydrateClient>
+    </div>
   );
 }
