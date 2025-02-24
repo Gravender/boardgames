@@ -1,7 +1,13 @@
+import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  ScrollView,
+  TextInput,
+  View,
+} from "react-native";
 import { useRouter } from "expo-router";
-import { FlashList } from "@shopify/flash-list";
 import { z } from "zod";
 
 import {
@@ -19,14 +25,8 @@ import { api } from "~/utils/api";
 import { Button } from "./ui/button";
 import { CardFooter } from "./ui/card";
 import { Checkbox } from "./ui/checkbox";
-import { Input } from "./ui/input";
-import {
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "./ui/table";
+import { Separator } from "./ui/separator";
+import { TableCell, TableHead, TableRow } from "./ui/table";
 import { Text } from "./ui/text";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
@@ -43,6 +43,7 @@ const ManualWinnerPlayerSchema = z
     }),
   )
   .min(1);
+
 export function MatchScoresheet({ data }: { data: Match }) {
   const [players, setPlayers] = useState<Player[]>(() => [...data.players]);
   const [manualWinners, setManualWinners] = useState<
@@ -55,8 +56,35 @@ export function MatchScoresheet({ data }: { data: Match }) {
   const [isRunning, setIsRunning] = useState(data.running);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const leftRef = useRef<ScrollView | null>(null);
-  const rightRef = useRef<ScrollView | null>(null);
+  const topScrollViewRef = useRef<ScrollView>(null);
+  const bottomScrollViewRef = useRef<ScrollView>(null);
+
+  const [isTopScrollEnabled, setIsTopScrollEnabled] = useState(true);
+  const [isBottomScrollEnabled, setIsBottomScrollEnabled] = useState(true);
+
+  const handleTopScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (isTopScrollEnabled) {
+      setIsBottomScrollEnabled(false);
+      const offsetX = event.nativeEvent.contentOffset.x;
+      bottomScrollViewRef.current?.scrollTo({ x: offsetX, animated: false });
+
+      // Re-enable bottom scroll after syncing
+      setTimeout(() => setIsBottomScrollEnabled(true), 50);
+    }
+  };
+
+  const handleBottomScroll = (
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
+    if (isBottomScrollEnabled) {
+      setIsTopScrollEnabled(false);
+      const offsetX = event.nativeEvent.contentOffset.x;
+      topScrollViewRef.current?.scrollTo({ x: offsetX, animated: false });
+
+      // Re-enable top scroll after syncing
+      setTimeout(() => setIsTopScrollEnabled(true), 50);
+    }
+  };
 
   const utils = api.useUtils();
   const router = useRouter();
@@ -232,133 +260,128 @@ export function MatchScoresheet({ data }: { data: Match }) {
 
   return (
     <View className="flex flex-col gap-2" style={{ flex: 1, height: "100%" }}>
-      <View style={{ height: "80%", flexDirection: "row" }}>
-        <View>
-          <TableHeader>
-            <TableRow className="h-14 w-28 bg-accent">
-              <TableHead className="h-14 w-28">
-                <Button size="icon"></Button>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <ScrollView
-            ref={leftRef}
-            scrollEnabled={false}
-            style={{ height: "80%" }}
-            scrollEventThrottle={16}
-            showsVerticalScrollIndicator={false}
-          >
-            <View className="flex-1">
-              <FlashList
-                data={data.scoresheet.rounds}
-                renderItem={({ item: round }) => (
-                  <RoundHeaderCell round={round} />
-                )}
-                estimatedItemSize={56}
-                keyExtractor={(item) => item.id.toString()}
-              />
-            </View>
-
-            <TableFooter>
-              <TableRow>
-                <TotalCell />
-              </TableRow>
-            </TableFooter>
-          </ScrollView>
-        </View>
-        <ScrollView
-          bounces={false}
-          horizontal={true}
-          className="w-full max-w-[100vw]"
-          showsHorizontalScrollIndicator={false}
-        >
-          <View className="w-full">
-            <TableHeader>
-              <TableRow className="h-14 bg-accent">
-                {players.map((player) => (
-                  <PlayerHeaderCell
-                    player={player}
-                    key={`${player.id}-header`}
-                  />
-                ))}
-              </TableRow>
-            </TableHeader>
+      <SafeAreaView style={{ height: "80%" }}>
+        <ScrollView stickyHeaderIndices={[0]}>
+          {/* Sticky Header */}
+          <TableRow className="h-14 bg-accent">
+            <TableHead className="w-28">
+              <Button size="icon"></Button>
+            </TableHead>
 
             <ScrollView
-              ref={rightRef}
-              onScroll={(e) => {
-                leftRef.current?.scrollTo({
-                  y: e.nativeEvent.contentOffset.y,
-                  animated: false,
-                });
-              }}
+              horizontal
+              ref={topScrollViewRef}
+              onScroll={handleTopScroll}
               scrollEventThrottle={16}
-              style={{ height: "80%" }}
-              showsVerticalScrollIndicator={false}
+              showsHorizontalScrollIndicator={false}
             >
-              <View className="flex-1">
-                <FlashList
-                  data={data.scoresheet.rounds}
-                  renderItem={({ item: round }) => (
-                    <TableRow className="h-20">
-                      {players.map((player) => {
-                        const roundPlayer = player.rounds.find(
-                          (r) => r.roundId === round.id,
-                        );
-                        if (roundPlayer === undefined) return null;
-                        return (
-                          <PlayerRoundCell
-                            key={`${player.id}-${round.id}`}
-                            playerRound={roundPlayer}
-                            round={round}
-                            updateScore={handleScoreChange}
-                          />
-                        );
-                      })}
-                    </TableRow>
-                  )}
-                  estimatedItemSize={80}
-                  keyExtractor={(item) => item.id.toString()}
-                />
-              </View>
-              <TableFooter>
+              {data.players.map((player, playerIndex) => {
+                if (playerIndex > 0 && playerIndex < players.length) {
+                  return (
+                    <View
+                      key={`${player.id}-header}`}
+                      className="flex flex-row items-center justify-center"
+                    >
+                      <Separator orientation="vertical" className="h-4" />
+                      <PlayerHeaderCell player={player} />
+                    </View>
+                  );
+                } else {
+                  return (
+                    <PlayerHeaderCell
+                      key={`${player.id}-header}`}
+                      player={player}
+                    />
+                  );
+                }
+              })}
+            </ScrollView>
+          </TableRow>
+
+          <View className="flex flex-row">
+            {/* Rounds Table */}
+            <View className="shadow-offset-[4px,0] bg-card shadow-lg shadow-black/80">
+              {data.scoresheet.rounds.map((round) => (
                 <TableRow
-                  className={cn(
-                    data.scoresheet.roundsScore === "Manual" ? "h-20" : "h-14",
-                  )}
+                  key={round.id}
+                  className="flex h-16 flex-row items-center justify-center"
                 >
-                  <FlashList
-                    data={players}
-                    renderItem={({ item: player }) => {
-                      if (data.scoresheet.roundsScore === "Manual") {
+                  <RoundHeaderCell round={round} />
+                </TableRow>
+              ))}
+              <TableRow className="flex h-16 flex-row items-center justify-center">
+                <TotalCell />
+              </TableRow>
+            </View>
+            <ScrollView
+              horizontal
+              ref={bottomScrollViewRef}
+              onScroll={handleBottomScroll}
+              scrollEventThrottle={16}
+              showsHorizontalScrollIndicator={false}
+            >
+              <View>
+                {data.scoresheet.rounds.map((round) => (
+                  <TableRow key={round.id} className="h-16">
+                    {players.map((player, playerIndex) => {
+                      const roundPlayer = player.rounds.find(
+                        (r) => r.roundId === round.id,
+                      );
+                      if (!roundPlayer) return null;
+                      if (playerIndex > 0 && playerIndex < players.length) {
                         return (
-                          <FooterManualScore
-                            key={`${player.id}-total`}
-                            player={player}
-                            updatePlayerScore={updatePlayerScore}
-                          />
+                          <View
+                            key={`${player.id}-${round.id}`}
+                            className="flex flex-row items-center justify-center"
+                          >
+                            <Separator
+                              orientation="vertical"
+                              className="h-8 font-bold"
+                            />
+                            <PlayerRoundCell
+                              playerRound={roundPlayer}
+                              round={round}
+                              updateScore={handleScoreChange}
+                            />
+                          </View>
                         );
                       }
-                      const total = calculateFinalScore(
-                        player.rounds.map((round) => ({
-                          score: round.score ?? 0,
-                        })),
-                        data.scoresheet,
+                      return (
+                        <PlayerRoundCell
+                          key={`${player.id}-${round.id}`}
+                          playerRound={roundPlayer}
+                          round={round}
+                          updateScore={handleScoreChange}
+                        />
                       );
-                      return <FooterTotalCell total={total} />;
-                    }}
-                    estimatedItemSize={
-                      data.scoresheet.roundsScore === "Manual" ? 80 : 56
+                    })}
+                  </TableRow>
+                ))}
+                <TableRow className="h-16 bg-accent/50">
+                  {players.map((player) => {
+                    if (data.scoresheet.roundsScore === "Manual") {
+                      return (
+                        <FooterManualScore
+                          key={player.id}
+                          player={player}
+                          updatePlayerScore={updatePlayerScore}
+                        />
+                      );
                     }
-                    keyExtractor={(item) => item.id.toString()}
-                  />
+                    const total = calculateFinalScore(
+                      player.rounds.map((round) => ({
+                        score: round.score ?? 0,
+                      })),
+                      data.scoresheet,
+                    );
+                    return <FooterTotalCell key={player.id} total={total} />;
+                  })}
                 </TableRow>
-              </TableFooter>
+              </View>
             </ScrollView>
           </View>
         </ScrollView>
-      </View>
+      </SafeAreaView>
       <MatchFooter
         duration={duration}
         isRunning={isRunning}
@@ -424,18 +447,18 @@ const RoundHeaderCell = ({ round }: { round: Round }) => {
   return (
     <TableCell
       className={cn(
-        "h-20 w-28 items-center justify-center bg-accent/90 font-semibold text-muted-foreground",
+        "w-28 items-center justify-center font-semibold text-muted-foreground",
         round.color && "text-slate-600 hover:opacity-50 hover:dark:opacity-80",
       )}
     >
-      <Text className="text-center">{round.name}</Text>
+      <Text className="text-center text-sm">{round.name}</Text>
     </TableCell>
   );
 };
 const PlayerHeaderCell = ({ player }: { player: Match["players"][number] }) => {
   return (
-    <TableHead className="h-14 min-w-20 flex-1 items-center justify-center text-center">
-      <Text className="flex w-20 flex-wrap">{player.name}</Text>
+    <TableHead className="flex w-28 min-w-20 flex-1 items-center justify-center text-center">
+      <Text className="flex w-20 flex-wrap text-sm">{player.name}</Text>
     </TableHead>
   );
 };
@@ -453,9 +476,9 @@ const PlayerRoundCell = ({
   ) => void;
 }) => {
   return (
-    <TableCell className="flex min-w-20 flex-1 flex-row items-center justify-center">
+    <TableCell className="flex w-28 min-w-20 flex-1 flex-row items-center justify-center">
       {round.type === "Numeric" ? (
-        <Input
+        <TextInput
           value={`${playerRound.score ?? ""}`}
           onChangeText={(text) => {
             const parsed = parseInt(text);
@@ -466,7 +489,8 @@ const PlayerRoundCell = ({
             }
           }}
           keyboardType="numeric"
-          className="min-h-5 min-w-5 border-none bg-transparent text-center outline-none"
+          className="min-h-5 w-full min-w-5 border-none bg-transparent text-center outline-none"
+          style={{ outline: "none", outlineColor: "transparent" }}
         />
       ) : (
         <Checkbox
@@ -482,7 +506,7 @@ const PlayerRoundCell = ({
 const TotalCell = () => {
   return (
     <TableCell className="w-28 bg-accent/90 font-bold text-muted-foreground">
-      <Text className="text-foreground">Total</Text>
+      <Text className="text-sm text-foreground">Total</Text>
     </TableCell>
   );
 };
@@ -490,7 +514,7 @@ const FooterTotalCell = ({ total }: { total: number }) => {
   return (
     <TableCell className="min-w-20 flex-1">
       <View className="flex flex-row items-center justify-center">
-        <Text className="text-center">
+        <Text className="text-center text-sm">
           {total === Infinity ? 0 : total === -Infinity ? 0 : total}
         </Text>
       </View>
@@ -505,8 +529,8 @@ const FooterManualScore = ({
   updatePlayerScore: (player: Player, score: number | null) => void;
 }) => {
   return (
-    <TableCell key={`${player.id}-total`} className="min-w-20 flex-1">
-      <Input
+    <TableCell className="min-w-20 flex-1">
+      <TextInput
         value={`${player.score ?? ""}`}
         onChangeText={(text: string) => {
           const score = Number(text);
@@ -517,7 +541,8 @@ const FooterManualScore = ({
           }
         }}
         keyboardType="numeric"
-        className="min-h-5 min-w-5 border-none bg-transparent text-center"
+        className="min-h-5 min-w-5 text-center"
+        style={{ outline: "none", outlineColor: "transparent" }}
       />
     </TableCell>
   );
