@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
@@ -21,8 +21,6 @@ import { CardFooter } from "./ui/card";
 import { Checkbox } from "./ui/checkbox";
 import { Input } from "./ui/input";
 import {
-  Table,
-  TableBody,
   TableCell,
   TableFooter,
   TableHead,
@@ -32,7 +30,9 @@ import {
 import { Text } from "./ui/text";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
+type ScoreSheet = Match["scoresheet"];
 type Player = Match["players"][number];
+type Round = Match["scoresheet"]["rounds"][number];
 const ManualWinnerPlayerSchema = z
   .array(
     z.object({
@@ -231,50 +231,60 @@ export function MatchScoresheet({ data }: { data: Match }) {
   };
 
   return (
-    <View className="flex flex-col gap-2" style={{ height: "100%" }}>
-      <ScrollView style={{ flexDirection: "row", height: "80%" }}>
-        <View className="rounded-l-lg">
-          <Table>
-            <TableHeader>
-              <TableRow className="h-14 w-28 bg-accent">
-                <TableHead>
-                  <Button size="icon"></Button>
-                </TableHead>
+    <View className="flex flex-col gap-2" style={{ flex: 1, height: "100%" }}>
+      <View style={{ height: "80%", flexDirection: "row" }}>
+        <View>
+          <TableHeader>
+            <TableRow className="h-14 w-28 bg-accent">
+              <TableHead className="h-14 w-28">
+                <Button size="icon"></Button>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <ScrollView
+            ref={leftRef}
+            scrollEnabled={false}
+            style={{ height: "80%" }}
+            scrollEventThrottle={16}
+            showsVerticalScrollIndicator={false}
+          >
+            <View className="flex-1">
+              <FlashList
+                data={data.scoresheet.rounds}
+                renderItem={({ item: round }) => (
+                  <RoundHeaderCell round={round} />
+                )}
+                estimatedItemSize={56}
+                keyExtractor={(item) => item.id.toString()}
+              />
+            </View>
+
+            <TableFooter>
+              <TableRow>
+                <TotalCell />
               </TableRow>
-            </TableHeader>
-            <ScrollView
-              ref={leftRef}
-              scrollEnabled={false}
-              style={{ height: "80%" }}
-            >
-              <TableBody>
-                {data.scoresheet.rounds.map((round) => (
-                  <TableRow key={`${round.id}-name`} className="h-20">
-                    <RoundHeaderCell round={round} />
-                  </TableRow>
-                ))}
-              </TableBody>
-              <TableFooter className="h-14">
-                <TableRow>
-                  <TotalCell />
-                </TableRow>
-              </TableFooter>
-            </ScrollView>
-          </Table>
+            </TableFooter>
+          </ScrollView>
         </View>
         <ScrollView
           bounces={false}
           horizontal={true}
           className="w-full max-w-[100vw]"
+          showsHorizontalScrollIndicator={false}
         >
-          <Table>
+          <View className="w-full">
             <TableHeader>
               <TableRow className="h-14 bg-accent">
                 {players.map((player) => (
-                  <PlayerHeaderCell key={player.id} player={player} />
+                  <PlayerHeaderCell
+                    player={player}
+                    key={`${player.id}-header`}
+                  />
                 ))}
               </TableRow>
             </TableHeader>
+
             <ScrollView
               ref={rightRef}
               onScroll={(e) => {
@@ -283,20 +293,23 @@ export function MatchScoresheet({ data }: { data: Match }) {
                   animated: false,
                 });
               }}
-              style={{ height: "80%", marginTop: -1 }}
+              scrollEventThrottle={16}
+              style={{ height: "80%" }}
+              showsVerticalScrollIndicator={false}
             >
-              <TableBody>
-                {data.scoresheet.rounds.map((round, roundIndex) => {
-                  return (
-                    <TableRow
-                      key={round.id}
-                      className={cn("h-20 active:bg-secondary")}
-                    >
-                      {players.map((player, playerIndex) => {
-                        const roundPlayer = player.rounds[roundIndex];
+              <View className="flex-1">
+                <FlashList
+                  data={data.scoresheet.rounds}
+                  renderItem={({ item: round }) => (
+                    <TableRow className="h-20">
+                      {players.map((player) => {
+                        const roundPlayer = player.rounds.find(
+                          (r) => r.roundId === round.id,
+                        );
                         if (roundPlayer === undefined) return null;
                         return (
                           <PlayerRoundCell
+                            key={`${player.id}-${round.id}`}
                             playerRound={roundPlayer}
                             round={round}
                             updateScore={handleScoreChange}
@@ -304,40 +317,48 @@ export function MatchScoresheet({ data }: { data: Match }) {
                         );
                       })}
                     </TableRow>
-                  );
-                })}
-              </TableBody>
+                  )}
+                  estimatedItemSize={80}
+                  keyExtractor={(item) => item.id.toString()}
+                />
+              </View>
               <TableFooter>
-                <TableRow className="h-14">
-                  {players.map((player) => {
-                    if (data.scoresheet.roundsScore === "Manual") {
-                      return (
-                        <FooterManualScore
-                          key={`${player.id}-total`}
-                          player={player}
-                          updatePlayerScore={updatePlayerScore}
-                        />
+                <TableRow
+                  className={cn(
+                    data.scoresheet.roundsScore === "Manual" ? "h-20" : "h-14",
+                  )}
+                >
+                  <FlashList
+                    data={players}
+                    renderItem={({ item: player }) => {
+                      if (data.scoresheet.roundsScore === "Manual") {
+                        return (
+                          <FooterManualScore
+                            key={`${player.id}-total`}
+                            player={player}
+                            updatePlayerScore={updatePlayerScore}
+                          />
+                        );
+                      }
+                      const total = calculateFinalScore(
+                        player.rounds.map((round) => ({
+                          score: round.score ?? 0,
+                        })),
+                        data.scoresheet,
                       );
+                      return <FooterTotalCell total={total} />;
+                    }}
+                    estimatedItemSize={
+                      data.scoresheet.roundsScore === "Manual" ? 80 : 56
                     }
-                    const total = calculateFinalScore(
-                      player.rounds.map((round) => ({
-                        score: round.score ?? 0,
-                      })),
-                      data.scoresheet,
-                    );
-                    return (
-                      <FooterTotalCell
-                        key={`${player.id}-total`}
-                        total={total}
-                      />
-                    );
-                  })}
+                    keyExtractor={(item) => item.id.toString()}
+                  />
                 </TableRow>
               </TableFooter>
             </ScrollView>
-          </Table>
+          </View>
         </ScrollView>
-      </ScrollView>
+      </View>
       <MatchFooter
         duration={duration}
         isRunning={isRunning}
@@ -399,15 +420,11 @@ const MatchFooter = ({
   );
 };
 
-const RoundHeaderCell = ({
-  round,
-}: {
-  round: Match["scoresheet"]["rounds"][number];
-}) => {
+const RoundHeaderCell = ({ round }: { round: Round }) => {
   return (
     <TableCell
       className={cn(
-        "w-28 items-center justify-center bg-accent/90 font-semibold text-muted-foreground",
+        "h-20 w-28 items-center justify-center bg-accent/90 font-semibold text-muted-foreground",
         round.color && "text-slate-600 hover:opacity-50 hover:dark:opacity-80",
       )}
     >
@@ -417,7 +434,7 @@ const RoundHeaderCell = ({
 };
 const PlayerHeaderCell = ({ player }: { player: Match["players"][number] }) => {
   return (
-    <TableHead className="min-w-20 flex-1 items-center justify-center text-center">
+    <TableHead className="h-14 min-w-20 flex-1 items-center justify-center text-center">
       <Text className="flex w-20 flex-wrap">{player.name}</Text>
     </TableHead>
   );
@@ -428,10 +445,10 @@ const PlayerRoundCell = ({
   updateScore,
 }: {
   playerRound: Player["rounds"][number];
-  round: Match["scoresheet"]["rounds"][number];
+  round: Round;
   updateScore: (
     PlayerRound: Player["rounds"][number],
-    Round: Match["scoresheet"]["rounds"][number],
+    Round: Round,
     newScore: number | null,
   ) => void;
 }) => {
