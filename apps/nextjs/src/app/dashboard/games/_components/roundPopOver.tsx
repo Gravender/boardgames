@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import type { z } from "zod";
 import { Settings } from "lucide-react";
 import { useFieldArray } from "react-hook-form";
 
@@ -24,7 +25,7 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 
-import type { formSchemaType } from "../page";
+import type { scoreSheetWithRoundsFormSchema } from "./addGameDialog";
 import { NumberInput } from "~/components/number-input";
 
 export function RoundPopOver({
@@ -32,7 +33,7 @@ export function RoundPopOver({
   form,
 }: {
   index: number;
-  form: UseFormReturn<formSchemaType>;
+  form: UseFormReturn<z.infer<typeof scoreSheetWithRoundsFormSchema>>;
 }) {
   const { fields, update } = useFieldArray({
     name: "rounds",

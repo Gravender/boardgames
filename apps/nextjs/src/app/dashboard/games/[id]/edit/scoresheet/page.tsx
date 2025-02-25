@@ -8,6 +8,10 @@ import { Copy, Minus, Plus, Trash } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
+import {
+  insertRoundSchema,
+  insertScoreSheetSchema,
+} from "@board-games/db/schema";
 import { Button } from "@board-games/ui/button";
 import {
   Card,
@@ -37,9 +41,28 @@ import { Separator } from "@board-games/ui/separator";
 
 import { GradientPicker } from "~/components/color-picker";
 import { useEditGameStore } from "~/providers/edit-game-provider";
-import { roundsSchema, scoreSheetSchema } from "~/stores/add-game-store";
 import { RoundPopOver } from "./_components/roundPopOver";
 
+const scoreSheetSchema = insertScoreSheetSchema
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    userId: true,
+    type: true,
+    gameId: true,
+  })
+  .required({ name: true });
+const roundsSchema = z.array(
+  insertRoundSchema
+    .omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true,
+      scoresheetId: true,
+    })
+    .required({ name: true }),
+);
 const formSchema = z.object({
   scoresheet: scoreSheetSchema,
   rounds: roundsSchema,

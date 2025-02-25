@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, count, eq, inArray, max, sql } from "drizzle-orm";
+import { and, count, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import {
@@ -335,6 +335,7 @@ export const gameRouter = createTRPCRouter({
       .select({
         id: game.id,
         name: game.name,
+        createdAt: game.createdAt,
         players: {
           min: game.playersMin,
           max: game.playersMax,
@@ -353,12 +354,23 @@ export const gameRouter = createTRPCRouter({
       .where(and(eq(game.userId, ctx.userId), eq(game.deleted, false)))
       .leftJoin(image, eq(game.imageId, image.id))
       .leftJoin(match, eq(game.id, match.gameId))
-      .groupBy(game.id, image.url)
-      .orderBy(max(match.date), game.name);
-    return games.map((returnedGame) => ({
-      ...returnedGame,
-      lastPlayed: returnedGame.games < 1 ? null : returnedGame.lastPlayed,
-    }));
+      .groupBy(game.id, image.url);
+    return games
+      .map((returnedGame) => ({
+        ...returnedGame,
+        lastPlayed: returnedGame.games < 1 ? null : returnedGame.lastPlayed,
+      }))
+      .toSorted((a, b) => {
+        if (a.lastPlayed && b.lastPlayed) {
+          return b.lastPlayed.getTime() - a.lastPlayed.getTime();
+        } else if (a.lastPlayed && !b.lastPlayed) {
+          return b.createdAt.getTime() - a.lastPlayed.getTime();
+        } else if (!a.lastPlayed && b.lastPlayed) {
+          return b.lastPlayed.getTime() - a.createdAt.getTime();
+        } else {
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        }
+      });
   }),
 
   updateGame: protectedUserProcedure

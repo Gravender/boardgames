@@ -1,14 +1,10 @@
 {
-  "name": "@board-games/api",
-  "version": "0.1.0",
+  "name": "@board-games/shared",
   "private": true,
+  "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./src/index.ts"
-    },
-    "./uploadthing": "./src/uploadthing.ts"
+    ".": "./src/index.ts"
   },
   "license": "MIT",
   "scripts": {
@@ -21,9 +17,6 @@
   },
   "dependencies": {
     "@board-games/db": "workspace:*",
-    "@trpc/server": "catalog:",
-    "superjson": "2.2.2",
-    "uploadthing": "^7.4.1",
     "zod": "catalog:"
   },
   "devDependencies": {

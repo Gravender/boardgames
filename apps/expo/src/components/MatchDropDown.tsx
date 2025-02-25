@@ -17,10 +17,12 @@ import { Text } from "~/components/ui/text";
 import { MoreVertical } from "~/lib/icons/MoreVertical";
 import { api } from "~/utils/api";
 
-export function GamesDropDown({
+export function MatchDropDown({
+  gameId,
   data,
 }: {
-  data: RouterOutputs["game"]["getGames"][0];
+  gameId: NonNullable<RouterOutputs["game"]["getGame"]>["id"];
+  data: NonNullable<RouterOutputs["game"]["getGame"]>["matches"][number];
 }) {
   const insets = useSafeAreaInsets();
   const contentInsets = {
@@ -46,14 +48,12 @@ export function GamesDropDown({
   }, []);
 
   const utils = api.useUtils();
-  const deleteGame = api.game.deleteGame.useMutation({
+  const deleteGame = api.match.deleteMatch.useMutation({
     onSuccess: async () => {
       await Promise.all([
         utils.game.getGames.invalidate(),
-        utils.game.getGame.invalidate({ id: data.id }),
-        utils.game.getEditGame.invalidate({ id: data.id }),
+        utils.game.getGame.invalidate({ id: gameId }),
         utils.game.getGameStats.invalidate({ id: data.id }),
-        utils.game.getGameName.invalidate({ id: data.id }),
         utils.game.getGameMetaData.invalidate({ id: data.id }),
         utils.player.invalidate(),
         utils.dashboard.invalidate(),
@@ -85,14 +85,24 @@ export function GamesDropDown({
           <DropdownMenuItem>
             <Text>Edit</Text>
           </DropdownMenuItem>
-          <Link href={`/games/${data.id}/stats`} asChild>
+          <Link
+            href={{
+              pathname: "/games/[id]/[matchId]/scoresheet",
+              params: { id: gameId, matchId: data.id },
+            }}
+            asChild
+          >
             <DropdownMenuItem>
-              <Text>Stats</Text>
+              <Text>ScoreSheet</Text>
             </DropdownMenuItem>
           </Link>
-          <DropdownMenuItem>
-            <Text>Rules</Text>
-          </DropdownMenuItem>
+          {data.finished && (
+            <Link href={`/games/${gameId}/${data.id}/summary`} asChild>
+              <DropdownMenuItem>
+                <Text>Summary</Text>
+              </DropdownMenuItem>
+            </Link>
+          )}
           <DropdownMenuItem onPress={() => onDelete()}>
             <Text className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground">
               Delete

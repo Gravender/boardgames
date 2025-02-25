@@ -37,6 +37,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   experiments: {
     typedRoutes: true,
   },
-  plugins: ["expo-router", "expo-secure-store", "expo-font"],
+  plugins: [
+    "expo-router",
+    "expo-secure-store",
+    "expo-font",
+    [
+      "expo-image-picker",
+      {
+        photosPermission:
+          "The app accesses your photos to upload player avatars and game images.",
+      },
+    ],
+  ],
   newArchEnabled: true,
 });

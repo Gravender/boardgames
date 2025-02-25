@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { format } from "date-fns/format";
 import { Dices } from "lucide-react";
 
+import { formatDuration } from "@board-games/shared";
 import {
   Card,
   CardContent,
@@ -13,7 +14,6 @@ import {
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
 
-import { formatDuration } from "~/lib/utils";
 import { api } from "~/trpc/server";
 import { PlayerDetails } from "./_components/playerDetails";
 

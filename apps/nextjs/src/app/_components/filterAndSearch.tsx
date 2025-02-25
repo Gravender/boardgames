@@ -24,7 +24,7 @@ export function FilterAndSearch<T>({
   items: T[];
   setItems: (items: T[]) => void;
   sortFields: (keyof T)[];
-  defaultSortField: keyof T;
+  defaultSortField: keyof T | { primary: keyof T; fallback: keyof T };
   defaultSortOrder: SortOrder;
   searchField: keyof T | undefined;
   searchPlaceholder: string | undefined;
@@ -44,10 +44,34 @@ export function FilterAndSearch<T>({
       });
     }
 
+    const getSortValue = (
+      item: T,
+      field: keyof T | { primary: keyof T; fallback: keyof T },
+    ) => {
+      if (typeof field === "object") {
+        // If primary field is null/undefined, use fallback
+        return item[field.primary] ?? item[field.fallback];
+      }
+      return item[field];
+    };
+
+    const compareValues = (a: T[keyof T], b: T[keyof T]): number => {
+      if (a == null && b == null) return 0;
+      if (a == null) return sortOrder === "asc" ? -1 : 1;
+      if (b == null) return sortOrder === "asc" ? 1 : -1;
+
+      if (typeof a === "number" && typeof b === "number") return a - b;
+      if (a instanceof Date && b instanceof Date)
+        return a.getTime() - b.getTime();
+
+      return String(a).localeCompare(String(b));
+    };
+
     filtered.sort((a, b) => {
-      if (a[sortField] < b[sortField]) return sortOrder === "asc" ? -1 : 1;
-      if (a[sortField] > b[sortField]) return sortOrder === "asc" ? 1 : -1;
-      return 0;
+      const valueA = getSortValue(a, sortField);
+      const valueB = getSortValue(b, sortField);
+
+      return compareValues(valueA, valueB) * (sortOrder === "asc" ? 1 : -1);
     });
 
     return filtered;
@@ -84,7 +108,9 @@ export function FilterAndSearch<T>({
         </Button>
         <SortingOptions
           sortFields={sortFields}
-          sortField={sortField}
+          sortField={
+            typeof sortField === "object" ? sortField.primary : sortField
+          }
           setSortField={setSortField}
         />
       </div>

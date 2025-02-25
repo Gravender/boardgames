@@ -1,6 +1,6 @@
 import type { UseFormReturn } from "react-hook-form";
 import React, { Fragment } from "react";
-import { Platform, SafeAreaView } from "react-native";
+import { Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFieldArray } from "react-hook-form";
 
@@ -102,7 +102,7 @@ function Content({
   return (
     <Fragment>
       <Form {...form}>
-        <SafeAreaView className="flex flex-col gap-4">
+        <View className="flex flex-col gap-4">
           <FormField
             control={form.control}
             name={`rounds.${index}.type`}
@@ -116,7 +116,7 @@ function Content({
                       .pick({ type: true })
                       .parse({ type: value?.value });
                     update(index, {
-                      ...fields[index],
+                      color: fields[index]?.color,
                       name: fields[index]?.name ?? "",
                       type: safeValue.type,
                     });
@@ -178,7 +178,7 @@ function Content({
               )}
             />
           )}
-        </SafeAreaView>
+        </View>
       </Form>
     </Fragment>
   );

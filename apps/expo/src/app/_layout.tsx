@@ -108,6 +108,27 @@ export default function RootLayout() {
                     ),
                   }}
                 />
+                <Drawer.Screen
+                  name="games/[id]/[matchId]/index"
+                  options={{
+                    drawerItemStyle: { display: "none" }, // Hide from drawer
+                    title: "Match Details",
+                  }}
+                />
+                <Drawer.Screen
+                  name="games/[id]/[matchId]/scoresheet"
+                  options={{
+                    drawerItemStyle: { display: "none" }, // Hide from drawer
+                    title: "Match Scoresheet",
+                  }}
+                />
+                <Drawer.Screen
+                  name="games/[id]/index"
+                  options={{
+                    drawerItemStyle: { display: "none" }, // Hide from drawer
+                    title: "Game Details",
+                  }}
+                />
               </Drawer>
               <PortalHost />
             </GestureHandlerRootView>

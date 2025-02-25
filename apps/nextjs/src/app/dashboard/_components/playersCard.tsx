@@ -3,10 +3,9 @@
 import { User } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
+import { formatDuration } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
-
-import { formatDuration } from "~/lib/utils";
 
 export function PlayersCard({
   data,

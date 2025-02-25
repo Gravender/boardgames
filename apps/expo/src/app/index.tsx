@@ -8,6 +8,7 @@ import { Text } from "~/components/ui/text";
 export default function Index() {
   const { user } = useUser();
   const { signOut } = useClerk();
+
   return (
     <Card className="bg-card">
       <SignedIn>
