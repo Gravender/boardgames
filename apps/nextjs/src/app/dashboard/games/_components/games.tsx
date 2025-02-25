@@ -24,12 +24,11 @@ import { api } from "~/trpc/react";
 import { AddGameDialog } from "./addGameDialog";
 import { GamesDropDown } from "./gamesDropDown";
 
-export function Games() {
-  const [data] = api.game.getGames.useSuspenseQuery();
+export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
   const [games, setGames] = useState<RouterOutputs["game"]["getGames"]>(data);
 
   return (
-    <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
+    <>
       <CardHeader>
         <CardTitle>Games</CardTitle>
 
@@ -41,13 +40,13 @@ export function Games() {
         items={data}
         setItems={setGames}
         sortFields={["lastPlayed", "name", "games"]}
-        defaultSortField="lastPlayed"
-        defaultSortOrder="asc"
+        defaultSortField={{ primary: "lastPlayed", fallback: "createdAt" }}
+        defaultSortOrder="desc"
         searchField="name"
         searchPlaceholder="Search Games..."
       />
       <ScrollArea className="h-[75vh] sm:h-[80vh]">
-        <Table className="hidden pb-14 xs:block">
+        <Table className="hidden pb-14 xs:table">
           <TableBody className="flex w-full flex-col gap-2 p-4">
             {games.map((game) => {
               const players = game.players as {
@@ -90,7 +89,9 @@ export function Games() {
                         )}
                       </div>
                       <div className="flex flex-col gap-1 p-2">
-                        <h2 className="text-xl font-bold">{game.name}</h2>
+                        <h2 className="w-56 truncate text-xl font-bold sm:w-72 md:w-80">
+                          {game.name}
+                        </h2>
                         <div className="flex min-w-20 items-center gap-1">
                           <span>Last Played:</span>
                           <span
@@ -200,7 +201,7 @@ export function Games() {
                     <div className="flex w-full items-center justify-between">
                       <Link href={`/dashboard/games/${game.id}`}>
                         <div className="flex flex-col items-start">
-                          <h2 className="text-md text-left font-semibold">
+                          <h2 className="text-md max-w-40 truncate text-left font-semibold">
                             {game.name}
                           </h2>
                           <div className="flex min-w-20 items-center gap-1">
@@ -275,10 +276,7 @@ export function Games() {
           })}
         </div>
       </ScrollArea>
-      <div className="absolute bottom-4 right-6 z-10 sm:right-10">
-        <AddGameDialog />
-      </div>
-    </div>
+    </>
   );
 }
 export function GameSkeleton() {
