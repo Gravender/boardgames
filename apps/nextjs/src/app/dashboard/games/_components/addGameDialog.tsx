@@ -1,5 +1,6 @@
 "use client";
 
+import type { SubmitHandler, UseFormReturn } from "react-hook-form";
 import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,12 +14,7 @@ import {
   Table,
   Trash,
 } from "lucide-react";
-import {
-  SubmitHandler,
-  useFieldArray,
-  useForm,
-  UseFormReturn,
-} from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import {
@@ -244,9 +240,7 @@ const AddGameForm = ({
     };
   }, [imagePreview]);
 
-  const onSubmitForm: SubmitHandler<z.infer<typeof gameSchema>> = async (
-    data,
-  ) => {
+  const onSubmitForm: SubmitHandler<z.infer<typeof gameSchema>> = (data) => {
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("ownedBy", JSON.stringify(data.ownedBy));
@@ -255,10 +249,7 @@ const AddGameForm = ({
     formData.append("playtimeMin", JSON.stringify(data.playtimeMin));
     formData.append("playtimeMax", JSON.stringify(data.playtimeMax));
     formData.append("yearPublished", JSON.stringify(data.yearPublished));
-    formData.append(
-      "gameImg",
-      data.gameImg === null ? "null" : (data.gameImg as File),
-    );
+    formData.append("gameImg", data.gameImg ?? "null");
     formData.append(
       "scoresheet",
       JSON.stringify(scoreSheetWithRounds.scoresheet),

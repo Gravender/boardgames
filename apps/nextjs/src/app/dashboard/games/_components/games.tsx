@@ -20,8 +20,6 @@ import { Separator } from "@board-games/ui/separator";
 import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
-import { api } from "~/trpc/react";
-import { AddGameDialog } from "./addGameDialog";
 import { GamesDropDown } from "./gamesDropDown";
 
 export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {

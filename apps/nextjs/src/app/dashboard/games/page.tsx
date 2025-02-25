@@ -30,7 +30,7 @@ function GamesContentFallback() {
   );
 }
 
-export default async function Page() {
+export default function Page() {
   return (
     <div className="flex w-full items-center justify-center">
       <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">

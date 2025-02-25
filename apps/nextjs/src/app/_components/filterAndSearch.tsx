@@ -33,29 +33,6 @@ export function FilterAndSearch<T>({
   const [sortField, setSortField] = useState(defaultSortField);
   const [sortOrder, setSortOrder] = useState<SortOrder>(defaultSortOrder);
 
-  const getSortValue = (
-    item: T,
-    field: keyof T | { primary: keyof T; fallback: keyof T },
-  ) => {
-    if (typeof field === "object") {
-      // If primary field is null/undefined, use fallback
-      return item[field.primary] ?? item[field.fallback];
-    }
-    return item[field];
-  };
-
-  const compareValues = (a: T[keyof T], b: T[keyof T]): number => {
-    if (a == null && b == null) return 0;
-    if (a == null) return sortOrder === "asc" ? -1 : 1;
-    if (b == null) return sortOrder === "asc" ? 1 : -1;
-
-    if (typeof a === "number" && typeof b === "number") return a - b;
-    if (a instanceof Date && b instanceof Date)
-      return a.getTime() - b.getTime();
-
-    return String(a).localeCompare(String(b));
-  };
-
   const filteredAndSortedItems = useMemo(() => {
     let filtered = [...items];
     if (searchField && search) {
@@ -66,6 +43,29 @@ export function FilterAndSearch<T>({
           : false;
       });
     }
+
+    const getSortValue = (
+      item: T,
+      field: keyof T | { primary: keyof T; fallback: keyof T },
+    ) => {
+      if (typeof field === "object") {
+        // If primary field is null/undefined, use fallback
+        return item[field.primary] ?? item[field.fallback];
+      }
+      return item[field];
+    };
+
+    const compareValues = (a: T[keyof T], b: T[keyof T]): number => {
+      if (a == null && b == null) return 0;
+      if (a == null) return sortOrder === "asc" ? -1 : 1;
+      if (b == null) return sortOrder === "asc" ? 1 : -1;
+
+      if (typeof a === "number" && typeof b === "number") return a - b;
+      if (a instanceof Date && b instanceof Date)
+        return a.getTime() - b.getTime();
+
+      return String(a).localeCompare(String(b));
+    };
 
     filtered.sort((a, b) => {
       const valueA = getSortValue(a, sortField);

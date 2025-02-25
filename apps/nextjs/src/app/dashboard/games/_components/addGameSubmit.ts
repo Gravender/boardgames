@@ -11,13 +11,12 @@ import {
 } from "@board-games/db/schema";
 
 import { api } from "~/trpc/server";
-import { gameSchema } from "./addGameDialog";
 
-export type FormState = {
+export interface FormState {
   message: string;
   fields?: Record<string, string>;
   issues?: string[];
-};
+}
 
 const formSchema = z.object({
   game: z
@@ -92,15 +91,18 @@ const formSchema = z.object({
 });
 export async function addGameSubmitAction(data: FormData) {
   const formData = Object.fromEntries(data);
+  /* eslint-disable @typescript-eslint/no-unsafe-assignment */
   if (formData.scoresheet !== undefined) {
     formData.scoresheet = JSON.parse(formData.scoresheet as string);
   }
   if (formData.rounds !== undefined) {
     formData.rounds = JSON.parse(formData.rounds as string);
   }
+  /* eslint-enable @typescript-eslint/no-unsafe-assignment */
   const parsed = formSchema.safeParse({
     game: {
       name: data.get("name"),
+      /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-base-to-string */
       ownedBy: JSON.parse(data.get("ownedBy")?.toString() ?? "null"),
       playersMin: JSON.parse(data.get("playersMin")?.toString() ?? "null"),
       playersMax: JSON.parse(data.get("playersMax")?.toString() ?? "null"),
@@ -109,6 +111,7 @@ export async function addGameSubmitAction(data: FormData) {
       yearPublished: JSON.parse(
         data.get("yearPublished")?.toString() ?? "null",
       ),
+      /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-base-to-string */
       gameImg:
         data.get("gameImg") === "null" ? null : (data.get("gameImg") as File),
     },
@@ -119,7 +122,10 @@ export async function addGameSubmitAction(data: FormData) {
     console.error(JSON.stringify(parsed));
     const fields: Record<string, string> = {};
     for (const key of Object.keys(formData)) {
-      fields[key] = formData[key]?.toString() ?? "";
+      fields[key] =
+        typeof formData[key] === "string"
+          ? formData[key]
+          : JSON.stringify(formData[key]);
     }
     return {
       data: null,
@@ -171,8 +177,8 @@ export async function addGameSubmitAction(data: FormData) {
       };
     } finally {
       revalidatePath("/dashboard/games");
-      return { errors: null, data: "Game Created" };
     }
+    return { errors: null, data: "Game Created" };
   }
 }
 export async function uploadFileToUploadThing(file: File) {

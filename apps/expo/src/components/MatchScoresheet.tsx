@@ -1,3 +1,6 @@
+/* eslint-disable */
+// TODO: Finish implementing
+
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import {
