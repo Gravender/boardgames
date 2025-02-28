@@ -38,11 +38,11 @@ export function calculateFinalScore(rounds: Round[], scoresheet: scoreSheet) {
     }
     if (scoresheet.winCondition === "Target Score") {
       return rounds.reduce((acc, round) => {
-        return acc === scoresheet.targetScore
-          ? acc
-          : round.score === scoresheet.targetScore
-            ? round.score
-            : acc;
+        if (acc === scoresheet.targetScore) return acc;
+        if (round.score === scoresheet.targetScore) return round.score;
+        const accClose = Math.abs(acc - scoresheet.targetScore);
+        const roundClose = Math.abs(round.score - scoresheet.targetScore);
+        return accClose < roundClose ? acc : round.score;
       }, rounds[0]?.score ?? 0);
     }
   }
@@ -61,20 +61,37 @@ export function calculateFinalScores(
     score: calculateFinalScore(player.rounds, scoresheet),
   }));
 }
-export function calculateWinners(players: Player[], scoresheet: scoreSheet) {
+export function calculatePlacement(players: Player[], scoresheet: scoreSheet) {
   const finalScores = calculateFinalScores(players, scoresheet);
-  if (scoresheet.winCondition === "Highest Score") {
-    const maxScore = Math.max(...finalScores.map((player) => player.score));
-    return finalScores.filter((player) => player.score === maxScore);
+  finalScores.sort((a, b) => {
+    if (scoresheet.winCondition === "Highest Score") {
+      return b.score - a.score;
+    }
+    if (scoresheet.winCondition === "Lowest Score") {
+      return a.score - b.score;
+    }
+    if (scoresheet.winCondition === "Target Score") {
+      if (a.score == b.score) {
+        return 0;
+      }
+      if (a.score === scoresheet.targetScore) return -1;
+      if (b.score === scoresheet.targetScore) return 1;
+    }
+    return 0;
+  });
+  let placement = 1;
+  const placements: { id: number; score: number; placement: number }[] = [];
+
+  for (let i = 0; i < finalScores.length; i++) {
+    if (i > 0 && finalScores[i]?.score !== finalScores[i - 1]?.score) {
+      placement = i + 1; // Adjust placement only if score changes
+    }
+    placements.push({
+      id: finalScores[i]!.id,
+      score: finalScores[i]!.score,
+      placement,
+    });
   }
-  if (scoresheet.winCondition === "Lowest Score") {
-    const minScore = Math.min(...finalScores.map((player) => player.score));
-    return finalScores.filter((player) => player.score === minScore);
-  }
-  if (scoresheet.winCondition === "Target Score") {
-    return finalScores.filter(
-      (player) => player.score === scoresheet.targetScore,
-    );
-  }
-  return [];
+
+  return placements;
 }
