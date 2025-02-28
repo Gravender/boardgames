@@ -11,7 +11,7 @@ import type { RouterOutputs } from "@board-games/api";
 import { insertRoundSchema } from "@board-games/db/schema";
 import {
   calculateFinalScore,
-  calculateWinners,
+  calculatePlacement,
   formatDuration,
 } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
@@ -163,7 +163,8 @@ export function Match({ match }: { match: Match }) {
       });
       return;
     }
-    const winners = calculateWinners(
+
+    const playersPlacement = calculatePlacement(
       players.map((player) => ({
         id: player.id,
         rounds: player.rounds.map((round) => ({
@@ -172,18 +173,6 @@ export function Match({ match }: { match: Match }) {
       })),
       match.scoresheet,
     );
-    const matchPlayers = players.map((player) => {
-      return {
-        id: player.id,
-        score: calculateFinalScore(
-          player.rounds.map((round) => ({
-            score: round.score ?? 0,
-          })),
-          match.scoresheet,
-        ),
-        winner: winners.find((winner) => winner.id === player.id) !== undefined,
-      };
-    });
     updateMatch.mutate({
       match: {
         id: match.id,
@@ -192,7 +181,7 @@ export function Match({ match }: { match: Match }) {
         running: false,
       },
       roundPlayers: submittedPlayers,
-      matchPlayers: matchPlayers,
+      playersPlacement: playersPlacement,
     });
   };
   useEffect(() => {

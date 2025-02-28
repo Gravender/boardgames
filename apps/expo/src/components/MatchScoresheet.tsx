@@ -15,7 +15,7 @@ import { z } from "zod";
 
 import {
   calculateFinalScore,
-  calculateWinners,
+  calculatePlacement,
   formatDuration,
 } from "@board-games/shared";
 
@@ -173,7 +173,7 @@ export function MatchScoresheet({ data }: { data: Match }) {
       return;
     }
 
-    const winners = calculateWinners(
+    const playersPlacement = calculatePlacement(
       players.map((player) => ({
         id: player.id,
         rounds: player.rounds.map((round) => ({
@@ -191,16 +191,7 @@ export function MatchScoresheet({ data }: { data: Match }) {
         running: false,
       },
       roundPlayers: submittedPlayers,
-      matchPlayers: players.map((player) => ({
-        id: player.id,
-        score: calculateFinalScore(
-          player.rounds.map((round) => ({
-            score: round.score ?? 0,
-          })),
-          data.scoresheet,
-        ),
-        winner: winners.find((winner) => winner.id === player.id) !== undefined,
-      })),
+      playersPlacement: playersPlacement,
     });
   };
 

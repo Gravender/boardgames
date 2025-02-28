@@ -173,7 +173,7 @@ export default async function Page({ params }: Props) {
                 <div
                   className={cn(
                     "flex items-center justify-between p-4",
-                    player.isWinner && "bg-green-500/10",
+                    player.placement == 1 && "bg-green-500/10",
                   )}
                   key={`match-${player.id}`}
                 >
@@ -269,7 +269,7 @@ export default async function Page({ params }: Props) {
                     <TableRow key={player.id}>
                       <TableHead>{player.name}</TableHead>
                       <TableCell>{player.plays}</TableCell>
-                      <TableCell>{player.wins}</TableCell>
+                      <TableCell>{player.placements[1] ?? 0}</TableCell>
                       <TableCell>{Best ?? ""}</TableCell>
                       <TableCell>{Worst ?? ""}</TableCell>
                     </TableRow>

@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, arrayOverlaps, eq, inArray, SQL, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type {
@@ -203,14 +203,28 @@ export const matchRouter = createTRPCRouter({
         with: {
           scoresheet: true,
           matchPlayers: {
+            columns: {
+              id: true,
+              placement: true,
+              score: true,
+            },
             with: {
               player: {
+                columns: {
+                  id: true,
+                  name: true,
+                },
                 with: {
-                  image: true,
+                  image: {
+                    columns: {
+                      url: true,
+                    },
+                  },
                 },
               },
               roundPlayers: true,
             },
+            orderBy: (matchPlayer, { asc }) => asc(matchPlayer.placement),
           },
           game: {
             with: {
@@ -223,147 +237,135 @@ export const matchRouter = createTRPCRouter({
       if (!returnedMatch) {
         return null;
       }
-      const previousMatches = await ctx.db.query.match.findMany({
-        columns: {
-          gameId: true,
-          id: true,
-          date: true,
-          createdAt: true,
-        },
-        where: and(
-          eq(match.userId, ctx.userId),
-          eq(match.gameId, returnedMatch.gameId),
-        ),
-        with: {
-          matchPlayers: {
-            with: {
-              player: true,
+      const previousMatches = (
+        await ctx.db.query.match.findMany({
+          columns: {
+            gameId: true,
+            id: true,
+            date: true,
+            createdAt: true,
+          },
+          where: and(
+            eq(match.userId, ctx.userId),
+            eq(match.gameId, returnedMatch.gameId),
+          ),
+          with: {
+            matchPlayers: {
+              columns: {
+                id: true,
+                score: true,
+                placement: true,
+              },
+              with: {
+                player: {
+                  columns: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+              orderBy: (matchPlayer, { asc }) => asc(matchPlayer.placement),
             },
           },
-        },
-        orderBy: (match) => match.date,
-      });
-      const refinedPlayers = returnedMatch.matchPlayers
-        .map((matchPlayer) => {
-          return {
-            id: matchPlayer.player.id,
-            name: matchPlayer.player.name,
-            imageUrl: matchPlayer.player.image?.url,
-            score: matchPlayer.score,
-            isWinner: matchPlayer.winner,
-          };
+          orderBy: (match) => match.date,
         })
-        .sort((a, b) => {
-          if (a.isWinner && !b.isWinner) {
-            return -1;
-          }
-          if (!a.isWinner && b.isWinner) {
-            return 1;
-          }
-          if (!a.score && !b.score) {
-            return 0;
-          }
-          if (!a.score) {
-            return 1;
-          }
-          if (!b.score) {
-            return -1;
-          }
-          if (returnedMatch.scoresheet.winCondition === "Highest Score") {
-            return b.score - a.score;
-          }
-          if (returnedMatch.scoresheet.winCondition === "Lowest Score") {
-            return a.score - b.score;
-          }
-          return 0;
-        });
-      const playerStats = previousMatches
-        .flatMap((match) =>
-          match.matchPlayers
+      ).filter((match) =>
+        match.matchPlayers.some((prevMatchPlayer) =>
+          returnedMatch.matchPlayers.some(
+            (returnedMatchPlayer) =>
+              returnedMatchPlayer.player.id === prevMatchPlayer.player.id,
+          ),
+        ),
+      );
 
-            .map((matchPlayer) => {
-              const player = matchPlayer.player;
-              if (
-                returnedMatch.matchPlayers.findIndex(
-                  (returnedMatchPlayer) =>
-                    returnedMatchPlayer.player.id === player.id,
-                ) === -1
-              )
-                return false;
-              return {
-                id: player.id,
-                name: player.name,
-                score: matchPlayer.score,
-                isWinner: matchPlayer.winner,
-                date: match.date,
-                createdAt: match.createdAt,
-                matchId: match.id,
+      const refinedPlayers = returnedMatch.matchPlayers.map((matchPlayer) => {
+        return {
+          id: matchPlayer.id,
+          playerId: matchPlayer.player.id,
+          name: matchPlayer.player.name,
+          imageUrl: matchPlayer.player.image?.url,
+          score: matchPlayer.score,
+          placement: matchPlayer.placement,
+        };
+      });
+
+      interface AccPlayer {
+        name: string;
+        scores: number[]; // from matches that contain scores
+        dates: { matchId: number; date: Date; createdAt: Date }[];
+        placements: Record<number, number>;
+        id: number;
+        plays: number;
+      }
+
+      const playerStats: Record<number, AccPlayer> = {};
+      previousMatches.forEach((match) => {
+        match.matchPlayers.forEach((matchPlayer) => {
+          if (
+            refinedPlayers.find(
+              (player) => player.playerId === matchPlayer.player.id,
+            )
+          ) {
+            const { id: playerId, name } = matchPlayer.player;
+
+            // If this player hasn't been seen yet, initialize
+            if (!playerStats[playerId]) {
+              playerStats[playerId] = {
+                name,
+                id: playerId,
+                scores: [],
+                dates: [],
+                placements: {},
+                plays: 0,
               };
-            })
-            .filter((player) => player !== false),
-        )
-        .reduce(
-          (acc, player) => {
-            const foundPlayer = acc.find((p) => p.id === player.id);
-            if (foundPlayer) {
-              foundPlayer.scores.push(player.score ?? 0);
-              foundPlayer.dates.push({
-                matchId: player.matchId,
-                date: player.date,
-                createdAt: player.createdAt,
-              });
-              if (player.isWinner) {
-                foundPlayer.wins = foundPlayer.wins + 1;
-              }
-              foundPlayer.plays = foundPlayer.plays + 1;
-            } else {
-              acc.push({
-                name: player.name,
-                scores: [player.score ?? 0],
-                dates: [
-                  {
-                    matchId: player.matchId,
-                    date: player.date,
-                    createdAt: player.createdAt,
-                  },
-                ],
-                wins: player.isWinner ? 1 : 0,
-                id: player.id,
-                plays: 1,
-              });
             }
-            return acc;
-          },
-          [] as {
-            name: string;
-            scores: number[];
-            dates: { matchId: number; date: Date; createdAt: Date }[];
-            wins: number;
-            id: number;
-            plays: number;
-          }[],
-        )
-        .sort((a, b) => b.plays - a.plays)
-        .map((player) => {
-          const firstGame = () => {
-            const firstGame = player.dates.toSorted((a, b) => {
-              if (a.date.getTime() === b.date.getTime()) {
-                return a.createdAt.getTime() - b.createdAt.getTime();
-              } else {
-                return a.date.getTime() - b.date.getTime();
-              }
-            })[0];
 
-            return firstGame?.matchId === returnedMatch.id;
-          };
-          return {
-            ...player,
-            firstGame: firstGame(),
-            dates: player.dates.map((date) => {
-              return date.date;
-            }),
-          };
+            // Add score info for this match
+            if (matchPlayer.score)
+              playerStats[playerId].scores.push(matchPlayer.score);
+
+            // Add date info for this match
+            playerStats[playerId].dates.push({
+              matchId: match.id,
+              date: match.date,
+              createdAt: match.createdAt,
+            });
+
+            // Increase the count for this placement
+            const placement = matchPlayer.placement;
+            if (placement != null) {
+              playerStats[playerId].placements[placement] =
+                (playerStats[playerId].placements[placement] || 0) + 1;
+            }
+
+            // This counts as one "play"
+            playerStats[playerId].plays += 1;
+          }
         });
+      });
+
+      const finalPlayerArray = Object.values(playerStats);
+      finalPlayerArray.sort((a, b) => b.plays - a.plays);
+      const finalPlayersWithFirstGame = finalPlayerArray.map((player) => {
+        const firstGame = () => {
+          const firstGame = player.dates.toSorted((a, b) => {
+            if (a.date.getTime() === b.date.getTime()) {
+              return a.createdAt.getTime() - b.createdAt.getTime();
+            } else {
+              return a.date.getTime() - b.date.getTime();
+            }
+          })[0];
+
+          return firstGame?.matchId === returnedMatch.id;
+        };
+        return {
+          ...player,
+          firstGame: firstGame(),
+          dates: player.dates.map((date) => {
+            return date.date;
+          }),
+        };
+      });
       return {
         id: returnedMatch.id,
         date: returnedMatch.date,
@@ -376,7 +378,7 @@ export const matchRouter = createTRPCRouter({
         players: refinedPlayers,
         duration: returnedMatch.duration,
         previousMatches: previousMatches.length,
-        playerStats: playerStats,
+        playerStats: finalPlayersWithFirstGame,
       };
     }),
   getMatchesByCalender: protectedUserProcedure.query(async ({ ctx }) => {
@@ -475,8 +477,12 @@ export const matchRouter = createTRPCRouter({
     .input(
       z.object({
         roundPlayers: z.array(selectRoundPlayerSchema),
-        matchPlayers: z.array(
-          selectMatchPlayerSchema.pick({ id: true, score: true, winner: true }),
+        playersPlacement: z.array(
+          selectMatchPlayerSchema.pick({
+            id: true,
+            score: true,
+            placement: true,
+          }),
         ),
         match: selectMatchSchema.pick({
           id: true,
@@ -487,35 +493,78 @@ export const matchRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db
-        .update(match)
-        .set({
-          duration: input.match.duration,
-          finished: input.match.finished,
-          running: input.match.running,
-        })
-        .where(and(eq(match.id, input.match.id), eq(match.userId, ctx.userId)));
-      await Promise.all(
-        input.roundPlayers.map(async (player) => {
-          await ctx.db
+      await ctx.db.transaction(async (transaction) => {
+        await transaction
+          .update(match)
+          .set({
+            duration: input.match.duration,
+            finished: input.match.finished,
+            running: input.match.running,
+          })
+          .where(
+            and(eq(match.id, input.match.id), eq(match.userId, ctx.userId)),
+          );
+        console.log(1);
+        if (input.roundPlayers.length > 0) {
+          const sqlChunks: SQL[] = [];
+          const ids: number[] = [];
+          sqlChunks.push(sql`(case`);
+
+          for (const inputRoundPlayer of input.roundPlayers) {
+            sqlChunks.push(
+              sql`when ${roundPlayer.id} = ${inputRoundPlayer.id} then ${sql`${inputRoundPlayer.score}::integer`}`,
+            );
+            ids.push(inputRoundPlayer.id);
+          }
+
+          sqlChunks.push(sql`end)`);
+
+          const finalSql: SQL = sql.join(sqlChunks, sql.raw(" "));
+
+          await transaction
             .update(roundPlayer)
-            .set({
-              score: player.score,
-            })
-            .where(eq(roundPlayer.id, player.id));
-        }),
-      );
-      await Promise.all(
-        input.matchPlayers.map(async (player) => {
-          await ctx.db
+            .set({ score: finalSql })
+            .where(inArray(roundPlayer.id, ids));
+        }
+        console.log(2);
+        if (input.playersPlacement.length > 0) {
+          const ids = input.playersPlacement.map((p) => p.id);
+          const scoreSqlChunks: SQL[] = [sql`(case`];
+          const placementSqlChunks: SQL[] = [sql`(case`];
+          const winnerSqlChunks: SQL[] = [sql`(case`];
+
+          for (const player of input.playersPlacement) {
+            scoreSqlChunks.push(
+              sql`when ${matchPlayer.id} = ${player.id} then ${sql`${player.score}::integer`}`,
+            );
+            placementSqlChunks.push(
+              sql`when ${matchPlayer.id} = ${player.id} then ${sql`${player.placement}::integer`}`,
+            );
+            winnerSqlChunks.push(
+              sql`when ${matchPlayer.id} = ${player.id} then ${player.placement === 1}`,
+            );
+          }
+
+          scoreSqlChunks.push(sql`end)`);
+          placementSqlChunks.push(sql`end)`);
+          winnerSqlChunks.push(sql`end)`);
+
+          // Join each array of CASE chunks into a single SQL expression
+          const finalScoreSql = sql.join(scoreSqlChunks, sql.raw(" "));
+          const finalPlacementSql = sql.join(placementSqlChunks, sql.raw(" "));
+          const finalWinnerSql = sql.join(winnerSqlChunks, sql.raw(" "));
+
+          // Perform the bulk update
+          await transaction
             .update(matchPlayer)
             .set({
-              score: player.score,
-              winner: player.winner,
+              score: finalScoreSql,
+              placement: finalPlacementSql,
+              winner: finalWinnerSql,
             })
-            .where(eq(matchPlayer.id, player.id));
-        }),
-      );
+            .where(inArray(matchPlayer.id, ids));
+        }
+      });
     }),
   updateMatchScores: protectedUserProcedure
     .input(
