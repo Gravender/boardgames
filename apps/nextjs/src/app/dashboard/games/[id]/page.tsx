@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
+import { Table } from "@board-games/ui/table";
+
 import { api, HydrateClient } from "~/trpc/server";
 import { Matches, MatchSkeleton } from "./_components/matches";
 
@@ -38,11 +40,11 @@ export default async function Page({ params }: Props) {
         <Suspense
           fallback={
             <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
-              <div className="flex flex-col gap-2">
+              <Table className="flex flex-col gap-2">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <MatchSkeleton key={i} />
                 ))}
-              </div>
+              </Table>
             </div>
           }
         >

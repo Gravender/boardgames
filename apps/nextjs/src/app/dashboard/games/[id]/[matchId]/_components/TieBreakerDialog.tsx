@@ -90,7 +90,7 @@ function Content({
 }) {
   const router = useRouter();
   const utils = api.useUtils();
-  const updateWinner = api.match.updateMatchPlacement.useMutation({
+  const updateMatchPlacement = api.match.updateMatchPlacement.useMutation({
     onSuccess: async () => {
       await utils.match.getMatch.invalidate({ id: matchId });
       await utils.game.getGame.invalidate({ id: gameId });
@@ -103,7 +103,7 @@ function Content({
     defaultValues: { players: players },
   });
   function onSubmitForm(values: z.infer<typeof FormSchema>) {
-    updateWinner.mutate({
+    updateMatchPlacement.mutate({
       match: { id: matchId },
       playersPlacement: values.players.map((player) => ({
         id: player.matchPlayerId,
