@@ -180,7 +180,7 @@ export default async function Page({
                           className="flex shrink-0 flex-col items-center gap-2 text-sm text-secondary-foreground"
                           key={match.id}
                         >
-                          <span className="w-28 truncate font-semibold">
+                          <span className="max-w-28 truncate font-semibold">
                             {match.finished
                               ? match.players
                                   .map((player) => player.name)

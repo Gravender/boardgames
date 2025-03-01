@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { format } from "date-fns";
 import { Dices, User } from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
@@ -16,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@board-games/ui/card";
+import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -95,7 +97,7 @@ export default async function Page({ params }: Props) {
               <div className="flex items-center gap-2">
                 <h4 className="font-medium">Plays:</h4>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>{summary.previousMatches}</span>
+                  <span>{summary.previousMatches.length}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -135,7 +137,57 @@ export default async function Page({ params }: Props) {
             </div>
           </CardFooter>
         </Card>
-
+        <Card className="w-full sm:col-span-2">
+          <CardHeader>
+            <CardTitle>Previous Plays</CardTitle>
+          </CardHeader>
+          <CardContent className="p-2 sm:p-6">
+            <div className="flex">
+              <ScrollArea className="w-1 flex-1">
+                <div className="flex space-x-4 p-1 sm:p-4">
+                  {summary.previousMatches.map((match) => (
+                    <Link
+                      className="flex shrink-0 flex-col items-center gap-2 text-sm text-secondary-foreground"
+                      key={match.id}
+                      href={
+                        match.finished
+                          ? `/dashboard/games/${match.gameId}/${match.id}/summary`
+                          : `/dashboard/games/${match.gameId}/${match.id}`
+                      }
+                    >
+                      <span className="flex max-w-28 truncate font-medium">
+                        {match.finished
+                          ? match.matchPlayers
+                              .filter((player) => player.placement === 1)
+                              .map((player) => player.player.name)
+                              .join(", ")
+                          : "Not Finished"}
+                      </span>
+                      <div className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded shadow">
+                        {summary.gameImageUrl ? (
+                          <Image
+                            fill
+                            src={summary.gameImageUrl}
+                            alt={`${summary.gameName} game image`}
+                            className="aspect-square h-full w-full rounded-md object-cover"
+                          />
+                        ) : (
+                          <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
+                        )}
+                      </div>
+                      <div className="text-muted-foreground">
+                        <span suppressHydrationWarning>
+                          {format(match.date, "d MMM yyyy")}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </div>
+          </CardContent>
+        </Card>
         <Card className="w-full max-w-2xl sm:col-span-1">
           <CardHeader>
             <CardTitle>Match Results</CardTitle>

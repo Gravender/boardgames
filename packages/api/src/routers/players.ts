@@ -292,7 +292,7 @@ export const playerRouter = createTRPCRouter({
         .groupBy(game.id, game.name)
         .orderBy(game.name)
         .as("gamesSubquery");
-      const outPlayer = await ctx.db
+      const [outPlayer] = await ctx.db
         .select({
           id: player.id,
           name: player.name,
@@ -384,11 +384,11 @@ export const playerRouter = createTRPCRouter({
         )
         .where(eq(player.id, input.id))
         .groupBy(player.id);
-      if (!outPlayer[0]) {
+      if (!outPlayer) {
         return null;
       }
-      outPlayer[0].matches.sort((a, b) => compareAsc(b.date, a.date));
-      return outPlayer[0];
+      outPlayer.matches.sort((a, b) => compareAsc(b.date, a.date));
+      return outPlayer;
     }),
   create: protectedUserProcedure
     .input(insertPlayerSchema.pick({ name: true, imageId: true }))

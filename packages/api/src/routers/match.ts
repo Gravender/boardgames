@@ -242,8 +242,10 @@ export const matchRouter = createTRPCRouter({
           columns: {
             gameId: true,
             id: true,
+            name: true,
             date: true,
             createdAt: true,
+            finished: true,
           },
           where: and(
             eq(match.userId, ctx.userId),
@@ -300,48 +302,50 @@ export const matchRouter = createTRPCRouter({
 
       const playerStats: Record<number, AccPlayer> = {};
       previousMatches.forEach((match) => {
-        match.matchPlayers.forEach((matchPlayer) => {
-          if (
-            refinedPlayers.find(
-              (player) => player.playerId === matchPlayer.player.id,
-            )
-          ) {
-            const { id: playerId, name } = matchPlayer.player;
+        if (match.finished) {
+          match.matchPlayers.forEach((matchPlayer) => {
+            if (
+              refinedPlayers.find(
+                (player) => player.playerId === matchPlayer.player.id,
+              )
+            ) {
+              const { id: playerId, name } = matchPlayer.player;
 
-            // If this player hasn't been seen yet, initialize
-            if (!playerStats[playerId]) {
-              playerStats[playerId] = {
-                name,
-                id: playerId,
-                scores: [],
-                dates: [],
-                placements: {},
-                plays: 0,
-              };
+              // If this player hasn't been seen yet, initialize
+              if (!playerStats[playerId]) {
+                playerStats[playerId] = {
+                  name,
+                  id: playerId,
+                  scores: [],
+                  dates: [],
+                  placements: {},
+                  plays: 0,
+                };
+              }
+
+              // Add score info for this match
+              if (matchPlayer.score)
+                playerStats[playerId].scores.push(matchPlayer.score);
+
+              // Add date info for this match
+              playerStats[playerId].dates.push({
+                matchId: match.id,
+                date: match.date,
+                createdAt: match.createdAt,
+              });
+
+              // Increase the count for this placement
+              const placement = matchPlayer.placement;
+              if (placement != null) {
+                playerStats[playerId].placements[placement] =
+                  (playerStats[playerId].placements[placement] || 0) + 1;
+              }
+
+              // This counts as one "play"
+              playerStats[playerId].plays += 1;
             }
-
-            // Add score info for this match
-            if (matchPlayer.score)
-              playerStats[playerId].scores.push(matchPlayer.score);
-
-            // Add date info for this match
-            playerStats[playerId].dates.push({
-              matchId: match.id,
-              date: match.date,
-              createdAt: match.createdAt,
-            });
-
-            // Increase the count for this placement
-            const placement = matchPlayer.placement;
-            if (placement != null) {
-              playerStats[playerId].placements[placement] =
-                (playerStats[playerId].placements[placement] || 0) + 1;
-            }
-
-            // This counts as one "play"
-            playerStats[playerId].plays += 1;
-          }
-        });
+          });
+        }
       });
 
       const finalPlayerArray = Object.values(playerStats);
@@ -377,7 +381,7 @@ export const matchRouter = createTRPCRouter({
         gameImageUrl: returnedMatch.game.image?.url,
         players: refinedPlayers,
         duration: returnedMatch.duration,
-        previousMatches: previousMatches.length,
+        previousMatches: previousMatches,
         playerStats: finalPlayersWithFirstGame,
       };
     }),
