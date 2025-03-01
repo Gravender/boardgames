@@ -1,0 +1,22 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Database",
+			"type": "shell",
+			"command": "./start-database.sh",
+			"problemMatcher": [],
+			"detail": "./start-database.sh"
+		},
+		{
+			"label": "Stop Database",
+			"type": "shell",
+			"command": "./stop-database.sh",
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			}
+		}
+	]
+}

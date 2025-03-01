@@ -1,5 +1,4 @@
 {
-
   "version": "0.2.0",
   "configurations": [
     {
@@ -14,7 +13,9 @@
       "sourceMaps": true,
       "sourceMapPathOverrides": {
         "/turbopack/[project]/*": "${webRoot}/*"
-      }
+      },
+      "preLaunchTask": "Start Database",
+      "postDebugTask": "Stop Database"
     }
-  ]
+  ],
 }
