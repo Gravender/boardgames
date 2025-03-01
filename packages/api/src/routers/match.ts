@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, arrayOverlaps, eq, inArray, SQL, sql } from "drizzle-orm";
+import { and, arrayOverlaps, desc, eq, inArray, SQL, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type {
@@ -207,6 +207,7 @@ export const matchRouter = createTRPCRouter({
               id: true,
               placement: true,
               score: true,
+              winner: true,
             },
             with: {
               player: {
@@ -257,6 +258,7 @@ export const matchRouter = createTRPCRouter({
                 id: true,
                 score: true,
                 placement: true,
+                winner: true,
               },
               with: {
                 player: {
@@ -269,7 +271,7 @@ export const matchRouter = createTRPCRouter({
               orderBy: (matchPlayer, { asc }) => asc(matchPlayer.placement),
             },
           },
-          orderBy: (match) => match.date,
+          orderBy: (match) => desc(match.date),
         })
       ).filter((match) =>
         match.matchPlayers.some((prevMatchPlayer) =>
@@ -288,7 +290,22 @@ export const matchRouter = createTRPCRouter({
           imageUrl: matchPlayer.player.image?.url,
           score: matchPlayer.score,
           placement: matchPlayer.placement,
+          winner: matchPlayer.winner,
         };
+      });
+      refinedPlayers.sort((a, b) => {
+        if (returnedMatch.scoresheet.winCondition === "Manual") {
+          if (a.winner && !b.winner) {
+            return -1;
+          }
+          if (!a.winner && b.winner) {
+            return 1;
+          }
+        }
+        if (a.placement !== null && b.placement !== null) {
+          return a.placement - b.placement;
+        }
+        return 0;
       });
 
       interface AccPlayer {
@@ -296,6 +313,7 @@ export const matchRouter = createTRPCRouter({
         scores: number[]; // from matches that contain scores
         dates: { matchId: number; date: Date; createdAt: Date }[];
         placements: Record<number, number>;
+        wins: number;
         id: number;
         plays: number;
       }
@@ -319,6 +337,7 @@ export const matchRouter = createTRPCRouter({
                   scores: [],
                   dates: [],
                   placements: {},
+                  wins: 0,
                   plays: 0,
                 };
               }
@@ -326,6 +345,7 @@ export const matchRouter = createTRPCRouter({
               // Add score info for this match
               if (matchPlayer.score)
                 playerStats[playerId].scores.push(matchPlayer.score);
+              if (matchPlayer.winner) playerStats[playerId].wins++;
 
               // Add date info for this match
               playerStats[playerId].dates.push({
@@ -349,7 +369,15 @@ export const matchRouter = createTRPCRouter({
       });
 
       const finalPlayerArray = Object.values(playerStats);
-      finalPlayerArray.sort((a, b) => b.plays - a.plays);
+      finalPlayerArray.sort((a, b) => {
+        if (b.plays === a.plays) {
+          if (b.wins === a.wins) {
+            return a.name.localeCompare(b.name);
+          }
+          return b.wins - a.wins;
+        }
+        return b.plays - a.plays;
+      });
       const finalPlayersWithFirstGame = finalPlayerArray.map((player) => {
         const firstGame = () => {
           const firstGame = player.dates.toSorted((a, b) => {

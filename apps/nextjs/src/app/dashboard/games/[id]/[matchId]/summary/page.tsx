@@ -230,7 +230,13 @@ export default async function Page({ params }: Props) {
                   key={`match-${player.id}`}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <span>{`${player.placement}.`}</span>
+                    <span>
+                      {summary.scoresheet.winCondition === "Manual"
+                        ? player.winner
+                          ? "✔️"
+                          : "❌"
+                        : `${player.placement}.`}
+                    </span>
                     <div className="flex items-center gap-2">
                       <Avatar className="shadow">
                         <AvatarImage
@@ -321,7 +327,7 @@ export default async function Page({ params }: Props) {
                     <TableRow key={player.id}>
                       <TableHead>{player.name}</TableHead>
                       <TableCell>{player.plays}</TableCell>
-                      <TableCell>{player.placements[1] ?? 0}</TableCell>
+                      <TableCell>{player.wins}</TableCell>
                       <TableCell>{Best ?? ""}</TableCell>
                       <TableCell>{Worst ?? ""}</TableCell>
                     </TableRow>
