@@ -838,4 +838,92 @@ export const matchRouter = createTRPCRouter({
         );
       }
     }),
+  updateAllMatchPlacements: protectedUserProcedure.mutation(async ({ ctx }) => {
+    const matches = await ctx.db.query.match.findMany({
+      where: and(eq(match.userId, ctx.userId)),
+      with: {
+        matchPlayers: {
+          columns: {
+            id: true,
+            score: true,
+            placement: true,
+          },
+        },
+        scoresheet: true,
+      },
+    });
+    for (const match of matches) {
+      if (match.finished) {
+        const finalScores = match.matchPlayers.map((matchPlayer) => {
+          return {
+            matchPlayerId: matchPlayer.id,
+            score: matchPlayer.score,
+          };
+        });
+        finalScores.sort((a, b) => {
+          if (a.score == null || b.score === null) return 0;
+          if (match.scoresheet.winCondition === "Highest Score") {
+            return b.score - a.score;
+          }
+          if (match.scoresheet.winCondition === "Lowest Score") {
+            return a.score - b.score;
+          }
+          if (match.scoresheet.winCondition === "Target Score") {
+            if (a.score == b.score) {
+              return 0;
+            }
+            if (a.score === match.scoresheet.targetScore) return -1;
+            if (b.score === match.scoresheet.targetScore) return 1;
+          }
+          return 0;
+        });
+        let placement = 1;
+        const placements: {
+          matchPlayerId: number;
+          score: number | null;
+          placement: number;
+        }[] = [];
+
+        for (let i = 0; i < finalScores.length; i++) {
+          if (i > 0 && finalScores[i]?.score !== finalScores[i - 1]?.score) {
+            placement = i + 1; // Adjust placement only if score changes
+          }
+          placements.push({
+            matchPlayerId: finalScores[i]!.matchPlayerId,
+            score: finalScores[i]!.score,
+            placement,
+          });
+        }
+        const ids = placements.map((p) => p.matchPlayerId);
+
+        const placementSqlChunks: SQL[] = [sql`(case`];
+        const winnerSqlChunks: SQL[] = [sql`(case`];
+
+        for (const player of placements) {
+          placementSqlChunks.push(
+            sql`when ${matchPlayer.id} = ${player.matchPlayerId} then ${sql`${player.placement}::integer`}`,
+          );
+          winnerSqlChunks.push(
+            sql`when ${matchPlayer.id} = ${player.matchPlayerId} then ${player.placement === 1}`,
+          );
+        }
+
+        placementSqlChunks.push(sql`end)`);
+        winnerSqlChunks.push(sql`end)`);
+
+        // Join each array of CASE chunks into a single SQL expression
+        const finalPlacementSql = sql.join(placementSqlChunks, sql.raw(" "));
+        const finalWinnerSql = sql.join(winnerSqlChunks, sql.raw(" "));
+
+        // Perform the bulk update
+        await ctx.db
+          .update(matchPlayer)
+          .set({
+            placement: finalPlacementSql,
+            winner: finalWinnerSql,
+          })
+          .where(inArray(matchPlayer.id, ids));
+      }
+    }
+  }),
 });

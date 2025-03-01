@@ -6,6 +6,7 @@ import { Table, TableBody } from "@board-games/ui/table";
 import { api } from "~/trpc/server";
 import { AddGameDialog } from "./_components/addGameDialog";
 import { Games, GameSkeleton } from "./_components/games";
+import { UpdateAllMatchesPlacement } from "./_components/updateAllMatchesPlacement";
 
 async function GamesContent() {
   const games = await api.game.getGames();
@@ -33,6 +34,7 @@ function GamesContentFallback() {
 export default function Page() {
   return (
     <div className="flex w-full items-center justify-center">
+      <UpdateAllMatchesPlacement />
       <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
         <Suspense fallback={<GamesContentFallback />}>
           <GamesContent />
