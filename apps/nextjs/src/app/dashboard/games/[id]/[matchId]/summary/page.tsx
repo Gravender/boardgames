@@ -178,7 +178,7 @@ export default async function Page({ params }: Props) {
                   key={`match-${player.id}`}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <span>{`${index + 1}.`}</span>
+                    <span>{`${player.placement}.`}</span>
                     <div className="flex items-center gap-2">
                       <Avatar className="shadow">
                         <AvatarImage
