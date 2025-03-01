@@ -504,7 +504,6 @@ export const matchRouter = createTRPCRouter({
           .where(
             and(eq(match.id, input.match.id), eq(match.userId, ctx.userId)),
           );
-        console.log(1);
         if (input.roundPlayers.length > 0) {
           const sqlChunks: SQL[] = [];
           const ids: number[] = [];
@@ -526,7 +525,6 @@ export const matchRouter = createTRPCRouter({
             .set({ score: finalSql })
             .where(inArray(roundPlayer.id, ids));
         }
-        console.log(2);
         if (input.playersPlacement.length > 0) {
           const ids = input.playersPlacement.map((p) => p.id);
           const scoreSqlChunks: SQL[] = [sql`(case`];
@@ -648,6 +646,62 @@ export const matchRouter = createTRPCRouter({
           duration: input.duration,
         })
         .where(eq(match.id, input.match.id));
+    }),
+  updateMatchPlacement: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectMatchSchema.pick({ id: true }),
+        playersPlacement: z
+          .array(
+            selectMatchPlayerSchema.pick({
+              id: true,
+              placement: true,
+            }),
+          )
+          .refine((placements) => placements.length > 0),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.transaction(async (transaction) => {
+        await transaction
+          .update(match)
+          .set({
+            finished: true,
+          })
+          .where(
+            and(eq(match.id, input.match.id), eq(match.userId, ctx.userId)),
+          );
+
+        const ids = input.playersPlacement.map((p) => p.id);
+
+        const placementSqlChunks: SQL[] = [sql`(case`];
+        const winnerSqlChunks: SQL[] = [sql`(case`];
+
+        for (const player of input.playersPlacement) {
+          placementSqlChunks.push(
+            sql`when ${matchPlayer.id} = ${player.id} then ${sql`${player.placement}::integer`}`,
+          );
+          winnerSqlChunks.push(
+            sql`when ${matchPlayer.id} = ${player.id} then ${player.placement === 1}`,
+          );
+        }
+
+        placementSqlChunks.push(sql`end)`);
+        winnerSqlChunks.push(sql`end)`);
+
+        // Join each array of CASE chunks into a single SQL expression
+        const finalPlacementSql = sql.join(placementSqlChunks, sql.raw(" "));
+        const finalWinnerSql = sql.join(winnerSqlChunks, sql.raw(" "));
+
+        // Perform the bulk update
+        await transaction
+          .update(matchPlayer)
+          .set({
+            placement: finalPlacementSql,
+            winner: finalWinnerSql,
+          })
+          .where(inArray(matchPlayer.id, ids));
+      });
     }),
   editMatch: protectedUserProcedure
     .input(

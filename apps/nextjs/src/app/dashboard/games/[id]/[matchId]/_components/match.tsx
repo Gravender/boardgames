@@ -53,12 +53,14 @@ import {
 import { cn } from "@board-games/ui/utils";
 
 import type { ManualWinnerPlayerSchema } from "./ManualWinnerDialog";
+import type { TieBreakerPlayerSchema } from "./TieBreakerDialog";
 import { GradientPicker } from "~/components/color-picker";
 import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";
 import { useDebouncedUpdateMatchData } from "~/hooks/use-debounced-update-match";
 import { api } from "~/trpc/react";
 import { ManualWinnerDialog } from "./ManualWinnerDialog";
+import { TieBreakerDialog } from "./TieBreakerDialog";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
 export function Match({ match }: { match: Match }) {
@@ -67,6 +69,10 @@ export function Match({ match }: { match: Match }) {
     z.infer<typeof ManualWinnerPlayerSchema>
   >([]);
   const [openManualWinnerDialog, setOpenManualWinnerDialog] = useState(false);
+  const [tieBreakers, setTieBreakers] = useState<
+    z.infer<typeof TieBreakerPlayerSchema>
+  >([]);
+  const [openTieBreakerDialog, setOpenTieBreakerDialog] = useState(false);
   const [hasPlayersChanged, setHasPlayersChanged] = useState(false);
 
   const [duration, setDuration] = useState(match.duration);
@@ -173,16 +179,61 @@ export function Match({ match }: { match: Match }) {
       })),
       match.scoresheet,
     );
-    updateMatch.mutate({
-      match: {
-        id: match.id,
-        duration: duration,
-        finished: true,
-        running: false,
-      },
-      roundPlayers: submittedPlayers,
-      playersPlacement: playersPlacement,
+    let isTieBreaker = false;
+    playersPlacement.forEach((player, index) => {
+      if (
+        index > 0 &&
+        player.placement === playersPlacement[index - 1]?.placement
+      ) {
+        isTieBreaker = true;
+      }
     });
+    if (isTieBreaker) {
+      setOpenTieBreakerDialog(true);
+      setTieBreakers(
+        playersPlacement.map((player) => {
+          const foundPlayer = players.find((p) => p.id === player.id);
+          return {
+            matchPlayerId: player.id,
+            name: foundPlayer?.name ?? "",
+            imageUrl: foundPlayer?.imageUrl ?? "",
+            placement: player.placement,
+            score: player.score,
+          };
+        }),
+      );
+      updateMatchScores.mutate({
+        match: {
+          id: match.id,
+          duration: duration,
+          running: false,
+        },
+        roundPlayers: submittedPlayers,
+        matchPlayers: players.map((player) => {
+          return {
+            id: player.id,
+            score: calculateFinalScore(
+              player.rounds.map((round) => ({
+                score: round.score ?? 0,
+              })),
+              match.scoresheet,
+            ),
+          };
+        }),
+      });
+      return;
+    } else {
+      updateMatch.mutate({
+        match: {
+          id: match.id,
+          duration: duration,
+          finished: true,
+          running: false,
+        },
+        roundPlayers: submittedPlayers,
+        playersPlacement: playersPlacement,
+      });
+    }
   };
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -402,6 +453,13 @@ export function Match({ match }: { match: Match }) {
         gameId={match.gameId}
         matchId={match.id}
         players={manualWinners}
+      />
+      <TieBreakerDialog
+        isOpen={openTieBreakerDialog}
+        setIsOpen={setOpenTieBreakerDialog}
+        gameId={match.gameId}
+        matchId={match.id}
+        players={tieBreakers}
       />
     </div>
   );
