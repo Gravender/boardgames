@@ -180,14 +180,17 @@ export function Match({ match }: { match: Match }) {
       match.scoresheet,
     );
     let isTieBreaker = false;
-    playersPlacement.forEach((player, index) => {
+
+    for (let index = 0; index < playersPlacement.length; index++) {
       if (
         index > 0 &&
-        player.placement === playersPlacement[index - 1]?.placement
+        playersPlacement[index]?.placement ===
+          playersPlacement[index - 1]?.placement
       ) {
         isTieBreaker = true;
+        break;
       }
-    });
+    }
     if (isTieBreaker) {
       setOpenTieBreakerDialog(true);
       setTieBreakers(

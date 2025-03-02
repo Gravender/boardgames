@@ -87,7 +87,9 @@ export function calculatePlacement(players: Player[], scoresheet: scoreSheet) {
       placement = i + 1; // Adjust placement only if score changes
     }
     placements.push({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       id: finalScores[i]!.id,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       score: finalScores[i]!.score,
       placement,
     });

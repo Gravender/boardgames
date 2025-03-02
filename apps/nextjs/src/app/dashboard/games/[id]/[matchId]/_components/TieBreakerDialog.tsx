@@ -6,14 +6,11 @@ import { z } from "zod";
 
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@board-games/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
@@ -116,7 +113,7 @@ function Content({
     control: form.control,
     name: "players",
   });
-  const indexes: Map<number, number> = new Map(
+  const indexes = new Map<number, number>(
     fields.map((player, index) => [player.matchPlayerId, index]),
   );
 
@@ -198,6 +195,7 @@ function Content({
                             <PopoverContent>
                               <FormField
                                 control={form.control}
+                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                 name={`players.${indexes.get(player.matchPlayerId)!}.placement`}
                                 render={({ field }) => (
                                   <FormItem>
@@ -221,6 +219,7 @@ function Content({
                                           console.log(player);
 
                                           update(
+                                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                             indexes.get(player.matchPlayerId)!,
                                             {
                                               ...player,

@@ -1,8 +1,6 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
 
 import { Separator } from "@board-games/ui/separator";
 import {
@@ -49,6 +47,7 @@ async function SidebarLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export default async function DashboardLayout({
   children,
 }: {

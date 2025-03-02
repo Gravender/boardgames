@@ -1,5 +1,6 @@
+import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { and, arrayOverlaps, desc, eq, inArray, SQL, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type {
@@ -358,7 +359,7 @@ export const matchRouter = createTRPCRouter({
               const placement = matchPlayer.placement;
               if (placement != null) {
                 playerStats[playerId].placements[placement] =
-                  (playerStats[playerId].placements[placement] || 0) + 1;
+                  (playerStats[playerId].placements[placement] ?? 0) + 1;
               }
 
               // This counts as one "play"

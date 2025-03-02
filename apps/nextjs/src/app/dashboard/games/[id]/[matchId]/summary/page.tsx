@@ -193,7 +193,7 @@ export default async function Page({ params }: Props) {
             <CardTitle>Match Results</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col divide-y">
-            {summary.players.map((player, index) => {
+            {summary.players.map((player) => {
               const calculatePerformance = () => {
                 if (player.score === null) return "";
                 const foundPlayer = summary.playerStats.find(

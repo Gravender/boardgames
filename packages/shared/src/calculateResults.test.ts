@@ -1,7 +1,7 @@
+import type { z } from "zod";
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
 
-import { insertScoreSheetSchema } from "@board-games/db/schema";
+import type { insertScoreSheetSchema } from "@board-games/db/schema";
 
 import {
   calculateFinalScore,
@@ -13,10 +13,6 @@ interface Round {
   score: number;
 }
 
-interface Player {
-  id: number;
-  rounds: Round[];
-}
 interface scoreSheet {
   roundsScore: NonNullable<
     z.infer<typeof insertScoreSheetSchema>["roundsScore"]
