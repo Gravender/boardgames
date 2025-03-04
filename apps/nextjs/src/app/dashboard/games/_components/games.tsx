@@ -20,9 +20,11 @@ import { Separator } from "@board-games/ui/separator";
 import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
+import { api } from "~/trpc/react";
 import { GamesDropDown } from "./gamesDropDown";
 
-export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
+export function Games() {
+  const [data] = api.game.getGames.useSuspenseQuery();
   const [games, setGames] = useState<RouterOutputs["game"]["getGames"]>(data);
 
   return (
@@ -44,8 +46,8 @@ export function Games({ data }: { data: RouterOutputs["game"]["getGames"] }) {
         searchPlaceholder="Search Games..."
       />
       <ScrollArea className="h-[75vh] sm:h-[80vh]">
-        <Table className="hidden pb-14 xs:table">
-          <TableBody className="flex w-full flex-col gap-2 p-4">
+        <Table className="hidden xs:table">
+          <TableBody className="flex w-full flex-col gap-2 p-4 pb-24">
             {games.map((game) => {
               const players = game.players as {
                 min: number | null;

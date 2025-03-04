@@ -3,14 +3,10 @@ import { Suspense } from "react";
 import { CardHeader, CardTitle } from "@board-games/ui/card";
 import { Table, TableBody } from "@board-games/ui/table";
 
-import { api } from "~/trpc/server";
+import { api, HydrateClient } from "~/trpc/server";
 import { AddGameDialog } from "./_components/addGameDialog";
 import { Games, GameSkeleton } from "./_components/games";
 
-async function GamesContent() {
-  const games = await api.game.getGames();
-  return <Games data={games} />;
-}
 function GamesContentFallback() {
   return (
     <>
@@ -30,17 +26,20 @@ function GamesContentFallback() {
   );
 }
 
-export default function Page() {
+export default async function Page() {
+  api.game.getGames.prefetch();
   return (
-    <div className="flex w-full items-center justify-center">
-      <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
-        <Suspense fallback={<GamesContentFallback />}>
-          <GamesContent />
-        </Suspense>
-        <div className="absolute bottom-4 right-6 z-10 sm:right-10">
-          <AddGameDialog />
+    <HydrateClient>
+      <div className="flex w-full items-center justify-center">
+        <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
+          <Suspense fallback={<GamesContentFallback />}>
+            <Games />
+          </Suspense>
+          <div className="absolute bottom-4 right-6 z-10 sm:right-10">
+            <AddGameDialog />
+          </div>
         </div>
       </div>
-    </div>
+    </HydrateClient>
   );
 }
