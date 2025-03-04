@@ -500,17 +500,82 @@ export async function seed() {
         if (matchScoresheet.winCondition === "Target Score") {
           return parsedScore === matchScoresheet.targetScore;
         }
+        if (matchScoresheet.winCondition === "Manual") {
+          return faker.datatype.boolean(
+            returnedRoundPlayersGroupByMatchPLayer.length > 1
+              ? 1.5 / returnedRoundPlayersGroupByMatchPLayer.length
+              : 0.5,
+          );
+        }
         return false;
+      };
+      const finalScores = returnedRoundPlayersGroupByMatchPLayer.map(
+        (player) => ({
+          id: player.matchPlayerId,
+          score: player.finalScore,
+        }),
+      );
+      finalScores.sort((a, b) => {
+        if (matchScoresheet.winCondition === "Highest Score") {
+          return b.score - a.score;
+        }
+        if (matchScoresheet.winCondition === "Lowest Score") {
+          return a.score - b.score;
+        }
+        if (matchScoresheet.winCondition === "Target Score") {
+          if (a.score == b.score) {
+            return 0;
+          }
+          if (a.score === matchScoresheet.targetScore) return -1;
+          if (b.score === matchScoresheet.targetScore) return 1;
+        }
+        return 0;
+      });
+      let placement = 1;
+      const placements: { id: number; score: number; placement: number }[] = [];
+
+      for (let i = 0; i < finalScores.length; i++) {
+        if (i > 0 && finalScores[i]?.score !== finalScores[i - 1]?.score) {
+          placement = i + 1; // Adjust placement only if score changes
+        }
+        placements.push({
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          id: finalScores[i]!.id,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          score: finalScores[i]!.score,
+          placement,
+        });
+      }
+      const findPlacement = (matchPlayerId: number): number => {
+        const parsedMatchPlayerId = Number(matchPlayerId); // Ensure it's a number
+        const foundPlayer = placements.find(
+          (player) => player.id === parsedMatchPlayerId,
+        );
+        return foundPlayer?.placement ?? 0;
       };
 
       for (const returnedRoundPlayer of returnedRoundPlayersGroupByMatchPLayer) {
-        await db
-          .update(matchPlayer)
-          .set({
-            winner: isWinner(returnedRoundPlayer.finalScore),
-            score: returnedRoundPlayer.finalScore,
-          })
-          .where(eq(matchPlayer.id, returnedRoundPlayer.matchPlayerId));
+        const playerIsWinner = isWinner(returnedRoundPlayer.finalScore);
+        if (matchScoresheet.winCondition === "Manual") {
+          await db
+            .update(matchPlayer)
+            .set({
+              winner: playerIsWinner,
+              score: returnedRoundPlayer.finalScore,
+              placement: playerIsWinner ? 1 : 0,
+            })
+            .where(eq(matchPlayer.id, returnedRoundPlayer.matchPlayerId));
+        } else {
+          const placement = findPlacement(returnedRoundPlayer.matchPlayerId);
+          await db
+            .update(matchPlayer)
+            .set({
+              winner: isWinner(returnedRoundPlayer.finalScore),
+              score: returnedRoundPlayer.finalScore,
+              placement: placement,
+            })
+            .where(eq(matchPlayer.id, returnedRoundPlayer.matchPlayerId));
+        }
       }
     }
   }
