@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { LabelList, Pie, PieChart } from "recharts";
+import { LabelList, Pie, PieChart, ResponsiveContainer } from "recharts";
 
 import type { RouterOutputs } from "@board-games/api";
 import type { ChartConfig } from "@board-games/ui/chart";
@@ -55,24 +55,26 @@ export function UniqueGamesChart({
       <CardContent className="flex-1 pb-0">
         <ChartContainer
           config={chartConfig}
-          className="mx-auto aspect-square max-h-[250px] [&_.recharts-text]:fill-background"
+          className="mx-auto aspect-square max-h-[500px] min-h-[150px] [&_.recharts-text]:fill-background"
         >
-          <PieChart>
-            <ChartTooltip
-              content={<ChartTooltipContent nameKey="matches" hideLabel />}
-            />
-            <Pie data={chartData} dataKey="matches">
-              <LabelList
-                dataKey="game"
-                className="fill-background"
-                stroke="none"
-                fontSize={12}
-                formatter={(value: keyof typeof chartConfig) =>
-                  chartConfig[value]?.label
-                }
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <ChartTooltip
+                content={<ChartTooltipContent nameKey="matches" hideLabel />}
               />
-            </Pie>
-          </PieChart>
+              <Pie data={chartData} dataKey="matches">
+                <LabelList
+                  dataKey="game"
+                  className="fill-background"
+                  stroke="none"
+                  fontSize={12}
+                  formatter={(value: keyof typeof chartConfig) =>
+                    chartConfig[value]?.label
+                  }
+                />
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
         </ChartContainer>
       </CardContent>
       <CardFooter className="flex-col gap-2 text-sm">

@@ -45,7 +45,8 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "conventionalCommits.scopes": [
     "api",
-    "expo"
+    "expo",
+    "next"
   ],
   "cSpell.words": [
     "nativewind",

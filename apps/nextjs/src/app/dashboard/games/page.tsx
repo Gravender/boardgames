@@ -26,8 +26,8 @@ function GamesContentFallback() {
   );
 }
 
-export default async function Page() {
-  api.game.getGames.prefetch();
+export default function Page() {
+  void api.game.getGames.prefetch();
   return (
     <HydrateClient>
       <div className="flex w-full items-center justify-center">

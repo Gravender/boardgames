@@ -2,6 +2,8 @@ import { exit } from "process";
 import type { Table } from "drizzle-orm";
 import type { z } from "zod";
 import { faker } from "@faker-js/faker";
+import { randomLcg, randomNormal, randomUniform } from "d3";
+import { endOfMonth, getDaysInMonth, subMonths } from "date-fns";
 import { eq, getTableName, inArray, sql } from "drizzle-orm";
 
 import type {
@@ -78,6 +80,7 @@ function weightedRandomSample<T>(
 }
 
 // Set seed for deterministic data
+const d3Seed = 123;
 faker.seed(123);
 async function resetTable(table: Table) {
   return db.execute(
@@ -128,47 +131,67 @@ export async function seed() {
 
   const gameImages = await db.insert(image).values(imageGameData).returning();
 
+  const totalGames = 80;
+  const maxMatches = 3000; // Control total number of matches across all games
+
+  const normalGames = randomNormal.source(randomLcg(d3Seed))(40, 25);
+
   const gameData: z.infer<typeof insertGameSchema>[] = Array.from(
-    { length: 30 },
-    () => ({
-      name: faker.commerce.productName(),
-      userId: faker.helpers.arrayElement([user1.id, user2.id]),
-      imageId: faker.helpers.maybe(
-        () => faker.helpers.arrayElement(gameImages).id,
-        {
-          probability: 0.75,
-        },
-      ),
-      playersMin: faker.helpers.maybe(
+    { length: totalGames },
+    () => {
+      const fakePlayerMin = faker.helpers.maybe(
         () => faker.number.int({ min: 1, max: 4 }),
         { probability: 0.5 },
-      ),
-      playersMax: faker.helpers.maybe(
-        () => faker.number.int({ min: 4, max: 8 }),
+      );
+      const fakePlayerMax = faker.helpers.maybe(
+        () => faker.number.int({ min: fakePlayerMin ?? 2, max: 8 }),
         { probability: 0.5 },
-      ),
-      playtimeMin: faker.helpers.maybe(
+      );
+      const fakePlayTimeMin = faker.helpers.maybe(
         () => faker.number.int({ min: 15, max: 60 }),
         { probability: 0.5 },
-      ),
-      playtimeMax: faker.helpers.maybe(
-        () => faker.number.int({ min: 60, max: 180 }),
+      );
+      const fakePlayTimeMax = faker.helpers.maybe(
+        () => faker.number.int({ min: fakePlayTimeMin ?? 20, max: 180 }),
         { probability: 0.5 },
-      ),
-      yearPublished: faker.helpers.maybe(
-        () => faker.date.past({ years: 20 }).getFullYear(),
-        { probability: 0.5 },
-      ),
-      description: faker.helpers.maybe(() => faker.lorem.paragraph(), {
-        probability: 0.5,
-      }),
-      rules: faker.helpers.maybe(() => faker.lorem.paragraphs(3), {
-        probability: 0.5,
-      }),
-    }),
+      );
+      return {
+        name: faker.commerce.productName(),
+        userId: faker.helpers.arrayElement([user1.id, user2.id]),
+        imageId: faker.helpers.maybe(
+          () => faker.helpers.arrayElement(gameImages).id,
+          {
+            probability: 0.75,
+          },
+        ),
+        playersMin: fakePlayerMin,
+        playersMax: fakePlayerMax,
+        playtimeMin: fakePlayTimeMin,
+        playtimeMax: fakePlayTimeMax,
+        yearPublished: faker.helpers.maybe(
+          () => faker.date.past({ years: 20 }).getFullYear(),
+          { probability: 0.5 },
+        ),
+        description: faker.helpers.maybe(() => faker.lorem.paragraph(), {
+          probability: 0.5,
+        }),
+        rules: faker.helpers.maybe(() => faker.lorem.paragraphs(3), {
+          probability: 0.5,
+        }),
+      };
+    },
   );
 
   const returnedGames = await db.insert(game).values(gameData).returning();
+
+  let remainingMatches = maxMatches;
+  const gameMatchCounts = returnedGames.map(() => {
+    let numMatches = Math.max(1, Math.round(normalGames()));
+    numMatches = Math.min(numMatches, remainingMatches); // Prevent overflow
+    remainingMatches -= numMatches;
+    return numMatches;
+  });
+  const matchCount = gameMatchCounts.reduce((acc, curr) => acc + curr, 0);
 
   const locationData: z.infer<typeof insertLocationSchema>[] = Array.from(
     { length: 12 },
@@ -195,7 +218,7 @@ export async function seed() {
     .returning();
 
   const playerData: z.infer<typeof insertPlayerSchema>[] = Array.from(
-    { length: 40 },
+    { length: Math.round(matchCount / 20) },
     () => ({
       name: faker.person.fullName(),
       createdBy: faker.helpers.arrayElement([user1.id, user2.id]),
@@ -234,7 +257,41 @@ export async function seed() {
     await db.insert(groupPlayer).values(groupPlayersData);
   }
 
-  for (const returnedGame of returnedGames) {
+  const playerAppearances = new Map<number, number>();
+
+  // Setup a samples from a log-normal distribution where most players appear in a few matches, and some appear in many.
+  const playerNormal = randomNormal.source(randomLcg(d3Seed))(
+    Math.max(Math.min(5, matchCount), matchCount / 10),
+    Math.max(Math.min(15, matchCount / 4), matchCount / 8),
+  );
+
+  for (const player of players) {
+    let appearances = Math.round(Math.abs(playerNormal())); // Ensure positive values
+
+    // Ensure at least 1 match, and cap at 20 to prevent extreme values
+    appearances = Math.max(1, Math.min(appearances, matchCount / 3));
+
+    playerAppearances.set(player.id, appearances);
+  }
+  const userMatches = new Map<number, number>();
+  for (const [index, returnedGame] of returnedGames.entries()) {
+    if (returnedGame.userId == null) continue;
+    if (!userMatches.has(returnedGame.userId)) {
+      userMatches.set(returnedGame.userId, gameMatchCounts[index] ?? 1);
+    } else {
+      userMatches.set(
+        returnedGame.userId,
+        (userMatches.get(returnedGame.userId) ?? 0) +
+          (gameMatchCounts[index] ?? 1),
+      );
+    }
+  }
+
+  const dateNormal = randomUniform.source(randomLcg(d3Seed))(0, 24);
+
+  const today = new Date();
+
+  for (const [index, returnedGame] of returnedGames.entries()) {
     const winCondition = faker.helpers.weightedArrayElement([
       { weight: 0.05, value: "Manual" },
       { weight: 0.42, value: "Highest Score" },
@@ -259,9 +316,10 @@ export async function seed() {
       type: "Default",
       isCoop: faker.datatype.boolean(0.1),
     };
-    const returnedScoresheet = (
-      await db.insert(scoresheet).values(scoresheetData).returning()
-    )[0];
+    const [returnedScoresheet] = await db
+      .insert(scoresheet)
+      .values(scoresheetData)
+      .returning();
     if (!returnedScoresheet) {
       throw new Error("Scoresheet not created");
     }
@@ -284,10 +342,18 @@ export async function seed() {
       },
     );
     await db.insert(round).values(roundData).returning();
+
     let matchData: z.infer<typeof insertMatchSchema>[] = Array.from(
-      { length: faker.number.int({ min: 5, max: 30 }) },
+      { length: gameMatchCounts[index] ?? 1 },
       (_, index) => {
         const finished = faker.datatype.boolean(0.85);
+        let monthsAgo = Math.round(Math.abs(dateNormal())); // Ensure positive months
+        monthsAgo = Math.min(monthsAgo, 24); // Cap at 24 months
+
+        // Calculate the final date
+        const subbedDate = subMonths(today, monthsAgo);
+        const matchDate = endOfMonth(subbedDate);
+
         return {
           name: faker.helpers.weightedArrayElement([
             {
@@ -303,8 +369,11 @@ export async function seed() {
           gameId: returnedGame.id,
           scoresheetId: returnedScoresheet.id,
           locationId: faker.helpers.arrayElement(locations).id,
-          date: faker.date.past({ years: 10 }),
-          duration: faker.number.int({ min: 30, max: 240 }),
+          date: faker.date.recent({
+            days: getDaysInMonth(subbedDate),
+            refDate: matchDate,
+          }),
+          duration: faker.number.int({ min: 30, max: 400 }),
           finished: finished,
           running: !finished,
         };
@@ -312,21 +381,19 @@ export async function seed() {
     );
     matchData = await Promise.all(
       matchData.map(async (match) => {
-        const newScoreSheet = (
-          await db
-            .insert(scoresheet)
-            .values({
-              name: `${match.name} Scoresheet`,
-              gameId: returnedScoresheet.gameId,
-              userId: returnedScoresheet.userId,
-              isCoop: returnedScoresheet.isCoop,
-              winCondition: returnedScoresheet.winCondition,
-              targetScore: returnedScoresheet.targetScore,
-              roundsScore: returnedScoresheet.roundsScore,
-              type: "Match",
-            })
-            .returning()
-        )[0];
+        const [newScoreSheet] = await db
+          .insert(scoresheet)
+          .values({
+            name: `${match.name} Scoresheet`,
+            gameId: returnedScoresheet.gameId,
+            userId: returnedScoresheet.userId,
+            isCoop: returnedScoresheet.isCoop,
+            winCondition: returnedScoresheet.winCondition,
+            targetScore: returnedScoresheet.targetScore,
+            roundsScore: returnedScoresheet.roundsScore,
+            type: "Match",
+          })
+          .returning();
         if (!newScoreSheet) {
           throw new Error("Scoresheet not created");
         }
@@ -358,48 +425,33 @@ export async function seed() {
       .insert(match)
       .values(matchData)
       .returning();
+
     for (const returnedMatch of returnedMatches) {
       const filteredPlayers = players.filter(
         (player) => player.createdBy === returnedMatch.userId,
       );
-      const baseWeight = 1 / filteredPlayers.length;
-      let weights: number[] = [];
-      const remainingWeight = 1 - baseWeight;
-      const randomWeights = filteredPlayers.map((_, index) =>
-        faker.number.float({
-          min:
-            (remainingWeight / (filteredPlayers.length - 2)) *
-            (baseWeight * 0.01 + index * (baseWeight * 0.01)),
-          max: remainingWeight / (filteredPlayers.length - 2),
-        }),
-      );
 
-      const totalRandomWeight = randomWeights.reduce((sum, w) => sum + w, 0);
-      const normalizedWeights = randomWeights.map(
-        (w) => (w / totalRandomWeight) * remainingWeight,
-      );
-
-      weights = weights.concat(normalizedWeights);
-
-      const weightedPlayers = filteredPlayers.map((player, index) => {
-        if (player.createdBy === returnedMatch.userId) {
-          return {
-            weight: baseWeight,
-            value: player.id,
-          };
-        }
-        return {
-          weight: Number(weights[index]?.toFixed(4) ?? 0),
-          value: player.id,
-        };
-      });
+      if (!filteredPlayers.length) {
+        throw new Error("No eligible players found for match.");
+      }
 
       const minPlayers = returnedGame.playersMin ?? 2;
-      const maxPlayers = returnedGame.playersMax ?? 4;
+      const maxPlayers = returnedGame.playersMax ?? 8;
       const playerCount = faker.number.int({
         min: minPlayers,
         max: maxPlayers,
       });
+      const weightedPlayers = filteredPlayers.map((player) => ({
+        weight:
+          player.userId === returnedMatch.userId
+            ? Math.max(
+                (playerAppearances.get(player.id) ?? 1) / matchCount,
+                0.75,
+              )
+            : (playerAppearances.get(player.id) ?? 1) / matchCount,
+        value: player.id,
+      }));
+
       const matchPlayers = weightedRandomSample(weightedPlayers, playerCount);
       const matchPlayerData: z.infer<typeof insertMatchPlayerSchema>[] =
         matchPlayers.map((player, index) => ({
@@ -415,12 +467,10 @@ export async function seed() {
         .select()
         .from(round)
         .where(eq(round.scoresheetId, returnedMatch.scoresheetId));
-      const matchScoresheet = (
-        await db
-          .select()
-          .from(scoresheet)
-          .where(eq(scoresheet.id, returnedMatch.scoresheetId))
-      )[0];
+      const [matchScoresheet] = await db
+        .select()
+        .from(scoresheet)
+        .where(eq(scoresheet.id, returnedMatch.scoresheetId));
       if (!matchScoresheet) {
         throw new Error("Scoresheet not found");
       }
@@ -459,13 +509,15 @@ export async function seed() {
             return sql<number>`MIN(${roundPlayer.score})`.as("finalScore");
           }
           if (matchScoresheet.winCondition === "Target Score") {
-            return sql<number>`CASE WHEN ${roundPlayer.score} = ${matchScoresheet.targetScore} THEN ${roundPlayer.score} ELSE 0 END`.as(
-              "finalScore",
-            );
+            return sql<number>`SUM(
+                CASE WHEN ${roundPlayer.score} = ${matchScoresheet.targetScore} 
+                THEN ${roundPlayer.score} ELSE 0 END
+              )`.as("finalScore");
           }
         }
         return sql<number>`0`.as("finalScore");
       };
+
       const returnedRoundPlayersGroupByMatchPLayer = await db
         .select({
           matchPlayerId: roundPlayer.matchPlayerId,

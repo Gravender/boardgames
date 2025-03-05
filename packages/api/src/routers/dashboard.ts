@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { subMonths, subYears } from "date-fns";
 import { and, asc, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -233,7 +234,7 @@ export const dashboardRouter = {
         ),
       )
       .groupBy(game.id)
-      .orderBy(count(match.id), game.name);
+      .orderBy(desc(count(match.id)), game.name);
     const lastMonthGames = await ctx.db
       .select({
         id: game.id,
@@ -270,8 +271,15 @@ export const dashboardRouter = {
       .from(player)
       .innerJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
       .innerJoin(match, eq(match.id, matchPlayer.matchId))
-      .innerJoin(game, and(eq(match.gameId, game.id), eq(game.deleted, false)))
-      .where(eq(player.createdBy, ctx.userId))
+      .innerJoin(game, eq(match.gameId, game.id))
+      .where(
+        and(
+          eq(player.createdBy, ctx.userId),
+          eq(match.userId, ctx.userId),
+          sql`${match.date} >= now() - interval '1 year'`,
+          eq(game.deleted, false),
+        ),
+      )
       .groupBy(player.id)
       .orderBy(desc(count(match.id)), player.name)
       .as("sq");
@@ -286,6 +294,153 @@ export const dashboardRouter = {
       .from(image)
       .rightJoin(sq, eq(image.id, sq.imageId))
       .orderBy(desc(sq.matches));
-    return playersWithImages.slice(0, 5);
+    return playersWithImages.slice(0, 10);
+  }),
+  getUserPlacements: protectedUserProcedure.query(async ({ ctx }) => {
+    const [returnedPlayer] = await ctx.db
+      .select({ id: player.id })
+      .from(player)
+      .where(eq(player.userId, ctx.userId));
+    if (!returnedPlayer)
+      throw new TRPCError({ code: "NOT_FOUND", message: "Player not found" });
+
+    const placementCounts = await ctx.db
+      .select({
+        placement: matchPlayer.placement,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(matchPlayer)
+      .innerJoin(match, eq(match.id, matchPlayer.matchId))
+      .innerJoin(game, eq(match.gameId, game.id))
+      .where(
+        and(
+          eq(matchPlayer.playerId, returnedPlayer.id),
+          eq(match.finished, true),
+          sql`${match.date} >= now() - interval '1 year'`,
+          eq(game.deleted, false),
+        ),
+      )
+      .groupBy(matchPlayer.placement);
+    const formattedPlacements: Record<
+      number,
+      { placement: string; count: number }
+    > = {
+      1: { placement: "1st", count: 0 },
+      2: { placement: "2nd", count: 0 },
+      3: { placement: "3rd", count: 0 },
+      4: { placement: "4th", count: 0 },
+      5: { placement: "5th", count: 0 },
+      6: { placement: "6th+", count: 0 },
+    };
+
+    // Ensure placementCounts is processed safely
+    placementCounts.forEach((p) => {
+      const placement = p.placement ?? 6;
+
+      if (placement >= 1 && placement <= 5 && formattedPlacements[placement]) {
+        formattedPlacements[placement].count = Number(p.count);
+      } else if (formattedPlacements[6]) {
+        formattedPlacements[6].count =
+          Number(p.count) + Number(formattedPlacements[6].count);
+      }
+    });
+
+    // Convert object to array format
+    const placementData = Object.values(formattedPlacements);
+    return placementData;
+  }),
+  getUserWinPercentage: protectedUserProcedure.query(async ({ ctx }) => {
+    const results = await ctx.db
+      .select({
+        month: sql<string>`to_char(${match.date}, 'Mon')`,
+        monthNum: sql<number>`extract(month from ${match.date})`,
+        year: sql<number>`extract(year from ${match.date})`,
+        totalMatches: sql<number>`COUNT(${match.id})`,
+        wins: sql<number>`SUM(CASE WHEN ${matchPlayer.winner} THEN 1 ELSE 0 END)`,
+      })
+      .from(match)
+      .innerJoin(matchPlayer, eq(match.id, matchPlayer.matchId))
+      .innerJoin(player, eq(matchPlayer.playerId, player.id))
+      .innerJoin(game, eq(match.gameId, game.id))
+      .where(
+        and(
+          eq(player.userId, ctx.userId),
+          sql`${match.date} >= now() - interval '2 year'`,
+          eq(match.finished, true),
+          eq(game.deleted, false),
+        ),
+      )
+      .groupBy(
+        sql`to_char(${match.date}, 'Mon'), extract(month from ${match.date}), extract(year from ${match.date})`,
+      )
+      .orderBy(
+        sql`extract(year from ${match.date}), extract(month from ${match.date})`,
+      );
+
+    if (results.length === 0) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "No match data available for the past year",
+      });
+    }
+
+    let numMatches = 0;
+    let numWins = 0;
+    const formattedResults = {
+      overtime: results
+        .map((row) => {
+          numMatches += Number(row.totalMatches);
+          numWins += Number(row.wins);
+
+          return {
+            month: row.month,
+            year: row.year,
+            winPercentage:
+              numMatches > 0 ? ((numWins / numMatches) * 100).toFixed(2) : 0,
+          };
+        })
+        .filter((_, index) => {
+          return index + 1 >= results.length / 2;
+        }),
+      monthToMonth: results
+        .map((row) => ({
+          month: row.month,
+          year: row.year,
+          winPercentage:
+            row.totalMatches > 0 ? (row.wins / row.totalMatches) * 100 : 0,
+        }))
+        .filter((_, index) => {
+          return index + 1 >= results.length / 2;
+        }),
+    };
+    return formattedResults;
+  }),
+  getDaysPlayed: protectedUserProcedure.query(async ({ ctx }) => {
+    const daysPlayed = await ctx.db
+      .select({
+        day: sql<string>`to_char(${match.date}, 'Day')`,
+        matches: sql<number>`count(${match.id})`,
+      })
+      .from(match)
+      .innerJoin(matchPlayer, eq(match.id, matchPlayer.matchId))
+      .innerJoin(player, eq(matchPlayer.playerId, player.id))
+      .innerJoin(game, eq(match.gameId, game.id))
+      .where(
+        and(
+          eq(player.userId, ctx.userId),
+          sql`${match.date} >= now() - interval '1 year'`,
+          eq(match.finished, true),
+          eq(game.deleted, false),
+        ),
+      )
+      .groupBy(
+        sql`to_char(${match.date}, 'Day'), extract(dow from ${match.date})`,
+      )
+      .orderBy(sql`extract(dow from ${match.date})`);
+
+    return daysPlayed.map((day) => ({
+      day: day.day.trim(),
+      matches: Number(day.matches),
+    }));
   }),
 };

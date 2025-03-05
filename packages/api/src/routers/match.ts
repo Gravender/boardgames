@@ -452,7 +452,6 @@ export const matchRouter = createTRPCRouter({
           location: true,
         },
       });
-      console.log(matches);
       return matches.map((match) => ({
         id: match.id,
         date: match.date,
