@@ -52,7 +52,7 @@ export function PlayedChart({
         <CardDescription>{`${data[0]?.month} ${subMonths(new Date(), 11).getFullYear()} - ${data[data.length - 1]?.month} ${new Date().getFullYear()}`}</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig}>
+        <ChartContainer config={chartConfig} className="max-h-64 w-full">
           <LineChart
             accessibilityLayer
             data={data}

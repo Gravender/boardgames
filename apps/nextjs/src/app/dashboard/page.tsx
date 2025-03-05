@@ -18,8 +18,8 @@ export default async function Page() {
   const daysOfWeek = await api.dashboard.getDaysPlayed();
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4 pt-0">
+      <div className="grid max-w-4xl gap-4 md:grid-cols-2 lg:grid-cols-3">
         {uniqueGames.currentMonthGames > 0 && (
           <UniqueGamesChart data={uniqueGames} />
         )}
@@ -37,12 +37,7 @@ export default async function Page() {
         />
         {players.length > 0 && <PlayersCard data={players} />}
         {matches.played > 0 && <PlayedChart data={matches.months} />}
-        <ChartCard
-          className="col-span-1 lg:col-span-3"
-          title="Win Percentage Over Time"
-          description="Your win rate trends over the past months"
-          children={<WinPercentageChart data={winPercentage} />}
-        />
+        <WinPercentageChart data={winPercentage} />
       </div>
       <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
     </div>
