@@ -48,7 +48,7 @@ const scoresheets = createTable(
       .default("Aggregate")
       .notNull(),
     type: text("type", {
-      enum: ["Template", "Default", "Match"],
+      enum: ["Template", "Default", "Match", "Game"],
     })
       .default("Default")
       .notNull(),

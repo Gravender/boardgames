@@ -49,10 +49,9 @@ export const matchRouter = createTRPCRouter({
         }),
     )
     .mutation(async ({ ctx, input }) => {
-      const returnedScoresheet = await ctx.db.query.scoresheet.findFirst({
+      const returnedScoresheets = await ctx.db.query.scoresheet.findMany({
         where: and(
           eq(match.gameId, input.gameId),
-          eq(scoresheet.type, "Default"),
           eq(scoresheet.userId, ctx.userId),
         ),
         with: {
@@ -61,6 +60,9 @@ export const matchRouter = createTRPCRouter({
           },
         },
       });
+      const returnedScoresheet =
+        returnedScoresheets.find((x) => x.name === "Default") ??
+        returnedScoresheets[0];
       if (!returnedScoresheet) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",

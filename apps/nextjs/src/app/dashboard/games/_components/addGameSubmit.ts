@@ -67,36 +67,36 @@ const formSchema = z.object({
         });
       }
     }),
-  scoresheet: insertScoreSheetSchema
-    .omit({
-      id: true,
-      createdAt: true,
-      updatedAt: true,
-      userId: true,
-      type: true,
-      gameId: true,
-    })
-    .required({ name: true })
-    .or(z.null()),
-  rounds: z.array(
-    insertRoundSchema
-      .omit({
-        id: true,
-        createdAt: true,
-        updatedAt: true,
-        scoresheetId: true,
-      })
-      .required({ name: true }),
+  scoresheets: z.array(
+    z.object({
+      scoresheet: insertScoreSheetSchema
+        .omit({
+          id: true,
+          createdAt: true,
+          updatedAt: true,
+          userId: true,
+          type: true,
+          gameId: true,
+        })
+        .required({ name: true }),
+      rounds: z.array(
+        insertRoundSchema
+          .omit({
+            id: true,
+            createdAt: true,
+            updatedAt: true,
+            scoresheetId: true,
+          })
+          .required({ name: true }),
+      ),
+    }),
   ),
 });
 export async function addGameSubmitAction(data: FormData) {
   const formData = Object.fromEntries(data);
   /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-  if (formData.scoresheet !== undefined) {
-    formData.scoresheet = JSON.parse(formData.scoresheet as string);
-  }
-  if (formData.rounds !== undefined) {
-    formData.rounds = JSON.parse(formData.rounds as string);
+  if (formData.scoresheets !== undefined) {
+    formData.scoresheets = JSON.parse(formData.scoresheets as string);
   }
   /* eslint-enable @typescript-eslint/no-unsafe-assignment */
   const parsed = formSchema.safeParse({
@@ -115,8 +115,7 @@ export async function addGameSubmitAction(data: FormData) {
       gameImg:
         data.get("gameImg") === "null" ? null : (data.get("gameImg") as File),
     },
-    scoresheet: formData.scoresheet,
-    rounds: formData.rounds,
+    scoresheets: formData.scoresheets,
   });
   if (!parsed.success) {
     console.error(JSON.stringify(parsed));
@@ -145,8 +144,7 @@ export async function addGameSubmitAction(data: FormData) {
         yearPublished: parsed.data.game.yearPublished,
         imageId: null,
       },
-      scoresheet: parsed.data.scoresheet,
-      rounds: parsed.data.rounds,
+      scoresheets: parsed.data.scoresheets,
     });
     revalidatePath("/dashboard/games");
     return { errors: null, data: "Game Created" };
@@ -166,8 +164,7 @@ export async function addGameSubmitAction(data: FormData) {
           yearPublished: parsed.data.game.yearPublished,
           imageId: imageId,
         },
-        scoresheet: parsed.data.scoresheet,
-        rounds: parsed.data.rounds,
+        scoresheets: parsed.data.scoresheets,
       });
     } catch (error) {
       console.error("Error uploading Image:", error);

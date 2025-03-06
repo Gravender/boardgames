@@ -4,6 +4,7 @@ import type { SubmitHandler, UseFormReturn } from "react-hook-form";
 import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { set } from "lodash";
 import {
   ChevronDown,
   ChevronUp,
@@ -154,16 +155,15 @@ const roundsSchema = z.array(
     .required({ name: true }),
 );
 const scoreSheetWithRoundsSchema = z.object({
-  scoresheet: scoreSheetSchema.or(z.null()),
+  scoresheet: scoreSheetSchema,
   rounds: roundsSchema,
 });
+const scoreSheetsSchema = z.array(scoreSheetWithRoundsSchema);
 function Content({ setIsOpen }: { setIsOpen: (isOpen: boolean) => void }) {
-  const [scoreSheetWithRounds, setScoreSheetWithRounds] = useState<
-    z.infer<typeof scoreSheetWithRoundsSchema>
-  >({
-    scoresheet: null,
-    rounds: [],
-  });
+  const [scoreSheets, setScoreSheets] = useState<
+    z.infer<typeof scoreSheetsSchema>
+  >([]);
+  const [activeScoreSheet, setActiveScoreSheet] = useState(0);
   const [game, setGame] = useState<z.infer<typeof gameSchema>>({
     name: "",
     ownedBy: false,
@@ -177,6 +177,23 @@ function Content({ setIsOpen }: { setIsOpen: (isOpen: boolean) => void }) {
   const [moreOptions, setMoreOptions] = useState(false);
   const [isScoresheet, setIsScoresheet] = useState(false);
 
+  const updateScoreSheets = (
+    scoreSheetWithRounds: z.infer<typeof scoreSheetWithRoundsSchema>,
+  ) => {
+    setScoreSheets((prev) => {
+      if (prev.length === 0) {
+        return [scoreSheetWithRounds];
+      }
+      const newScoreSheets = [...prev];
+      if (activeScoreSheet === prev.length) {
+        newScoreSheets.push(scoreSheetWithRounds);
+        return newScoreSheets;
+      }
+      newScoreSheets[activeScoreSheet] = scoreSheetWithRounds;
+      return newScoreSheets;
+    });
+  };
+
   return (
     <>
       <DialogHeader>
@@ -186,8 +203,30 @@ function Content({ setIsOpen }: { setIsOpen: (isOpen: boolean) => void }) {
       </DialogHeader>
       {isScoresheet ? (
         <AddScoreSheetForm
-          scoreSheetWithRounds={scoreSheetWithRounds}
-          setScoreSheetWithRounds={setScoreSheetWithRounds}
+          scoreSheetWithRounds={
+            scoreSheets[activeScoreSheet] ?? {
+              scoresheet: {
+                name:
+                  scoreSheets.length === 0
+                    ? "Default"
+                    : `Scoresheet ${scoreSheets.length}`,
+                winCondition: "Highest Score",
+                isCoop: false,
+                roundsScore: "Aggregate",
+                targetScore: 0,
+              },
+              rounds: [
+                {
+                  name: "Round 1",
+                  type: "Numeric",
+                  color: "#E2E2E2",
+                  score: 0,
+                  order: 0,
+                },
+              ],
+            }
+          }
+          setScoreSheetWithRounds={updateScoreSheets}
           setIsScoresheet={setIsScoresheet}
         />
       ) : (
@@ -196,7 +235,9 @@ function Content({ setIsOpen }: { setIsOpen: (isOpen: boolean) => void }) {
           setGame={setGame}
           moreOptions={moreOptions}
           setMoreOptions={setMoreOptions}
-          scoreSheetWithRounds={scoreSheetWithRounds}
+          scoreSheets={scoreSheets}
+          setScoreSheets={setScoreSheets}
+          setActiveScoreSheet={setActiveScoreSheet}
           setIsOpen={setIsOpen}
           setIsScoresheet={setIsScoresheet}
         />
@@ -210,7 +251,9 @@ const AddGameForm = ({
   setGame,
   moreOptions,
   setMoreOptions,
-  scoreSheetWithRounds,
+  scoreSheets,
+  setScoreSheets,
+  setActiveScoreSheet,
   setIsScoresheet,
   setIsOpen,
 }: {
@@ -218,7 +261,9 @@ const AddGameForm = ({
   setMoreOptions: (moreOptions: boolean) => void;
   game: z.infer<typeof gameSchema>;
   setGame: (game: z.infer<typeof gameSchema>) => void;
-  scoreSheetWithRounds: z.infer<typeof scoreSheetWithRoundsSchema>;
+  scoreSheets: z.infer<typeof scoreSheetsSchema>;
+  setScoreSheets: (scoreSheets: z.infer<typeof scoreSheetsSchema>) => void;
+  setActiveScoreSheet: (activeScoreSheet: number) => void;
   setIsScoresheet: (isScoresheet: boolean) => void;
   setIsOpen: (isOpen: boolean) => void;
 }) => {
@@ -250,11 +295,7 @@ const AddGameForm = ({
     formData.append("playtimeMax", JSON.stringify(data.playtimeMax));
     formData.append("yearPublished", JSON.stringify(data.yearPublished));
     formData.append("gameImg", data.gameImg ?? "null");
-    formData.append(
-      "scoresheet",
-      JSON.stringify(scoreSheetWithRounds.scoresheet),
-    );
-    formData.append("rounds", JSON.stringify(scoreSheetWithRounds.rounds));
+    formData.append("scoresheets", JSON.stringify(scoreSheets));
     startTransaction(async () => {
       // call the server action
       const { data: success, errors } = await addGameSubmitAction(formData);
@@ -553,50 +594,71 @@ const AddGameForm = ({
                   onClick={() => {
                     setGame(form.getValues());
                     setIsScoresheet(true);
+                    setActiveScoreSheet(scoreSheets.length);
                   }}
                   type="button"
                 >
-                  {scoreSheetWithRounds.scoresheet === null
-                    ? "Create New"
-                    : "Edit Sheet"}
+                  {"Create New"}
                 </Button>
               </div>
-              <button
-                className="flex items-center justify-between gap-2"
-                onClick={() => {
-                  setGame(form.getValues());
-                  setIsScoresheet(true);
-                }}
-                type="button"
-              >
-                <Table />
-                <div className="flex flex-grow flex-col items-start justify-start">
-                  <span className="text-lg">
-                    {scoreSheetWithRounds.scoresheet?.name ?? "Default"}
-                  </span>
-                  <div className="mb-2 flex w-full items-center gap-3 text-sm">
-                    <div className="flex min-w-20 items-center gap-1">
-                      <span>Win Condition:</span>
-                      <span className="text-sm text-muted-foreground">
-                        {scoreSheetWithRounds.scoresheet?.winCondition ??
-                          "Highest Score"}
-                      </span>
+              <div>
+                {scoreSheets.map((scoreSheet, index) => {
+                  return (
+                    <div
+                      key={`${index}-${scoreSheet.scoresheet.name}`}
+                      className="flex items-center justify-between gap-2"
+                    >
+                      <Table />
+                      <button
+                        className="flex flex-grow flex-col items-start justify-start"
+                        onClick={() => {
+                          setGame(form.getValues());
+                          setIsScoresheet(true);
+                          setActiveScoreSheet(index);
+                        }}
+                        type="button"
+                      >
+                        <span className="text-lg">
+                          {scoreSheet.scoresheet?.name ?? "Default"}
+                        </span>
+                        <div className="mb-2 flex w-full items-center gap-3 text-sm">
+                          <div className="flex min-w-20 items-center gap-1">
+                            <span>Win Condition:</span>
+                            <span className="text-sm text-muted-foreground">
+                              {scoreSheet.scoresheet?.winCondition ??
+                                "Highest Score"}
+                            </span>
+                          </div>
+                          <Separator
+                            orientation="vertical"
+                            className="font-semi-bold h-4"
+                          />
+                          <div className="flex min-w-20 items-center gap-1">
+                            <span>Rounds:</span>
+                            <span className="text-sm text-muted-foreground">
+                              {scoreSheet.rounds.length > 0
+                                ? scoreSheet.rounds.length
+                                : "1"}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        type="button"
+                        onClick={() =>
+                          setScoreSheets(
+                            scoreSheets.filter((_, i) => i !== index),
+                          )
+                        }
+                      >
+                        <Trash />
+                      </Button>
                     </div>
-                    <Separator
-                      orientation="vertical"
-                      className="font-semi-bold h-4"
-                    />
-                    <div className="flex min-w-20 items-center gap-1">
-                      <span>Rounds:</span>
-                      <span className="text-sm text-muted-foreground">
-                        {scoreSheetWithRounds.rounds.length > 0
-                          ? scoreSheetWithRounds.rounds.length
-                          : "1"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </button>
+                  );
+                })}
+              </div>
             </div>
           </CollapsibleContent>
         </Collapsible>
@@ -624,7 +686,7 @@ const AddGameForm = ({
   );
 };
 export const scoreSheetWithRoundsFormSchema = z.object({
-  scoresheet: scoreSheetSchema.or(z.null()),
+  scoresheet: scoreSheetSchema,
   rounds: roundsSchema,
 });
 const AddScoreSheetForm = ({
@@ -641,27 +703,8 @@ const AddScoreSheetForm = ({
   const form = useForm<z.infer<typeof scoreSheetWithRoundsFormSchema>>({
     resolver: zodResolver(scoreSheetWithRoundsFormSchema),
     defaultValues: {
-      scoresheet: scoreSheetWithRounds.scoresheet
-        ? scoreSheetWithRounds.scoresheet
-        : {
-            name: "Default",
-            winCondition: "Highest Score",
-            isCoop: false,
-            roundsScore: "Aggregate",
-            targetScore: 0,
-          },
-      rounds:
-        scoreSheetWithRounds.rounds.length > 0
-          ? scoreSheetWithRounds.rounds
-          : [
-              {
-                name: "Round 1",
-                type: "Numeric",
-                color: "#E2E2E2",
-                score: 0,
-                order: 0,
-              },
-            ],
+      scoresheet: scoreSheetWithRounds.scoresheet,
+      rounds: scoreSheetWithRounds.rounds,
     },
   });
   const onBack = () => {

@@ -26,45 +26,48 @@ export const gameRouter = createTRPCRouter({
           createdAt: true,
           updatedAt: true,
         }),
-        scoresheet: insertScoreSheetSchema
-          .omit({
-            id: true,
-            createdAt: true,
-            updatedAt: true,
-            userId: true,
-            type: true,
-            gameId: true,
-          })
-          .required({ name: true })
-          .or(z.null()),
-        rounds: z.array(
-          insertRoundSchema
-            .omit({
-              id: true,
-              createdAt: true,
-              updatedAt: true,
-              scoresheetId: true,
-            })
-            .required({ name: true }),
+        scoresheets: z.array(
+          z.object({
+            scoresheet: insertScoreSheetSchema
+              .omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                userId: true,
+                type: true,
+                gameId: true,
+              })
+              .required({ name: true }),
+            rounds: z.array(
+              insertRoundSchema
+                .omit({
+                  id: true,
+                  createdAt: true,
+                  updatedAt: true,
+                  scoresheetId: true,
+                })
+                .required({ name: true }),
+            ),
+          }),
         ),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const returningGame = await ctx.db
+      const [returningGame] = await ctx.db
         .insert(game)
         .values({ ...input.game, userId: ctx.userId })
         .returning();
-      if (!returningGame[0]?.id) {
+      if (!returningGame?.id) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       }
-      if (!input.scoresheet) {
+      if (input.scoresheets.length === 0) {
         const scoresheetId = (
           await ctx.db
             .insert(scoresheet)
             .values({
               name: "Default",
               userId: ctx.userId,
-              gameId: returningGame[0].id,
+              gameId: returningGame.id,
               type: "Default",
             })
             .returning()
@@ -79,27 +82,27 @@ export const gameRouter = createTRPCRouter({
           order: 1,
         });
       } else {
-        const scoresheetId = (
-          await ctx.db
+        input.scoresheets.forEach(async (inputScoresheet) => {
+          const [returnedScoresheet] = await ctx.db
             .insert(scoresheet)
             .values({
-              ...input.scoresheet,
+              ...inputScoresheet.scoresheet,
               userId: ctx.userId,
-              gameId: returningGame[0].id,
-              type: "Default",
+              gameId: returningGame.id,
+              type: "Game",
             })
-            .returning()
-        )[0]?.id;
-        if (!scoresheetId) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-        }
+            .returning();
+          if (!returnedScoresheet) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+          }
 
-        const rounds = input.rounds.map((round, index) => ({
-          ...round,
-          scoresheetId: scoresheetId,
-          order: index + 1,
-        }));
-        await ctx.db.insert(round).values(rounds);
+          const rounds = inputScoresheet.rounds.map((round, index) => ({
+            ...round,
+            scoresheetId: returnedScoresheet.id,
+            order: index + 1,
+          }));
+          await ctx.db.insert(round).values(rounds);
+        });
       }
     }),
   getGame: protectedUserProcedure
