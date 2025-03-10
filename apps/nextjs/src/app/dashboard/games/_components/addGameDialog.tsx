@@ -4,7 +4,6 @@ import type { SubmitHandler, UseFormReturn } from "react-hook-form";
 import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { set } from "lodash";
 import {
   ChevronDown,
   ChevronUp,
@@ -19,9 +18,11 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import {
-  insertRoundSchema,
-  insertScoreSheetSchema,
-} from "@board-games/db/schema";
+  baseRoundSchema,
+  createGameSchema,
+  roundsSchema,
+  scoreSheetSchema,
+} from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
 import { CardContent } from "@board-games/ui/card";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -86,77 +87,9 @@ export function AddGameDialog() {
     </Dialog>
   );
 }
-export const gameSchema = z
-  .object({
-    name: z.string().min(1, {
-      message: "Game name is required",
-    }),
-    ownedBy: z.boolean(),
-    gameImg: z
-      .instanceof(File)
-      .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
-      .refine(
-        (file) => file.type === "image/jpeg" || file.type === "image/png",
-        "Only .jpg and .png formats are supported.",
-      )
-      .nullable(),
-    playersMin: z.number().min(1).nullable(),
-    playersMax: z.number().positive().nullable(),
-    playtimeMin: z.number().min(1).positive().nullable(),
-    playtimeMax: z.number().positive().nullable(),
-    yearPublished: z
-      .number()
-      .min(1900)
-      .max(new Date().getFullYear())
-      .nullable(),
-  })
-  .superRefine((values, ctx) => {
-    if (
-      values.playersMin &&
-      values.playersMax &&
-      values.playersMin > values.playersMax
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Players min must be less than or equal to players max.",
-        path: ["playersMin"],
-      });
-    }
-    if (
-      values.playtimeMin &&
-      values.playtimeMax &&
-      values.playtimeMin > values.playtimeMax
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Playtime min must be less than or equal to playtime max.",
-        path: ["playtimeMin"],
-      });
-    }
-  });
-const scoreSheetSchema = insertScoreSheetSchema
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    userId: true,
-    type: true,
-    gameId: true,
-  })
-  .required({ name: true });
-const roundsSchema = z.array(
-  insertRoundSchema
-    .omit({
-      id: true,
-      createdAt: true,
-      updatedAt: true,
-      scoresheetId: true,
-    })
-    .required({ name: true }),
-);
 const scoreSheetWithRoundsSchema = z.object({
   scoresheet: scoreSheetSchema,
-  rounds: roundsSchema,
+  rounds: z.array(baseRoundSchema),
 });
 const scoreSheetsSchema = z.array(scoreSheetWithRoundsSchema);
 function Content({ setIsOpen }: { setIsOpen: (isOpen: boolean) => void }) {
@@ -164,7 +97,7 @@ function Content({ setIsOpen }: { setIsOpen: (isOpen: boolean) => void }) {
     z.infer<typeof scoreSheetsSchema>
   >([]);
   const [activeScoreSheet, setActiveScoreSheet] = useState(0);
-  const [game, setGame] = useState<z.infer<typeof gameSchema>>({
+  const [game, setGame] = useState<z.infer<typeof createGameSchema>>({
     name: "",
     ownedBy: false,
     gameImg: null,
@@ -259,8 +192,8 @@ const AddGameForm = ({
 }: {
   moreOptions: boolean;
   setMoreOptions: (moreOptions: boolean) => void;
-  game: z.infer<typeof gameSchema>;
-  setGame: (game: z.infer<typeof gameSchema>) => void;
+  game: z.infer<typeof createGameSchema>;
+  setGame: (game: z.infer<typeof createGameSchema>) => void;
   scoreSheets: z.infer<typeof scoreSheetsSchema>;
   setScoreSheets: (scoreSheets: z.infer<typeof scoreSheetsSchema>) => void;
   setActiveScoreSheet: (activeScoreSheet: number) => void;
@@ -273,8 +206,8 @@ const AddGameForm = ({
 
   const { toast } = useToast();
   const [pending, startTransaction] = useTransition();
-  const form = useForm<z.infer<typeof gameSchema>>({
-    resolver: zodResolver(gameSchema),
+  const form = useForm<z.infer<typeof createGameSchema>>({
+    resolver: zodResolver(createGameSchema),
     defaultValues: game,
   });
   useEffect(() => {
@@ -285,7 +218,9 @@ const AddGameForm = ({
     };
   }, [imagePreview]);
 
-  const onSubmitForm: SubmitHandler<z.infer<typeof gameSchema>> = (data) => {
+  const onSubmitForm: SubmitHandler<z.infer<typeof createGameSchema>> = (
+    data,
+  ) => {
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("ownedBy", JSON.stringify(data.ownedBy));
@@ -619,13 +554,13 @@ const AddGameForm = ({
                         type="button"
                       >
                         <span className="text-lg">
-                          {scoreSheet.scoresheet?.name ?? "Default"}
+                          {scoreSheet.scoresheet.name}
                         </span>
                         <div className="mb-2 flex w-full items-center gap-3 text-sm">
                           <div className="flex min-w-20 items-center gap-1">
                             <span>Win Condition:</span>
                             <span className="text-sm text-muted-foreground">
-                              {scoreSheet.scoresheet?.winCondition ??
+                              {scoreSheet.scoresheet.winCondition ??
                                 "Highest Score"}
                             </span>
                           </div>
@@ -935,6 +870,7 @@ const AddRounds = ({
           size={"icon"}
           onClick={() =>
             append({
+              roundId: null,
               name: `Round ${fields.length + 1}`,
               type: "Numeric",
               score: 0,

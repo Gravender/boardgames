@@ -64,10 +64,13 @@ export function RoundPopOver({
                         .pick({ type: true })
                         .parse({ type: value });
                       update(index, {
-                        ...fields[index],
+                        roundId: fields[index]?.roundId ?? null,
                         name: fields[index]?.name ?? "",
                         type: safeValue.type,
-                        order: index,
+                        order: fields[index]?.order ?? index,
+                        color: fields[index]?.color ?? null,
+                        modifier: fields[index]?.modifier ?? null,
+                        lookup: fields[index]?.lookup ?? null,
                       });
                     }}
                     defaultValue={field.value}

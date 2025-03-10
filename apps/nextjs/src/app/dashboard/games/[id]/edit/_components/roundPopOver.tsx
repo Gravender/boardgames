@@ -1,6 +1,7 @@
 import type { UseFormReturn } from "react-hook-form";
 import { Settings } from "lucide-react";
 import { useFieldArray } from "react-hook-form";
+import type { z } from "zod";
 
 import { insertRoundSchema } from "@board-games/db/schema";
 import { Button } from "@board-games/ui/button";
@@ -24,15 +25,15 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 
-import type { formSchemaType } from "../page";
 import { NumberInput } from "~/components/number-input";
+import type { scoresheetSchema } from "./editGameForm";
 
 export function RoundPopOver({
   index,
   form,
 }: {
   index: number;
-  form: UseFormReturn<formSchemaType>;
+  form: UseFormReturn<z.infer<typeof scoresheetSchema>>;
 }) {
   const { fields, update } = useFieldArray({
     name: "rounds",
@@ -63,10 +64,13 @@ export function RoundPopOver({
                         .pick({ type: true })
                         .parse({ type: value });
                       update(index, {
-                        ...fields[index],
+                        roundId: fields[index]?.roundId ?? null,
                         name: fields[index]?.name ?? "",
                         type: safeValue.type,
                         order: fields[index]?.order ?? index,
+                        color: fields[index]?.color ?? null,
+                        modifier: fields[index]?.modifier ?? null,
+                        lookup: fields[index]?.lookup ?? null,
                       });
                     }}
                     defaultValue={field.value}

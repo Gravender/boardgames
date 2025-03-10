@@ -218,11 +218,17 @@ function AddGameContent({
           yearPublished: values.game.yearPublished,
           imageId: null,
         },
-        scoresheet: values.scoresheet,
-        rounds: values.rounds.map((round, index) => ({
-          ...round,
-          order: index,
-        })),
+        scoresheets: values.scoresheet
+          ? [
+              {
+                scoresheet: values.scoresheet,
+                rounds: values.rounds.map((round, index) => ({
+                  ...round,
+                  order: index,
+                })),
+              },
+            ]
+          : [],
       });
       return;
     }
@@ -258,11 +264,17 @@ function AddGameContent({
           yearPublished: values.game.yearPublished,
           imageId: imageId,
         },
-        scoresheet: values.scoresheet,
-        rounds: values.rounds.map((round, index) => ({
-          ...round,
-          order: index,
-        })),
+        scoresheets: values.scoresheet
+          ? [
+              {
+                scoresheet: values.scoresheet,
+                rounds: values.rounds.map((round, index) => ({
+                  ...round,
+                  order: index,
+                })),
+              },
+            ]
+          : [],
       });
       form.reset();
       setImagePreview(null);

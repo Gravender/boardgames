@@ -1,3 +1,4 @@
+import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { and, count, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -13,6 +14,7 @@ import {
   scoresheet,
   selectGameSchema,
 } from "@board-games/db/schema";
+import { baseRoundSchema, editScoresheetSchema } from "@board-games/shared";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 
@@ -82,7 +84,7 @@ export const gameRouter = createTRPCRouter({
           order: 1,
         });
       } else {
-        input.scoresheets.forEach(async (inputScoresheet) => {
+        for (const inputScoresheet of input.scoresheets) {
           const [returnedScoresheet] = await ctx.db
             .insert(scoresheet)
             .values({
@@ -102,7 +104,7 @@ export const gameRouter = createTRPCRouter({
             order: index + 1,
           }));
           await ctx.db.insert(round).values(rounds);
-        });
+        }
       }
     }),
   getGame: protectedUserProcedure
@@ -181,42 +183,67 @@ export const gameRouter = createTRPCRouter({
     .input(selectGameSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.game.findFirst({
+        columns: {
+          id: true,
+          name: true,
+          playersMin: true,
+          playersMax: true,
+          playtimeMin: true,
+          playtimeMax: true,
+          yearPublished: true,
+          ownedBy: true,
+        },
         where: and(eq(game.id, input.id), eq(game.userId, ctx.userId)),
         with: {
           image: true,
           scoresheets: {
+            columns: {
+              id: true,
+              name: true,
+              winCondition: true,
+              isCoop: true,
+              roundsScore: true,
+              targetScore: true,
+            },
             with: {
               rounds: {
+                columns: {
+                  id: true,
+                  name: true,
+                  type: true,
+                  score: true,
+                  color: true,
+                  lookup: true,
+                  modifier: true,
+                  order: true,
+                },
                 orderBy: round.order,
               },
             },
-            where: (scoresheets, { eq }) => eq(scoresheets.type, "Default"),
+            where: inArray(scoresheet.type, ["Game", "Default"]),
           },
         },
       });
       if (!result) return null;
-      const resultScoresheet = result.scoresheets[0];
-      const resultRounds = resultScoresheet?.rounds;
-      if (!resultScoresheet) return null;
       return {
-        id: result.id,
-        name: result.name,
-        imageUrl: result.image?.url ?? "",
-        playersMin: result.playersMin,
-        playersMax: result.playersMax,
-        playtimeMin: result.playtimeMin,
-        playtimeMax: result.playtimeMax,
-        yearPublished: result.yearPublished,
-        ownedBy: result.ownedBy,
-        scoresheet: {
-          id: resultScoresheet.id,
-          name: resultScoresheet.name,
-          winCondition: resultScoresheet.winCondition,
-          isCoop: resultScoresheet.isCoop,
-          roundsScore: resultScoresheet.roundsScore,
-          targetScore: resultScoresheet.targetScore,
+        game: {
+          id: result.id,
+          name: result.name,
+          imageUrl: result.image?.url ?? "",
+          playersMin: result.playersMin,
+          playersMax: result.playersMax,
+          playtimeMin: result.playtimeMin,
+          playtimeMax: result.playtimeMax,
+          yearPublished: result.yearPublished,
+          ownedBy: result.ownedBy ?? false,
         },
-        rounds: resultRounds ?? [],
+        scoresheets: result.scoresheets.map((scoresheet) => ({
+          ...scoresheet,
+          rounds: scoresheet.rounds.map((round) => ({
+            ...round,
+            roundId: round.id,
+          })),
+        })),
       };
     }),
   getGameStats: protectedUserProcedure
@@ -390,42 +417,49 @@ export const gameRouter = createTRPCRouter({
           playtimeMax: z.number().nullish(),
           yearPublished: z.number().nullish(),
         }),
-        scoresheet: insertScoreSheetSchema
-          .pick({
-            id: true,
-            winCondition: true,
-            isCoop: true,
-            roundsScore: true,
-            targetScore: true,
-          })
-          .required({ id: true })
-          .extend({ name: z.string().optional() })
-          .nullable(),
-        roundsToEdit: z
-          .array(
-            insertRoundSchema
-              .pick({
-                id: true,
-                type: true,
-                score: true,
-                color: true,
-              })
-              .required({ id: true })
-              .extend({ name: z.string().optional() }),
-          )
-          .nullable(),
-        roundsToAdd: z
-          .array(
-            insertRoundSchema
-              .omit({
-                createdAt: true,
-                updatedAt: true,
-                id: true,
-              })
-              .required({ name: true }),
-          )
-          .nullable(),
-        roundsToDelete: z.array(z.number()).nullable(),
+        scoresheets: z.array(
+          z.discriminatedUnion("type", [
+            z.object({
+              type: z.literal("New"),
+              scoresheet: editScoresheetSchema,
+              rounds: z.array(
+                baseRoundSchema.extend({
+                  order: z.number(),
+                }),
+              ),
+            }),
+            z.object({
+              type: z.literal("Update Scoresheet"),
+              scoresheet: editScoresheetSchema.omit({ name: true }).extend({
+                id: z.number(),
+                name: z.string().optional(),
+              }),
+            }),
+            z.object({
+              type: z.literal("Update Scoresheet & Rounds"),
+              scoresheet: editScoresheetSchema
+                .omit({ name: true })
+                .extend({
+                  id: z.number(),
+                  name: z.string().optional(),
+                })
+                .nullable(),
+              roundsToEdit: z.array(
+                baseRoundSchema
+                  .omit({ name: true, order: true })
+                  .extend({ id: z.number(), name: z.string().optional() }),
+              ),
+              roundsToAdd: z.array(
+                baseRoundSchema.extend({
+                  scoresheetId: z.number(),
+                  order: z.number(),
+                }),
+              ),
+              roundsToDelete: z.array(z.number()),
+            }),
+          ]),
+        ),
+        scoresheetsToDelete: z.array(z.number()),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -433,29 +467,147 @@ export const gameRouter = createTRPCRouter({
         .update(game)
         .set({ ...input.game })
         .where(eq(game.id, input.game.id));
-      if (input.scoresheet) {
-        await ctx.db
-          .update(scoresheet)
-          .set({ ...input.scoresheet })
-          .where(eq(scoresheet.id, input.scoresheet.id));
+      if (input.scoresheets.length > 0) {
+        await ctx.db.transaction(async (transaction) => {
+          for (const inputScoresheet of input.scoresheets) {
+            if (inputScoresheet.type === "New") {
+              const [returnedScoresheet] = await transaction
+                .insert(scoresheet)
+                .values({
+                  name: inputScoresheet.scoresheet.name,
+                  winCondition: inputScoresheet.scoresheet.winCondition,
+                  isCoop: inputScoresheet.scoresheet.isCoop,
+                  roundsScore: inputScoresheet.scoresheet.roundsScore,
+                  targetScore: inputScoresheet.scoresheet.targetScore,
+
+                  userId: ctx.userId,
+                  gameId: input.game.id,
+                  type: "Game",
+                })
+                .returning();
+              if (!returnedScoresheet) {
+                throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+              }
+
+              const roundsToInsert = inputScoresheet.rounds.map(
+                (round, index) => ({
+                  name: round.name,
+                  type: round.type,
+                  score: round.score,
+                  color: round.color,
+                  lookup: round.lookup,
+                  modifier: round.modifier,
+                  scoresheetId: returnedScoresheet.id,
+                  order: index + 1,
+                }),
+              );
+              await transaction.insert(round).values(roundsToInsert);
+            }
+            if (inputScoresheet.type === "Update Scoresheet") {
+              await transaction
+                .update(scoresheet)
+                .set({
+                  name: inputScoresheet.scoresheet.name,
+                  winCondition: inputScoresheet.scoresheet.winCondition,
+                  isCoop: inputScoresheet.scoresheet.isCoop,
+                  roundsScore: inputScoresheet.scoresheet.roundsScore,
+                  targetScore: inputScoresheet.scoresheet.targetScore,
+                })
+                .where(eq(scoresheet.id, inputScoresheet.scoresheet.id));
+            }
+            if (inputScoresheet.type === "Update Scoresheet & Rounds") {
+              if (inputScoresheet.scoresheet !== null) {
+                await transaction
+                  .update(scoresheet)
+                  .set({
+                    name: inputScoresheet.scoresheet.name,
+                    winCondition: inputScoresheet.scoresheet.winCondition,
+                    isCoop: inputScoresheet.scoresheet.isCoop,
+                    roundsScore: inputScoresheet.scoresheet.roundsScore,
+                    targetScore: inputScoresheet.scoresheet.targetScore,
+                  })
+                  .where(eq(scoresheet.id, inputScoresheet.scoresheet.id));
+              }
+              if (inputScoresheet.roundsToEdit.length > 0) {
+                const ids = inputScoresheet.roundsToEdit.map((p) => p.id);
+                const nameSqlChunks: SQL[] = [sql`(case`];
+                const scoreSqlChunks: SQL[] = [sql`(case`];
+                const typeSqlChunks: SQL[] = [sql`(case`];
+                const colorSqlChunks: SQL[] = [sql`(case`];
+                const lookupSqlChunks: SQL[] = [sql`(case`];
+                const modifierSqlChunks: SQL[] = [sql`(case`];
+                for (const inputRound of inputScoresheet.roundsToEdit) {
+                  nameSqlChunks.push(
+                    sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.name}::varchar`}`,
+                  );
+                  scoreSqlChunks.push(
+                    sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.score}::integer`}`,
+                  );
+                  typeSqlChunks.push(
+                    sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.type}::varchar`}`,
+                  );
+                  colorSqlChunks.push(
+                    sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.color}::varchar`}`,
+                  );
+                  lookupSqlChunks.push(
+                    sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.lookup}::integer`}`,
+                  );
+                  modifierSqlChunks.push(
+                    sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.modifier}::integer`}`,
+                  );
+                }
+                nameSqlChunks.push(sql`end)`);
+                scoreSqlChunks.push(sql`end)`);
+                typeSqlChunks.push(sql`end)`);
+                colorSqlChunks.push(sql`end)`);
+                lookupSqlChunks.push(sql`end)`);
+                modifierSqlChunks.push(sql`end)`);
+
+                // Join each array of CASE chunks into a single SQL expression
+                const finalNameSql = sql.join(nameSqlChunks, sql.raw(" "));
+                const finalScoreSql = sql.join(scoreSqlChunks, sql.raw(" "));
+                const finalTypeSql = sql.join(typeSqlChunks, sql.raw(" "));
+                const finalColorSql = sql.join(colorSqlChunks, sql.raw(" "));
+                const finalLookupSql = sql.join(lookupSqlChunks, sql.raw(" "));
+                const finalModifierSql = sql.join(
+                  modifierSqlChunks,
+                  sql.raw(" "),
+                );
+
+                // Perform the bulk update
+                await transaction
+                  .update(round)
+                  .set({
+                    name: finalNameSql,
+                    score: finalScoreSql,
+                    type: finalTypeSql,
+                    color: finalColorSql,
+                    lookup: finalLookupSql,
+                    modifier: finalModifierSql,
+                  })
+                  .where(inArray(round.id, ids));
+              }
+              if (inputScoresheet.roundsToAdd.length > 0) {
+                await transaction
+                  .insert(round)
+                  .values(inputScoresheet.roundsToAdd);
+              }
+              if (inputScoresheet.roundsToDelete.length > 0) {
+                await transaction
+                  .delete(round)
+                  .where(inArray(round.id, inputScoresheet.roundsToDelete));
+              }
+            }
+          }
+        });
       }
-      if (input.roundsToEdit) {
-        await Promise.all(
-          input.roundsToEdit.map(async (roundToUpdate) => {
-            await ctx.db
-              .update(round)
-              .set({ ...roundToUpdate })
-              .where(eq(round.id, roundToUpdate.id));
-          }),
-        );
-      }
-      if (input.roundsToAdd) {
-        await ctx.db.insert(round).values(input.roundsToAdd);
-      }
-      if (input.roundsToDelete) {
+      if (input.scoresheetsToDelete.length > 0) {
         await ctx.db
           .delete(round)
-          .where(inArray(round.id, input.roundsToDelete));
+          .where(inArray(round.scoresheetId, input.scoresheetsToDelete));
+        await ctx.db
+          .delete(scoresheet)
+          .where(inArray(scoresheet.id, input.scoresheetsToDelete));
       }
     }),
   deleteGame: protectedUserProcedure
