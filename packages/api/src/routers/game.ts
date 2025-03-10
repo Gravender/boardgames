@@ -406,17 +406,21 @@ export const gameRouter = createTRPCRouter({
   updateGame: protectedUserProcedure
     .input(
       z.object({
-        game: z.object({
-          id: z.number(),
-          name: z.string().optional(),
-          ownedBy: z.boolean().nullish(),
-          imageId: z.number().nullish(),
-          playersMin: z.number().nullish(),
-          playersMax: z.number().nullish(),
-          playtimeMin: z.number().nullish(),
-          playtimeMax: z.number().nullish(),
-          yearPublished: z.number().nullish(),
-        }),
+        game: z.discriminatedUnion("type", [
+          z.object({
+            type: z.literal("updateGame"),
+            id: z.number(),
+            name: z.string().optional(),
+            ownedBy: z.boolean().nullish(),
+            imageId: z.number().nullish(),
+            playersMin: z.number().nullish(),
+            playersMax: z.number().nullish(),
+            playtimeMin: z.number().nullish(),
+            playtimeMax: z.number().nullish(),
+            yearPublished: z.number().nullish(),
+          }),
+          z.object({ type: z.literal("default"), id: z.number() }),
+        ]),
         scoresheets: z.array(
           z.discriminatedUnion("type", [
             z.object({
@@ -463,10 +467,12 @@ export const gameRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db
-        .update(game)
-        .set({ ...input.game })
-        .where(eq(game.id, input.game.id));
+      if (input.game.type === "updateGame") {
+        await ctx.db
+          .update(game)
+          .set({ ...input.game })
+          .where(eq(game.id, input.game.id));
+      }
       if (input.scoresheets.length > 0) {
         await ctx.db.transaction(async (transaction) => {
           for (const inputScoresheet of input.scoresheets) {

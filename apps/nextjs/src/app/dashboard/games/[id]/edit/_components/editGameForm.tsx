@@ -24,6 +24,16 @@ import {
   editScoresheetSchema,
   roundsSchema,
 } from "@board-games/shared";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@board-games/ui/alert-dialog";
 import { Button } from "@board-games/ui/button";
 import {
   Card,
@@ -157,6 +167,7 @@ export function EditGameForm({
           game={game}
           scoresheets={scoresheets}
           moreOptions={moreOptions}
+          activeScoreSheet={activeScoreSheet}
           setGame={setGame}
           setScoresheets={setScoresheets}
           setActiveScoreSheet={setActiveScoreSheet}
@@ -173,6 +184,7 @@ const GameForm = ({
   game,
   scoresheets,
   moreOptions,
+  activeScoreSheet,
   setGame,
   setScoresheets,
   setActiveScoreSheet,
@@ -183,6 +195,7 @@ const GameForm = ({
   game: z.infer<typeof editGameSchema>;
   scoresheets: z.infer<typeof scoresheetsSchema>;
   moreOptions: boolean;
+  activeScoreSheet: number;
   setGame: (game: z.infer<typeof editGameSchema>) => void;
   setScoresheets: (scoresheets: z.infer<typeof scoresheetsSchema>) => void;
   setActiveScoreSheet: (activeScoreSheet: number) => void;
@@ -195,6 +208,7 @@ const GameForm = ({
       ? URL.createObjectURL(tempGameImg)
       : (tempGameImg ?? null),
   );
+  const [openAlert, setOpenAlert] = useState(false);
 
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
@@ -233,8 +247,6 @@ const GameForm = ({
     imageId: number | null | undefined;
     values: z.infer<typeof editGameSchema>;
   }) => {
-    console.log(values);
-    console.log(scoresheets);
     const nameChanged = values.name !== data.game.name;
     const ownedByChanged = values.ownedBy !== data.game.ownedBy;
     const playersMinChanged = values.playersMin !== data.game.playersMin;
@@ -247,8 +259,7 @@ const GameForm = ({
     const scoresheetChanged = scoresheets.some(
       (scoresheet) => scoresheet.scoreSheetChanged || scoresheet.roundChanged,
     );
-
-    if (
+    const gameChanged =
       nameChanged ||
       ownedByChanged ||
       playersMinChanged ||
@@ -256,21 +267,25 @@ const GameForm = ({
       playtimeMinChanged ||
       playtimeMaxChanged ||
       yearPublishedChanged ||
-      imageIdChanged ||
-      scoresheetChanged
-    ) {
-      const game = {
-        id: data.game.id,
+      imageIdChanged;
 
-        name: nameChanged ? values.name : undefined,
-        ownedBy: ownedByChanged ? values.ownedBy : undefined,
-        playersMin: playersMinChanged ? values.playersMin : undefined,
-        playersMax: playersMaxChanged ? values.playersMax : undefined,
-        playtimeMin: playtimeMinChanged ? values.playtimeMin : undefined,
-        playtimeMax: playtimeMaxChanged ? values.playtimeMax : undefined,
-        yearPublished: yearPublishedChanged ? values.yearPublished : undefined,
-        imageId: imageId,
-      };
+    if (gameChanged || scoresheetChanged) {
+      const game = gameChanged
+        ? {
+            type: "updateGame" as const,
+            id: data.game.id,
+            name: nameChanged ? values.name : undefined,
+            ownedBy: ownedByChanged ? values.ownedBy : undefined,
+            playersMin: playersMinChanged ? values.playersMin : undefined,
+            playersMax: playersMaxChanged ? values.playersMax : undefined,
+            playtimeMin: playtimeMinChanged ? values.playtimeMin : undefined,
+            playtimeMax: playtimeMaxChanged ? values.playtimeMax : undefined,
+            yearPublished: yearPublishedChanged
+              ? values.yearPublished
+              : undefined,
+            imageId: imageId,
+          }
+        : { type: "default" as const, id: data.game.id };
       if (scoresheetChanged) {
         const changedScoresheets = scoresheets
           .filter(
@@ -301,6 +316,32 @@ const GameForm = ({
               };
               return newScoresheet;
             }
+            const scoresheetName =
+              scoresheet.name !== foundScoresheet.name
+                ? scoresheet.name
+                : undefined;
+            const scoresheetWinCondition =
+              scoresheet.winCondition !== foundScoresheet.winCondition
+                ? scoresheet.winCondition
+                : undefined;
+            const scoresheetIsCoop =
+              scoresheet.isCoop !== foundScoresheet.isCoop
+                ? scoresheet.isCoop
+                : undefined;
+            const scoresheetRoundsScore =
+              scoresheet.roundsScore !== foundScoresheet.roundsScore
+                ? scoresheet.roundsScore
+                : undefined;
+            const scoresheetTargetScore =
+              scoresheet.targetScore !== foundScoresheet.targetScore
+                ? scoresheet.targetScore
+                : undefined;
+            const hasScoresheetChanged =
+              scoresheetName ||
+              scoresheetWinCondition ||
+              scoresheetIsCoop ||
+              scoresheetRoundsScore ||
+              scoresheetTargetScore;
             if (scoresheet.roundChanged) {
               type UpdateScoresheetAndRoundsType = Extract<
                 RouterInputs["game"]["updateGame"]["scoresheets"][number],
@@ -377,34 +418,19 @@ const GameForm = ({
                 .filter<UpdateScoresheetAndRoundsType["roundsToAdd"][number]>(
                   (round) => round !== undefined,
                 );
-              const changedScoresheet = scoresheet.scoreSheetChanged
-                ? {
-                    id: foundScoresheet.id,
-                    name:
-                      scoresheet.name !== foundScoresheet.name
-                        ? scoresheet.name
-                        : undefined,
-                    winCondition:
-                      scoresheet.winCondition !== foundScoresheet.winCondition
-                        ? scoresheet.winCondition
-                        : undefined,
-                    isCoop:
-                      scoresheet.isCoop !== foundScoresheet.isCoop
-                        ? scoresheet.isCoop
-                        : undefined,
-                    roundsScore:
-                      scoresheet.roundsScore !== foundScoresheet.roundsScore
-                        ? scoresheet.roundsScore
-                        : undefined,
-                    targetScore:
-                      scoresheet.targetScore !== foundScoresheet.targetScore
-                        ? scoresheet.targetScore
-                        : undefined,
-                  }
-                : null;
+
               const updateScoresheetAndRounds: UpdateScoresheetAndRoundsType = {
                 type: "Update Scoresheet & Rounds" as const,
-                scoresheet: changedScoresheet,
+                scoresheet: hasScoresheetChanged
+                  ? {
+                      id: foundScoresheet.id,
+                      name: scoresheetName,
+                      winCondition: scoresheetWinCondition,
+                      isCoop: scoresheetIsCoop,
+                      roundsScore: scoresheetRoundsScore,
+                      targetScore: scoresheetTargetScore,
+                    }
+                  : null,
                 roundsToEdit: changedRounds,
                 roundsToAdd: roundsToAdd,
                 roundsToDelete: roundsToDelete,
@@ -416,26 +442,11 @@ const GameForm = ({
                 type: "Update Scoresheet" as const,
                 scoresheet: {
                   id: foundScoresheet.id,
-                  name:
-                    scoresheet.name !== foundScoresheet.name
-                      ? scoresheet.name
-                      : undefined,
-                  winCondition:
-                    scoresheet.winCondition !== foundScoresheet.winCondition
-                      ? scoresheet.winCondition
-                      : undefined,
-                  isCoop:
-                    scoresheet.isCoop !== foundScoresheet.isCoop
-                      ? scoresheet.isCoop
-                      : undefined,
-                  roundsScore:
-                    scoresheet.roundsScore !== foundScoresheet.roundsScore
-                      ? scoresheet.roundsScore
-                      : undefined,
-                  targetScore:
-                    scoresheet.targetScore !== foundScoresheet.targetScore
-                      ? scoresheet.targetScore
-                      : undefined,
+                  name: scoresheetName,
+                  winCondition: scoresheetWinCondition,
+                  isCoop: scoresheetIsCoop,
+                  roundsScore: scoresheetRoundsScore,
+                  targetScore: scoresheetTargetScore,
                 },
               };
             }
@@ -519,371 +530,389 @@ const GameForm = ({
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <CardContent className="space-y-8">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Game Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Game name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <AlertDialog open={openAlert} onOpenChange={setOpenAlert}>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <CardContent className="space-y-8">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Game Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Game name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="imageUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Image</FormLabel>
-                <FormControl>
-                  <div className="flex items-center space-x-4">
-                    <div className="relative flex h-20 w-20 shrink-0 overflow-hidden">
-                      {imagePreview ? (
-                        <Image
-                          src={imagePreview}
-                          alt="Game image"
-                          className="aspect-square h-full w-full rounded-sm object-cover"
-                          fill
-                        />
-                      ) : (
-                        <Dices className="h-full w-full items-center justify-center rounded-full bg-muted p-2" />
-                      )}
+            <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image</FormLabel>
+                  <FormControl>
+                    <div className="flex items-center space-x-4">
+                      <div className="relative flex h-20 w-20 shrink-0 overflow-hidden">
+                        {imagePreview ? (
+                          <Image
+                            src={imagePreview}
+                            alt="Game image"
+                            className="aspect-square h-full w-full rounded-sm object-cover"
+                            fill
+                          />
+                        ) : (
+                          <Dices className="h-full w-full items-center justify-center rounded-full bg-muted p-2" />
+                        )}
+                      </div>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          field.onChange(file);
+                          if (file) {
+                            const url = URL.createObjectURL(file);
+                            setImagePreview(url);
+                          }
+                        }}
+                      />
                     </div>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        field.onChange(file);
-                        if (file) {
-                          const url = URL.createObjectURL(file);
-                          setImagePreview(url);
-                        }
-                      }}
+                  </FormControl>
+                  <FormDescription>Upload an image (max 4MB).</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="ownedBy"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormLabel>Owned by</FormLabel>
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <Collapsible open={moreOptions} onOpenChange={setMoreOptions}>
+              <CollapsibleTrigger asChild>
+                <Button className="pl-0" variant="ghost" size="sm">
+                  <span>More options</span>
+                  {moreOptions ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 items-center gap-4">
+                    <Label>Players</Label>
+                    <FormField
+                      control={form.control}
+                      name="playersMin"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="Min"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value === ""
+                                    ? null
+                                    : parseInt(e.target.value),
+                                )
+                              }
+                              value={field.value ?? undefined}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="playersMax"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="Max"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value === ""
+                                    ? null
+                                    : parseInt(e.target.value),
+                                )
+                              }
+                              value={field.value ?? undefined}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
                     />
                   </div>
-                </FormControl>
-                <FormDescription>Upload an image (max 4MB).</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="ownedBy"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                <FormLabel>Owned by</FormLabel>
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <Collapsible open={moreOptions} onOpenChange={setMoreOptions}>
-            <CollapsibleTrigger asChild>
-              <Button className="pl-0" variant="ghost" size="sm">
-                <span>More options</span>
-                {moreOptions ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 items-center gap-4">
-                  <Label>Players</Label>
-                  <FormField
-                    control={form.control}
-                    name="playersMin"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Min"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value === ""
-                                  ? null
-                                  : parseInt(e.target.value),
-                              )
-                            }
-                            value={field.value ?? undefined}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="playersMax"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Max"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value === ""
-                                  ? null
-                                  : parseInt(e.target.value),
-                              )
-                            }
-                            value={field.value ?? undefined}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                {(form.formState.errors.playersMin ??
-                  form.formState.errors.playersMax) && (
+                  {(form.formState.errors.playersMin ??
+                    form.formState.errors.playersMax) && (
+                    <div className="grid grid-cols-3 items-center gap-4">
+                      <div />
+                      {form.formState.errors.playersMin !== undefined ? (
+                        <FormMessage>
+                          {form.formState.errors.playersMin.message}
+                        </FormMessage>
+                      ) : (
+                        <div />
+                      )}
+                      {form.formState.errors.playersMax !== undefined ? (
+                        <FormMessage>
+                          {form.formState.errors.playersMax.message}
+                        </FormMessage>
+                      ) : (
+                        <div />
+                      )}
+                    </div>
+                  )}
                   <div className="grid grid-cols-3 items-center gap-4">
-                    <div />
-                    {form.formState.errors.playersMin !== undefined ? (
-                      <FormMessage>
-                        {form.formState.errors.playersMin.message}
-                      </FormMessage>
-                    ) : (
-                      <div />
-                    )}
-                    {form.formState.errors.playersMax !== undefined ? (
-                      <FormMessage>
-                        {form.formState.errors.playersMax.message}
-                      </FormMessage>
-                    ) : (
-                      <div />
-                    )}
-                  </div>
-                )}
-                <div className="grid grid-cols-3 items-center gap-4">
-                  <Label>Playtime</Label>
-                  <FormField
-                    control={form.control}
-                    name="playtimeMin"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Min"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value === ""
-                                  ? null
-                                  : parseInt(e.target.value),
-                              )
-                            }
-                            value={field.value ?? undefined}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="playtimeMax"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Max"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value === ""
-                                  ? null
-                                  : parseInt(e.target.value),
-                              )
-                            }
-                            value={field.value ?? undefined}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                {(form.formState.errors.playtimeMin ??
-                  form.formState.errors.playtimeMax) && (
-                  <div className="grid grid-cols-3 items-center gap-4">
-                    <div />
-                    {form.formState.errors.playtimeMin !== undefined ? (
-                      <FormMessage>
-                        {form.formState.errors.playtimeMin.message}
-                      </FormMessage>
-                    ) : (
-                      <div />
-                    )}
-                    {form.formState.errors.playtimeMax !== undefined ? (
-                      <FormMessage>
-                        {form.formState.errors.playtimeMax.message}
-                      </FormMessage>
-                    ) : (
-                      <div />
-                    )}
-                  </div>
-                )}
-                <div className="grid grid-cols-3 items-center gap-4">
-                  <Label>Year Published</Label>
-                  <FormField
-                    control={form.control}
-                    name="yearPublished"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Min"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value === ""
-                                  ? null
-                                  : parseInt(e.target.value),
-                              )
-                            }
-                            value={field.value ?? undefined}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <div></div>
-                </div>
-                {form.formState.errors.yearPublished && (
-                  <div className="grid grid-cols-3 items-center gap-4">
-                    <div />
-                    {form.formState.errors.yearPublished.message !==
-                    undefined ? (
-                      <FormMessage>
-                        {form.formState.errors.yearPublished.message}
-                      </FormMessage>
-                    ) : (
-                      <div />
-                    )}
-                    <div />
-                  </div>
-                )}
-              </div>
-              <Separator className="w-full" orientation="horizontal" />
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-xl font-semibold">Scoresheet</div>
-                  <Button
-                    variant="default"
-                    onClick={() => {
-                      setGame(form.getValues());
-                      setIsScoresheet(true);
-                      setActiveScoreSheet(scoresheets.length);
-                    }}
-                    type="button"
-                  >
-                    {"Create New"}
-                  </Button>
-                </div>
-                <div>
-                  {scoresheets.map((scoreSheet, index) => {
-                    return (
-                      <div
-                        key={`${index}-${scoreSheet.scoresheetId}`}
-                        className="flex items-center justify-between gap-2"
-                      >
-                        <Table />
-                        <button
-                          className="flex flex-grow flex-col items-start justify-start"
-                          onClick={() => {
-                            setGame(form.getValues());
-                            setIsScoresheet(true);
-                            setActiveScoreSheet(index);
-                          }}
-                          type="button"
-                        >
-                          <span className="text-lg">{scoreSheet.name}</span>
-                          <div className="mb-2 flex w-full items-center gap-3 text-sm">
-                            <div className="flex min-w-20 items-center gap-1">
-                              <span>Win Condition:</span>
-                              <span className="text-sm text-muted-foreground">
-                                {scoreSheet.winCondition ?? "Highest Score"}
-                              </span>
-                            </div>
-                            <Separator
-                              orientation="vertical"
-                              className="font-semi-bold h-4"
+                    <Label>Playtime</Label>
+                    <FormField
+                      control={form.control}
+                      name="playtimeMin"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="Min"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value === ""
+                                    ? null
+                                    : parseInt(e.target.value),
+                                )
+                              }
+                              value={field.value ?? undefined}
                             />
-                            <div className="flex min-w-20 items-center gap-1">
-                              <span>Rounds:</span>
-                              <span className="text-sm text-muted-foreground">
-                                {scoreSheet.rounds.length > 0
-                                  ? scoreSheet.rounds.length
-                                  : "1"}
-                              </span>
-                            </div>
-                          </div>
-                        </button>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          type="button"
-                          onClick={() =>
-                            setScoresheets(
-                              scoresheets.filter((scoresheetToDelete, i) =>
-                                scoreSheet.scoresheetId !== null
-                                  ? scoresheetToDelete.scoresheetId !==
-                                    scoreSheet.scoresheetId
-                                  : i !== index,
-                              ),
-                            )
-                          }
-                        >
-                          <Trash />
-                        </Button>
-                      </div>
-                    );
-                  })}
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="playtimeMax"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="Max"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value === ""
+                                    ? null
+                                    : parseInt(e.target.value),
+                                )
+                              }
+                              value={field.value ?? undefined}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  {(form.formState.errors.playtimeMin ??
+                    form.formState.errors.playtimeMax) && (
+                    <div className="grid grid-cols-3 items-center gap-4">
+                      <div />
+                      {form.formState.errors.playtimeMin !== undefined ? (
+                        <FormMessage>
+                          {form.formState.errors.playtimeMin.message}
+                        </FormMessage>
+                      ) : (
+                        <div />
+                      )}
+                      {form.formState.errors.playtimeMax !== undefined ? (
+                        <FormMessage>
+                          {form.formState.errors.playtimeMax.message}
+                        </FormMessage>
+                      ) : (
+                        <div />
+                      )}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-3 items-center gap-4">
+                    <Label>Year Published</Label>
+                    <FormField
+                      control={form.control}
+                      name="yearPublished"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="Min"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value === ""
+                                    ? null
+                                    : parseInt(e.target.value),
+                                )
+                              }
+                              value={field.value ?? undefined}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <div></div>
+                  </div>
+                  {form.formState.errors.yearPublished && (
+                    <div className="grid grid-cols-3 items-center gap-4">
+                      <div />
+                      {form.formState.errors.yearPublished.message !==
+                      undefined ? (
+                        <FormMessage>
+                          {form.formState.errors.yearPublished.message}
+                        </FormMessage>
+                      ) : (
+                        <div />
+                      )}
+                      <div />
+                    </div>
+                  )}
                 </div>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </CardContent>
-        <CardFooter className="flex flex-row justify-end gap-2">
-          <Button
-            type="reset"
-            variant="secondary"
-            onClick={() => router.back()}
+                <Separator className="w-full" orientation="horizontal" />
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xl font-semibold">Scoresheet</div>
+                    <Button
+                      variant="default"
+                      onClick={() => {
+                        setGame(form.getValues());
+                        setIsScoresheet(true);
+                        setActiveScoreSheet(scoresheets.length);
+                      }}
+                      type="button"
+                    >
+                      {"Create New"}
+                    </Button>
+                  </div>
+                  <div>
+                    {scoresheets.map((scoreSheet, index) => {
+                      return (
+                        <div
+                          key={`${index}-${scoreSheet.scoresheetId}`}
+                          className="flex items-center justify-between gap-2"
+                        >
+                          <Table />
+                          <button
+                            className="flex flex-grow flex-col items-start justify-start"
+                            onClick={() => {
+                              setGame(form.getValues());
+                              setIsScoresheet(true);
+                              setActiveScoreSheet(index);
+                            }}
+                            type="button"
+                          >
+                            <span className="text-lg">{scoreSheet.name}</span>
+                            <div className="mb-2 flex w-full items-center gap-3 text-sm">
+                              <div className="flex min-w-20 items-center gap-1">
+                                <span>Win Condition:</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {scoreSheet.winCondition ?? "Highest Score"}
+                                </span>
+                              </div>
+                              <Separator
+                                orientation="vertical"
+                                className="font-semi-bold h-4"
+                              />
+                              <div className="flex min-w-20 items-center gap-1">
+                                <span>Rounds:</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {scoreSheet.rounds.length > 0
+                                    ? scoreSheet.rounds.length
+                                    : "1"}
+                                </span>
+                              </div>
+                            </div>
+                          </button>
+
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            type="button"
+                            onClick={() => {
+                              setActiveScoreSheet(index);
+                              setOpenAlert(true);
+                            }}
+                          >
+                            <Trash />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </CardContent>
+          <CardFooter className="flex flex-row justify-end gap-2">
+            <Button
+              type="reset"
+              variant="secondary"
+              onClick={() => router.back()}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isUploading}>
+              {isUploading ? (
+                <>
+                  <Spinner />
+                  <span>Uploading...</span>
+                </>
+              ) : (
+                "Submit"
+              )}
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. The scoresheet will be permanently
+            deleted.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() =>
+              setScoresheets(
+                scoresheets.filter((_, i) => i !== activeScoreSheet),
+              )
+            }
           >
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isUploading}>
-            {isUploading ? (
-              <>
-                <Spinner />
-                <span>Uploading...</span>
-              </>
-            ) : (
-              "Submit"
-            )}
-          </Button>
-        </CardFooter>
-      </form>
-    </Form>
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 
