@@ -11,7 +11,7 @@ type Running = NonNullable<RouterOutputs["match"]["getMatch"]>["running"];
 
 export function useDebouncedUpdateMatchData(matchId: number, delay = 1000) {
   const [isUpdating, setIsUpdating] = useState(false);
-  const saveMatchData = api.match.updateMatch.useMutation();
+  const saveMatchData = api.match.updateMatchScores.useMutation();
 
   const debouncedUpdate = useMemo(
     () =>
@@ -43,7 +43,6 @@ export function useDebouncedUpdateMatchData(matchId: number, delay = 1000) {
             match: {
               id: matchId,
               duration: duration,
-              finished: false,
               running: running,
             },
             roundPlayers: submittedPlayers,
