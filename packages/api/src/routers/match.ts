@@ -720,7 +720,7 @@ export const matchRouter = createTRPCRouter({
             sql`when ${matchPlayer.id} = ${player.id} then ${sql`${player.placement}::integer`}`,
           );
           winnerSqlChunks.push(
-            sql`when ${matchPlayer.id} = ${player.id} then ${player.placement === 1}`,
+            sql`when ${matchPlayer.id} = ${player.id} then ${player.placement === 1}::boolean`,
           );
         }
 
