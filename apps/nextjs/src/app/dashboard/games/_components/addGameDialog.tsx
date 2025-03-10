@@ -620,10 +620,6 @@ const AddGameForm = ({
     </Form>
   );
 };
-export const scoreSheetWithRoundsFormSchema = z.object({
-  scoresheet: scoreSheetSchema,
-  rounds: roundsSchema,
-});
 const AddScoreSheetForm = ({
   scoreSheetWithRounds,
   setScoreSheetWithRounds,
@@ -635,8 +631,8 @@ const AddScoreSheetForm = ({
   ) => void;
   setIsScoresheet: (isScoresheet: boolean) => void;
 }) => {
-  const form = useForm<z.infer<typeof scoreSheetWithRoundsFormSchema>>({
-    resolver: zodResolver(scoreSheetWithRoundsFormSchema),
+  const form = useForm<z.infer<typeof scoreSheetWithRoundsSchema>>({
+    resolver: zodResolver(scoreSheetWithRoundsSchema),
     defaultValues: {
       scoresheet: scoreSheetWithRounds.scoresheet,
       rounds: scoreSheetWithRounds.rounds,
@@ -645,7 +641,7 @@ const AddScoreSheetForm = ({
   const onBack = () => {
     setIsScoresheet(false);
   };
-  const onSubmit = (data: z.infer<typeof scoreSheetWithRoundsFormSchema>) => {
+  const onSubmit = (data: z.infer<typeof scoreSheetWithRoundsSchema>) => {
     setScoreSheetWithRounds({
       scoresheet: data.scoresheet,
       rounds: data.rounds,
@@ -784,7 +780,7 @@ const AddScoreSheetForm = ({
 const AddRounds = ({
   form,
 }: {
-  form: UseFormReturn<z.infer<typeof scoreSheetWithRoundsFormSchema>>;
+  form: UseFormReturn<z.infer<typeof scoreSheetWithRoundsSchema>>;
 }) => {
   const { fields, remove, append } = useFieldArray({
     name: "rounds",
@@ -840,10 +836,12 @@ const AddRounds = ({
                   onClick={() => {
                     const round = form.getValues("rounds")[index];
                     append({
-                      ...field,
                       name: `Round ${fields.length + 1}`,
+                      color: round?.color,
                       type: round?.type,
                       score: round?.score,
+                      modifier: round?.modifier,
+                      lookup: round?.lookup,
                       order: fields.length + 1,
                     });
                   }}
@@ -870,7 +868,6 @@ const AddRounds = ({
           size={"icon"}
           onClick={() =>
             append({
-              roundId: null,
               name: `Round ${fields.length + 1}`,
               type: "Numeric",
               score: 0,
