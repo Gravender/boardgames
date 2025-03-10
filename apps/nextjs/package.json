@@ -22,7 +22,7 @@
     "@clerk/nextjs": "^6.9.6",
     "@hookform/resolvers": "^3.9.1",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
-    "@sentry/nextjs": "^8.47.0",
+    "@sentry/nextjs": "^8.49.0",
     "@t3-oss/env-nextjs": "^0.10.1",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-table": "^8.20.6",
