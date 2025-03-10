@@ -124,11 +124,9 @@ export function Match({ match }: { match: Match }) {
     setIsSubmitting(true);
     setIsRunning(false);
     const submittedPlayers = players.flatMap((player) =>
-      player.rounds.map((round) => ({
-        id: round.id,
-        score: round.score,
-        roundId: round.id,
-        matchPlayerId: player.id,
+      player.rounds.map((playerRound) => ({
+        id: playerRound.id,
+        score: playerRound.score,
       })),
     );
     if (match.scoresheet.winCondition === "Manual") {

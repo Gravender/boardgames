@@ -510,7 +510,9 @@ export const matchRouter = createTRPCRouter({
   updateMatch: protectedUserProcedure
     .input(
       z.object({
-        roundPlayers: z.array(selectRoundPlayerSchema),
+        roundPlayers: z.array(
+          selectRoundPlayerSchema.pick({ id: true, score: true }),
+        ),
         playersPlacement: z.array(
           selectMatchPlayerSchema.pick({
             id: true,
@@ -573,7 +575,7 @@ export const matchRouter = createTRPCRouter({
               sql`when ${matchPlayer.id} = ${player.id} then ${sql`${player.placement}::integer`}`,
             );
             winnerSqlChunks.push(
-              sql`when ${matchPlayer.id} = ${player.id} then ${player.placement === 1}`,
+              sql`when ${matchPlayer.id} = ${player.id} then ${player.placement === 1}::boolean`,
             );
           }
 
@@ -601,7 +603,9 @@ export const matchRouter = createTRPCRouter({
   updateMatchScores: protectedUserProcedure
     .input(
       z.object({
-        roundPlayers: z.array(selectRoundPlayerSchema),
+        roundPlayers: z.array(
+          selectRoundPlayerSchema.pick({ id: true, score: true }),
+        ),
         matchPlayers: z.array(
           selectMatchPlayerSchema.pick({ id: true, score: true }),
         ),
