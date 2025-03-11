@@ -53,9 +53,7 @@ const scoresheets = createTable(
       .default("Default")
       .notNull(),
   },
-  (table) => ({
-    gameIndex: index().on(table.gameId),
-  }),
+  (table) => [index("boardgames_scoresheet_game_id_index").on(table.gameId)],
 );
 export const scoresheetRelations = relations(scoresheets, ({ one, many }) => ({
   game: one(game, { fields: [scoresheets.gameId], references: [game.id] }),

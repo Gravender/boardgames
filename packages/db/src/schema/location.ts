@@ -29,9 +29,7 @@ const locations = createTable(
       () => new Date(),
     ),
   },
-  (table) => ({
-    locationIndex: index().on(table.name),
-  }),
+  (table) => [index("boardgames_location_name_index").on(table.name)],
 );
 
 export const locationRelations = relations(locations, ({ one, many }) => ({

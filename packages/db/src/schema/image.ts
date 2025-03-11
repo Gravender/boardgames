@@ -22,9 +22,7 @@ const images = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
-  (table) => ({
-    userIndex: index().on(table.userId),
-  }),
+  (table) => [index("boardgames_image_user_id_index").on(table.userId)],
 );
 
 export const matchPlayerRelations = relations(images, ({ one }) => ({

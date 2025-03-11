@@ -18,11 +18,12 @@ const roundPlayers = createTable(
       .notNull()
       .references(() => matchPlayer.id),
   },
-  (table) => {
-    return {
-      uniqueRoundPlayer: unique().on(table.roundId, table.matchPlayerId),
-    };
-  },
+  (table) => [
+    unique("boardgames_round_player_round_match_player_id_unique").on(
+      table.roundId,
+      table.matchPlayerId,
+    ),
+  ],
 );
 export const roundPlayerRelations = relations(roundPlayers, ({ one }) => ({
   round: one(round, {

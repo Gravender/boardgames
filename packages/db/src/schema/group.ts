@@ -27,9 +27,7 @@ const groups = createTable(
       () => new Date(),
     ),
   },
-  (table) => ({
-    groupIndex: index().on(table.name),
-  }),
+  (table) => [index("boardgames_group_name_index").on(table.name)],
 );
 
 export const groupRelations = relations(groups, ({ one, many }) => ({

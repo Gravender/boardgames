@@ -30,10 +30,10 @@ const players = createTable(
       () => new Date(),
     ),
   },
-  (table) => ({
-    nameIndex: index("name_idx").on(table.name),
-    playerIndex: index().on(table.id),
-  }),
+  (table) => [
+    index("name_idx").on(table.name),
+    index("boardgames_player_id_index").on(table.id),
+  ],
 );
 
 export const playerRelations = relations(players, ({ one, many }) => ({

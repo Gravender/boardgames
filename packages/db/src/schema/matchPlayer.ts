@@ -22,11 +22,12 @@ const matchPlayers = createTable(
     placement: integer("placement").default(0),
     order: integer("order"),
   },
-  (table) => {
-    return {
-      uniqueMatchPlayer: unique().on(table.matchId, table.playerId),
-    };
-  },
+  (table) => [
+    unique("boardgames_match_player_match_id_player_id_unique").on(
+      table.matchId,
+      table.playerId,
+    ),
+  ],
 );
 
 export const matchPlayerRelations = relations(

@@ -44,11 +44,11 @@ const matches = createTable(
     locationId: integer("location_id").references(() => location.id),
     comment: text("comment"),
   },
-  (table) => ({
-    gameIndex: index().on(table.gameId),
-    userIndex: index().on(table.userId),
-    matchIndex: index().on(table.id),
-  }),
+  (table) => [
+    index("boardgames_match_game_id_index").on(table.gameId),
+    index("boardgames_match_user_id_index").on(table.userId),
+    index("boardgames_match_id_index").on(table.id),
+  ],
 );
 
 export const matchRelations = relations(matches, ({ one, many }) => ({

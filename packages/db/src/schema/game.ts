@@ -39,10 +39,10 @@ const games = createTable(
     rules: text("rules"),
     deleted: boolean("deleted").default(false),
   },
-  (table) => ({
-    userIndex: index().on(table.userId),
-    gameIndex: index().on(table.id),
-  }),
+  (table) => [
+    index("boardgames_game_user_id_index").on(table.userId),
+    index("boardgames_game_id_index").on(table.id),
+  ],
 );
 
 export const gameRelations = relations(games, ({ one, many }) => ({

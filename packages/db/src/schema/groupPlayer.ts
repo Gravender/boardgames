@@ -17,11 +17,12 @@ const groupPlayers = createTable(
       .notNull()
       .references(() => player.id),
   },
-  (table) => {
-    return {
-      uniqueGroupPlayer: unique().on(table.groupId, table.playerId),
-    };
-  },
+  (table) => [
+    unique("boardgames_group_player_group_id_player_id_unique").on(
+      table.groupId,
+      table.playerId,
+    ),
+  ],
 );
 
 export const groupPlayerRelations = relations(groupPlayers, ({ one }) => ({

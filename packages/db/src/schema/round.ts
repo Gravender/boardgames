@@ -40,9 +40,9 @@ const rounds = createTable(
       () => new Date(),
     ),
   },
-  (table) => ({
-    scoresheetIndex: index().on(table.scoresheetId),
-  }),
+  (table) => [
+    index("boardgames_round_scoresheet_id_index").on(table.scoresheetId),
+  ],
 );
 export const roundRelations = relations(rounds, ({ one, many }) => ({
   scoresheet: one(scoresheet, {
