@@ -41,11 +41,11 @@ export const useDebouncedCallback = (callback: () => void, delay?: number) => {
 
   const debouncedCallback = useMemo(() => {
     const func = () => {
-      ref.current?.();
+      ref.current();
     };
 
     return debounce(func, delay ?? 1000);
-  }, []);
+  }, [delay]);
 
   return debouncedCallback;
 };

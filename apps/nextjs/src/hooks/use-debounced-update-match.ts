@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import debounce from "lodash.debounce";
+import { useState } from "react";
 
 import type { RouterInputs, RouterOutputs } from "@board-games/api";
 
@@ -7,8 +6,6 @@ import { api } from "~/trpc/react";
 import { useDebouncedCallback } from "./use-debounce";
 
 type Players = NonNullable<RouterOutputs["match"]["getMatch"]>["players"];
-type Duration = NonNullable<RouterOutputs["match"]["getMatch"]>["duration"];
-type Running = NonNullable<RouterOutputs["match"]["getMatch"]>["running"];
 
 export function useDebouncedUpdateMatchData(
   input: RouterInputs["match"]["updateMatchScores"],
@@ -20,8 +17,8 @@ export function useDebouncedUpdateMatchData(
   const utils = api.useUtils();
   const sendRequest = () => {
     saveMatchData.mutate(value, {
-      onSuccess: async () =>
-        await utils.match.getMatch.invalidate({ id: input.match.id }),
+      onSuccess: () =>
+        void utils.match.getMatch.invalidate({ id: input.match.id }),
     });
   };
   const prepareMatchData = (players: Players) => {
@@ -42,7 +39,7 @@ export function useDebouncedUpdateMatchData(
     return { submittedPlayers, matchPlayers };
   };
 
-  const debouncedRequest = useDebouncedCallback(sendRequest, 1000);
+  const debouncedRequest = useDebouncedCallback(sendRequest, delay);
 
   return { debouncedRequest, prepareMatchData, setValue };
 }

@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 "use client";
 
 import type { z } from "zod";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ListPlus, Pause, Play, RotateCcw } from "lucide-react";
@@ -61,14 +62,14 @@ import { Spinner } from "~/components/spinner";
 import { useDebouncedUpdateMatchData } from "~/hooks/use-debounced-update-match";
 import { api } from "~/trpc/react";
 import { CommentDialog } from "./CommentDialog";
+import { DetailDialog } from "./DetailDialog";
 import { ManualWinnerDialog } from "./ManualWinnerDialog";
 import { TieBreakerDialog } from "./TieBreakerDialog";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
 export function Match({ matchId }: { matchId: number }) {
   const [match] = api.match.getMatch.useSuspenseQuery({ id: matchId });
-  if (!match) return null;
-  const [players, setPlayers] = useState(() => [...match.players]);
+  const [players, setPlayers] = useState(() => [...match!.players]);
   const [manualWinners, setManualWinners] = useState<
     z.infer<typeof ManualWinnerPlayerSchema>
   >([]);
@@ -79,18 +80,18 @@ export function Match({ matchId }: { matchId: number }) {
   const [openTieBreakerDialog, setOpenTieBreakerDialog] = useState(false);
   const [hasPlayersChanged, setHasPlayersChanged] = useState(false);
 
-  const [duration, setDuration] = useState(match.duration);
-  const [isRunning, setIsRunning] = useState(match.running);
+  const [duration, setDuration] = useState(match!.duration);
+  const [isRunning, setIsRunning] = useState(match!.running);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const router = useRouter();
   const utils = api.useUtils();
   const updateMatch = api.match.updateMatch.useMutation({
     onSuccess: async () => {
-      await utils.match.getMatch.invalidate({ id: match.id });
-      await utils.game.getGame.invalidate({ id: match.gameId });
+      await utils.match.getMatch.invalidate({ id: match!.id });
+      await utils.game.getGame.invalidate({ id: match!.gameId });
 
-      router.push(`/dashboard/games/${match.gameId}/${match.id}/summary`);
+      router.push(`/dashboard/games/${match!.gameId}/${match!.id}/summary`);
       setIsSubmitting(false);
     },
   });
@@ -99,7 +100,7 @@ export function Match({ matchId }: { matchId: number }) {
 
   const { debouncedRequest, setValue, prepareMatchData } =
     useDebouncedUpdateMatchData({
-      match: { id: match.id, duration, running: isRunning },
+      match: { id: match!.id, duration, running: isRunning },
       roundPlayers: players.flatMap((player) =>
         player.rounds.map((round) => ({
           id: round.id,
@@ -123,30 +124,38 @@ export function Match({ matchId }: { matchId: number }) {
           winner: false,
         })),
     });
-  const saveMatch = () => {
+  const saveMatch = useCallback(() => {
     const { submittedPlayers, matchPlayers } = prepareMatchData(players);
     setValue({
-      match: { id: match.id, duration, running: isRunning },
+      match: { id: match!.id, duration, running: isRunning },
       roundPlayers: submittedPlayers,
       matchPlayers,
     });
     debouncedRequest();
-  };
+  }, [
+    players,
+    match,
+    duration,
+    isRunning,
+    debouncedRequest,
+    setValue,
+    prepareMatchData,
+  ]);
   useEffect(() => {
     if (hasPlayersChanged) {
       saveMatch();
       setHasPlayersChanged(false);
     }
-  }, [players, hasPlayersChanged, duration, isRunning]);
+  }, [saveMatch, hasPlayersChanged]);
   useEffect(() => {
     if (
       !openManualWinnerDialog &&
-      match.scoresheet.winCondition === "Manual" &&
+      match!.scoresheet.winCondition === "Manual" &&
       isSubmitting
     ) {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, match.scoresheet.winCondition, openManualWinnerDialog]);
+  }, [isSubmitting, match, openManualWinnerDialog]);
   const onFinish = () => {
     setIsSubmitting(true);
     setIsRunning(false);
@@ -156,7 +165,7 @@ export function Match({ matchId }: { matchId: number }) {
         score: playerRound.score,
       })),
     );
-    if (match.scoresheet.winCondition === "Manual") {
+    if (match!.scoresheet.winCondition === "Manual") {
       setManualWinners(
         players.map((player) => {
           return {
@@ -167,7 +176,7 @@ export function Match({ matchId }: { matchId: number }) {
               player.rounds.map((round) => ({
                 score: round.score ?? 0,
               })),
-              match.scoresheet,
+              match!.scoresheet,
             ),
           };
         }),
@@ -175,7 +184,7 @@ export function Match({ matchId }: { matchId: number }) {
       setOpenManualWinnerDialog(true);
       updateMatchScores.mutate({
         match: {
-          id: match.id,
+          id: match!.id,
           duration: duration,
           running: false,
         },
@@ -187,7 +196,7 @@ export function Match({ matchId }: { matchId: number }) {
               player.rounds.map((round) => ({
                 score: round.score ?? 0,
               })),
-              match.scoresheet,
+              match!.scoresheet,
             ),
           };
         }),
@@ -202,7 +211,7 @@ export function Match({ matchId }: { matchId: number }) {
           score: round.score ?? 0,
         })),
       })),
-      match.scoresheet,
+      match!.scoresheet,
     );
     let isTieBreaker = false;
 
@@ -232,7 +241,7 @@ export function Match({ matchId }: { matchId: number }) {
       );
       updateMatchScores.mutate({
         match: {
-          id: match.id,
+          id: match!.id,
           duration: duration,
           running: false,
         },
@@ -244,7 +253,7 @@ export function Match({ matchId }: { matchId: number }) {
               player.rounds.map((round) => ({
                 score: round.score ?? 0,
               })),
-              match.scoresheet,
+              match!.scoresheet,
             ),
           };
         }),
@@ -253,7 +262,7 @@ export function Match({ matchId }: { matchId: number }) {
     } else {
       updateMatch.mutate({
         match: {
-          id: match.id,
+          id: match!.id,
           duration: duration,
           finished: true,
           running: false,
@@ -274,10 +283,10 @@ export function Match({ matchId }: { matchId: number }) {
   }, [isRunning]);
 
   useEffect(() => {
-    if (isRunning && duration % 30 === 0 && match.duration !== duration) {
+    if (isRunning && duration % 30 === 0 && match!.duration !== duration) {
       const debounce = setTimeout(() => {
         updateMatchDuration.mutate({
-          match: { id: match.id },
+          match: { id: match!.id },
           duration: duration,
         });
       }, 1000); // Debounce duration
@@ -308,7 +317,7 @@ export function Match({ matchId }: { matchId: number }) {
 
     setHasPlayersChanged(true);
   };
-
+  if (!match) return null;
   return (
     <div className="flex w-full justify-center">
       <div className="w-full max-w-6xl sm:px-4">
@@ -396,6 +405,31 @@ export function Match({ matchId }: { matchId: number }) {
                 ))}
               </TableBody>
               <TableFooter>
+                <TableRow>
+                  <TableHead
+                    scope="row"
+                    className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+                  >
+                    {"Details(optional)"}
+                  </TableHead>
+                  {match.players.map((player) => {
+                    return (
+                      <TableCell
+                        key={`${player.id}-details`}
+                        className="border-b border-r"
+                      >
+                        <DetailDialog
+                          matchId={match.id}
+                          matchPlayer={{
+                            id: player.id,
+                            name: player.name,
+                            details: player.details,
+                          }}
+                        />
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
                 <TableRow>
                   <TableHead
                     scope="row"

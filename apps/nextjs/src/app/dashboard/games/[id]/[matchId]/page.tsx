@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { Match } from "~/app/dashboard/games/[id]/[matchId]/_components/match";
@@ -38,7 +39,9 @@ export default async function Page({ params }: Props) {
   void api.match.getMatch.prefetch({ id: Number(matchId) });
   return (
     <HydrateClient>
-      <Match matchId={Number(matchId)} />
+      <Suspense>
+        <Match matchId={Number(matchId)} />
+      </Suspense>
     </HydrateClient>
   );
 }

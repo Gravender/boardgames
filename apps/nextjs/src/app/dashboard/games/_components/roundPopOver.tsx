@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 
-import type { scoreSheetWithRoundsFormSchema } from "./addGameDialog";
+import type { scoreSheetWithRoundsSchema } from "./addGameDialog";
 import { NumberInput } from "~/components/number-input";
 
 export function RoundPopOver({
@@ -33,7 +33,7 @@ export function RoundPopOver({
   form,
 }: {
   index: number;
-  form: UseFormReturn<z.infer<typeof scoreSheetWithRoundsFormSchema>>;
+  form: UseFormReturn<z.infer<typeof scoreSheetWithRoundsSchema>>;
 }) {
   const { fields, update } = useFieldArray({
     name: "rounds",
@@ -64,7 +64,6 @@ export function RoundPopOver({
                         .pick({ type: true })
                         .parse({ type: value });
                       update(index, {
-                        roundId: fields[index]?.roundId ?? null,
                         name: fields[index]?.name ?? "",
                         type: safeValue.type,
                         order: fields[index]?.order ?? index,

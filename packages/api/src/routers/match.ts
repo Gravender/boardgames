@@ -184,6 +184,7 @@ export const matchRouter = createTRPCRouter({
           id: matchPlayer.id,
           playerId: matchPlayer.player.id,
           imageUrl: matchPlayer.player.image?.url,
+          details: matchPlayer.details,
         };
       });
       return {
@@ -755,6 +756,19 @@ export const matchRouter = createTRPCRouter({
         .update(match)
         .set({ comment: input.comment })
         .where(eq(match.id, input.match.id));
+    }),
+  updateMatchPlayerDetails: protectedUserProcedure
+    .input(
+      z.object({
+        matchPlayer: selectMatchPlayerSchema.pick({ id: true }),
+        details: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(matchPlayer)
+        .set({ details: input.details })
+        .where(eq(matchPlayer.id, input.matchPlayer.id));
     }),
   editMatch: protectedUserProcedure
     .input(

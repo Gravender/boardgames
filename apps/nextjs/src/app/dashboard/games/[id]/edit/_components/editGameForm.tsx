@@ -337,11 +337,11 @@ const GameForm = ({
                 ? scoresheet.targetScore
                 : undefined;
             const hasScoresheetChanged =
-              scoresheetName ||
-              scoresheetWinCondition ||
-              scoresheetIsCoop ||
-              scoresheetRoundsScore ||
-              scoresheetTargetScore;
+              scoresheetName !== undefined ||
+              scoresheetWinCondition !== undefined ||
+              scoresheetIsCoop !== undefined ||
+              scoresheetRoundsScore !== undefined ||
+              scoresheetTargetScore !== undefined;
             if (scoresheet.roundChanged) {
               type UpdateScoresheetAndRoundsType = Extract<
                 RouterInputs["game"]["updateGame"]["scoresheets"][number],

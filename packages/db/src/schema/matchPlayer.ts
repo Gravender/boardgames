@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { boolean, integer, serial, unique } from "drizzle-orm/pg-core";
+import { boolean, integer, serial, text, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
@@ -21,6 +21,7 @@ const matchPlayers = createTable(
     score: integer("score").default(0),
     placement: integer("placement").default(0),
     order: integer("order"),
+    details: text("details"),
   },
   (table) => [
     unique("boardgames_match_player_match_id_player_id_unique").on(

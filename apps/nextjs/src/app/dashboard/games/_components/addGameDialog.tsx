@@ -20,7 +20,6 @@ import { z } from "zod";
 import {
   baseRoundSchema,
   createGameSchema,
-  roundsSchema,
   scoreSheetSchema,
 } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
@@ -87,7 +86,7 @@ export function AddGameDialog() {
     </Dialog>
   );
 }
-const scoreSheetWithRoundsSchema = z.object({
+export const scoreSheetWithRoundsSchema = z.object({
   scoresheet: scoreSheetSchema,
   rounds: z.array(baseRoundSchema),
 });
