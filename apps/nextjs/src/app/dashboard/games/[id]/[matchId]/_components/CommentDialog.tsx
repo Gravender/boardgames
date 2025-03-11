@@ -29,7 +29,7 @@ export function CommentDialog({
   comment,
 }: {
   matchId: number;
-  comment: string;
+  comment: string | null;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -41,12 +41,16 @@ export function CommentDialog({
         >
           <span className="text-lg font-semibold text-primary">Comment:</span>
           <span className="text-wrap text-start text-base text-primary">
-            {comment}
+            {comment ?? "No comment"}
           </span>
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <Content setIsOpen={setIsOpen} matchId={matchId} comment={comment} />
+        <Content
+          setIsOpen={setIsOpen}
+          matchId={matchId}
+          comment={comment ?? ""}
+        />
       </DialogContent>
     </Dialog>
   );
@@ -83,7 +87,7 @@ function Content({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Select Winners</DialogTitle>
+        <DialogTitle>Match Comment</DialogTitle>
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmitForm)} className="space-y-8">
@@ -94,7 +98,7 @@ function Content({
               <FormItem>
                 <FormLabel className="hidden">Comment:</FormLabel>
                 <FormControl>
-                  <Input placeholder="Sheet name" {...field} />
+                  <Input {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

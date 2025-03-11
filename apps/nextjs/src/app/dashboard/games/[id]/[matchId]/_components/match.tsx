@@ -480,7 +480,7 @@ export function Match({ matchId }: { matchId: number }) {
           </div>
           <Separator />
           <div className="flex w-full items-start">
-            <CommentDialog matchId={match.id} comment={match.comment ?? ""} />
+            <CommentDialog matchId={match.id} comment={match.comment} />
           </div>
         </CardFooter>
         <ManualWinnerDialog
