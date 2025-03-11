@@ -376,6 +376,9 @@ export async function seed() {
           duration: faker.number.int({ min: 30, max: 400 }),
           finished: finished,
           running: !finished,
+          comment: faker.helpers.maybe(() => faker.lorem.sentence(), {
+            probability: 0.1,
+          }),
         };
       },
     );

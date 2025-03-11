@@ -1,70 +1,48 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "lodash.debounce";
 
-import type { RouterOutputs } from "@board-games/api";
+import type { RouterInputs, RouterOutputs } from "@board-games/api";
 
 import { api } from "~/trpc/react";
+import { useDebouncedCallback } from "./use-debounce";
 
 type Players = NonNullable<RouterOutputs["match"]["getMatch"]>["players"];
 type Duration = NonNullable<RouterOutputs["match"]["getMatch"]>["duration"];
 type Running = NonNullable<RouterOutputs["match"]["getMatch"]>["running"];
 
-export function useDebouncedUpdateMatchData(matchId: number, delay = 1000) {
-  const [isUpdating, setIsUpdating] = useState(false);
+export function useDebouncedUpdateMatchData(
+  input: RouterInputs["match"]["updateMatchScores"],
+  delay = 1000,
+) {
+  const [value, setValue] =
+    useState<RouterInputs["match"]["updateMatchScores"]>(input);
   const saveMatchData = api.match.updateMatchScores.useMutation();
+  const utils = api.useUtils();
+  const sendRequest = () => {
+    saveMatchData.mutate(value, {
+      onSuccess: async () =>
+        await utils.match.getMatch.invalidate({ id: input.match.id }),
+    });
+  };
+  const prepareMatchData = (players: Players) => {
+    const submittedPlayers = players.flatMap((player) =>
+      player.rounds.map((round) => ({
+        id: round.id,
+        score: round.score,
+        roundId: round.id,
+        matchPlayerId: player.id,
+      })),
+    );
+    const matchPlayers = submittedPlayers.map((player) => ({
+      id: player.id,
+      score: player.score,
+      winner: false,
+    }));
 
-  const debouncedUpdate = useMemo(
-    () =>
-      debounce((players: Players, duration: Duration, running: Running) => {
-        setIsUpdating(true);
+    return { submittedPlayers, matchPlayers };
+  };
 
-        const prepareMatchData = (players: Players) => {
-          const submittedPlayers = players.flatMap((player) =>
-            player.rounds.map((round) => ({
-              id: round.id,
-              score: round.score,
-              roundId: round.id,
-              matchPlayerId: player.id,
-            })),
-          );
-          const matchPlayers = submittedPlayers.map((player) => ({
-            id: player.id,
-            score: player.score,
-            winner: false,
-          }));
+  const debouncedRequest = useDebouncedCallback(sendRequest, 1000);
 
-          return { submittedPlayers, matchPlayers };
-        };
-
-        const { submittedPlayers, matchPlayers } = prepareMatchData(players);
-
-        saveMatchData.mutate(
-          {
-            match: {
-              id: matchId,
-              duration: duration,
-              running: running,
-            },
-            roundPlayers: submittedPlayers,
-            matchPlayers: matchPlayers,
-          },
-          {
-            onSuccess: () => setIsUpdating(false),
-            onError: () => setIsUpdating(false),
-          },
-        );
-      }, delay),
-    [saveMatchData, delay, matchId],
-  );
-
-  // Cancel debounced function on unmount
-  const cleanup = useCallback(() => {
-    debouncedUpdate.cancel();
-  }, [debouncedUpdate]);
-
-  useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
-
-  return { debouncedUpdate, isUpdating };
+  return { debouncedRequest, prepareMatchData, setValue };
 }

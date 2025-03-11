@@ -196,6 +196,7 @@ export const matchRouter = createTRPCRouter({
         duration: returnedMatch.duration,
         finished: returnedMatch.finished,
         running: returnedMatch.running,
+        comment: returnedMatch.comment,
       };
     }),
   getSummary: protectedUserProcedure
@@ -407,6 +408,7 @@ export const matchRouter = createTRPCRouter({
         name: returnedMatch.name,
         scoresheet: returnedMatch.scoresheet,
         locationName: returnedMatch.location?.name,
+        comment: returnedMatch.comment,
         gameId: returnedMatch.gameId,
         gameName: returnedMatch.game.name,
         gameImageUrl: returnedMatch.game.image?.url,
@@ -740,6 +742,19 @@ export const matchRouter = createTRPCRouter({
           })
           .where(inArray(matchPlayer.id, ids));
       });
+    }),
+  updateMatchComment: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectMatchSchema.pick({ id: true }),
+        comment: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(match)
+        .set({ comment: input.comment })
+        .where(eq(match.id, input.match.id));
     }),
   editMatch: protectedUserProcedure
     .input(

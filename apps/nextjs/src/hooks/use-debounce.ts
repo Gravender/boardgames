@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { debounce } from "lodash";
 
 export function useDebounce<T>(value: T, delay: number) {
   // State and setters for debounced value
@@ -31,3 +32,20 @@ export function useDebouncedInput<T>(
 
   return [value, setValue] as const;
 }
+export const useDebouncedCallback = (callback: () => void, delay?: number) => {
+  const ref = useRef(callback);
+
+  useEffect(() => {
+    ref.current = callback;
+  }, [callback]);
+
+  const debouncedCallback = useMemo(() => {
+    const func = () => {
+      ref.current?.();
+    };
+
+    return debounce(func, delay ?? 1000);
+  }, []);
+
+  return debouncedCallback;
+};

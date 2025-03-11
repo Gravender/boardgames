@@ -11,11 +11,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // read route params
   const slugs = await params;
   const matchId = slugs.matchId;
-
-  // fetch data
-  if (isNaN(Number(matchId))) return { title: "Games" };
+  const gameId = slugs.id;
+  if (isNaN(Number(matchId))) {
+    if (isNaN(Number(gameId))) redirect("/dashboard/games");
+    else {
+      redirect(`/dashboard/games/${gameId}`);
+    }
+  }
   const match = await api.match.getMatch({ id: Number(matchId) });
-  if (!match) return { title: "Match" };
+  if (!match) redirect(`/dashboard/games/${gameId}`);
   return {
     title: `${match.name} Scoresheet`,
     description: `Scoresheet Table for ${match.name}`,
@@ -31,11 +35,10 @@ export default async function Page({ params }: Props) {
       redirect(`/dashboard/games/${gameId}`);
     }
   }
-  const match = await api.match.getMatch({ id: Number(matchId) });
-  if (!match) redirect(`/dashboard/games/${gameId}`);
+  void api.match.getMatch.prefetch({ id: Number(matchId) });
   return (
     <HydrateClient>
-      <Match match={match} />
+      <Match matchId={Number(matchId)} />
     </HydrateClient>
   );
 }

@@ -41,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@board-games/ui/select";
+import { Separator } from "@board-games/ui/separator";
 import {
   Table,
   TableBody,
@@ -59,11 +60,14 @@ import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";
 import { useDebouncedUpdateMatchData } from "~/hooks/use-debounced-update-match";
 import { api } from "~/trpc/react";
+import { CommentDialog } from "./CommentDialog";
 import { ManualWinnerDialog } from "./ManualWinnerDialog";
 import { TieBreakerDialog } from "./TieBreakerDialog";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
-export function Match({ match }: { match: Match }) {
+export function Match({ matchId }: { matchId: number }) {
+  const [match] = api.match.getMatch.useSuspenseQuery({ id: matchId });
+  if (!match) return null;
   const [players, setPlayers] = useState(() => [...match.players]);
   const [manualWinners, setManualWinners] = useState<
     z.infer<typeof ManualWinnerPlayerSchema>
@@ -93,24 +97,47 @@ export function Match({ match }: { match: Match }) {
   const updateMatchScores = api.match.updateMatchScores.useMutation();
   const updateMatchDuration = api.match.updateMatchDuration.useMutation();
 
-  const { debouncedUpdate, isUpdating } = useDebouncedUpdateMatchData(match.id);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const saveMatch = useCallback(() => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    saveTimeoutRef.current = setTimeout(() => {
-      if (hasPlayersChanged) {
-        debouncedUpdate(players, duration, isRunning);
-        setHasPlayersChanged(false);
-      }
-    }, 500);
-  }, [players, duration, isRunning, debouncedUpdate, hasPlayersChanged]);
+  const { debouncedRequest, setValue, prepareMatchData } =
+    useDebouncedUpdateMatchData({
+      match: { id: match.id, duration, running: isRunning },
+      roundPlayers: players.flatMap((player) =>
+        player.rounds.map((round) => ({
+          id: round.id,
+          score: round.score,
+          roundId: round.id,
+          matchPlayerId: player.id,
+        })),
+      ),
+      matchPlayers: players
+        .flatMap((player) =>
+          player.rounds.map((round) => ({
+            id: round.id,
+            score: round.score,
+            roundId: round.id,
+            matchPlayerId: player.id,
+          })),
+        )
+        .map((player) => ({
+          id: player.id,
+          score: player.score,
+          winner: false,
+        })),
+    });
+  const saveMatch = () => {
+    const { submittedPlayers, matchPlayers } = prepareMatchData(players);
+    setValue({
+      match: { id: match.id, duration, running: isRunning },
+      roundPlayers: submittedPlayers,
+      matchPlayers,
+    });
+    debouncedRequest();
+  };
   useEffect(() => {
     if (hasPlayersChanged) {
       saveMatch();
+      setHasPlayersChanged(false);
     }
-  }, [players, saveMatch, hasPlayersChanged]);
+  }, [players, hasPlayersChanged, duration, isRunning]);
   useEffect(() => {
     if (
       !openManualWinnerDialog &&
@@ -245,6 +272,7 @@ export function Match({ match }: { match: Match }) {
     }
     return () => clearInterval(interval);
   }, [isRunning]);
+
   useEffect(() => {
     if (isRunning && duration % 30 === 0 && match.duration !== duration) {
       const debounce = setTimeout(() => {
@@ -282,186 +310,194 @@ export function Match({ match }: { match: Match }) {
   };
 
   return (
-    <div className="sm:px-4">
-      <CardHeader>
-        <CardTitle>{`${match.name}`}</CardTitle>
-      </CardHeader>
-      <Card>
-        <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
-          <>
-            <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
-              <TableRow>
-                <TableHead
-                  scope="col"
-                  className="bg-sidebar sticky left-0 top-0 w-20 sm:w-36"
-                >
-                  <div>
-                    <AddRoundDialog match={match} />
-                  </div>
-                </TableHead>
-                {players.map((player) => (
+    <div className="flex w-full justify-center">
+      <div className="w-full max-w-6xl sm:px-4">
+        <CardHeader>
+          <CardTitle>{`${match.name}`}</CardTitle>
+        </CardHeader>
+        <Card>
+          <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
+            <>
+              <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
+                <TableRow>
                   <TableHead
-                    className="min-w-20 text-center"
                     scope="col"
-                    key={player.id}
+                    className="bg-sidebar sticky left-0 top-0 w-20 sm:w-36"
                   >
-                    {player.name}
+                    <div>
+                      <AddRoundDialog match={match} />
+                    </div>
                   </TableHead>
+                  {players.map((player) => (
+                    <TableHead
+                      className="min-w-20 text-center"
+                      scope="col"
+                      key={player.id}
+                    >
+                      {player.name}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {match.scoresheet.rounds.map((round, index) => (
+                  <TableRow key={`round-${round.id}`}>
+                    <TableHead
+                      scope="row"
+                      className={cn(
+                        "sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg",
+                        round.color &&
+                          "text-slate-600 hover:opacity-50 hover:dark:opacity-80",
+                      )}
+                      style={{
+                        backgroundColor: round.color ?? "",
+                      }}
+                    >
+                      {round.name}
+                    </TableHead>
+                    {players.map((player, playerIndex) => {
+                      const roundPlayer = player.rounds[index];
+                      return (
+                        <TableCell
+                          key={`player-${player.id}-round-${round.id}`}
+                          className="p-0"
+                        >
+                          <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
+                            {round.type === "Numeric" ? (
+                              <NumberInput
+                                value={roundPlayer?.score ?? 0}
+                                onValueChange={(value) => {
+                                  handleScoreChange(playerIndex, index, value);
+                                }}
+                                className="border-none text-center"
+                              />
+                            ) : (
+                              <>
+                                <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
+                                <Checkbox
+                                  onCheckedChange={(isChecked) => {
+                                    handleScoreChange(
+                                      playerIndex,
+                                      index,
+                                      isChecked ? round.score : 0,
+                                    );
+                                  }}
+                                  checked={
+                                    (roundPlayer?.score ?? 0) === round.score
+                                  }
+                                />
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
                 ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {match.scoresheet.rounds.map((round, index) => (
-                <TableRow key={`round-${round.id}`}>
+              </TableBody>
+              <TableFooter>
+                <TableRow>
                   <TableHead
                     scope="row"
-                    className={cn(
-                      "sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg",
-                      round.color &&
-                        "text-slate-600 hover:opacity-50 hover:dark:opacity-80",
-                    )}
-                    style={{
-                      backgroundColor: round.color ?? "",
-                    }}
+                    className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
                   >
-                    {round.name}
+                    Total
                   </TableHead>
-                  {players.map((player, playerIndex) => {
-                    const roundPlayer = player.rounds[index];
+                  {players.map((player, index) => {
+                    if (match.scoresheet.roundsScore === "Manual") {
+                      return (
+                        <TableCell key={`${player.id}-total`}>
+                          <Input
+                            type="number"
+                            className="text-center"
+                            value={player.score ?? 0}
+                            onChange={(e) => {
+                              const score = Number(e.target.value);
+                              const temp = [...players];
+                              if (temp[index]?.score !== undefined) {
+                                temp[index].score = score;
+                              }
+                              setPlayers(temp);
+                              setHasPlayersChanged(true);
+                            }}
+                          />
+                        </TableCell>
+                      );
+                    }
+                    const total = calculateFinalScore(
+                      player.rounds.map((round) => ({
+                        score: round.score ?? 0,
+                      })),
+                      match.scoresheet,
+                    );
                     return (
-                      <TableCell
-                        key={`player-${player.id}-round-${round.id}`}
-                        className="p-0"
-                      >
-                        <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
-                          {round.type === "Numeric" ? (
-                            <NumberInput
-                              value={roundPlayer?.score ?? 0}
-                              onValueChange={(value) => {
-                                handleScoreChange(playerIndex, index, value);
-                              }}
-                              className="border-none text-center"
-                            />
-                          ) : (
-                            <>
-                              <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
-                              <Checkbox
-                                onCheckedChange={(isChecked) => {
-                                  handleScoreChange(
-                                    playerIndex,
-                                    index,
-                                    isChecked ? round.score : 0,
-                                  );
-                                }}
-                                checked={
-                                  (roundPlayer?.score ?? 0) === round.score
-                                }
-                              />
-                            </>
-                          )}
+                      <TableCell key={`${player.id}-total`}>
+                        <div className="flex items-center justify-center">
+                          <span className="text-center">
+                            {total === Infinity
+                              ? 0
+                              : total === -Infinity
+                                ? 0
+                                : total}
+                          </span>
                         </div>
                       </TableCell>
                     );
                   })}
                 </TableRow>
-              ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableHead
-                  scope="row"
-                  className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
-                >
-                  Total
-                </TableHead>
-                {players.map((player, index) => {
-                  if (match.scoresheet.roundsScore === "Manual") {
-                    return (
-                      <TableCell key={`${player.id}-total`}>
-                        <Input
-                          type="number"
-                          className="text-center"
-                          value={player.score ?? 0}
-                          onChange={(e) => {
-                            const score = Number(e.target.value);
-                            const temp = [...players];
-                            if (temp[index]?.score !== undefined) {
-                              temp[index].score = score;
-                            }
-                            setPlayers(temp);
-                            setHasPlayersChanged(true);
-                          }}
-                        />
-                      </TableCell>
-                    );
-                  }
-                  const total = calculateFinalScore(
-                    player.rounds.map((round) => ({
-                      score: round.score ?? 0,
-                    })),
-                    match.scoresheet,
-                  );
-                  return (
-                    <TableCell key={`${player.id}-total`}>
-                      <div className="flex items-center justify-center">
-                        <span className="text-center">
-                          {total === Infinity
-                            ? 0
-                            : total === -Infinity
-                              ? 0
-                              : total}
-                        </span>
-                      </div>
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            </TableFooter>
-          </>
-        </Table>
-      </Card>
-      <CardFooter className="flex justify-between px-2 pt-6">
-        <div className="flex items-center justify-center gap-2">
-          <div className="text-center text-2xl font-bold">
-            {formatDuration(duration)}
-          </div>
-          <Button onClick={toggleClock} size={"icon"} variant={"outline"}>
-            {isRunning ? <Pause /> : <Play />}
-          </Button>
-          <Button onClick={resetClock} size={"icon"} variant={"outline"}>
-            <RotateCcw />
-          </Button>
-        </div>
-        <Button
-          onClick={() => {
-            onFinish();
-          }}
-          disabled={isSubmitting || isUpdating}
-        >
-          {isSubmitting ? (
-            <>
-              <Spinner />
-              <span>Submitting...</span>
+              </TableFooter>
             </>
-          ) : (
-            "Finish"
-          )}
-        </Button>
-      </CardFooter>
-      <ManualWinnerDialog
-        isOpen={openManualWinnerDialog}
-        setIsOpen={setOpenManualWinnerDialog}
-        gameId={match.gameId}
-        matchId={match.id}
-        players={manualWinners}
-      />
-      <TieBreakerDialog
-        isOpen={openTieBreakerDialog}
-        setIsOpen={setOpenTieBreakerDialog}
-        gameId={match.gameId}
-        matchId={match.id}
-        players={tieBreakers}
-      />
+          </Table>
+        </Card>
+        <CardFooter className="flex flex-col gap-2">
+          <div className="flex w-full justify-between px-2 pt-6">
+            <div className="flex items-center justify-center gap-2">
+              <div className="text-center text-2xl font-bold">
+                {formatDuration(duration)}
+              </div>
+              <Button onClick={toggleClock} size={"icon"} variant={"outline"}>
+                {isRunning ? <Pause /> : <Play />}
+              </Button>
+              <Button onClick={resetClock} size={"icon"} variant={"outline"}>
+                <RotateCcw />
+              </Button>
+            </div>
+            <Button
+              onClick={() => {
+                onFinish();
+              }}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Spinner />
+                  <span>Submitting...</span>
+                </>
+              ) : (
+                "Finish"
+              )}
+            </Button>
+          </div>
+          <Separator />
+          <div className="flex w-full items-start">
+            <CommentDialog matchId={match.id} comment={match.comment ?? ""} />
+          </div>
+        </CardFooter>
+        <ManualWinnerDialog
+          isOpen={openManualWinnerDialog}
+          setIsOpen={setOpenManualWinnerDialog}
+          gameId={match.gameId}
+          matchId={match.id}
+          players={manualWinners}
+        />
+        <TieBreakerDialog
+          isOpen={openTieBreakerDialog}
+          setIsOpen={setOpenTieBreakerDialog}
+          gameId={match.gameId}
+          matchId={match.id}
+          players={tieBreakers}
+        />
+      </div>
     </div>
   );
 }
@@ -499,7 +535,6 @@ const AddRoundDialogContent = ({
   setOpen: (isOpen: boolean) => void;
 }) => {
   const utils = api.useUtils();
-  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof RoundSchema>>({
@@ -516,7 +551,6 @@ const AddRoundDialogContent = ({
     onSuccess: async () => {
       setIsSubmitting(false);
       await utils.match.getMatch.invalidate({ id: match.id });
-      router.refresh();
       setOpen(false);
       form.reset();
     },

@@ -297,24 +297,18 @@ export const dashboardRouter = {
     return playersWithImages.slice(0, 10);
   }),
   getUserPlacements: protectedUserProcedure.query(async ({ ctx }) => {
-    const [returnedPlayer] = await ctx.db
-      .select({ id: player.id })
-      .from(player)
-      .where(eq(player.userId, ctx.userId));
-    if (!returnedPlayer)
-      throw new TRPCError({ code: "NOT_FOUND", message: "Player not found" });
-
     const placementCounts = await ctx.db
       .select({
         placement: matchPlayer.placement,
         count: sql<number>`COUNT(*)`,
       })
       .from(matchPlayer)
+      .innerJoin(player, eq(player.id, matchPlayer.playerId))
       .innerJoin(match, eq(match.id, matchPlayer.matchId))
       .innerJoin(game, eq(match.gameId, game.id))
       .where(
         and(
-          eq(matchPlayer.playerId, returnedPlayer.id),
+          eq(player.userId, ctx.userId),
           eq(match.finished, true),
           sql`${match.date} >= now() - interval '1 year'`,
           eq(game.deleted, false),
@@ -378,10 +372,10 @@ export const dashboardRouter = {
       );
 
     if (results.length === 0) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "No match data available for the past year",
-      });
+      return {
+        overtime: [],
+        monthToMonth: [],
+      };
     }
 
     let numMatches = 0;

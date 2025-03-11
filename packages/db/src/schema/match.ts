@@ -4,6 +4,7 @@ import {
   index,
   integer,
   serial,
+  text,
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -41,6 +42,7 @@ const matches = createTable(
     finished: boolean("finished").notNull().default(false),
     running: boolean("running").notNull().default(true),
     locationId: integer("location_id").references(() => location.id),
+    comment: text("comment"),
   },
   (table) => ({
     gameIndex: index().on(table.gameId),
