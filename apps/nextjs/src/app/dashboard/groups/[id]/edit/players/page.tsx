@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { api, HydrateClient } from "~/trpc/server";
+import { caller, HydrateClient } from "~/trpc/server";
 import { PlayersTable } from "./_components/playerTable";
 
 export default async function Page({
@@ -12,7 +12,7 @@ export default async function Page({
 }) {
   const id = (await params).id;
   if (isNaN(Number(id))) redirect("/dashboard/groups");
-  const players = await api.player.getPlayersByGroup({
+  const players = await caller.player.getPlayersByGroup({
     group: { id: Number(id) },
   });
 

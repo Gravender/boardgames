@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { CardHeader, CardTitle } from "@board-games/ui/card";
 import { Table, TableBody } from "@board-games/ui/table";
 
-import { api, HydrateClient } from "~/trpc/server";
+import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { AddGameDialog } from "./_components/addGameDialog";
 import { Games, GameSkeleton } from "./_components/games";
 
@@ -27,7 +27,7 @@ function GamesContentFallback() {
 }
 
 export default function Page() {
-  void api.game.getGames.prefetch();
+  void prefetch(trpc.game.getGames.queryOptions());
   return (
     <HydrateClient>
       <div className="flex w-full items-center justify-center">

@@ -4,6 +4,7 @@ import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@clerk/clerk-expo";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -43,7 +44,7 @@ import { ChevronUp } from "~/lib/icons/ChevronUp";
 import { Dices } from "~/lib/icons/Dices";
 import { Plus } from "~/lib/icons/Plus";
 import { Table } from "~/lib/icons/Table";
-import { api } from "~/utils/api";
+import { trpc } from "~/utils/api";
 import { useUploadThing } from "~/utils/uploadthing";
 import AddScoresheetModal from "./AddScoresheetModal";
 import { Separator } from "./ui/separator";
@@ -152,7 +153,7 @@ function AddGameContent({
   const [moreOptions, setMoreOptions] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const utils = api.useUtils();
+  const queryClient = useQueryClient();
 
   const { getToken } = useAuth();
   const { startUpload } = useUploadThing("imageUploader", {
@@ -191,18 +192,22 @@ function AddGameContent({
     },
   });
 
-  const createGame = api.game.create.useMutation({
-    onSuccess: async () => {
-      setIsUploading(false);
-      await Promise.all([
-        utils.game.getGames.invalidate(),
-        utils.dashboard.getGames.invalidate(),
-        utils.dashboard.getUniqueGames.invalidate(),
-      ]);
-      form.reset();
-      setIsOpen(false);
-    },
-  });
+  const createGame = useMutation(
+    trpc.game.create.mutationOptions({
+      onSuccess: async () => {
+        setIsUploading(false);
+        await queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
+        await queryClient.invalidateQueries(
+          trpc.dashboard.getGames.queryOptions(),
+        );
+        await queryClient.invalidateQueries(
+          trpc.dashboard.getUniqueGames.queryOptions(),
+        );
+        form.reset();
+        setIsOpen(false);
+      },
+    }),
+  );
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsUploading(true);

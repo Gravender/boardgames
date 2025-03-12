@@ -4,6 +4,7 @@ import type { z } from "zod";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, X } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -40,7 +41,7 @@ import {
   matchSchema,
   playersSchema,
 } from "~/stores/add-match-store";
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 
@@ -53,8 +54,11 @@ export function AddMatchDialog({
   gameName: Game["name"];
   matches: number;
 }) {
+  const trpc = useTRPC();
   const { isOpen, setIsOpen } = useAddMatchStore((state) => state);
-  const { data: defaultLocation } = api.location.getDefaultLocation.useQuery();
+  const { data: defaultLocation } = useQuery(
+    trpc.location.getDefaultLocation.queryOptions(),
+  );
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[425px]">
@@ -97,13 +101,14 @@ function Content({
   matches: number;
   defaultLocation: RouterOutputs["location"]["getDefaultLocation"];
 }) {
+  const trpc = useTRPC();
   const { isOpen, match, setMatch, setLocation, reset } = useAddMatchStore(
     (state) => state,
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingPlayers, setIsGettingPlayers] = useState(false);
   const [isGettingLocations, setIsGettingLocations] = useState(false);
-  const utils = api.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
   const form = useForm<formSchemaType>({
     resolver: zodResolver(formSchema),
@@ -114,19 +119,25 @@ function Content({
       location: match.location === undefined ? defaultLocation : match.location,
     },
   });
-  const createMatch = api.match.createMatch.useMutation({
-    onSuccess: async (match) => {
-      reset();
-      setIsSubmitting(false);
-      router.push(`/dashboard/games/${gameId}/${match.id}`);
-      await Promise.all([
-        utils.player.getPlayersByGame.invalidate({ game: { id: gameId } }),
-        utils.player.getPlayers.invalidate(),
-        utils.game.getGame.invalidate({ id: gameId }),
-        utils.dashboard.invalidate(),
-      ]);
-    },
-  });
+  const createMatch = useMutation(
+    trpc.match.createMatch.mutationOptions({
+      onSuccess: async (match) => {
+        reset();
+        setIsSubmitting(false);
+        router.push(`/dashboard/games/${gameId}/${match.id}`);
+        await queryClient.invalidateQueries(
+          trpc.player.getPlayersByGame.queryFilter({ game: { id: gameId } }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.player.getPlayers.queryOptions(),
+        );
+        await queryClient.invalidateQueries(
+          trpc.game.getGame.queryOptions({ id: gameId }),
+        );
+        await queryClient.invalidateQueries(trpc.dashboard.pathFilter());
+      },
+    }),
+  );
 
   useEffect(() => {
     if (!isOpen) reset();

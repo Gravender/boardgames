@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MoreVertical } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -13,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 import { EditLocationDialog } from "./editLocationDialog";
 
 export function LocationDropDown({
@@ -21,12 +22,17 @@ export function LocationDropDown({
 }: {
   data: RouterOutputs["location"]["getLocations"][number];
 }) {
-  const utils = api.useUtils();
-  const deleteLocation = api.location.deleteLocation.useMutation({
-    onSuccess: async () => {
-      await Promise.all([utils.location.getLocations.invalidate()]);
-    },
-  });
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const deleteLocation = useMutation(
+    trpc.location.deleteLocation.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.location.getLocations.queryOptions(),
+        );
+      },
+    }),
+  );
   const onDelete = () => {
     deleteLocation.mutate({ id: data.id });
   };

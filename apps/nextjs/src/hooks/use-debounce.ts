@@ -43,7 +43,7 @@ export const useDebouncedCallback = (callback: () => void, delay?: number) => {
     const func = () => {
       ref.current();
     };
-
+    // eslint-disable-next-line react-compiler/react-compiler
     return debounce(func, delay ?? 1000);
   }, [delay]);
 

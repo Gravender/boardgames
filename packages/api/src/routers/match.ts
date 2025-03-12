@@ -434,10 +434,7 @@ export const matchRouter = createTRPCRouter({
   getMatchesByDate: protectedUserProcedure
     .input(
       z.object({
-        date: z
-          .date()
-          .min(new Date(1900, 1, 1))
-          .max(new Date()),
+        date: z.date().min(new Date(1900, 1, 1)),
       }),
     )
     .query(async ({ ctx, input }) => {

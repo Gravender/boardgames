@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Search, Users } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -10,12 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { Input } from "@board-games/ui/input";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 import { AddGroupDialog } from "./addGroupDialog";
 import { GroupDropDown } from "./groupDropDown";
 
 export function GroupTable() {
-  const [data] = api.group.getGroups.useSuspenseQuery();
+  const trpc = useTRPC();
+  const { data: data } = useSuspenseQuery(trpc.group.getGroups.queryOptions());
   const [groups, setGroups] =
     useState<RouterOutputs["group"]["getGroups"]>(data);
 

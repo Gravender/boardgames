@@ -12,13 +12,14 @@ import { PortalHost } from "@rn-primitives/portal";
 import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
 import { NAV_THEME } from "~/lib/constants";
 import { useColorScheme } from "~/lib/useColorScheme";
-import { TRPCProvider } from "~/utils/api";
+import { queryClient } from "~/utils/api";
 import { tokenCache } from "~/utils/cache";
 
 import "../styles.css";
 
 import { useLayoutEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { QueryClientProvider } from "@tanstack/react-query";
 
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { Text } from "~/components/ui/text";
@@ -63,7 +64,7 @@ export default function RootLayout() {
 
   return (
     <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-      <TRPCProvider>
+      <QueryClientProvider client={queryClient}>
         <ClerkLoaded>
           <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
             <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
@@ -134,7 +135,7 @@ export default function RootLayout() {
             </GestureHandlerRootView>
           </ThemeProvider>
         </ClerkLoaded>
-      </TRPCProvider>
+      </QueryClientProvider>
     </ClerkProvider>
   );
 }

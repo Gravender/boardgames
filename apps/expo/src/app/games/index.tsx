@@ -5,12 +5,13 @@ import { Link, Stack } from "expo-router";
 import { SignedIn, SignedOut } from "@clerk/clerk-expo";
 import { PortalHost } from "@rn-primitives/portal";
 import { FlashList } from "@shopify/flash-list";
+import { useQuery } from "@tanstack/react-query";
 
 import type { RouterOutputs } from "~/utils/api";
 import { AddGame } from "~/components/AddGame";
 import { GamesCard } from "~/components/GameCard";
 import { Text } from "~/components/ui/text";
-import { api } from "~/utils/api";
+import { trpc } from "~/utils/api";
 
 function GamesTable({ games }: { games: RouterOutputs["game"]["getGames"] }) {
   return (
@@ -35,7 +36,7 @@ const WindowOverlay =
   Platform.OS === "ios" ? FullWindowOverlay : React.Fragment;
 
 export default function Index() {
-  const gamesQuery = api.game.getGames.useQuery();
+  const gamesQuery = useQuery(trpc.game.getGames.queryOptions());
 
   return (
     <View className="bg-background">

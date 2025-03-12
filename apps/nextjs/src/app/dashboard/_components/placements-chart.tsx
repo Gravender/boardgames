@@ -1,19 +1,21 @@
 "use client";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { LabelList, Pie, PieChart, ResponsiveContainer } from "recharts";
 
-import type { RouterOutputs } from "@board-games/api";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@board-games/ui/chart";
 
-export default function PlacementsChart({
-  data,
-}: {
-  data: RouterOutputs["dashboard"]["getUserPlacements"];
-}) {
+import { useTRPC } from "~/trpc/react";
+
+export default function PlacementsChart() {
+  const trpc = useTRPC();
+  const { data: data } = useSuspenseQuery(
+    trpc.dashboard.getUserPlacements.queryOptions(),
+  );
   const chartConfig = {
     first: {
       label: "1st Place",

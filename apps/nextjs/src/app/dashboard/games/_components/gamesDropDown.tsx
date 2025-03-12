@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MoreVertical } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -12,23 +13,26 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 
 export function GamesDropDown({
   data,
 }: {
   data: RouterOutputs["game"]["getGames"][0];
 }) {
-  const utils = api.useUtils();
-  const deleteGame = api.game.deleteGame.useMutation({
-    onSuccess: async () => {
-      await Promise.all([
-        utils.game.getGames.invalidate(),
-        utils.player.invalidate(),
-        utils.dashboard.invalidate(),
-      ]);
-    },
-  });
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const deleteGame = useMutation(
+    trpc.game.deleteGame.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
+        await queryClient.invalidateQueries(
+          trpc.player.getPlayers.queryOptions(),
+        );
+        await queryClient.invalidateQueries(trpc.dashboard.pathFilter());
+      },
+    }),
+  );
   const onDelete = () => {
     deleteGame.mutate({ id: data.id });
   };

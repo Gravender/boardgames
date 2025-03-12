@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
   ChevronUp,
@@ -71,7 +72,7 @@ import { Separator } from "@board-games/ui/separator";
 
 import { GradientPicker } from "~/components/color-picker";
 import { Spinner } from "~/components/spinner";
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 import { RoundPopOver } from "./roundPopOver";
 
@@ -202,6 +203,7 @@ const GameForm = ({
   setIsScoresheet: (isScoresheet: boolean) => void;
   setMoreOptions: (moreOptions: boolean) => void;
 }) => {
+  const trpc = useTRPC();
   const tempGameImg = game.imageUrl;
   const [imagePreview, setImagePreview] = useState<string | null>(
     tempGameImg instanceof File
@@ -215,25 +217,35 @@ const GameForm = ({
   const { startUpload } = useUploadThing("imageUploader");
   const router = useRouter();
 
-  const utils = api.useUtils();
-  const mutation = api.game.updateGame.useMutation({
-    onSuccess: async () => {
-      await Promise.all([
-        utils.game.getGames.invalidate(),
-        utils.game.getGame.invalidate({ id: data.game.id }),
-        utils.game.getGameMetaData.invalidate({ id: data.game.id }),
-        utils.game.getGameName.invalidate({ id: data.game.id }),
-        utils.game.getGameStats.invalidate({ id: data.game.id }),
-        utils.dashboard.getGames.invalidate(),
-      ]);
-      toast({
-        title: "Game updated successfully!",
-      });
-      form.reset();
-      setImagePreview(null);
-      router.push(`/dashboard/games`);
-    },
-  });
+  const queryClient = useQueryClient();
+  const mutation = useMutation(
+    trpc.game.updateGame.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
+        await queryClient.invalidateQueries(
+          trpc.game.getGame.queryOptions({ id: data.game.id }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.game.getGameMetaData.queryOptions({ id: data.game.id }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.game.getGameName.queryOptions({ id: data.game.id }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.game.getGameStats.queryOptions({ id: data.game.id }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.dashboard.getGames.queryOptions(),
+        );
+        toast({
+          title: "Game updated successfully!",
+        });
+        form.reset();
+        setImagePreview(null);
+        router.push(`/dashboard/games`);
+      },
+    }),
+  );
 
   const form = useForm<z.infer<typeof editGameSchema>>({
     resolver: zodResolver(editGameSchema),

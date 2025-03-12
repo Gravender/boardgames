@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { User } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -27,7 +28,7 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
 import { Spinner } from "~/components/spinner";
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 
 const formSchema = z.object({
   players: z
@@ -48,9 +49,10 @@ export default function SelectPlayersForm({
   players: RouterOutputs["player"]["getPlayersByGroup"];
   groupId: number;
 }) {
+  const trpc = useTRPC();
   const { toast } = useToast();
   const router = useRouter();
-  const utils = api.useUtils();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inGroup = players.filter((player) => player.ingroup);
   const form = useForm<formSchemaType>({
@@ -60,20 +62,26 @@ export default function SelectPlayersForm({
     },
   });
 
-  const updateGroupPlayers = api.group.updatePlayers.useMutation({
-    onSuccess: async () => {
-      await utils.group.getGroups.invalidate();
-      await utils.dashboard.getGroups.invalidate();
-      router.refresh();
-      setIsSubmitting(false);
-      form.reset();
-      router.refresh();
-      toast({
-        title: "Group players updated successfully!",
-      });
-      onBack();
-    },
-  });
+  const updateGroupPlayers = useMutation(
+    trpc.group.updatePlayers.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.group.getGroups.queryOptions(),
+        );
+        await queryClient.invalidateQueries(
+          trpc.dashboard.getGroups.queryOptions(),
+        );
+        router.refresh();
+        setIsSubmitting(false);
+        form.reset();
+        router.refresh();
+        toast({
+          title: "Group players updated successfully!",
+        });
+        onBack();
+      },
+    }),
+  );
   const onBack = () => {
     router.push(`/dashboard/groups`);
   };

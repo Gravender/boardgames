@@ -1,10 +1,11 @@
 import React from "react";
 import { View } from "react-native";
 import { Redirect, Stack, useLocalSearchParams } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
 
 import { MatchScoresheet } from "~/components/MatchScoresheet";
 import { Text } from "~/components/ui/text";
-import { api } from "~/utils/api";
+import { trpc } from "~/utils/api";
 
 export default function Scoresheet() {
   const { id, matchId } = useLocalSearchParams<{
@@ -13,13 +14,15 @@ export default function Scoresheet() {
   }>();
   const gameId = Number(id);
   const matchIdNumber = Number(matchId);
+  const { data, isLoading } = useQuery(
+    trpc.match.getMatch.queryOptions({
+      id: matchIdNumber,
+    }),
+  );
   if (isNaN(matchIdNumber) || isNaN(gameId)) {
     if (isNaN(gameId)) return <Redirect href="/games" />;
     return <Redirect href={`/games/${gameId}`} />;
   }
-  const { data, isLoading } = api.match.getMatch.useQuery({
-    id: matchIdNumber,
-  });
   if (!data && !isLoading) return <Redirect href={`/games/${gameId}`} />;
 
   return (

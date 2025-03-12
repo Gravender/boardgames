@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns/format";
 import { Dices } from "lucide-react";
 
@@ -12,14 +13,17 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 import { AddMatchDialog } from "./addMatch";
 import { MatchDropDown } from "./matchesDropDown";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 
 export function Matches({ gameId }: { gameId: Game["id"] }) {
-  const [data] = api.game.getGame.useSuspenseQuery({ id: gameId });
+  const trpc = useTRPC();
+  const { data: data } = useSuspenseQuery(
+    trpc.game.getGame.queryOptions({ id: gameId }),
+  );
 
   const [matches, setMatches] = useState<Game["matches"]>(data?.matches ?? []);
 

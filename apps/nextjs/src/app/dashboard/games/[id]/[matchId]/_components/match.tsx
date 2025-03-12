@@ -5,6 +5,11 @@ import type { z } from "zod";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { ListPlus, Pause, Play, RotateCcw } from "lucide-react";
 import { useForm } from "react-hook-form";
 
@@ -60,7 +65,7 @@ import { GradientPicker } from "~/components/color-picker";
 import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";
 import { useDebouncedUpdateMatchData } from "~/hooks/use-debounced-update-match";
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 import { CommentDialog } from "./CommentDialog";
 import { DetailDialog } from "./DetailDialog";
 import { ManualWinnerDialog } from "./ManualWinnerDialog";
@@ -68,7 +73,10 @@ import { TieBreakerDialog } from "./TieBreakerDialog";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
 export function Match({ matchId }: { matchId: number }) {
-  const [match] = api.match.getMatch.useSuspenseQuery({ id: matchId });
+  const trpc = useTRPC();
+  const { data: match } = useSuspenseQuery(
+    trpc.match.getMatch.queryOptions({ id: matchId }),
+  );
   const [players, setPlayers] = useState(() => [...match!.players]);
   const [manualWinners, setManualWinners] = useState<
     z.infer<typeof ManualWinnerPlayerSchema>
@@ -85,18 +93,28 @@ export function Match({ matchId }: { matchId: number }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const router = useRouter();
-  const utils = api.useUtils();
-  const updateMatch = api.match.updateMatch.useMutation({
-    onSuccess: async () => {
-      await utils.match.getMatch.invalidate({ id: match!.id });
-      await utils.game.getGame.invalidate({ id: match!.gameId });
+  const queryClient = useQueryClient();
+  const updateMatch = useMutation(
+    trpc.match.updateMatch.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.match.getMatch.queryOptions({ id: match!.id }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.game.getGame.queryOptions({ id: match!.gameId }),
+        );
 
-      router.push(`/dashboard/games/${match!.gameId}/${match!.id}/summary`);
-      setIsSubmitting(false);
-    },
-  });
-  const updateMatchScores = api.match.updateMatchScores.useMutation();
-  const updateMatchDuration = api.match.updateMatchDuration.useMutation();
+        router.push(`/dashboard/games/${match!.gameId}/${match!.id}/summary`);
+        setIsSubmitting(false);
+      },
+    }),
+  );
+  const updateMatchScores = useMutation(
+    trpc.match.updateMatchScores.mutationOptions(),
+  );
+  const updateMatchDuration = useMutation(
+    trpc.match.updateMatchDuration.mutationOptions(),
+  );
 
   const { debouncedRequest, setValue, prepareMatchData } =
     useDebouncedUpdateMatchData({
@@ -568,7 +586,8 @@ const AddRoundDialogContent = ({
   match: Match;
   setOpen: (isOpen: boolean) => void;
 }) => {
-  const utils = api.useUtils();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof RoundSchema>>({
@@ -581,14 +600,18 @@ const AddRoundDialogContent = ({
     },
   });
 
-  const addRound = api.round.addRound.useMutation({
-    onSuccess: async () => {
-      setIsSubmitting(false);
-      await utils.match.getMatch.invalidate({ id: match.id });
-      setOpen(false);
-      form.reset();
-    },
-  });
+  const addRound = useMutation(
+    trpc.round.addRound.mutationOptions({
+      onSuccess: async () => {
+        setIsSubmitting(false);
+        await queryClient.invalidateQueries(
+          trpc.match.getMatch.queryOptions({ id: match.id }),
+        );
+        setOpen(false);
+        form.reset();
+      },
+    }),
+  );
   function onSubmitForm(values: z.infer<typeof RoundSchema>) {
     setIsSubmitting(true);
     addRound.mutate({

@@ -1,17 +1,19 @@
 "use client";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { User } from "lucide-react";
 
-import type { RouterOutputs } from "@board-games/api";
 import { formatDuration } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 
-export function PlayersCard({
-  data,
-}: {
-  data: RouterOutputs["dashboard"]["getPlayersWIthMatches"];
-}) {
+import { useTRPC } from "~/trpc/react";
+
+export function PlayersCard() {
+  const trpc = useTRPC();
+  const { data: data } = useSuspenseQuery(
+    trpc.dashboard.getPlayersWIthMatches.queryOptions(),
+  );
   return (
     <Card>
       <CardHeader>

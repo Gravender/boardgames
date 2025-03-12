@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { RouterInputs, RouterOutputs } from "@board-games/api";
 
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 import { useDebouncedCallback } from "./use-debounce";
 
 type Players = NonNullable<RouterOutputs["match"]["getMatch"]>["players"];
@@ -11,14 +12,19 @@ export function useDebouncedUpdateMatchData(
   input: RouterInputs["match"]["updateMatchScores"],
   delay = 1000,
 ) {
+  const trpc = useTRPC();
   const [value, setValue] =
     useState<RouterInputs["match"]["updateMatchScores"]>(input);
-  const saveMatchData = api.match.updateMatchScores.useMutation();
-  const utils = api.useUtils();
+  const saveMatchData = useMutation(
+    trpc.match.updateMatchScores.mutationOptions(),
+  );
+  const queryClient = useQueryClient();
   const sendRequest = () => {
     saveMatchData.mutate(value, {
       onSuccess: () =>
-        void utils.match.getMatch.invalidate({ id: input.match.id }),
+        void queryClient.invalidateQueries(
+          trpc.match.getMatch.queryOptions({ id: input.match.id }),
+        ),
     });
   };
   const prepareMatchData = (players: Players) => {

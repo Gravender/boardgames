@@ -11,8 +11,6 @@ createJiti(fileURLToPath(import.meta.url))("./src/env");
 
 /** @type {import("next").NextConfig} */
 const coreConfig = {
-  reactStrictMode: true,
-
   images: {
     remotePatterns: [
       { hostname: "utfs.io" },
@@ -25,6 +23,7 @@ const coreConfig = {
     "@board-games/auth",
     "@board-games/db",
     "@board-games/ui",
+    "@board-games/shared",
   ],
   typescript: {
     ignoreBuildErrors: true,

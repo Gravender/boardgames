@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { api, HydrateClient } from "~/trpc/server";
+import { caller, HydrateClient } from "~/trpc/server";
 import { LocationsTable } from "./_components/locationsTable";
 
 export const metadata: Metadata = {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  const locations = await api.location.getLocations();
+  const locations = await caller.location.getLocations();
   return (
     <HydrateClient>
       <div className="flex w-full items-center justify-center">

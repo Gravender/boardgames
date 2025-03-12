@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PlusIcon, User } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -31,7 +32,7 @@ import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 
 import { Spinner } from "~/components/spinner";
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
 export const AddPlayerDialog = () => {
@@ -70,13 +71,14 @@ const playerSchema = insertPlayerSchema.pick({ name: true }).extend({
     .nullable(),
 });
 const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
+  const trpc = useTRPC();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   const { toast } = useToast();
   const { startUpload } = useUploadThing("imageUploader");
 
-  const utils = api.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof playerSchema>>({
@@ -86,20 +88,28 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
       imageUrl: null,
     },
   });
-  const createPlayer = api.player.create.useMutation({
-    onSuccess: async () => {
-      setIsUploading(false);
-      await utils.player.getPlayers.invalidate();
-      await utils.player.getPlayersByGame.invalidate();
-      await utils.dashboard.getPlayers.invalidate();
-      setOpen(false);
-      form.reset();
-      router.refresh();
-      toast({
-        title: "Player created successfully!",
-      });
-    },
-  });
+  const createPlayer = useMutation(
+    trpc.player.create.mutationOptions({
+      onSuccess: async () => {
+        setIsUploading(false);
+        await queryClient.invalidateQueries(
+          trpc.player.getPlayers.queryOptions(),
+        );
+        await queryClient.invalidateQueries(
+          trpc.player.getPlayersByGame.queryFilter(),
+        );
+        await queryClient.invalidateQueries(
+          trpc.dashboard.getPlayers.queryOptions(),
+        );
+        setOpen(false);
+        form.reset();
+        router.refresh();
+        toast({
+          title: "Player created successfully!",
+        });
+      },
+    }),
+  );
   useEffect(() => {
     return () => {
       if (imagePreview) {

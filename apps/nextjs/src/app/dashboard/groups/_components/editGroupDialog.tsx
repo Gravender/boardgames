@@ -4,6 +4,7 @@ import type { z } from "zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -27,7 +28,7 @@ import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 
 import { Spinner } from "~/components/spinner";
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 
 export const EditGroupDialog = ({
   group,
@@ -51,12 +52,13 @@ const GroupContent = ({
   setOpen: (isOpen: boolean) => void;
   group: RouterOutputs["group"]["getGroups"][number];
 }) => {
+  const trpc = useTRPC();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isGettingPlayers, setIsGettingPlayers] = useState(false);
 
-  const utils = api.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof groupSchema>>({
@@ -66,18 +68,24 @@ const GroupContent = ({
     },
   });
 
-  const mutation = api.group.update.useMutation({
-    onSuccess: async () => {
-      setIsSubmitting(false);
-      await utils.group.getGroups.invalidate();
-      await utils.dashboard.getGroups.invalidate();
-      router.refresh();
-      toast({
-        title: "Group updated successfully!",
-      });
-      setOpen(false);
-    },
-  });
+  const mutation = useMutation(
+    trpc.group.update.mutationOptions({
+      onSuccess: async () => {
+        setIsSubmitting(false);
+        await queryClient.invalidateQueries(
+          trpc.group.getGroups.queryOptions(),
+        );
+        await queryClient.invalidateQueries(
+          trpc.dashboard.getGroups.queryOptions(),
+        );
+        router.refresh();
+        toast({
+          title: "Group updated successfully!",
+        });
+        setOpen(false);
+      },
+    }),
+  );
   function onSubmit(values: z.infer<typeof groupSchema>) {
     setIsSubmitting(true);
     mutation.mutate({

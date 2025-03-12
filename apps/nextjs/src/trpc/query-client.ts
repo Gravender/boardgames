@@ -17,6 +17,9 @@ export const createQueryClient = () =>
         shouldDehydrateQuery: (query) =>
           defaultShouldDehydrateQuery(query) ||
           query.state.status === "pending",
+        shouldRedactErrors: () => {
+          return false;
+        },
       },
       hydrate: {
         deserializeData: SuperJSON.deserialize,

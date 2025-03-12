@@ -1,9 +1,10 @@
 "use client";
 
-import type { SubmitHandler, UseFormReturn } from "react-hook-form";
-import { useEffect, useState, useTransition } from "react";
+import type { UseFormReturn } from "react-hook-form";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
   ChevronUp,
@@ -60,7 +61,8 @@ import { Separator } from "@board-games/ui/separator";
 
 import { GradientPicker } from "~/components/color-picker";
 import { Spinner } from "~/components/spinner";
-import { addGameSubmitAction } from "./addGameSubmit";
+import { useTRPC } from "~/trpc/react";
+import { useUploadThing } from "~/utils/uploadthing";
 import { RoundPopOver } from "./roundPopOver";
 
 export function AddGameDialog() {
@@ -202,9 +204,44 @@ const AddGameForm = ({
   const [imagePreview, setImagePreview] = useState<string | null>(
     game.gameImg ? URL.createObjectURL(game.gameImg) : null,
   );
+  const [isUploading, setIsUploading] = useState(false);
+
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  const addGame = useMutation(
+    trpc.game.create.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
+        await queryClient.invalidateQueries(
+          trpc.dashboard.getGames.queryOptions(),
+        );
+        await queryClient.invalidateQueries(
+          trpc.dashboard.getUniqueGames.queryOptions(),
+        );
+        setImagePreview(null);
+        form.reset();
+        setIsUploading(false);
+        setIsOpen(false);
+        toast({
+          title: "Game created successfully!",
+          description: "Your data has been uploaded.",
+        });
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "There was a problem adding your game.",
+          variant: "destructive",
+        });
+      },
+    }),
+  );
+
+  const { startUpload } = useUploadThing("imageUploader");
 
   const { toast } = useToast();
-  const [pending, startTransaction] = useTransition();
+
   const form = useForm<z.infer<typeof createGameSchema>>({
     resolver: zodResolver(createGameSchema),
     defaultValues: game,
@@ -217,47 +254,69 @@ const AddGameForm = ({
     };
   }, [imagePreview]);
 
-  const onSubmitForm: SubmitHandler<z.infer<typeof createGameSchema>> = (
-    data,
-  ) => {
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("ownedBy", JSON.stringify(data.ownedBy));
-    formData.append("playersMin", JSON.stringify(data.playersMin));
-    formData.append("playersMax", JSON.stringify(data.playersMax));
-    formData.append("playtimeMin", JSON.stringify(data.playtimeMin));
-    formData.append("playtimeMax", JSON.stringify(data.playtimeMax));
-    formData.append("yearPublished", JSON.stringify(data.yearPublished));
-    formData.append("gameImg", data.gameImg ?? "null");
-    formData.append("scoresheets", JSON.stringify(scoreSheets));
-    startTransaction(async () => {
-      // call the server action
-      const { data: success, errors } = await addGameSubmitAction(formData);
-      if (errors) {
-        if (errors === "There was a problem uploading your Image.") {
+  const onSubmit = async (values: z.infer<typeof createGameSchema>) => {
+    setIsUploading(true);
+    if (!values.gameImg) {
+      addGame.mutate({
+        game: {
+          name: values.name,
+          ownedBy: values.ownedBy,
+          playersMin: values.playersMin,
+          playersMax: values.playersMax,
+          playtimeMin: values.playtimeMin,
+          playtimeMax: values.playtimeMax,
+          yearPublished: values.yearPublished,
+          imageId: null,
+        },
+        scoresheets: scoreSheets,
+      });
+    } else {
+      try {
+        const imageFile = values.gameImg;
+
+        const uploadResult = await startUpload([imageFile]);
+
+        if (!uploadResult) {
           toast({
             title: "Error",
             description: "There was a problem uploading your Image.",
             variant: "destructive",
           });
-        } else {
-          console.error(errors);
+          throw new Error("Image upload failed");
         }
-      }
-      if (success) {
-        setImagePreview(null);
-        form.reset();
-        setIsOpen(false);
+        const imageId = uploadResult[0]
+          ? uploadResult[0].serverData.imageId
+          : null;
+
+        addGame.mutate({
+          game: {
+            name: values.name,
+            ownedBy: values.ownedBy,
+            playersMin: values.playersMin,
+            playersMax: values.playersMax,
+            playtimeMin: values.playtimeMin,
+            playtimeMax: values.playtimeMax,
+            yearPublished: values.yearPublished,
+            imageId: imageId,
+          },
+          scoresheets: scoreSheets,
+        });
+      } catch (error) {
+        console.error("Error uploading Image:", error);
+
         toast({
-          title: "Game created successfully!",
-          description: "Your data has been uploaded.",
+          title: "Error",
+
+          description: "There was a problem uploading your Image.",
+
+          variant: "destructive",
         });
       }
-    });
+    }
   };
   return (
     <Form {...form}>
-      <form className="space-y-8" onSubmit={form.handleSubmit(onSubmitForm)}>
+      <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
         <FormField
           control={form.control}
           name="name"
@@ -358,7 +417,7 @@ const AddGameForm = ({
                                 : parseInt(e.target.value),
                             )
                           }
-                          value={field.value ?? undefined}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                     </FormItem>
@@ -381,7 +440,7 @@ const AddGameForm = ({
                                 : parseInt(e.target.value),
                             )
                           }
-                          value={field.value ?? undefined}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                     </FormItem>
@@ -427,7 +486,7 @@ const AddGameForm = ({
                                 : parseInt(e.target.value),
                             )
                           }
-                          value={field.value ?? undefined}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                     </FormItem>
@@ -450,7 +509,7 @@ const AddGameForm = ({
                                 : parseInt(e.target.value),
                             )
                           }
-                          value={field.value ?? undefined}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                     </FormItem>
@@ -496,7 +555,7 @@ const AddGameForm = ({
                                 : parseInt(e.target.value),
                             )
                           }
-                          value={field.value ?? undefined}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                     </FormItem>
@@ -604,8 +663,8 @@ const AddGameForm = ({
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={pending}>
-            {pending ? (
+          <Button type="submit" disabled={isUploading}>
+            {isUploading ? (
               <>
                 <Spinner />
                 <span>Uploading...</span>

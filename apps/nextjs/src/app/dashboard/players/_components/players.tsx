@@ -2,24 +2,25 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { User } from "lucide-react";
 
-import type { RouterOutputs } from "@board-games/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
+import { useTRPC } from "~/trpc/react";
 import { AddPlayerDialog } from "./addPlayerDialog";
 import { PlayerDropDown } from "./playerDropDown";
 
-export function PlayersTable({
-  data,
-}: {
-  data: RouterOutputs["player"]["getPlayers"];
-}) {
+export function PlayersTable() {
+  const trpc = useTRPC();
+  const { data: data } = useSuspenseQuery(
+    trpc.player.getPlayers.queryOptions(),
+  );
   const [players, setPlayers] = useState(data);
 
   return (

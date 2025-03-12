@@ -14,7 +14,7 @@ import {
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
 
-import { api } from "~/trpc/server";
+import { caller } from "~/trpc/server";
 import { PlayerDetails } from "./_components/playerDetails";
 
 export default async function Page({
@@ -25,7 +25,7 @@ export default async function Page({
   const slugs = await params;
   const gameId = slugs.id;
   if (isNaN(Number(gameId))) redirect("/dashboard/games");
-  const game = await api.game.getGameStats({
+  const game = await caller.game.getGameStats({
     id: Number(gameId),
   });
   if (!game) redirect("/dashboard/games");

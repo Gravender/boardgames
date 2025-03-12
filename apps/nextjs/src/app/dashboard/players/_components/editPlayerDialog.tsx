@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { User } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -30,7 +31,7 @@ import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 
 import { Spinner } from "~/components/spinner";
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
 export const EditPlayerDialog = ({
@@ -65,6 +66,7 @@ const PlayerContent = ({
   setOpen: (isOpen: boolean) => void;
   player: RouterOutputs["player"]["getPlayers"][number];
 }) => {
+  const trpc = useTRPC();
   const [imagePreview, setImagePreview] = useState<string | null>(
     player.imageUrl ?? null,
   );
@@ -73,7 +75,7 @@ const PlayerContent = ({
   const { toast } = useToast();
   const { startUpload } = useUploadThing("imageUploader");
 
-  const utils = api.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof playerSchema>>({
@@ -83,20 +85,28 @@ const PlayerContent = ({
       imageUrl: player.imageUrl,
     },
   });
-  const mutation = api.player.update.useMutation({
-    onSuccess: async () => {
-      await utils.player.getPlayers.invalidate();
-      await utils.player.getPlayer.invalidate({ id: player.id });
-      await utils.dashboard.getPlayers.invalidate();
-      router.refresh();
-      toast({
-        title: "Player updated successfully!",
-      });
-      form.reset();
-      setImagePreview(null);
-      setOpen(false);
-    },
-  });
+  const mutation = useMutation(
+    trpc.player.update.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.player.getPlayers.queryOptions(),
+        );
+        await queryClient.invalidateQueries(
+          trpc.player.getPlayer.queryOptions({ id: player.id }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.dashboard.getPlayers.queryOptions(),
+        );
+        router.refresh();
+        toast({
+          title: "Player updated successfully!",
+        });
+        form.reset();
+        setImagePreview(null);
+        setOpen(false);
+      },
+    }),
+  );
   useEffect(() => {
     return () => {
       if (imagePreview) {

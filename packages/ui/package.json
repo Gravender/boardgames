@@ -50,15 +50,15 @@
     "@board-games/prettier-config": "workspace:*",
     "@board-games/tailwind-config": "workspace:*",
     "@board-games/tsconfig": "workspace:*",
-    "@types/react": "catalog:react18",
+    "@types/react": "catalog:react19",
     "eslint": "catalog:",
     "prettier": "catalog:",
-    "react": "catalog:react18",
+    "react": "catalog:react19",
     "typescript": "catalog:",
     "zod": "catalog:"
   },
   "peerDependencies": {
-    "react": "catalog:react18",
+    "react": "catalog:react19",
     "zod": "catalog:"
   },
   "prettier": "@board-games/prettier-config"

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Dices } from "lucide-react";
 
@@ -20,11 +21,12 @@ import { Separator } from "@board-games/ui/separator";
 import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 import { GamesDropDown } from "./gamesDropDown";
 
 export function Games() {
-  const [data] = api.game.getGames.useSuspenseQuery();
+  const trpc = useTRPC();
+  const { data: data } = useSuspenseQuery(trpc.game.getGames.queryOptions());
   const [games, setGames] = useState<RouterOutputs["game"]["getGames"]>(data);
 
   return (

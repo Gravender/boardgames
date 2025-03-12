@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, PlusIcon, Trash, User } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
@@ -51,7 +52,7 @@ import {
 import { cn } from "@board-games/ui/utils";
 
 import { Spinner } from "~/components/spinner";
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
 const playerSchema = insertPlayerSchema
@@ -99,10 +100,11 @@ export function EditMatchForm({
   match: NonNullable<RouterOutputs["match"]["getMatch"]>;
   players: RouterOutputs["player"]["getPlayersByGame"];
 }) {
+  const trpc = useTRPC();
   const { startUpload } = useUploadThing("imageUploader");
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const utils = api.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
   const [addedPlayers, setAddedPlayers] = useState<addedPlayers>([]);
   const form = useForm<z.infer<typeof matchSchema>>({
@@ -119,18 +121,26 @@ export function EditMatchForm({
       })),
     },
   });
-  const editMatch = api.match.editMatch.useMutation({
-    onSuccess: async () => {
-      await utils.player.getPlayersByGame.invalidate({
-        game: { id: match.gameId },
-      });
-      await utils.game.getGame.invalidate({ id: match.gameId });
-      await utils.match.getMatch.invalidate({ id: match.id });
-      router.push(`/dashboard/games/${match.gameId}/${match.id}`);
-      form.reset();
-      setIsSubmitting(false);
-    },
-  });
+  const editMatch = useMutation(
+    trpc.match.editMatch.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.player.getPlayersByGame.queryFilter({
+            game: { id: match.gameId },
+          }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.game.getGame.queryOptions({ id: match.gameId }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.match.getMatch.queryOptions({ id: match.id }),
+        );
+        router.push(`/dashboard/games/${match.gameId}/${match.id}`);
+        form.reset();
+        setIsSubmitting(false);
+      },
+    }),
+  );
   const onSubmit = async (values: z.infer<typeof matchSchema>) => {
     setIsSubmitting(true);
     const playersToRemove = match.players.filter(

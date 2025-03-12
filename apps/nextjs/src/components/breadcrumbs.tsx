@@ -1,11 +1,13 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
+import type { RouterInputs, RouterOutputs } from "@board-games/api";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,100 +17,126 @@ import {
   BreadcrumbSeparator,
 } from "@board-games/ui/breadcrumb";
 
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 
 export function BreadCrumbs() {
+  const trpc = useTRPC();
   const { userId } = useAuth();
   const paths = usePathname();
 
-  const pathNames = paths.split("/").filter((path) => path);
-  const pathItems = pathNames.slice(0, 2).map((path, i) => {
-    return {
-      name: path,
-      path: pathNames.slice(0, i + 1).join("/"),
-    };
-  });
-  const pathsSchema = z.enum(["games", "players", "groups"]);
-  const pathType = pathsSchema.safeParse(pathNames[1]);
-  const id =
-    pathNames.length > 3 && pathType.data === "games"
-      ? Number(pathNames[3])
-      : Number(pathNames[2]);
-  const enabled =
-    pathNames.length > 2 && pathType.success && !isNaN(id) && !!userId;
-  const { data } = api.dashboard.getBreadCrumbs.useQuery(
-    {
-      type:
-        pathNames.length > 3 && pathType.data === "games"
-          ? "match"
-          : (pathType.data ?? "games"),
-      path: id,
-    },
-    {
-      enabled: enabled,
-    },
+  const [type, setType] = useState<
+    RouterInputs["dashboard"]["getBreadCrumbs"]["type"] | "other"
+  >("other");
+  const [path, setPath] = useState(0);
+  const [enabled, setEnabled] = useState(false);
+  const [pathItems, setPathItems] = useState<{ name: string; path: string }[]>(
+    paths
+      .split("/")
+      .filter((path) => path)
+      .slice(0, 2)
+      .map((path, i) => {
+        return {
+          name: path,
+          path: paths
+            .split("/")
+            .filter((path) => path)
+            .slice(0, i + 1)
+            .join("/"),
+        };
+      }),
   );
 
-  if (pathNames.length > 2 && pathType.success && !isNaN(id) && userId) {
-    if (pathType.data === "games" && data) {
-      if (pathNames.length > 3 && data.game) {
-        return (
-          <RenderBreadCrumbs
-            pathItems={[
-              ...pathItems,
-              {
-                name: data.game.name,
-                path: pathNames.slice(0, 3).join("/"),
-              },
-              {
-                name: data.name,
-                path: pathNames.slice(0, 2).join("/"),
-              },
-            ]}
-          />
-        );
+  useEffect(() => {
+    const tempPathNames = paths.split("/").filter((path) => path);
+    const tempPathItems = tempPathNames.slice(0, 2).map((path, i) => {
+      return {
+        name: path,
+        path: tempPathNames.slice(0, i + 1).join("/"),
+      };
+    });
+    const pathsSchema = z.enum(["games", "players", "groups"]);
+    const pathType = pathsSchema.safeParse(tempPathNames[1]);
+    const parsedId =
+      tempPathNames.length > 3 && pathType.data === "games"
+        ? Number(tempPathNames[3])
+        : Number(tempPathNames[2]);
+    const id = isNaN(parsedId) ? 0 : parsedId;
+    setPath(id);
+    setEnabled(
+      tempPathNames.length > 2 &&
+        pathType.success &&
+        !isNaN(parsedId) &&
+        !!userId,
+    );
+    setType(
+      tempPathNames.length > 3 && pathType.data === "games"
+        ? "match"
+        : (pathType.data ?? "other"),
+    );
+    setPathItems(tempPathItems);
+  }, [paths, userId]);
+  const BreadCrumbsQuery = useQuery(
+    trpc.dashboard.getBreadCrumbs.queryOptions(
+      {
+        type: type === "other" ? "games" : type,
+        path: path,
+      },
+      { enabled: enabled },
+    ),
+  );
+  const data = BreadCrumbsQuery.data as
+    | RouterOutputs["dashboard"]["getBreadCrumbs"]
+    | undefined;
+  useEffect(() => {
+    const tempPathNames = paths.split("/").filter((path) => path);
+    const tempPathItems = tempPathNames.slice(0, 2).map((path, i) => {
+      return {
+        name: path,
+        path: tempPathNames.slice(0, i + 1).join("/"),
+      };
+    });
+    if ((type == "games" || type == "match") && data) {
+      if (tempPathNames.length > 3 && data.game !== undefined) {
+        setPathItems(() => [
+          ...tempPathItems,
+          {
+            name: data.game.name,
+            path: tempPathNames.slice(0, 3).join("/"),
+          },
+          {
+            name: data.name,
+            path: tempPathNames.slice(0, 2).join("/"),
+          },
+        ]);
+      } else {
+        setPathItems(() => [
+          ...tempPathItems,
+          {
+            name: data.name,
+            path: tempPathNames.slice(0, 3).join("/"),
+          },
+        ]);
       }
-      return (
-        <RenderBreadCrumbs
-          pathItems={[
-            ...pathItems,
-            {
-              name: data.name,
-              path: pathNames.slice(0, 3).join("/"),
-            },
-          ]}
-        />
-      );
     }
-    if (pathType.data === "players" && data) {
-      return (
-        <RenderBreadCrumbs
-          pathItems={[
-            ...pathItems,
-            {
-              name: data.name,
-              path: pathNames.slice(0, 3).join("/"),
-            },
-          ]}
-        />
-      );
+    if (type === "players" && data) {
+      setPathItems(() => [
+        ...tempPathItems,
+        {
+          name: data.name,
+          path: tempPathNames.slice(0, 3).join("/"),
+        },
+      ]);
     }
-    if (pathType.data === "groups" && data) {
-      return (
-        <RenderBreadCrumbs
-          pathItems={[
-            ...pathItems,
-            {
-              name: data.name,
-              path: pathNames.slice(0, 3).join("/"),
-            },
-          ]}
-        />
-      );
+    if (type === "groups" && data) {
+      setPathItems(() => [
+        ...tempPathItems,
+        {
+          name: data.name,
+          path: tempPathNames.slice(0, 3).join("/"),
+        },
+      ]);
     }
-
-    return <RenderBreadCrumbs pathItems={pathItems} />;
-  }
+  }, [data, type, paths]);
 
   return <RenderBreadCrumbs pathItems={pathItems} />;
 }

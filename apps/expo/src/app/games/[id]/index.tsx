@@ -4,12 +4,13 @@ import { FullWindowOverlay } from "react-native-screens";
 import { Redirect, Stack, useLocalSearchParams } from "expo-router";
 import { PortalHost } from "@rn-primitives/portal";
 import { FlashList } from "@shopify/flash-list";
+import { useQuery } from "@tanstack/react-query";
 
 import type { RouterOutputs } from "~/utils/api";
 import { AddGame } from "~/components/AddGame";
 import { MatchCard } from "~/components/MatchCard";
 import { Text } from "~/components/ui/text";
-import { api } from "~/utils/api";
+import { trpc } from "~/utils/api";
 
 function MatchesTable({
   gameId,
@@ -53,10 +54,10 @@ export default function GameScreen() {
     id: string;
   }>();
   const gameId = Number(id);
+  const { data } = useQuery(trpc.game.getGame.queryOptions({ id: gameId }));
   if (isNaN(gameId)) {
     return <Redirect href="/games" />;
   }
-  const { data } = api.game.getGame.useQuery({ id: gameId });
 
   return (
     <View>
