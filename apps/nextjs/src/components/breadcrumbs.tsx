@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
 import {
@@ -15,9 +16,10 @@ import {
   BreadcrumbSeparator,
 } from "@board-games/ui/breadcrumb";
 
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 
 export function BreadCrumbs() {
+  const trpc = useTRPC();
   const { userId } = useAuth();
   const paths = usePathname();
 
@@ -36,18 +38,21 @@ export function BreadCrumbs() {
       : Number(pathNames[2]);
   const enabled =
     pathNames.length > 2 && pathType.success && !isNaN(id) && !!userId;
-  const { data } = api.dashboard.getBreadCrumbs.useQuery(
-    {
-      type:
-        pathNames.length > 3 && pathType.data === "games"
-          ? "match"
-          : (pathType.data ?? "games"),
-      path: id,
-    },
-    {
-      enabled: enabled,
-    },
+  const breadcrumbsQuery = useSuspenseQuery(
+    trpc.dashboard.getBreadCrumbs.queryOptions(
+      {
+        type:
+          pathNames.length > 3 && pathType.data === "games"
+            ? "match"
+            : (pathType.data ?? "games"),
+        path: id,
+      },
+      {
+        enabled: enabled,
+      },
+    ),
   );
+  const data = breadcrumbsQuery.data;
 
   if (pathNames.length > 2 && pathType.success && !isNaN(id) && userId) {
     if (pathType.data === "games" && data) {

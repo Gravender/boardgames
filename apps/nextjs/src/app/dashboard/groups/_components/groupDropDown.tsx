@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MoreVertical } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -13,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 import { EditGroupDialog } from "./editGroupDialog";
 
 export function GroupDropDown({
@@ -21,12 +22,17 @@ export function GroupDropDown({
 }: {
   data: RouterOutputs["group"]["getGroups"][number];
 }) {
-  const utils = api.useUtils();
-  const deleteGroup = api.group.deleteGroup.useMutation({
-    onSuccess: async () => {
-      await Promise.all([utils.group.getGroups.invalidate()]);
-    },
-  });
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const deleteGroup = useMutation(
+    trpc.group.deleteGroup.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.group.getGroups.queryOptions(),
+        );
+      },
+    }),
+  );
   const onDelete = () => {
     deleteGroup.mutate({ id: data.id });
   };

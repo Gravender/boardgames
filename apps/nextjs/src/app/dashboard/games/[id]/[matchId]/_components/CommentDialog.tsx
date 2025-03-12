@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -22,7 +23,7 @@ import {
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 
 export function CommentDialog({
   matchId,
@@ -67,13 +68,19 @@ function Content({
   setIsOpen: (isOpen: boolean) => void;
   comment: string;
 }) {
-  const utils = api.useUtils();
-  const updateComment = api.match.updateMatchComment.useMutation({
-    onSuccess: async () => {
-      await utils.match.getMatch.invalidate({ id: matchId });
-      setIsOpen(false);
-    },
-  });
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const updateComment = useMutation(
+    trpc.match.updateMatchComment.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.match.getMatch.queryOptions({ id: matchId }),
+        );
+
+        setIsOpen(false);
+      },
+    }),
+  );
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: { comment },

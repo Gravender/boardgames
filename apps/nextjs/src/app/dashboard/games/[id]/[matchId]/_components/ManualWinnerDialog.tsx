@@ -1,5 +1,6 @@
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { User } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -26,7 +27,7 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 
 export const ManualWinnerPlayerSchema = z
   .array(
@@ -77,16 +78,23 @@ function Content({
   setIsOpen: (isOpen: boolean) => void;
   players: z.infer<typeof ManualWinnerPlayerSchema>;
 }) {
+  const trpc = useTRPC();
   const router = useRouter();
-  const utils = api.useUtils();
-  const updateWinner = api.match.updateMatchManualWinner.useMutation({
-    onSuccess: async () => {
-      await utils.match.getMatch.invalidate({ id: matchId });
-      await utils.game.getGame.invalidate({ id: gameId });
+  const queryClient = useQueryClient();
+  const updateWinner = useMutation(
+    trpc.match.updateMatchManualWinner.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.match.getMatch.queryOptions({ id: matchId }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.game.getGame.queryOptions({ id: gameId }),
+        );
 
-      router.push(`/dashboard/games/${gameId}/${matchId}/summary`);
-    },
-  });
+        router.push(`/dashboard/games/${gameId}/${matchId}/summary`);
+      },
+    }),
+  );
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: { players: [] },

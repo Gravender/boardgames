@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -22,7 +23,7 @@ import {
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 
 export function DetailDialog({
   matchId,
@@ -74,13 +75,18 @@ function Content({
   };
   setIsOpen: (isOpen: boolean) => void;
 }) {
-  const utils = api.useUtils();
-  const updateComment = api.match.updateMatchPlayerDetails.useMutation({
-    onSuccess: () => {
-      void utils.match.getMatch.invalidate({ id: matchId });
-      setIsOpen(false);
-    },
-  });
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const updateComment = useMutation(
+    trpc.match.updateMatchPlayerDetails.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.match.getMatch.queryOptions({ id: matchId }),
+        );
+        setIsOpen(false);
+      },
+    }),
+  );
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: { detail: matchPlayer.details ?? "" },

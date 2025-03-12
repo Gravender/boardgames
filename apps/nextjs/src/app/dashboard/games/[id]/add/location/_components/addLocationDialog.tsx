@@ -4,6 +4,7 @@ import type { z } from "zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 
@@ -31,7 +32,7 @@ import { Switch } from "@board-games/ui/switch";
 
 import { Spinner } from "~/components/spinner";
 import { useAddMatchStore } from "~/providers/add-match-provider";
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 
 export const AddLocationDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -64,10 +65,11 @@ const LocationContent = ({
 }: {
   setIsOpen: (isOpen: boolean) => void;
 }) => {
+  const trpc = useTRPC();
   const { setLocation } = useAddMatchStore((state) => state);
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const utils = api.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   const form = useForm<formSchemaType>({
@@ -77,18 +79,22 @@ const LocationContent = ({
       isDefault: false,
     },
   });
-  const createLocation = api.location.create.useMutation({
-    onSuccess: async (location) => {
-      setLocation(location);
-      await utils.location.getLocations.invalidate();
-      setIsSubmitting(false);
-      router.refresh();
-      setIsOpen(false);
-      toast({
-        title: "Location created successfully!",
-      });
-    },
-  });
+  const createLocation = useMutation(
+    trpc.location.create.mutationOptions({
+      onSuccess: async (location) => {
+        setLocation(location);
+        await queryClient.invalidateQueries(
+          trpc.location.getLocations.queryOptions(),
+        );
+        setIsSubmitting(false);
+        router.refresh();
+        setIsOpen(false);
+        toast({
+          title: "Location created successfully!",
+        });
+      },
+    }),
+  );
 
   function onSubmit(values: formSchemaType) {
     setIsSubmitting(true);

@@ -4,6 +4,7 @@ import type { z } from "zod";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 
@@ -30,7 +31,7 @@ import { Input } from "@board-games/ui/input";
 import { Spinner } from "~/components/spinner";
 import { useAddGroupStore } from "~/providers/add-group-provider";
 import { groupSchema, playersSchema } from "~/stores/add-group-store";
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 
 export const AddGroupDialog = () => {
   const { isOpen, setIsOpen } = useAddGroupStore((state) => state);
@@ -61,12 +62,13 @@ const formSchema = groupSchema.extend({ players: playersSchema });
 
 type formSchemaType = z.infer<typeof formSchema>;
 const GroupContent = () => {
+  const trpc = useTRPC();
   const { toast } = useToast();
   const { isOpen, group, setGroup, reset } = useAddGroupStore((state) => state);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingPlayers, setIsGettingPlayers] = useState(false);
 
-  const utils = api.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   const form = useForm<formSchemaType>({
@@ -76,18 +78,22 @@ const GroupContent = () => {
       players: group.players,
     },
   });
-  const createGroup = api.group.create.useMutation({
-    onSuccess: async () => {
-      await utils.group.getGroups.invalidate();
-      reset();
-      setIsSubmitting(false);
-      form.reset();
-      router.refresh();
-      toast({
-        title: "Group created successfully!",
-      });
-    },
-  });
+  const createGroup = useMutation(
+    trpc.group.create.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.group.getGroups.queryOptions(),
+        );
+        reset();
+        setIsSubmitting(false);
+        form.reset();
+        router.refresh();
+        toast({
+          title: "Group created successfully!",
+        });
+      },
+    }),
+  );
 
   useEffect(() => {
     if (!isOpen) reset();

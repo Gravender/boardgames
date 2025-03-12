@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -27,7 +28,7 @@ import { Input } from "@board-games/ui/input";
 import { Switch } from "@board-games/ui/switch";
 
 import { Spinner } from "~/components/spinner";
-import { api } from "~/trpc/react";
+import { useTRPC } from "~/trpc/react";
 
 export const EditLocationDialog = ({
   location,
@@ -56,9 +57,10 @@ const LocationContent = ({
   setOpen: (isOpen: boolean) => void;
   location: RouterOutputs["location"]["getLocations"][number];
 }) => {
+  const trpc = useTRPC();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const utils = api.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof locationSchema>>({
@@ -68,18 +70,24 @@ const LocationContent = ({
       isDefault: location.isDefault,
     },
   });
-  const mutation = api.location.update.useMutation({
-    onSuccess: async () => {
-      setIsSubmitting(false);
-      await utils.location.getLocations.invalidate();
-      await utils.dashboard.getLocations.invalidate();
-      router.refresh();
-      setOpen(false);
-      toast({
-        title: "Location updated successfully!",
-      });
-    },
-  });
+  const mutation = useMutation(
+    trpc.location.update.mutationOptions({
+      onSuccess: async () => {
+        setIsSubmitting(false);
+        queryClient.invalidateQueries(
+          trpc.location.getLocations.queryOptions(),
+        );
+        queryClient.invalidateQueries(
+          trpc.dashboard.getLocations.queryOptions(),
+        );
+        router.refresh();
+        setOpen(false);
+        toast({
+          title: "Location updated successfully!",
+        });
+      },
+    }),
+  );
   function onSubmit(values: z.infer<typeof locationSchema>) {
     setIsSubmitting(true);
     mutation.mutate({
