@@ -54,10 +54,10 @@ export default function GameScreen() {
     id: string;
   }>();
   const gameId = Number(id);
+  const { data } = useQuery(trpc.game.getGame.queryOptions({ id: gameId }));
   if (isNaN(gameId)) {
     return <Redirect href="/games" />;
   }
-  const { data } = useQuery(trpc.game.getGame.queryOptions({ id: gameId }));
 
   return (
     <View>

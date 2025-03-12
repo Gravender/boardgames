@@ -92,10 +92,10 @@ function Content({
   const updateMatchPlacement = useMutation(
     trpc.match.updateMatchPlacement.mutationOptions({
       onSuccess: async () => {
-        queryClient.invalidateQueries(
+        await queryClient.invalidateQueries(
           trpc.match.getMatch.queryOptions({ id: matchId }),
         );
-        queryClient.invalidateQueries(
+        await queryClient.invalidateQueries(
           trpc.game.getGame.queryOptions({ id: gameId }),
         );
 

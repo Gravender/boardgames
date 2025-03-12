@@ -21,8 +21,8 @@ export function useDebouncedUpdateMatchData(
   const queryClient = useQueryClient();
   const sendRequest = () => {
     saveMatchData.mutate(value, {
-      onSuccess: async () =>
-        await queryClient.invalidateQueries(
+      onSuccess: () =>
+        void queryClient.invalidateQueries(
           trpc.match.getMatch.queryOptions({ id: input.match.id }),
         ),
     });

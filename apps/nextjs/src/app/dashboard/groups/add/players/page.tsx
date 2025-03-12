@@ -1,10 +1,10 @@
 "use server";
 
-import { api, HydrateClient } from "~/trpc/server";
+import { caller, HydrateClient } from "~/trpc/server";
 import { PlayersTable } from "./_components/playerTable";
 
 export default async function Page() {
-  const players = await api.player.getPlayers();
+  const players = await caller.player.getPlayers();
 
   return (
     <HydrateClient>

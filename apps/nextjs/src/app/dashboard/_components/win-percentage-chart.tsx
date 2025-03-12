@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   CartesianGrid,
   Line,
@@ -10,7 +11,6 @@ import {
   YAxis,
 } from "recharts";
 
-import type { RouterOutputs } from "@board-games/api";
 import {
   Card,
   CardContent,
@@ -25,12 +25,14 @@ import {
 } from "@board-games/ui/chart";
 import { Tabs, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 
+import { useTRPC } from "~/trpc/react";
+
 type ViewType = "overtime" | "month to month";
-export default function WinPercentageChart({
-  data,
-}: {
-  data: RouterOutputs["dashboard"]["getUserWinPercentage"];
-}) {
+export default function WinPercentageChart() {
+  const trpc = useTRPC();
+  const { data: data } = useSuspenseQuery(
+    trpc.dashboard.getUserWinPercentage.queryOptions(),
+  );
   const [view, setView] = useState<ViewType>("overtime");
 
   const chartConfig = {

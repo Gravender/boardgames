@@ -15,7 +15,7 @@ import {
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
 
-import { api } from "~/trpc/server";
+import { caller } from "~/trpc/server";
 import { GameDetails } from "./_components/GameDetailsTable";
 
 interface Props {
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // fetch data
   if (isNaN(Number(id))) return { title: "Player" };
-  const player = await api.player.getPlayer({
+  const player = await caller.player.getPlayer({
     id: Number(id),
   });
   if (!player) return { title: "Player" };
@@ -52,7 +52,7 @@ export default async function Page({ params }: Props) {
   const slugs = await params;
   const playerId = slugs.id;
   if (isNaN(Number(playerId))) redirect("/dashboard/players");
-  const player = await api.player.getPlayer({
+  const player = await caller.player.getPlayer({
     id: Number(playerId),
   });
   if (player === null) redirect("/dashboard/players");

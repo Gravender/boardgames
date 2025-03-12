@@ -1,9 +1,9 @@
 "use client";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { LabelList, Pie, PieChart, ResponsiveContainer } from "recharts";
 
-import type { RouterOutputs } from "@board-games/api";
 import type { ChartConfig } from "@board-games/ui/chart";
 import {
   Card,
@@ -19,11 +19,13 @@ import {
   ChartTooltipContent,
 } from "@board-games/ui/chart";
 
-export function UniqueGamesChart({
-  data,
-}: {
-  data: RouterOutputs["dashboard"]["getUniqueGames"];
-}) {
+import { useTRPC } from "~/trpc/react";
+
+export function UniqueGamesChart() {
+  const trpc = useTRPC();
+  const { data: data } = useSuspenseQuery(
+    trpc.dashboard.getUniqueGames.queryOptions(),
+  );
   const games = data.games.slice(0, 5);
   const chartConfig = games.reduce<ChartConfig>(
     (acc, game) => {

@@ -74,10 +74,10 @@ const LocationContent = ({
     trpc.location.update.mutationOptions({
       onSuccess: async () => {
         setIsSubmitting(false);
-        queryClient.invalidateQueries(
+        await queryClient.invalidateQueries(
           trpc.location.getLocations.queryOptions(),
         );
-        queryClient.invalidateQueries(
+        await queryClient.invalidateQueries(
           trpc.dashboard.getLocations.queryOptions(),
         );
         router.refresh();

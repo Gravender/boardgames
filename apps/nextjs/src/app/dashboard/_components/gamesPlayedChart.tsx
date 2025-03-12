@@ -1,10 +1,10 @@
 "use client";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { subMonths } from "date-fns";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
 
-import type { RouterOutputs } from "@board-games/api";
 import type { ChartConfig } from "@board-games/ui/chart";
 import {
   Card,
@@ -20,6 +20,8 @@ import {
   ChartTooltipContent,
 } from "@board-games/ui/chart";
 
+import { useTRPC } from "~/trpc/react";
+
 const chartConfig = {
   thisYear: {
     label: "This Years Games: ",
@@ -31,11 +33,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function PlayedChart({
-  data,
-}: {
-  data: RouterOutputs["dashboard"]["getMatchesByMonth"]["months"];
-}) {
+export function PlayedChart() {
+  const trpc = useTRPC();
+  const { data: data } = useSuspenseQuery(
+    trpc.dashboard.getMatchesByMonth.queryOptions(),
+  );
   const trendCalculate = (numbers: number[]) => {
     const last = numbers[numbers.length - 1];
     const secondLast = numbers[numbers.length - 2];
@@ -43,19 +45,19 @@ export function PlayedChart({
     if (secondLast <= 0) return 0;
     return ((last - secondLast) / secondLast) * 100;
   };
-  const trend = trendCalculate(data.map((month) => month.thisYear));
+  const trend = trendCalculate(data.months.map((month) => month.thisYear));
 
   return (
     <Card className="col-span-1 lg:col-span-2">
       <CardHeader>
         <CardTitle>Matches Played</CardTitle>
-        <CardDescription>{`${data[0]?.month} ${subMonths(new Date(), 11).getFullYear()} - ${data[data.length - 1]?.month} ${new Date().getFullYear()}`}</CardDescription>
+        <CardDescription>{`${data.months[0]?.month} ${subMonths(new Date(), 11).getFullYear()} - ${data.months[data.months.length - 1]?.month} ${new Date().getFullYear()}`}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="max-h-64 w-full">
           <LineChart
             accessibilityLayer
-            data={data}
+            data={data.months}
             margin={{
               left: 12,
               right: 12,

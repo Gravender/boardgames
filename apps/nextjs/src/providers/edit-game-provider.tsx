@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable react-compiler/react-compiler */
 import type { ReactNode } from "react";
 import { createContext, useContext, useRef } from "react";
 import { useStore } from "zustand";
@@ -20,7 +21,7 @@ export interface EditGameStoreProviderProps {
 export const EditGameStoreProvider = ({
   children,
 }: EditGameStoreProviderProps) => {
-  const storeRef = useRef<EditGameStoreApi>();
+  const storeRef = useRef<EditGameStoreApi>(null);
   if (!storeRef.current) {
     storeRef.current = createEditGameStore();
   }

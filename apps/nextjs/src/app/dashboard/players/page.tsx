@@ -1,28 +1,22 @@
-"use server";
+import { Suspense } from "react";
 
-import type { Metadata } from "next";
-
-import { api } from "~/trpc/server";
+import { prefetch, trpc } from "~/trpc/server";
 import { PlayersTable } from "./_components/players";
 
-// eslint-disable-next-line @typescript-eslint/require-await
-export async function generateMetadata(): Promise<Metadata> {
+export function generateMetadata() {
   return {
     title: "Players",
     icons: [{ rel: "icon", url: "/users.ico" }],
   };
 }
 
-export default async function Page() {
-  const players = await api.player.getPlayers();
+export default function Page() {
+  void prefetch(trpc.player.getPlayers.queryOptions());
   return (
     <div className="flex w-full items-center justify-center">
-      <PlayersTable
-        data={players.map((player) => ({
-          ...player,
-          matches: Number(player.matches),
-        }))}
-      />
+      <Suspense>
+        <PlayersTable />
+      </Suspense>
     </div>
   );
 }

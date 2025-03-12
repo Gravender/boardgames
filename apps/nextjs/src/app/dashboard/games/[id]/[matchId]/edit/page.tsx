@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { api, HydrateClient } from "~/trpc/server";
+import { caller, HydrateClient } from "~/trpc/server";
 import { EditMatchForm } from "./_components/editMatch";
 
 export default async function Page({
@@ -17,9 +17,9 @@ export default async function Page({
       redirect(`/dashboard/games/${gameId}`);
     }
   }
-  const match = await api.match.getMatch({ id: Number(matchId) });
+  const match = await caller.match.getMatch({ id: Number(matchId) });
   if (!match) redirect(`/dashboard/games/${gameId}`);
-  const players = await api.player.getPlayersByGame({
+  const players = await caller.player.getPlayersByGame({
     game: { id: match.gameId },
   });
   return (

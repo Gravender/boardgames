@@ -28,7 +28,7 @@ import {
 } from "@board-games/ui/table";
 import { cn } from "@board-games/ui/utils";
 
-import { api } from "~/trpc/server";
+import { caller } from "~/trpc/server";
 
 interface Props {
   params: Promise<{ matchId: string; id: string }>;
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // fetch data
   if (isNaN(Number(matchId))) return { title: "Games" };
-  const summary = await api.match.getSummary({
+  const summary = await caller.match.getSummary({
     id: Number(matchId),
   });
   if (!summary) return { title: "Games" };
@@ -62,7 +62,7 @@ export default async function Page({ params }: Props) {
   const slugs = await params;
   const matchId = slugs.matchId;
   if (isNaN(Number(matchId))) redirect("/dashboard/games");
-  const summary = await api.match.getSummary({
+  const summary = await caller.match.getSummary({
     id: Number(matchId),
   });
   if (!summary) redirect("/dashboard/games");

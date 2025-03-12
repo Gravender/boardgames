@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { api, HydrateClient } from "~/trpc/server";
+import { caller, HydrateClient } from "~/trpc/server";
 import { EditGameForm } from "./_components/editGameForm";
 
 export default async function Page({
@@ -11,7 +11,7 @@ export default async function Page({
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
-  const game = await api.game.getEditGame({ id: Number(id) });
+  const game = await caller.game.getEditGame({ id: Number(id) });
   if (!game) redirect("/dashboard/games");
   return (
     <HydrateClient>

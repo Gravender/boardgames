@@ -1,21 +1,23 @@
 "use client";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { LabelList, Pie, PieChart, ResponsiveContainer } from "recharts";
 
-import type { RouterOutputs } from "@board-games/api";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@board-games/ui/chart";
 
+import { useTRPC } from "~/trpc/react";
+
 // Sample data for days of the week played
 
-export default function DaysPlayedChart({
-  data,
-}: {
-  data: RouterOutputs["dashboard"]["getDaysPlayed"];
-}) {
+export default function DaysPlayedChart() {
+  const trpc = useTRPC();
+  const { data: data } = useSuspenseQuery(
+    trpc.dashboard.getDaysPlayed.queryOptions(),
+  );
   const chartConfig = {
     Sunday: {
       label: "Sunday",

@@ -12,15 +12,15 @@ import {
 import { AppSidebar } from "~/components/app-sidebar";
 import { BreadCrumbs } from "~/components/breadcrumbs";
 import { ModeToggle } from "~/components/theme-toggle";
-import { api, HydrateClient } from "~/trpc/server";
+import { caller, HydrateClient } from "~/trpc/server";
 
 async function SidebarLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar:state")?.value === "true";
-  const games = await api.dashboard.getGames();
-  const players = await api.dashboard.getPlayers();
-  const groups = await api.dashboard.getGroups();
-  const locations = await api.dashboard.getLocations();
+  const games = await caller.dashboard.getGames();
+  const players = await caller.dashboard.getPlayers();
+  const groups = await caller.dashboard.getGroups();
+  const locations = await caller.dashboard.getLocations();
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>

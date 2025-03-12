@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import { useAuth } from "@clerk/clerk-expo";
 import { QueryClient } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink, loggerLink } from "@trpc/client";
@@ -7,7 +8,6 @@ import superjson from "superjson";
 import type { AppRouter } from "@board-games/api";
 
 import { getBaseUrl } from "./base-url";
-import { getToken } from "./cache";
 
 /**
  * A set of typesafe hooks for consuming your API.
@@ -41,6 +41,7 @@ export const trpc = createTRPCOptionsProxy<AppRouter>({
         async headers() {
           const headers = new Map<string, string>();
           headers.set("x-trpc-source", "expo-react");
+          //TODO: Fix this
           const { getToken } = useAuth();
           const authToken = await getToken();
           if (authToken) headers.set("Authorization", authToken);

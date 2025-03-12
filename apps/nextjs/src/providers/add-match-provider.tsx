@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable react-compiler/react-compiler */
 import type { ReactNode } from "react";
 import { createContext, useContext, useRef } from "react";
 import { useStore } from "zustand";
@@ -20,7 +21,7 @@ export interface AddMatchStoreProviderProps {
 export const AddMatchStoreProvider = ({
   children,
 }: AddMatchStoreProviderProps) => {
-  const storeRef = useRef<AddMatchStoreApi>();
+  const storeRef = useRef<AddMatchStoreApi>(null);
   if (!storeRef.current) {
     storeRef.current = createAddMatchStore();
   }

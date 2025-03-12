@@ -13,15 +13,15 @@ export default function GameScreen() {
   }>();
   const gameId = Number(id);
   const matchIdNumber = Number(matchId);
-  if (isNaN(matchIdNumber) || isNaN(gameId)) {
-    if (isNaN(gameId)) return <Redirect href="/games" />;
-    return <Redirect href={`/games/${gameId}`} />;
-  }
   const { data, isLoading } = useQuery(
     trpc.match.getMatch.queryOptions({
       id: matchIdNumber,
     }),
   );
+  if (isNaN(matchIdNumber) || isNaN(gameId)) {
+    if (isNaN(gameId)) return <Redirect href="/games" />;
+    return <Redirect href={`/games/${gameId}`} />;
+  }
   if (!data && !isLoading) return <Redirect href={`/games/${gameId}`} />;
 
   return (

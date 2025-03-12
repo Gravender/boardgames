@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 
-import { api, HydrateClient } from "~/trpc/server";
+import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { GroupSkeleton, GroupTable } from "./_components/groupTable";
 
 export default function Page() {
-  void api.group.getGroups.prefetch();
+  void prefetch(trpc.group.getGroups.queryOptions());
   return (
     <HydrateClient>
       <div className="flex w-full items-center justify-center">

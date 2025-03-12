@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { Match } from "~/app/dashboard/games/[id]/[matchId]/_components/match";
-import { api, HydrateClient } from "~/trpc/server";
+import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
 
 interface Props {
   params: Promise<{ matchId: string; id: string }>;
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       redirect(`/dashboard/games/${gameId}`);
     }
   }
-  const match = await api.match.getMatch({ id: Number(matchId) });
+  const match = await caller.match.getMatch({ id: Number(matchId) });
   if (!match) redirect(`/dashboard/games/${gameId}`);
   return {
     title: `${match.name} Scoresheet`,
@@ -36,7 +36,7 @@ export default async function Page({ params }: Props) {
       redirect(`/dashboard/games/${gameId}`);
     }
   }
-  void api.match.getMatch.prefetch({ id: Number(matchId) });
+  void prefetch(trpc.match.getMatch.queryOptions({ id: Number(matchId) }));
   return (
     <HydrateClient>
       <Suspense>

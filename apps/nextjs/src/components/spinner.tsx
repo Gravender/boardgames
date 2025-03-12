@@ -1,3 +1,5 @@
+import type { JSX } from "react";
+
 import { cn } from "@board-games/ui/utils";
 
 export type SpinnerProps = JSX.IntrinsicElements["svg"];
