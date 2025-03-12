@@ -1,7 +1,7 @@
 import type { UseFormReturn } from "react-hook-form";
+import type { z } from "zod";
 import { Settings } from "lucide-react";
 import { useFieldArray } from "react-hook-form";
-import type { z } from "zod";
 
 import { insertRoundSchema } from "@board-games/db/schema";
 import { Button } from "@board-games/ui/button";
@@ -25,8 +25,8 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 
-import { NumberInput } from "~/components/number-input";
 import type { scoresheetSchema } from "./editGameForm";
+import { NumberInput } from "~/components/number-input";
 
 export function RoundPopOver({
   index,

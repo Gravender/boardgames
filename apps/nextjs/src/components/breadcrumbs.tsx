@@ -97,7 +97,7 @@ export function BreadCrumbs() {
     });
     if ((type == "games" || type == "match") && data) {
       if (tempPathNames.length > 3 && data.game !== undefined) {
-        setPathItems((prev) => [
+        setPathItems(() => [
           ...tempPathItems,
           {
             name: data.game.name,
@@ -109,7 +109,7 @@ export function BreadCrumbs() {
           },
         ]);
       } else {
-        setPathItems((prev) => [
+        setPathItems(() => [
           ...tempPathItems,
           {
             name: data.name,
@@ -119,7 +119,7 @@ export function BreadCrumbs() {
       }
     }
     if (type === "players" && data) {
-      setPathItems((prev) => [
+      setPathItems(() => [
         ...tempPathItems,
         {
           name: data.name,
@@ -128,7 +128,7 @@ export function BreadCrumbs() {
       ]);
     }
     if (type === "groups" && data) {
-      setPathItems((prev) => [
+      setPathItems(() => [
         ...tempPathItems,
         {
           name: data.name,
