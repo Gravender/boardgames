@@ -1,9 +1,10 @@
 import React from "react";
 import { View } from "react-native";
 import { Redirect, Stack, useLocalSearchParams } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
 
 import { Text } from "~/components/ui/text";
-import { api } from "~/utils/api";
+import { trpc } from "~/utils/api";
 
 export default function GameScreen() {
   const { id, matchId } = useLocalSearchParams<{
@@ -16,9 +17,11 @@ export default function GameScreen() {
     if (isNaN(gameId)) return <Redirect href="/games" />;
     return <Redirect href={`/games/${gameId}`} />;
   }
-  const { data, isLoading } = api.match.getMatch.useQuery({
-    id: matchIdNumber,
-  });
+  const { data, isLoading } = useQuery(
+    trpc.match.getMatch.queryOptions({
+      id: matchIdNumber,
+    }),
+  );
   if (!data && !isLoading) return <Redirect href={`/games/${gameId}`} />;
 
   return (

@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
 import {
@@ -24,7 +25,7 @@ import { Pause } from "~/lib/icons/Pause";
 import { Play } from "~/lib/icons/Play";
 import { RotateCcw } from "~/lib/icons/RotateCcw";
 import { cn } from "~/lib/utils";
-import { api } from "~/utils/api";
+import { trpc } from "~/utils/api";
 import { Button } from "./ui/button";
 import { CardFooter } from "./ui/card";
 import { Checkbox } from "./ui/checkbox";
@@ -89,20 +90,30 @@ export function MatchScoresheet({ data }: { data: Match }) {
     }
   };
 
-  const utils = api.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
-  const updateMatch = api.match.updateMatch.useMutation({
-    onSuccess: async () => {
-      await utils.match.getMatch.invalidate({ id: data.id });
-      await utils.game.getGame.invalidate({ id: data.gameId });
+  const updateMatch = useMutation(
+    trpc.match.updateMatch.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.match.getMatch.queryOptions({ id: data.id }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.game.getGame.queryOptions({ id: data.gameId }),
+        );
 
-      router.push(`/games/${data.gameId}/${data.id}/summary`);
-      setIsSubmitting(false);
-    },
-  });
-  const updateMatchScores = api.match.updateMatchScores.useMutation();
-  const updateMatchDuration = api.match.updateMatchDuration.useMutation();
+        router.push(`/games/${data.gameId}/${data.id}/summary`);
+        setIsSubmitting(false);
+      },
+    }),
+  );
+  const updateMatchScores = useMutation(
+    trpc.match.updateMatchScores.mutationOptions(),
+  );
+  const updateMatchDuration = useMutation(
+    trpc.match.updateMatchDuration.mutationOptions(),
+  );
 
   useEffect(() => {
     let interval: NodeJS.Timeout;

@@ -3,6 +3,7 @@ import * as React from "react";
 import { Dimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Link } from "expo-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { RouterOutputs } from "~/utils/api";
 import { Button } from "~/components/ui/button";
@@ -15,7 +16,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Text } from "~/components/ui/text";
 import { MoreVertical } from "~/lib/icons/MoreVertical";
-import { api } from "~/utils/api";
+import { trpc } from "~/utils/api";
 
 export function MatchDropDown({
   gameId,
@@ -47,19 +48,25 @@ export function MatchDropDown({
     }
   }, []);
 
-  const utils = api.useUtils();
-  const deleteGame = api.match.deleteMatch.useMutation({
-    onSuccess: async () => {
-      await Promise.all([
-        utils.game.getGames.invalidate(),
-        utils.game.getGame.invalidate({ id: gameId }),
-        utils.game.getGameStats.invalidate({ id: data.id }),
-        utils.game.getGameMetaData.invalidate({ id: data.id }),
-        utils.player.invalidate(),
-        utils.dashboard.invalidate(),
-      ]);
-    },
-  });
+  const queryClient = useQueryClient();
+  const deleteGame = useMutation(
+    trpc.match.deleteMatch.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
+        await queryClient.invalidateQueries(
+          trpc.game.getGame.queryOptions({ id: gameId }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.game.getGameStats.queryOptions({ id: gameId }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.game.getGameMetaData.queryOptions({ id: gameId }),
+        );
+        await queryClient.invalidateQueries(trpc.player.pathFilter());
+        await queryClient.invalidateQueries(trpc.dashboard.pathFilter());
+      },
+    }),
+  );
   const onDelete = () => {
     deleteGame.mutate({ id: data.id });
   };
