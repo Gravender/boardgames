@@ -66,19 +66,9 @@ export function calculateFinalScore(rounds: Round[], scoresheet: scoreSheet) {
 interface Player {
   id: number;
   rounds: Round[];
+  teamId: number | null;
 }
-/**
- * The function `calculateFinalScores` takes an array of players and a scoresheet, then calculates the
- * final score for each player based on their rounds and the scoresheet.
- * @param {Player[]} players - An array of Player objects representing the players participating in the
- * game.
- * @param {scoreSheet} scoresheet - The `scoresheet` parameter is an object that contains the scoring
- * criteria for the game. It likely includes information such as point values for different actions or
- * achievements in the game. This object is used in the `calculateFinalScore` function to determine the
- * final score for each player based on their rounds played
- * @returns An array of objects containing the player's ID and their final score calculated based on
- * their rounds and the scoresheet.
- */
+
 export function calculateFinalScores(
   players: Player[],
   scoresheet: scoreSheet,
@@ -86,21 +76,10 @@ export function calculateFinalScores(
   return players.map((player) => ({
     id: player.id,
     score: calculateFinalScore(player.rounds, scoresheet),
+    teamId: player.teamId,
   }));
 }
-/**
- * The function `calculatePlacement` determines the placement of players based on their scores
- * according to the specified win condition.
- * @param {Player[]} players - The `players` parameter in the `calculatePlacement` function is an array
- * of objects representing players. Each player object typically contains information such as an `id`,
- * `name`, and other relevant data about the player participating in the game or competition.
- * @param {scoreSheet} scoresheet - The `scoresheet` parameter in the `calculatePlacement` function
- * represents the score sheet used in the game. It contains information such as the win condition
- * (whether it's based on the highest score, lowest score, or a target score) and possibly other
- * game-specific details like the target score for the
- * @returns The function `calculatePlacement` returns an array of objects containing the player's ID,
- * score, and placement based on the sorting criteria specified in the function.
- */
+
 export function calculatePlacement(players: Player[], scoresheet: scoreSheet) {
   const finalScores = calculateFinalScores(players, scoresheet);
   finalScores.sort((a, b) => {
@@ -111,20 +90,37 @@ export function calculatePlacement(players: Player[], scoresheet: scoreSheet) {
       return a.score - b.score;
     }
     if (scoresheet.winCondition === "Target Score") {
-      if (a.score == b.score) {
-        return 0;
-      }
       if (a.score === scoresheet.targetScore) return -1;
       if (b.score === scoresheet.targetScore) return 1;
+      return (
+        Math.abs(a.score - scoresheet.targetScore) -
+        Math.abs(b.score - scoresheet.targetScore)
+      );
     }
     return 0;
   });
   let placement = 1;
   const placements: { id: number; score: number; placement: number }[] = [];
-
   for (let i = 0; i < finalScores.length; i++) {
-    if (i > 0 && finalScores[i]?.score !== finalScores[i - 1]?.score) {
-      placement = i + 1; // Adjust placement only if score changes
+    if (
+      i > 0 &&
+      finalScores[i]?.score !== finalScores[i - 1]?.score &&
+      (finalScores[i]?.teamId === null ||
+        finalScores[i]?.teamId !== finalScores[i - 1]?.teamId)
+    ) {
+      const finalScoreSlice = finalScores.slice(0, i);
+      const increment = finalScoreSlice.reduce((acc, curr) => {
+        if (curr.teamId === null) {
+          acc++;
+        }
+        return acc;
+      }, 0);
+      const uniqueTeams = new Set(
+        finalScoreSlice
+          .filter((score) => score.teamId !== null)
+          .map((score) => score.teamId ?? 0),
+      );
+      placement = increment + 1 + uniqueTeams.size; // Adjust placement only if score changes
     }
     placements.push({
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

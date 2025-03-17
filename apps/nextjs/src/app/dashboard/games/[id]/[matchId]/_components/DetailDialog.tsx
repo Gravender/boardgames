@@ -21,19 +21,20 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { Input } from "@board-games/ui/input";
+import { Textarea } from "@board-games/ui/textarea";
 
 import { useTRPC } from "~/trpc/react";
 
 export function DetailDialog({
   matchId,
-  matchPlayer,
+  data,
 }: {
   matchId: number;
-  matchPlayer: {
+  data: {
     id: number;
     name: string;
     details: string | null;
+    type: "Player" | "Team";
   };
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,19 +43,15 @@ export function DetailDialog({
       <DialogTrigger asChild>
         <Button
           variant="ghost"
-          className="h-fit w-full min-w-20 items-start justify-start"
+          className="h-full w-full min-w-20 items-start justify-start p-0"
         >
-          <span className="text-wrap text-start text-base text-primary">
-            {matchPlayer.details ?? ""}
+          <span className="max-h-10 min-h-6 overflow-scroll text-wrap text-start text-base text-primary">
+            {data.details ?? ""}
           </span>
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <Content
-          setIsOpen={setIsOpen}
-          matchId={matchId}
-          matchPlayer={matchPlayer}
-        />
+        <Content setIsOpen={setIsOpen} matchId={matchId} data={data} />
       </DialogContent>
     </Dialog>
   );
@@ -64,21 +61,22 @@ const FormSchema = z.object({
 });
 function Content({
   matchId,
-  matchPlayer,
+  data,
   setIsOpen,
 }: {
   matchId: number;
-  matchPlayer: {
+  data: {
     id: number;
     name: string;
     details: string | null;
+    type: "Player" | "Team";
   };
   setIsOpen: (isOpen: boolean) => void;
 }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const updateComment = useMutation(
-    trpc.match.updateMatchPlayerDetails.mutationOptions({
+  const updateDetails = useMutation(
+    trpc.match.updateMatchDetails.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries(
           trpc.match.getMatch.queryOptions({ id: matchId }),
@@ -89,18 +87,21 @@ function Content({
   );
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
-    defaultValues: { detail: matchPlayer.details ?? "" },
+    defaultValues: { detail: data.details ?? "" },
   });
   function onSubmitForm(values: z.infer<typeof FormSchema>) {
-    updateComment.mutate({
-      matchPlayer: { id: matchPlayer.id },
+    updateDetails.mutate({
+      id: data.id,
+      type: data.type,
       details: values.detail,
     });
   }
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{matchPlayer.name}</DialogTitle>
+        <DialogTitle>
+          {data.type === "Team" ? `Team: ${data.name}` : data.name}
+        </DialogTitle>
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmitForm)} className="space-y-8">
@@ -111,7 +112,7 @@ function Content({
               <FormItem>
                 <FormLabel>Details:</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Textarea className="resize-none" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

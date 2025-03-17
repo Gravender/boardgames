@@ -1,7 +1,7 @@
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { User } from "lucide-react";
+import { User, Users } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -36,6 +36,7 @@ export const ManualWinnerPlayerSchema = z
       name: z.string(),
       imageUrl: z.string().nullable(),
       score: z.number(),
+      teamId: z.number().nullable(),
     }),
   )
   .min(1);
@@ -44,12 +45,14 @@ export function ManualWinnerDialog({
   setIsOpen,
   gameId,
   matchId,
+  teams,
   players,
 }: {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   gameId: number;
   matchId: number;
+  teams: { id: number; name: string }[];
   players: z.infer<typeof ManualWinnerPlayerSchema>;
 }) {
   return (
@@ -60,6 +63,7 @@ export function ManualWinnerDialog({
           players={players}
           matchId={matchId}
           gameId={gameId}
+          teams={teams}
         />
       </DialogContent>
     </Dialog>
@@ -72,10 +76,13 @@ function Content({
   players,
   gameId,
   matchId,
+  teams,
 }: {
   gameId: number;
   matchId: number;
   setIsOpen: (isOpen: boolean) => void;
+
+  teams: { id: number; name: string }[];
   players: z.infer<typeof ManualWinnerPlayerSchema>;
 }) {
   const trpc = useTRPC();
@@ -125,69 +132,143 @@ function Content({
                 </div>
                 <ScrollArea className="h-96">
                   <div className="flex flex-col gap-2 rounded-lg">
-                    {players.map((player) => (
-                      <FormField
-                        key={player.id}
-                        control={form.control}
-                        name="players"
-                        render={({ field }) => {
-                          return (
-                            <FormItem
-                              key={player.id}
-                              className={cn(
-                                "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-2",
-                                field.value.findIndex(
-                                  (i) => i.id === player.id,
-                                ) > -1
-                                  ? "bg-violet-400"
-                                  : "bg-border",
-                              )}
-                            >
-                              <FormControl>
-                                <Checkbox
-                                  className="hidden"
-                                  checked={
-                                    field.value.findIndex(
-                                      (i) => i.id === player.id,
-                                    ) > -1
-                                  }
-                                  onCheckedChange={(checked) => {
-                                    return checked
-                                      ? field.onChange([...field.value, player])
-                                      : field.onChange(
-                                          field.value.filter(
-                                            (value) => value.id !== player.id,
-                                          ),
-                                        );
-                                  }}
-                                />
-                              </FormControl>
-                              <FormLabel className="flex w-full items-center justify-between gap-2 text-sm font-normal">
-                                <div className="flex items-center gap-2">
-                                  <Avatar>
-                                    <AvatarImage
-                                      className="object-cover"
-                                      src={player.imageUrl ?? ""}
-                                      alt={player.name}
-                                    />
-                                    <AvatarFallback className="bg-slate-300">
-                                      <User />
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-lg font-semibold">
-                                    {player.name}
-                                  </span>
-                                </div>
+                    {teams.map((team) => {
+                      const teamPlayers = players.filter(
+                        (player) => player.teamId === team.id,
+                      );
+                      const [firstTeamPlayer] = teamPlayers;
+                      if (firstTeamPlayer === undefined) return null;
+                      return (
+                        <FormField
+                          key={firstTeamPlayer.id}
+                          control={form.control}
+                          name="players"
+                          render={({ field }) => {
+                            return (
+                              <FormItem
+                                key={firstTeamPlayer.id}
+                                className={cn(
+                                  "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-2",
+                                  field.value.findIndex(
+                                    (i) => i.id === firstTeamPlayer.id,
+                                  ) > -1
+                                    ? "bg-violet-400"
+                                    : "bg-border",
+                                )}
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    className="hidden"
+                                    checked={
+                                      field.value.findIndex(
+                                        (i) => i.teamId === team.id,
+                                      ) > -1
+                                    }
+                                    onCheckedChange={(checked) => {
+                                      return checked
+                                        ? field.onChange([
+                                            ...field.value,
+                                            ...teamPlayers,
+                                          ])
+                                        : field.onChange(
+                                            field.value.filter(
+                                              (value) =>
+                                                value.teamId !== team.id,
+                                            ),
+                                          );
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="flex w-full items-center justify-between gap-2 text-sm font-normal">
+                                  <div className="flex items-center gap-2">
+                                    <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full">
+                                      <div className="flex h-full w-full items-center justify-center rounded-full bg-slate-300">
+                                        <Users />
+                                      </div>
+                                    </div>
+                                    <span className="text-lg font-semibold">
+                                      {`Team: ${team.name}`}
+                                    </span>
+                                  </div>
 
-                                <div className="flex w-20 items-center justify-start font-semibold">
-                                  {`Score: ${player.score}`}
-                                </div>
-                              </FormLabel>
-                            </FormItem>
-                          );
-                        }}
-                      />
-                    ))}
+                                  <div className="flex w-20 items-center justify-start font-semibold">
+                                    {`Score: ${firstTeamPlayer.score}`}
+                                  </div>
+                                </FormLabel>
+                              </FormItem>
+                            );
+                          }}
+                        />
+                      );
+                    })}
+                    {players
+                      .filter((player) => player.teamId === null)
+                      .map((player) => (
+                        <FormField
+                          key={player.id}
+                          control={form.control}
+                          name="players"
+                          render={({ field }) => {
+                            return (
+                              <FormItem
+                                key={player.id}
+                                className={cn(
+                                  "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-2",
+                                  field.value.findIndex(
+                                    (i) => i.id === player.id,
+                                  ) > -1
+                                    ? "bg-violet-400"
+                                    : "bg-border",
+                                )}
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    className="hidden"
+                                    checked={
+                                      field.value.findIndex(
+                                        (i) => i.id === player.id,
+                                      ) > -1
+                                    }
+                                    onCheckedChange={(checked) => {
+                                      return checked
+                                        ? field.onChange([
+                                            ...field.value,
+                                            player,
+                                          ])
+                                        : field.onChange(
+                                            field.value.filter(
+                                              (value) => value.id !== player.id,
+                                            ),
+                                          );
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="flex w-full items-center justify-between gap-2 text-sm font-normal">
+                                  <div className="flex items-center gap-2">
+                                    <Avatar>
+                                      <AvatarImage
+                                        className="object-cover"
+                                        src={player.imageUrl ?? ""}
+                                        alt={player.name}
+                                      />
+                                      <AvatarFallback className="bg-slate-300">
+                                        <User />
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-lg font-semibold">
+                                      {player.name}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex w-20 items-center justify-start font-semibold">
+                                    {`Score: ${player.score}`}
+                                  </div>
+                                </FormLabel>
+                              </FormItem>
+                            );
+                          }}
+                        />
+                      ))}
                   </div>
                 </ScrollArea>
                 <FormMessage />

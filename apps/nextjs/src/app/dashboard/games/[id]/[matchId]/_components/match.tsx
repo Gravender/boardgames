@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 "use client";
 
 import type { z } from "zod";
@@ -21,7 +20,13 @@ import {
   formatDuration,
 } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
-import { Card, CardFooter, CardHeader, CardTitle } from "@board-games/ui/card";
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@board-games/ui/card";
 import { Checkbox } from "@board-games/ui/checkbox";
 import {
   Dialog,
@@ -72,12 +77,14 @@ import { ManualWinnerDialog } from "./ManualWinnerDialog";
 import { TieBreakerDialog } from "./TieBreakerDialog";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
+type Player = Match["players"][number];
 export function Match({ matchId }: { matchId: number }) {
   const trpc = useTRPC();
   const { data: match } = useSuspenseQuery(
     trpc.match.getMatch.queryOptions({ id: matchId }),
   );
-  const [players, setPlayers] = useState(() => [...match!.players]);
+
+  const [players, setPlayers] = useState<Player[]>([]);
   const [manualWinners, setManualWinners] = useState<
     z.infer<typeof ManualWinnerPlayerSchema>
   >([]);
@@ -88,9 +95,19 @@ export function Match({ matchId }: { matchId: number }) {
   const [openTieBreakerDialog, setOpenTieBreakerDialog] = useState(false);
   const [hasPlayersChanged, setHasPlayersChanged] = useState(false);
 
-  const [duration, setDuration] = useState(match!.duration);
-  const [isRunning, setIsRunning] = useState(match!.running);
+  const [duration, setDuration] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  useEffect(() => {
+    if (match && isInitialLoad) {
+      setDuration(match.duration);
+      setIsRunning(match.running);
+      setPlayers(match.players);
+      setIsInitialLoad(false);
+    }
+  }, [match, isInitialLoad]);
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -98,13 +115,13 @@ export function Match({ matchId }: { matchId: number }) {
     trpc.match.updateMatch.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: match!.id }),
+          trpc.match.getMatch.queryOptions({ id: match?.id ?? 0 }),
         );
         await queryClient.invalidateQueries(
-          trpc.game.getGame.queryOptions({ id: match!.gameId }),
+          trpc.game.getGame.queryOptions({ id: match?.gameId ?? 0 }),
         );
 
-        router.push(`/dashboard/games/${match!.gameId}/${match!.id}/summary`);
+        router.push(`/dashboard/games/${match?.gameId}/${match?.id}/summary`);
         setIsSubmitting(false);
       },
     }),
@@ -118,7 +135,7 @@ export function Match({ matchId }: { matchId: number }) {
 
   const { debouncedRequest, setValue, prepareMatchData } =
     useDebouncedUpdateMatchData({
-      match: { id: match!.id, duration, running: isRunning },
+      match: { id: match?.id ?? 0, duration, running: isRunning },
       roundPlayers: players.flatMap((player) =>
         player.rounds.map((round) => ({
           id: round.id,
@@ -145,7 +162,7 @@ export function Match({ matchId }: { matchId: number }) {
   const saveMatch = useCallback(() => {
     const { submittedPlayers, matchPlayers } = prepareMatchData(players);
     setValue({
-      match: { id: match!.id, duration, running: isRunning },
+      match: { id: match?.id ?? 0, duration, running: isRunning },
       roundPlayers: submittedPlayers,
       matchPlayers,
     });
@@ -168,7 +185,7 @@ export function Match({ matchId }: { matchId: number }) {
   useEffect(() => {
     if (
       !openManualWinnerDialog &&
-      match!.scoresheet.winCondition === "Manual" &&
+      match?.scoresheet.winCondition === "Manual" &&
       isSubmitting
     ) {
       setIsSubmitting(false);
@@ -183,7 +200,7 @@ export function Match({ matchId }: { matchId: number }) {
         score: playerRound.score,
       })),
     );
-    if (match!.scoresheet.winCondition === "Manual") {
+    if (match?.scoresheet.winCondition === "Manual") {
       setManualWinners(
         players.map((player) => {
           return {
@@ -194,15 +211,16 @@ export function Match({ matchId }: { matchId: number }) {
               player.rounds.map((round) => ({
                 score: round.score ?? 0,
               })),
-              match!.scoresheet,
+              match.scoresheet,
             ),
+            teamId: player.teamId,
           };
         }),
       );
       setOpenManualWinnerDialog(true);
       updateMatchScores.mutate({
         match: {
-          id: match!.id,
+          id: match.id,
           duration: duration,
           running: false,
         },
@@ -214,7 +232,7 @@ export function Match({ matchId }: { matchId: number }) {
               player.rounds.map((round) => ({
                 score: round.score ?? 0,
               })),
-              match!.scoresheet,
+              match.scoresheet,
             ),
           };
         }),
@@ -228,7 +246,9 @@ export function Match({ matchId }: { matchId: number }) {
         rounds: player.rounds.map((round) => ({
           score: round.score ?? 0,
         })),
+        teamId: player.teamId,
       })),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       match!.scoresheet,
     );
     let isTieBreaker = false;
@@ -254,12 +274,13 @@ export function Match({ matchId }: { matchId: number }) {
             imageUrl: foundPlayer?.imageUrl ?? "",
             placement: player.placement,
             score: player.score,
+            teamId: foundPlayer?.teamId ?? null,
           };
         }),
       );
       updateMatchScores.mutate({
         match: {
-          id: match!.id,
+          id: match?.id ?? 0,
           duration: duration,
           running: false,
         },
@@ -271,6 +292,7 @@ export function Match({ matchId }: { matchId: number }) {
               player.rounds.map((round) => ({
                 score: round.score ?? 0,
               })),
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               match!.scoresheet,
             ),
           };
@@ -280,7 +302,7 @@ export function Match({ matchId }: { matchId: number }) {
     } else {
       updateMatch.mutate({
         match: {
-          id: match!.id,
+          id: match?.id ?? 0,
           duration: duration,
           finished: true,
           running: false,
@@ -301,10 +323,10 @@ export function Match({ matchId }: { matchId: number }) {
   }, [isRunning]);
 
   useEffect(() => {
-    if (isRunning && duration % 30 === 0 && match!.duration !== duration) {
+    if (isRunning && duration % 30 === 0 && match?.duration !== duration) {
       const debounce = setTimeout(() => {
         updateMatchDuration.mutate({
-          match: { id: match!.id },
+          match: { id: match?.id ?? 0 },
           duration: duration,
         });
       }, 1000); // Debounce duration
@@ -323,13 +345,35 @@ export function Match({ matchId }: { matchId: number }) {
   };
 
   const handleScoreChange = (
-    playerIndex: number,
-    roundIndex: number,
+    player: Player,
+    round: Match["scoresheet"]["rounds"][number],
     value: number | null,
   ) => {
     const temp = [...players];
-    if (temp[playerIndex]?.rounds?.[roundIndex]?.score !== undefined) {
-      temp[playerIndex].rounds[roundIndex].score = value ?? null;
+    const roundPlayer = player.rounds.find(
+      (roundPlayer) => roundPlayer.roundId === round.id,
+    );
+    if (roundPlayer?.score !== undefined) {
+      roundPlayer.score = value ?? null;
+    }
+    setPlayers(temp);
+
+    setHasPlayersChanged(true);
+  };
+  const handleTeamScoreChange = (
+    team: Match["teams"][number],
+    round: Match["scoresheet"]["rounds"][number],
+    value: number | null,
+  ) => {
+    const temp = [...players];
+    const teamPlayer = players.filter((player) => player.teamId === team.id);
+    for (const player of teamPlayer) {
+      const roundPlayer = player.rounds.find(
+        (roundPlayer) => roundPlayer.roundId === round.id,
+      );
+      if (roundPlayer?.score !== undefined) {
+        roundPlayer.score = value ?? null;
+      }
     }
     setPlayers(temp);
 
@@ -341,162 +385,36 @@ export function Match({ matchId }: { matchId: number }) {
       <div className="w-full max-w-6xl sm:px-4">
         <CardHeader>
           <CardTitle>{`${match.name}`}</CardTitle>
+          {match.scoresheet.winCondition === "Target Score" && (
+            <CardDescription>{`Target Score: ${match.scoresheet.targetScore}`}</CardDescription>
+          )}
         </CardHeader>
         <Card>
           <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
             <>
               <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
-                <TableRow>
-                  <TableHead
-                    scope="col"
-                    className="bg-sidebar sticky left-0 top-0 w-20 sm:w-36"
-                  >
-                    <div>
-                      <AddRoundDialog match={match} />
-                    </div>
-                  </TableHead>
-                  {players.map((player) => (
-                    <TableHead
-                      className="min-w-20 text-center"
-                      scope="col"
-                      key={player.id}
-                    >
-                      {player.name}
-                    </TableHead>
-                  ))}
-                </TableRow>
+                <HeaderRow match={match} players={players} />
               </TableHeader>
               <TableBody>
-                {match.scoresheet.rounds.map((round, index) => (
-                  <TableRow key={`round-${round.id}`}>
-                    <TableHead
-                      scope="row"
-                      className={cn(
-                        "sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg",
-                        round.color &&
-                          "text-slate-600 hover:opacity-50 hover:dark:opacity-80",
-                      )}
-                      style={{
-                        backgroundColor: round.color ?? "",
-                      }}
-                    >
-                      {round.name}
-                    </TableHead>
-                    {players.map((player, playerIndex) => {
-                      const roundPlayer = player.rounds[index];
-                      return (
-                        <TableCell
-                          key={`player-${player.id}-round-${round.id}`}
-                          className="p-0"
-                        >
-                          <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
-                            {round.type === "Numeric" ? (
-                              <NumberInput
-                                value={roundPlayer?.score ?? 0}
-                                onValueChange={(value) => {
-                                  handleScoreChange(playerIndex, index, value);
-                                }}
-                                className="border-none text-center"
-                              />
-                            ) : (
-                              <>
-                                <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
-                                <Checkbox
-                                  onCheckedChange={(isChecked) => {
-                                    handleScoreChange(
-                                      playerIndex,
-                                      index,
-                                      isChecked ? round.score : 0,
-                                    );
-                                  }}
-                                  checked={
-                                    (roundPlayer?.score ?? 0) === round.score
-                                  }
-                                />
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
+                {match.scoresheet.rounds.map((round) => (
+                  <BodyRow
+                    key={`round-${round.id}`}
+                    match={match}
+                    round={round}
+                    players={players}
+                    handleTeamScoreChange={handleTeamScoreChange}
+                    handleScoreChange={handleScoreChange}
+                  />
                 ))}
               </TableBody>
               <TableFooter>
-                <TableRow>
-                  <TableHead
-                    scope="row"
-                    className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
-                  >
-                    {"Details(optional)"}
-                  </TableHead>
-                  {match.players.map((player) => {
-                    return (
-                      <TableCell
-                        key={`${player.id}-details`}
-                        className="border-b border-r"
-                      >
-                        <DetailDialog
-                          matchId={match.id}
-                          matchPlayer={{
-                            id: player.id,
-                            name: player.name,
-                            details: player.details,
-                          }}
-                        />
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-                <TableRow>
-                  <TableHead
-                    scope="row"
-                    className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
-                  >
-                    Total
-                  </TableHead>
-                  {players.map((player, index) => {
-                    if (match.scoresheet.roundsScore === "Manual") {
-                      return (
-                        <TableCell key={`${player.id}-total`}>
-                          <Input
-                            type="number"
-                            className="text-center"
-                            value={player.score ?? 0}
-                            onChange={(e) => {
-                              const score = Number(e.target.value);
-                              const temp = [...players];
-                              if (temp[index]?.score !== undefined) {
-                                temp[index].score = score;
-                              }
-                              setPlayers(temp);
-                              setHasPlayersChanged(true);
-                            }}
-                          />
-                        </TableCell>
-                      );
-                    }
-                    const total = calculateFinalScore(
-                      player.rounds.map((round) => ({
-                        score: round.score ?? 0,
-                      })),
-                      match.scoresheet,
-                    );
-                    return (
-                      <TableCell key={`${player.id}-total`}>
-                        <div className="flex items-center justify-center">
-                          <span className="text-center">
-                            {total === Infinity
-                              ? 0
-                              : total === -Infinity
-                                ? 0
-                                : total}
-                          </span>
-                        </div>
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
+                <CommentsRow match={match} />
+                <TotalRow
+                  match={match}
+                  players={players}
+                  setPlayers={setPlayers}
+                  setHasPlayersChanged={setHasPlayersChanged}
+                />
               </TableFooter>
             </>
           </Table>
@@ -541,6 +459,7 @@ export function Match({ matchId }: { matchId: number }) {
           gameId={match.gameId}
           matchId={match.id}
           players={manualWinners}
+          teams={match.teams}
         />
         <TieBreakerDialog
           isOpen={openTieBreakerDialog}
@@ -548,11 +467,502 @@ export function Match({ matchId }: { matchId: number }) {
           gameId={match.gameId}
           matchId={match.id}
           players={tieBreakers}
+          teams={match.teams}
         />
       </div>
     </div>
   );
 }
+
+const HeaderRow = ({ match, players }: { match: Match; players: Player[] }) => {
+  if (match.teams.length > 0) {
+    return (
+      <TableRow>
+        <TableHead
+          scope="col"
+          className="bg-sidebar sticky left-0 top-0 w-20 sm:w-36"
+        >
+          <div>
+            <AddRoundDialog match={match} />
+          </div>
+        </TableHead>
+        {match.teams
+          .filter((team) => players.find((player) => player.teamId === team.id))
+          .map((team) => {
+            const teamPlayers = players.filter(
+              (player) => player.teamId === team.id,
+            );
+            return (
+              <TableHead
+                className="min-w-20 text-center"
+                scope="col"
+                key={team.id}
+              >
+                <div className="flex max-h-10 w-full flex-col gap-1 overflow-scroll">
+                  <span className="font-semibold">{`Team: ${team.name}`}</span>
+                  <span>
+                    {teamPlayers.map((player) => player.name).join(", ")}
+                  </span>
+                </div>
+              </TableHead>
+            );
+          })}
+        {players
+          .filter((player) => player.teamId === null)
+          .map((player) => (
+            <TableHead
+              className="min-w-20 text-center"
+              scope="col"
+              key={player.id}
+            >
+              {player.name}
+            </TableHead>
+          ))}
+      </TableRow>
+    );
+  }
+  return (
+    <TableRow>
+      <TableHead
+        scope="col"
+        className="bg-sidebar sticky left-0 top-0 w-20 sm:w-36"
+      >
+        <div>
+          <AddRoundDialog match={match} />
+        </div>
+      </TableHead>
+      {players.map((player) => (
+        <TableHead className="min-w-20 text-center" scope="col" key={player.id}>
+          {player.name}
+        </TableHead>
+      ))}
+    </TableRow>
+  );
+};
+
+const BodyRow = ({
+  match,
+  players,
+  round,
+  handleTeamScoreChange,
+  handleScoreChange,
+}: {
+  match: Match;
+  players: Player[];
+  round: Match["scoresheet"]["rounds"][number];
+  handleTeamScoreChange: (
+    team: Match["teams"][number],
+    round: Match["scoresheet"]["rounds"][number],
+    value: number | null,
+  ) => void;
+  handleScoreChange: (
+    player: Player,
+    round: Match["scoresheet"]["rounds"][number],
+    value: number | null,
+  ) => void;
+}) => {
+  if (match.teams.length > 0) {
+    return (
+      <TableRow>
+        <TableHead
+          scope="row"
+          className={cn(
+            "sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg",
+            round.color &&
+              "text-slate-600 hover:opacity-50 hover:dark:opacity-80",
+          )}
+          style={{
+            backgroundColor: round.color ?? "",
+          }}
+        >
+          {round.name}
+        </TableHead>
+        {match.teams
+          .filter((team) => players.find((player) => player.teamId === team.id))
+          .map((team) => {
+            const teamPlayer = players.filter(
+              (player) => player.teamId === team.id,
+            );
+            const roundPlayers = teamPlayer
+              .flatMap((player) => {
+                return player.rounds.find(
+                  (roundPlayer) => roundPlayer.roundId === round.id,
+                );
+              })
+              .filter((roundPlayer) => roundPlayer !== undefined);
+            return (
+              <TableCell
+                key={`team-${team.id}-round-${round.id}`}
+                className="p-0"
+              >
+                <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
+                  {round.type === "Numeric" ? (
+                    <NumberInput
+                      value={roundPlayers[0]?.score ?? 0}
+                      onValueChange={(value) => {
+                        handleTeamScoreChange(team, round, value);
+                      }}
+                      className="border-none text-center"
+                    />
+                  ) : (
+                    <>
+                      <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
+                      <Checkbox
+                        onCheckedChange={(isChecked) => {
+                          handleTeamScoreChange(
+                            team,
+                            round,
+                            isChecked ? round.score : 0,
+                          );
+                        }}
+                        checked={(roundPlayers[0]?.score ?? 0) === round.score}
+                      />
+                    </>
+                  )}
+                </div>
+              </TableCell>
+            );
+          })}
+        {players
+          .filter((player) => player.teamId === null)
+          .map((player) => {
+            const roundPlayer = player.rounds.find(
+              (roundPlayer) => roundPlayer.roundId === round.id,
+            );
+            return (
+              <TableCell
+                key={`player-${player.id}-round-${round.id}`}
+                className="p-0"
+              >
+                <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
+                  {round.type === "Numeric" ? (
+                    <NumberInput
+                      value={roundPlayer?.score ?? 0}
+                      onValueChange={(value) => {
+                        handleScoreChange(player, round, value);
+                      }}
+                      className="border-none text-center"
+                    />
+                  ) : (
+                    <>
+                      <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
+                      <Checkbox
+                        onCheckedChange={(isChecked) => {
+                          handleScoreChange(
+                            player,
+                            round,
+                            isChecked ? round.score : 0,
+                          );
+                        }}
+                        checked={(roundPlayer?.score ?? 0) === round.score}
+                      />
+                    </>
+                  )}
+                </div>
+              </TableCell>
+            );
+          })}
+      </TableRow>
+    );
+  }
+  return (
+    <TableRow>
+      <TableHead
+        scope="row"
+        className={cn(
+          "sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg",
+          round.color &&
+            "text-slate-600 hover:opacity-50 hover:dark:opacity-80",
+        )}
+        style={{
+          backgroundColor: round.color ?? "",
+        }}
+      >
+        {round.name}
+      </TableHead>
+      {players.map((player) => {
+        const roundPlayer = player.rounds.find(
+          (roundPlayer) => roundPlayer.roundId === round.id,
+        );
+        return (
+          <TableCell
+            key={`player-${player.id}-round-${round.id}`}
+            className="p-0"
+          >
+            <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
+              {round.type === "Numeric" ? (
+                <NumberInput
+                  value={roundPlayer?.score ?? 0}
+                  onValueChange={(value) => {
+                    handleScoreChange(player, round, value);
+                  }}
+                  className="border-none text-center"
+                />
+              ) : (
+                <>
+                  <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
+                  <Checkbox
+                    onCheckedChange={(isChecked) => {
+                      handleScoreChange(
+                        player,
+                        round,
+                        isChecked ? round.score : 0,
+                      );
+                    }}
+                    checked={(roundPlayer?.score ?? 0) === round.score}
+                  />
+                </>
+              )}
+            </div>
+          </TableCell>
+        );
+      })}
+    </TableRow>
+  );
+};
+
+const CommentsRow = ({ match }: { match: Match }) => {
+  if (match.teams.length > 0) {
+    return (
+      <TableRow>
+        <TableHead
+          scope="row"
+          className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+        >
+          {"Details(optional)"}
+        </TableHead>
+        {match.teams
+          .filter((team) =>
+            match.players.find((player) => player.teamId === team.id),
+          )
+          .map((team) => (
+            <TableCell
+              key={`${team.id}-details`}
+              className="border-b border-r p-2"
+            >
+              <DetailDialog
+                matchId={match.id}
+                data={{
+                  id: team.id,
+                  name: team.name,
+                  details: team.details,
+                  type: "Team",
+                }}
+              />
+            </TableCell>
+          ))}
+        {match.players
+          .filter((player) => player.teamId === null)
+          .map((player) => {
+            return (
+              <TableCell
+                key={`${player.id}-details`}
+                className="border-b border-r p-2"
+              >
+                <DetailDialog
+                  matchId={match.id}
+                  data={{
+                    id: player.id,
+                    name: player.name,
+                    details: player.details,
+                    type: "Player",
+                  }}
+                />
+              </TableCell>
+            );
+          })}
+      </TableRow>
+    );
+  }
+  return (
+    <TableRow>
+      <TableHead
+        scope="row"
+        className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+      >
+        {"Details(optional)"}
+      </TableHead>
+
+      {match.players.map((player) => {
+        return (
+          <TableCell
+            key={`${player.id}-details`}
+            className="border-b border-r p-2"
+          >
+            <DetailDialog
+              matchId={match.id}
+              data={{
+                id: player.id,
+                name: player.name,
+                details: player.details,
+                type: "Player",
+              }}
+            />
+          </TableCell>
+        );
+      })}
+    </TableRow>
+  );
+};
+
+const TotalRow = ({
+  match,
+  players,
+  setPlayers,
+  setHasPlayersChanged,
+}: {
+  match: Match;
+  players: Player[];
+  setPlayers: (players: Player[]) => void;
+  setHasPlayersChanged: (hasPlayersChanged: boolean) => void;
+}) => {
+  if (match.teams.length > 0) {
+    return (
+      <TableRow>
+        <TableHead
+          scope="row"
+          className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+        >
+          Total
+        </TableHead>
+        {match.teams
+          .filter((team) => players.find((player) => player.teamId === team.id))
+          .map((team) => {
+            const teamPlayer = players.filter(
+              (player) => player.teamId === team.id,
+            );
+            const firstTeamPlayer = teamPlayer[0];
+            if (firstTeamPlayer === undefined) return null;
+            if (match.scoresheet.roundsScore === "Manual") {
+              return (
+                <TableCell key={`${team.id}-total`}>
+                  <Input
+                    type="number"
+                    className="text-center"
+                    value={firstTeamPlayer.score ?? 0}
+                    onChange={(e) => {
+                      const score = Number(e.target.value);
+                      const temp = [...players];
+                      const tempTeamPlayer = temp.filter(
+                        (player) => player.teamId === team.id,
+                      );
+                      for (const player of tempTeamPlayer) {
+                        player.score = score;
+                      }
+                      setPlayers(temp);
+                      setHasPlayersChanged(true);
+                    }}
+                  />
+                </TableCell>
+              );
+            }
+
+            const total = calculateFinalScore(
+              firstTeamPlayer.rounds.map((round) => ({
+                score: round.score ?? 0,
+              })),
+              match.scoresheet,
+            );
+            return (
+              <TableCell key={`${team.id}-total`}>
+                <div className="flex items-center justify-center">
+                  <span className="text-center">
+                    {total === Infinity ? 0 : total === -Infinity ? 0 : total}
+                  </span>
+                </div>
+              </TableCell>
+            );
+          })}
+        {players
+          .filter((player) => player.teamId === null)
+          .map((player, index) => {
+            if (match.scoresheet.roundsScore === "Manual") {
+              return (
+                <TableCell key={`${player.id}-total`}>
+                  <Input
+                    type="number"
+                    className="text-center"
+                    value={player.score ?? 0}
+                    onChange={(e) => {
+                      const score = Number(e.target.value);
+                      const temp = [...players];
+                      if (temp[index]?.score !== undefined) {
+                        temp[index].score = score;
+                      }
+                      setPlayers(temp);
+                      setHasPlayersChanged(true);
+                    }}
+                  />
+                </TableCell>
+              );
+            }
+            const total = calculateFinalScore(
+              player.rounds.map((round) => ({
+                score: round.score ?? 0,
+              })),
+              match.scoresheet,
+            );
+            return (
+              <TableCell key={`${player.id}-total`}>
+                <div className="flex items-center justify-center">
+                  <span className="text-center">
+                    {total === Infinity ? 0 : total === -Infinity ? 0 : total}
+                  </span>
+                </div>
+              </TableCell>
+            );
+          })}
+      </TableRow>
+    );
+  }
+  return (
+    <TableRow>
+      <TableHead
+        scope="row"
+        className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+      >
+        Total
+      </TableHead>
+      {players.map((player, index) => {
+        if (match.scoresheet.roundsScore === "Manual") {
+          return (
+            <TableCell key={`${player.id}-total`}>
+              <Input
+                type="number"
+                className="text-center"
+                value={player.score ?? 0}
+                onChange={(e) => {
+                  const score = Number(e.target.value);
+                  const temp = [...players];
+                  if (temp[index]?.score !== undefined) {
+                    temp[index].score = score;
+                  }
+                  setPlayers(temp);
+                  setHasPlayersChanged(true);
+                }}
+              />
+            </TableCell>
+          );
+        }
+        const total = calculateFinalScore(
+          player.rounds.map((round) => ({
+            score: round.score ?? 0,
+          })),
+          match.scoresheet,
+        );
+        return (
+          <TableCell key={`${player.id}-total`}>
+            <div className="flex items-center justify-center">
+              <span className="text-center">
+                {total === Infinity ? 0 : total === -Infinity ? 0 : total}
+              </span>
+            </div>
+          </TableCell>
+        );
+      })}
+    </TableRow>
+  );
+};
 
 const AddRoundDialog = ({ match }: { match: Match }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -593,7 +1003,7 @@ const AddRoundDialogContent = ({
   const form = useForm<z.infer<typeof RoundSchema>>({
     resolver: zodResolver(RoundSchema),
     defaultValues: {
-      name: `Round ${(match.players[0]?.rounds.length ?? 0) + 1}`,
+      name: `Round ${match.scoresheet.rounds.length + 1}`,
       type: "Numeric",
       color: "#E2E2E2",
       score: 0,

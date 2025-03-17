@@ -1,7 +1,7 @@
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { User } from "lucide-react";
+import { User, Users } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -43,6 +43,7 @@ export const TieBreakerPlayerSchema = z
       imageUrl: z.string().nullable(),
       score: z.number(),
       placement: z.number().min(1),
+      teamId: z.number().nullable(),
     }),
   )
   .min(1);
@@ -50,6 +51,7 @@ export function TieBreakerDialog({
   isOpen,
   setIsOpen,
   players,
+  teams,
   gameId,
   matchId,
 }: {
@@ -57,6 +59,8 @@ export function TieBreakerDialog({
   setIsOpen: (isOpen: boolean) => void;
   gameId: number;
   matchId: number;
+
+  teams: { id: number; name: string }[];
   players: z.infer<typeof TieBreakerPlayerSchema>;
 }) {
   return (
@@ -65,6 +69,7 @@ export function TieBreakerDialog({
         <Content
           setIsOpen={setIsOpen}
           players={players}
+          teams={teams}
           matchId={matchId}
           gameId={gameId}
         />
@@ -78,12 +83,14 @@ const FormSchema = z.object({
 });
 function Content({
   players,
+  teams,
   gameId,
   matchId,
 }: {
   gameId: number;
   matchId: number;
   setIsOpen: (isOpen: boolean) => void;
+  teams: { id: number; name: string }[];
   players: z.infer<typeof TieBreakerPlayerSchema>;
 }) {
   const trpc = useTRPC();
@@ -124,14 +131,64 @@ function Content({
   const indexes = new Map<number, number>(
     fields.map((player, index) => [player.matchPlayerId, index]),
   );
-
   function countPlacement(placement: number) {
-    let count = 0;
-    fields.forEach((player) => {
-      if (player.placement === placement) count++;
-    });
-    return count;
+    const count = fields
+      .toSorted((a, b) => {
+        if (a.placement === b.placement) {
+          return a.name.localeCompare(b.name);
+        } else {
+          return a.placement - b.placement;
+        }
+      })
+      .reduce((acc, curr) => {
+        if (curr.teamId === null && curr.placement === placement) {
+          acc++;
+        }
+        return acc;
+      }, 0);
+    return (
+      count +
+      new Set(
+        fields
+          .filter(
+            (player) =>
+              player.teamId !== null && player.placement === placement,
+          )
+          .map((score) => score.teamId ?? 0),
+      ).size
+    );
   }
+  const uniqueInOrderPlacements = () => {
+    const uniqueTeams = Array.from(
+      new Set(
+        fields
+          .filter((player) => player.teamId !== null)
+          .map((score) => score.teamId ?? 0),
+      ),
+    ).map((teamId) => {
+      const findFirstPlayer = fields.find((player) => player.teamId === teamId);
+      const findTeam = teams.find((team) => team.id === teamId);
+      return {
+        teamId: teamId,
+        placement: findFirstPlayer?.placement ?? 0,
+        name: findTeam?.name ?? "",
+        id: findTeam?.id,
+        imageUrl: findFirstPlayer?.imageUrl ?? null,
+        score: findFirstPlayer?.score ?? 0,
+        matchPlayerId: findFirstPlayer?.matchPlayerId ?? 0,
+      };
+    });
+    const playersWithoutTeams = fields.filter(
+      (player) => player.teamId === null,
+    );
+    return [...uniqueTeams, ...playersWithoutTeams].toSorted((a, b) => {
+      if (a.placement === b.placement) {
+        return a.name.localeCompare(b.name);
+      } else {
+        return a.placement - b.placement;
+      }
+    });
+  };
   return (
     <>
       <AlertDialogHeader>
@@ -155,20 +212,25 @@ function Content({
                 </div>
                 <ScrollArea className="h-96">
                   <div className="flex flex-col gap-2 rounded-lg">
-                    {fields
-                      .toSorted((a, b) => {
-                        if (a.placement === b.placement) {
-                          return a.name.localeCompare(b.name);
-                        } else {
-                          return a.placement - b.placement;
-                        }
-                      })
-                      .map((player) => (
+                    {uniqueInOrderPlacements().map((player, index) => {
+                      const numberPlacements = countPlacement(player.placement);
+                      if (
+                        player.teamId !== null &&
+                        index > 0 &&
+                        uniqueInOrderPlacements()
+                          .slice(0, index)
+                          .find(
+                            (prevPlayer) => prevPlayer.teamId === player.teamId,
+                          )
+                      ) {
+                        return null;
+                      }
+                      return (
                         <div
                           key={player.id}
                           className={cn(
                             "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-2",
-                            countPlacement(player.placement) > 1
+                            numberPlacements > 1
                               ? "bg-destructive/50"
                               : "bg-border",
                           )}
@@ -180,19 +242,38 @@ function Content({
                                   <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90">
                                     {player.placement}
                                   </div>
-                                  <Avatar>
-                                    <AvatarImage
-                                      className="object-cover"
-                                      src={player.imageUrl ?? ""}
-                                      alt={player.name}
-                                    />
-                                    <AvatarFallback className="bg-slate-300">
-                                      <User />
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-lg font-semibold">
-                                    {player.name}
-                                  </span>
+                                  {player.teamId === null ? (
+                                    <>
+                                      <Avatar>
+                                        <AvatarImage
+                                          className="object-cover"
+                                          src={player.imageUrl ?? ""}
+                                          alt={player.name}
+                                        />
+                                        <AvatarFallback className="bg-slate-300">
+                                          <User />
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="text-lg font-semibold">
+                                        {player.name}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full">
+                                        <div className="flex h-full w-full items-center justify-center rounded-full bg-slate-300">
+                                          <Users />
+                                        </div>
+                                      </div>
+                                      <span className="text-lg font-semibold">
+                                        {`Team: ${
+                                          teams.find(
+                                            (team) => team.id === player.teamId,
+                                          )?.name
+                                        }`}
+                                      </span>
+                                    </>
+                                  )}
                                 </div>
 
                                 <div className="flex w-20 items-center justify-start font-semibold">
@@ -224,16 +305,33 @@ function Content({
                                           )
                                             return;
 
-                                          console.log(player);
-
-                                          update(
-                                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                            indexes.get(player.matchPlayerId)!,
-                                            {
-                                              ...player,
-                                              placement: newPlacement,
-                                            },
-                                          );
+                                          if (player.teamId === null) {
+                                            update(
+                                              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                              indexes.get(
+                                                player.matchPlayerId,
+                                              )!,
+                                              {
+                                                ...player,
+                                                placement: newPlacement,
+                                              },
+                                            );
+                                          } else {
+                                            const tempPlayers =
+                                              form.getValues("players");
+                                            for (const tempPlayer of tempPlayers) {
+                                              if (
+                                                player.teamId ===
+                                                tempPlayer.teamId
+                                              )
+                                                tempPlayer.placement =
+                                                  newPlacement;
+                                            }
+                                            form.setValue(
+                                              "players",
+                                              tempPlayers,
+                                            );
+                                          }
                                         }}
                                         type="number"
                                         className="border-none text-center"
@@ -248,7 +346,8 @@ function Content({
                             </PopoverContent>
                           </Popover>
                         </div>
-                      ))}
+                      );
+                    })}
                   </div>
                 </ScrollArea>
                 <FormMessage />
