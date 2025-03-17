@@ -6,6 +6,7 @@ import { createTable } from "./baseTable";
 import match from "./match";
 import player from "./player";
 import roundPlayers from "./roundPlayer";
+import team from "./team";
 
 const matchPlayers = createTable(
   "match_player",
@@ -17,6 +18,7 @@ const matchPlayers = createTable(
     playerId: integer("player_id")
       .notNull()
       .references(() => player.id),
+    teamId: integer("team_id").references(() => team.id),
     winner: boolean("winner").default(false),
     score: integer("score").default(0),
     placement: integer("placement").default(0),
@@ -41,6 +43,10 @@ export const matchPlayerRelations = relations(
     player: one(player, {
       fields: [matchPlayers.playerId],
       references: [player.id],
+    }),
+    team: one(team, {
+      fields: [matchPlayers.teamId],
+      references: [team.id],
     }),
     roundPlayers: many(roundPlayers),
   }),

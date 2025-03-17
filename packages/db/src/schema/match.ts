@@ -15,6 +15,7 @@ import game from "./game";
 import location from "./location";
 import matchPlayer from "./matchPlayer";
 import scoresheet from "./scoresheet";
+import teams from "./team";
 import user from "./user";
 
 const matches = createTable(
@@ -69,6 +70,7 @@ export const matchRelations = relations(matches, ({ one, many }) => ({
     references: [location.id],
   }),
   matchPlayers: many(matchPlayer),
+  teams: many(teams),
 }));
 
 export const insertMatchSchema = createInsertSchema(matches);

@@ -16,6 +16,7 @@ import type {
   insertMatchSchema,
   insertPlayerSchema,
   insertScoreSheetSchema,
+  insertTeamSchema,
   insertUserSchema,
 } from "@board-games/db/schema";
 import { db } from "@board-games/db/client";
@@ -31,6 +32,7 @@ import {
   round,
   roundPlayer,
   scoresheet,
+  team,
   user,
 } from "@board-games/db/schema";
 
@@ -111,7 +113,7 @@ export async function seed() {
       clerkUserId: faker.person.fullName(),
     }),
   );
-
+  console.log("Inserting users...\n");
   const [user1, user2] = await db.insert(user).values(userData).returning();
   if (!user1) {
     throw new Error("User 1 not found");
@@ -128,7 +130,7 @@ export async function seed() {
       name: faker.commerce.productName(),
     }),
   );
-
+  console.log("Inserting game images...\n");
   const gameImages = await db.insert(image).values(imageGameData).returning();
 
   const totalGames = 80;
@@ -181,7 +183,7 @@ export async function seed() {
       };
     },
   );
-
+  console.log("Inserting games...\n");
   const returnedGames = await db.insert(game).values(gameData).returning();
 
   let remainingMatches = maxMatches;
@@ -200,7 +202,7 @@ export async function seed() {
       createdBy: faker.helpers.arrayElement([user1.id, user2.id]),
     }),
   );
-
+  console.log("Inserting locations...\n");
   const locations = await db.insert(location).values(locationData).returning();
 
   const imagePlayerData: z.infer<typeof insertImageSchema>[] = Array.from(
@@ -211,7 +213,7 @@ export async function seed() {
       name: faker.person.fullName(),
     }),
   );
-
+  console.log("Inserting player images...\n");
   const playerImages = await db
     .insert(image)
     .values(imagePlayerData)
@@ -233,6 +235,7 @@ export async function seed() {
     playerData[0].userId = user1.id;
     playerData[1].userId = user2.id;
   }
+  console.log("Inserting players...\n");
   const players = await db.insert(player).values(playerData).returning();
 
   const groupData: z.infer<typeof insertGroupSchema>[] = Array.from(
@@ -242,6 +245,7 @@ export async function seed() {
       createdBy: faker.helpers.arrayElement([user1.id, user2.id]),
     }),
   );
+  console.log("Inserting groups...\n");
   const groups = await db.insert(group).values(groupData).returning();
   for (const group of groups) {
     const playerCount = faker.number.int({
@@ -316,6 +320,7 @@ export async function seed() {
       type: "Default",
       isCoop: faker.datatype.boolean(0.1),
     };
+    console.log(`Inserting scoresheet for ${returnedGame.name}...\n`);
     const [returnedScoresheet] = await db
       .insert(scoresheet)
       .values(scoresheetData)
@@ -341,6 +346,7 @@ export async function seed() {
         };
       },
     );
+    console.log(`Inserting rounds for ${returnedGame.name}...\n`);
     await db.insert(round).values(roundData).returning();
 
     let matchData: z.infer<typeof insertMatchSchema>[] = Array.from(
@@ -423,7 +429,7 @@ export async function seed() {
         };
       }),
     );
-
+    console.log(`Inserting matches for ${returnedGame.name}...\n`);
     const returnedMatches = await db
       .insert(match)
       .values(matchData)
@@ -444,6 +450,30 @@ export async function seed() {
         min: minPlayers,
         max: maxPlayers,
       });
+
+      const teamsToInsert: z.infer<typeof insertTeamSchema>[] = Array.from(
+        {
+          length: faker.number.int({
+            min: Math.min(2, Math.ceil(playerCount / 2)),
+            max: Math.ceil(playerCount / 2),
+          }),
+        },
+        () => {
+          const teamName = faker.animal.insect();
+          return {
+            name: teamName,
+            matchId: returnedMatch.id,
+            details: faker.helpers.maybe(() => faker.lorem.sentence(), {
+              probability: 0.05,
+            }),
+          };
+        },
+      );
+      console.log(`Inserting teams for ${returnedMatch.name}...\n`);
+      const returnedTeams = faker.datatype.boolean(0.3)
+        ? await db.insert(team).values(teamsToInsert).returning()
+        : undefined;
+
       const weightedPlayers = filteredPlayers.map((player) => ({
         weight:
           player.userId === returnedMatch.userId
@@ -461,7 +491,18 @@ export async function seed() {
           matchId: returnedMatch.id,
           playerId: player,
           order: index + 1,
+          details: faker.helpers.maybe(() => faker.lorem.sentence(), {
+            probability: 0.05,
+          }),
+          teamId:
+            returnedTeams !== undefined
+              ? faker.helpers.maybe(
+                  () => faker.helpers.arrayElement(returnedTeams).id,
+                  { probability: 0.9 },
+                )
+              : undefined,
         }));
+      console.log(`Inserting match players for ${returnedMatch.name}...\n`);
       const matchPlayersResult = await db
         .insert(matchPlayer)
         .values(matchPlayerData)
@@ -470,6 +511,7 @@ export async function seed() {
         .select()
         .from(round)
         .where(eq(round.scoresheetId, returnedMatch.scoresheetId));
+
       const [matchScoresheet] = await db
         .select()
         .from(scoresheet)
@@ -477,27 +519,69 @@ export async function seed() {
       if (!matchScoresheet) {
         throw new Error("Scoresheet not found");
       }
+      const teamPlayers = matchPlayersResult.reduce<
+        Record<number, typeof matchPlayersResult>
+      >((acc, curr) => {
+        if (curr.teamId) {
+          if (acc[curr.teamId]) {
+            acc[curr.teamId]?.push(curr);
+          } else {
+            acc[curr.teamId] = [curr];
+          }
+        }
+        return acc;
+      }, {});
+      const maxScore =
+        matchScoresheet.roundsScore === "Aggregate" ||
+        matchScoresheet.roundsScore === "Best Of"
+          ? faker.number.int({ min: 10, max: 30 })
+          : 5;
+      const minScore =
+        matchScoresheet.winCondition === "Lowest Score"
+          ? faker.number.int({ min: -30, max: -1 })
+          : 0;
       const roundPlayerData: z.infer<typeof insertRoundPlayerSchema>[] =
-        matchRounds.flatMap((round) => {
-          const maxScore =
-            matchScoresheet.roundsScore === "Aggregate" ||
-            matchScoresheet.roundsScore === "Best Of"
-              ? faker.number.int({ min: 10, max: 30 })
-              : 5;
-          const minScore =
-            matchScoresheet.winCondition === "Lowest Score"
-              ? faker.number.int({ min: -30, max: -1 })
-              : 0;
-          return matchPlayersResult.map((matchPlayer) => ({
-            roundId: round.id,
-            matchPlayerId: matchPlayer.id,
-            score:
-              round.type === "Checkbox"
-                ? faker.helpers.maybe(() => round.score, { probability: 0.5 })
-                : faker.number.int({ min: minScore, max: maxScore }),
-          }));
+        returnedTeams !== undefined &&
+        matchPlayersResult.find(
+          (matchPlayerResult) => matchPlayerResult.teamId !== null,
+        )
+          ? Object.values(teamPlayers).flatMap((teamPlayers) => {
+              const scoreToSet = faker.number.int({
+                min: minScore,
+                max: maxScore,
+              });
+              const isChecked = faker.datatype.boolean(0.5);
+              return teamPlayers.flatMap((matchPlayer) => {
+                return matchRounds.map((round) => ({
+                  roundId: round.id,
+                  matchPlayerId: matchPlayer.id,
+                  score:
+                    round.type === "Checkbox"
+                      ? isChecked
+                        ? round.score
+                        : null
+                      : scoreToSet,
+                }));
+              });
+            })
+          : [];
+      matchPlayersResult
+        .filter((matchPlayerResult) => matchPlayerResult.teamId === null)
+        .forEach((matchPlayer) => {
+          matchRounds.forEach((round) => {
+            roundPlayerData.push({
+              roundId: round.id,
+              matchPlayerId: matchPlayer.id,
+              score:
+                round.type === "Checkbox"
+                  ? faker.helpers.maybe(() => round.score, {
+                      probability: 0.5,
+                    })
+                  : faker.number.int({ min: minScore, max: maxScore }),
+            });
+          });
         });
-
+      console.log(`Inserting round players for ${returnedMatch.name}...\n`);
       await db.insert(roundPlayers).values(roundPlayerData).returning();
 
       const finalScoreSqlStatement = () => {
@@ -521,6 +605,7 @@ export async function seed() {
         return sql<number>`0`.as("finalScore");
       };
 
+      console.log(`Calculating final scores for ${returnedMatch.name}...\n`);
       const returnedRoundPlayersGroupByMatchPLayer = await db
         .select({
           matchPlayerId: roundPlayer.matchPlayerId,

@@ -64,3 +64,9 @@ export {
   insertLocationSchema,
   selectLocationSchema,
 } from "./location";
+export {
+  default as team,
+  teamRelations,
+  insertTeamSchema,
+  selectTeamSchema,
+} from "./team";
