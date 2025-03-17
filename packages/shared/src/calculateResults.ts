@@ -90,12 +90,11 @@ export function calculatePlacement(players: Player[], scoresheet: scoreSheet) {
       return a.score - b.score;
     }
     if (scoresheet.winCondition === "Target Score") {
+      if (a.score == b.score) {
+        return 0;
+      }
       if (a.score === scoresheet.targetScore) return -1;
       if (b.score === scoresheet.targetScore) return 1;
-      return (
-        Math.abs(a.score - scoresheet.targetScore) -
-        Math.abs(b.score - scoresheet.targetScore)
-      );
     }
     return 0;
   });

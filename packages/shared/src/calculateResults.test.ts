@@ -167,8 +167,8 @@ describe("calculateFinalScores", () => {
     };
 
     expect(calculateFinalScores(players, scoresheet)).toEqual([
-      { id: 1, score: 30 },
-      { id: 2, score: 45 },
+      { id: 1, score: 30, teamId: null },
+      { id: 2, score: 45, teamId: null },
     ]);
   });
 
@@ -184,8 +184,8 @@ describe("calculateFinalScores", () => {
     };
 
     expect(calculateFinalScores(players, scoresheet)).toEqual([
-      { id: 1, score: 30 },
-      { id: 2, score: 45 },
+      { id: 1, score: 30, teamId: null },
+      { id: 2, score: 45, teamId: null },
     ]);
   });
 
@@ -201,8 +201,8 @@ describe("calculateFinalScores", () => {
     };
 
     expect(calculateFinalScores(players, scoresheet)).toEqual([
-      { id: 1, score: 30 },
-      { id: 2, score: 45 },
+      { id: 1, score: 30, teamId: null },
+      { id: 2, score: 45, teamId: null },
     ]);
   });
   it("should return correct scores for multiple players when the target score is not met", () => {
@@ -233,8 +233,8 @@ describe("calculateFinalScores", () => {
       targetScore: 50,
     };
     expect(calculateFinalScores(players, scoresheet)).toEqual([
-      { id: 1, score: 0 },
-      { id: 2, score: 0 },
+      { id: 1, score: 0, teamId: null },
+      { id: 2, score: 0, teamId: null },
     ]);
   });
 
@@ -249,8 +249,8 @@ describe("calculateFinalScores", () => {
       targetScore: 50,
     };
     expect(calculateFinalScores(players, scoresheet)).toEqual([
-      { id: 1, score: 30 },
-      { id: 2, score: 30 },
+      { id: 1, score: 30, teamId: null },
+      { id: 2, score: 30, teamId: null },
     ]);
   });
 });
