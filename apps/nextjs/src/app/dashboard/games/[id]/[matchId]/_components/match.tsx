@@ -252,15 +252,47 @@ export function Match({ matchId }: { matchId: number }) {
       match!.scoresheet,
     );
     let isTieBreaker = false;
-
-    for (let index = 0; index < playersPlacement.length; index++) {
-      if (
-        index > 0 &&
-        playersPlacement[index]?.placement ===
-          playersPlacement[index - 1]?.placement
-      ) {
-        isTieBreaker = true;
-        break;
+    const placements: Record<number, number> = {};
+    const nonTeamPlayerPlacements = playersPlacement
+      .filter((player) => {
+        const foundPlayer = players.find((p) => p.id === player.id);
+        return foundPlayer?.teamId === null;
+      })
+      .map((player) => player.placement);
+    const teamPlacements = Array.from(
+      new Set(
+        playersPlacement
+          .filter((player) => {
+            const foundPlayer = players.find((p) => p.id === player.id);
+            return foundPlayer?.teamId === null;
+          })
+          .map((player) => {
+            {
+              const foundPlayer = players.find((p) => p.id === player.id);
+              return foundPlayer?.teamId ?? null;
+            }
+          }),
+      ),
+    ).map((teamId) => {
+      const findFirstPlayer = players.find(
+        (player) => player.teamId === teamId,
+      );
+      const findPlayerPlacement = playersPlacement.find(
+        (player) => player.id === findFirstPlayer?.id,
+      );
+      return findPlayerPlacement?.placement ?? -1;
+    });
+    const teamAndPlayerPlacements = [
+      ...teamPlacements,
+      ...nonTeamPlayerPlacements,
+    ];
+    for (const currentPlacement of teamAndPlayerPlacements) {
+      if (currentPlacement) {
+        placements[currentPlacement] = (placements[currentPlacement] ?? 0) + 1;
+        if (placements[currentPlacement] > 1) {
+          isTieBreaker = true;
+          break;
+        }
       }
     }
     if (isTieBreaker) {
