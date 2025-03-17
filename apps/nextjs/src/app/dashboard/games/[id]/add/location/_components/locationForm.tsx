@@ -55,7 +55,6 @@ export default function SelectLocationForm({
   };
   const onSubmit = (data: formSchemaType) => {
     setIsSubmitting(true);
-    console.log(data.location);
     setLocation(data.location);
     setIsOpen(true);
     onBack();
