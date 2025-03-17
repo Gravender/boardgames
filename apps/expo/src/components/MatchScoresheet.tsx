@@ -190,6 +190,7 @@ export function MatchScoresheet({ data }: { data: Match }) {
         rounds: player.rounds.map((round) => ({
           score: round.score ?? 0,
         })),
+        teamId: player.teamId,
       })),
       data.scoresheet,
     );

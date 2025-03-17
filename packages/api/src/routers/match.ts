@@ -1,7 +1,7 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
-import { number, z } from "zod";
+import { z } from "zod";
 
 import type {
   insertMatchPlayerSchema,

@@ -418,6 +418,7 @@ export const playerRouter = createTRPCRouter({
         name: returnedPlayer[0].name,
         imageUrl: returnedPlayerImage?.image?.url ?? null,
         matches: 0,
+        team: 0,
       };
     }),
   update: protectedUserProcedure

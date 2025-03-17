@@ -157,8 +157,8 @@ describe("calculateFinalScore", () => {
 describe("calculateFinalScores", () => {
   it("should return correct scores for multiple players with the highest  aggregate score", () => {
     const players = [
-      { id: 1, rounds: [{ score: 10 }, { score: 20 }] },
-      { id: 2, rounds: [{ score: 15 }, { score: 30 }] },
+      { id: 1, rounds: [{ score: 10 }, { score: 20 }], teamId: null },
+      { id: 2, rounds: [{ score: 15 }, { score: 30 }], teamId: null },
     ];
     const scoresheet: scoreSheet = {
       roundsScore: "Aggregate",
@@ -174,8 +174,8 @@ describe("calculateFinalScores", () => {
 
   it("should return correct scores for multiple players with the lowest aggregate score", () => {
     const players = [
-      { id: 1, rounds: [{ score: 10 }, { score: 20 }] },
-      { id: 2, rounds: [{ score: 15 }, { score: 30 }] },
+      { id: 1, rounds: [{ score: 10 }, { score: 20 }], teamId: null },
+      { id: 2, rounds: [{ score: 15 }, { score: 30 }], teamId: null },
     ];
     const scoresheet: scoreSheet = {
       roundsScore: "Aggregate",
@@ -191,8 +191,8 @@ describe("calculateFinalScores", () => {
 
   it("should return correct scores for multiple players when the target score is met", () => {
     const players = [
-      { id: 1, rounds: [{ score: 10 }, { score: 20 }] },
-      { id: 2, rounds: [{ score: 15 }, { score: 30 }] },
+      { id: 1, rounds: [{ score: 10 }, { score: 20 }], teamId: null },
+      { id: 2, rounds: [{ score: 15 }, { score: 30 }], teamId: null },
     ];
     const scoresheet: scoreSheet = {
       roundsScore: "Aggregate",
@@ -207,8 +207,8 @@ describe("calculateFinalScores", () => {
   });
   it("should return correct scores for multiple players when the target score is not met", () => {
     const players = [
-      { id: 1, rounds: [{ score: 10 }, { score: 20 }] },
-      { id: 2, rounds: [{ score: 15 }, { score: 30 }] },
+      { id: 1, rounds: [{ score: 10 }, { score: 20 }], teamId: null },
+      { id: 2, rounds: [{ score: 15 }, { score: 30 }], teamId: null },
     ];
     const scoresheet: scoreSheet = {
       roundsScore: "Aggregate",
@@ -217,15 +217,15 @@ describe("calculateFinalScores", () => {
     };
 
     expect(calculateFinalScores(players, scoresheet)).toEqual([
-      { id: 1, score: 30 },
-      { id: 2, score: 45 },
+      { id: 1, score: 30, teamId: null },
+      { id: 2, score: 45, teamId: null },
     ]);
   });
 
   it("should return 0 scores for players with no rounds", () => {
     const players = [
-      { id: 1, rounds: [] },
-      { id: 2, rounds: [] },
+      { id: 1, rounds: [], teamId: null },
+      { id: 2, rounds: [], teamId: null },
     ];
     const scoresheet: scoreSheet = {
       roundsScore: "Aggregate",
@@ -240,8 +240,8 @@ describe("calculateFinalScores", () => {
 
   it("should handle ties when players have the same final score", () => {
     const players = [
-      { id: 1, rounds: [{ score: 30 }] },
-      { id: 2, rounds: [{ score: 30 }] },
+      { id: 1, rounds: [{ score: 30 }], teamId: null },
+      { id: 2, rounds: [{ score: 30 }], teamId: null },
     ];
     const scoresheet: scoreSheet = {
       roundsScore: "Aggregate",
@@ -258,8 +258,8 @@ describe("calculateFinalScores", () => {
 describe("calculatePlacement", () => {
   it("should correctly rank players based on highest score", () => {
     const players = [
-      { id: 1, rounds: [{ score: 10 }, { score: 20 }] },
-      { id: 2, rounds: [{ score: 15 }, { score: 30 }] },
+      { id: 1, rounds: [{ score: 10 }, { score: 20 }], teamId: null },
+      { id: 2, rounds: [{ score: 15 }, { score: 30 }], teamId: null },
     ];
     const scoresheet: scoreSheet = {
       roundsScore: "Aggregate",
@@ -275,8 +275,8 @@ describe("calculatePlacement", () => {
 
   it("should correctly rank players based on lowest score", () => {
     const players = [
-      { id: 1, rounds: [{ score: 10 }, { score: 20 }] },
-      { id: 2, rounds: [{ score: 15 }, { score: 30 }] },
+      { id: 1, rounds: [{ score: 10 }, { score: 20 }], teamId: null },
+      { id: 2, rounds: [{ score: 15 }, { score: 30 }], teamId: null },
     ];
     const scoresheet: scoreSheet = {
       roundsScore: "Aggregate",
@@ -292,14 +292,14 @@ describe("calculatePlacement", () => {
 
   it("should correctly rank players based on target score", () => {
     const players = [
-      { id: 1, rounds: [{ score: 10 }, { score: 50 }] },
-      { id: 2, rounds: [{ score: 15 }, { score: 30 }] },
-      { id: 3, rounds: [{ score: 20 }, { score: 40 }] },
-      { id: 4, rounds: [{ score: 25 }, { score: 60 }] },
-      { id: 5, rounds: [{ score: 30 }, { score: 70 }] },
-      { id: 6, rounds: [{ score: 35 }, { score: 80 }] },
-      { id: 7, rounds: [{ score: 27 }, { score: 23 }] },
-      { id: 8, rounds: [{ score: 45 }, { score: 100 }] },
+      { id: 1, rounds: [{ score: 10 }, { score: 50 }], teamId: null },
+      { id: 2, rounds: [{ score: 15 }, { score: 30 }], teamId: null },
+      { id: 3, rounds: [{ score: 20 }, { score: 40 }], teamId: null },
+      { id: 4, rounds: [{ score: 25 }, { score: 60 }], teamId: null },
+      { id: 5, rounds: [{ score: 30 }, { score: 70 }], teamId: null },
+      { id: 6, rounds: [{ score: 35 }, { score: 80 }], teamId: null },
+      { id: 7, rounds: [{ score: 27 }, { score: 23 }], teamId: null },
+      { id: 8, rounds: [{ score: 45 }, { score: 100 }], teamId: null },
     ];
     const scoresheet: scoreSheet = {
       roundsScore: "Aggregate",
@@ -321,8 +321,8 @@ describe("calculatePlacement", () => {
 
   it("should correctly rank players when a target score is met", () => {
     const players = [
-      { id: 1, rounds: [{ score: 10 }, { score: 50 }] },
-      { id: 2, rounds: [{ score: 15 }, { score: 30 }] },
+      { id: 1, rounds: [{ score: 10 }, { score: 50 }], teamId: null },
+      { id: 2, rounds: [{ score: 15 }, { score: 30 }], teamId: null },
     ];
     const scoresheet: scoreSheet = {
       roundsScore: "Best Of",
@@ -338,8 +338,8 @@ describe("calculatePlacement", () => {
 
   it("should calculate the best of high score correctly", () => {
     const players = [
-      { id: 1, rounds: [{ score: 10 }, { score: 20 }] },
-      { id: 2, rounds: [{ score: 15 }, { score: 30 }] },
+      { id: 1, rounds: [{ score: 10 }, { score: 20 }], teamId: null },
+      { id: 2, rounds: [{ score: 15 }, { score: 30 }], teamId: null },
     ];
     const scoresheet: scoreSheet = {
       roundsScore: "Best Of",
@@ -355,8 +355,8 @@ describe("calculatePlacement", () => {
 
   it("should calculate the best of lowest score correctly", () => {
     const players = [
-      { id: 1, rounds: [{ score: 10 }, { score: 20 }] },
-      { id: 2, rounds: [{ score: 15 }, { score: 30 }] },
+      { id: 1, rounds: [{ score: 10 }, { score: 20 }], teamId: null },
+      { id: 2, rounds: [{ score: 15 }, { score: 30 }], teamId: null },
     ];
     const scoresheet: scoreSheet = {
       roundsScore: "Best Of",
@@ -372,9 +372,9 @@ describe("calculatePlacement", () => {
 
   it("should assign the same placement for tied players", () => {
     const players = [
-      { id: 1, rounds: [{ score: 30 }] },
-      { id: 2, rounds: [{ score: 30 }] },
-      { id: 3, rounds: [{ score: 20 }] },
+      { id: 1, rounds: [{ score: 30 }], teamId: null },
+      { id: 2, rounds: [{ score: 30 }], teamId: null },
+      { id: 3, rounds: [{ score: 20 }], teamId: null },
     ];
     const scoresheet: scoreSheet = {
       roundsScore: "Aggregate",
@@ -390,9 +390,9 @@ describe("calculatePlacement", () => {
 
   it("should correctly rank players when all have the same score", () => {
     const players = [
-      { id: 1, rounds: [{ score: 40 }] },
-      { id: 2, rounds: [{ score: 40 }] },
-      { id: 3, rounds: [{ score: 40 }] },
+      { id: 1, rounds: [{ score: 40 }], teamId: null },
+      { id: 2, rounds: [{ score: 40 }], teamId: null },
+      { id: 3, rounds: [{ score: 40 }], teamId: null },
     ];
     const scoresheet: scoreSheet = {
       roundsScore: "Aggregate",
@@ -407,7 +407,7 @@ describe("calculatePlacement", () => {
   });
 
   it("should correctly rank a single player", () => {
-    const players = [{ id: 1, rounds: [{ score: 30 }] }];
+    const players = [{ id: 1, rounds: [{ score: 30 }], teamId: null }];
     const scoresheet: scoreSheet = {
       roundsScore: "Aggregate",
       winCondition: "Highest Score",
