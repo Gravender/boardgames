@@ -6,7 +6,7 @@ import { createTable } from "./baseTable";
 
 const users = createTable("user", {
   id: serial("id").primaryKey(),
-  clerkUserId: varchar("clerk_user_id", { length: 255 }).notNull(),
+  clerkUserId: varchar("clerk_user_id", { length: 255 }).notNull().unique(),
   email: varchar("email", { length: 255 }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
