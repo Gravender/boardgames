@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -57,6 +57,10 @@ export default function SelectPlayersForm({
     setIsOpen(true);
     onBack();
   };
+  const { update, append, remove } = useFieldArray({
+    control: form.control,
+    name: "players",
+  });
 
   return (
     <div className="flex w-full items-center justify-center">
@@ -74,7 +78,7 @@ export default function SelectPlayersForm({
                       Select the players for the match
                     </FormDescription>
                   </div>
-                  <ScrollArea className="h-[65dvh] p-6 pt-0 sm:h-[75dvh]">
+                  <ScrollArea className="h-[65dvh] pt-0 sm:h-[75dvh] sm:p-6">
                     <div className="flex flex-col gap-2 rounded-lg">
                       {players.map((player) => (
                         <FormField
@@ -104,13 +108,10 @@ export default function SelectPlayersForm({
                                     }
                                     onCheckedChange={(checked) => {
                                       return checked
-                                        ? field.onChange([
-                                            ...field.value,
-                                            player,
-                                          ])
-                                        : field.onChange(
-                                            field.value.filter(
-                                              (value) => value.id !== player.id,
+                                        ? append({ ...player, team: null })
+                                        : remove(
+                                            field.value.findIndex(
+                                              (i) => i.id === player.id,
                                             ),
                                           );
                                     }}
@@ -128,14 +129,59 @@ export default function SelectPlayersForm({
                                         <User />
                                       </AvatarFallback>
                                     </Avatar>
-                                    <span className="text-lg font-semibold">
+                                    <span className="font-semibold sm:text-lg">
                                       {player.name}
                                     </span>
                                   </div>
+                                  {field.value.findIndex(
+                                    (i) => i.id === player.id,
+                                  ) > -1 && (
+                                    <div className="flex gap-1 sm:gap-2">
+                                      {Array.from({ length: 6 }).map(
+                                        (_, index) => (
+                                          <Button
+                                            key={index}
+                                            className="size-8 rounded-sm text-xs sm:size-10"
+                                            variant={
+                                              field.value.find(
+                                                (i) => i.id === player.id,
+                                              )?.team ===
+                                              index + 1
+                                                ? "default"
+                                                : "secondary"
+                                            }
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              const foundPlayer =
+                                                field.value.find(
+                                                  (i) => i.id === player.id,
+                                                );
+                                              if (foundPlayer) {
+                                                if (
+                                                  foundPlayer.team ===
+                                                  index + 1
+                                                ) {
+                                                  foundPlayer.team = null;
+                                                } else {
+                                                  foundPlayer.team = index + 1;
+                                                }
 
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-background">
-                                    {player.matches}
-                                  </div>
+                                                update(
+                                                  field.value.findIndex(
+                                                    (i) => i.id === player.id,
+                                                  ),
+                                                  foundPlayer,
+                                                );
+                                              }
+                                            }}
+                                          >
+                                            {index + 1}
+                                          </Button>
+                                        ),
+                                      )}
+                                    </div>
+                                  )}
                                 </FormLabel>
                               </FormItem>
                             );
@@ -149,7 +195,7 @@ export default function SelectPlayersForm({
               )}
             />
 
-            <CardFooter className="gap-2">
+            <CardFooter className="gap-2 pt-2">
               <Button type="reset" variant="secondary" onClick={() => onBack()}>
                 Cancel
               </Button>

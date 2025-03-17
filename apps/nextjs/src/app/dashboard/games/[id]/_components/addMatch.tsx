@@ -145,11 +145,37 @@ function Content({
 
   const onSubmit = (values: formSchemaType) => {
     setIsSubmitting(true);
+    const teams = values.players.reduce<
+      Record<string, { name: string; players: { id: number }[] }>
+    >((acc, player) => {
+      if (player.team === null) {
+        const noTeam = acc["No Team"];
+        if (noTeam) {
+          noTeam.players.push({ id: player.id });
+        } else {
+          acc["No Team"] = {
+            name: "No Team" as const,
+            players: [{ id: player.id }],
+          };
+        }
+      } else {
+        const team = acc[player.team];
+        if (team) {
+          team.players.push({ id: player.id });
+        } else {
+          acc[player.team] = {
+            name: player.team.toString(),
+            players: [{ id: player.id }],
+          };
+        }
+      }
+      return acc;
+    }, {});
     createMatch.mutate({
       gameId: gameId,
       name: values.name,
       date: values.date,
-      players: values.players,
+      teams: Object.values(teams),
     });
   };
   return (

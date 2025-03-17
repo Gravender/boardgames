@@ -1,7 +1,7 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
-import { z } from "zod";
+import { and, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
+import { number, z } from "zod";
 
 import type {
   insertMatchPlayerSchema,
@@ -19,6 +19,7 @@ import {
   selectMatchPlayerSchema,
   selectMatchSchema,
   selectRoundPlayerSchema,
+  team,
 } from "@board-games/db/schema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
@@ -35,15 +36,18 @@ export const matchRouter = createTRPCRouter({
         })
         .required({ name: true })
         .extend({
-          players: z
+          teams: z
             .array(
-              insertPlayerSchema
-                .pick({
-                  name: true,
-                  imageId: true,
-                  id: true,
-                })
-                .required({ id: true }),
+              z.object({
+                name: z.string().or(z.literal("No Team")),
+                players: z
+                  .array(
+                    insertPlayerSchema
+                      .pick({ id: true })
+                      .required({ id: true }),
+                  )
+                  .min(1),
+              }),
             )
             .min(1),
         }),
@@ -117,24 +121,84 @@ export const matchRouter = createTRPCRouter({
           message: "Match Not Created Successfully",
         });
       }
-      const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
-        input.players.map((player) => ({
-          matchId: returningMatch.id,
-          playerId: player.id,
-        }));
-      const returnedMatchPlayers = await ctx.db
-        .insert(matchPlayer)
-        .values(playersToInsert)
-        .returning();
-
-      const roundPlayersToInsert: z.infer<typeof insertRoundPlayerSchema>[] =
-        insertedRounds.flatMap((round) => {
-          return returnedMatchPlayers.map((player) => ({
-            roundId: round.id,
-            matchPlayerId: player.id,
+      if (input.teams.length === 1 && input.teams[0] !== undefined) {
+        const inputPlayers = input.teams[0].players;
+        const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
+          inputPlayers.map((player) => ({
+            matchId: returningMatch.id,
+            playerId: player.id,
           }));
-        });
-      await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);
+        const returnedMatchPlayers = await ctx.db
+          .insert(matchPlayer)
+          .values(playersToInsert)
+          .returning();
+
+        const roundPlayersToInsert: z.infer<typeof insertRoundPlayerSchema>[] =
+          insertedRounds.flatMap((round) => {
+            return returnedMatchPlayers.map((player) => ({
+              roundId: round.id,
+              matchPlayerId: player.id,
+            }));
+          });
+        await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);
+      } else {
+        for (const inputTeam of input.teams) {
+          if (inputTeam.name === "No Team") {
+            const playersToInsert = inputTeam.players.map<
+              z.infer<typeof insertMatchPlayerSchema>
+            >((player) => ({
+              matchId: returningMatch.id,
+              playerId: player.id,
+              teamId: null,
+            }));
+
+            const returnedMatchPlayers = await ctx.db
+              .insert(matchPlayer)
+              .values(playersToInsert)
+              .returning();
+            const roundPlayersToInsert: z.infer<
+              typeof insertRoundPlayerSchema
+            >[] = insertedRounds.flatMap((round) => {
+              return returnedMatchPlayers.map((player) => ({
+                roundId: round.id,
+                matchPlayerId: player.id,
+              }));
+            });
+            await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);
+          } else {
+            const [returningTeam] = await ctx.db
+              .insert(team)
+              .values({ name: inputTeam.name, matchId: returningMatch.id })
+              .returning();
+
+            if (!returningTeam) {
+              throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+            }
+
+            const playersToInsert = inputTeam.players.map<
+              z.infer<typeof insertMatchPlayerSchema>
+            >((player) => ({
+              matchId: returningMatch.id,
+              playerId: player.id,
+              teamId: returningTeam.id, // Assign player to team
+            }));
+
+            const returnedMatchPlayers = await ctx.db
+              .insert(matchPlayer)
+              .values(playersToInsert)
+              .returning();
+            const roundPlayersToInsert: z.infer<
+              typeof insertRoundPlayerSchema
+            >[] = insertedRounds.flatMap((round) => {
+              return returnedMatchPlayers.map((player) => ({
+                roundId: round.id,
+                matchPlayerId: player.id,
+              }));
+            });
+            await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);
+          }
+        }
+      }
       return returningMatch;
     }),
   getMatch: protectedUserProcedure
@@ -160,6 +224,7 @@ export const matchRouter = createTRPCRouter({
               roundPlayers: true,
             },
           },
+          teams: true,
         },
       });
       if (!returnedMatch) {
@@ -173,9 +238,10 @@ export const matchRouter = createTRPCRouter({
               (roundPlayer) => roundPlayer.roundId === scoresheetRound.id,
             );
             if (!matchPlayerRound) {
+              const message = `Match Player Round not found with roundId: ${scoresheetRound.id} and matchPlayerId: ${matchPlayer.id}`;
               throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
-                message: "Match Player Round not found",
+                message: message,
               });
             }
             return matchPlayerRound;
@@ -185,6 +251,7 @@ export const matchRouter = createTRPCRouter({
           playerId: matchPlayer.player.id,
           imageUrl: matchPlayer.player.image?.url,
           details: matchPlayer.details,
+          teamId: matchPlayer.teamId,
         };
       });
       return {
@@ -194,6 +261,7 @@ export const matchRouter = createTRPCRouter({
         scoresheet: returnedMatch.scoresheet,
         gameId: returnedMatch.gameId,
         players: refinedPlayers,
+        teams: returnedMatch.teams,
         duration: returnedMatch.duration,
         finished: returnedMatch.finished,
         running: returnedMatch.running,
@@ -213,6 +281,7 @@ export const matchRouter = createTRPCRouter({
               placement: true,
               score: true,
               winner: true,
+              teamId: true,
             },
             with: {
               player: {
@@ -238,6 +307,7 @@ export const matchRouter = createTRPCRouter({
             },
           },
           location: true,
+          teams: true,
         },
       });
       if (!returnedMatch) {
@@ -296,6 +366,7 @@ export const matchRouter = createTRPCRouter({
           score: matchPlayer.score,
           placement: matchPlayer.placement,
           winner: matchPlayer.winner,
+          teamId: matchPlayer.teamId,
         };
       });
       refinedPlayers.sort((a, b) => {
@@ -414,6 +485,7 @@ export const matchRouter = createTRPCRouter({
         gameName: returnedMatch.game.name,
         gameImageUrl: returnedMatch.game.image?.url,
         players: refinedPlayers,
+        teams: returnedMatch.teams,
         duration: returnedMatch.duration,
         previousMatches: previousMatches,
         playerStats: finalPlayersWithFirstGame,
@@ -662,11 +734,26 @@ export const matchRouter = createTRPCRouter({
         .where(eq(match.id, input.matchId));
       await ctx.db
         .update(matchPlayer)
+        .set({ winner: false })
+        .where(
+          and(
+            eq(matchPlayer.matchId, input.matchId),
+            notInArray(
+              matchPlayer.id,
+              input.winners.map((winner) => winner.id),
+            ),
+          ),
+        );
+      await ctx.db
+        .update(matchPlayer)
         .set({ winner: true })
         .where(
-          inArray(
-            matchPlayer.id,
-            input.winners.map((winner) => winner.id),
+          and(
+            eq(matchPlayer.matchId, input.matchId),
+            inArray(
+              matchPlayer.id,
+              input.winners.map((winner) => winner.id),
+            ),
           ),
         );
     }),
@@ -754,18 +841,26 @@ export const matchRouter = createTRPCRouter({
         .set({ comment: input.comment })
         .where(eq(match.id, input.match.id));
     }),
-  updateMatchPlayerDetails: protectedUserProcedure
+  updateMatchDetails: protectedUserProcedure
     .input(
       z.object({
-        matchPlayer: selectMatchPlayerSchema.pick({ id: true }),
+        id: z.number(),
         details: z.string(),
+        type: z.enum(["Player", "Team"]),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db
-        .update(matchPlayer)
-        .set({ details: input.details })
-        .where(eq(matchPlayer.id, input.matchPlayer.id));
+      if (input.type === "Player") {
+        await ctx.db
+          .update(matchPlayer)
+          .set({ details: input.details })
+          .where(eq(matchPlayer.id, input.id));
+      } else {
+        await ctx.db
+          .update(team)
+          .set({ details: input.details })
+          .where(eq(team.id, input.id));
+      }
     }),
   editMatch: protectedUserProcedure
     .input(

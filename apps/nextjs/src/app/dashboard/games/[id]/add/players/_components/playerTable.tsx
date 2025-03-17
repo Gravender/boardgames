@@ -19,7 +19,7 @@ export function PlayersTable({
   const [players, setPlayers] = useState(data);
 
   return (
-    <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
+    <div className="container relative mx-auto h-[90vh] max-w-3xl px-1 sm:px-4">
       <CardHeader>
         <CardTitle>Select Players</CardTitle>
       </CardHeader>

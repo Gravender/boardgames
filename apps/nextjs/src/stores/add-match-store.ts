@@ -11,6 +11,7 @@ export const playersSchema = z
       .extend({
         imageUrl: z.string().nullable(),
         matches: z.number(),
+        team: z.number().nullable(),
       }),
   )
   .refine((players) => players.length > 0, {
