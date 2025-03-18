@@ -118,27 +118,25 @@ const isAuthed = t.middleware(async ({ ctx, next }) => {
 });
 
 const isUser = t.middleware(async ({ ctx, next }) => {
-  if (!ctx.auth.userId) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
-  }
-  let returnedUser = (
-    await ctx.db
-      .selectDistinct()
+  const returnedUser = await ctx.db.transaction(async (tx) => {
+    if (ctx.auth.userId === null) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    const [returnedUser] = await tx
+      .select()
       .from(user)
-      .where(eq(user.clerkUserId, ctx.auth.userId))
-  )[0];
-  if (!returnedUser) {
-    await ctx.db.insert(user).values({ clerkUserId: ctx.auth.userId });
-    returnedUser = (
-      await ctx.db
-        .selectDistinct()
-        .from(user)
-        .where(eq(user.clerkUserId, ctx.auth.userId))
-    )[0];
-  }
-  if (!returnedUser) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
-  }
+      .where(eq(user.clerkUserId, ctx.auth.userId));
+
+    if (!returnedUser) {
+      const [insertedUser] = await tx
+        .insert(user)
+        .values({ clerkUserId: ctx.auth.userId })
+        .returning();
+      if (!insertedUser) throw new TRPCError({ code: "UNAUTHORIZED" });
+      return insertedUser;
+    }
+    return returnedUser;
+  });
   return next({
     ctx: {
       auth: ctx.auth,

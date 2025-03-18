@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { Webhook } from "svix";
 
 import { env } from "~/env";
+import { caller } from "~/trpc/server";
 
 export async function POST(req: Request) {
   const SIGNING_SECRET = env.SIGNING_SECRET;
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
   }
 
   // Get body
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const payload = await req.json();
   const body = JSON.stringify(payload);
 
@@ -54,6 +56,8 @@ export async function POST(req: Request) {
 
   if (evt.type === "user.created") {
     console.log("userId:", evt.data.id);
+    const result = await caller.user.isInDb({ userId: evt.data.id });
+    console.log("result:", result);
   }
 
   return new Response("Webhook received", { status: 200 });
