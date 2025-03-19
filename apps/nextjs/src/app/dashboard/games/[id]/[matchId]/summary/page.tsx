@@ -274,7 +274,9 @@ export default async function Page({ params }: Props) {
                 <div
                   className={cn(
                     "flex items-center justify-between p-4",
-                    data.placement == 1 && "bg-green-500/10",
+                    summary.scoresheet.winCondition === "Manual"
+                      ? data.winner
+                      : data.placement == 1 && "bg-green-500/10",
                   )}
                   key={`match-${data.id}`}
                 >
@@ -343,7 +345,11 @@ export default async function Page({ params }: Props) {
                       </div>
                     </div>
                   )}
-                  <span>{data.score ?? 0}</span>
+                  <span>
+                    {summary.scoresheet.winCondition === "Manual"
+                      ? data.score
+                      : (data.score ?? 0)}
+                  </span>
                 </div>
               );
             })}
@@ -366,12 +372,16 @@ export default async function Page({ params }: Props) {
                   <TableHead className="font-semibold text-card-foreground">
                     Wins
                   </TableHead>
-                  <TableHead className="font-semibold text-card-foreground">
-                    Best
-                  </TableHead>
-                  <TableHead className="font-semibold text-card-foreground">
-                    Worst
-                  </TableHead>
+                  {summary.scoresheet.winCondition !== "Manual" && (
+                    <>
+                      <TableHead className="font-semibold text-card-foreground">
+                        Best
+                      </TableHead>
+                      <TableHead className="font-semibold text-card-foreground">
+                        Worst
+                      </TableHead>
+                    </>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -408,8 +418,12 @@ export default async function Page({ params }: Props) {
                       <TableHead>{player.name}</TableHead>
                       <TableCell>{player.plays}</TableCell>
                       <TableCell>{player.wins}</TableCell>
-                      <TableCell>{Best ?? ""}</TableCell>
-                      <TableCell>{Worst ?? ""}</TableCell>
+                      {summary.scoresheet.winCondition !== "Manual" && (
+                        <>
+                          <TableCell>{Best ?? ""}</TableCell>
+                          <TableCell>{Worst ?? ""}</TableCell>
+                        </>
+                      )}
                     </TableRow>
                   );
                 })}
