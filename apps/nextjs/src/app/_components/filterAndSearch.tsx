@@ -60,9 +60,9 @@ export function FilterAndSearch<T>({
       if (a == null) return sortOrder === "asc" ? -1 : 1;
       if (b == null) return sortOrder === "asc" ? 1 : -1;
 
-      if (typeof a === "number" && typeof b === "number") return a - b;
       if (a instanceof Date && b instanceof Date)
         return a.getTime() - b.getTime();
+      if (Number(a) && Number(b)) return Number(a) - Number(b);
 
       return String(a).localeCompare(String(b));
     };
