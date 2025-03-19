@@ -13,7 +13,7 @@ export default async function Page({
   params: Promise<{ date: string }>;
 }) {
   const date = (await params).date;
-  if (!isValid(date)) redirect("/dashboard/calendar");
+  if (!isValid(new Date(date))) redirect("/dashboard/calendar");
   const matches = await caller.match.getMatchesByDate({
     date: new Date(date),
   });

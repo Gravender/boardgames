@@ -511,7 +511,12 @@ export const matchRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const matches = await ctx.db.query.match.findMany({
-        where: sql`${match.date}::date = ${input.date.toLocaleDateString()}::date`,
+        where: and(
+          sql`
+    date_trunc('day', ${match.date}) = date_trunc('day', ${input.date.toISOString().split("T")[0]}::date)
+  `,
+          eq(match.userId, ctx.userId),
+        ),
         with: {
           game: {
             with: {
