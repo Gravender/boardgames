@@ -34,6 +34,10 @@ export default async function Page({ params }: Props) {
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
   void prefetch(trpc.game.getGame.queryOptions({ id: Number(id) }));
+  void prefetch(
+    trpc.game.getGameScoresheets.queryOptions({ gameId: Number(id) }),
+  );
+  void prefetch(trpc.location.getDefaultLocation.queryOptions());
   return (
     <HydrateClient>
       <div className="flex w-full items-center justify-center">

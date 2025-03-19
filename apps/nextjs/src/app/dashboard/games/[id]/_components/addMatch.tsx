@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, X } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -63,10 +67,10 @@ export function AddMatchDialog({
 }) {
   const trpc = useTRPC();
   const { isOpen, setIsOpen } = useAddMatchStore((state) => state);
-  const { data: defaultLocation } = useQuery(
+  const { data: defaultLocation } = useSuspenseQuery(
     trpc.location.getDefaultLocation.queryOptions(),
   );
-  const { data: scoreSheets } = useQuery(
+  const { data: scoreSheets } = useSuspenseQuery(
     trpc.game.getGameScoresheets.queryOptions({ gameId: gameId }),
   );
   return (
@@ -77,7 +81,7 @@ export function AddMatchDialog({
           gameName={gameName}
           matches={matches}
           defaultLocation={defaultLocation ?? null}
-          scoresheets={scoreSheets ?? []}
+          scoresheets={scoreSheets}
         />
       </DialogContent>
       <div className="flex h-full w-full flex-col justify-end">
