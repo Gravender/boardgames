@@ -263,12 +263,15 @@ export default function UploadBGGdata() {
                           {...rest}
                         />
                       </label>
-                      {value && (
-                        <p className="text-sm text-muted-foreground">
-                          Selected file:{" "}
-                          {value instanceof File ? value.name : ""}
-                        </p>
-                      )}
+                      {
+                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                        value && (
+                          <p className="text-sm text-muted-foreground">
+                            Selected file:{" "}
+                            {value instanceof File ? value.name : ""}
+                          </p>
+                        )
+                      }
                     </div>
                   </FormControl>
                   <FormDescription>

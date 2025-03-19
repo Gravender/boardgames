@@ -17,7 +17,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (isNaN(Number(id))) redirect("/dashboard/locations");
   const location = await caller.location.getLocation({ id: Number(id) });
-  if (!location) redirect("/dashboard/locations");
   return {
     title: location.name,
     description: `${location.name} Match Tracker`,
