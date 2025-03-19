@@ -1,6 +1,5 @@
 "use client";
 
-import type { z } from "zod";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, X } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
@@ -33,6 +33,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@board-games/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@board-games/ui/select";
 
 import { Spinner } from "~/components/spinner";
 import { useAddMatchStore } from "~/providers/add-match-provider";
@@ -59,6 +66,9 @@ export function AddMatchDialog({
   const { data: defaultLocation } = useQuery(
     trpc.location.getDefaultLocation.queryOptions(),
   );
+  const { data: scoreSheets } = useQuery(
+    trpc.game.getGameScoresheets.queryOptions({ gameId: gameId }),
+  );
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[425px]">
@@ -67,6 +77,7 @@ export function AddMatchDialog({
           gameName={gameName}
           matches={matches}
           defaultLocation={defaultLocation ?? null}
+          scoresheets={scoreSheets ?? []}
         />
       </DialogContent>
       <div className="flex h-full w-full flex-col justify-end">
@@ -88,6 +99,7 @@ export function AddMatchDialog({
 const formSchema = matchSchema.extend({
   players: playersSchema,
   location: locationSchema,
+  scoresheetId: z.number(),
 });
 type formSchemaType = z.infer<typeof formSchema>;
 function Content({
@@ -95,16 +107,17 @@ function Content({
   gameId,
   gameName,
   defaultLocation,
+  scoresheets,
 }: {
   gameId: Game["id"];
   gameName: Game["name"];
   matches: number;
   defaultLocation: RouterOutputs["location"]["getDefaultLocation"];
+  scoresheets: RouterOutputs["game"]["getGameScoresheets"];
 }) {
   const trpc = useTRPC();
-  const { isOpen, match, setMatch, setLocation, reset } = useAddMatchStore(
-    (state) => state,
-  );
+  const { isOpen, match, setMatch, setLocation, setScoresheetId, reset } =
+    useAddMatchStore((state) => state);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingPlayers, setIsGettingPlayers] = useState(false);
   const [isGettingLocations, setIsGettingLocations] = useState(false);
@@ -117,6 +130,11 @@ function Content({
       date: match.date,
       players: match.players,
       location: match.location === undefined ? defaultLocation : match.location,
+      scoresheetId:
+        match.scoresheetId === -1
+          ? (scoresheets.find((scoresheet) => scoresheet.type === "Default")
+              ?.id ?? 0)
+          : match.scoresheetId,
     },
   });
   const createMatch = useMutation(
@@ -176,6 +194,7 @@ function Content({
       name: values.name,
       date: values.date,
       teams: Object.values(teams),
+      scoresheetId: values.scoresheetId,
     });
   };
   return (
@@ -317,6 +336,38 @@ function Content({
                     <X />
                   </Button>
                 </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="scoresheetId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Scoresheet:</FormLabel>
+                <Select
+                  onValueChange={(e) => {
+                    field.onChange(e);
+                    setScoresheetId(Number(e));
+                  }}
+                  defaultValue={field.value.toString()}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a verified email to display" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {scoresheets.map((scoresheet) => {
+                      return (
+                        <SelectItem value={scoresheet.id.toString()}>
+                          {scoresheet.name}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

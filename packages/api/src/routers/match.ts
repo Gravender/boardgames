@@ -50,6 +50,7 @@ export const matchRouter = createTRPCRouter({
               }),
             )
             .min(1),
+          scoresheetId: z.number(),
         }),
     )
     .mutation(async ({ ctx, input }) => {

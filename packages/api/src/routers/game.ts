@@ -1,6 +1,7 @@
 import type { SQL } from "drizzle-orm";
+import type { PgColumn } from "drizzle-orm/pg-core";
 import { TRPCError } from "@trpc/server";
-import { and, count, eq, inArray, sql } from "drizzle-orm";
+import { and, count, eq, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type {
@@ -188,6 +189,18 @@ export const gameRouter = createTRPCRouter({
         name: result.name,
         imageUrl: result.image,
       };
+    }),
+  getGameScoresheets: protectedUserProcedure
+    .input(z.object({ gameId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const returnedScoresheets = await ctx.db.query.scoresheet.findMany({
+        where: and(
+          eq(scoresheet.userId, ctx.userId),
+          eq(scoresheet.gameId, input.gameId),
+          or(eq(scoresheet.type, "Default"), eq(scoresheet.type, "Game")),
+        ),
+      });
+      return returnedScoresheets;
     }),
   getEditGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))

@@ -39,6 +39,7 @@ export const addMatchSchema = z.object({
   match: matchSchema.extend({
     players: playersSchema,
     location: locationSchema,
+    scoresheetId: z.number(),
   }),
 });
 
@@ -50,6 +51,7 @@ export interface AddMatchActions {
   setMatch: (match: Match) => void;
   setPlayers: (players: Players) => void;
   setLocation: (location: Location) => void;
+  setScoresheetId: (scoresheetId: number) => void;
   reset: () => void;
 }
 
@@ -63,6 +65,7 @@ export const defaultInitState: AddMatchState = {
     date: new Date(),
     players: [],
     location: undefined,
+    scoresheetId: -1,
   },
 };
 export const createAddMatchStore = (
@@ -83,6 +86,10 @@ export const createAddMatchStore = (
       set((state) => ({ match: { ...state.match, players: players } })),
     setLocation: (location: Location) =>
       set((state) => ({ match: { ...state.match, location: location } })),
+    setScoresheetId: (scoresheetId: number) =>
+      set((state) => ({
+        match: { ...state.match, scoresheetId: scoresheetId },
+      })),
     reset: () => set(defaultInitState),
   }));
 };
