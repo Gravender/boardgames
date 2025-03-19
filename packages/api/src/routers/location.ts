@@ -36,7 +36,12 @@ export const locationRouter = createTRPCRouter({
           matches: true,
         },
       });
-      if (!result) throw new TRPCError({ code: "NOT_FOUND" });
+      if (!result)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Location not found",
+          cause: input.id,
+        });
       return result;
     }),
   getDefaultLocation: protectedUserProcedure.query(async ({ ctx }) => {
