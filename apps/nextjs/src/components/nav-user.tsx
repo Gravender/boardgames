@@ -1,20 +1,12 @@
 "use client";
 
-import { SignOutButton } from "@clerk/nextjs";
-import {
-  BadgeCheck,
-  Bell,
-  ChevronsUpDown,
-  CreditCard,
-  LogOut,
-  Sparkles,
-} from "lucide-react";
+import { SignOutButton, useUser } from "@clerk/nextjs";
+import { ChevronsUpDown, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -27,17 +19,10 @@ import {
   useSidebar,
 } from "@board-games/ui/sidebar";
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string;
-    email: string;
-    avatar: string;
-  };
-}) {
+export function NavUser() {
+  const { user } = useUser();
   const { isMobile } = useSidebar();
-
+  if (!user) return null;
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -50,15 +35,17 @@ export function NavUser({
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage
                   className="object-cover"
-                  src={user.avatar}
-                  alt={user.name}
+                  src={user.imageUrl}
+                  alt={user.fullName ?? ""}
                 />
                 <AvatarFallback className="rounded-lg">CN</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{"Gravender"}</span>
+                <span className="truncate font-semibold">
+                  {user.fullName ?? ""}
+                </span>
                 <span className="truncate text-xs">
-                  {"example@example.com"}
+                  {user.emailAddresses[0]?.emailAddress ?? ""}
                 </span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
@@ -75,39 +62,21 @@ export function NavUser({
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage
                     className="object-cover"
-                    src={user.avatar}
-                    alt={user.name}
+                    src={user.imageUrl}
+                    alt={user.fullName ?? ""}
                   />
                   <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <span className="truncate font-semibold">
+                    {user.fullName ?? ""}
+                  </span>
+                  <span className="truncate text-xs">
+                    {user.emailAddresses[0]?.emailAddress ?? ""}
+                  </span>
                 </div>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <SignOutButton>

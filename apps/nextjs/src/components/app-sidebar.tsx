@@ -1,17 +1,6 @@
-"use client";
-
 import * as React from "react";
-import { SignedOut, SignInButton, useUser } from "@clerk/nextjs";
-import {
-  Calendar1,
-  Dices,
-  Map,
-  Settings2,
-  User,
-  UsersRound,
-} from "lucide-react";
+import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
-import type { RouterOutputs } from "@board-games/api";
 import {
   Sidebar,
   SidebarContent,
@@ -24,101 +13,19 @@ import { NavUser } from "~/components/nav-user";
 
 // This is sample data.
 
-export function AppSidebar({
-  games,
-  players,
-  groups,
-  locations,
+// eslint-disable-next-line @typescript-eslint/require-await
+export async function AppSidebar({
   ...props
-}: React.ComponentProps<typeof Sidebar> & {
-  games: RouterOutputs["dashboard"]["getGames"];
-  players: RouterOutputs["dashboard"]["getPlayers"];
-  groups: RouterOutputs["dashboard"]["getGroups"];
-  locations: RouterOutputs["dashboard"]["getLocations"];
-}) {
-  const { isLoaded, isSignedIn, user } = useUser();
-  const data = [
-    {
-      title: "Games",
-      url: "/dashboard/games",
-      icon: Dices,
-      isActive: true,
-      items: games.map((game) => {
-        return {
-          title: game.name,
-          url: `/dashboard/games/${game.id}`,
-        };
-      }),
-    },
-    {
-      title: "Players",
-      url: "/dashboard/players",
-      icon: User,
-      items: players.map((player) => {
-        return {
-          title: player.name,
-          url: `/dashboard/players/${player.id}/stats`,
-        };
-      }),
-    },
-    {
-      title: "Groups",
-      url: "/dashboard/groups",
-      icon: UsersRound,
-      items: groups.map((group) => {
-        return {
-          title: group.name,
-          url: `/dashboard/groups/${group.id}/`,
-        };
-      }),
-    },
-    {
-      title: "Locations",
-      url: "/dashboard/locations",
-      icon: Map,
-      items: locations.map((location) => {
-        return {
-          title: location.name,
-          url: `/dashboard/locations/${location.id}/`,
-        };
-      }),
-    },
-    {
-      title: "Calendar",
-      url: "/dashboard/calendar",
-      icon: Calendar1,
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "App Settings",
-          url: "#",
-        },
-        {
-          title: "App Info",
-          url: "#",
-        },
-      ],
-    },
-  ];
+}: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarContent>
-        <NavMain items={data} />
+        <NavMain />
       </SidebarContent>
       <SidebarFooter>
-        {isLoaded && isSignedIn && (
-          <NavUser
-            user={{
-              name: user.fullName ?? "",
-              email: user.emailAddresses[0]?.emailAddress ?? "",
-              avatar: user.imageUrl,
-            }}
-          />
-        )}
+        <SignedIn>
+          <NavUser />
+        </SignedIn>
         <SignedOut>
           <SignInButton />
         </SignedOut>

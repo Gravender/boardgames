@@ -12,24 +12,14 @@ import {
 import { AppSidebar } from "~/components/app-sidebar";
 import { BreadCrumbs } from "~/components/breadcrumbs";
 import { ModeToggle } from "~/components/theme-toggle";
-import { caller } from "~/trpc/server";
 
 async function SidebarLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar:state")?.value === "true";
-  const games = await caller.dashboard.getGames();
-  const players = await caller.dashboard.getPlayers();
-  const groups = await caller.dashboard.getGroups();
-  const locations = await caller.dashboard.getLocations();
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      <AppSidebar
-        games={games}
-        players={players}
-        groups={groups}
-        locations={locations}
-      />
+      <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">

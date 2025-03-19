@@ -1,80 +1,60 @@
-"use client";
+import { Suspense } from "react";
+import Link from "next/link";
+import { Calendar1 } from "lucide-react";
 
-import type { LucideIcon } from "lucide-react";
-import { ChevronRight } from "lucide-react";
-
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@board-games/ui/collapsible";
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "@board-games/ui/sidebar";
 
-export function NavMain({
-  items,
-}: {
-  items: {
-    title: string;
-    url: string;
-    icon?: LucideIcon;
-    isActive?: boolean;
-    items?: {
-      title: string;
-      url: string;
-    }[];
-  }[];
-}) {
+import { HydrateClient, prefetch, trpc } from "~/trpc/server";
+import {
+  GameItem,
+  GamesItem,
+  GroupItem,
+  GroupsItem,
+  LocationItem,
+  LocationsItem,
+  PlayerItem,
+  PlayersItem,
+} from "./sidebar-items";
+
+// eslint-disable-next-line @typescript-eslint/require-await
+export async function NavMain() {
+  prefetch(trpc.dashboard.getGames.queryOptions());
+  prefetch(trpc.dashboard.getPlayers.queryOptions());
+  prefetch(trpc.dashboard.getGroups.queryOptions());
+  prefetch(trpc.dashboard.getLocations.queryOptions());
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>BoardGame Scores</SidebarGroupLabel>
-      <SidebarMenu>
-        {items.map((item) => (
-          <Collapsible
-            key={item.title}
-            asChild
-            defaultOpen={item.isActive}
-            className="group/collapsible"
-          >
-            <SidebarMenuItem>
-              <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip={item.title}>
-                  {item.icon && (
-                    <a href={item.url} onClick={(e) => e.stopPropagation()}>
-                      <item.icon />
-                    </a>
-                  )}
-                  <a href={item.url} onClick={(e) => e.stopPropagation()}>
-                    <span>{item.title}</span>
-                  </a>
-                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                </SidebarMenuButton>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarMenuSub>
-                  {item.items?.map((subItem) => (
-                    <SidebarMenuSubItem key={subItem.title}>
-                      <SidebarMenuSubButton asChild>
-                        <a href={subItem.url}>
-                          <span>{subItem.title}</span>
-                        </a>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
-              </CollapsibleContent>
-            </SidebarMenuItem>
-          </Collapsible>
-        ))}
-      </SidebarMenu>
-    </SidebarGroup>
+    <HydrateClient>
+      <SidebarGroup>
+        <SidebarGroupLabel>BoardGame Scores</SidebarGroupLabel>
+        <SidebarMenu>
+          <Suspense fallback={<GameItem />}>
+            <GamesItem />
+          </Suspense>
+          <Suspense fallback={<PlayerItem />}>
+            <PlayersItem />
+          </Suspense>
+          <Suspense fallback={<GroupItem />}>
+            <GroupsItem />
+          </Suspense>
+          <Suspense fallback={<LocationItem />}>
+            <LocationsItem />
+          </Suspense>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link href="/dashboard/calendar">
+                <Calendar1 />
+                <span>{"Calendar"}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarGroup>
+    </HydrateClient>
   );
 }
