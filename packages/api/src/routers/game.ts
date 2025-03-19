@@ -723,6 +723,12 @@ export const gameRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const currentGames = await ctx.db.query.game.findMany({
+        where: eq(game.userId, ctx.userId),
+      });
+      if (currentGames.length > 0) {
+        return null;
+      }
       const mappedGames = input.games.map((game) => ({
         name: game.name,
         minPlayers: game.minPlayerCount,
