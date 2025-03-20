@@ -1,5 +1,6 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { compareAsc } from "date-fns";
 import { and, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
@@ -392,6 +393,7 @@ export const matchRouter = createTRPCRouter({
         placements: Record<number, number>;
         wins: number;
         id: number;
+        playerId: number;
         plays: number;
       }
 
@@ -410,7 +412,8 @@ export const matchRouter = createTRPCRouter({
               if (!playerStats[playerId]) {
                 playerStats[playerId] = {
                   name,
-                  id: playerId,
+                  id: matchPlayer.id,
+                  playerId: playerId,
                   scores: [],
                   dates: [],
                   placements: {},
@@ -456,20 +459,17 @@ export const matchRouter = createTRPCRouter({
         return b.plays - a.plays;
       });
       const finalPlayersWithFirstGame = finalPlayerArray.map((player) => {
-        const firstGame = () => {
-          const firstGame = player.dates.toSorted((a, b) => {
-            if (a.date.getTime() === b.date.getTime()) {
-              return a.createdAt.getTime() - b.createdAt.getTime();
-            } else {
-              return a.date.getTime() - b.date.getTime();
-            }
-          })[0];
+        const [firstGame] = player.dates.toSorted((a, b) => {
+          if (a.date === b.date) {
+            return compareAsc(a.createdAt, b.createdAt);
+          } else {
+            return compareAsc(a.date, b.date);
+          }
+        });
 
-          return firstGame?.matchId === returnedMatch.id;
-        };
         return {
           ...player,
-          firstGame: firstGame(),
+          firstGame: firstGame?.matchId === returnedMatch.id,
           dates: player.dates.map((date) => {
             return date.date;
           }),

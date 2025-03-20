@@ -86,14 +86,16 @@ export default async function Page({ params }: Props) {
       RouterOutputs["match"]["getSummary"]
     >["players"][number],
   ) => {
-    if (player.score === null) return "";
-    const foundPlayer = summary.playerStats.find((p) => p.id === player.id);
-    if (!foundPlayer) return "";
+    if (player.score === null) return undefined;
+    const foundPlayer = summary.playerStats.find(
+      (p) => p.playerId === player.playerId,
+    );
+
+    if (!foundPlayer) return undefined;
 
     if (foundPlayer.firstGame) return "First Game";
     const highestScore = Math.max(...foundPlayer.scores);
     const lowestScore = Math.min(...foundPlayer.scores);
-
     if (summary.scoresheet.winCondition === "Highest Score") {
       if (player.score >= highestScore) return "Best Game";
       if (player.score === lowestScore) return "Worst Game";
@@ -107,7 +109,7 @@ export default async function Page({ params }: Props) {
         return "Perfect Game";
       return "Worst Game";
     }
-    return "";
+    return undefined;
   };
   const matchResults = () => {
     const playersWithoutTeams = summary.players
@@ -145,6 +147,7 @@ export default async function Page({ params }: Props) {
   return (
     <div className="flex w-full items-center justify-center">
       <div className="flex max-w-[54rem] flex-1 flex-col items-center gap-4 p-4 pt-0 sm:grid sm:grid-cols-2 sm:items-stretch">
+        {/* Game Summary */}
         <Card className="w-full sm:col-span-2">
           <CardHeader>
             <CardTitle>Summary</CardTitle>
@@ -213,6 +216,7 @@ export default async function Page({ params }: Props) {
             </div>
           </CardFooter>
         </Card>
+        {/* Previous Plays */}
         <Card className="w-full sm:col-span-2">
           <CardHeader>
             <CardTitle>Previous Plays</CardTitle>
@@ -264,6 +268,7 @@ export default async function Page({ params }: Props) {
             </div>
           </CardContent>
         </Card>
+        {/* Match Results */}
         <Card className="w-full max-w-2xl sm:col-span-1">
           <CardHeader>
             <CardTitle>Match Results</CardTitle>
@@ -355,6 +360,7 @@ export default async function Page({ params }: Props) {
             })}
           </CardContent>
         </Card>
+        {/* Player Stats */}
         <Card className="w-full max-w-2xl sm:col-span-1">
           <CardHeader>
             <CardTitle>Player stats</CardTitle>
