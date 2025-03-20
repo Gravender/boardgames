@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { MapPin, Search } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -60,7 +61,10 @@ export function LocationsTable({
                 )}
               >
                 <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">
-                  <div className="flex items-center gap-2">
+                  <Link
+                    href={`/dashboard/locations/${location.id}`}
+                    className="flex items-center gap-2"
+                  >
                     <div className="relative flex h-14 w-14 shrink-0 overflow-hidden rounded-full shadow">
                       <div className="flex h-full w-full items-center justify-center rounded-full bg-muted">
                         <MapPin />
@@ -69,11 +73,14 @@ export function LocationsTable({
                     <div className="flex flex-col gap-2">
                       <div className="flex w-full items-center justify-between">
                         <h2 className="text-md text-left font-semibold">
-                          {location.name}
+                          {`${location.name}`}
                         </h2>
+                        {location.isDefault && (
+                          <span className="pl-2">{"(Default)"}</span>
+                        )}
                       </div>
                     </div>
-                  </div>
+                  </Link>
 
                   <div className="flex items-center justify-center gap-4">
                     <Button size={"icon"} variant={"outline"}>

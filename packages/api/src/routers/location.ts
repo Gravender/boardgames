@@ -18,6 +18,7 @@ export const locationRouter = createTRPCRouter({
       with: {
         matches: true,
       },
+      orderBy: (location, { asc }) => asc(location.name),
     });
   }),
   getLocation: protectedUserProcedure
