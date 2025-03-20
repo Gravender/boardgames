@@ -136,6 +136,7 @@ const isUser = t.middleware(async ({ ctx, next }) => {
         .values({
           clerkUserId: ctx.auth.userId,
           email: clerkUser?.emailAddresses[0]?.emailAddress,
+          name: clerkUser?.fullName,
         })
         .returning();
       if (!insertedUser) throw new TRPCError({ code: "UNAUTHORIZED" });

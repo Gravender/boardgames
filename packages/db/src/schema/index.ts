@@ -94,6 +94,12 @@ export {
   selectFriendSchema,
 } from "./friends";
 export {
+  default as friendRequest,
+  friendRequestRelations,
+  insertFriendRequestSchema,
+  selectFriendRequestSchema,
+} from "./friendRequest";
+export {
   default as userSharingPreference,
   userSharingPreferenceRelations,
   insertUserSharingPreferenceSchema,

@@ -40,6 +40,7 @@ export const userRouter = createTRPCRouter({
             .values({
               clerkUserId: input.userId,
               email: clerkUser?.emailAddresses[0]?.emailAddress,
+              name: clerkUser?.fullName,
             })
             .returning();
           if (!insertedUser)
