@@ -15,6 +15,7 @@ import game from "./game";
 import location from "./location";
 import matchPlayer from "./matchPlayer";
 import scoresheet from "./scoresheet";
+import sharedMatch from "./sharedMatch";
 import teams from "./team";
 import user from "./user";
 
@@ -71,6 +72,7 @@ export const matchRelations = relations(matches, ({ one, many }) => ({
   }),
   matchPlayers: many(matchPlayer),
   teams: many(teams),
+  sharedMatch: many(sharedMatch),
 }));
 
 export const insertMatchSchema = createInsertSchema(matches);

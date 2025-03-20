@@ -1,8 +1,11 @@
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { serial, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
+import sharedGame from "./sharedGame";
+import sharedMatch from "./sharedMatch";
+import userSharingPreference from "./userSharingPreferences";
 
 const users = createTable("user", {
   id: serial("id").primaryKey(),
@@ -15,6 +18,28 @@ const users = createTable("user", {
     () => new Date(),
   ),
 });
+
+export const userRelations = relations(users, ({ one, many }) => ({
+  userSharingPreference: one(userSharingPreference, {
+    fields: [users.id],
+    references: [userSharingPreference.userId],
+  }),
+  gamesShareWith: many(sharedGame, {
+    relationName: "shared_with",
+  }),
+  gamesShared: many(sharedGame, {
+    relationName: "owner",
+  }),
+  matchesSharedWith: many(sharedMatch, {
+    relationName: "shared_with",
+  }),
+  matchesShared: many(sharedMatch, {
+    relationName: "owner",
+  }),
+  friends: many(users, {
+    relationName: "user",
+  }),
+}));
 
 export const insertUserSchema = createInsertSchema(users);
 

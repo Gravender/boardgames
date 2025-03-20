@@ -14,6 +14,7 @@ import { createTable } from "./baseTable";
 import image from "./image";
 import match from "./match";
 import scoresheet from "./scoresheet";
+import sharedGame from "./sharedGame";
 import user from "./user";
 
 const games = createTable(
@@ -56,6 +57,12 @@ export const gameRelations = relations(games, ({ one, many }) => ({
   }),
   matches: many(match),
   scoresheets: many(scoresheet),
+  sharedGames: many(sharedGame, {
+    relationName: "original_game",
+  }),
+  linkedGames: many(sharedGame, {
+    relationName: "linked_game",
+  }),
 }));
 
 export const insertGameSchema = createInsertSchema(games);
