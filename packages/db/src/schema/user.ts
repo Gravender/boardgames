@@ -3,6 +3,7 @@ import { serial, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
+import friendRequest from "./friendRequest";
 import sharedGame from "./sharedGame";
 import sharedMatch from "./sharedMatch";
 import userSharingPreference from "./userSharingPreferences";
@@ -10,6 +11,7 @@ import userSharingPreference from "./userSharingPreferences";
 const users = createTable("user", {
   id: serial("id").primaryKey(),
   clerkUserId: varchar("clerk_user_id", { length: 255 }).notNull().unique(),
+  name: varchar("name", { length: 255 }),
   email: varchar("email", { length: 255 }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
@@ -38,6 +40,12 @@ export const userRelations = relations(users, ({ one, many }) => ({
   }),
   friends: many(users, {
     relationName: "user",
+  }),
+  friendRequests: many(friendRequest, {
+    relationName: "requestee",
+  }),
+  friendRequestsSent: many(friendRequest, {
+    relationName: "requester",
   }),
 }));
 

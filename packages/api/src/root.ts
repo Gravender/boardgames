@@ -1,4 +1,5 @@
 import { dashboardRouter } from "./routers/dashboard";
+import { friendsRouter } from "./routers/friends";
 import { gameRouter } from "./routers/game";
 import { groupRouter } from "./routers/group";
 import { imageRouter } from "./routers/image";
@@ -7,6 +8,7 @@ import { matchRouter } from "./routers/match";
 import { playerRouter } from "./routers/players";
 import { roundRouter } from "./routers/round";
 import { scoresheetRouter } from "./routers/scoresheet";
+import { sharingRouter } from "./routers/sharing";
 import { userRouter } from "./routers/user";
 import { createCallerFactory, createTRPCRouter } from "./trpc";
 
@@ -26,6 +28,8 @@ export const appRouter = createTRPCRouter({
   dashboard: dashboardRouter,
   group: groupRouter,
   location: locationRouter,
+  friend: friendsRouter,
+  sharing: sharingRouter,
 });
 
 // export type definition of API
