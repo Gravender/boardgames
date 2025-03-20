@@ -1,4 +1,9 @@
-export { default as user, insertUserSchema, selectUserSchema } from "./user";
+export {
+  default as user,
+  userRelations,
+  insertUserSchema,
+  selectUserSchema,
+} from "./user";
 export {
   default as game,
   gameRelations,
@@ -70,3 +75,27 @@ export {
   insertTeamSchema,
   selectTeamSchema,
 } from "./team";
+export {
+  default as sharedGame,
+  insertSharedGameSchema,
+  selectSharedGameSchema,
+  sharedGameRelations,
+} from "./sharedGame";
+export {
+  default as sharedMatch,
+  insertSharedMatchSchema,
+  selectSharedMatchSchema,
+  sharedMatchRelations,
+} from "./sharedMatch";
+export {
+  default as friend,
+  friendRelations,
+  insertFriendSchema,
+  selectFriendSchema,
+} from "./friends";
+export {
+  default as userSharingPreference,
+  userSharingPreferenceRelations,
+  insertUserSharingPreferenceSchema,
+  selectUserSharingPreferenceSchema,
+} from "./userSharingPreferences";
