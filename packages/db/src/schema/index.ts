@@ -112,8 +112,8 @@ export {
   selectSharedPlayerSchema,
 } from "./sharedPlayer";
 export {
-  default as sharedLink,
-  sharedLinkRelations,
-  insertSharedLinkSchema,
-  selectSharedLinkSchema,
-} from "./sharedLink";
+  default as shareRequest,
+  shareRequestRelations,
+  insertShareRequestSchema,
+  selectShareRequestSchema,
+} from "./shareRequest";

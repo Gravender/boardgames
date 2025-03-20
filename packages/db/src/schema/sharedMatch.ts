@@ -24,9 +24,6 @@ const sharedMatch = createTable("shared_match", {
   permission: text("permission", { enum: ["view", "edit"] })
     .default("view")
     .notNull(),
-  status: text("status", { enum: ["pending", "accepted", "rejected"] })
-    .default("pending")
-    .notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
