@@ -11,6 +11,7 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { createTable } from "./baseTable";
 import image from "./image";
 import matchPlayer from "./matchPlayer";
+import sharedPlayer from "./sharedPlayer";
 import user from "./user";
 
 const players = createTable(
@@ -50,6 +51,12 @@ export const playerRelations = relations(players, ({ one, many }) => ({
     references: [image.id],
   }),
   matchesByPlayer: many(matchPlayer),
+  linkedPlayers: many(sharedPlayer, {
+    relationName: "linked_player",
+  }),
+  originalPlayers: many(sharedPlayer, {
+    relationName: "original_player",
+  }),
 }));
 
 export const insertPlayerSchema = createInsertSchema(players);
