@@ -6,6 +6,7 @@ import { createTable } from "./baseTable";
 import friendRequest from "./friendRequest";
 import sharedGame from "./sharedGame";
 import sharedMatch from "./sharedMatch";
+import shareRequest from "./shareRequest";
 import userSharingPreference from "./userSharingPreferences";
 
 const users = createTable("user", {
@@ -46,6 +47,12 @@ export const userRelations = relations(users, ({ one, many }) => ({
   }),
   friendRequestsSent: many(friendRequest, {
     relationName: "requester",
+  }),
+  shareRequests: many(shareRequest, {
+    relationName: "owner",
+  }),
+  shareRequestsReceived: many(shareRequest, {
+    relationName: "shared_with",
   }),
 }));
 
