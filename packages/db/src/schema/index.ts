@@ -105,3 +105,15 @@ export {
   insertUserSharingPreferenceSchema,
   selectUserSharingPreferenceSchema,
 } from "./userSharingPreferences";
+export {
+  default as sharedPlayer,
+  sharedPlayerRelations,
+  insertSharedPlayerSchema,
+  selectSharedPlayerSchema,
+} from "./sharedPlayer";
+export {
+  default as sharedLink,
+  sharedLinkRelations,
+  insertSharedLinkSchema,
+  selectSharedLinkSchema,
+} from "./sharedLink";
