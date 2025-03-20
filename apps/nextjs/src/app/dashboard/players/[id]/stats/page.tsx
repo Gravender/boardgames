@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { Dices, User } from "lucide-react";
@@ -223,7 +224,8 @@ export default async function Page({ params }: Props) {
                 <ScrollArea className="w-1 flex-1">
                   <div className="flex space-x-4 p-1 sm:p-4">
                     {player.matches.map((match) => (
-                      <div
+                      <Link
+                        href={`/dashboard/games/${match.gameId}/${match.id}/summary`}
                         className="flex shrink-0 flex-col items-center gap-2 text-sm text-secondary-foreground"
                         key={match.id}
                       >
@@ -247,7 +249,7 @@ export default async function Page({ params }: Props) {
                             {format(match.date, "d MMM yyyy")}
                           </span>
                         </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                   <ScrollBar orientation="horizontal" />

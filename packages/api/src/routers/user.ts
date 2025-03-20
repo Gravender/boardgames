@@ -1,3 +1,4 @@
+import { currentUser } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -33,9 +34,13 @@ export const userRouter = createTRPCRouter({
           .where(eq(user.clerkUserId, input.userId));
 
         if (!returnedUser) {
+          const clerkUser = await currentUser();
           const [insertedUser] = await tx
             .insert(user)
-            .values({ clerkUserId: input.userId })
+            .values({
+              clerkUserId: input.userId,
+              email: clerkUser?.emailAddresses[0]?.emailAddress,
+            })
             .returning();
           if (!insertedUser)
             throw new TRPCError({

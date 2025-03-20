@@ -1,3 +1,13 @@
+import type { getAuth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
+import { initTRPC, TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
+import superjson from "superjson";
+import { ZodError } from "zod";
+
+import { db } from "@board-games/db/client";
+import { user } from "@board-games/db/schema";
+
 /**
  * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
  * 1. You want to modify request context (see Part 1).
@@ -6,14 +16,6 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import type { getAuth } from "@clerk/nextjs/server";
-import { initTRPC, TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
-import superjson from "superjson";
-import { ZodError } from "zod";
-
-import { db } from "@board-games/db/client";
-import { user } from "@board-games/db/schema";
 
 type AuthObject = ReturnType<typeof getAuth>;
 
@@ -128,9 +130,13 @@ const isUser = t.middleware(async ({ ctx, next }) => {
       .where(eq(user.clerkUserId, ctx.auth.userId));
 
     if (!returnedUser) {
+      const clerkUser = await currentUser();
       const [insertedUser] = await tx
         .insert(user)
-        .values({ clerkUserId: ctx.auth.userId })
+        .values({
+          clerkUserId: ctx.auth.userId,
+          email: clerkUser?.emailAddresses[0]?.emailAddress,
+        })
         .returning();
       if (!insertedUser) throw new TRPCError({ code: "UNAUTHORIZED" });
       return insertedUser;
