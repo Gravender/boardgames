@@ -108,33 +108,29 @@ for (const table of [
 }
 export async function seed() {
   const userData: z.infer<typeof insertUserSchema>[] = Array.from(
-    { length: 5 },
+    { length: 10 },
     () => ({
       clerkUserId: faker.person.fullName(),
+      name: faker.person.fullName(),
+      email: faker.internet.email(),
     }),
   );
   console.log("Inserting users...\n");
-  const [user1, user2] = await db.insert(user).values(userData).returning();
-  if (!user1) {
-    throw new Error("User 1 not found");
-  }
-  if (!user2) {
-    throw new Error("User 2 not found");
-  }
+  const users = await db.insert(user).values(userData).returning();
 
   const imageGameData: z.infer<typeof insertImageSchema>[] = Array.from(
     { length: 30 },
     () => ({
       url: faker.image.urlPicsumPhotos(),
-      userId: faker.helpers.arrayElement([user1.id, user2.id]),
+      userId: faker.helpers.arrayElement(users).id,
       name: faker.commerce.productName(),
     }),
   );
   console.log("Inserting game images...\n");
   const gameImages = await db.insert(image).values(imageGameData).returning();
 
-  const totalGames = 80;
-  const maxMatches = 3000; // Control total number of matches across all games
+  const totalGames = 400;
+  const maxMatches = 30000; // Control total number of matches across all games
 
   const normalGames = randomNormal.source(randomLcg(d3Seed))(40, 25);
 
@@ -159,7 +155,7 @@ export async function seed() {
       );
       return {
         name: faker.commerce.productName(),
-        userId: faker.helpers.arrayElement([user1.id, user2.id]),
+        userId: faker.helpers.arrayElement(users).id,
         imageId: faker.helpers.maybe(
           () => faker.helpers.arrayElement(gameImages).id,
           {
@@ -199,7 +195,7 @@ export async function seed() {
     { length: 12 },
     () => ({
       name: faker.location.city(),
-      createdBy: faker.helpers.arrayElement([user1.id, user2.id]),
+      createdBy: faker.helpers.arrayElement(users).id,
     }),
   );
   console.log("Inserting locations...\n");
@@ -209,7 +205,7 @@ export async function seed() {
     { length: 30 },
     () => ({
       url: faker.image.avatar(),
-      userId: faker.helpers.arrayElement([user1.id, user2.id]),
+      userId: faker.helpers.arrayElement(users).id,
       name: faker.person.fullName(),
     }),
   );
@@ -223,7 +219,7 @@ export async function seed() {
     { length: Math.round(matchCount / 20) },
     () => ({
       name: faker.person.fullName(),
-      createdBy: faker.helpers.arrayElement([user1.id, user2.id]),
+      createdBy: faker.helpers.arrayElement(users).id,
       userId: null,
       imageId: faker.helpers.maybe(
         () => faker.helpers.arrayElement(playerImages).id,
@@ -232,8 +228,8 @@ export async function seed() {
     }),
   );
   if (playerData[0] && playerData[1]) {
-    playerData[0].userId = user1.id;
-    playerData[1].userId = user2.id;
+    playerData[0].userId = users[0]?.id;
+    playerData[1].userId = users[1]?.id;
   }
   console.log("Inserting players...\n");
   const players = await db.insert(player).values(playerData).returning();
@@ -242,7 +238,7 @@ export async function seed() {
     { length: 10 },
     () => ({
       name: faker.company.name(),
-      createdBy: faker.helpers.arrayElement([user1.id, user2.id]),
+      createdBy: faker.helpers.arrayElement(users).id,
     }),
   );
   console.log("Inserting groups...\n");
@@ -430,6 +426,7 @@ export async function seed() {
       }),
     );
     console.log(`Inserting matches for ${returnedGame.name}...\n`);
+    if (matchData.length === 0) continue;
     const returnedMatches = await db
       .insert(match)
       .values(matchData)
