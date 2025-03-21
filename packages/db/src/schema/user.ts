@@ -4,6 +4,7 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
 import friendRequest from "./friendRequest";
+import friends from "./friends";
 import sharedGame from "./sharedGame";
 import sharedMatch from "./sharedMatch";
 import shareRequest from "./shareRequest";
@@ -39,7 +40,7 @@ export const userRelations = relations(users, ({ one, many }) => ({
   matchesShared: many(sharedMatch, {
     relationName: "owner",
   }),
-  friends: many(users, {
+  friends: many(friends, {
     relationName: "user",
   }),
   friendRequests: many(friendRequest, {
