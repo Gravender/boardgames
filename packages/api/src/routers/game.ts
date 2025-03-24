@@ -1,5 +1,4 @@
 import type { SQL } from "drizzle-orm";
-import type { PgColumn } from "drizzle-orm/pg-core";
 import { TRPCError } from "@trpc/server";
 import { and, count, eq, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
