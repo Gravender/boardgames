@@ -690,7 +690,23 @@ const AddScoreSheetForm = ({
   setIsScoresheet: (isScoresheet: boolean) => void;
 }) => {
   const form = useForm<z.infer<typeof scoreSheetWithRoundsSchema>>({
-    resolver: zodResolver(scoreSheetWithRoundsSchema),
+    resolver: zodResolver(
+      scoreSheetWithRoundsSchema.superRefine((data, ctx) => {
+        if (data.scoresheet.isCoop) {
+          if (
+            data.scoresheet.winCondition !== "Manual" &&
+            data.scoresheet.winCondition !== "Target Score"
+          ) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message:
+                "Win condition must be Manual or Target Score for Coop games.",
+              path: ["scoresheet.winCondition"],
+            });
+          }
+        }
+      }),
+    ),
     defaultValues: {
       scoresheet: scoreSheetWithRounds.scoresheet,
       rounds: scoreSheetWithRounds.rounds,
@@ -712,6 +728,7 @@ const AddScoreSheetForm = ({
   const roundsScoreOptions = scoreSheetSchema
     .required()
     .pick({ roundsScore: true }).shape.roundsScore.options;
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -761,11 +778,23 @@ const AddScoreSheetForm = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {conditions.map((condition) => (
-                      <SelectItem key={condition} value={condition}>
-                        {condition}
-                      </SelectItem>
-                    ))}
+                    {form.getValues("scoresheet.isCoop")
+                      ? conditions
+                          .filter(
+                            (condition) =>
+                              condition === "Manual" ||
+                              condition === "Target Score",
+                          )
+                          .map((condition) => (
+                            <SelectItem key={condition} value={condition}>
+                              {condition}
+                            </SelectItem>
+                          ))
+                      : conditions.map((condition) => (
+                          <SelectItem key={condition} value={condition}>
+                            {condition}
+                          </SelectItem>
+                        ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
