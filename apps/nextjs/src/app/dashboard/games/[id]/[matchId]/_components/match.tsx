@@ -264,7 +264,7 @@ export function Match({ matchId }: { matchId: number }) {
         playersPlacement
           .filter((player) => {
             const foundPlayer = players.find((p) => p.id === player.id);
-            return foundPlayer?.teamId === null;
+            return foundPlayer?.teamId !== null;
           })
           .map((player) => {
             {
@@ -287,12 +287,10 @@ export function Match({ matchId }: { matchId: number }) {
       ...nonTeamPlayerPlacements,
     ];
     for (const currentPlacement of teamAndPlayerPlacements) {
-      if (currentPlacement) {
-        placements[currentPlacement] = (placements[currentPlacement] ?? 0) + 1;
-        if (placements[currentPlacement] > 1) {
-          isTieBreaker = true;
-          break;
-        }
+      placements[currentPlacement] = (placements[currentPlacement] ?? 0) + 1;
+      if (placements[currentPlacement] > 1) {
+        isTieBreaker = true;
+        break;
       }
     }
     if (isTieBreaker) {
