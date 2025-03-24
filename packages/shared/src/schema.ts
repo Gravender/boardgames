@@ -107,7 +107,7 @@ export const scoreSheetSchema = insertScoreSheetSchema
     type: true,
     gameId: true,
   })
-  .required({ name: true });
+  .required({ name: true, isCoop: true });
 export const editScoresheetSchema = scoreSheetSchema.extend({
   isDefault: z.boolean().optional(),
 });

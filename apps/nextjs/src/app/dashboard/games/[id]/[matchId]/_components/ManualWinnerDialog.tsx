@@ -5,6 +5,7 @@ import { User, Users } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import type { RouterOutputs } from "@board-games/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -29,17 +30,16 @@ import { cn } from "@board-games/ui/utils";
 
 import { useTRPC } from "~/trpc/react";
 
-export const ManualWinnerPlayerSchema = z
-  .array(
-    z.object({
-      id: z.number(),
-      name: z.string(),
-      imageUrl: z.string().nullable(),
-      score: z.number(),
-      teamId: z.number().nullable(),
-    }),
-  )
-  .min(1);
+const playerSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  imageUrl: z.string().nullable(),
+  score: z.number(),
+  teamId: z.number().nullable(),
+});
+export const ManualWinnerPlayerSchema = z.array(playerSchema).min(1);
+type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
+type Scoresheet = Match["scoresheet"];
 export function ManualWinnerDialog({
   isOpen,
   setIsOpen,
@@ -47,13 +47,15 @@ export function ManualWinnerDialog({
   matchId,
   teams,
   players,
+  scoresheet,
 }: {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  gameId: number;
-  matchId: number;
+  gameId: Match["gameId"];
+  matchId: Match["id"];
   teams: { id: number; name: string }[];
   players: z.infer<typeof ManualWinnerPlayerSchema>;
+  scoresheet: Scoresheet;
 }) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -64,26 +66,27 @@ export function ManualWinnerDialog({
           matchId={matchId}
           gameId={gameId}
           teams={teams}
+          scoresheet={scoresheet}
         />
       </DialogContent>
     </Dialog>
   );
 }
-const FormSchema = z.object({
-  players: ManualWinnerPlayerSchema,
-});
+
 function Content({
   players,
   gameId,
   matchId,
   teams,
+  scoresheet,
 }: {
-  gameId: number;
-  matchId: number;
+  gameId: Match["gameId"];
+  matchId: Match["id"];
   setIsOpen: (isOpen: boolean) => void;
 
   teams: { id: number; name: string }[];
   players: z.infer<typeof ManualWinnerPlayerSchema>;
+  scoresheet: Scoresheet;
 }) {
   const trpc = useTRPC();
   const router = useRouter();
@@ -102,6 +105,11 @@ function Content({
       },
     }),
   );
+  const FormSchema = z.object({
+    players: scoresheet.isCoop
+      ? z.array(playerSchema)
+      : z.array(playerSchema).min(1),
+  });
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: { players: [] },

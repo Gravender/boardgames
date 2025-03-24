@@ -490,6 +490,7 @@ export function Match({ matchId }: { matchId: number }) {
           matchId={match.id}
           players={manualWinners}
           teams={match.teams}
+          scoresheet={match.scoresheet}
         />
         <TieBreakerDialog
           isOpen={openTieBreakerDialog}
