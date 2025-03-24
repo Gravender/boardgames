@@ -780,30 +780,37 @@ export const matchRouter = createTRPCRouter({
           running: false,
         })
         .where(eq(match.id, input.matchId));
-      await ctx.db
-        .update(matchPlayer)
-        .set({ winner: false })
-        .where(
-          and(
-            eq(matchPlayer.matchId, input.matchId),
-            notInArray(
-              matchPlayer.id,
-              input.winners.map((winner) => winner.id),
+      if (input.winners.length > 0) {
+        await ctx.db
+          .update(matchPlayer)
+          .set({ winner: false })
+          .where(
+            and(
+              eq(matchPlayer.matchId, input.matchId),
+              notInArray(
+                matchPlayer.id,
+                input.winners.map((winner) => winner.id),
+              ),
             ),
-          ),
-        );
-      await ctx.db
-        .update(matchPlayer)
-        .set({ winner: true })
-        .where(
-          and(
-            eq(matchPlayer.matchId, input.matchId),
-            inArray(
-              matchPlayer.id,
-              input.winners.map((winner) => winner.id),
+          );
+        await ctx.db
+          .update(matchPlayer)
+          .set({ winner: true })
+          .where(
+            and(
+              eq(matchPlayer.matchId, input.matchId),
+              inArray(
+                matchPlayer.id,
+                input.winners.map((winner) => winner.id),
+              ),
             ),
-          ),
-        );
+          );
+      } else {
+        await ctx.db
+          .update(matchPlayer)
+          .set({ winner: false })
+          .where(eq(matchPlayer.matchId, input.matchId));
+      }
     }),
   updateMatchDuration: protectedUserProcedure
     .input(
