@@ -100,12 +100,7 @@ export function AddMatchDialog({
     </Dialog>
   );
 }
-const formSchema = matchSchema.extend({
-  players: playersSchema,
-  location: locationSchema,
-  scoresheetId: z.number(),
-});
-type formSchemaType = z.infer<typeof formSchema>;
+
 function Content({
   matches,
   gameId,
@@ -119,6 +114,20 @@ function Content({
   defaultLocation: RouterOutputs["location"]["getDefaultLocation"];
   scoresheets: RouterOutputs["game"]["getGameScoresheets"];
 }) {
+  const formSchema = matchSchema.extend({
+    players: playersSchema,
+    location: locationSchema,
+    scoresheetId: z
+      .number()
+      .refine(
+        (scoresheetId) =>
+          scoresheets.find((scoresheet) => scoresheet.id === scoresheetId) !==
+          undefined,
+        { message: "Must select a scoresheet" },
+      ),
+  });
+  type formSchemaType = z.infer<typeof formSchema>;
+
   const trpc = useTRPC();
   const { isOpen, match, setMatch, setLocation, setScoresheetId, reset } =
     useAddMatchStore((state) => state);
@@ -163,6 +172,9 @@ function Content({
 
   useEffect(() => {
     if (!isOpen) reset();
+    return () => {
+      if (!isOpen) reset();
+    };
   }, [isOpen, reset]);
 
   const onSubmit = (values: formSchemaType) => {
@@ -352,14 +364,14 @@ function Content({
                 <FormLabel>Scoresheet:</FormLabel>
                 <Select
                   onValueChange={(e) => {
-                    field.onChange(e);
-                    setScoresheetId(Number(e));
+                    field.onChange(Number.parseInt(e));
+                    setScoresheetId(Number.parseInt(e));
                   }}
                   defaultValue={field.value.toString()}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a verified email to display" />
+                      <SelectValue placeholder="Select a scoresheet" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>

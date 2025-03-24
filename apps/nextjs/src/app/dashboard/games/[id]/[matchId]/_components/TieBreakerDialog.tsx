@@ -33,6 +33,7 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
+import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 
 export const TieBreakerPlayerSchema = z
@@ -355,7 +356,16 @@ function Content({
             )}
           />
           <AlertDialogFooter>
-            <Button type="submit">Finish</Button>
+            <Button type="submit" disabled={updateMatchPlacement.isPending}>
+              {updateMatchPlacement.isPending ? (
+                <>
+                  <Spinner />
+                  <span>Finishing...</span>
+                </>
+              ) : (
+                "Finish"
+              )}
+            </Button>
           </AlertDialogFooter>
         </form>
       </Form>
