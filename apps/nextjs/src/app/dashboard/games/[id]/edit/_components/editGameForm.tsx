@@ -938,7 +938,23 @@ const ScoresheetForm = ({
   setIsScoresheet: (isScoresheet: boolean) => void;
 }) => {
   const form = useForm<z.infer<typeof scoresheetSchema>>({
-    resolver: zodResolver(scoresheetSchema),
+    resolver: zodResolver(
+      scoresheetSchema.superRefine((data, ctx) => {
+        if (scoresheet.isCoop) {
+          if (
+            data.winCondition !== "Manual" &&
+            data.winCondition !== "Target Score"
+          ) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message:
+                "Win condition must be Manual or Target Score for Coop games.",
+              path: ["scoresheet.winCondition"],
+            });
+          }
+        }
+      }),
+    ),
     defaultValues: scoresheet,
   });
   const onBack = () => {
@@ -1006,11 +1022,23 @@ const ScoresheetForm = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {winConditionOptions.map((condition) => (
-                      <SelectItem key={condition} value={condition}>
-                        {condition}
-                      </SelectItem>
-                    ))}
+                    {form.getValues("isCoop")
+                      ? winConditionOptions
+                          .filter(
+                            (condition) =>
+                              condition === "Manual" ||
+                              condition === "Target Score",
+                          )
+                          .map((condition) => (
+                            <SelectItem key={condition} value={condition}>
+                              {condition}
+                            </SelectItem>
+                          ))
+                      : winConditionOptions.map((condition) => (
+                          <SelectItem key={condition} value={condition}>
+                            {condition}
+                          </SelectItem>
+                        ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
