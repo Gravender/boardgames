@@ -32,8 +32,8 @@
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
-    "drizzle-orm": "^0.36.4",
-    "drizzle-zod": "^0.5.1",
+    "drizzle-orm": "^0.41.0",
+    "drizzle-zod": "^0.7.0",
     "postgres": "^3.4.5",
     "tsx": "^4.19.2",
     "zod": "catalog:"
@@ -47,7 +47,7 @@
     "d3": "^7.9.0",
     "date-fns": "^4.1.0",
     "dotenv-cli": "^7.4.4",
-    "drizzle-kit": "^0.28.1",
+    "drizzle-kit": "^0.30.5",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
