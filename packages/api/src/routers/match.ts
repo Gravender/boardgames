@@ -55,10 +55,11 @@ export const matchRouter = createTRPCRouter({
         }),
     )
     .mutation(async ({ ctx, input }) => {
-      const returnedScoresheets = await ctx.db.query.scoresheet.findMany({
+      const returnedScoresheet = await ctx.db.query.scoresheet.findFirst({
         where: and(
           eq(match.gameId, input.gameId),
           eq(scoresheet.userId, ctx.userId),
+          eq(scoresheet.id, input.scoresheetId),
         ),
         with: {
           rounds: {
@@ -66,31 +67,26 @@ export const matchRouter = createTRPCRouter({
           },
         },
       });
-      const returnedScoresheet =
-        returnedScoresheets.find((x) => x.name === "Default") ??
-        returnedScoresheets[0];
       if (!returnedScoresheet) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "No scoresheet found for game",
         });
       }
-      const scoresheetId = (
-        await ctx.db
-          .insert(scoresheet)
-          .values({
-            name: returnedScoresheet.name,
-            gameId: returnedScoresheet.gameId,
-            userId: ctx.userId,
-            isCoop: returnedScoresheet.isCoop,
-            winCondition: returnedScoresheet.winCondition,
-            targetScore: returnedScoresheet.targetScore,
-            roundsScore: returnedScoresheet.roundsScore,
-            type: "Match",
-          })
-          .returning()
-      )[0]?.id;
-      if (!scoresheetId) {
+      const [insertedScoresheet] = await ctx.db
+        .insert(scoresheet)
+        .values({
+          name: returnedScoresheet.name,
+          gameId: returnedScoresheet.gameId,
+          userId: ctx.userId,
+          isCoop: returnedScoresheet.isCoop,
+          winCondition: returnedScoresheet.winCondition,
+          targetScore: returnedScoresheet.targetScore,
+          roundsScore: returnedScoresheet.roundsScore,
+          type: "Match",
+        })
+        .returning();
+      if (!insertedScoresheet) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Scoresheet Not Created Successfully",
@@ -104,19 +100,21 @@ export const matchRouter = createTRPCRouter({
         modifier: round.modifier,
         score: round.score,
         toggleScore: round.toggleScore,
-        scoresheetId: scoresheetId,
+        scoresheetId: insertedScoresheet.id,
         order: round.order,
       }));
       const insertedRounds = await ctx.db
         .insert(round)
         .values(returnedRounds)
         .returning();
-      const returningMatch = (
-        await ctx.db
-          .insert(match)
-          .values({ ...input, userId: ctx.userId, scoresheetId })
-          .returning()
-      )[0];
+      const [returningMatch] = await ctx.db
+        .insert(match)
+        .values({
+          ...input,
+          userId: ctx.userId,
+          scoresheetId: insertedScoresheet.id,
+        })
+        .returning();
       if (!returningMatch) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -174,7 +172,10 @@ export const matchRouter = createTRPCRouter({
               .returning();
 
             if (!returningTeam) {
-              throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Team Not Created Successfully",
+              });
             }
 
             const playersToInsert = inputTeam.players.map<
