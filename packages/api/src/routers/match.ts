@@ -7,6 +7,7 @@ import { z } from "zod";
 import type {
   insertMatchPlayerSchema,
   insertRoundPlayerSchema,
+  insertRoundSchema,
 } from "@board-games/db/schema";
 import {
   insertMatchSchema,
@@ -55,154 +56,169 @@ export const matchRouter = createTRPCRouter({
         }),
     )
     .mutation(async ({ ctx, input }) => {
-      const returnedScoresheet = await ctx.db.query.scoresheet.findFirst({
-        where: and(
-          eq(match.gameId, input.gameId),
-          eq(scoresheet.userId, ctx.userId),
-          eq(scoresheet.id, input.scoresheetId),
-        ),
-        with: {
-          rounds: {
-            orderBy: round.order,
+      await ctx.db.transaction(async (transaction) => {
+        const returnedScoresheet = await transaction.query.scoresheet.findFirst(
+          {
+            where: and(
+              eq(match.gameId, input.gameId),
+              eq(scoresheet.userId, ctx.userId),
+              eq(scoresheet.id, input.scoresheetId),
+            ),
+            with: {
+              rounds: {
+                orderBy: round.order,
+              },
+            },
           },
-        },
-      });
-      if (!returnedScoresheet) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "No scoresheet found for game",
-        });
-      }
-      const [insertedScoresheet] = await ctx.db
-        .insert(scoresheet)
-        .values({
-          name: returnedScoresheet.name,
-          gameId: returnedScoresheet.gameId,
-          userId: ctx.userId,
-          isCoop: returnedScoresheet.isCoop,
-          winCondition: returnedScoresheet.winCondition,
-          targetScore: returnedScoresheet.targetScore,
-          roundsScore: returnedScoresheet.roundsScore,
-          type: "Match",
-        })
-        .returning();
-      if (!insertedScoresheet) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Scoresheet Not Created Successfully",
-        });
-      }
-      const returnedRounds = returnedScoresheet.rounds.map((round) => ({
-        color: round.color,
-        name: round.name,
-        type: round.type,
-        lookup: round.lookup,
-        modifier: round.modifier,
-        score: round.score,
-        toggleScore: round.toggleScore,
-        scoresheetId: insertedScoresheet.id,
-        order: round.order,
-      }));
-      const insertedRounds = await ctx.db
-        .insert(round)
-        .values(returnedRounds)
-        .returning();
-      const [returningMatch] = await ctx.db
-        .insert(match)
-        .values({
-          ...input,
-          userId: ctx.userId,
-          scoresheetId: insertedScoresheet.id,
-        })
-        .returning();
-      if (!returningMatch) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Match Not Created Successfully",
-        });
-      }
-      if (input.teams.length === 1 && input.teams[0] !== undefined) {
-        const inputPlayers = input.teams[0].players;
-        const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
-          inputPlayers.map((player) => ({
-            matchId: returningMatch.id,
-            playerId: player.id,
-          }));
-        const returnedMatchPlayers = await ctx.db
-          .insert(matchPlayer)
-          .values(playersToInsert)
+        );
+        if (!returnedScoresheet) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "No scoresheet found for given scoresheetId",
+          });
+        }
+        const [insertedScoresheet] = await transaction
+          .insert(scoresheet)
+          .values({
+            name: returnedScoresheet.name,
+            gameId: returnedScoresheet.gameId,
+            userId: ctx.userId,
+            isCoop: returnedScoresheet.isCoop,
+            winCondition: returnedScoresheet.winCondition,
+            targetScore: returnedScoresheet.targetScore,
+            roundsScore: returnedScoresheet.roundsScore,
+            type: "Match",
+          })
           .returning();
+        if (!insertedScoresheet) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Scoresheet Not Created Successfully",
+          });
+        }
+        const [returningMatch] = await transaction
+          .insert(match)
+          .values({
+            ...input,
+            userId: ctx.userId,
+            scoresheetId: insertedScoresheet.id,
+          })
+          .returning();
+        if (!returningMatch) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Match Not Created Successfully",
+          });
+        }
 
-        const roundPlayersToInsert: z.infer<typeof insertRoundPlayerSchema>[] =
-          insertedRounds.flatMap((round) => {
-            return returnedMatchPlayers.map((player) => ({
+        const insertedMatchPlayers: { id: number }[] = [];
+        if (
+          input.teams.length === 1 &&
+          input.teams[0] !== undefined &&
+          input.teams[0].name === "No Team"
+        ) {
+          const inputPlayers = input.teams[0].players;
+          const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
+            inputPlayers.map((player) => ({
+              matchId: returningMatch.id,
+              playerId: player.id,
+            }));
+          const returnedMatchPlayers = await transaction
+            .insert(matchPlayer)
+            .values(playersToInsert)
+            .returning();
+
+          insertedMatchPlayers.concat(
+            returnedMatchPlayers.map((returnedMatchPlayer) => ({
+              id: returnedMatchPlayer.id,
+            })),
+          );
+        } else {
+          for (const inputTeam of input.teams) {
+            if (inputTeam.name === "No Team") {
+              const playersToInsert = inputTeam.players.map<
+                z.infer<typeof insertMatchPlayerSchema>
+              >((player) => ({
+                matchId: returningMatch.id,
+                playerId: player.id,
+                teamId: null,
+              }));
+
+              const returnedMatchPlayers = await transaction
+                .insert(matchPlayer)
+                .values(playersToInsert)
+                .returning();
+              insertedMatchPlayers.concat(
+                returnedMatchPlayers.map((returnedMatchPlayer) => ({
+                  id: returnedMatchPlayer.id,
+                })),
+              );
+            } else {
+              const [returningTeam] = await transaction
+                .insert(team)
+                .values({ name: inputTeam.name, matchId: returningMatch.id })
+                .returning();
+
+              if (!returningTeam) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: "Team Not Created Successfully",
+                });
+              }
+
+              const playersToInsert = inputTeam.players.map<
+                z.infer<typeof insertMatchPlayerSchema>
+              >((player) => ({
+                matchId: returningMatch.id,
+                playerId: player.id,
+                teamId: returningTeam.id, // Assign player to team
+              }));
+
+              const returnedMatchPlayers = await transaction
+                .insert(matchPlayer)
+                .values(playersToInsert)
+                .returning();
+              insertedMatchPlayers.concat(
+                returnedMatchPlayers.map((returnedMatchPlayer) => ({
+                  id: returnedMatchPlayer.id,
+                })),
+              );
+            }
+          }
+        }
+        if (
+          returnedScoresheet.rounds.length === 0 &&
+          insertedMatchPlayers.length > 0
+        ) {
+          const returnedRounds = returnedScoresheet.rounds.map<
+            z.infer<typeof insertRoundSchema>
+          >((round) => ({
+            color: round.color,
+            name: round.name,
+            type: round.type,
+            lookup: round.lookup,
+            modifier: round.modifier,
+            score: round.score,
+            toggleScore: round.toggleScore,
+            scoresheetId: insertedScoresheet.id,
+            order: round.order,
+          }));
+          const insertedRounds = await transaction
+            .insert(round)
+            .values(returnedRounds)
+            .returning();
+          const roundPlayersToInsert: z.infer<
+            typeof insertRoundPlayerSchema
+          >[] = insertedRounds.flatMap((round) => {
+            return insertedMatchPlayers.map((player) => ({
               roundId: round.id,
               matchPlayerId: player.id,
             }));
           });
-        await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);
-      } else {
-        for (const inputTeam of input.teams) {
-          if (inputTeam.name === "No Team") {
-            const playersToInsert = inputTeam.players.map<
-              z.infer<typeof insertMatchPlayerSchema>
-            >((player) => ({
-              matchId: returningMatch.id,
-              playerId: player.id,
-              teamId: null,
-            }));
-
-            const returnedMatchPlayers = await ctx.db
-              .insert(matchPlayer)
-              .values(playersToInsert)
-              .returning();
-            const roundPlayersToInsert: z.infer<
-              typeof insertRoundPlayerSchema
-            >[] = insertedRounds.flatMap((round) => {
-              return returnedMatchPlayers.map((player) => ({
-                roundId: round.id,
-                matchPlayerId: player.id,
-              }));
-            });
-            await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);
-          } else {
-            const [returningTeam] = await ctx.db
-              .insert(team)
-              .values({ name: inputTeam.name, matchId: returningMatch.id })
-              .returning();
-
-            if (!returningTeam) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Team Not Created Successfully",
-              });
-            }
-
-            const playersToInsert = inputTeam.players.map<
-              z.infer<typeof insertMatchPlayerSchema>
-            >((player) => ({
-              matchId: returningMatch.id,
-              playerId: player.id,
-              teamId: returningTeam.id, // Assign player to team
-            }));
-
-            const returnedMatchPlayers = await ctx.db
-              .insert(matchPlayer)
-              .values(playersToInsert)
-              .returning();
-            const roundPlayersToInsert: z.infer<
-              typeof insertRoundPlayerSchema
-            >[] = insertedRounds.flatMap((round) => {
-              return returnedMatchPlayers.map((player) => ({
-                roundId: round.id,
-                matchPlayerId: player.id,
-              }));
-            });
-            await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);
-          }
+          await transaction.insert(roundPlayer).values(roundPlayersToInsert);
         }
-      }
-      return returningMatch;
+        return returningMatch;
+      });
     }),
   getMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
