@@ -211,6 +211,7 @@ function Content({
       date: values.date,
       teams: Object.values(teams),
       scoresheetId: values.scoresheetId,
+      locationId: values.location?.id,
     });
   };
   return (
