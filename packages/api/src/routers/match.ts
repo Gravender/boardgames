@@ -426,18 +426,16 @@ export const matchRouter = createTRPCRouter({
               const { id: playerId, name } = matchPlayer.player;
 
               // If this player hasn't been seen yet, initialize
-              if (!playerStats[playerId]) {
-                playerStats[playerId] = {
-                  name,
-                  id: matchPlayer.id,
-                  playerId: playerId,
-                  scores: [],
-                  dates: [],
-                  placements: {},
-                  wins: 0,
-                  plays: 0,
-                };
-              }
+              playerStats[playerId] ??= {
+                name,
+                id: matchPlayer.id,
+                playerId: playerId,
+                scores: [],
+                dates: [],
+                placements: {},
+                wins: 0,
+                plays: 0,
+              };
 
               // Add score info for this match
               if (matchPlayer.score)

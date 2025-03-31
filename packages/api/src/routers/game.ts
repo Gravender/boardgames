@@ -65,16 +65,19 @@ export const gameRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const [returningGame] = await ctx.db
-        .insert(game)
-        .values({ ...input.game, userId: ctx.userId })
-        .returning();
-      if (!returningGame?.id) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      }
-      if (input.scoresheets.length === 0) {
-        const scoresheetId = (
-          await ctx.db
+      await ctx.db.transaction(async (transaction) => {
+        const [returningGame] = await transaction
+          .insert(game)
+          .values({ ...input.game, userId: ctx.userId })
+          .returning();
+        if (!returningGame) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create game",
+          });
+        }
+        if (input.scoresheets.length === 0) {
+          const [returnedScoresheet] = await transaction
             .insert(scoresheet)
             .values({
               name: "Default",
@@ -82,40 +85,46 @@ export const gameRouter = createTRPCRouter({
               gameId: returningGame.id,
               type: "Default",
             })
-            .returning()
-        )[0]?.id;
-        if (!scoresheetId) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-        }
-        await ctx.db.insert(round).values({
-          name: "Round 1",
-          scoresheetId: scoresheetId,
-          type: "Numeric",
-          order: 1,
-        });
-      } else {
-        for (const inputScoresheet of input.scoresheets) {
-          const [returnedScoresheet] = await ctx.db
-            .insert(scoresheet)
-            .values({
-              ...inputScoresheet.scoresheet,
-              userId: ctx.userId,
-              gameId: returningGame.id,
-              type: "Game",
-            })
             .returning();
           if (!returnedScoresheet) {
-            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create scoresheet",
+            });
           }
-
-          const rounds = inputScoresheet.rounds.map((round, index) => ({
-            ...round,
+          await transaction.insert(round).values({
+            name: "Round 1",
             scoresheetId: returnedScoresheet.id,
-            order: index + 1,
-          }));
-          await ctx.db.insert(round).values(rounds);
+            type: "Numeric",
+            order: 1,
+          });
+        } else {
+          for (const inputScoresheet of input.scoresheets) {
+            const [returnedScoresheet] = await transaction
+              .insert(scoresheet)
+              .values({
+                ...inputScoresheet.scoresheet,
+                userId: ctx.userId,
+                gameId: returningGame.id,
+                type: "Game",
+              })
+              .returning();
+            if (!returnedScoresheet) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Failed to create scoresheet",
+              });
+            }
+
+            const rounds = inputScoresheet.rounds.map((round, index) => ({
+              ...round,
+              scoresheetId: returnedScoresheet.id,
+              order: index + 1,
+            }));
+            await transaction.insert(round).values(rounds);
+          }
         }
-      }
+      });
     }),
   getGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))
