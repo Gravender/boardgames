@@ -117,3 +117,9 @@ export {
   insertShareRequestSchema,
   selectShareRequestSchema,
 } from "./shareRequest";
+export {
+  default as sharedScoresheet,
+  sharedScoresheetRelations,
+  insertSharedScoresheetSchema,
+  selectSharedScoresheetSchema,
+} from "./sharedScoresheet";

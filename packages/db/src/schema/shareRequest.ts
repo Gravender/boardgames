@@ -15,7 +15,9 @@ const shareRequest = createTable("share_request", {
     .default(sql`gen_random_uuid()`)
     .unique()
     .notNull(),
-  itemType: text("item_type", { enum: ["game", "match", "player"] }).notNull(),
+  itemType: text("item_type", {
+    enum: ["game", "match", "player", "scoresheet"],
+  }).notNull(),
   itemId: integer("item_id").notNull(),
   permission: text("permission", { enum: ["view", "edit"] })
     .default("view")
