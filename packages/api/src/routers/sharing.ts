@@ -2,6 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { and, eq, gt, lt, sql } from "drizzle-orm";
 import { z } from "zod";
 
+import type {
+  selectGameSchema,
+  selectMatchSchema,
+  selectScoreSheetSchema,
+} from "@board-games/db/schema";
 import {
   game,
   match,
@@ -609,6 +614,9 @@ export const sharingRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const sharedItem = await ctx.db.query.shareRequest.findFirst({
         where: eq(shareRequest.token, input.token),
+        with: {
+          childShareRequests: true,
+        },
       });
 
       if (!sharedItem) {
@@ -648,11 +656,99 @@ export const sharingRouter = createTRPCRouter({
           message: "Item not found.",
         });
       }
+      const childItems: (
+        | {
+            itemType: "game";
+            item: z.infer<typeof selectGameSchema>;
+            permission: "view" | "edit";
+          }
+        | {
+            itemType: "match";
+            item: z.infer<typeof selectMatchSchema>;
+            permission: "view" | "edit";
+          }
+        | {
+            itemType: "scoresheet";
+            item: z.infer<typeof selectScoreSheetSchema>;
+            permission: "view" | "edit";
+          }
+      )[] = [];
+      if (sharedItem.childShareRequests.length > 0) {
+        for (const childShareRequest of sharedItem.childShareRequests) {
+          if (childShareRequest.itemType === "game") {
+            const [returnGame] = await ctx.db
+              .select()
+              .from(game)
+              .where(
+                and(
+                  eq(game.id, childShareRequest.itemId),
+                  eq(game.userId, childShareRequest.ownerId),
+                ),
+              );
+            if (!returnGame) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Shared Game not found",
+              });
+            }
+            childItems.push({
+              itemType: "game",
+              item: returnGame,
+              permission: childShareRequest.permission,
+            });
+          }
+          if (childShareRequest.itemType === "match") {
+            const [returnedMatch] = await ctx.db
+              .select()
+              .from(match)
+              .where(
+                and(
+                  eq(match.id, childShareRequest.itemId),
+                  eq(match.userId, sharedItem.ownerId),
+                ),
+              );
+            if (!returnedMatch) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Match not found",
+              });
+            }
+            childItems.push({
+              itemType: "match",
+              item: returnedMatch,
+              permission: childShareRequest.permission,
+            });
+          }
+          if (childShareRequest.itemType === "scoresheet") {
+            const [returnedScoresheet] = await ctx.db
+              .select()
+              .from(scoresheet)
+              .where(
+                and(
+                  eq(scoresheet.id, childShareRequest.itemId),
+                  eq(scoresheet.userId, sharedItem.ownerId),
+                ),
+              );
+            if (!returnedScoresheet) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Scoresheet not found",
+              });
+            }
+            childItems.push({
+              itemType: "scoresheet",
+              item: returnedScoresheet,
+              permission: childShareRequest.permission,
+            });
+          }
+        }
+      }
 
       return {
         success: true,
         itemType: sharedItem.itemType,
         item: content,
+        childItems: childItems,
         permission: sharedItem.permission,
       };
     }),
@@ -705,5 +801,52 @@ export const sharingRouter = createTRPCRouter({
         };
       }
       return { success: true, message: "Shared player linked successfully." };
+    }),
+  linkSharedGame: protectedUserProcedure
+    .input(
+      z.object({
+        sharedGameId: z.number(),
+        linkedGameId: z.number().nullable(), // Allow unlinking
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const sharedGameEntry = await ctx.db.query.sharedGame.findFirst({
+        where: eq(sharedGame.id, input.sharedGameId),
+      });
+
+      if (!sharedGameEntry) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared game not found.",
+        });
+      }
+
+      if (input.linkedGameId) {
+        const gameEntry = await ctx.db.query.game.findFirst({
+          where: and(
+            eq(game.id, input.linkedGameId),
+            eq(game.userId, ctx.userId),
+          ),
+        });
+
+        if (!gameEntry) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You do not own this game.",
+          });
+        }
+      }
+
+      await ctx.db
+        .update(sharedGame)
+        .set({ linkedGameId: input.linkedGameId })
+        .where(eq(sharedGame.id, input.sharedGameId));
+
+      return {
+        success: true,
+        message: input.linkedGameId
+          ? "Shared game linked successfully."
+          : "Shared game unlinked successfully.",
+      };
     }),
 });
