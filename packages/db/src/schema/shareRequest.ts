@@ -25,6 +25,7 @@ const shareRequest = createTable("share_request", {
   status: text("status", { enum: ["pending", "accepted", "rejected"] })
     .default("pending")
     .notNull(),
+  parentShareId: integer("parent_share_id"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -34,18 +35,29 @@ const shareRequest = createTable("share_request", {
   expiresAt: timestamp("expires_at", { withTimezone: true }),
 });
 
-export const shareRequestRelations = relations(shareRequest, ({ one }) => ({
-  owner: one(user, {
-    fields: [shareRequest.ownerId],
-    references: [user.id],
-    relationName: "owner",
+export const shareRequestRelations = relations(
+  shareRequest,
+  ({ one, many }) => ({
+    owner: one(user, {
+      fields: [shareRequest.ownerId],
+      references: [user.id],
+      relationName: "owner",
+    }),
+    sharedWith: one(user, {
+      fields: [shareRequest.sharedWithId],
+      references: [user.id],
+      relationName: "shared_with",
+    }),
+    parentShareRequest: one(shareRequest, {
+      fields: [shareRequest.parentShareId],
+      references: [shareRequest.id],
+      relationName: "child_share_request",
+    }),
+    childShareRequests: many(shareRequest, {
+      relationName: "child_share_request",
+    }),
   }),
-  sharedWith: one(user, {
-    fields: [shareRequest.sharedWithId],
-    references: [user.id],
-    relationName: "shared_with",
-  }),
-}));
+);
 
 export const insertShareRequestSchema = createInsertSchema(shareRequest);
 

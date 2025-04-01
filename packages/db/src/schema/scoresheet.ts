@@ -22,7 +22,9 @@ const scoresheets = createTable(
   {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 256 }).notNull(),
-    gameId: integer("game_id").references(() => game.id),
+    gameId: integer("game_id")
+      .references(() => game.id)
+      .notNull(),
     userId: integer("user_id").references(() => user.id),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
