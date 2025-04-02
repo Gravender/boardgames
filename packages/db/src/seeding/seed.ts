@@ -7,6 +7,8 @@ import { endOfMonth, getDaysInMonth, subMonths } from "date-fns";
 import { eq, getTableName, inArray, sql } from "drizzle-orm";
 
 import type {
+  insertFriendRequestSchema,
+  insertFriendSchema,
   insertGameSchema,
   insertGroupPlayerSchema,
   insertGroupSchema,
@@ -21,6 +23,8 @@ import type {
 } from "@board-games/db/schema";
 import { db } from "@board-games/db/client";
 import {
+  friend,
+  friendRequest,
   game,
   group,
   groupPlayer,
@@ -37,7 +41,6 @@ import {
 } from "@board-games/db/schema";
 
 import type { insertRoundPlayerSchema, insertRoundSchema } from "../schema";
-import roundPlayers from "../schema/roundPlayer";
 
 function weightedRandomSample<T>(
   weightedPlayers: { weight: number; value: T }[],
@@ -90,6 +93,12 @@ async function resetTable(table: Table) {
   );
 }
 for (const table of [
+  friend,
+  friendRequest,
+  game,
+  group,
+  groupPlayer,
+  image,
   location,
   match,
   matchPlayer,
@@ -97,18 +106,18 @@ for (const table of [
   round,
   roundPlayer,
   scoresheet,
+  team,
   user,
-  game,
-  group,
-  groupPlayer,
-  image,
 ]) {
   // await db.delete(table); // clear tables without truncating / resetting ids
   await resetTable(table);
 }
 export async function seed() {
+  const totalUsers = 30;
+  const totalGames = 10 * totalUsers;
+  const maxMatches = 30 * totalGames; // Control total number of matches across all games
   const userData: z.infer<typeof insertUserSchema>[] = Array.from(
-    { length: 10 },
+    { length: totalUsers },
     () => ({
       clerkUserId: faker.person.fullName(),
       name: faker.person.fullName(),
@@ -117,6 +126,67 @@ export async function seed() {
   );
   console.log("Inserting users...\n");
   const users = await db.insert(user).values(userData).returning();
+
+  console.log("Inserting users player...\n");
+  await db.insert(player).values(
+    users.map((u) => ({
+      name: u.name ?? "",
+      createdBy: u.id,
+      userId: u.id,
+    })),
+  );
+
+  const friendPairs = new Set<string>();
+  const friendRequestsData: z.infer<typeof insertFriendRequestSchema>[] = [];
+  const friendsData: z.infer<typeof insertFriendSchema>[] = [];
+
+  for (const userA of users) {
+    const friendCount = faker.number.int({ min: 0, max: 5 });
+    if (friendCount === 0) continue;
+    const potentialFriends = faker.helpers.arrayElements(
+      users.filter((u) => u.id !== userA.id),
+      friendCount,
+    );
+
+    for (const userB of potentialFriends) {
+      const key = `${Math.min(userA.id, userB.id)}-${Math.max(userA.id, userB.id)}`;
+      if (friendPairs.has(key)) continue;
+      friendPairs.add(key);
+
+      const status = faker.helpers.weightedArrayElement([
+        { weight: 0.7, value: "accepted" },
+        { weight: 0.2, value: "pending" },
+        { weight: 0.1, value: "rejected" },
+      ]);
+      const date = faker.date.past({ years: 2 });
+
+      friendRequestsData.push({
+        userId: userA.id,
+        requesteeId: userB.id,
+        status,
+        createdAt: date,
+      });
+
+      if (status === "accepted") {
+        const futureDate = faker.date.future({ refDate: date, years: 1 });
+        friendsData.push(
+          {
+            userId: userA.id,
+            friendId: userB.id,
+            createdAt: futureDate,
+          },
+          { userId: userB.id, friendId: userA.id, createdAt: futureDate },
+        );
+      }
+    }
+  }
+
+  console.log("Inserting friend requests...");
+  if (friendRequestsData.length > 0)
+    await db.insert(friendRequest).values(friendRequestsData);
+
+  console.log("Inserting accepted friends...");
+  if (friendsData.length > 0) await db.insert(friend).values(friendsData);
 
   const imageGameData: z.infer<typeof insertImageSchema>[] = Array.from(
     { length: 30 },
@@ -128,9 +198,6 @@ export async function seed() {
   );
   console.log("Inserting game images...\n");
   const gameImages = await db.insert(image).values(imageGameData).returning();
-
-  const totalGames = 400;
-  const maxMatches = 30000; // Control total number of matches across all games
 
   const normalGames = randomNormal.source(randomLcg(d3Seed))(40, 25);
 
@@ -227,12 +294,10 @@ export async function seed() {
       ),
     }),
   );
-  if (playerData[0] && playerData[1]) {
-    playerData[0].userId = users[0]?.id;
-    playerData[1].userId = users[1]?.id;
-  }
+
   console.log("Inserting players...\n");
-  const players = await db.insert(player).values(playerData).returning();
+  await db.insert(player).values(playerData);
+  const players = await db.select().from(player);
 
   const groupData: z.infer<typeof insertGroupSchema>[] = Array.from(
     { length: 10 },
@@ -579,7 +644,7 @@ export async function seed() {
           });
         });
       console.log(`Inserting round players for ${returnedMatch.name}...\n`);
-      await db.insert(roundPlayers).values(roundPlayerData).returning();
+      await db.insert(roundPlayer).values(roundPlayerData).returning();
 
       const finalScoreSqlStatement = () => {
         if (matchScoresheet.roundsScore === "Aggregate") {
