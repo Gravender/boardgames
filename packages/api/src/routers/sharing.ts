@@ -1548,6 +1548,7 @@ export const sharingRouter = createTRPCRouter({
             });
             return {
               type: "game" as const,
+              hasChildren: sharedItem.childShareRequests.length > 0,
               name: returnedGame?.name,
               ownerName: sharedItem.owner.name,
               permission: sharedItem.permission,
@@ -1575,6 +1576,7 @@ export const sharingRouter = createTRPCRouter({
             });
             return {
               type: "match" as const,
+              hasChildren: sharedItem.childShareRequests.length > 0,
               createdAt: sharedItem.createdAt,
               expiredAt: sharedItem.expiresAt,
               status: sharedItem.status,
@@ -1599,6 +1601,7 @@ export const sharingRouter = createTRPCRouter({
             });
             return {
               type: "player" as const,
+              hasChildren: sharedItem.childShareRequests.length > 0,
               createdAt: sharedItem.createdAt,
               expiredAt: sharedItem.expiresAt,
               status: sharedItem.status,
@@ -1645,6 +1648,7 @@ export const sharingRouter = createTRPCRouter({
             });
             return {
               type: "game" as const,
+              hasChildren: sharedItem.childShareRequests.length > 0,
               name: returnedGame?.name,
               sharedWith: sharedItem.sharedWith?.name,
               permission: sharedItem.permission,
@@ -1673,6 +1677,7 @@ export const sharingRouter = createTRPCRouter({
             });
             return {
               type: "match" as const,
+              hasChildren: sharedItem.childShareRequests.length > 0,
               createdAt: sharedItem.createdAt,
               expiredAt: sharedItem.expiresAt,
               status: sharedItem.status,
@@ -1698,6 +1703,7 @@ export const sharingRouter = createTRPCRouter({
             });
             return {
               type: "player" as const,
+              hasChildren: sharedItem.childShareRequests.length > 0,
               createdAt: sharedItem.createdAt,
               expiredAt: sharedItem.expiresAt,
               status: sharedItem.status,

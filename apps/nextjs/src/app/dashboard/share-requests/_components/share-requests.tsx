@@ -109,176 +109,162 @@ export default function ShareRequestsPage() {
       date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     );
   };
+  console.log(outgoingRequests);
 
   return (
-    <div className="container max-w-4xl py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Share Requests</h1>
-        <p className="text-muted-foreground">
-          Manage incoming and outgoing share requests
-        </p>
-      </div>
+    <Tabs defaultValue="incoming">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="incoming">
+          Incoming Requests
+          {incomingRequests.length > 0 && (
+            <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+              {incomingRequests.length}
+            </span>
+          )}
+        </TabsTrigger>
+        <TabsTrigger value="outgoing">Outgoing Requests</TabsTrigger>
+      </TabsList>
 
-      <Tabs defaultValue="incoming">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="incoming">
-            Incoming Requests
-            {incomingRequests.length > 0 && (
-              <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                {incomingRequests.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="outgoing">Outgoing Requests</TabsTrigger>
-        </TabsList>
+      <TabsContent value="incoming" className="space-y-4 pt-4">
+        {incomingRequests.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-10 text-center">
+              <GameController className="h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">No incoming requests</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                You don't have any incoming share requests at the moment
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {incomingRequests.map((request) => (
+              <Card key={request.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>{request.name}</CardTitle>
+                      <CardDescription>
+                        Shared by {request.ownerName} on{" "}
+                        {formatDate(request.createdAt)}
+                      </CardDescription>
+                    </div>
+                    <div className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">
+                      {request.permission === "view"
+                        ? "View Only"
+                        : "Edit Access"}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <p className="text-sm">
+                      <span className="font-medium">{request.ownerName}</span>{" "}
+                      wants to share their {request.type} with you
+                    </p>
+                    {request.hasChildren && (
+                      <div className="text-sm text-muted-foreground">
+                        <p>This share includes:</p>
+                        <ul className="ml-5 list-disc">
+                          {(request.game ?? 0) > 0 && <li>{`1 game`}</li>}
+                          {(request.scoresheets ?? 0) > 0 && (
+                            <li>{`${request.scoresheets} scoresheets`}</li>
+                          )}
+                          {(request.matches ?? 0) > 0 && (
+                            <li>{`${request.matches} matches`}</li>
+                          )}
+                          {(request.players ?? 0) > 0 && (
+                            <li>{`${request.players} players`}</li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between gap-2">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => handleReject(request.id)}
+                    disabled={
+                      loading[`reject-${request.id}`] ||
+                      loading[`accept-${request.id}`]
+                    }
+                  >
+                    {loading[`reject-${request.id}`] ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <X className="mr-2 h-4 w-4" />
+                    )}
+                    Reject
+                  </Button>
+                  <Button
+                    className="w-full"
+                    onClick={() => handleAccept(request.id)}
+                    disabled={
+                      loading[`reject-${request.id}`] ||
+                      loading[`accept-${request.id}`]
+                    }
+                  >
+                    {loading[`accept-${request.id}`] ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="mr-2 h-4 w-4" />
+                    )}
+                    Accept
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
+      </TabsContent>
 
-        <TabsContent value="incoming" className="space-y-4 pt-4">
-          {incomingRequests.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-10 text-center">
-                <GameController className="h-10 w-10 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">
-                  No incoming requests
-                </h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  You don't have any incoming share requests at the moment
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {incomingRequests.map((request) => (
-                <Card key={request.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle>{request.name}</CardTitle>
+      <TabsContent value="outgoing" className="space-y-4 pt-4">
+        {outgoingRequests.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-10 text-center">
+              <GameController className="h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">No outgoing requests</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                You haven't shared any games with others yet
+              </p>
+              <Button
+                className="mt-4"
+                onClick={() => (window.location.href = "/share-game")}
+              >
+                Share a Game
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {outgoingRequests.map((request) => (
+              <Card key={request.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>{request.name}</CardTitle>
+                      {request.sharedWith ? (
                         <CardDescription>
-                          Shared by {request.ownerName} on{" "}
+                          Shared with {request.sharedWith} on{" "}
                           {formatDate(request.createdAt)}
                         </CardDescription>
-                      </div>
-                      <div className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">
-                        {request.permission === "view"
-                          ? "View Only"
-                          : "Edit Access"}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <p className="text-sm">
-                        <span className="font-medium">{request.ownerName}</span>{" "}
-                        wants to share their {request.type} with you
-                      </p>
-                      {(request.matches ?? 0) > 0 ||
-                        request.players > 0 ||
-                        (request.scoresheets ?? 0) > 0 ||
-                        ((request.game ?? 0) > 0 && (
-                          <div className="text-sm text-muted-foreground">
-                            <p>This share includes:</p>
-                            <ul className="ml-5 list-disc">
-                              {(request.game ?? 0) > 0 && <li>{`1 game`}</li>}
-                              {(request.scoresheets ?? 0) > 0 && (
-                                <li>{`${request.scoresheets} scoresheets`}</li>
-                              )}
-                              {(request.matches ?? 0) > 0 && (
-                                <li>{`${request.matches} matches`}</li>
-                              )}
-                              {(request.players ?? 0) > 0 && (
-                                <li>{`${request.players} players`}</li>
-                              )}
-                            </ul>
-                          </div>
-                        ))}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between gap-2">
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => handleReject(request.id)}
-                      disabled={
-                        loading[`reject-${request.id}`] ||
-                        loading[`accept-${request.id}`]
-                      }
-                    >
-                      {loading[`reject-${request.id}`] ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <X className="mr-2 h-4 w-4" />
+                        <CardDescription>
+                          Created share Link on {formatDate(request.createdAt)}
+                        </CardDescription>
                       )}
-                      Reject
-                    </Button>
-                    <Button
-                      className="w-full"
-                      onClick={() => handleAccept(request.id)}
-                      disabled={
-                        loading[`reject-${request.id}`] ||
-                        loading[`accept-${request.id}`]
-                      }
-                    >
-                      {loading[`accept-${request.id}`] ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Check className="mr-2 h-4 w-4" />
-                      )}
-                      Accept
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="outgoing" className="space-y-4 pt-4">
-          {outgoingRequests.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-10 text-center">
-                <GameController className="h-10 w-10 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">
-                  No outgoing requests
-                </h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  You haven't shared any games with others yet
-                </p>
-                <Button
-                  className="mt-4"
-                  onClick={() => (window.location.href = "/share-game")}
-                >
-                  Share a Game
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {outgoingRequests.map((request) => (
-                <Card key={request.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle>{request.name}</CardTitle>
-                        {request.sharedWith ? (
-                          <CardDescription>
-                            Shared with {request.sharedWith} on{" "}
-                            {formatDate(request.createdAt)}
-                          </CardDescription>
-                        ) : (
-                          <CardDescription>
-                            Created share Link on{" "}
-                            {formatDate(request.createdAt)}
-                          </CardDescription>
-                        )}
-                      </div>
-                      <div className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">
-                        {request.permission === "view"
-                          ? "View Only"
-                          : "Edit Access"}
-                      </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
+                    <div className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">
+                      {request.permission === "view"
+                        ? "View Only"
+                        : "Edit Access"}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       {request.status === "pending" ? (
                         <>
@@ -301,29 +287,46 @@ export default function ShareRequestsPage() {
                         </>
                       )}
                     </div>
-                  </CardContent>
-                  {request.status === "pending" && (
-                    <CardFooter>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => handleCancel(request.id)}
-                        disabled={loading[`cancel-${request.id}`]}
-                      >
-                        {loading[`cancel-${request.id}`] ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          "Cancel Request"
-                        )}
-                      </Button>
-                    </CardFooter>
-                  )}
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
+                    {request.hasChildren && (
+                      <div className="text-sm text-muted-foreground">
+                        <p>This share includes:</p>
+                        <ul className="ml-5 list-disc">
+                          {(request.game ?? 0) > 0 && <li>{`1 game`}</li>}
+                          {(request.scoresheets ?? 0) > 0 && (
+                            <li>{`${request.scoresheets} scoresheets`}</li>
+                          )}
+                          {(request.matches ?? 0) > 0 && (
+                            <li>{`${request.matches} matches`}</li>
+                          )}
+                          {(request.players ?? 0) > 0 && (
+                            <li>{`${request.players} players`}</li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+                {request.status === "pending" && (
+                  <CardFooter>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => handleCancel(request.id)}
+                      disabled={loading[`cancel-${request.id}`]}
+                    >
+                      {loading[`cancel-${request.id}`] ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Cancel Request"
+                      )}
+                    </Button>
+                  </CardFooter>
+                )}
+              </Card>
+            ))}
+          </div>
+        )}
+      </TabsContent>
+    </Tabs>
   );
 }

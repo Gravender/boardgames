@@ -10,13 +10,11 @@ export default async function Page() {
   return (
     <HydrateClient>
       <div className="container max-w-4xl py-10">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Share Game</h1>
-            <p className="text-muted-foreground">
-              Share your games with friends and other users
-            </p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Share Requests</h1>
+          <p className="text-muted-foreground">
+            Manage incoming and outgoing share requests
+          </p>
         </div>
         <Suspense fallback={<div>Loading...</div>}>
           <ShareRequestsPage />
