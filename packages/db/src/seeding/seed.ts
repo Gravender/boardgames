@@ -820,7 +820,7 @@ export async function seed() {
     const userShareRequests: z.infer<typeof parentShareRequestSchema>[] =
       await Promise.all(
         Array.from(
-          { length: faker.number.int({ min: 1, max: 10 }) },
+          { length: faker.number.int({ min: 5, max: 30 }) },
           async () => {
             const isLink = faker.datatype.boolean(0.2);
             const itemType = faker.helpers.arrayElement([
@@ -927,7 +927,12 @@ export async function seed() {
             eq(game.userId, returnedUserShareRequest.ownerId),
           ),
           with: {
-            scoresheets: true,
+            scoresheets: {
+              where: or(
+                eq(scoresheet.type, "Default"),
+                eq(scoresheet.type, "Game"),
+              ),
+            },
             matches: {
               with: {
                 matchPlayers: true,
@@ -938,66 +943,68 @@ export async function seed() {
         if (returnedGame) {
           const childShareRequest: z.infer<typeof childShareRequestSchema>[] =
             [];
-          faker.helpers
-            .arrayElements(returnedGame.matches, {
-              min: 0,
-              max: returnedGame.matches.length,
-            })
-            .forEach((m) => {
-              childShareRequest.push({
-                createdAt: returnedUserShareRequest.createdAt,
-                itemId: m.id,
-                parentShareId: returnedUserShareRequest.id,
-                status: returnedUserShareRequest.status,
-                itemType: "match",
-                ownerId: returnedUserShareRequest.ownerId,
-                expiresAt: returnedUserShareRequest.expiresAt,
-                permission: faker.helpers.arrayElement(["view", "edit"]),
-                sharedWithId: returnedUserShareRequest.sharedWithId,
-              });
-              if (faker.datatype.boolean(0.8)) {
-                m.matchPlayers.forEach((mPlayer) => {
-                  childShareRequest.push({
-                    createdAt: returnedUserShareRequest.createdAt,
-                    itemId: mPlayer.playerId,
-                    parentShareId: returnedUserShareRequest.id,
-                    status: returnedUserShareRequest.status,
-                    itemType: "player",
-                    ownerId: returnedUserShareRequest.ownerId,
-                    expiresAt: returnedUserShareRequest.expiresAt,
-                    permission: "view",
-                    sharedWithId: returnedUserShareRequest.sharedWithId,
+          if (returnedGame.matches.length > 0 && faker.datatype.boolean()) {
+            faker.helpers
+              .arrayElements(returnedGame.matches, {
+                min: 1,
+                max: returnedGame.matches.length,
+              })
+              .forEach((m) => {
+                childShareRequest.push({
+                  createdAt: returnedUserShareRequest.createdAt,
+                  itemId: m.id,
+                  parentShareId: returnedUserShareRequest.id,
+                  status: returnedUserShareRequest.status,
+                  itemType: "match",
+                  ownerId: returnedUserShareRequest.ownerId,
+                  expiresAt: returnedUserShareRequest.expiresAt,
+                  permission: faker.helpers.arrayElement(["view", "edit"]),
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
+                });
+                if (faker.datatype.boolean(0.8)) {
+                  m.matchPlayers.forEach((mPlayer) => {
+                    childShareRequest.push({
+                      createdAt: returnedUserShareRequest.createdAt,
+                      itemId: mPlayer.playerId,
+                      parentShareId: returnedUserShareRequest.id,
+                      status: returnedUserShareRequest.status,
+                      itemType: "player",
+                      ownerId: returnedUserShareRequest.ownerId,
+                      expiresAt: returnedUserShareRequest.expiresAt,
+                      permission: "view",
+                      sharedWithId: returnedUserShareRequest.sharedWithId,
+                    });
                   });
+                }
+              });
+            returnedGame.scoresheets.forEach((sSheet) => {
+              if (sSheet.type === "Default") {
+                childShareRequest.push({
+                  createdAt: returnedUserShareRequest.createdAt,
+                  itemId: sSheet.id,
+                  parentShareId: returnedUserShareRequest.id,
+                  status: returnedUserShareRequest.status,
+                  itemType: "scoresheet",
+                  ownerId: returnedUserShareRequest.ownerId,
+                  expiresAt: returnedUserShareRequest.expiresAt,
+                  permission: faker.helpers.arrayElement(["view", "edit"]),
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
+                });
+              } else if (faker.datatype.boolean(0.5)) {
+                childShareRequest.push({
+                  createdAt: returnedUserShareRequest.createdAt,
+                  itemId: sSheet.id,
+                  parentShareId: returnedUserShareRequest.id,
+                  status: returnedUserShareRequest.status,
+                  itemType: "scoresheet",
+                  ownerId: returnedUserShareRequest.ownerId,
+                  expiresAt: returnedUserShareRequest.expiresAt,
+                  permission: faker.helpers.arrayElement(["view", "edit"]),
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
                 });
               }
             });
-          returnedGame.scoresheets.forEach((sSheet) => {
-            if (sSheet.type === "Default") {
-              childShareRequest.push({
-                createdAt: returnedUserShareRequest.createdAt,
-                itemId: sSheet.id,
-                parentShareId: returnedUserShareRequest.id,
-                status: returnedUserShareRequest.status,
-                itemType: "scoresheet",
-                ownerId: returnedUserShareRequest.ownerId,
-                expiresAt: returnedUserShareRequest.expiresAt,
-                permission: faker.helpers.arrayElement(["view", "edit"]),
-                sharedWithId: returnedUserShareRequest.sharedWithId,
-              });
-            } else if (faker.datatype.boolean(0.5)) {
-              childShareRequest.push({
-                createdAt: returnedUserShareRequest.createdAt,
-                itemId: sSheet.id,
-                parentShareId: returnedUserShareRequest.id,
-                status: returnedUserShareRequest.status,
-                itemType: "scoresheet",
-                ownerId: returnedUserShareRequest.ownerId,
-                expiresAt: returnedUserShareRequest.expiresAt,
-                permission: faker.helpers.arrayElement(["view", "edit"]),
-                sharedWithId: returnedUserShareRequest.sharedWithId,
-              });
-            }
-          });
+          }
           const filteredChildShareRequest = childShareRequest.filter(
             (cShareRequest) => {
               return !currentChildShareRequest.find(
@@ -1093,42 +1100,46 @@ export async function seed() {
         if (returnedPlayer) {
           const childShareRequest: z.infer<typeof childShareRequestSchema>[] =
             [];
-
-          faker.helpers
-            .arrayElements(returnedPlayer.matchesByPlayer, {
-              min: 0,
-              max: returnedPlayer.matchesByPlayer.length,
-            })
-            .forEach((mPlayer) => {
-              childShareRequest.push({
-                createdAt: returnedUserShareRequest.createdAt,
-                itemId: mPlayer.match.id,
-                parentShareId: returnedUserShareRequest.id,
-                status: returnedUserShareRequest.status,
-                itemType: "match",
-                ownerId: returnedUserShareRequest.ownerId,
-                expiresAt: returnedUserShareRequest.expiresAt,
-                permission: faker.helpers.arrayElement(["view", "edit"]),
-                sharedWithId: returnedUserShareRequest.sharedWithId,
-              });
-              if (faker.datatype.boolean(0.8)) {
-                mPlayer.match.matchPlayers.forEach((mPlayer) => {
-                  if (mPlayer.playerId !== returnedUserShareRequest.itemId) {
-                    childShareRequest.push({
-                      createdAt: returnedUserShareRequest.createdAt,
-                      itemId: mPlayer.playerId,
-                      parentShareId: returnedUserShareRequest.id,
-                      status: returnedUserShareRequest.status,
-                      itemType: "player",
-                      ownerId: returnedUserShareRequest.ownerId,
-                      expiresAt: returnedUserShareRequest.expiresAt,
-                      permission: "view",
-                      sharedWithId: returnedUserShareRequest.sharedWithId,
-                    });
-                  }
+          if (
+            returnedPlayer.matchesByPlayer.length > 0 &&
+            faker.datatype.boolean()
+          ) {
+            faker.helpers
+              .arrayElements(returnedPlayer.matchesByPlayer, {
+                min: 1,
+                max: returnedPlayer.matchesByPlayer.length,
+              })
+              .forEach((mPlayer) => {
+                childShareRequest.push({
+                  createdAt: returnedUserShareRequest.createdAt,
+                  itemId: mPlayer.match.id,
+                  parentShareId: returnedUserShareRequest.id,
+                  status: returnedUserShareRequest.status,
+                  itemType: "match",
+                  ownerId: returnedUserShareRequest.ownerId,
+                  expiresAt: returnedUserShareRequest.expiresAt,
+                  permission: faker.helpers.arrayElement(["view", "edit"]),
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
                 });
-              }
-            });
+                if (faker.datatype.boolean(0.8)) {
+                  mPlayer.match.matchPlayers.forEach((mPlayer) => {
+                    if (mPlayer.playerId !== returnedUserShareRequest.itemId) {
+                      childShareRequest.push({
+                        createdAt: returnedUserShareRequest.createdAt,
+                        itemId: mPlayer.playerId,
+                        parentShareId: returnedUserShareRequest.id,
+                        status: returnedUserShareRequest.status,
+                        itemType: "player",
+                        ownerId: returnedUserShareRequest.ownerId,
+                        expiresAt: returnedUserShareRequest.expiresAt,
+                        permission: "view",
+                        sharedWithId: returnedUserShareRequest.sharedWithId,
+                      });
+                    }
+                  });
+                }
+              });
+          }
           const filteredChildShareRequest = childShareRequest.filter(
             (cShareRequest) => {
               return !currentChildShareRequest.find(
