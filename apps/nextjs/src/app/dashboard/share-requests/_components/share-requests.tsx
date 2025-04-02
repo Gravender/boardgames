@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { differenceInCalendarDays, format, isBefore } from "date-fns";
 import {
   Check,
   Clock,
+  Copy,
   GamepadIcon as GameController,
+  LinkIcon,
   Loader2,
   X,
 } from "lucide-react";
@@ -20,12 +23,20 @@ import {
   CardTitle,
 } from "@board-games/ui/card";
 import { useToast } from "@board-games/ui/hooks/use-toast";
+import { Input } from "@board-games/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@board-games/ui/tooltip";
 
-import { useTRPC } from "~/trpc/react";
+import { getBaseUrl, useTRPC } from "~/trpc/react";
 
 export default function ShareRequestsPage() {
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [copiedLinks, setCopiedLinks] = useState<Record<number, boolean>>({});
   const trpc = useTRPC();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -102,14 +113,42 @@ export default function ShareRequestsPage() {
     }
   };
 
-  const formatDate = (date: Date) => {
-    return (
-      date.toLocaleDateString() +
-      " at " +
-      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    );
+  const copyShareLink = (id: number, link: string) => {
+    void navigator.clipboard.writeText(link);
+    setCopiedLinks({ ...copiedLinks, [id]: true });
+
+    setTimeout(() => {
+      setCopiedLinks((prev) => ({ ...prev, [id]: false }));
+    }, 2000);
+
+    toast({
+      title: "Link copied",
+      description: "Share link copied to clipboard",
+    });
   };
-  console.log(outgoingRequests);
+
+  const formatDate = (date: Date) => {
+    return `${format(date, "P")} at ${format(date, "p")}`;
+  };
+  const formatExpiry = (expiryDate: Date | null) => {
+    if (expiryDate === null) return "never expires";
+
+    const now = new Date();
+
+    if (isBefore(expiryDate, now)) return "expired";
+
+    const diffDays = differenceInCalendarDays(expiryDate, now);
+
+    if (diffDays === 0) return "expires today";
+    if (diffDays === 1) return "expires tomorrow";
+    if (diffDays < 7) return `expires in ${diffDays} days`;
+    if (diffDays === 7) return `expires in a week`;
+
+    return `expires on ${format(expiryDate, "P")}`;
+  };
+  const shareUrl = (token: string) => {
+    return `${getBaseUrl()}/share/${token}`;
+  };
 
   return (
     <Tabs defaultValue="incoming">
@@ -244,7 +283,7 @@ export default function ShareRequestsPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>{request.name}</CardTitle>
+                      <CardTitle>{`${request.name} (${request.type})`}</CardTitle>
                       {request.sharedWith ? (
                         <CardDescription>
                           Shared with {request.sharedWith} on{" "}
@@ -252,7 +291,7 @@ export default function ShareRequestsPage() {
                         </CardDescription>
                       ) : (
                         <CardDescription>
-                          Created share Link on {formatDate(request.createdAt)}
+                          Shared via link on {formatDate(request.createdAt)}
                         </CardDescription>
                       )}
                     </div>
@@ -264,9 +303,16 @@ export default function ShareRequestsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      {request.status === "pending" ? (
+                      {!request.sharedWith ? (
+                        <>
+                          <LinkIcon className="h-4 w-4 text-blue-500" />
+                          <span className="text-sm">
+                            {`Link (${formatExpiry(request.expiredAt)})`}
+                          </span>
+                        </>
+                      ) : request.status === "pending" ? (
                         <>
                           <Clock className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">
@@ -302,6 +348,44 @@ export default function ShareRequestsPage() {
                             <li>{`${request.players} players`}</li>
                           )}
                         </ul>
+                      </div>
+                    )}
+                    {!request.sharedWith && (
+                      <div className="mt-3 flex items-center gap-2">
+                        <Input
+                          value={shareUrl(request.token)}
+                          readOnly
+                          className="flex-1 font-mono text-sm"
+                        />
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() =>
+                                  copyShareLink(
+                                    request.id,
+                                    shareUrl(request.token),
+                                  )
+                                }
+                              >
+                                {copiedLinks[request.id] ? (
+                                  <Check className="h-4 w-4" />
+                                ) : (
+                                  <Copy className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {copiedLinks[request.id]
+                                  ? "Copied!"
+                                  : "Copy link"}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     )}
                   </div>
