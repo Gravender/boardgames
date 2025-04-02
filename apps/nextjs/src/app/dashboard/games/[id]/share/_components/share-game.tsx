@@ -39,7 +39,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { toast } from "@board-games/ui/hooks/use-toast";
+import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Label } from "@board-games/ui/label";
 import {
   Popover,
@@ -61,25 +61,36 @@ import { cn } from "@board-games/ui/utils";
 
 import { useTRPC } from "~/trpc/react";
 
-const formSchema = z.object({
-  gameId: z.number({
-    required_error: "Please select a game",
-  }),
-  shareMethod: z.enum(["friends", "link"]),
-  friendIds: z.array(z.number()).optional(),
-  permission: z.enum(["view", "edit"]),
-  linkExpiry: z.enum(["1day", "7days", "30days", "never"]).default("7days"),
-  matchIds: z.array(
-    z.object({
-      id: z.number(),
-      includePlayers: z.boolean(),
-      permission: z.enum(["view", "edit"]),
-    }),
-  ),
-  scoresheetIds: z
-    .array(z.object({ id: z.number(), permission: z.enum(["view", "edit"]) }))
-    .min(1),
-});
+const formSchema = z
+  .object({
+    shareMethod: z.enum(["friends", "link"]),
+    friendIds: z.array(z.number()).optional(),
+    permission: z.enum(["view", "edit"]),
+    linkExpiry: z.enum(["1day", "7days", "30days", "never"]).default("7days"),
+    matchIds: z.array(
+      z.object({
+        id: z.number(),
+        includePlayers: z.boolean(),
+        permission: z.enum(["view", "edit"]),
+      }),
+    ),
+    scoresheetIds: z
+      .array(z.object({ id: z.number(), permission: z.enum(["view", "edit"]) }))
+      .min(1),
+  })
+  .superRefine((values, ctx) => {
+    if (
+      values.shareMethod === "friends" &&
+      (values.friendIds === undefined || values.friendIds.length < 1)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Must have at least one friend to share to if sharing with friends",
+        path: ["friendIds"],
+      });
+    }
+  });
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -89,7 +100,7 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
   const [selectedFriends, setSelectedFriends] = useState<
     { id: number; name: string; email: string }[]
   >([]);
-
+  const { toast } = useToast();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { data: gameToShare } = useSuspenseQuery(
@@ -660,7 +671,10 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
                                       >
                                         {match.name}
                                       </Label>
-                                      <p className="text-sm text-muted-foreground">
+                                      <p
+                                        className="text-sm text-muted-foreground"
+                                        suppressHydrationWarning
+                                      >
                                         Played on{" "}
                                         {new Date(
                                           match.date,
@@ -869,6 +883,13 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
               onClick={() => router.back()}
             >
               Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => console.log(form.formState.errors)}
+            >
+              FormState
             </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? (

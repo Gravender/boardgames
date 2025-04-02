@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
-import { prefetch, trpc } from "~/trpc/server";
+import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 import ShareGamePage from "./_components/share-game";
 
 export default async function Page({
@@ -15,18 +15,20 @@ export default async function Page({
   prefetch(trpc.game.getGameToShare.queryOptions({ id: Number(gameId) }));
   prefetch(trpc.friend.getFriends.queryOptions());
   return (
-    <div className="container max-w-4xl py-10">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Share Game</h1>
-          <p className="text-muted-foreground">
-            Share your games with friends and other users
-          </p>
+    <HydrateClient>
+      <div className="container max-w-4xl py-10">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Share Game</h1>
+            <p className="text-muted-foreground">
+              Share your games with friends and other users
+            </p>
+          </div>
         </div>
+        <Suspense fallback={<div>Loading...</div>}>
+          <ShareGamePage gameId={Number(gameId)} />
+        </Suspense>
       </div>
-      <Suspense fallback={<div>Loading...</div>}>
-        <ShareGamePage gameId={Number(gameId)} />
-      </Suspense>
-    </div>
+    </HydrateClient>
   );
 }
