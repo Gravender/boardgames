@@ -1015,15 +1015,29 @@ export async function seed() {
               }
             });
           }
-          const filteredChildShareRequest = childShareRequest.filter(
-            (cShareRequest) => {
-              return !currentShareRequest.find(
-                (cChildShareRequest) =>
-                  cChildShareRequest.itemType === cShareRequest.itemType &&
-                  cChildShareRequest.itemId === cShareRequest.itemId,
-              );
-            },
+          const uniqueMap = new Map<
+            string,
+            z.infer<typeof childShareRequestSchema>
+          >();
+          for (const req of childShareRequest) {
+            const key = `${req.itemType}-${req.itemId}`;
+            if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, req);
+            }
+          }
+
+          // Filter out items that are already in currentShareRequest
+          const filteredChildShareRequest = Array.from(
+            uniqueMap.values(),
+          ).filter(
+            (cShareRequest) =>
+              !currentShareRequest.find(
+                (existing) =>
+                  existing.itemType === cShareRequest.itemType &&
+                  existing.itemId === cShareRequest.itemId,
+              ),
           );
+
           if (filteredChildShareRequest.length > 0) {
             await db.insert(shareRequest).values(filteredChildShareRequest);
           }
@@ -1070,14 +1084,27 @@ export async function seed() {
               });
             });
           }
-          const filteredChildShareRequest = childShareRequest.filter(
-            (cShareRequest) => {
-              return !currentShareRequest.find(
-                (cChildShareRequest) =>
-                  cChildShareRequest.itemType === cShareRequest.itemType &&
-                  cChildShareRequest.itemId === cShareRequest.itemId,
-              );
-            },
+          const uniqueMap = new Map<
+            string,
+            z.infer<typeof childShareRequestSchema>
+          >();
+          for (const req of childShareRequest) {
+            const key = `${req.itemType}-${req.itemId}`;
+            if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, req);
+            }
+          }
+
+          // Filter out items that are already in currentShareRequest
+          const filteredChildShareRequest = Array.from(
+            uniqueMap.values(),
+          ).filter(
+            (cShareRequest) =>
+              !currentShareRequest.find(
+                (existing) =>
+                  existing.itemType === cShareRequest.itemType &&
+                  existing.itemId === cShareRequest.itemId,
+              ),
           );
           if (filteredChildShareRequest.length > 0) {
             await db.insert(shareRequest).values(filteredChildShareRequest);
@@ -1150,14 +1177,27 @@ export async function seed() {
                 }
               });
           }
-          const filteredChildShareRequest = childShareRequest.filter(
-            (cShareRequest) => {
-              return !currentShareRequest.find(
-                (cChildShareRequest) =>
-                  cChildShareRequest.itemType === cShareRequest.itemType &&
-                  cChildShareRequest.itemId === cShareRequest.itemId,
-              );
-            },
+          const uniqueMap = new Map<
+            string,
+            z.infer<typeof childShareRequestSchema>
+          >();
+          for (const req of childShareRequest) {
+            const key = `${req.itemType}-${req.itemId}`;
+            if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, req);
+            }
+          }
+
+          // Filter out items that are already in currentShareRequest
+          const filteredChildShareRequest = Array.from(
+            uniqueMap.values(),
+          ).filter(
+            (cShareRequest) =>
+              !currentShareRequest.find(
+                (existing) =>
+                  existing.itemType === cShareRequest.itemType &&
+                  existing.itemId === cShareRequest.itemId,
+              ),
           );
           if (filteredChildShareRequest.length > 0) {
             await db.insert(shareRequest).values(filteredChildShareRequest);
