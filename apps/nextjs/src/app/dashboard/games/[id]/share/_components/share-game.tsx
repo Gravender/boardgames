@@ -69,15 +69,13 @@ const formSchema = z.object({
   friendIds: z.array(z.number()).optional(),
   permission: z.enum(["view", "edit"]),
   linkExpiry: z.enum(["1day", "7days", "30days", "never"]).default("7days"),
-  matchIds: z
-    .array(
-      z.object({
-        id: z.number(),
-        includePlayers: z.boolean(),
-        permission: z.enum(["view", "edit"]),
-      }),
-    )
-    .min(1),
+  matchIds: z.array(
+    z.object({
+      id: z.number(),
+      includePlayers: z.boolean(),
+      permission: z.enum(["view", "edit"]),
+    }),
+  ),
   scoresheetIds: z
     .array(z.object({ id: z.number(), permission: z.enum(["view", "edit"]) }))
     .min(1),
