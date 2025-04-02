@@ -4,7 +4,15 @@ import type { z } from "zod";
 import { faker } from "@faker-js/faker";
 import { randomLcg, randomNormal, randomUniform } from "d3";
 import { endOfMonth, getDaysInMonth, subMonths } from "date-fns";
-import { eq, getTableName, inArray, sql } from "drizzle-orm";
+import {
+  and,
+  eq,
+  getTableName,
+  inArray,
+  isNotNull,
+  ne,
+  sql,
+} from "drizzle-orm";
 
 import type {
   insertFriendRequestSchema,
@@ -29,6 +37,7 @@ import {
   group,
   groupPlayer,
   image,
+  insertShareRequestSchema,
   location,
   match,
   matchPlayer,
@@ -36,6 +45,7 @@ import {
   round,
   roundPlayer,
   scoresheet,
+  shareRequest,
   team,
   user,
   userSharingPreference,
@@ -107,8 +117,10 @@ for (const table of [
   round,
   roundPlayer,
   scoresheet,
+  shareRequest,
   team,
   user,
+  userSharingPreference,
 ]) {
   // await db.delete(table); // clear tables without truncating / resetting ids
   await resetTable(table);
@@ -190,11 +202,16 @@ export async function seed() {
   }
 
   console.log("Inserting friend requests...");
-  if (friendRequestsData.length > 0)
-    await db.insert(friendRequest).values(friendRequestsData);
+  if (friendRequestsData.length > 0) {
+    console.error("Need at least one friend request");
+  }
+  await db.insert(friendRequest).values(friendRequestsData);
 
   console.log("Inserting accepted friends...");
-  if (friendsData.length > 0) await db.insert(friend).values(friendsData);
+  if (friendsData.length > 0) {
+    console.error("Need at least one friend");
+  }
+  await db.insert(friend).values(friendsData);
 
   const imageGameData: z.infer<typeof insertImageSchema>[] = Array.from(
     { length: 30 },
@@ -785,6 +802,335 @@ export async function seed() {
               placement: placement,
             })
             .where(eq(matchPlayer.id, returnedRoundPlayer.matchPlayerId));
+        }
+      }
+    }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const parentShareRequestSchema = insertShareRequestSchema
+    .required({ createdAt: true, ownerId: true, permission: true })
+    .omit({ updatedAt: true, id: true, token: true, parentShareId: true });
+  for (const userA of users) {
+    const userAFriends = await db
+      .select()
+      .from(friend)
+      .where(eq(friend.userId, userA.id));
+    const userShareRequests: z.infer<typeof parentShareRequestSchema>[] =
+      await Promise.all(
+        Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          async () => {
+            const isLink = faker.datatype.boolean(0.2);
+            const itemType = faker.helpers.arrayElement([
+              "match",
+              "game",
+              "player",
+            ]);
+            const status = faker.helpers.weightedArrayElement([
+              { weight: 0.7, value: "accepted" },
+              { weight: 0.2, value: "pending" },
+              { weight: 0.1, value: "rejected" },
+            ]);
+            if (itemType === "game") {
+              return {
+                ownerId: userA.id,
+                sharedWithId: isLink
+                  ? undefined
+                  : faker.helpers.arrayElement(userAFriends).id,
+                itemType,
+                itemId: faker.helpers.arrayElement(
+                  returnedGames.filter((g) => g.userId === userA.id),
+                ).id,
+                createdAt: faker.date.past(),
+                expiresAt: isLink
+                  ? faker.date.future()
+                  : faker.helpers.maybe(() => faker.date.future(), {
+                      probability: 0.5,
+                    }),
+                status,
+                permission: faker.helpers.arrayElement(["view", "edit"]),
+              };
+            }
+            if (itemType === "player") {
+              return {
+                ownerId: userA.id,
+                sharedWithId: isLink
+                  ? undefined
+                  : faker.helpers.arrayElement(userAFriends).id,
+                itemType,
+                itemId: faker.helpers.arrayElement(
+                  players.filter((p) => p.createdBy === userA.id),
+                ).id,
+                createdAt: faker.date.past(),
+                expiresAt: isLink
+                  ? faker.date.future()
+                  : faker.helpers.maybe(() => faker.date.future(), {
+                      probability: 0.5,
+                    }),
+                status,
+                permission: faker.helpers.arrayElement(["view", "edit"]),
+              };
+            } else {
+              const returnedMatches = await db
+                .select()
+                .from(match)
+                .where(eq(match.userId, userA.id));
+              return {
+                ownerId: userA.id,
+                sharedWithId: isLink
+                  ? undefined
+                  : faker.helpers.arrayElement(userAFriends).id,
+                itemType,
+                itemId: faker.helpers.arrayElement(returnedMatches).id,
+                expiresAt: isLink
+                  ? faker.date.future()
+                  : faker.helpers.maybe(() => faker.date.future(), {
+                      probability: 0.5,
+                    }),
+                createdAt: faker.date.past(),
+                status,
+                permission: faker.helpers.arrayElement(["view", "edit"]),
+              };
+            }
+          },
+        ),
+      );
+    const returnedUserShareRequests = await db
+      .insert(shareRequest)
+      .values(userShareRequests)
+      .returning();
+    for (const returnedUserShareRequest of returnedUserShareRequests) {
+      const currentChildShareRequest = await db.query.shareRequest.findMany({
+        where: and(
+          isNotNull(shareRequest.parentShareId),
+          eq(shareRequest.ownerId, returnedUserShareRequest.ownerId),
+        ),
+      });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const childShareRequestSchema = insertShareRequestSchema
+        .required({ parentShareId: true, createdAt: true })
+        .omit({ updatedAt: true, id: true, token: true });
+      if (returnedUserShareRequest.itemType === "game") {
+        const returnedGame = await db.query.game.findFirst({
+          where: and(
+            eq(game.id, returnedUserShareRequest.itemId),
+            eq(game.userId, returnedUserShareRequest.ownerId),
+          ),
+          with: {
+            scoresheets: true,
+            matches: {
+              with: {
+                matchPlayers: true,
+              },
+            },
+          },
+        });
+        if (returnedGame) {
+          const childShareRequest: z.infer<typeof childShareRequestSchema>[] =
+            [];
+          faker.helpers
+            .arrayElements(returnedGame.matches, {
+              min: 0,
+              max: returnedGame.matches.length,
+            })
+            .forEach((m) => {
+              childShareRequest.push({
+                createdAt: returnedUserShareRequest.createdAt,
+                itemId: m.id,
+                parentShareId: returnedUserShareRequest.id,
+                status: returnedUserShareRequest.status,
+                itemType: "match",
+                ownerId: returnedUserShareRequest.ownerId,
+                expiresAt: returnedUserShareRequest.expiresAt,
+                permission: faker.helpers.arrayElement(["view", "edit"]),
+                sharedWithId: returnedUserShareRequest.sharedWithId,
+              });
+              if (faker.datatype.boolean(0.8)) {
+                m.matchPlayers.forEach((mPlayer) => {
+                  childShareRequest.push({
+                    createdAt: returnedUserShareRequest.createdAt,
+                    itemId: mPlayer.playerId,
+                    parentShareId: returnedUserShareRequest.id,
+                    status: returnedUserShareRequest.status,
+                    itemType: "player",
+                    ownerId: returnedUserShareRequest.ownerId,
+                    expiresAt: returnedUserShareRequest.expiresAt,
+                    permission: "view",
+                    sharedWithId: returnedUserShareRequest.sharedWithId,
+                  });
+                });
+              }
+            });
+          returnedGame.scoresheets.forEach((sSheet) => {
+            if (sSheet.type === "Default") {
+              childShareRequest.push({
+                createdAt: returnedUserShareRequest.createdAt,
+                itemId: sSheet.id,
+                parentShareId: returnedUserShareRequest.id,
+                status: returnedUserShareRequest.status,
+                itemType: "scoresheet",
+                ownerId: returnedUserShareRequest.ownerId,
+                expiresAt: returnedUserShareRequest.expiresAt,
+                permission: faker.helpers.arrayElement(["view", "edit"]),
+                sharedWithId: returnedUserShareRequest.sharedWithId,
+              });
+            } else if (faker.datatype.boolean(0.5)) {
+              childShareRequest.push({
+                createdAt: returnedUserShareRequest.createdAt,
+                itemId: sSheet.id,
+                parentShareId: returnedUserShareRequest.id,
+                status: returnedUserShareRequest.status,
+                itemType: "scoresheet",
+                ownerId: returnedUserShareRequest.ownerId,
+                expiresAt: returnedUserShareRequest.expiresAt,
+                permission: faker.helpers.arrayElement(["view", "edit"]),
+                sharedWithId: returnedUserShareRequest.sharedWithId,
+              });
+            }
+          });
+          const filteredChildShareRequest = childShareRequest.filter(
+            (cShareRequest) => {
+              return !currentChildShareRequest.find(
+                (cChildShareRequest) =>
+                  cChildShareRequest.itemType === cShareRequest.itemType &&
+                  cChildShareRequest.itemId === cShareRequest.itemId,
+              );
+            },
+          );
+          if (filteredChildShareRequest.length > 0) {
+            await db.insert(shareRequest).values(filteredChildShareRequest);
+          }
+        }
+      }
+      if (returnedUserShareRequest.itemType === "match") {
+        const returnedMatch = await db.query.match.findFirst({
+          where: and(
+            eq(match.id, returnedUserShareRequest.itemId),
+            eq(match.userId, returnedUserShareRequest.ownerId),
+          ),
+          with: {
+            game: true,
+            matchPlayers: true,
+          },
+        });
+        if (returnedMatch) {
+          const childShareRequest: z.infer<typeof childShareRequestSchema>[] =
+            [];
+          childShareRequest.push({
+            createdAt: returnedUserShareRequest.createdAt,
+            itemId: returnedMatch.gameId,
+            parentShareId: returnedUserShareRequest.id,
+            status: returnedUserShareRequest.status,
+            itemType: "game",
+            ownerId: returnedUserShareRequest.ownerId,
+            expiresAt: returnedUserShareRequest.expiresAt,
+            permission: "view",
+            sharedWithId: returnedUserShareRequest.sharedWithId,
+          });
+
+          if (faker.datatype.boolean(0.8)) {
+            returnedMatch.matchPlayers.forEach((mPlayer) => {
+              childShareRequest.push({
+                createdAt: returnedUserShareRequest.createdAt,
+                itemId: mPlayer.playerId,
+                parentShareId: returnedUserShareRequest.id,
+                status: returnedUserShareRequest.status,
+                itemType: "player",
+                ownerId: returnedUserShareRequest.ownerId,
+                expiresAt: returnedUserShareRequest.expiresAt,
+                permission: "view",
+                sharedWithId: returnedUserShareRequest.sharedWithId,
+              });
+            });
+          }
+          const filteredChildShareRequest = childShareRequest.filter(
+            (cShareRequest) => {
+              return !currentChildShareRequest.find(
+                (cChildShareRequest) =>
+                  cChildShareRequest.itemType === cShareRequest.itemType &&
+                  cChildShareRequest.itemId === cShareRequest.itemId,
+              );
+            },
+          );
+          if (filteredChildShareRequest.length > 0) {
+            await db.insert(shareRequest).values(filteredChildShareRequest);
+          }
+        }
+      }
+      if (returnedUserShareRequest.itemType === "player") {
+        const returnedPlayer = await db.query.player.findFirst({
+          where: and(
+            eq(player.id, returnedUserShareRequest.itemId),
+            eq(player.userId, returnedUserShareRequest.ownerId),
+          ),
+          with: {
+            matchesByPlayer: {
+              with: {
+                match: {
+                  with: {
+                    matchPlayers: {
+                      where: ne(
+                        matchPlayer.playerId,
+                        returnedUserShareRequest.itemId,
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+        if (returnedPlayer) {
+          const childShareRequest: z.infer<typeof childShareRequestSchema>[] =
+            [];
+
+          faker.helpers
+            .arrayElements(returnedPlayer.matchesByPlayer, {
+              min: 0,
+              max: returnedPlayer.matchesByPlayer.length,
+            })
+            .forEach((mPlayer) => {
+              childShareRequest.push({
+                createdAt: returnedUserShareRequest.createdAt,
+                itemId: mPlayer.match.id,
+                parentShareId: returnedUserShareRequest.id,
+                status: returnedUserShareRequest.status,
+                itemType: "match",
+                ownerId: returnedUserShareRequest.ownerId,
+                expiresAt: returnedUserShareRequest.expiresAt,
+                permission: faker.helpers.arrayElement(["view", "edit"]),
+                sharedWithId: returnedUserShareRequest.sharedWithId,
+              });
+              if (faker.datatype.boolean(0.8)) {
+                mPlayer.match.matchPlayers.forEach((mPlayer) => {
+                  if (mPlayer.playerId !== returnedUserShareRequest.itemId) {
+                    childShareRequest.push({
+                      createdAt: returnedUserShareRequest.createdAt,
+                      itemId: mPlayer.playerId,
+                      parentShareId: returnedUserShareRequest.id,
+                      status: returnedUserShareRequest.status,
+                      itemType: "player",
+                      ownerId: returnedUserShareRequest.ownerId,
+                      expiresAt: returnedUserShareRequest.expiresAt,
+                      permission: "view",
+                      sharedWithId: returnedUserShareRequest.sharedWithId,
+                    });
+                  }
+                });
+              }
+            });
+          const filteredChildShareRequest = childShareRequest.filter(
+            (cShareRequest) => {
+              return !currentChildShareRequest.find(
+                (cChildShareRequest) =>
+                  cChildShareRequest.itemType === cShareRequest.itemType &&
+                  cChildShareRequest.itemId === cShareRequest.itemId,
+              );
+            },
+          );
+          if (filteredChildShareRequest.length > 0) {
+            await db.insert(shareRequest).values(filteredChildShareRequest);
+          }
         }
       }
     }
