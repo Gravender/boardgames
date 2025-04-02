@@ -102,6 +102,12 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
   const shareGameMutation = useMutation(
     trpc.sharing.requestShareGame.mutationOptions({
       onSuccess: async (response) => {
+        await queryClient.invalidateQueries(
+          trpc.sharing.getIncomingShareRequests.queryOptions(),
+        );
+        await queryClient.invalidateQueries(
+          trpc.sharing.getOutgoingShareRequests.queryOptions(),
+        );
         if (response.success) {
           if (response.shareableUrl) {
             toast({
@@ -124,12 +130,13 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
           });
         }
       },
-      onError: async (error) => {
+      onError: (error) => {
         toast({
           title: "Error",
-          description: "There was an error sharing the game.",
+          description: `${error.message}`,
           variant: "destructive",
         });
+        console.error(error.message);
         form.reset();
         setIsLoading(false);
       },
@@ -163,14 +170,14 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
     setSelectedFriends((current) =>
       current.filter((friend) => friend.id !== id),
     );
-    const currentFriendIds = form.getValues("friendIds") || [];
+    const currentFriendIds = form.getValues("friendIds") ?? [];
     form.setValue(
       "friendIds",
       currentFriendIds.filter((friendId) => friendId !== id),
     );
   };
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = (data: FormValues) => {
     setIsLoading(true);
     const numberOfDays = () => {
       if (data.linkExpiry === "1day") {
@@ -208,7 +215,7 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
         gameId: gameToShare.id,
         permission: data.permission,
         friends:
-          data?.friendIds?.map((friendId) => ({
+          data.friendIds?.map((friendId) => ({
             id: friendId,
           })) ?? [],
         expiresAt:
