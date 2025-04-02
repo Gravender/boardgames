@@ -38,6 +38,7 @@ import {
   scoresheet,
   team,
   user,
+  userSharingPreference,
 } from "@board-games/db/schema";
 
 import type { insertRoundPlayerSchema, insertRoundSchema } from "../schema";
@@ -132,6 +133,13 @@ export async function seed() {
     users.map((u) => ({
       name: u.name ?? "",
       createdBy: u.id,
+      userId: u.id,
+    })),
+  );
+
+  console.log("Insert user sharing preference's");
+  await db.insert(userSharingPreference).values(
+    users.map((u) => ({
       userId: u.id,
     })),
   );
