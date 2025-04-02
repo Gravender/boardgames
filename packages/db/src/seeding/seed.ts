@@ -8,9 +8,11 @@ import {
   and,
   eq,
   getTableName,
+  gt,
   inArray,
   isNotNull,
   ne,
+  or,
   sql,
 } from "drizzle-orm";
 
@@ -836,7 +838,7 @@ export async function seed() {
                 ownerId: userA.id,
                 sharedWithId: isLink
                   ? undefined
-                  : faker.helpers.arrayElement(userAFriends).id,
+                  : faker.helpers.arrayElement(userAFriends).friendId,
                 itemType,
                 itemId: faker.helpers.arrayElement(
                   returnedGames.filter((g) => g.userId === userA.id),
@@ -856,7 +858,7 @@ export async function seed() {
                 ownerId: userA.id,
                 sharedWithId: isLink
                   ? undefined
-                  : faker.helpers.arrayElement(userAFriends).id,
+                  : faker.helpers.arrayElement(userAFriends).friendId,
                 itemType,
                 itemId: faker.helpers.arrayElement(
                   players.filter((p) => p.createdBy === userA.id),
@@ -879,7 +881,7 @@ export async function seed() {
                 ownerId: userA.id,
                 sharedWithId: isLink
                   ? undefined
-                  : faker.helpers.arrayElement(userAFriends).id,
+                  : faker.helpers.arrayElement(userAFriends).friendId,
                 itemType,
                 itemId: faker.helpers.arrayElement(returnedMatches).id,
                 expiresAt: isLink
@@ -904,6 +906,14 @@ export async function seed() {
         where: and(
           isNotNull(shareRequest.parentShareId),
           eq(shareRequest.ownerId, returnedUserShareRequest.ownerId),
+          or(
+            eq(shareRequest.status, "rejected"),
+            and(
+              eq(shareRequest.status, "pending"),
+              gt(shareRequest.expiresAt, returnedUserShareRequest.createdAt),
+            ),
+            eq(shareRequest.status, "accepted"),
+          ),
         ),
       });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
