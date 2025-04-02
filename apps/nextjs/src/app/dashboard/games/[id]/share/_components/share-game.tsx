@@ -884,13 +884,7 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
             >
               Cancel
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => console.log(form.formState.errors)}
-            >
-              FormState
-            </Button>
+
             <Button type="submit" disabled={isLoading}>
               {isLoading ? (
                 <>
