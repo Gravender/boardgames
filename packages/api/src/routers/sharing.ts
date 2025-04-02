@@ -219,7 +219,7 @@ export const sharingRouter = createTRPCRouter({
         }
         for (const scoresheetToShare of input.scoresheetsToShare) {
           const existingSharedScoresheet =
-            await ctx.db.query.sharedScoresheet.findFirst({
+            await ctx.db.query.shareRequest.findFirst({
               where: and(
                 eq(shareRequest.itemId, scoresheetToShare.scoresheetId),
                 eq(shareRequest.itemType, "scoresheet"),
@@ -413,7 +413,7 @@ export const sharingRouter = createTRPCRouter({
           }
           for (const scoresheetToShare of input.scoresheetsToShare) {
             const existingSharedScoresheet =
-              await ctx.db.query.sharedScoresheet.findFirst({
+              await ctx.db.query.shareRequest.findFirst({
                 where: and(
                   eq(shareRequest.itemId, scoresheetToShare.scoresheetId),
                   eq(shareRequest.itemType, "scoresheet"),
@@ -1531,11 +1531,94 @@ export const sharingRouter = createTRPCRouter({
       ),
       with: {
         childShareRequests: true,
+        owner: true,
       },
       orderBy: shareRequest.createdAt,
     });
 
-    return sharedItems;
+    const mappedItems = (
+      await Promise.all(
+        sharedItems.map(async (sharedItem) => {
+          if (sharedItem.itemType === "game") {
+            const returnedGame = await ctx.db.query.game.findFirst({
+              where: and(
+                eq(game.id, sharedItem.itemId),
+                eq(game.userId, sharedItem.ownerId),
+              ),
+            });
+            return {
+              type: "game" as const,
+              name: returnedGame?.name,
+              ownerName: sharedItem.owner.name,
+              permission: sharedItem.permission,
+              createdAt: sharedItem.createdAt,
+              expiredAt: sharedItem.expiresAt,
+              status: sharedItem.status,
+              id: sharedItem.id,
+              matches: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "match",
+              ).length,
+              scoresheets: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "scoresheet",
+              ).length,
+              players: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "player",
+              ).length,
+            };
+          }
+          if (sharedItem.itemType === "match") {
+            const returnedMatch = await ctx.db.query.match.findFirst({
+              where: and(
+                eq(match.id, sharedItem.itemId),
+                eq(match.userId, sharedItem.ownerId),
+              ),
+            });
+            return {
+              type: "match" as const,
+              createdAt: sharedItem.createdAt,
+              expiredAt: sharedItem.expiresAt,
+              status: sharedItem.status,
+              id: sharedItem.id,
+              name: returnedMatch?.name,
+              ownerName: sharedItem.owner.name,
+              permission: sharedItem.permission,
+              game: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "game",
+              ).length,
+              players: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "player",
+              ).length,
+            };
+          }
+          if (sharedItem.itemType === "player") {
+            const returnedPlayer = await ctx.db.query.player.findFirst({
+              where: and(
+                eq(player.id, sharedItem.itemId),
+                eq(player.userId, sharedItem.ownerId),
+              ),
+            });
+            return {
+              type: "player" as const,
+              createdAt: sharedItem.createdAt,
+              expiredAt: sharedItem.expiresAt,
+              status: sharedItem.status,
+              id: sharedItem.id,
+              name: returnedPlayer?.name,
+              ownerName: sharedItem.owner.name,
+              permission: sharedItem.permission,
+              matches: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "match",
+              ).length,
+              players: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "player",
+              ).length,
+            };
+          }
+          return null;
+        }),
+      )
+    ).filter((item) => item !== null);
+    return mappedItems;
   }),
   getOutgoingShareRequests: protectedUserProcedure.query(async ({ ctx }) => {
     const sharedItems = await ctx.db.query.shareRequest.findMany({
@@ -1545,11 +1628,97 @@ export const sharingRouter = createTRPCRouter({
       ),
       with: {
         childShareRequests: true,
+        sharedWith: true,
       },
       orderBy: shareRequest.createdAt,
     });
 
-    return sharedItems;
+    const mappedItems = (
+      await Promise.all(
+        sharedItems.map(async (sharedItem) => {
+          if (sharedItem.itemType === "game") {
+            const returnedGame = await ctx.db.query.game.findFirst({
+              where: and(
+                eq(game.id, sharedItem.itemId),
+                eq(game.userId, sharedItem.ownerId),
+              ),
+            });
+            return {
+              type: "game" as const,
+              name: returnedGame?.name,
+              sharedWith: sharedItem.sharedWith?.name,
+              permission: sharedItem.permission,
+              createdAt: sharedItem.createdAt,
+              expiredAt: sharedItem.expiresAt,
+              status: sharedItem.status,
+              token: sharedItem.token,
+              id: sharedItem.id,
+              matches: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "match",
+              ).length,
+              scoresheets: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "scoresheet",
+              ).length,
+              players: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "player",
+              ).length,
+            };
+          }
+          if (sharedItem.itemType === "match") {
+            const returnedMatch = await ctx.db.query.match.findFirst({
+              where: and(
+                eq(match.id, sharedItem.itemId),
+                eq(match.userId, sharedItem.ownerId),
+              ),
+            });
+            return {
+              type: "match" as const,
+              createdAt: sharedItem.createdAt,
+              expiredAt: sharedItem.expiresAt,
+              status: sharedItem.status,
+              id: sharedItem.id,
+              name: returnedMatch?.name,
+              sharedWith: sharedItem.sharedWith?.name,
+              permission: sharedItem.permission,
+              token: sharedItem.token,
+              game: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "game",
+              ).length,
+              players: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "player",
+              ).length,
+            };
+          }
+          if (sharedItem.itemType === "player") {
+            const returnedPlayer = await ctx.db.query.player.findFirst({
+              where: and(
+                eq(player.id, sharedItem.itemId),
+                eq(player.userId, sharedItem.ownerId),
+              ),
+            });
+            return {
+              type: "player" as const,
+              createdAt: sharedItem.createdAt,
+              expiredAt: sharedItem.expiresAt,
+              status: sharedItem.status,
+              id: sharedItem.id,
+              name: returnedPlayer?.name,
+              sharedWith: sharedItem.sharedWith?.name,
+              permission: sharedItem.permission,
+              token: sharedItem.token,
+              matches: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "match",
+              ).length,
+              players: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "player",
+              ).length,
+            };
+          }
+          return null;
+        }),
+      )
+    ).filter((item) => item !== null);
+    return mappedItems;
   }),
   linkSharedPlayer: protectedUserProcedure
     .input(
