@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, or } from "drizzle-orm";
 import { z } from "zod";
 
 import type {
@@ -485,11 +485,7 @@ export const sharingRouter = createTRPCRouter({
       const returnedMatch = await ctx.db.query.match.findFirst({
         where: and(eq(match.id, input.matchId), eq(match.userId, ctx.userId)),
         with: {
-          matchPlayers: {
-            with: {
-              player: true,
-            },
-          },
+          matchPlayers: true,
         },
       });
       if (!returnedMatch) {
@@ -546,21 +542,40 @@ export const sharingRouter = createTRPCRouter({
             message: "Failed to generate share.",
           });
         }
-        await ctx.db.insert(shareRequest).values({
-          ownerId: ctx.userId,
-          sharedWithId: null,
-          itemType: "game",
-          itemId: returnedMatch.gameId,
-          permission: input.permission,
-          expiresAt: input.expiresAt ?? null,
-          parentShareId: newShare.id,
-        });
+        const returnedSharedGameRequest =
+          await ctx.db.query.shareRequest.findFirst({
+            where: and(
+              eq(shareRequest.itemId, returnedMatch.gameId),
+              eq(shareRequest.itemType, "game"),
+              eq(shareRequest.ownerId, ctx.userId),
+              isNull(shareRequest.sharedWithId),
+              or(
+                eq(shareRequest.status, "rejected"),
+                and(
+                  eq(shareRequest.status, "pending"),
+                  gt(shareRequest.expiresAt, new Date()),
+                ),
+                eq(shareRequest.status, "accepted"),
+              ),
+            ),
+            orderBy: shareRequest.createdAt,
+          });
+        if (!returnedSharedGameRequest)
+          await ctx.db.insert(shareRequest).values({
+            ownerId: ctx.userId,
+            sharedWithId: null,
+            itemType: "game",
+            itemId: returnedMatch.gameId,
+            permission: input.permission,
+            expiresAt: input.expiresAt ?? null,
+            parentShareId: newShare.id,
+          });
         if (input.includePlayers) {
           for (const matchPlayer of returnedMatch.matchPlayers) {
             const existingSharedMatchPlayer =
               await ctx.db.query.shareRequest.findFirst({
                 where: and(
-                  eq(shareRequest.itemId, matchPlayer.player.id),
+                  eq(shareRequest.itemId, matchPlayer.playerId),
                   eq(shareRequest.itemType, "player"),
                   eq(shareRequest.ownerId, ctx.userId),
                   isNull(shareRequest.sharedWithId),
@@ -577,9 +592,9 @@ export const sharingRouter = createTRPCRouter({
             if (!existingSharedMatchPlayer) {
               await ctx.db.insert(shareRequest).values({
                 ownerId: ctx.userId,
-                sharedWithId: ctx.userId,
+                sharedWithId: null,
                 itemType: "player",
-                itemId: matchPlayer.player.id,
+                itemId: matchPlayer.playerId,
                 permission: "view",
                 parentShareId: newShare.id,
                 expiresAt: input.expiresAt ?? null,
@@ -662,24 +677,43 @@ export const sharingRouter = createTRPCRouter({
               message: "Failed to generate share.",
             });
           }
-          await ctx.db.insert(shareRequest).values({
-            ownerId: ctx.userId,
-            sharedWithId: friendToShareTo.id,
-            itemType: "game",
-            itemId: returnedMatch.gameId,
-            permission: input.permission,
-            expiresAt: input.expiresAt ?? null,
-            parentShareId: newShare.id,
-          });
+          const returnedSharedGameRequest =
+            await ctx.db.query.shareRequest.findFirst({
+              where: and(
+                eq(shareRequest.itemId, returnedMatch.gameId),
+                eq(shareRequest.itemType, "game"),
+                eq(shareRequest.ownerId, ctx.userId),
+                eq(shareRequest.sharedWithId, friendToShareTo.id),
+                or(
+                  eq(shareRequest.status, "rejected"),
+                  and(
+                    eq(shareRequest.status, "pending"),
+                    gt(shareRequest.expiresAt, new Date()),
+                  ),
+                  eq(shareRequest.status, "accepted"),
+                ),
+              ),
+              orderBy: shareRequest.createdAt,
+            });
+          if (!returnedSharedGameRequest)
+            await ctx.db.insert(shareRequest).values({
+              ownerId: ctx.userId,
+              sharedWithId: friendToShareTo.id,
+              itemType: "game",
+              itemId: returnedMatch.gameId,
+              permission: input.permission,
+              expiresAt: input.expiresAt ?? null,
+              parentShareId: newShare.id,
+            });
           if (input.includePlayers) {
             for (const matchPlayer of returnedMatch.matchPlayers) {
               const existingSharedMatchPlayer =
                 await ctx.db.query.shareRequest.findFirst({
                   where: and(
-                    eq(shareRequest.itemId, matchPlayer.player.id),
+                    eq(shareRequest.itemId, matchPlayer.playerId),
                     eq(shareRequest.itemType, "player"),
                     eq(shareRequest.ownerId, ctx.userId),
-                    isNull(shareRequest.sharedWithId),
+                    eq(shareRequest.sharedWithId, friendToShareTo.id),
                     or(
                       eq(shareRequest.status, "rejected"),
                       and(
@@ -693,9 +727,9 @@ export const sharingRouter = createTRPCRouter({
               if (!existingSharedMatchPlayer) {
                 await ctx.db.insert(shareRequest).values({
                   ownerId: ctx.userId,
-                  sharedWithId: ctx.userId,
+                  sharedWithId: friendToShareTo.id,
                   itemType: "player",
-                  itemId: matchPlayer.player.id,
+                  itemId: matchPlayer.playerId,
                   permission: "view",
                   parentShareId: newShare.id,
                   expiresAt: input.expiresAt ?? null,
@@ -821,11 +855,7 @@ export const sharingRouter = createTRPCRouter({
               eq(match.userId, ctx.userId),
             ),
             with: {
-              matchPlayers: {
-                with: {
-                  player: true,
-                },
-              },
+              matchPlayers: true,
             },
           });
           if (!returnedMatch) {
@@ -899,7 +929,7 @@ export const sharingRouter = createTRPCRouter({
               const existingSharedMatchPlayer =
                 await ctx.db.query.shareRequest.findFirst({
                   where: and(
-                    eq(shareRequest.itemId, matchPlayer.player.id),
+                    eq(shareRequest.itemId, matchPlayer.playerId),
                     eq(shareRequest.itemType, "player"),
                     eq(shareRequest.ownerId, ctx.userId),
                     isNull(shareRequest.sharedWithId),
@@ -918,7 +948,7 @@ export const sharingRouter = createTRPCRouter({
                   ownerId: ctx.userId,
                   sharedWithId: null,
                   itemType: "player",
-                  itemId: matchPlayer.player.id,
+                  itemId: matchPlayer.playerId,
                   permission: "view",
                   parentShareId: newShare.id,
                   expiresAt: input.expiresAt ?? null,
