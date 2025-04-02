@@ -1080,7 +1080,7 @@ export async function seed() {
         const returnedPlayer = await db.query.player.findFirst({
           where: and(
             eq(player.id, returnedUserShareRequest.itemId),
-            eq(player.userId, returnedUserShareRequest.ownerId),
+            eq(player.createdBy, returnedUserShareRequest.ownerId),
           ),
           with: {
             matchesByPlayer: {

@@ -1626,7 +1626,7 @@ export const sharingRouter = createTRPCRouter({
             const returnedPlayer = await ctx.db.query.player.findFirst({
               where: and(
                 eq(player.id, sharedItem.itemId),
-                eq(player.userId, sharedItem.ownerId),
+                eq(player.createdBy, sharedItem.ownerId),
               ),
             });
             return {
@@ -1728,7 +1728,7 @@ export const sharingRouter = createTRPCRouter({
             const returnedPlayer = await ctx.db.query.player.findFirst({
               where: and(
                 eq(player.id, sharedItem.itemId),
-                eq(player.userId, sharedItem.ownerId),
+                eq(player.createdBy, sharedItem.ownerId),
               ),
             });
             return {

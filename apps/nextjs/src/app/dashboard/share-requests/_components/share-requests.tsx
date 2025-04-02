@@ -182,7 +182,7 @@ export default function ShareRequestsPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>{request.name}</CardTitle>
+                      <CardTitle>{`${request.name} (${request.type})`}</CardTitle>
                       <CardDescription>
                         Shared by {request.ownerName} on{" "}
                         {formatDate(request.createdAt)}
@@ -308,7 +308,7 @@ export default function ShareRequestsPage() {
                       {!request.sharedWith ? (
                         <>
                           <LinkIcon className="h-4 w-4 text-blue-500" />
-                          <span className="text-sm">
+                          <span className="text-sm" suppressHydrationWarning>
                             {`Link (${formatExpiry(request.expiredAt)})`}
                           </span>
                         </>
