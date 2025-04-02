@@ -808,7 +808,7 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
                                       htmlFor={`sheet-${sheet.id}`}
                                       className="font-medium"
                                     >
-                                      {sheet.name}
+                                      {`${sheet.name}${sheet.type === "Default" && " (Default)"}`}
                                     </Label>
                                   </div>
                                   {field.value.find(
