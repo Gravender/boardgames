@@ -6,7 +6,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { db } from "@board-games/db/client";
-import { user } from "@board-games/db/schema";
+import { player, user } from "@board-games/db/schema";
 
 /**
  * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
@@ -139,7 +139,24 @@ const isUser = t.middleware(async ({ ctx, next }) => {
           name: clerkUser?.fullName,
         })
         .returning();
-      if (!insertedUser) throw new TRPCError({ code: "UNAUTHORIZED" });
+      if (!insertedUser)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Could not insert user",
+        });
+      const [insertedPlayer] = await tx
+        .insert(player)
+        .values({
+          name: clerkUser?.fullName ?? "",
+          createdBy: insertedUser.id,
+          userId: insertedUser.id,
+        })
+        .returning();
+      if (!insertedPlayer)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Could not insert player",
+        });
       return insertedUser;
     }
     return returnedUser;
