@@ -4,17 +4,7 @@ import type { z } from "zod";
 import { faker } from "@faker-js/faker";
 import { randomLcg, randomNormal, randomUniform } from "d3";
 import { endOfMonth, getDaysInMonth, subMonths } from "date-fns";
-import {
-  and,
-  eq,
-  getTableName,
-  gt,
-  inArray,
-  isNotNull,
-  ne,
-  or,
-  sql,
-} from "drizzle-orm";
+import { and, eq, getTableName, gt, inArray, ne, or, sql } from "drizzle-orm";
 
 import type {
   insertFriendRequestSchema,
@@ -130,7 +120,7 @@ for (const table of [
 export async function seed() {
   const totalUsers = 30;
   const totalGames = 10 * totalUsers;
-  const maxMatches = 30 * totalGames; // Control total number of matches across all games
+  const maxMatches = 20 * totalGames; // Control total number of matches across all games
   const userData: z.infer<typeof insertUserSchema>[] = Array.from(
     { length: totalUsers },
     () => ({
@@ -535,16 +525,19 @@ export async function seed() {
 
       const minPlayers = returnedGame.playersMin ?? 2;
       const maxPlayers = returnedGame.playersMax ?? 8;
-      const playerCount = faker.number.int({
-        min: minPlayers,
-        max: maxPlayers,
-      });
+      const playerCount =
+        minPlayers > maxPlayers
+          ? minPlayers
+          : faker.number.int({
+              min: minPlayers,
+              max: maxPlayers,
+            });
 
       const teamsToInsert: z.infer<typeof insertTeamSchema>[] = Array.from(
         {
           length: faker.number.int({
-            min: Math.min(2, Math.ceil(playerCount / 2)),
-            max: Math.ceil(playerCount / 2),
+            min: 1,
+            max: Math.max(2, Math.floor(playerCount / 1.5)),
           }),
         },
         () => {
@@ -574,7 +567,10 @@ export async function seed() {
         value: player.id,
       }));
 
-      const matchPlayers = weightedRandomSample(weightedPlayers, playerCount);
+      const matchPlayers = weightedRandomSample(
+        weightedPlayers,
+        Math.min(weightedPlayers.length, playerCount),
+      );
       const matchPlayerData: z.infer<typeof insertMatchPlayerSchema>[] =
         matchPlayers.map((player, index) => ({
           matchId: returnedMatch.id,
@@ -783,6 +779,7 @@ export async function seed() {
         return foundPlayer?.placement ?? 0;
       };
 
+      console.log(`Updating player placements for ${returnedMatch.name}...\n`);
       for (const returnedRoundPlayer of returnedRoundPlayersGroupByMatchPLayer) {
         const playerIsWinner = isWinner(returnedRoundPlayer.finalScore);
         if (matchScoresheet.winCondition === "Manual") {
@@ -806,6 +803,7 @@ export async function seed() {
             .where(eq(matchPlayer.id, returnedRoundPlayer.matchPlayerId));
         }
       }
+      console.log(`Finished ${returnedMatch.name}\n`);
     }
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -822,7 +820,7 @@ export async function seed() {
     const userShareRequests: z.infer<typeof parentShareRequestSchema>[] = (
       await Promise.all(
         Array.from(
-          { length: faker.number.int({ min: 5, max: 30 }) },
+          { length: faker.number.int({ min: 8, max: 50 }) },
           async () => {
             const isLink =
               faker.datatype.boolean(0.2) || userAFriends.length === 0;
@@ -836,6 +834,7 @@ export async function seed() {
               { weight: 0.2, value: "pending" },
               { weight: 0.1, value: "rejected" },
             ]);
+            const pastDate = faker.date.past();
             if (itemType === "game" && filteredGames.length > 0) {
               return {
                 ownerId: userA.id,
@@ -844,12 +843,15 @@ export async function seed() {
                   : faker.helpers.arrayElement(userAFriends).friendId,
                 itemType,
                 itemId: faker.helpers.arrayElement(filteredGames).id,
-                createdAt: faker.date.past(),
+                createdAt: pastDate,
                 expiresAt: isLink
-                  ? faker.date.future()
-                  : faker.helpers.maybe(() => faker.date.future(), {
-                      probability: 0.5,
-                    }),
+                  ? faker.date.future({ years: 1, refDate: pastDate })
+                  : faker.helpers.maybe(
+                      () => faker.date.future({ years: 1, refDate: pastDate }),
+                      {
+                        probability: 0.5,
+                      },
+                    ),
                 status,
                 permission: faker.helpers.arrayElement(["view", "edit"]),
               };
@@ -862,12 +864,15 @@ export async function seed() {
                   : faker.helpers.arrayElement(userAFriends).friendId,
                 itemType,
                 itemId: faker.helpers.arrayElement(filteredPlayers).id,
-                createdAt: faker.date.past(),
+                createdAt: pastDate,
                 expiresAt: isLink
-                  ? faker.date.future()
-                  : faker.helpers.maybe(() => faker.date.future(), {
-                      probability: 0.5,
-                    }),
+                  ? faker.date.future({ years: 1, refDate: pastDate })
+                  : faker.helpers.maybe(
+                      () => faker.date.future({ years: 1, refDate: pastDate }),
+                      {
+                        probability: 0.5,
+                      },
+                    ),
                 status,
                 permission: faker.helpers.arrayElement(["view", "edit"]),
               };
@@ -886,11 +891,14 @@ export async function seed() {
                 itemType,
                 itemId: faker.helpers.arrayElement(returnedMatches).id,
                 expiresAt: isLink
-                  ? faker.date.future()
-                  : faker.helpers.maybe(() => faker.date.future(), {
-                      probability: 0.5,
-                    }),
-                createdAt: faker.date.past(),
+                  ? faker.date.future({ years: 1, refDate: pastDate })
+                  : faker.helpers.maybe(
+                      () => faker.date.future({ years: 1, refDate: pastDate }),
+                      {
+                        probability: 0.5,
+                      },
+                    ),
+                createdAt: pastDate,
                 status,
                 permission: faker.helpers.arrayElement(["view", "edit"]),
               };
