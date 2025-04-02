@@ -1523,6 +1523,34 @@ export const sharingRouter = createTRPCRouter({
         permission: sharedItem.permission,
       };
     }),
+  getIncomingShareRequests: protectedUserProcedure.query(async ({ ctx }) => {
+    const sharedItems = await ctx.db.query.shareRequest.findMany({
+      where: and(
+        eq(shareRequest.sharedWithId, ctx.userId),
+        isNull(shareRequest.parentShareId),
+      ),
+      with: {
+        childShareRequests: true,
+      },
+      orderBy: shareRequest.createdAt,
+    });
+
+    return sharedItems;
+  }),
+  getOutgoingShareRequests: protectedUserProcedure.query(async ({ ctx }) => {
+    const sharedItems = await ctx.db.query.shareRequest.findMany({
+      where: and(
+        eq(shareRequest.ownerId, ctx.userId),
+        isNull(shareRequest.parentShareId),
+      ),
+      with: {
+        childShareRequests: true,
+      },
+      orderBy: shareRequest.createdAt,
+    });
+
+    return sharedItems;
+  }),
   linkSharedPlayer: protectedUserProcedure
     .input(
       z.object({
