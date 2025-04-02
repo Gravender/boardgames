@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { prefetch, trpc } from "~/trpc/server";
@@ -12,6 +13,7 @@ export default async function Page({
   const gameId = slugs.id;
   if (isNaN(Number(gameId))) redirect("/dashboard/games");
   prefetch(trpc.game.getGameToShare.queryOptions({ id: Number(gameId) }));
+  prefetch(trpc.friend.getFriends.queryOptions());
   return (
     <div className="container max-w-4xl py-10">
       <div className="mb-8 flex items-center justify-between">
@@ -22,7 +24,9 @@ export default async function Page({
           </p>
         </div>
       </div>
-      <ShareGamePage gameId={Number(gameId)} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <ShareGamePage gameId={Number(gameId)} />
+      </Suspense>
     </div>
   );
 }
