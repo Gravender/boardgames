@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, gt, lt, sql } from "drizzle-orm";
+import { share } from "@trpc/server/observable";
+import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type {
@@ -45,24 +46,7 @@ export const sharingRouter = createTRPCRouter({
                 permission: z.enum(["view", "edit"]),
               }),
             }),
-            z.object({
-              itemType: z.literal("game"),
-              sharedWithId: z.number().optional(),
-              sharedMatches: z.array(
-                z.object({
-                  matchId: z.number(),
-                  permission: z.enum(["view", "edit"]),
-                }),
-              ),
-              scoresheetsToShare: z
-                .array(
-                  z.object({
-                    scoresheetId: z.number(),
-                    permission: z.enum(["view", "edit"]),
-                  }),
-                )
-                .min(1),
-            }),
+
             z.object({
               itemType: z.literal("player"),
               sharedWithId: z.number().optional(),
@@ -108,18 +92,6 @@ export const sharingRouter = createTRPCRouter({
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Shared Match not found",
-          });
-        }
-      }
-      if (input.itemType === "game") {
-        const [returnedGame] = await ctx.db
-          .select()
-          .from(game)
-          .where(and(eq(game.id, input.itemId), eq(game.userId, ctx.userId)));
-        if (!returnedGame) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Shared Game not found",
           });
         }
       }
@@ -218,68 +190,6 @@ export const sharingRouter = createTRPCRouter({
         });
       }
 
-      if (input.itemType === "game") {
-        for (const matchToShare of input.sharedMatches) {
-          const existingSharedMatch = await ctx.db.query.shareRequest.findFirst(
-            {
-              where: and(
-                eq(shareRequest.itemId, matchToShare.matchId),
-                eq(shareRequest.itemType, "match"),
-                eq(shareRequest.ownerId, ctx.userId),
-                input.sharedWithId
-                  ? eq(shareRequest.sharedWithId, input.sharedWithId)
-                  : sql`1=1`,
-                and(
-                  eq(shareRequest.status, "pending"),
-                  gt(shareRequest.expiresAt, new Date()),
-                ),
-              ),
-              orderBy: shareRequest.createdAt,
-            },
-          );
-          //check if the match is already shared with the user or the previous share request has expired
-          if (!existingSharedMatch) {
-            await ctx.db.insert(shareRequest).values({
-              ownerId: ctx.userId,
-              sharedWithId: input.sharedWithId ?? null,
-              itemType: "match",
-              itemId: matchToShare.matchId,
-              permission: matchToShare.permission,
-              parentShareId: newShare.id,
-              expiresAt: input.expiresAt ?? null,
-            });
-          }
-        }
-        for (const scoresheetToShare of input.scoresheetsToShare) {
-          const existingSharedScoresheet =
-            await ctx.db.query.sharedScoresheet.findFirst({
-              where: and(
-                eq(shareRequest.itemId, scoresheetToShare.scoresheetId),
-                eq(shareRequest.itemType, "scoresheet"),
-                eq(shareRequest.ownerId, ctx.userId),
-                input.sharedWithId
-                  ? eq(shareRequest.sharedWithId, input.sharedWithId)
-                  : sql`1=1`,
-                and(
-                  eq(shareRequest.status, "pending"),
-                  gt(shareRequest.expiresAt, new Date()),
-                ),
-              ),
-              orderBy: shareRequest.createdAt,
-            });
-          if (!existingSharedScoresheet) {
-            await ctx.db.insert(shareRequest).values({
-              ownerId: ctx.userId,
-              sharedWithId: input.sharedWithId ?? null,
-              itemType: "scoresheet",
-              itemId: scoresheetToShare.scoresheetId,
-              permission: scoresheetToShare.permission,
-              parentShareId: newShare.id,
-              expiresAt: input.expiresAt ?? null,
-            });
-          }
-        }
-      }
       if (input.itemType === "player") {
         for (const matchToShare of input.sharedMatches) {
           const existingSharedMatch = await ctx.db.query.shareRequest.findFirst(
@@ -356,6 +266,425 @@ export const sharingRouter = createTRPCRouter({
       return { success: true, shareableUrl };
     }),
 
+  requestShareGame: protectedUserProcedure
+    .input(
+      z
+        .object({
+          gameId: z.number(),
+          permission: z.enum(["view", "edit"]),
+          expiresAt: z.date().optional(),
+          sharedMatches: z.array(
+            z.object({
+              matchId: z.number(),
+              permission: z.enum(["view", "edit"]),
+              includePlayers: z.boolean(),
+            }),
+          ),
+          scoresheetsToShare: z
+            .array(
+              z.object({
+                scoresheetId: z.number(),
+                permission: z.enum(["view", "edit"]),
+              }),
+            )
+            .min(1),
+        })
+        .and(
+          z.discriminatedUnion("type", [
+            z.object({
+              type: z.literal("link"),
+            }),
+            z.object({
+              type: z.literal("friends"),
+              friends: z
+                .array(
+                  z.object({
+                    id: z.number(),
+                  }),
+                )
+                .min(1),
+            }),
+          ]),
+        ),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [returnedGame] = await ctx.db
+        .select()
+        .from(game)
+        .where(and(eq(game.id, input.gameId), eq(game.userId, ctx.userId)));
+      if (!returnedGame) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared Game not found",
+        });
+      }
+      if (input.type === "link") {
+        const existingShare = await ctx.db.query.shareRequest.findFirst({
+          where: and(
+            eq(shareRequest.itemId, input.gameId),
+            eq(shareRequest.itemType, "game"),
+            eq(shareRequest.ownerId, ctx.userId),
+            isNull(shareRequest.sharedWithId),
+          ),
+          orderBy: shareRequest.createdAt,
+        });
+
+        if (existingShare && existingShare.status === "rejected") {
+          return { success: false, message: "This has already been rejected" };
+        }
+        if (
+          existingShare &&
+          existingShare.status === "pending" &&
+          existingShare.expiresAt &&
+          new Date() < existingShare.expiresAt
+        ) {
+          return {
+            success: false,
+            message: "There is already a pending share",
+          };
+        }
+        if (existingShare && existingShare.status === "accepted") {
+          return { success: false, message: "This has already been accepted" };
+        }
+
+        // Insert new share request
+        const [newShare] = await ctx.db
+          .insert(shareRequest)
+          .values({
+            ownerId: ctx.userId,
+            sharedWithId: null,
+            itemType: "game",
+            itemId: input.gameId,
+            permission: input.permission,
+            expiresAt: input.expiresAt ?? null,
+          })
+          .returning();
+
+        if (!newShare) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to generate share.",
+          });
+        }
+        const shareMessages: {
+          success: boolean;
+          message: string;
+        }[] = [];
+
+        for (const matchToShare of input.sharedMatches) {
+          const returnedMatch = await ctx.db.query.match.findFirst({
+            where: and(
+              eq(match.id, matchToShare.matchId),
+              eq(match.userId, ctx.userId),
+            ),
+            with: {
+              matchPlayers: {
+                with: {
+                  player: true,
+                },
+              },
+            },
+          });
+          if (!returnedMatch) {
+            shareMessages.push({
+              success: false,
+              message: `Match ${matchToShare.matchId} not found.`,
+            });
+            continue;
+          }
+          const existingSharedMatch = await ctx.db.query.shareRequest.findFirst(
+            {
+              where: and(
+                eq(shareRequest.itemId, matchToShare.matchId),
+                eq(shareRequest.itemType, "match"),
+                eq(shareRequest.ownerId, ctx.userId),
+                isNull(shareRequest.sharedWithId),
+                or(
+                  eq(shareRequest.status, "rejected"),
+                  and(
+                    eq(shareRequest.status, "pending"),
+                    gt(shareRequest.expiresAt, new Date()),
+                  ),
+                  eq(shareRequest.status, "accepted"),
+                ),
+              ),
+              orderBy: shareRequest.createdAt,
+            },
+          );
+          //check if the match is already shared with the user or the previous share request has expired
+          if (!existingSharedMatch) {
+            await ctx.db.insert(shareRequest).values({
+              ownerId: ctx.userId,
+              sharedWithId: null,
+              itemType: "match",
+              itemId: matchToShare.matchId,
+              permission: matchToShare.permission,
+              parentShareId: newShare.id,
+              expiresAt: input.expiresAt ?? null,
+            });
+          }
+          if (matchToShare.includePlayers) {
+            for (const matchPlayer of returnedMatch.matchPlayers) {
+              if (matchPlayer.player.id === ctx.userId) {
+                continue;
+              }
+              const existingSharedMatchPlayer =
+                await ctx.db.query.shareRequest.findFirst({
+                  where: and(
+                    eq(shareRequest.itemId, matchPlayer.player.id),
+                    eq(shareRequest.itemType, "player"),
+                    eq(shareRequest.ownerId, ctx.userId),
+                    isNull(shareRequest.sharedWithId),
+                    or(
+                      eq(shareRequest.status, "rejected"),
+                      and(
+                        eq(shareRequest.status, "pending"),
+                        gt(shareRequest.expiresAt, new Date()),
+                      ),
+                      eq(shareRequest.status, "accepted"),
+                    ),
+                  ),
+                });
+              if (!existingSharedMatchPlayer) {
+                await ctx.db.insert(shareRequest).values({
+                  ownerId: ctx.userId,
+                  sharedWithId: ctx.userId,
+                  itemType: "player",
+                  itemId: matchPlayer.player.id,
+                  permission: "view",
+                  parentShareId: newShare.id,
+                  expiresAt: input.expiresAt ?? null,
+                });
+              }
+            }
+          }
+        }
+        for (const scoresheetToShare of input.scoresheetsToShare) {
+          const existingSharedScoresheet =
+            await ctx.db.query.sharedScoresheet.findFirst({
+              where: and(
+                eq(shareRequest.itemId, scoresheetToShare.scoresheetId),
+                eq(shareRequest.itemType, "scoresheet"),
+                eq(shareRequest.ownerId, ctx.userId),
+                isNull(shareRequest.sharedWithId),
+                or(
+                  eq(shareRequest.status, "rejected"),
+                  and(
+                    eq(shareRequest.status, "pending"),
+                    gt(shareRequest.expiresAt, new Date()),
+                  ),
+                  eq(shareRequest.status, "accepted"),
+                ),
+              ),
+              orderBy: shareRequest.createdAt,
+            });
+          if (!existingSharedScoresheet) {
+            await ctx.db.insert(shareRequest).values({
+              ownerId: ctx.userId,
+              sharedWithId: null,
+              itemType: "scoresheet",
+              itemId: scoresheetToShare.scoresheetId,
+              permission: scoresheetToShare.permission,
+              parentShareId: newShare.id,
+              expiresAt: input.expiresAt ?? null,
+            });
+          }
+        }
+        return {
+          success: true,
+          message: "Created share Link",
+          shareableUrl: `/share/${newShare.token}`,
+        };
+      } else {
+        const shareMessages: {
+          success: boolean;
+          message: string;
+        }[] = [];
+        for (const friendToShareTo of input.friends) {
+          const existingShare = await ctx.db.query.shareRequest.findFirst({
+            where: and(
+              eq(shareRequest.itemId, input.gameId),
+              eq(shareRequest.itemType, "game"),
+              eq(shareRequest.ownerId, ctx.userId),
+              eq(shareRequest.sharedWithId, friendToShareTo.id),
+            ),
+            orderBy: shareRequest.createdAt,
+          });
+          if (existingShare && existingShare.status === "rejected") {
+            shareMessages.push({
+              success: false,
+              message: "This has already been rejected",
+            });
+            continue;
+          }
+          if (
+            existingShare &&
+            existingShare.status === "pending" &&
+            existingShare.expiresAt &&
+            new Date() < existingShare.expiresAt
+          ) {
+            shareMessages.push({
+              success: false,
+              message: "There is already a pending share",
+            });
+            continue;
+          }
+          if (existingShare && existingShare.status === "accepted") {
+            shareMessages.push({
+              success: false,
+              message: "This has already been accepted",
+            });
+            continue;
+          }
+          const [newShare] = await ctx.db
+            .insert(shareRequest)
+            .values({
+              ownerId: ctx.userId,
+              sharedWithId: friendToShareTo.id,
+              itemType: "game",
+              itemId: input.gameId,
+              permission: input.permission,
+              expiresAt: input.expiresAt ?? null,
+            })
+            .returning();
+
+          if (!newShare) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to generate share.",
+            });
+          }
+
+          for (const matchToShare of input.sharedMatches) {
+            const returnedMatch = await ctx.db.query.match.findFirst({
+              where: and(
+                eq(match.id, matchToShare.matchId),
+                eq(match.userId, ctx.userId),
+              ),
+              with: {
+                matchPlayers: {
+                  with: {
+                    player: true,
+                  },
+                },
+              },
+            });
+            if (!returnedMatch) {
+              shareMessages.push({
+                success: false,
+                message: `Match ${matchToShare.matchId} not found.`,
+              });
+              continue;
+            }
+            const existingSharedMatch =
+              await ctx.db.query.shareRequest.findFirst({
+                where: and(
+                  eq(shareRequest.itemId, matchToShare.matchId),
+                  eq(shareRequest.itemType, "match"),
+                  eq(shareRequest.ownerId, ctx.userId),
+                  eq(shareRequest.sharedWithId, friendToShareTo.id),
+                  or(
+                    eq(shareRequest.status, "rejected"),
+                    and(
+                      eq(shareRequest.status, "pending"),
+                      gt(shareRequest.expiresAt, new Date()),
+                    ),
+                    eq(shareRequest.status, "accepted"),
+                  ),
+                ),
+                orderBy: shareRequest.createdAt,
+              });
+            //check if the match is already shared with the user or the previous share request has expired
+            if (!existingSharedMatch) {
+              await ctx.db.insert(shareRequest).values({
+                ownerId: ctx.userId,
+                sharedWithId: friendToShareTo.id,
+                itemType: "match",
+                itemId: matchToShare.matchId,
+                permission: matchToShare.permission,
+                parentShareId: newShare.id,
+                expiresAt: input.expiresAt ?? null,
+              });
+            }
+            if (matchToShare.includePlayers) {
+              for (const matchPlayer of returnedMatch.matchPlayers) {
+                if (matchPlayer.player.id === ctx.userId) {
+                  continue;
+                }
+                const existingSharedMatchPlayer =
+                  await ctx.db.query.shareRequest.findFirst({
+                    where: and(
+                      eq(shareRequest.itemId, matchPlayer.player.id),
+                      eq(shareRequest.itemType, "player"),
+                      eq(shareRequest.ownerId, ctx.userId),
+                      eq(shareRequest.sharedWithId, friendToShareTo.id),
+                      or(
+                        eq(shareRequest.status, "rejected"),
+                        and(
+                          eq(shareRequest.status, "pending"),
+                          gt(shareRequest.expiresAt, new Date()),
+                        ),
+                        eq(shareRequest.status, "accepted"),
+                      ),
+                    ),
+                  });
+                if (!existingSharedMatchPlayer) {
+                  await ctx.db.insert(shareRequest).values({
+                    ownerId: ctx.userId,
+                    sharedWithId: friendToShareTo.id,
+                    itemType: "player",
+                    itemId: matchPlayer.player.id,
+                    permission: "view",
+                    parentShareId: newShare.id,
+                    expiresAt: input.expiresAt ?? null,
+                  });
+                }
+              }
+            }
+          }
+          for (const scoresheetToShare of input.scoresheetsToShare) {
+            const existingSharedScoresheet =
+              await ctx.db.query.sharedScoresheet.findFirst({
+                where: and(
+                  eq(shareRequest.itemId, scoresheetToShare.scoresheetId),
+                  eq(shareRequest.itemType, "scoresheet"),
+                  eq(shareRequest.ownerId, ctx.userId),
+                  eq(shareRequest.sharedWithId, friendToShareTo.id),
+                  or(
+                    eq(shareRequest.status, "rejected"),
+                    and(
+                      eq(shareRequest.status, "pending"),
+                      gt(shareRequest.expiresAt, new Date()),
+                    ),
+                    eq(shareRequest.status, "accepted"),
+                  ),
+                ),
+                orderBy: shareRequest.createdAt,
+              });
+            if (!existingSharedScoresheet) {
+              await ctx.db.insert(shareRequest).values({
+                ownerId: ctx.userId,
+                sharedWithId: friendToShareTo.id,
+                itemType: "scoresheet",
+                itemId: scoresheetToShare.scoresheetId,
+                permission: scoresheetToShare.permission,
+                parentShareId: newShare.id,
+                expiresAt: input.expiresAt ?? null,
+              });
+            }
+          }
+          shareMessages.push({
+            success: true,
+            message: `Shared ${returnedGame.name} with ${friendToShareTo.id}`,
+          });
+        }
+        return {
+          success: shareMessages.filter((m) => m.success).length > 0,
+          message: `Shared ${returnedGame.name} with ${shareMessages.filter((m) => m.success).length} friends / ${shareMessages.length} friends`,
+          shareMessages,
+        };
+      }
+    }),
   respondToShareRequest: protectedUserProcedure
     .input(
       z.object({
