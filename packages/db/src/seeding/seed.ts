@@ -817,12 +817,15 @@ export async function seed() {
       .select()
       .from(friend)
       .where(eq(friend.userId, userA.id));
-    const userShareRequests: z.infer<typeof parentShareRequestSchema>[] =
+    const filteredGames = returnedGames.filter((g) => g.userId === userA.id);
+    const filteredPlayers = players.filter((p) => p.createdBy === userA.id);
+    const userShareRequests: z.infer<typeof parentShareRequestSchema>[] = (
       await Promise.all(
         Array.from(
           { length: faker.number.int({ min: 5, max: 30 }) },
           async () => {
-            const isLink = faker.datatype.boolean(0.2);
+            const isLink =
+              faker.datatype.boolean(0.2) || userAFriends.length === 0;
             const itemType = faker.helpers.arrayElement([
               "match",
               "game",
@@ -833,16 +836,14 @@ export async function seed() {
               { weight: 0.2, value: "pending" },
               { weight: 0.1, value: "rejected" },
             ]);
-            if (itemType === "game") {
+            if (itemType === "game" && filteredGames.length > 0) {
               return {
                 ownerId: userA.id,
                 sharedWithId: isLink
                   ? undefined
                   : faker.helpers.arrayElement(userAFriends).friendId,
                 itemType,
-                itemId: faker.helpers.arrayElement(
-                  returnedGames.filter((g) => g.userId === userA.id),
-                ).id,
+                itemId: faker.helpers.arrayElement(filteredGames).id,
                 createdAt: faker.date.past(),
                 expiresAt: isLink
                   ? faker.date.future()
@@ -853,16 +854,14 @@ export async function seed() {
                 permission: faker.helpers.arrayElement(["view", "edit"]),
               };
             }
-            if (itemType === "player") {
+            if (itemType === "player" && filteredPlayers.length > 0) {
               return {
                 ownerId: userA.id,
                 sharedWithId: isLink
                   ? undefined
                   : faker.helpers.arrayElement(userAFriends).friendId,
                 itemType,
-                itemId: faker.helpers.arrayElement(
-                  players.filter((p) => p.createdBy === userA.id),
-                ).id,
+                itemId: faker.helpers.arrayElement(filteredPlayers).id,
                 createdAt: faker.date.past(),
                 expiresAt: isLink
                   ? faker.date.future()
@@ -872,11 +871,13 @@ export async function seed() {
                 status,
                 permission: faker.helpers.arrayElement(["view", "edit"]),
               };
-            } else {
+            }
+            if (itemType === "match") {
               const returnedMatches = await db
                 .select()
                 .from(match)
                 .where(eq(match.userId, userA.id));
+              if (returnedMatches.length === 0) return null;
               return {
                 ownerId: userA.id,
                 sharedWithId: isLink
@@ -894,17 +895,18 @@ export async function seed() {
                 permission: faker.helpers.arrayElement(["view", "edit"]),
               };
             }
+            return null;
           },
         ),
-      );
+      )
+    ).filter((item) => item !== null);
     const returnedUserShareRequests = await db
       .insert(shareRequest)
       .values(userShareRequests)
       .returning();
     for (const returnedUserShareRequest of returnedUserShareRequests) {
-      const currentChildShareRequest = await db.query.shareRequest.findMany({
+      const currentShareRequest = await db.query.shareRequest.findMany({
         where: and(
-          isNotNull(shareRequest.parentShareId),
           eq(shareRequest.ownerId, returnedUserShareRequest.ownerId),
           or(
             eq(shareRequest.status, "rejected"),
@@ -1007,7 +1009,7 @@ export async function seed() {
           }
           const filteredChildShareRequest = childShareRequest.filter(
             (cShareRequest) => {
-              return !currentChildShareRequest.find(
+              return !currentShareRequest.find(
                 (cChildShareRequest) =>
                   cChildShareRequest.itemType === cShareRequest.itemType &&
                   cChildShareRequest.itemId === cShareRequest.itemId,
@@ -1062,7 +1064,7 @@ export async function seed() {
           }
           const filteredChildShareRequest = childShareRequest.filter(
             (cShareRequest) => {
-              return !currentChildShareRequest.find(
+              return !currentShareRequest.find(
                 (cChildShareRequest) =>
                   cChildShareRequest.itemType === cShareRequest.itemType &&
                   cChildShareRequest.itemId === cShareRequest.itemId,
@@ -1142,7 +1144,7 @@ export async function seed() {
           }
           const filteredChildShareRequest = childShareRequest.filter(
             (cShareRequest) => {
-              return !currentChildShareRequest.find(
+              return !currentShareRequest.find(
                 (cChildShareRequest) =>
                   cChildShareRequest.itemType === cShareRequest.itemType &&
                   cChildShareRequest.itemId === cShareRequest.itemId,
