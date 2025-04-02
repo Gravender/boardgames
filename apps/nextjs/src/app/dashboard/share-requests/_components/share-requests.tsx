@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 
+import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import {
   Card,
@@ -24,6 +25,7 @@ import {
 } from "@board-games/ui/card";
 import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
+import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import {
   Tooltip,
@@ -31,6 +33,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@board-games/ui/tooltip";
+import { cn } from "@board-games/ui/utils";
 
 import { getBaseUrl, useTRPC } from "~/trpc/react";
 
@@ -146,6 +149,23 @@ export default function ShareRequestsPage() {
 
     return `expires on ${format(expiryDate, "P")}`;
   };
+  const isExpired = (expiresAt: Date | null) => {
+    if (expiresAt === null) return false;
+
+    return isBefore(expiresAt, new Date());
+  };
+
+  const getExpiryStatusColor = (expiresAt: Date | null) => {
+    if (expiresAt === null) return "text-green-500";
+
+    const diffDays = differenceInCalendarDays(expiresAt, new Date());
+
+    if (diffDays <= 0) return "text-red-500";
+    if (diffDays <= 3) return "text-amber-500";
+    if (diffDays <= 7) return "text-yellow-500";
+
+    return "text-green-500";
+  };
   const shareUrl = (token: string) => {
     return `${getBaseUrl()}/share/${token}`;
   };
@@ -176,86 +196,125 @@ export default function ShareRequestsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4">
-            {incomingRequests.map((request) => (
-              <Card key={request.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>{`${request.name} (${request.type})`}</CardTitle>
-                      <CardDescription>
-                        Shared by {request.ownerName} on{" "}
-                        {formatDate(request.createdAt)}
-                      </CardDescription>
-                    </div>
-                    <div className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">
-                      {request.permission === "view"
-                        ? "View Only"
-                        : "Edit Access"}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <p className="text-sm">
-                      <span className="font-medium">{request.ownerName}</span>{" "}
-                      wants to share their {request.type} with you
-                    </p>
-                    {request.hasChildren && (
-                      <div className="text-sm text-muted-foreground">
-                        <p>This share includes:</p>
-                        <ul className="ml-5 list-disc">
-                          {(request.game ?? 0) > 0 && <li>{`1 game`}</li>}
-                          {(request.scoresheets ?? 0) > 0 && (
-                            <li>{`${request.scoresheets} scoresheets`}</li>
+          <ScrollArea className="h-[600px] pr-4">
+            <div className="grid gap-4">
+              {incomingRequests.map((request) => {
+                const expired = isExpired(request.expiredAt);
+                const expiryStatusColor = getExpiryStatusColor(
+                  request.expiredAt,
+                );
+                return (
+                  <Card
+                    key={request.id}
+                    className={cn(expired ? "opacity-75" : "")}
+                  >
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle>{`${request.name} (${request.type})`}</CardTitle>
+                          <CardDescription suppressHydrationWarning>
+                            Shared by {request.ownerName} on{" "}
+                            {formatDate(request.createdAt)}
+                          </CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">
+                            {request.permission === "view"
+                              ? "View Only"
+                              : "Edit Access"}
+                          </div>
+                          {expired && (
+                            <Badge variant="destructive" className="ml-2">
+                              Expired
+                            </Badge>
                           )}
-                          {(request.matches ?? 0) > 0 && (
-                            <li>{`${request.matches} matches`}</li>
-                          )}
-                          {(request.players ?? 0) > 0 && (
-                            <li>{`${request.players} players`}</li>
-                          )}
-                        </ul>
+                        </div>
                       </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <p className="text-sm">
+                          <span className="font-medium">
+                            {request.ownerName}
+                          </span>{" "}
+                          wants to share their {request.type} with you
+                        </p>
+                        <div
+                          className={`text-sm ${expiryStatusColor} flex items-center gap-1`}
+                        >
+                          <Clock className="h-4 w-4" />
+                          <span suppressHydrationWarning>
+                            {expired
+                              ? "This request has expired"
+                              : `This request ${formatExpiry(request.expiredAt)}`}
+                          </span>
+                        </div>
+                        {request.hasChildren && (
+                          <div className="text-sm text-muted-foreground">
+                            <p>This share includes:</p>
+                            <ul className="ml-5 list-disc">
+                              {(request.game ?? 0) > 0 && <li>{`1 game`}</li>}
+                              {(request.scoresheets ?? 0) > 0 && (
+                                <li>{`${request.scoresheets} scoresheets`}</li>
+                              )}
+                              {(request.matches ?? 0) > 0 && (
+                                <li>{`${request.matches} matches`}</li>
+                              )}
+                              {request.players > 0 && (
+                                <li>{`${request.players} players`}</li>
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                    {!expired && (
+                      <CardFooter className="flex justify-between gap-2">
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => handleReject(request.id)}
+                          disabled={
+                            loading[`reject-${request.id}`] ??
+                            loading[`accept-${request.id}`]
+                          }
+                        >
+                          {loading[`reject-${request.id}`] ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <X className="mr-2 h-4 w-4" />
+                          )}
+                          Reject
+                        </Button>
+                        <Button
+                          className="w-full"
+                          onClick={() => handleAccept(request.id)}
+                          disabled={
+                            loading[`reject-${request.id}`] ||
+                            loading[`accept-${request.id}`]
+                          }
+                        >
+                          {loading[`accept-${request.id}`] ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Check className="mr-2 h-4 w-4" />
+                          )}
+                          Accept
+                        </Button>
+                      </CardFooter>
                     )}
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-between gap-2">
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => handleReject(request.id)}
-                    disabled={
-                      loading[`reject-${request.id}`] ||
-                      loading[`accept-${request.id}`]
-                    }
-                  >
-                    {loading[`reject-${request.id}`] ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <X className="mr-2 h-4 w-4" />
+                    {expired && (
+                      <CardFooter>
+                        <p className="w-full text-center text-sm text-muted-foreground">
+                          This request has expired and can no longer be accepted
+                        </p>
+                      </CardFooter>
                     )}
-                    Reject
-                  </Button>
-                  <Button
-                    className="w-full"
-                    onClick={() => handleAccept(request.id)}
-                    disabled={
-                      loading[`reject-${request.id}`] ||
-                      loading[`accept-${request.id}`]
-                    }
-                  >
-                    {loading[`accept-${request.id}`] ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Check className="mr-2 h-4 w-4" />
-                    )}
-                    Accept
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </ScrollArea>
         )}
       </TabsContent>
 
@@ -277,138 +336,176 @@ export default function ShareRequestsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4">
-            {outgoingRequests.map((request) => (
-              <Card key={request.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>{`${request.name} (${request.type})`}</CardTitle>
-                      {request.sharedWith ? (
-                        <CardDescription>
-                          Shared with {request.sharedWith} on{" "}
-                          {formatDate(request.createdAt)}
-                        </CardDescription>
-                      ) : (
-                        <CardDescription>
-                          Shared via link on {formatDate(request.createdAt)}
-                        </CardDescription>
-                      )}
-                    </div>
-                    <div className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">
-                      {request.permission === "view"
-                        ? "View Only"
-                        : "Edit Access"}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      {!request.sharedWith ? (
-                        <>
-                          <LinkIcon className="h-4 w-4 text-blue-500" />
-                          <span className="text-sm" suppressHydrationWarning>
-                            {`Link (${formatExpiry(request.expiredAt)})`}
-                          </span>
-                        </>
-                      ) : request.status === "pending" ? (
-                        <>
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
-                            Waiting for response
-                          </span>
-                        </>
-                      ) : request.status === "accepted" ? (
-                        <>
-                          <Check className="h-4 w-4 text-green-500" />
-                          <span className="text-sm text-green-500">
-                            Accepted
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <X className="h-4 w-4 text-red-500" />
-                          <span className="text-sm text-red-500">Rejected</span>
-                        </>
-                      )}
-                    </div>
-                    {request.hasChildren && (
-                      <div className="text-sm text-muted-foreground">
-                        <p>This share includes:</p>
-                        <ul className="ml-5 list-disc">
-                          {(request.game ?? 0) > 0 && <li>{`1 game`}</li>}
-                          {(request.scoresheets ?? 0) > 0 && (
-                            <li>{`${request.scoresheets} scoresheets`}</li>
+          <ScrollArea className="h-[600px] pr-4">
+            <div className="grid gap-4">
+              {outgoingRequests.map((request) => {
+                const expired = isExpired(request.expiredAt);
+
+                return (
+                  <Card
+                    key={request.id}
+                    className={cn(expired ? "opacity-75" : "")}
+                  >
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle>{`${request.name} (${request.type})`}</CardTitle>
+                          {request.sharedWith ? (
+                            <CardDescription suppressHydrationWarning>
+                              Shared with {request.sharedWith} on{" "}
+                              {formatDate(request.createdAt)}
+                            </CardDescription>
+                          ) : (
+                            <CardDescription suppressHydrationWarning>
+                              Shared via link on {formatDate(request.createdAt)}
+                            </CardDescription>
                           )}
-                          {(request.matches ?? 0) > 0 && (
-                            <li>{`${request.matches} matches`}</li>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">
+                            {request.permission === "view"
+                              ? "View Only"
+                              : "Edit Access"}
+                          </div>
+                          {expired && (
+                            <Badge variant="destructive" className="ml-2">
+                              Expired
+                            </Badge>
                           )}
-                          {(request.players ?? 0) > 0 && (
-                            <li>{`${request.players} players`}</li>
-                          )}
-                        </ul>
+                        </div>
                       </div>
-                    )}
-                    {!request.sharedWith && (
-                      <div className="mt-3 flex items-center gap-2">
-                        <Input
-                          value={shareUrl(request.token)}
-                          readOnly
-                          className="flex-1 font-mono text-sm"
-                        />
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() =>
-                                  copyShareLink(
-                                    request.id,
-                                    shareUrl(request.token),
-                                  )
-                                }
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          {!request.sharedWith ? (
+                            <>
+                              <LinkIcon className="h-4 w-4 text-blue-500" />
+                              <span
+                                className="text-sm"
+                                suppressHydrationWarning
                               >
-                                {copiedLinks[request.id] ? (
-                                  <Check className="h-4 w-4" />
-                                ) : (
-                                  <Copy className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>
-                                {copiedLinks[request.id]
-                                  ? "Copied!"
-                                  : "Copy link"}
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                                {`Link (${formatExpiry(request.expiredAt)})`}
+                              </span>
+                            </>
+                          ) : request.status === "pending" ? (
+                            <>
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">
+                                Waiting for response
+                              </span>
+                            </>
+                          ) : request.status === "accepted" ? (
+                            <>
+                              <Check className="h-4 w-4 text-green-500" />
+                              <span className="text-sm text-green-500">
+                                Accepted
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <X className="h-4 w-4 text-red-500" />
+                              <span className="text-sm text-red-500">
+                                Rejected
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        {request.hasChildren && (
+                          <div className="text-sm text-muted-foreground">
+                            <p>This share includes:</p>
+                            <ul className="ml-5 list-disc">
+                              {(request.game ?? 0) > 0 && <li>{`1 game`}</li>}
+                              {(request.scoresheets ?? 0) > 0 && (
+                                <li>{`${request.scoresheets} scoresheets`}</li>
+                              )}
+                              {(request.matches ?? 0) > 0 && (
+                                <li>{`${request.matches} matches`}</li>
+                              )}
+                              {(request.players ?? 0) > 0 && (
+                                <li>{`${request.players} players`}</li>
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                        {!request.sharedWith && !expired && (
+                          <div className="mt-3 flex items-center gap-2">
+                            <Input
+                              value={shareUrl(request.token)}
+                              readOnly
+                              className="flex-1 font-mono text-sm"
+                            />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() =>
+                                      copyShareLink(
+                                        request.id,
+                                        shareUrl(request.token),
+                                      )
+                                    }
+                                  >
+                                    {copiedLinks[request.id] ? (
+                                      <Check className="h-4 w-4" />
+                                    ) : (
+                                      <Copy className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>
+                                    {copiedLinks[request.id]
+                                      ? "Copied!"
+                                      : "Copy link"}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        )}
+                        {request.sharedWith && expired && (
+                          <div className="mt-3 text-sm text-red-500">
+                            This share link has expired and is no longer
+                            accessible.
+                          </div>
+                        )}
                       </div>
+                    </CardContent>
+                    {request.status === "pending" && !expired && (
+                      <CardFooter>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => handleCancel(request.id)}
+                          disabled={loading[`cancel-${request.id}`]}
+                        >
+                          {loading[`cancel-${request.id}`] ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            "Cancel Request"
+                          )}
+                        </Button>
+                      </CardFooter>
                     )}
-                  </div>
-                </CardContent>
-                {request.status === "pending" && (
-                  <CardFooter>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => handleCancel(request.id)}
-                      disabled={loading[`cancel-${request.id}`]}
-                    >
-                      {loading[`cancel-${request.id}`] ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        "Cancel Request"
-                      )}
-                    </Button>
-                  </CardFooter>
-                )}
-              </Card>
-            ))}
-          </div>
+                    {expired && (
+                      <CardFooter>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => handleCancel(request.id)}
+                        >
+                          Remove from History
+                        </Button>
+                      </CardFooter>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
+          </ScrollArea>
         )}
       </TabsContent>
     </Tabs>

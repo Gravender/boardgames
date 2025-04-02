@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, gt, isNull, or } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { z } from "zod";
 
 import type {
@@ -1563,7 +1563,7 @@ export const sharingRouter = createTRPCRouter({
         childShareRequests: true,
         owner: true,
       },
-      orderBy: shareRequest.createdAt,
+      orderBy: desc(shareRequest.createdAt),
     });
 
     const mappedItems = (
@@ -1663,7 +1663,7 @@ export const sharingRouter = createTRPCRouter({
         childShareRequests: true,
         sharedWith: true,
       },
-      orderBy: shareRequest.createdAt,
+      orderBy: desc(shareRequest.createdAt),
     });
 
     const mappedItems = (
