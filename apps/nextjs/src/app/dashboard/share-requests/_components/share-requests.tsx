@@ -1,7 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { differenceInCalendarDays, format, isBefore } from "date-fns";
 import {
   Check,
@@ -54,49 +58,34 @@ export default function ShareRequestsPage() {
   const { data: outgoingRequests } = useSuspenseQuery(
     trpc.sharing.getOutgoingShareRequests.queryOptions(),
   );
+  const respondToShareRequestMutation = useMutation(
+    trpc.sharing.respondToShareRequest.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries(
+          trpc.sharing.getIncomingShareRequests.queryOptions(),
+        );
+        void queryClient.invalidateQueries(
+          trpc.sharing.getOutgoingShareRequests.queryOptions(),
+        );
+      },
+    }),
+  );
 
-  const handleAccept = async (id: number) => {
+  const handleAccept = (id: number) => {
     setLoading({ ...loading, [`accept-${id}`]: true });
-
-    try {
-      // This would be replaced with your actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      toast({
-        title: "Share request accepted",
-        description: "The shared item has been added to your collection",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to accept share request",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading({ ...loading, [`accept-${id}`]: false });
-    }
+    respondToShareRequestMutation.mutate({
+      requestId: id,
+      accept: true,
+    });
   };
 
-  const handleReject = async (id: number) => {
+  const handleReject = (id: number) => {
     setLoading({ ...loading, [`reject-${id}`]: true });
 
-    try {
-      // This would be replaced with your actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      toast({
-        title: "Share request rejected",
-        description: "The share request has been rejected",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to reject share request",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading({ ...loading, [`reject-${id}`]: false });
-    }
+    respondToShareRequestMutation.mutate({
+      requestId: id,
+      accept: false,
+    });
   };
 
   const handleCancel = async (id: number) => {
