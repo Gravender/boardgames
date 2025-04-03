@@ -223,7 +223,7 @@ export default function ShareRequestsPage() {
                               ? "View Only"
                               : "Edit Access"}
                           </div>
-                          {expired && (
+                          {expired && request.status === "pending" && (
                             <Badge variant="destructive" className="ml-2">
                               Expired
                             </Badge>
@@ -367,7 +367,7 @@ export default function ShareRequestsPage() {
                               ? "View Only"
                               : "Edit Access"}
                           </div>
-                          {expired && (
+                          {expired && request.status === "pending" && (
                             <Badge variant="destructive" className="ml-2">
                               Expired
                             </Badge>
@@ -378,7 +378,8 @@ export default function ShareRequestsPage() {
                     <CardContent>
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
-                          {!request.sharedWith ? (
+                          {!request.sharedWith &&
+                          request.status === "pending" ? (
                             <>
                               <LinkIcon className="h-4 w-4 text-blue-500" />
                               <span
@@ -428,50 +429,54 @@ export default function ShareRequestsPage() {
                             </ul>
                           </div>
                         )}
-                        {!request.sharedWith && !expired && (
-                          <div className="mt-3 flex items-center gap-2">
-                            <Input
-                              value={shareUrl(request.token)}
-                              readOnly
-                              className="flex-1 font-mono text-sm"
-                            />
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() =>
-                                      copyShareLink(
-                                        request.id,
-                                        shareUrl(request.token),
-                                      )
-                                    }
-                                  >
-                                    {copiedLinks[request.id] ? (
-                                      <Check className="h-4 w-4" />
-                                    ) : (
-                                      <Copy className="h-4 w-4" />
-                                    )}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>
-                                    {copiedLinks[request.id]
-                                      ? "Copied!"
-                                      : "Copy link"}
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                        )}
-                        {request.sharedWith && expired && (
-                          <div className="mt-3 text-sm text-red-500">
-                            This share link has expired and is no longer
-                            accessible.
-                          </div>
-                        )}
+                        {!request.sharedWith &&
+                          !expired &&
+                          request.status === "pending" && (
+                            <div className="mt-3 flex items-center gap-2">
+                              <Input
+                                value={shareUrl(request.token)}
+                                readOnly
+                                className="flex-1 font-mono text-sm"
+                              />
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() =>
+                                        copyShareLink(
+                                          request.id,
+                                          shareUrl(request.token),
+                                        )
+                                      }
+                                    >
+                                      {copiedLinks[request.id] ? (
+                                        <Check className="h-4 w-4" />
+                                      ) : (
+                                        <Copy className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>
+                                      {copiedLinks[request.id]
+                                        ? "Copied!"
+                                        : "Copy link"}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          )}
+                        {!request.sharedWith &&
+                          expired &&
+                          request.status === "pending" && (
+                            <div className="mt-3 text-sm text-red-500">
+                              This share link has expired and is no longer
+                              accessible.
+                            </div>
+                          )}
                       </div>
                     </CardContent>
                     {request.status === "pending" && !expired && (
@@ -490,7 +495,7 @@ export default function ShareRequestsPage() {
                         </Button>
                       </CardFooter>
                     )}
-                    {expired && (
+                    {expired && request.status === "pending" && (
                       <CardFooter>
                         <Button
                           variant="outline"
