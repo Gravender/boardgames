@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { differenceInCalendarDays, format, isBefore } from "date-fns";
 import {
   Check,
   Clock,
   Copy,
+  Filter,
   GamepadIcon as GameController,
   LinkIcon,
   Loader2,
@@ -25,7 +26,9 @@ import {
 } from "@board-games/ui/card";
 import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
+import { Label } from "@board-games/ui/label";
 import { ScrollArea } from "@board-games/ui/scroll-area";
+import { Switch } from "@board-games/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import {
   Tooltip,
@@ -40,6 +43,8 @@ import { getBaseUrl, useTRPC } from "~/trpc/react";
 export default function ShareRequestsPage() {
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [copiedLinks, setCopiedLinks] = useState<Record<number, boolean>>({});
+  const [filterIncomingActive, setFilterIncomingActive] = useState(false);
+  const [filterOutgoingActive, setFilterOutgoingActive] = useState(false);
   const trpc = useTRPC();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -170,35 +175,116 @@ export default function ShareRequestsPage() {
     return `${getBaseUrl()}/share/${token}`;
   };
 
+  const filteredIncomingRequests = useMemo(() => {
+    return incomingRequests.filter((request) => {
+      if (!filterIncomingActive) return true;
+      return !isExpired(request.expiredAt) && request.status === "pending";
+    });
+  }, [incomingRequests, filterIncomingActive]);
+
+  // Memoized filtered outgoing requests
+  const filteredOutgoingRequests = useMemo(() => {
+    return outgoingRequests.filter((request) => {
+      if (!filterOutgoingActive) return true;
+
+      if (!request.sharedWith) {
+        return !isExpired(request.expiredAt) && request.status === "pending";
+      }
+
+      return !isExpired(request.expiredAt) && request.status === "pending";
+    });
+  }, [outgoingRequests, filterOutgoingActive]);
+  const activeIncomingCount = useMemo(() => {
+    return incomingRequests.filter(
+      (request) =>
+        !isExpired(request.expiredAt) && request.status === "pending",
+    ).length;
+  }, [incomingRequests]);
+
+  // Memoized active outgoing count
+  const activeOutgoingCount = useMemo(() => {
+    return outgoingRequests.filter((request) => {
+      if (!request.sharedWith) {
+        return !isExpired(request.expiredAt) && request.status === "pending";
+      }
+      return !isExpired(request.expiredAt) && request.status === "pending";
+    }).length;
+  }, [outgoingRequests]);
+
   return (
     <Tabs defaultValue="incoming">
       <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="incoming">
           Incoming Requests
-          {incomingRequests.length > 0 && (
+          {activeIncomingCount > 0 && (
             <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-              {incomingRequests.length}
+              {activeIncomingCount}
             </span>
           )}
         </TabsTrigger>
-        <TabsTrigger value="outgoing">Outgoing Requests</TabsTrigger>
+        <TabsTrigger value="outgoing">
+          Outgoing Requests
+          {activeOutgoingCount > 0 && (
+            <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+              {activeOutgoingCount}
+            </span>
+          )}
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="incoming" className="space-y-4 pt-4">
-        {incomingRequests.length === 0 ? (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="filter-incoming"
+              checked={filterIncomingActive}
+              onCheckedChange={setFilterIncomingActive}
+            />
+            <Label
+              htmlFor="filter-incoming"
+              className="flex items-center gap-1.5 text-sm font-medium"
+            >
+              <Filter className="h-4 w-4" />
+              Show only active requests
+            </Label>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {filterIncomingActive ? (
+              <span>
+                Showing {filteredIncomingRequests.length} active of{" "}
+                {incomingRequests.length} total
+              </span>
+            ) : (
+              <span>Showing all {incomingRequests.length} requests</span>
+            )}
+          </div>
+        </div>
+
+        {filteredIncomingRequests.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-10 text-center">
               <GameController className="h-10 w-10 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-medium">No incoming requests</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                You don't have any incoming share requests at the moment
+                {filterIncomingActive
+                  ? "You don't have any active incoming share requests at the moment"
+                  : "You don't have any incoming share requests at the moment"}
               </p>
+              {filterIncomingActive && incomingRequests.length > 0 && (
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onClick={() => setFilterIncomingActive(false)}
+                >
+                  Show All Requests
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
           <ScrollArea className="h-[600px] pr-4">
             <div className="grid gap-4">
-              {incomingRequests.map((request) => {
+              {filteredIncomingRequests.map((request) => {
                 const expired = isExpired(request.expiredAt);
                 const expiryStatusColor = getExpiryStatusColor(
                   request.expiredAt,
@@ -228,27 +314,54 @@ export default function ShareRequestsPage() {
                               Expired
                             </Badge>
                           )}
+                          {request.status === "accepted" && (
+                            <Badge
+                              variant="destructive"
+                              className="ml-2 bg-green-500 dark:bg-green-600/80"
+                            >
+                              Accepted
+                            </Badge>
+                          )}
+                          {request.status === "rejected" && (
+                            <Badge variant="destructive" className="ml-2">
+                              Rejected
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        <p className="text-sm">
-                          <span className="font-medium">
-                            {request.ownerName}
-                          </span>{" "}
-                          wants to share their {request.type} with you
-                        </p>
-                        <div
-                          className={`text-sm ${expiryStatusColor} flex items-center gap-1`}
-                        >
-                          <Clock className="h-4 w-4" />
-                          <span suppressHydrationWarning>
-                            {expired
-                              ? "This request has expired"
-                              : `This request ${formatExpiry(request.expiredAt)}`}
-                          </span>
-                        </div>
+                        {(request.status === "accepted" ||
+                          request.status === "pending") && (
+                          <p className="text-sm">
+                            <span className="font-medium">
+                              {request.ownerName}
+                            </span>
+                            {request.status === "pending" && (
+                              <span>
+                                {` wants to share their ${request.type} with you`}
+                              </span>
+                            )}
+                            {request.status === "accepted" && (
+                              <span>
+                                {` shared their ${request.type} with you`}
+                              </span>
+                            )}
+                          </p>
+                        )}
+                        {request.status === "pending" && (
+                          <div
+                            className={`text-sm ${expiryStatusColor} flex items-center gap-1`}
+                          >
+                            <Clock className="h-4 w-4" />
+                            <span suppressHydrationWarning>
+                              {expired
+                                ? "This request has expired"
+                                : `This request ${formatExpiry(request.expiredAt)}`}
+                            </span>
+                          </div>
+                        )}
                         {request.hasChildren && (
                           <div className="text-sm text-muted-foreground">
                             <p>This share includes:</p>
@@ -268,7 +381,7 @@ export default function ShareRequestsPage() {
                         )}
                       </div>
                     </CardContent>
-                    {!expired && (
+                    {!expired && request.status === "pending" && (
                       <CardFooter className="flex justify-between gap-2">
                         <Button
                           variant="outline"
@@ -303,7 +416,7 @@ export default function ShareRequestsPage() {
                         </Button>
                       </CardFooter>
                     )}
-                    {expired && (
+                    {expired && request.status === "pending" && (
                       <CardFooter>
                         <p className="w-full text-center text-sm text-muted-foreground">
                           This request has expired and can no longer be accepted
@@ -319,26 +432,58 @@ export default function ShareRequestsPage() {
       </TabsContent>
 
       <TabsContent value="outgoing" className="space-y-4 pt-4">
-        {outgoingRequests.length === 0 ? (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="filter-outgoing"
+              checked={filterOutgoingActive}
+              onCheckedChange={setFilterOutgoingActive}
+            />
+            <Label
+              htmlFor="filter-outgoing"
+              className="flex items-center gap-1.5 text-sm font-medium"
+            >
+              <Filter className="h-4 w-4" />
+              Show only active requests
+            </Label>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {filterOutgoingActive ? (
+              <span>
+                Showing {filteredOutgoingRequests.length} active of{" "}
+                {outgoingRequests.length} total
+              </span>
+            ) : (
+              <span>Showing all {outgoingRequests.length} requests</span>
+            )}
+          </div>
+        </div>
+
+        {filteredOutgoingRequests.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-10 text-center">
               <GameController className="h-10 w-10 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-medium">No outgoing requests</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                You haven't shared any games with others yet
+                {filterOutgoingActive
+                  ? "You don't have any active outgoing share requests at the moment"
+                  : "You haven't shared any games with others yet"}
               </p>
-              <Button
-                className="mt-4"
-                onClick={() => (window.location.href = "/share-game")}
-              >
-                Share a Game
-              </Button>
+              {filterOutgoingActive && outgoingRequests.length > 0 && (
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onClick={() => setFilterOutgoingActive(false)}
+                >
+                  Show All Requests
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
           <ScrollArea className="h-[600px] pr-4">
             <div className="grid gap-4">
-              {outgoingRequests.map((request) => {
+              {filteredOutgoingRequests.map((request) => {
                 const expired = isExpired(request.expiredAt);
 
                 return (
@@ -372,6 +517,19 @@ export default function ShareRequestsPage() {
                               Expired
                             </Badge>
                           )}
+                          {request.status === "accepted" && (
+                            <Badge
+                              variant="destructive"
+                              className="ml-2 bg-green-500 dark:bg-green-600/80"
+                            >
+                              Accepted
+                            </Badge>
+                          )}
+                          {request.status === "rejected" && (
+                            <Badge variant="destructive" className="ml-2">
+                              Rejected
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </CardHeader>
@@ -395,6 +553,14 @@ export default function ShareRequestsPage() {
                               <span className="text-sm text-muted-foreground">
                                 Waiting for response
                               </span>
+                              {request.expiredAt && (
+                                <span
+                                  className="text-sm text-muted-foreground"
+                                  suppressHydrationWarning
+                                >
+                                  {`(${formatExpiry(request.expiredAt)})`}
+                                </span>
+                              )}
                             </>
                           ) : request.status === "accepted" ? (
                             <>
