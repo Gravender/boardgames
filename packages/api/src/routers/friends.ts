@@ -60,6 +60,37 @@ export const friendsRouter = createTRPCRouter({
 
       return { success: true, message: "Friend request cancelled." };
     }),
+  unFriend: protectedUserProcedure
+    .input(z.object({ friendId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.transaction(async (transaction) => {
+        await transaction
+          .delete(friend)
+          .where(
+            and(
+              eq(friend.userId, ctx.userId),
+              eq(friend.friendId, input.friendId),
+            ),
+          );
+        await transaction
+          .delete(friend)
+          .where(
+            and(
+              eq(friend.friendId, ctx.userId),
+              eq(friend.userId, input.friendId),
+            ),
+          );
+        await transaction
+          .update(friendRequest)
+          .set({ status: "rejected" })
+          .where(eq(friendRequest.requesteeId, input.friendId));
+        await transaction
+          .update(friendRequest)
+          .set({ status: "rejected" })
+          .where(eq(friendRequest.requesteeId, ctx.userId));
+      });
+      return { success: true, message: "Friend removed." };
+    }),
 
   getFriendRequests: protectedUserProcedure.query(async ({ ctx }) => {
     return await ctx.db.query.friendRequest.findMany({

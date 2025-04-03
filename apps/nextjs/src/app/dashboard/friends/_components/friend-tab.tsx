@@ -23,6 +23,7 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 
 import { useTRPC } from "~/trpc/react";
+import { FriendCard } from "./friend-card";
 import { FriendRequestCard } from "./friend-request-card";
 
 export function FriendsList() {
@@ -120,12 +121,12 @@ export function FriendsList() {
           <ScrollArea className="h-[68vh] sm:h-[75vh]">
             <div className="grid gap-4 md:grid-cols-2">
               {filteredFriends.map((friend) => (
-                <Card key={friend.id}>
-                  <CardHeader>
-                    <CardTitle>{friend.friend.name}</CardTitle>
-                    <CardDescription>{friend.friend.email}</CardDescription>
-                  </CardHeader>
-                </Card>
+                <FriendCard
+                  key={friend.id}
+                  id={friend.friend.id}
+                  name={friend.friend.name ?? "Unknown"}
+                  email={friend.friend.email ?? undefined}
+                />
               ))}
             </div>
           </ScrollArea>
