@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MoreVertical } from "lucide-react";
 
@@ -26,6 +27,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 import { useToast } from "@board-games/ui/hooks/use-toast";
@@ -87,6 +89,10 @@ export function FriendCard({ id, name, email }: FriendCardProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link href={`/dashboard/friends/${id}`}>View Profile</Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-500 focus:bg-red-50 focus:text-red-500"
               onClick={() => setUnfriendDialogOpen(true)}

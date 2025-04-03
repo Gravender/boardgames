@@ -1,8 +1,14 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { friend, friendRequest } from "@board-games/db/schema";
+import {
+  friend,
+  friendRequest,
+  sharedGame,
+  sharedMatch,
+  sharedPlayer,
+} from "@board-games/db/schema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 
@@ -123,4 +129,153 @@ export const friendsRouter = createTRPCRouter({
       },
     });
   }),
+  getFriend: protectedUserProcedure
+    .input(z.object({ friendId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const returnedFriend = await ctx.db.query.friend.findFirst({
+        columns: {
+          friendId: false,
+          userId: false,
+          createdAt: false,
+          updatedAt: false,
+          id: true,
+        },
+        where: and(
+          eq(friend.userId, ctx.userId),
+          eq(friend.friendId, input.friendId),
+        ),
+        with: {
+          friend: {
+            columns: {
+              name: true,
+              clerkUserId: false,
+              email: true,
+              createdAt: true,
+              updatedAt: false,
+              id: false,
+            },
+            with: {
+              gamesShared: {
+                columns: {
+                  gameId: false,
+                  linkedGameId: true,
+                  ownerId: false,
+                  sharedWithId: false,
+                  permission: true,
+                  createdAt: true,
+                  updatedAt: false,
+                  id: true,
+                },
+                where: eq(sharedGame.sharedWithId, ctx.userId),
+                orderBy: desc(sharedGame.createdAt),
+                with: {
+                  matches: true,
+                  scoresheets: true,
+                  game: {
+                    columns: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+              playersShared: {
+                columns: {
+                  playerId: false,
+                  linkedPlayerId: true,
+                  ownerId: false,
+                  sharedWithId: false,
+                  permission: true,
+                  createdAt: true,
+                  updatedAt: false,
+                  id: true,
+                },
+                where: eq(sharedPlayer.sharedWithId, ctx.userId),
+                orderBy: desc(sharedPlayer.createdAt),
+                with: {
+                  player: {
+                    columns: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          user: {
+            columns: {
+              name: false,
+              clerkUserId: false,
+              email: false,
+              createdAt: false,
+              updatedAt: false,
+              id: false,
+            },
+            with: {
+              gamesShared: {
+                columns: {
+                  gameId: false,
+                  linkedGameId: true,
+                  ownerId: false,
+                  sharedWithId: false,
+                  permission: true,
+                  createdAt: true,
+                  updatedAt: false,
+                  id: true,
+                },
+                where: eq(sharedGame.ownerId, ctx.userId),
+                orderBy: desc(sharedGame.createdAt),
+                with: {
+                  matches: true,
+                  scoresheets: true,
+                  game: {
+                    columns: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+              playersShared: {
+                columns: {
+                  playerId: false,
+                  linkedPlayerId: true,
+                  ownerId: false,
+                  sharedWithId: false,
+                  permission: true,
+                  createdAt: true,
+                  updatedAt: false,
+                  id: true,
+                },
+                where: eq(sharedPlayer.ownerId, ctx.userId),
+                orderBy: desc(sharedPlayer.createdAt),
+                with: {
+                  player: {
+                    columns: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!returnedFriend) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Friend not found" });
+      }
+      console.log(returnedFriend.user);
+      return returnedFriend;
+    }),
+  getFriendMetaData: protectedUserProcedure
+    .input(z.object({ friendId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.query.friend.findFirst({
+        where: and(
+          eq(friend.userId, ctx.userId),
+          eq(friend.friendId, input.friendId),
+        ),
+        with: {
+          friend: true,
+        },
+      });
+    }),
 });
