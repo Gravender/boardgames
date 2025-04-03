@@ -51,6 +51,15 @@ export const friendsRouter = createTRPCRouter({
 
       return { success: true, message: "Friend request rejected." };
     }),
+  cancelFriendRequest: protectedUserProcedure
+    .input(z.object({ requestId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .delete(friendRequest)
+        .where(eq(friendRequest.id, input.requestId));
+
+      return { success: true, message: "Friend request cancelled." };
+    }),
 
   getFriendRequests: protectedUserProcedure.query(async ({ ctx }) => {
     return await ctx.db.query.friendRequest.findMany({
@@ -64,6 +73,17 @@ export const friendsRouter = createTRPCRouter({
     });
   }),
 
+  getSentFriendRequests: protectedUserProcedure.query(async ({ ctx }) => {
+    return await ctx.db.query.friendRequest.findMany({
+      where: and(
+        eq(friendRequest.userId, ctx.userId),
+        eq(friendRequest.status, "pending"),
+      ),
+      with: {
+        user: true,
+      },
+    });
+  }),
   getFriends: protectedUserProcedure.query(async ({ ctx }) => {
     return await ctx.db.query.friend.findMany({
       where: eq(friend.userId, ctx.userId),
