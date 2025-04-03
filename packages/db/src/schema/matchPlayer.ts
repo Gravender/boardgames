@@ -1,5 +1,12 @@
-import { relations } from "drizzle-orm";
-import { boolean, integer, serial, text, unique } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
+import {
+  boolean,
+  integer,
+  serial,
+  text,
+  timestamp,
+  unique,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
@@ -24,6 +31,12 @@ const matchPlayers = createTable(
     placement: integer("placement").default(0),
     order: integer("order"),
     details: text("details"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
   },
   (table) => [
     unique("boardgames_match_player_match_id_player_id_unique").on(

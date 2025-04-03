@@ -1,5 +1,5 @@
-import { relations } from "drizzle-orm";
-import { integer, serial, text, varchar } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
+import { integer, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
@@ -14,6 +14,12 @@ const teams = createTable("team", {
     .references(() => match.id),
 
   details: text("details"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+    () => new Date(),
+  ),
 });
 
 export const teamRelations = relations(teams, ({ one, many }) => ({

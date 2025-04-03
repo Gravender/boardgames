@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { integer, serial, timestamp, unique } from "drizzle-orm/pg-core";
+import { index, integer, serial, timestamp, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
@@ -27,6 +27,8 @@ const friend = createTable(
       table.userId,
       table.friendId,
     ),
+    index("boardgames_friend__user_id").on(table.userId),
+    index("boardgames_friend__friend_id").on(table.friendId),
   ],
 );
 
