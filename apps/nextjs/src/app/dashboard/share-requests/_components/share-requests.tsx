@@ -282,7 +282,7 @@ export default function ShareRequestsPage() {
             </CardContent>
           </Card>
         ) : (
-          <ScrollArea className="h-[600px] pr-4">
+          <ScrollArea className="h-[68vh] sm:h-[75vh]">
             <div className="grid gap-4">
               {filteredIncomingRequests.map((request) => {
                 const expired = isExpired(request.expiredAt);
@@ -303,12 +303,10 @@ export default function ShareRequestsPage() {
                             {formatDate(request.createdAt)}
                           </CardDescription>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">
-                            {request.permission === "view"
-                              ? "View Only"
-                              : "Edit Access"}
-                          </div>
+                        <div className="flex flex-col items-center gap-2 xs:flex-row">
+                          <Badge variant="secondary">
+                            {request.permission === "view" ? "View" : "Edit"}
+                          </Badge>
                           {expired && request.status === "pending" && (
                             <Badge variant="destructive" className="ml-2">
                               Expired
@@ -481,7 +479,7 @@ export default function ShareRequestsPage() {
             </CardContent>
           </Card>
         ) : (
-          <ScrollArea className="h-[600px] pr-4">
+          <ScrollArea className="h-[68vh] sm:h-[75vh]">
             <div className="grid gap-4">
               {filteredOutgoingRequests.map((request) => {
                 const expired = isExpired(request.expiredAt);
@@ -506,12 +504,10 @@ export default function ShareRequestsPage() {
                             </CardDescription>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">
-                            {request.permission === "view"
-                              ? "View Only"
-                              : "Edit Access"}
-                          </div>
+                        <div className="flex flex-col items-center gap-2 xs:flex-row">
+                          <Badge variant="secondary">
+                            {request.permission === "view" ? "View" : "Edit"}
+                          </Badge>
                           {expired && request.status === "pending" && (
                             <Badge variant="destructive" className="ml-2">
                               Expired

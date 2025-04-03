@@ -9,8 +9,8 @@ export default async function Page() {
   prefetch(trpc.sharing.getOutgoingShareRequests.queryOptions());
   return (
     <HydrateClient>
-      <div className="container max-w-4xl py-10">
-        <div className="mb-8">
+      <div className="container max-w-4xl">
+        <div className="mb-2">
           <h1 className="text-3xl font-bold">Share Requests</h1>
           <p className="text-muted-foreground">
             Manage incoming and outgoing share requests
