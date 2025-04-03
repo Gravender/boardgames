@@ -7,6 +7,7 @@ import friendRequest from "./friendRequest";
 import friends from "./friends";
 import sharedGame from "./sharedGame";
 import sharedMatch from "./sharedMatch";
+import sharedPlayer from "./sharedPlayer";
 import shareRequest from "./shareRequest";
 import userSharingPreference from "./userSharingPreferences";
 
@@ -45,6 +46,12 @@ export const userRelations = relations(users, ({ one, many }) => ({
     relationName: "shared_with",
   }),
   matchesShared: many(sharedMatch, {
+    relationName: "owner",
+  }),
+  playersSharedWith: many(sharedPlayer, {
+    relationName: "shared_with",
+  }),
+  playersShared: many(sharedPlayer, {
     relationName: "owner",
   }),
   friends: many(friends, {

@@ -5,6 +5,7 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { createTable } from "./baseTable";
 import game from "./game";
 import sharedMatch from "./sharedMatch";
+import sharedScoresheet from "./sharedScoresheet";
 import user from "./user";
 
 const sharedGame = createTable(
@@ -60,6 +61,7 @@ export const sharedGameRelations = relations(sharedGame, ({ one, many }) => ({
     relationName: "linked_game",
   }),
   matches: many(sharedMatch),
+  scoresheets: many(sharedScoresheet),
 }));
 
 export const insertSharedGameSchema = createInsertSchema(sharedGame);
