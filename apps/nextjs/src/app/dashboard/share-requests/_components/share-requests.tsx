@@ -60,13 +60,44 @@ export default function ShareRequestsPage() {
   );
   const respondToShareRequestMutation = useMutation(
     trpc.sharing.respondToShareRequest.mutationOptions({
-      onSuccess: () => {
+      onSuccess: (response) => {
+        if (response.accept) {
+          setLoading({ ...loading, [`accept-${response.id}`]: false });
+          toast({
+            title: "Share request accepted",
+            description: "The shared item has been added to your collection",
+          });
+        } else {
+          setLoading({ ...loading, [`reject-${response.id}`]: false });
+          toast({
+            title: "Share request rejected",
+            description: "The share request has been rejected",
+          });
+        }
+
         void queryClient.invalidateQueries(
           trpc.sharing.getIncomingShareRequests.queryOptions(),
         );
         void queryClient.invalidateQueries(
           trpc.sharing.getOutgoingShareRequests.queryOptions(),
         );
+      },
+    }),
+  );
+  const cancelRequestMutation = useMutation(
+    trpc.sharing.cancelShareRequest.mutationOptions({
+      onSuccess: (response) => {
+        setLoading({ ...loading, [`cancel-${response}`]: false });
+        void queryClient.invalidateQueries(
+          trpc.sharing.getIncomingShareRequests.queryOptions(),
+        );
+        void queryClient.invalidateQueries(
+          trpc.sharing.getOutgoingShareRequests.queryOptions(),
+        );
+        toast({
+          title: "Share request cancelled",
+          description: "Your share request has been cancelled",
+        });
       },
     }),
   );
@@ -88,26 +119,12 @@ export default function ShareRequestsPage() {
     });
   };
 
-  const handleCancel = async (id: number) => {
+  const handleCancel = (id: number) => {
     setLoading({ ...loading, [`cancel-${id}`]: true });
 
-    try {
-      // This would be replaced with your actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      toast({
-        title: "Share request cancelled",
-        description: "Your share request has been cancelled",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to cancel share request",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading({ ...loading, [`cancel-${id}`]: false });
-    }
+    cancelRequestMutation.mutate({
+      requestId: id,
+    });
   };
 
   const copyShareLink = (id: number, link: string) => {
@@ -390,7 +407,7 @@ export default function ShareRequestsPage() {
                           className="w-full"
                           onClick={() => handleAccept(request.id)}
                           disabled={
-                            loading[`reject-${request.id}`] ||
+                            loading[`reject-${request.id}`] ??
                             loading[`accept-${request.id}`]
                           }
                         >
@@ -574,7 +591,7 @@ export default function ShareRequestsPage() {
                               {(request.matches ?? 0) > 0 && (
                                 <li>{`${request.matches} matches`}</li>
                               )}
-                              {(request.players ?? 0) > 0 && (
+                              {request.players > 0 && (
                                 <li>{`${request.players} players`}</li>
                               )}
                             </ul>

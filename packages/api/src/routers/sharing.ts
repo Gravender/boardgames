@@ -1294,7 +1294,7 @@ export const sharingRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.transaction(async (tx) => {
+      const response = await ctx.db.transaction(async (tx) => {
         const existingRequest = await tx.query.shareRequest.findFirst({
           where: and(
             eq(shareRequest.id, input.requestId),
@@ -1870,13 +1870,12 @@ export const sharingRouter = createTRPCRouter({
           }
         }
 
-        return {
-          success: true,
-          message: input.accept
-            ? "You have accepted the share request."
-            : "You have rejected the share request.",
-        };
+        return input.requestId;
       });
+      return {
+        id: response,
+        accept: input.accept,
+      };
     }),
   cancelShareRequest: protectedUserProcedure
     .input(
@@ -1885,7 +1884,7 @@ export const sharingRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.transaction(async (tx) => {
+      const response = await ctx.db.transaction(async (tx) => {
         const existingRequest = await tx.query.shareRequest.findFirst({
           where: and(
             eq(shareRequest.id, input.requestId),
@@ -1909,7 +1908,9 @@ export const sharingRouter = createTRPCRouter({
           ),
         );
         tx.delete(shareRequest).where(eq(shareRequest.id, existingRequest.id));
+        return input.requestId;
       });
+      return response;
     }),
 
   getSharedItemByToken: publicProcedure
