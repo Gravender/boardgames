@@ -4,9 +4,11 @@ import type { z } from "zod";
 import { faker } from "@faker-js/faker";
 import { randomLcg, randomNormal, randomUniform } from "d3";
 import { endOfMonth, getDaysInMonth, subMonths } from "date-fns";
-import { eq, getTableName, inArray, sql } from "drizzle-orm";
+import { and, eq, getTableName, gt, inArray, ne, or, sql } from "drizzle-orm";
 
 import type {
+  insertFriendRequestSchema,
+  insertFriendSchema,
   insertGameSchema,
   insertGroupPlayerSchema,
   insertGroupSchema,
@@ -21,10 +23,13 @@ import type {
 } from "@board-games/db/schema";
 import { db } from "@board-games/db/client";
 import {
+  friend,
+  friendRequest,
   game,
   group,
   groupPlayer,
   image,
+  insertShareRequestSchema,
   location,
   match,
   matchPlayer,
@@ -32,12 +37,13 @@ import {
   round,
   roundPlayer,
   scoresheet,
+  shareRequest,
   team,
   user,
+  userSharingPreference,
 } from "@board-games/db/schema";
 
 import type { insertRoundPlayerSchema, insertRoundSchema } from "../schema";
-import roundPlayers from "../schema/roundPlayer";
 
 function weightedRandomSample<T>(
   weightedPlayers: { weight: number; value: T }[],
@@ -90,6 +96,12 @@ async function resetTable(table: Table) {
   );
 }
 for (const table of [
+  friend,
+  friendRequest,
+  game,
+  group,
+  groupPlayer,
+  image,
   location,
   match,
   matchPlayer,
@@ -97,44 +109,112 @@ for (const table of [
   round,
   roundPlayer,
   scoresheet,
+  shareRequest,
+  team,
   user,
-  game,
-  group,
-  groupPlayer,
-  image,
+  userSharingPreference,
 ]) {
   // await db.delete(table); // clear tables without truncating / resetting ids
   await resetTable(table);
 }
 export async function seed() {
+  const totalUsers = 30;
+  const totalGames = 10 * totalUsers;
+  const maxMatches = 20 * totalGames; // Control total number of matches across all games
   const userData: z.infer<typeof insertUserSchema>[] = Array.from(
-    { length: 5 },
+    { length: totalUsers },
     () => ({
       clerkUserId: faker.person.fullName(),
+      name: faker.person.fullName(),
+      email: faker.internet.email(),
     }),
   );
   console.log("Inserting users...\n");
-  const [user1, user2] = await db.insert(user).values(userData).returning();
-  if (!user1) {
-    throw new Error("User 1 not found");
+  const users = await db.insert(user).values(userData).returning();
+
+  console.log("Inserting users player...\n");
+  await db.insert(player).values(
+    users.map((u) => ({
+      name: u.name ?? "",
+      createdBy: u.id,
+      userId: u.id,
+    })),
+  );
+
+  console.log("Insert user sharing preference's");
+  await db.insert(userSharingPreference).values(
+    users.map((u) => ({
+      userId: u.id,
+    })),
+  );
+
+  const friendPairs = new Set<string>();
+  const friendRequestsData: z.infer<typeof insertFriendRequestSchema>[] = [];
+  const friendsData: z.infer<typeof insertFriendSchema>[] = [];
+
+  for (const userA of users) {
+    const friendCount = faker.number.int({ min: 0, max: 5 });
+    if (friendCount === 0) continue;
+    const potentialFriends = faker.helpers.arrayElements(
+      users.filter((u) => u.id !== userA.id),
+      friendCount,
+    );
+
+    for (const userB of potentialFriends) {
+      const key = `${Math.min(userA.id, userB.id)}-${Math.max(userA.id, userB.id)}`;
+      if (friendPairs.has(key)) continue;
+      friendPairs.add(key);
+
+      const status = faker.helpers.weightedArrayElement([
+        { weight: 0.7, value: "accepted" },
+        { weight: 0.2, value: "pending" },
+        { weight: 0.1, value: "rejected" },
+      ]);
+      const date = faker.date.past({ years: 2 });
+
+      friendRequestsData.push({
+        userId: userA.id,
+        requesteeId: userB.id,
+        status,
+        createdAt: date,
+      });
+
+      if (status === "accepted") {
+        const futureDate = faker.date.future({ refDate: date, years: 1 });
+        friendsData.push(
+          {
+            userId: userA.id,
+            friendId: userB.id,
+            createdAt: futureDate,
+          },
+          { userId: userB.id, friendId: userA.id, createdAt: futureDate },
+        );
+      }
+    }
   }
-  if (!user2) {
-    throw new Error("User 2 not found");
+
+  console.log("Inserting friend requests...");
+  if (friendRequestsData.length > 0) {
+    console.error("Need at least one friend request");
   }
+  await db.insert(friendRequest).values(friendRequestsData);
+
+  console.log("Inserting accepted friends...");
+  if (friendsData.length > 0) {
+    console.error("Need at least one friend");
+  }
+  await db.insert(friend).values(friendsData);
 
   const imageGameData: z.infer<typeof insertImageSchema>[] = Array.from(
     { length: 30 },
     () => ({
       url: faker.image.urlPicsumPhotos(),
-      userId: faker.helpers.arrayElement([user1.id, user2.id]),
+      userId: faker.helpers.arrayElement(users).id,
       name: faker.commerce.productName(),
     }),
   );
   console.log("Inserting game images...\n");
   const gameImages = await db.insert(image).values(imageGameData).returning();
-
-  const totalGames = 80;
-  const maxMatches = 3000; // Control total number of matches across all games
 
   const normalGames = randomNormal.source(randomLcg(d3Seed))(40, 25);
 
@@ -159,7 +239,7 @@ export async function seed() {
       );
       return {
         name: faker.commerce.productName(),
-        userId: faker.helpers.arrayElement([user1.id, user2.id]),
+        userId: faker.helpers.arrayElement(users).id,
         imageId: faker.helpers.maybe(
           () => faker.helpers.arrayElement(gameImages).id,
           {
@@ -199,7 +279,7 @@ export async function seed() {
     { length: 12 },
     () => ({
       name: faker.location.city(),
-      createdBy: faker.helpers.arrayElement([user1.id, user2.id]),
+      createdBy: faker.helpers.arrayElement(users).id,
     }),
   );
   console.log("Inserting locations...\n");
@@ -209,7 +289,7 @@ export async function seed() {
     { length: 30 },
     () => ({
       url: faker.image.avatar(),
-      userId: faker.helpers.arrayElement([user1.id, user2.id]),
+      userId: faker.helpers.arrayElement(users).id,
       name: faker.person.fullName(),
     }),
   );
@@ -223,7 +303,7 @@ export async function seed() {
     { length: Math.round(matchCount / 20) },
     () => ({
       name: faker.person.fullName(),
-      createdBy: faker.helpers.arrayElement([user1.id, user2.id]),
+      createdBy: faker.helpers.arrayElement(users).id,
       userId: null,
       imageId: faker.helpers.maybe(
         () => faker.helpers.arrayElement(playerImages).id,
@@ -231,18 +311,16 @@ export async function seed() {
       ),
     }),
   );
-  if (playerData[0] && playerData[1]) {
-    playerData[0].userId = user1.id;
-    playerData[1].userId = user2.id;
-  }
+
   console.log("Inserting players...\n");
-  const players = await db.insert(player).values(playerData).returning();
+  await db.insert(player).values(playerData);
+  const players = await db.select().from(player);
 
   const groupData: z.infer<typeof insertGroupSchema>[] = Array.from(
     { length: 10 },
     () => ({
       name: faker.company.name(),
-      createdBy: faker.helpers.arrayElement([user1.id, user2.id]),
+      createdBy: faker.helpers.arrayElement(users).id,
     }),
   );
   console.log("Inserting groups...\n");
@@ -430,6 +508,7 @@ export async function seed() {
       }),
     );
     console.log(`Inserting matches for ${returnedGame.name}...\n`);
+    if (matchData.length === 0) continue;
     const returnedMatches = await db
       .insert(match)
       .values(matchData)
@@ -446,16 +525,19 @@ export async function seed() {
 
       const minPlayers = returnedGame.playersMin ?? 2;
       const maxPlayers = returnedGame.playersMax ?? 8;
-      const playerCount = faker.number.int({
-        min: minPlayers,
-        max: maxPlayers,
-      });
+      const playerCount =
+        minPlayers > maxPlayers
+          ? minPlayers
+          : faker.number.int({
+              min: minPlayers,
+              max: maxPlayers,
+            });
 
       const teamsToInsert: z.infer<typeof insertTeamSchema>[] = Array.from(
         {
           length: faker.number.int({
-            min: Math.min(2, Math.ceil(playerCount / 2)),
-            max: Math.ceil(playerCount / 2),
+            min: 1,
+            max: Math.max(2, Math.floor(playerCount / 1.5)),
           }),
         },
         () => {
@@ -485,7 +567,10 @@ export async function seed() {
         value: player.id,
       }));
 
-      const matchPlayers = weightedRandomSample(weightedPlayers, playerCount);
+      const matchPlayers = weightedRandomSample(
+        weightedPlayers,
+        Math.min(weightedPlayers.length, playerCount),
+      );
       const matchPlayerData: z.infer<typeof insertMatchPlayerSchema>[] =
         matchPlayers.map((player, index) => ({
           matchId: returnedMatch.id,
@@ -582,7 +667,7 @@ export async function seed() {
           });
         });
       console.log(`Inserting round players for ${returnedMatch.name}...\n`);
-      await db.insert(roundPlayers).values(roundPlayerData).returning();
+      await db.insert(roundPlayer).values(roundPlayerData).returning();
 
       const finalScoreSqlStatement = () => {
         if (matchScoresheet.roundsScore === "Aggregate") {
@@ -694,6 +779,7 @@ export async function seed() {
         return foundPlayer?.placement ?? 0;
       };
 
+      console.log(`Updating player placements for ${returnedMatch.name}...\n`);
       for (const returnedRoundPlayer of returnedRoundPlayersGroupByMatchPLayer) {
         const playerIsWinner = isWinner(returnedRoundPlayer.finalScore);
         if (matchScoresheet.winCondition === "Manual") {
@@ -715,6 +801,407 @@ export async function seed() {
               placement: placement,
             })
             .where(eq(matchPlayer.id, returnedRoundPlayer.matchPlayerId));
+        }
+      }
+      console.log(`Finished ${returnedMatch.name}\n`);
+    }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const parentShareRequestSchema = insertShareRequestSchema
+    .required({ createdAt: true, ownerId: true, permission: true })
+    .omit({ updatedAt: true, id: true, token: true, parentShareId: true });
+  for (const userA of users) {
+    const userAFriends = await db
+      .select()
+      .from(friend)
+      .where(eq(friend.userId, userA.id));
+    const filteredGames = returnedGames.filter((g) => g.userId === userA.id);
+    const filteredPlayers = players.filter((p) => p.createdBy === userA.id);
+    const userShareRequests: z.infer<typeof parentShareRequestSchema>[] = (
+      await Promise.all(
+        Array.from(
+          { length: faker.number.int({ min: 8, max: 50 }) },
+          async () => {
+            const isLink =
+              faker.datatype.boolean(0.2) || userAFriends.length === 0;
+            const itemType = faker.helpers.arrayElement([
+              "match",
+              "game",
+              "player",
+            ]);
+            const status = faker.helpers.weightedArrayElement([
+              { weight: 0.7, value: "accepted" },
+              { weight: 0.2, value: "pending" },
+              { weight: 0.1, value: "rejected" },
+            ]);
+            const pastDate = faker.date.past();
+            if (itemType === "game" && filteredGames.length > 0) {
+              return {
+                ownerId: userA.id,
+                sharedWithId: isLink
+                  ? undefined
+                  : faker.helpers.arrayElement(userAFriends).friendId,
+                itemType,
+                itemId: faker.helpers.arrayElement(filteredGames).id,
+                createdAt: pastDate,
+                expiresAt: isLink
+                  ? faker.date.future({ years: 1, refDate: pastDate })
+                  : faker.helpers.maybe(
+                      () => faker.date.future({ years: 1, refDate: pastDate }),
+                      {
+                        probability: 0.5,
+                      },
+                    ),
+                status,
+                permission: faker.helpers.arrayElement(["view", "edit"]),
+              };
+            }
+            if (itemType === "player" && filteredPlayers.length > 0) {
+              return {
+                ownerId: userA.id,
+                sharedWithId: isLink
+                  ? undefined
+                  : faker.helpers.arrayElement(userAFriends).friendId,
+                itemType,
+                itemId: faker.helpers.arrayElement(filteredPlayers).id,
+                createdAt: pastDate,
+                expiresAt: isLink
+                  ? faker.date.future({ years: 1, refDate: pastDate })
+                  : faker.helpers.maybe(
+                      () => faker.date.future({ years: 1, refDate: pastDate }),
+                      {
+                        probability: 0.5,
+                      },
+                    ),
+                status,
+                permission: faker.helpers.arrayElement(["view", "edit"]),
+              };
+            }
+            if (itemType === "match") {
+              const returnedMatches = await db
+                .select()
+                .from(match)
+                .where(eq(match.userId, userA.id));
+              if (returnedMatches.length === 0) return null;
+              return {
+                ownerId: userA.id,
+                sharedWithId: isLink
+                  ? undefined
+                  : faker.helpers.arrayElement(userAFriends).friendId,
+                itemType,
+                itemId: faker.helpers.arrayElement(returnedMatches).id,
+                expiresAt: isLink
+                  ? faker.date.future({ years: 1, refDate: pastDate })
+                  : faker.helpers.maybe(
+                      () => faker.date.future({ years: 1, refDate: pastDate }),
+                      {
+                        probability: 0.5,
+                      },
+                    ),
+                createdAt: pastDate,
+                status,
+                permission: faker.helpers.arrayElement(["view", "edit"]),
+              };
+            }
+            return null;
+          },
+        ),
+      )
+    ).filter((item) => item !== null);
+    const returnedUserShareRequests = await db
+      .insert(shareRequest)
+      .values(userShareRequests)
+      .returning();
+    for (const returnedUserShareRequest of returnedUserShareRequests) {
+      const currentShareRequest = await db.query.shareRequest.findMany({
+        where: and(
+          eq(shareRequest.ownerId, returnedUserShareRequest.ownerId),
+          or(
+            eq(shareRequest.status, "rejected"),
+            and(
+              eq(shareRequest.status, "pending"),
+              gt(shareRequest.expiresAt, returnedUserShareRequest.createdAt),
+            ),
+            eq(shareRequest.status, "accepted"),
+          ),
+        ),
+      });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const childShareRequestSchema = insertShareRequestSchema
+        .required({ parentShareId: true, createdAt: true })
+        .omit({ updatedAt: true, id: true, token: true });
+      if (returnedUserShareRequest.itemType === "game") {
+        const returnedGame = await db.query.game.findFirst({
+          where: and(
+            eq(game.id, returnedUserShareRequest.itemId),
+            eq(game.userId, returnedUserShareRequest.ownerId),
+          ),
+          with: {
+            scoresheets: {
+              where: or(
+                eq(scoresheet.type, "Default"),
+                eq(scoresheet.type, "Game"),
+              ),
+            },
+            matches: {
+              with: {
+                matchPlayers: true,
+              },
+            },
+          },
+        });
+        if (returnedGame) {
+          const childShareRequest: z.infer<typeof childShareRequestSchema>[] =
+            [];
+          if (returnedGame.matches.length > 0 && faker.datatype.boolean()) {
+            faker.helpers
+              .arrayElements(returnedGame.matches, {
+                min: 1,
+                max: returnedGame.matches.length,
+              })
+              .forEach((m) => {
+                childShareRequest.push({
+                  createdAt: returnedUserShareRequest.createdAt,
+                  itemId: m.id,
+                  parentShareId: returnedUserShareRequest.id,
+                  status: returnedUserShareRequest.status,
+                  itemType: "match",
+                  ownerId: returnedUserShareRequest.ownerId,
+                  expiresAt: returnedUserShareRequest.expiresAt,
+                  permission: faker.helpers.arrayElement(["view", "edit"]),
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
+                });
+                if (faker.datatype.boolean(0.8)) {
+                  m.matchPlayers.forEach((mPlayer) => {
+                    childShareRequest.push({
+                      createdAt: returnedUserShareRequest.createdAt,
+                      itemId: mPlayer.playerId,
+                      parentShareId: returnedUserShareRequest.id,
+                      status: returnedUserShareRequest.status,
+                      itemType: "player",
+                      ownerId: returnedUserShareRequest.ownerId,
+                      expiresAt: returnedUserShareRequest.expiresAt,
+                      permission: "view",
+                      sharedWithId: returnedUserShareRequest.sharedWithId,
+                    });
+                  });
+                }
+              });
+            returnedGame.scoresheets.forEach((sSheet) => {
+              if (sSheet.type === "Default") {
+                childShareRequest.push({
+                  createdAt: returnedUserShareRequest.createdAt,
+                  itemId: sSheet.id,
+                  parentShareId: returnedUserShareRequest.id,
+                  status: returnedUserShareRequest.status,
+                  itemType: "scoresheet",
+                  ownerId: returnedUserShareRequest.ownerId,
+                  expiresAt: returnedUserShareRequest.expiresAt,
+                  permission: faker.helpers.arrayElement(["view", "edit"]),
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
+                });
+              } else if (faker.datatype.boolean(0.5)) {
+                childShareRequest.push({
+                  createdAt: returnedUserShareRequest.createdAt,
+                  itemId: sSheet.id,
+                  parentShareId: returnedUserShareRequest.id,
+                  status: returnedUserShareRequest.status,
+                  itemType: "scoresheet",
+                  ownerId: returnedUserShareRequest.ownerId,
+                  expiresAt: returnedUserShareRequest.expiresAt,
+                  permission: faker.helpers.arrayElement(["view", "edit"]),
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
+                });
+              }
+            });
+          }
+          const uniqueMap = new Map<
+            string,
+            z.infer<typeof childShareRequestSchema>
+          >();
+          for (const req of childShareRequest) {
+            const key = `${req.itemType}-${req.itemId}`;
+            if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, req);
+            }
+          }
+
+          // Filter out items that are already in currentShareRequest
+          const filteredChildShareRequest = Array.from(
+            uniqueMap.values(),
+          ).filter(
+            (cShareRequest) =>
+              !currentShareRequest.find(
+                (existing) =>
+                  existing.itemType === cShareRequest.itemType &&
+                  existing.itemId === cShareRequest.itemId,
+              ),
+          );
+
+          if (filteredChildShareRequest.length > 0) {
+            await db.insert(shareRequest).values(filteredChildShareRequest);
+          }
+        }
+      }
+      if (returnedUserShareRequest.itemType === "match") {
+        const returnedMatch = await db.query.match.findFirst({
+          where: and(
+            eq(match.id, returnedUserShareRequest.itemId),
+            eq(match.userId, returnedUserShareRequest.ownerId),
+          ),
+          with: {
+            game: true,
+            matchPlayers: true,
+          },
+        });
+        if (returnedMatch) {
+          const childShareRequest: z.infer<typeof childShareRequestSchema>[] =
+            [];
+          childShareRequest.push({
+            createdAt: returnedUserShareRequest.createdAt,
+            itemId: returnedMatch.gameId,
+            parentShareId: returnedUserShareRequest.id,
+            status: returnedUserShareRequest.status,
+            itemType: "game",
+            ownerId: returnedUserShareRequest.ownerId,
+            expiresAt: returnedUserShareRequest.expiresAt,
+            permission: "view",
+            sharedWithId: returnedUserShareRequest.sharedWithId,
+          });
+
+          if (faker.datatype.boolean(0.8)) {
+            returnedMatch.matchPlayers.forEach((mPlayer) => {
+              childShareRequest.push({
+                createdAt: returnedUserShareRequest.createdAt,
+                itemId: mPlayer.playerId,
+                parentShareId: returnedUserShareRequest.id,
+                status: returnedUserShareRequest.status,
+                itemType: "player",
+                ownerId: returnedUserShareRequest.ownerId,
+                expiresAt: returnedUserShareRequest.expiresAt,
+                permission: "view",
+                sharedWithId: returnedUserShareRequest.sharedWithId,
+              });
+            });
+          }
+          const uniqueMap = new Map<
+            string,
+            z.infer<typeof childShareRequestSchema>
+          >();
+          for (const req of childShareRequest) {
+            const key = `${req.itemType}-${req.itemId}`;
+            if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, req);
+            }
+          }
+
+          // Filter out items that are already in currentShareRequest
+          const filteredChildShareRequest = Array.from(
+            uniqueMap.values(),
+          ).filter(
+            (cShareRequest) =>
+              !currentShareRequest.find(
+                (existing) =>
+                  existing.itemType === cShareRequest.itemType &&
+                  existing.itemId === cShareRequest.itemId,
+              ),
+          );
+          if (filteredChildShareRequest.length > 0) {
+            await db.insert(shareRequest).values(filteredChildShareRequest);
+          }
+        }
+      }
+      if (returnedUserShareRequest.itemType === "player") {
+        const returnedPlayer = await db.query.player.findFirst({
+          where: and(
+            eq(player.id, returnedUserShareRequest.itemId),
+            eq(player.createdBy, returnedUserShareRequest.ownerId),
+          ),
+          with: {
+            matchesByPlayer: {
+              with: {
+                match: {
+                  with: {
+                    matchPlayers: {
+                      where: ne(
+                        matchPlayer.playerId,
+                        returnedUserShareRequest.itemId,
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+        if (returnedPlayer) {
+          const childShareRequest: z.infer<typeof childShareRequestSchema>[] =
+            [];
+          if (
+            returnedPlayer.matchesByPlayer.length > 0 &&
+            faker.datatype.boolean()
+          ) {
+            faker.helpers
+              .arrayElements(returnedPlayer.matchesByPlayer, {
+                min: 1,
+                max: returnedPlayer.matchesByPlayer.length,
+              })
+              .forEach((mPlayer) => {
+                childShareRequest.push({
+                  createdAt: returnedUserShareRequest.createdAt,
+                  itemId: mPlayer.match.id,
+                  parentShareId: returnedUserShareRequest.id,
+                  status: returnedUserShareRequest.status,
+                  itemType: "match",
+                  ownerId: returnedUserShareRequest.ownerId,
+                  expiresAt: returnedUserShareRequest.expiresAt,
+                  permission: faker.helpers.arrayElement(["view", "edit"]),
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
+                });
+                if (faker.datatype.boolean(0.8)) {
+                  mPlayer.match.matchPlayers.forEach((mPlayer) => {
+                    if (mPlayer.playerId !== returnedUserShareRequest.itemId) {
+                      childShareRequest.push({
+                        createdAt: returnedUserShareRequest.createdAt,
+                        itemId: mPlayer.playerId,
+                        parentShareId: returnedUserShareRequest.id,
+                        status: returnedUserShareRequest.status,
+                        itemType: "player",
+                        ownerId: returnedUserShareRequest.ownerId,
+                        expiresAt: returnedUserShareRequest.expiresAt,
+                        permission: "view",
+                        sharedWithId: returnedUserShareRequest.sharedWithId,
+                      });
+                    }
+                  });
+                }
+              });
+          }
+          const uniqueMap = new Map<
+            string,
+            z.infer<typeof childShareRequestSchema>
+          >();
+          for (const req of childShareRequest) {
+            const key = `${req.itemType}-${req.itemId}`;
+            if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, req);
+            }
+          }
+
+          // Filter out items that are already in currentShareRequest
+          const filteredChildShareRequest = Array.from(
+            uniqueMap.values(),
+          ).filter(
+            (cShareRequest) =>
+              !currentShareRequest.find(
+                (existing) =>
+                  existing.itemType === cShareRequest.itemType &&
+                  existing.itemId === cShareRequest.itemId,
+              ),
+          );
+          if (filteredChildShareRequest.length > 0) {
+            await db.insert(shareRequest).values(filteredChildShareRequest);
+          }
         }
       }
     }

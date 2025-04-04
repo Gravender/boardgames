@@ -1,0 +1,578 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import {
+  Check,
+  ChevronDown,
+  Loader2,
+  ThumbsDown,
+  ThumbsUp,
+} from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
+import type { RouterOutputs } from "@board-games/api";
+import { Badge } from "@board-games/ui/badge";
+import { Button } from "@board-games/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@board-games/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@board-games/ui/command";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@board-games/ui/form";
+import { Label } from "@board-games/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@board-games/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@board-games/ui/radio-group";
+import { Separator } from "@board-games/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@board-games/ui/tooltip";
+
+import { useTRPC } from "~/trpc/react";
+import ChildMatchesRequest from "./child-match-request";
+import ChildPlayersRequest from "./child-players-request";
+
+type Game = Extract<
+  RouterOutputs["sharing"]["getShareRequest"],
+  { itemType: "game" }
+>;
+const formSchema = z
+  .object({
+    gameOption: z.enum(["new", "existing"]),
+    existingGameId: z.number().optional().nullable(),
+
+    scoresheets: z.array(
+      z.object({
+        sharedId: z.number(),
+        accept: z.boolean(),
+      }),
+    ),
+  })
+  .refine(
+    (data) => {
+      // Ensure at least one scoresheet is accepted
+      return data.scoresheets.some((scoresheet) => scoresheet.accept === true);
+    },
+    {
+      message: "You must accept at least one scoresheet",
+      path: ["scoresheets"],
+    },
+  );
+
+type FormValues = z.infer<typeof formSchema>;
+export default function GameRequestPage({ game }: { game: Game }) {
+  const trpc = useTRPC();
+
+  const { data: usersGames } = useSuspenseQuery(
+    trpc.sharing.getUserGamesForLinking.queryOptions(),
+  );
+
+  const [submitting, setSubmitting] = useState(false);
+
+  const [gameSearchOpen, setGameSearchOpen] = useState(false);
+  const [gameSearchQuery, setGameSearchQuery] = useState("");
+  const [players, setPlayers] = useState<
+    { sharedId: number; accept: boolean; linkedId: number | null }[]
+  >([]);
+  const [matches, setMatches] = useState<
+    { sharedId: number; accept: boolean }[]
+  >([]);
+
+  const childMatches = useMemo(() => {
+    return game.childItems.filter((item) => item.itemType === "match");
+  }, [game.childItems]);
+
+  const childPlayers = useMemo(() => {
+    return game.childItems.filter((item) => item.itemType === "player");
+  }, [game.childItems]);
+
+  const childScoresheets = useMemo(() => {
+    return game.childItems.filter((item) => item.itemType === "scoresheet");
+  }, [game.childItems]);
+
+  const filteredGames = useMemo(() => {
+    return usersGames.filter((game) =>
+      game.name.toLowerCase().includes(gameSearchQuery.toLowerCase()),
+    );
+  }, [usersGames, gameSearchQuery]);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      gameOption: "new",
+      existingGameId: null,
+      scoresheets: childScoresheets.map((scoresheet) => ({
+        sharedId: scoresheet.shareId,
+        accept: true,
+      })),
+    },
+  });
+  const onSubmit = (data: FormValues) => {
+    setSubmitting(true);
+    console.log(data);
+    console.log(players);
+    console.log(matches);
+  };
+
+  const handleGameSelect = (gameId: number) => {
+    form.setValue("existingGameId", gameId);
+    setGameSearchOpen(false);
+  };
+  const sharedPlayers = useMemo(() => {
+    return players.reduce((acc, curr) => {
+      if (curr.linkedId) return acc + 1;
+      return acc;
+    }, 0);
+  }, [players]);
+  const acceptedPlayers = useMemo(() => {
+    return players.reduce((acc, curr) => {
+      if (curr.accept) return acc + 1;
+      return acc;
+    }, 0);
+  }, [players]);
+  const acceptedMatches = useMemo(() => {
+    return matches.reduce((acc, curr) => {
+      if (curr.accept) return acc + 1;
+      return acc;
+    }, 0);
+  }, [matches]);
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>{game.item.name}</CardTitle>
+                <CardDescription>
+                  {game.item.yearPublished && (
+                    <span className="mr-2">({game.item.yearPublished})</span>
+                  )}
+                  {game.item.playersMin && game.item.playersMax && (
+                    <span className="mr-2">
+                      {game.item.playersMin === game.item.playersMax
+                        ? `${game.item.playersMin} players`
+                        : `${game.item.playersMin}-${game.item.playersMax} players`}
+                    </span>
+                  )}
+                  {game.item.playtimeMin && game.item.playtimeMax && (
+                    <span>
+                      {game.item.playtimeMin === game.item.playtimeMax
+                        ? `${game.item.playtimeMin} min`
+                        : `${game.item.playtimeMin}-${game.item.playtimeMax} min`}
+                    </span>
+                  )}
+                </CardDescription>
+              </div>
+              <Badge
+                variant={game.permission === "edit" ? "default" : "secondary"}
+              >
+                {game.permission === "edit" ? "Edit Access" : "View Only"}
+              </Badge>
+            </div>
+            {game.item.description && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                {game.item.description}
+              </p>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Game Linking Options</h3>
+
+              <FormField
+                control={form.control}
+                name="gameOption"
+                render={({ field }) => (
+                  <FormItem className="space-y-4">
+                    <FormControl>
+                      <RadioGroup
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        className="space-y-4"
+                      >
+                        <div className="flex items-start space-x-2">
+                          <RadioGroupItem
+                            value="new"
+                            id="new-game"
+                            className="mt-1"
+                          />
+                          <div className="grid gap-1.5">
+                            <Label htmlFor="new-game" className="font-medium">
+                              Create as a new game
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              Add {game.item.name} as a new game in your
+                              collection
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start space-x-2">
+                          <RadioGroupItem
+                            value="existing"
+                            id="existing-game"
+                            className="mt-1"
+                          />
+                          <div className="grid w-full gap-1.5">
+                            <Label
+                              htmlFor="existing-game"
+                              className="font-medium"
+                            >
+                              Link to an existing game
+                            </Label>
+                            <p className="mb-2 text-sm text-muted-foreground">
+                              Connect this shared game to a game you already
+                              have in your collection
+                            </p>
+
+                            {field.value === "existing" && (
+                              <FormField
+                                control={form.control}
+                                name="existingGameId"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <Popover
+                                        open={gameSearchOpen}
+                                        onOpenChange={setGameSearchOpen}
+                                      >
+                                        <PopoverTrigger asChild>
+                                          <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={gameSearchOpen}
+                                            className="justify-between"
+                                          >
+                                            {field.value
+                                              ? usersGames.find(
+                                                  (game) =>
+                                                    game.id === field.value,
+                                                )?.name
+                                              : "Select a game..."}
+                                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[300px] p-0">
+                                          <Command>
+                                            <CommandInput
+                                              placeholder="Search games..."
+                                              value={gameSearchQuery}
+                                              onValueChange={setGameSearchQuery}
+                                            />
+                                            <CommandEmpty>
+                                              No games found.
+                                            </CommandEmpty>
+                                            <CommandList>
+                                              <CommandGroup>
+                                                {filteredGames.map((game) => (
+                                                  <CommandItem
+                                                    key={game.id}
+                                                    value={game.name}
+                                                    onSelect={() =>
+                                                      handleGameSelect(game.id)
+                                                    }
+                                                  >
+                                                    <Check
+                                                      className={`mr-2 h-4 w-4 ${
+                                                        field.value === game.id
+                                                          ? "opacity-100"
+                                                          : "opacity-0"
+                                                      }`}
+                                                    />
+                                                    <div>
+                                                      <p>{game.name}</p>
+                                                      {(game.yearPublished ??
+                                                        game.playersMin) && (
+                                                        <p className="text-xs text-muted-foreground">
+                                                          {game.yearPublished}
+                                                          {game.playersMin &&
+                                                            game.playersMax && (
+                                                              <span className="ml-2">
+                                                                {game.playersMin ===
+                                                                game.playersMax
+                                                                  ? `${game.playersMin} players`
+                                                                  : `${game.playersMin}-${game.playersMax} players`}
+                                                              </span>
+                                                            )}
+                                                        </p>
+                                                      )}
+                                                    </div>
+                                                  </CommandItem>
+                                                ))}
+                                              </CommandGroup>
+                                            </CommandList>
+                                          </Command>
+                                        </PopoverContent>
+                                      </Popover>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {childScoresheets.length > 0 && (
+              <>
+                <Separator />
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">Scoresheets</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {form.getValues("scoresheets").reduce((acc, curr) => {
+                        if (curr.accept) return acc + 1;
+                        return acc;
+                      }, 0)}{" "}
+                      of {childScoresheets.length} selected
+                    </p>
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="scoresheets"
+                    render={() => (
+                      <FormItem>
+                        <div className="space-y-4">
+                          {childScoresheets.map((scoresheetItem) => {
+                            const scoresheet = scoresheetItem.item;
+
+                            return (
+                              <div
+                                key={scoresheet.id}
+                                className="flex items-center justify-between rounded-md border p-3"
+                              >
+                                <div>
+                                  <p className="font-medium">
+                                    {scoresheet.name}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Badge
+                                    variant={
+                                      scoresheetItem.permission === "edit"
+                                        ? "default"
+                                        : "secondary"
+                                    }
+                                  >
+                                    {scoresheetItem.permission === "edit"
+                                      ? "Edit Access"
+                                      : "View Only"}
+                                  </Badge>
+                                  <FormField
+                                    control={form.control}
+                                    name={`scoresheets.${form.getValues("scoresheets").findIndex((sItem) => sItem.sharedId === scoresheetItem.shareId)}.accept`}
+                                    render={({ field }) => (
+                                      <FormItem className="flex items-center space-x-2">
+                                        <FormControl>
+                                          <div className="flex items-center gap-2">
+                                            <TooltipProvider>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Button
+                                                    type="button"
+                                                    variant={
+                                                      field.value
+                                                        ? "default"
+                                                        : "outline"
+                                                    }
+                                                    size="sm"
+                                                    className="w-24"
+                                                    onClick={() =>
+                                                      field.onChange(
+                                                        !field.value,
+                                                      )
+                                                    }
+                                                  >
+                                                    {field.value ? (
+                                                      <>
+                                                        <ThumbsUp className="mr-2 h-4 w-4" />
+                                                        Accept
+                                                      </>
+                                                    ) : (
+                                                      <>
+                                                        <ThumbsDown className="mr-2 h-4 w-4" />
+                                                        Reject
+                                                      </>
+                                                    )}
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>
+                                                    {field.value
+                                                      ? "Accept this scoresheet"
+                                                      : "Reject this scoresheet"}
+                                                  </p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </TooltipProvider>
+                                          </div>
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
+
+            {childMatches.length > 0 && (
+              <>
+                <Separator />
+
+                <ChildMatchesRequest
+                  childMatches={childMatches}
+                  matches={matches}
+                  setMatches={setMatches}
+                  gameMatches={
+                    usersGames.find(
+                      (g) => g.id === form.getValues("existingGameId"),
+                    )?.matches ?? []
+                  }
+                />
+              </>
+            )}
+
+            {childPlayers.length > 0 && (
+              <>
+                <Separator />
+
+                <ChildPlayersRequest
+                  childPlayers={childPlayers}
+                  players={players}
+                  setPlayers={setPlayers}
+                />
+              </>
+            )}
+
+            <div className="rounded-md bg-blue-50 p-4">
+              <h4 className="mb-2 text-sm font-medium text-blue-700">
+                Summary of items to be added:
+              </h4>
+              <ul className="ml-5 list-disc space-y-1 text-sm text-blue-600">
+                <li>
+                  1 Game: {game.item.name}
+                  {form.getValues("gameOption") === "existing" &&
+                    form.getValues("existingGameId") && (
+                      <span>
+                        {" "}
+                        (linked to{" "}
+                        {
+                          usersGames.find(
+                            (g) => g.id === form.getValues("existingGameId"),
+                          )?.name
+                        }
+                        )
+                      </span>
+                    )}
+                </li>
+                {childMatches.length > 0 && acceptedMatches > 0 && (
+                  <li>
+                    {acceptedMatches} Match
+                    {acceptedMatches !== 1 ? "es" : ""}
+                    {form.getValues("gameOption") === "existing" &&
+                      form.getValues("existingGameId") && (
+                        <span>
+                          {" "}
+                          (
+                          {matches.reduce((acc, curr) => {
+                            if (curr.sharedId) return acc + 1;
+                            return acc;
+                          }, 0)}{" "}
+                          linked)
+                        </span>
+                      )}
+                  </li>
+                )}
+                {childScoresheets.length > 0 &&
+                  form.getValues("scoresheets").reduce((acc, curr) => {
+                    if (curr.accept) return acc + 1;
+                    return acc;
+                  }, 0) > 0 && (
+                    <li>
+                      {form.getValues("scoresheets").reduce((acc, curr) => {
+                        if (curr.accept) return acc + 1;
+                        return acc;
+                      }, 0)}{" "}
+                      Scoresheet
+                      {form.getValues("scoresheets").reduce((acc, curr) => {
+                        if (curr.accept) return acc + 1;
+                        return acc;
+                      }, 0) !== 1
+                        ? "s"
+                        : ""}
+                    </li>
+                  )}
+                {childPlayers.length > 0 && acceptedPlayers > 0 && (
+                  <li>
+                    {acceptedPlayers} Player
+                    {acceptedPlayers !== 1 ? "s" : ""}
+                    <span> ({sharedPlayers} linked)</span>
+                  </li>
+                )}
+              </ul>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline" type="button">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Accept & Link"
+              )}
+            </Button>
+          </CardFooter>
+        </Card>
+      </form>
+    </Form>
+  );
+}

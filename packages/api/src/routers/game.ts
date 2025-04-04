@@ -391,6 +391,35 @@ export const gameRouter = createTRPCRouter({
       if (!result) return null;
       return result.name;
     }),
+  getGameToShare: protectedUserProcedure
+    .input(selectGameSchema.pick({ id: true }))
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.db.query.game.findFirst({
+        where: and(
+          eq(game.id, input.id),
+          eq(game.userId, ctx.userId),
+          eq(game.deleted, false),
+        ),
+        with: {
+          matches: {
+            orderBy: (matches, { desc }) => [desc(matches.date)],
+          },
+          scoresheets: {
+            where: or(
+              eq(scoresheet.type, "Game"),
+              eq(scoresheet.type, "Default"),
+            ),
+          },
+        },
+      });
+      if (!result) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Game not found",
+        });
+      }
+      return result;
+    }),
   getGames: protectedUserProcedure.query(async ({ ctx }) => {
     const games = await ctx.db
       .select({

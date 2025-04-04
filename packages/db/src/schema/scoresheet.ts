@@ -14,6 +14,7 @@ import { createTable } from "./baseTable";
 import game from "./game";
 import match from "./match";
 import round from "./round";
+import sharedScoresheet from "./sharedScoresheet";
 import user from "./user";
 
 const scoresheets = createTable(
@@ -21,7 +22,9 @@ const scoresheets = createTable(
   {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 256 }).notNull(),
-    gameId: integer("game_id").references(() => game.id),
+    gameId: integer("game_id")
+      .references(() => game.id)
+      .notNull(),
     userId: integer("user_id").references(() => user.id),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
@@ -63,6 +66,7 @@ export const scoresheetRelations = relations(scoresheets, ({ one, many }) => ({
   }),
   rounds: many(round),
   matches: many(match),
+  sharedScoresheet: many(sharedScoresheet),
 }));
 
 export const insertScoreSheetSchema = createInsertSchema(scoresheets);
