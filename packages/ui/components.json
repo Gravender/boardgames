@@ -11,9 +11,9 @@
     "prefix": ""
   },
   "aliases": {
-    "components": "@board-games/ui/",
+    "components": "src/",
     "utils": "@board-games/ui/utils",
-    "ui": "@board-games/ui/",
+    "ui": "src/",
     "lib": "@board-games/ui/lib",
     "hooks": "@board-games/ui/hooks"
   },
