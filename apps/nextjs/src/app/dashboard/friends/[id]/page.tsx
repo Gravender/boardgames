@@ -31,24 +31,26 @@ export default async function Page({ params }: Props) {
   if (isNaN(Number(id))) redirect("/dashboard/friends");
   void prefetch(trpc.friend.getFriend.queryOptions({ friendId: Number(id) }));
   return (
-    <div className="flex w-full items-center justify-center">
-      <Suspense
-        fallback={
-          <div className="container max-w-4xl py-10">
-            <div className="mb-2 h-8 w-32 animate-pulse rounded bg-gray-200"></div>
-            <div className="mb-8 h-6 w-48 animate-pulse rounded bg-gray-200"></div>
+    <HydrateClient>
+      <div className="flex w-full items-center justify-center">
+        <Suspense
+          fallback={
+            <div className="container max-w-4xl py-10">
+              <div className="mb-2 h-8 w-32 animate-pulse rounded bg-gray-200"></div>
+              <div className="mb-8 h-6 w-48 animate-pulse rounded bg-gray-200"></div>
 
-            <div className="mb-6 h-10 w-full animate-pulse rounded bg-gray-200"></div>
+              <div className="mb-6 h-10 w-full animate-pulse rounded bg-gray-200"></div>
 
-            <div className="space-y-4">
-              <div className="h-40 w-full animate-pulse rounded bg-gray-200"></div>
-              <div className="h-40 w-full animate-pulse rounded bg-gray-200"></div>
+              <div className="space-y-4">
+                <div className="h-40 w-full animate-pulse rounded bg-gray-200"></div>
+                <div className="h-40 w-full animate-pulse rounded bg-gray-200"></div>
+              </div>
             </div>
-          </div>
-        }
-      >
-        <FriendProfilePage friendId={Number(id)} />
-      </Suspense>
-    </div>
+          }
+        >
+          <FriendProfilePage friendId={Number(id)} />
+        </Suspense>
+      </div>
+    </HydrateClient>
   );
 }

@@ -5,6 +5,7 @@ import { z } from "zod";
 import type {
   selectGameSchema,
   selectMatchSchema,
+  selectPlayerSchema,
   selectScoreSheetSchema,
 } from "@board-games/db/schema";
 import {
@@ -2060,6 +2061,227 @@ export const sharingRouter = createTRPCRouter({
         permission: sharedItem.permission,
       };
     }),
+  getShareRequest: protectedUserProcedure
+    .input(z.object({ requestId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const sharedItem = await ctx.db.query.shareRequest.findFirst({
+        where: and(
+          eq(shareRequest.id, input.requestId),
+          eq(shareRequest.sharedWithId, ctx.userId),
+          eq(shareRequest.status, "pending"),
+        ),
+        with: {
+          childShareRequests: true,
+          owner: true,
+        },
+      });
+
+      if (!sharedItem) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared item not found.",
+        });
+      }
+
+      const childItems: (
+        | {
+            itemType: "game";
+            shareId: number;
+            item: z.infer<typeof selectGameSchema>;
+            permission: "view" | "edit";
+          }
+        | {
+            itemType: "match";
+            shareId: number;
+            item: z.infer<typeof selectMatchSchema>;
+            permission: "view" | "edit";
+          }
+        | {
+            itemType: "scoresheet";
+            shareId: number;
+            item: z.infer<typeof selectScoreSheetSchema>;
+            permission: "view" | "edit";
+          }
+        | {
+            itemType: "player";
+            shareId: number;
+            item: z.infer<typeof selectPlayerSchema>;
+            permission: "view" | "edit";
+          }
+      )[] = [];
+      if (sharedItem.childShareRequests.length > 0) {
+        for (const childShareRequest of sharedItem.childShareRequests) {
+          if (childShareRequest.itemType === "game") {
+            const [returnGame] = await ctx.db
+              .select()
+              .from(game)
+              .where(
+                and(
+                  eq(game.id, childShareRequest.itemId),
+                  eq(game.userId, sharedItem.ownerId),
+                ),
+              );
+            if (!returnGame) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Shared Game not found",
+              });
+            }
+            childItems.push({
+              itemType: "game",
+              shareId: childShareRequest.id,
+              item: returnGame,
+              permission: childShareRequest.permission,
+            });
+          }
+          if (childShareRequest.itemType === "match") {
+            const returnedMatch = await ctx.db.query.match.findFirst({
+              where: and(
+                eq(match.id, childShareRequest.itemId),
+                eq(match.userId, sharedItem.ownerId),
+              ),
+              with: {
+                location: true,
+                matchPlayers: true,
+              },
+            });
+
+            if (!returnedMatch) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Match not found",
+              });
+            }
+            childItems.push({
+              itemType: "match",
+              shareId: childShareRequest.id,
+              item: returnedMatch,
+              permission: childShareRequest.permission,
+            });
+          }
+          if (childShareRequest.itemType === "scoresheet") {
+            const [returnedScoresheet] = await ctx.db
+              .select()
+              .from(scoresheet)
+              .where(
+                and(
+                  eq(scoresheet.id, childShareRequest.itemId),
+                  eq(scoresheet.userId, sharedItem.ownerId),
+                ),
+              );
+            if (!returnedScoresheet) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Scoresheet not found",
+              });
+            }
+            childItems.push({
+              itemType: "scoresheet",
+              shareId: childShareRequest.id,
+              item: returnedScoresheet,
+              permission: childShareRequest.permission,
+            });
+          }
+          if (childShareRequest.itemType === "player") {
+            const [returnedPlayer] = await ctx.db
+              .select()
+              .from(player)
+              .where(
+                and(
+                  eq(player.id, childShareRequest.itemId),
+                  eq(player.createdBy, sharedItem.ownerId),
+                ),
+              );
+            if (!returnedPlayer) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Player not found",
+              });
+            }
+            childItems.push({
+              itemType: "player",
+              shareId: childShareRequest.id,
+              item: returnedPlayer,
+              permission: childShareRequest.permission,
+            });
+          }
+        }
+      }
+      if (sharedItem.itemType === "game") {
+        const returnedGame = await ctx.db.query.game.findFirst({
+          where: eq(game.id, sharedItem.itemId),
+        });
+        if (!returnedGame) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Game not found.",
+          });
+        }
+        return {
+          itemType: "game" as const,
+          item: returnedGame,
+          permission: sharedItem.permission,
+          childItems: childItems,
+        };
+      } else if (sharedItem.itemType === "match") {
+        const returnedMatch = await ctx.db.query.match.findFirst({
+          where: eq(match.id, sharedItem.itemId),
+        });
+        if (!returnedMatch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Match not found.",
+          });
+        }
+        return {
+          itemType: "match" as const,
+          item: returnedMatch,
+          permission: sharedItem.permission,
+          childItems: childItems,
+        };
+      } else if (sharedItem.itemType === "player") {
+        const returnedPlayer = await ctx.db.query.player.findFirst({
+          where: eq(player.id, sharedItem.itemId),
+        });
+        if (!returnedPlayer) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Player not found.",
+          });
+        }
+        return {
+          itemType: "player" as const,
+          item: returnedPlayer,
+          permission: sharedItem.permission,
+          childItems: childItems,
+        };
+      } else {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Item not found.",
+        });
+      }
+    }),
+  getUserGamesForLinking: protectedUserProcedure.query(async ({ ctx }) => {
+    const games = await ctx.db.query.game.findMany({
+      where: and(eq(game.userId, ctx.userId), eq(game.deleted, false)),
+      with: {
+        matches: {
+          with: {
+            matchPlayers: true,
+            location: true,
+          },
+        },
+      },
+    });
+    return games;
+  }),
+  getUserPlayersForLinking: protectedUserProcedure.query(async ({ ctx }) => {
+    const players = await ctx.db.query.player.findMany({
+      where: eq(player.createdBy, ctx.userId),
+    });
+    return players;
+  }),
   getIncomingShareRequests: protectedUserProcedure.query(async ({ ctx }) => {
     const sharedItems = await ctx.db.query.shareRequest.findMany({
       where: and(

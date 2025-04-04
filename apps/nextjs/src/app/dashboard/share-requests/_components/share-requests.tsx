@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   useMutation,
   useQueryClient,
@@ -101,14 +102,6 @@ export default function ShareRequestsPage() {
       },
     }),
   );
-
-  const handleAccept = (id: number) => {
-    setLoading({ ...loading, [`accept-${id}`]: true });
-    respondToShareRequestMutation.mutate({
-      requestId: id,
-      accept: true,
-    });
-  };
 
   const handleReject = (id: number) => {
     setLoading({ ...loading, [`reject-${id}`]: true });
@@ -403,21 +396,25 @@ export default function ShareRequestsPage() {
                           )}
                           Reject
                         </Button>
-                        <Button
+                        <Link
                           className="w-full"
-                          onClick={() => handleAccept(request.id)}
-                          disabled={
-                            loading[`reject-${request.id}`] ??
-                            loading[`accept-${request.id}`]
-                          }
+                          href={`/dashboard/share-requests/${request.id}`}
                         >
-                          {loading[`accept-${request.id}`] ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <Check className="mr-2 h-4 w-4" />
-                          )}
-                          Accept
-                        </Button>
+                          <Button
+                            className="w-full"
+                            disabled={
+                              loading[`reject-${request.id}`] ??
+                              loading[`accept-${request.id}`]
+                            }
+                          >
+                            {loading[`accept-${request.id}`] ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Check className="mr-2 h-4 w-4" />
+                            )}
+                            Accept
+                          </Button>
+                        </Link>
                       </CardFooter>
                     )}
                     {expired && request.status === "pending" && (
