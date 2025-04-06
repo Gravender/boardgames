@@ -93,20 +93,29 @@ export default function ChildPlayersRequest({
           (p) => p.sharedId === playerItem.shareId,
         );
         if (!playerState) return null;
-
+        const foundPlayer = usersPlayers.find(
+          (p) => p.name.toLowerCase() === playerItem.item.name.toLowerCase(),
+        );
         return (
-          <Accordion type="multiple" className="w-full">
-            <AccordionItem
-              key={playerItem.item.id}
-              value={`player-${playerItem.item.id}`}
-            >
+          <Accordion
+            key={playerItem.item.id}
+            type="multiple"
+            className="w-full"
+          >
+            <AccordionItem value={`player-${playerItem.item.id}`}>
               <div className="flex w-full items-center justify-between pr-4">
                 <AccordionTrigger className="hover:no-underline">
                   <div className="flex w-full">
                     <div className="text-left">
                       <span className="font-medium">
                         {playerItem.item.name}{" "}
-                        {playerState.linkedId ? "(linked)" : ""}
+                      </span>
+                      <span className="font-medium text-green-600">
+                        {playerState.linkedId
+                          ? "(Linked)"
+                          : foundPlayer
+                            ? " (Possible Duplicate Found)"
+                            : ""}
                       </span>
                     </div>
                   </div>

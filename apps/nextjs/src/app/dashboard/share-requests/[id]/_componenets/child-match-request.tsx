@@ -93,6 +93,12 @@ export default function ChildMatchesRequest({
                       <span className="font-medium">
                         {matchItem.item.name}{" "}
                       </span>
+                      {potentialMatches(matchItem.item.date).length > 0 &&
+                        !isAccepted && (
+                          <span className="font-medium text-green-600">
+                            (Possible Match Found)
+                          </span>
+                        )}
                     </div>
                   </div>
                 </AccordionTrigger>
@@ -113,7 +119,6 @@ export default function ChildMatchesRequest({
                       className="w-24"
                       onClick={(e) => {
                         e.stopPropagation();
-                        console.log(5);
                         updateMatchAcceptance(
                           matchState.sharedId,
                           !matchState.accept,

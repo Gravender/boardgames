@@ -163,6 +163,12 @@ export default function GameRequestPage({ game }: { game: Game }) {
     }, 0);
   }, [matches]);
 
+  const foundGame = useMemo(() => {
+    return usersGames.find(
+      (g) => g.name.toLowerCase() === game.item.name.toLowerCase(),
+    );
+  }, [game.item.name, usersGames]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -215,7 +221,12 @@ export default function GameRequestPage({ game }: { game: Game }) {
                     <FormControl>
                       <RadioGroup
                         value={field.value}
-                        onValueChange={field.onChange}
+                        onValueChange={(value) => {
+                          if (value === "new") {
+                            form.setValue("existingGameId", null);
+                          }
+                          field.onChange(value);
+                        }}
                         className="space-y-4"
                       >
                         <div className="flex items-start space-x-2">
@@ -230,7 +241,8 @@ export default function GameRequestPage({ game }: { game: Game }) {
                             </Label>
                             <p className="text-sm text-muted-foreground">
                               Add {game.item.name} as a new game in your
-                              collection
+                              collection{" "}
+                              {foundGame ? "(Possible Duplicate Found)" : ""}
                             </p>
                           </div>
                         </div>
@@ -292,34 +304,40 @@ export default function GameRequestPage({ game }: { game: Game }) {
                                             </CommandEmpty>
                                             <CommandList>
                                               <CommandGroup>
-                                                {filteredGames.map((game) => (
+                                                {filteredGames.map((fGame) => (
                                                   <CommandItem
-                                                    key={game.id}
-                                                    value={game.name}
+                                                    key={fGame.id}
+                                                    value={fGame.name}
                                                     onSelect={() =>
-                                                      handleGameSelect(game.id)
+                                                      handleGameSelect(fGame.id)
                                                     }
                                                   >
                                                     <Check
                                                       className={`mr-2 h-4 w-4 ${
-                                                        field.value === game.id
+                                                        field.value === fGame.id
                                                           ? "opacity-100"
                                                           : "opacity-0"
                                                       }`}
                                                     />
                                                     <div>
-                                                      <p>{game.name}</p>
-                                                      {(game.yearPublished ??
-                                                        game.playersMin) && (
+                                                      <p>
+                                                        {fGame.name}
+                                                        {fGame.name.toLowerCase() ===
+                                                        game.item.name.toLowerCase()
+                                                          ? " (Possible Duplicate Found)"
+                                                          : ""}
+                                                      </p>
+                                                      {(fGame.yearPublished ??
+                                                        fGame.playersMin) && (
                                                         <p className="text-xs text-muted-foreground">
-                                                          {game.yearPublished}
-                                                          {game.playersMin &&
-                                                            game.playersMax && (
+                                                          {fGame.yearPublished}
+                                                          {fGame.playersMin &&
+                                                            fGame.playersMax && (
                                                               <span className="ml-2">
-                                                                {game.playersMin ===
-                                                                game.playersMax
-                                                                  ? `${game.playersMin} players`
-                                                                  : `${game.playersMin}-${game.playersMax} players`}
+                                                                {fGame.playersMin ===
+                                                                fGame.playersMax
+                                                                  ? `${fGame.playersMin} players`
+                                                                  : `${fGame.playersMin}-${fGame.playersMax} players`}
                                                               </span>
                                                             )}
                                                         </p>
