@@ -93,12 +93,11 @@ export default function ChildMatchesRequest({
                       <span className="font-medium">
                         {matchItem.item.name}{" "}
                       </span>
-                      {potentialMatches(matchItem.item.date).length > 0 &&
-                        !isAccepted && (
-                          <span className="font-medium text-green-600">
-                            (Possible Match Found)
-                          </span>
-                        )}
+                      {potentialMatches(matchItem.item.date).length > 0 && (
+                        <span className="font-medium text-green-600">
+                          (Possible Match Found)
+                        </span>
+                      )}
                     </div>
                   </div>
                 </AccordionTrigger>
@@ -111,7 +110,7 @@ export default function ChildMatchesRequest({
                   >
                     {matchItem.permission === "edit" ? "Edit" : "View"}
                   </Badge>
-                  <div className="space-y-2">
+                  <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
                     <Button
                       type="button"
                       variant={matchState.accept ? "default" : "outline"}
@@ -119,23 +118,24 @@ export default function ChildMatchesRequest({
                       className="w-24"
                       onClick={(e) => {
                         e.stopPropagation();
-                        updateMatchAcceptance(
-                          matchState.sharedId,
-                          !matchState.accept,
-                        );
+                        updateMatchAcceptance(matchState.sharedId, true);
                       }}
                     >
-                      {matchState.accept ? (
-                        <>
-                          <ThumbsUp className="mr-2 h-4 w-4" />
-                          Accept
-                        </>
-                      ) : (
-                        <>
-                          <ThumbsDown className="mr-2 h-4 w-4" />
-                          Reject
-                        </>
-                      )}
+                      <ThumbsUp className="mr-2 h-4 w-4" />
+                      Accept
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={matchState.accept ? "outline" : "default"}
+                      size="sm"
+                      className="w-24"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateMatchAcceptance(matchState.sharedId, false);
+                      }}
+                    >
+                      <ThumbsDown className="mr-2 h-4 w-4" />
+                      Reject
                     </Button>
                   </div>
                 </div>

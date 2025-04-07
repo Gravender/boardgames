@@ -47,12 +47,6 @@ import {
 } from "@board-games/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@board-games/ui/radio-group";
 import { Separator } from "@board-games/ui/separator";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@board-games/ui/tooltip";
 
 import { useTRPC } from "~/trpc/react";
 import ChildMatchesRequest from "./child-match-request";
@@ -74,16 +68,15 @@ const formSchema = z
       }),
     ),
   })
-  .refine(
-    (data) => {
-      // Ensure at least one scoresheet is accepted
-      return data.scoresheets.some((scoresheet) => scoresheet.accept === true);
-    },
-    {
-      message: "You must accept at least one scoresheet",
-      path: ["scoresheets"],
-    },
-  );
+  .superRefine((values, ctx) => {
+    if (!values.scoresheets.some((scoresheet) => scoresheet.accept === true)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "You must accept at least one scoresheet",
+        path: ["scoresheets"],
+      });
+    }
+  });
 
 type FormValues = z.infer<typeof formSchema>;
 export default function GameRequestPage({ game }: { game: Game }) {
@@ -418,47 +411,39 @@ export default function GameRequestPage({ game }: { game: Game }) {
                                     render={({ field }) => (
                                       <FormItem className="flex items-center space-x-2">
                                         <FormControl>
-                                          <div className="flex items-center gap-2">
-                                            <TooltipProvider>
-                                              <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                  <Button
-                                                    type="button"
-                                                    variant={
-                                                      field.value
-                                                        ? "default"
-                                                        : "outline"
-                                                    }
-                                                    size="sm"
-                                                    className="w-24"
-                                                    onClick={() =>
-                                                      field.onChange(
-                                                        !field.value,
-                                                      )
-                                                    }
-                                                  >
-                                                    {field.value ? (
-                                                      <>
-                                                        <ThumbsUp className="mr-2 h-4 w-4" />
-                                                        Accept
-                                                      </>
-                                                    ) : (
-                                                      <>
-                                                        <ThumbsDown className="mr-2 h-4 w-4" />
-                                                        Reject
-                                                      </>
-                                                    )}
-                                                  </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                  <p>
-                                                    {field.value
-                                                      ? "Accept this scoresheet"
-                                                      : "Reject this scoresheet"}
-                                                  </p>
-                                                </TooltipContent>
-                                              </Tooltip>
-                                            </TooltipProvider>
+                                          <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
+                                            <Button
+                                              type="button"
+                                              variant={
+                                                field.value
+                                                  ? "default"
+                                                  : "outline"
+                                              }
+                                              size="sm"
+                                              className="w-24"
+                                              onClick={() =>
+                                                field.onChange(true)
+                                              }
+                                            >
+                                              <ThumbsUp className="mr-2 h-4 w-4" />
+                                              Accept
+                                            </Button>
+                                            <Button
+                                              type="button"
+                                              variant={
+                                                field.value
+                                                  ? "outline"
+                                                  : "default"
+                                              }
+                                              size="sm"
+                                              className="w-24"
+                                              onClick={() =>
+                                                field.onChange(false)
+                                              }
+                                            >
+                                              <ThumbsDown className="mr-2 h-4 w-4" />
+                                              Reject
+                                            </Button>
                                           </div>
                                         </FormControl>
                                       </FormItem>
