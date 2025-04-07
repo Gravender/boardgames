@@ -1878,6 +1878,276 @@ export const sharingRouter = createTRPCRouter({
         accept: input.accept,
       };
     }),
+  acceptGameShareRequest: protectedUserProcedure
+    .input(
+      z.object({
+        requestId: z.number(),
+        linkedGameId: z.number().optional(),
+        scoresheets: z
+          .array(
+            z.object({
+              sharedId: z.number(),
+              accept: z.boolean(),
+            }),
+          )
+          .min(1),
+        matches: z.array(
+          z.object({
+            sharedId: z.number(),
+            accept: z.boolean(),
+          }),
+        ),
+        players: z.array(
+          z.object({
+            sharedId: z.number(),
+            accept: z.boolean(),
+            linkedId: z.number().optional(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const response = await ctx.db.transaction(async (tx) => {
+        const existingRequest = await tx.query.shareRequest.findFirst({
+          where: and(
+            eq(shareRequest.id, input.requestId),
+            eq(shareRequest.sharedWithId, ctx.userId),
+          ),
+        });
+
+        if (!existingRequest) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Share request not found.",
+          });
+        }
+        const [returnedGame] = await tx
+          .select()
+          .from(game)
+          .where(
+            and(
+              eq(game.id, existingRequest.itemId),
+              eq(game.userId, existingRequest.ownerId),
+            ),
+          );
+        if (!returnedGame) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Game not found.",
+          });
+        }
+        await tx
+          .update(shareRequest)
+          .set({ status: "accepted" })
+          .where(eq(shareRequest.id, input.requestId));
+        let sharedGameExists = await tx.query.sharedGame.findFirst({
+          where: and(
+            eq(sharedGame.ownerId, existingRequest.ownerId),
+            eq(sharedGame.sharedWithId, ctx.userId),
+            eq(sharedGame.gameId, existingRequest.itemId),
+          ),
+        });
+        if (!sharedGameExists) {
+          const [returnedSharedGame] = await tx
+            .insert(sharedGame)
+            .values({
+              ownerId: existingRequest.ownerId,
+              sharedWithId: ctx.userId,
+              gameId: existingRequest.itemId,
+              permission: existingRequest.permission,
+              linkedGameId: input.linkedGameId,
+            })
+            .returning();
+          if (!returnedSharedGame) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Shared Game not created successfully",
+            });
+          }
+          sharedGameExists = returnedSharedGame;
+        }
+        for (const scoresheetShareRequest of input.scoresheets) {
+          const returnedScoresheetRequest =
+            await tx.query.shareRequest.findFirst({
+              where: and(
+                eq(shareRequest.ownerId, existingRequest.ownerId),
+                eq(shareRequest.sharedWithId, ctx.userId),
+                eq(shareRequest.id, scoresheetShareRequest.sharedId),
+              ),
+            });
+          if (!returnedScoresheetRequest) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Scoresheet request not found.",
+            });
+          }
+          const returnedScoresheet = await tx.query.scoresheet.findFirst({
+            where: and(
+              eq(scoresheet.id, returnedScoresheetRequest.itemId),
+              eq(scoresheet.userId, existingRequest.ownerId),
+            ),
+          });
+          if (!returnedScoresheet) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Scoresheet not found.",
+            });
+          }
+          await tx
+            .update(shareRequest)
+            .set({
+              status: scoresheetShareRequest.accept ? "accepted" : "rejected",
+            })
+            .where(eq(shareRequest.id, returnedScoresheetRequest.id));
+          if (scoresheetShareRequest.accept) {
+            const sharedScoresheetExists =
+              await tx.query.sharedScoresheet.findFirst({
+                where: and(
+                  eq(
+                    sharedScoresheet.ownerId,
+                    returnedScoresheetRequest.ownerId,
+                  ),
+                  eq(sharedScoresheet.sharedWithId, ctx.userId),
+                  eq(
+                    sharedScoresheet.scoresheetId,
+                    returnedScoresheetRequest.itemId,
+                  ),
+                ),
+              });
+            if (!sharedScoresheetExists) {
+              await tx.insert(sharedScoresheet).values({
+                ownerId: returnedScoresheetRequest.ownerId,
+                sharedWithId: ctx.userId,
+                scoresheetId: returnedScoresheetRequest.itemId,
+                permission: returnedScoresheetRequest.permission,
+
+                sharedGameId: sharedGameExists.id,
+              });
+            }
+          }
+        }
+        for (const matchShareRequest of input.matches) {
+          const returnedMatchRequest = await tx.query.shareRequest.findFirst({
+            where: and(
+              eq(shareRequest.ownerId, existingRequest.ownerId),
+              eq(shareRequest.sharedWithId, ctx.userId),
+              eq(shareRequest.id, matchShareRequest.sharedId),
+            ),
+          });
+          if (!returnedMatchRequest) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Match request not found.",
+            });
+          }
+          const returnedMatch = await tx.query.match.findFirst({
+            where: and(
+              eq(match.id, returnedMatchRequest.itemId),
+              eq(match.userId, existingRequest.ownerId),
+            ),
+          });
+          if (!returnedMatch) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Match not found.",
+            });
+          }
+          await tx
+            .update(shareRequest)
+            .set({
+              status: matchShareRequest.accept ? "accepted" : "rejected",
+            })
+            .where(eq(shareRequest.id, returnedMatchRequest.id));
+          if (matchShareRequest.accept) {
+            const sharedMatchExists = await tx.query.sharedMatch.findFirst({
+              where: and(
+                eq(sharedMatch.ownerId, returnedMatchRequest.ownerId),
+                eq(sharedMatch.sharedWithId, ctx.userId),
+                eq(sharedMatch.matchId, returnedMatchRequest.itemId),
+              ),
+            });
+            if (!sharedMatchExists) {
+              await tx.insert(sharedMatch).values({
+                ownerId: returnedMatchRequest.ownerId,
+                sharedWithId: ctx.userId,
+                matchId: returnedMatchRequest.itemId,
+                sharedGameId: sharedGameExists.id,
+                permission: returnedMatchRequest.permission,
+              });
+            }
+          }
+        }
+        for (const playerShareRequest of input.players) {
+          const returnedPlayerRequest = await tx.query.shareRequest.findFirst({
+            where: and(
+              eq(shareRequest.ownerId, existingRequest.ownerId),
+              eq(shareRequest.sharedWithId, ctx.userId),
+              eq(shareRequest.id, playerShareRequest.sharedId),
+            ),
+          });
+          if (!returnedPlayerRequest) {
+            const message = `Player request ${playerShareRequest.sharedId} not found.`;
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: message,
+            });
+          }
+          const returnedPlayer = await tx.query.player.findFirst({
+            where: and(
+              eq(player.id, returnedPlayerRequest.itemId),
+              eq(player.createdBy, returnedPlayerRequest.ownerId),
+            ),
+          });
+          if (!returnedPlayer) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Player not found.",
+            });
+          }
+
+          await tx
+            .update(shareRequest)
+            .set({
+              status: playerShareRequest.accept ? "accepted" : "rejected",
+            })
+            .where(eq(shareRequest.id, returnedPlayerRequest.id));
+          if (playerShareRequest.accept) {
+            const sharedPlayerExists = await tx.query.sharedPlayer.findFirst({
+              where: and(
+                eq(sharedPlayer.ownerId, returnedPlayerRequest.ownerId),
+                eq(sharedPlayer.sharedWithId, ctx.userId),
+                eq(sharedPlayer.playerId, returnedPlayerRequest.itemId),
+              ),
+            });
+            if (!sharedPlayerExists) {
+              if (playerShareRequest.linkedId) {
+                const linkedPlayer = await tx.query.player.findFirst({
+                  where: and(
+                    eq(player.id, playerShareRequest.linkedId),
+                    eq(player.createdBy, ctx.userId),
+                  ),
+                });
+                if (!linkedPlayer) {
+                  throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Linked player not found.",
+                  });
+                }
+              }
+              await tx.insert(sharedPlayer).values({
+                ownerId: returnedPlayerRequest.ownerId,
+                sharedWithId: ctx.userId,
+                playerId: returnedPlayerRequest.itemId,
+                permission: returnedPlayerRequest.permission,
+                linkedPlayerId: playerShareRequest.linkedId,
+              });
+            }
+          }
+        }
+        return sharedGameExists;
+      });
+      return response;
+    }),
   cancelShareRequest: protectedUserProcedure
     .input(
       z.object({

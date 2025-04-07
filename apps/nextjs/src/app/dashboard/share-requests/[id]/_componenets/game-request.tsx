@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import {
   Check,
   ChevronDown,
@@ -79,11 +80,26 @@ const formSchema = z
   });
 
 type FormValues = z.infer<typeof formSchema>;
-export default function GameRequestPage({ game }: { game: Game }) {
+export default function GameRequestPage({
+  game,
+  requestId,
+}: {
+  game: Game;
+  requestId: number;
+}) {
   const trpc = useTRPC();
 
   const { data: usersGames } = useSuspenseQuery(
     trpc.sharing.getUserGamesForLinking.queryOptions(),
+  );
+  const router = useRouter();
+  const acceptGameRequestMutation = useMutation(
+    trpc.sharing.acceptGameShareRequest.mutationOptions({
+      onSuccess: (response) => {
+        setSubmitting(false);
+        router.push(`/dashboard/games/shared/[${response.id}]`);
+      },
+    }),
   );
 
   const [submitting, setSubmitting] = useState(false);
@@ -128,9 +144,26 @@ export default function GameRequestPage({ game }: { game: Game }) {
   });
   const onSubmit = (data: FormValues) => {
     setSubmitting(true);
-    console.log(data);
-    console.log(players);
-    console.log(matches);
+    acceptGameRequestMutation.mutate({
+      requestId: requestId,
+      linkedGameId:
+        data.gameOption === "existing"
+          ? (data.existingGameId ?? undefined)
+          : undefined,
+      scoresheets: data.scoresheets.map((scoresheet) => ({
+        sharedId: scoresheet.sharedId,
+        accept: scoresheet.accept,
+      })),
+      matches: matches.map((match) => ({
+        sharedId: match.sharedId,
+        accept: match.accept,
+      })),
+      players: players.map((player) => ({
+        sharedId: player.sharedId,
+        accept: player.accept,
+        linkedId: player.linkedId ?? undefined,
+      })),
+    });
   };
 
   const handleGameSelect = (gameId: number) => {

@@ -12,7 +12,7 @@ export default function ShareRequestPage({ requestId }: { requestId: number }) {
     trpc.sharing.getShareRequest.queryOptions({ requestId: requestId }),
   );
   if (shareRequest.itemType === "game") {
-    return <GameRequestPage game={shareRequest} />;
+    return <GameRequestPage game={shareRequest} requestId={requestId} />;
   } else {
     return <div>Not implemented</div>;
   }
