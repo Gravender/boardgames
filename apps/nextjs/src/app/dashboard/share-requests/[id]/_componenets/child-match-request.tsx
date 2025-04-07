@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect } from "react";
 import { isSameDay } from "date-fns";
 import { ThumbsDown, ThumbsUp } from "lucide-react";

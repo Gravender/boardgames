@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useMemo, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Check, ChevronDown, ThumbsDown, ThumbsUp } from "lucide-react";
