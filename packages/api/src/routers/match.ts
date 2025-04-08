@@ -507,6 +507,28 @@ export const matchRouter = createTRPCRouter({
         playerStats: finalPlayersWithFirstGame,
       };
     }),
+  getMatchToShare: protectedUserProcedure
+    .input(selectMatchSchema.pick({ id: true }))
+    .query(async ({ ctx, input }) => {
+      const returnedMatch = await ctx.db.query.match.findFirst({
+        where: and(eq(match.id, input.id), eq(match.userId, ctx.userId)),
+        with: {
+          location: true,
+          game: {
+            with: {
+              image: true,
+            },
+          },
+        },
+      });
+      if (!returnedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Match not found.",
+        });
+      }
+      return returnedMatch;
+    }),
   getMatchesByCalender: protectedUserProcedure.query(async ({ ctx }) => {
     const matches = await ctx.db
       .select({
