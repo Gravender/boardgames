@@ -2418,7 +2418,11 @@ export const sharingRouter = createTRPCRouter({
               ),
               with: {
                 location: true,
-                matchPlayers: true,
+                matchPlayers: {
+                  with: {
+                    player: true,
+                  },
+                },
               },
             });
 
@@ -2502,6 +2506,18 @@ export const sharingRouter = createTRPCRouter({
       } else if (sharedItem.itemType === "match") {
         const returnedMatch = await ctx.db.query.match.findFirst({
           where: eq(match.id, sharedItem.itemId),
+          with: {
+            game: {
+              with: {
+                image: true,
+              },
+            },
+            matchPlayers: {
+              with: {
+                player: true,
+              },
+            },
+          },
         });
         if (!returnedMatch) {
           throw new TRPCError({
@@ -2509,12 +2525,64 @@ export const sharingRouter = createTRPCRouter({
             message: "Match not found.",
           });
         }
-        return {
-          itemType: "match" as const,
-          item: returnedMatch,
-          permission: sharedItem.permission,
-          childItems: childItems,
-        };
+        const returnedSharedGame = await ctx.db.query.sharedGame.findFirst({
+          where: eq(sharedGame.gameId, returnedMatch.gameId),
+          with: {
+            game: {
+              with: {
+                image: true,
+              },
+            },
+            linkedGame: {
+              with: {
+                image: true,
+                matches: {
+                  with: {
+                    location: true,
+                    matchPlayers: {
+                      with: {
+                        player: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            matches: {
+              with: {
+                match: {
+                  with: {
+                    location: true,
+                    matchPlayers: {
+                      with: {
+                        player: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+        if (
+          childItems.find((item) => item.itemType === "game") &&
+          returnedSharedGame !== undefined
+        ) {
+          return {
+            itemType: "match" as const,
+            item: returnedMatch,
+            permission: sharedItem.permission,
+            childItems: childItems,
+          };
+        } else {
+          return {
+            itemType: "match" as const,
+            item: returnedMatch,
+            permission: sharedItem.permission,
+            childItems: childItems,
+            sharedGame: returnedSharedGame,
+          };
+        }
       } else if (sharedItem.itemType === "player") {
         const returnedPlayer = await ctx.db.query.player.findFirst({
           where: eq(player.id, sharedItem.itemId),
@@ -2544,7 +2612,11 @@ export const sharingRouter = createTRPCRouter({
       with: {
         matches: {
           with: {
-            matchPlayers: true,
+            matchPlayers: {
+              with: {
+                player: true,
+              },
+            },
             location: true,
           },
         },

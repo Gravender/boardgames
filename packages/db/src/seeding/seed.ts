@@ -4,7 +4,17 @@ import type { z } from "zod";
 import { faker } from "@faker-js/faker";
 import { randomLcg, randomNormal, randomUniform } from "d3";
 import { endOfMonth, getDaysInMonth, subMonths } from "date-fns";
-import { and, eq, getTableName, gt, inArray, ne, or, sql } from "drizzle-orm";
+import {
+  and,
+  eq,
+  getTableName,
+  gt,
+  inArray,
+  isNotNull,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 
 import type {
   insertFriendRequestSchema,
@@ -37,6 +47,10 @@ import {
   round,
   roundPlayer,
   scoresheet,
+  sharedGame,
+  sharedMatch,
+  sharedPlayer,
+  sharedScoresheet,
   shareRequest,
   team,
   user,
@@ -109,6 +123,10 @@ for (const table of [
   round,
   roundPlayer,
   scoresheet,
+  sharedGame,
+  sharedMatch,
+  sharedPlayer,
+  sharedScoresheet,
   shareRequest,
   team,
   user,
@@ -820,7 +838,7 @@ export async function seed() {
     const userShareRequests: z.infer<typeof parentShareRequestSchema>[] = (
       await Promise.all(
         Array.from(
-          { length: faker.number.int({ min: 8, max: 50 }) },
+          { length: faker.number.int({ min: 16, max: 50 }) },
           async () => {
             const isLink =
               faker.datatype.boolean(0.2) || userAFriends.length === 0;
@@ -913,17 +931,11 @@ export async function seed() {
       .values(userShareRequests)
       .returning();
     for (const returnedUserShareRequest of returnedUserShareRequests) {
-      const currentShareRequest = await db.query.shareRequest.findMany({
+      const currentShareRequests = await db.query.shareRequest.findMany({
         where: and(
           eq(shareRequest.ownerId, returnedUserShareRequest.ownerId),
-          or(
-            eq(shareRequest.status, "rejected"),
-            and(
-              eq(shareRequest.status, "pending"),
-              gt(shareRequest.expiresAt, returnedUserShareRequest.createdAt),
-            ),
-            eq(shareRequest.status, "accepted"),
-          ),
+          eq(shareRequest.status, "accepted"),
+          isNotNull(shareRequest.sharedWithId),
         ),
       });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1031,15 +1043,68 @@ export async function seed() {
             uniqueMap.values(),
           ).filter(
             (cShareRequest) =>
-              !currentShareRequest.find(
+              !currentShareRequests.find(
                 (existing) =>
                   existing.itemType === cShareRequest.itemType &&
-                  existing.itemId === cShareRequest.itemId,
+                  existing.itemId === cShareRequest.itemId &&
+                  existing.sharedWithId === cShareRequest.sharedWithId,
               ),
           );
 
           if (filteredChildShareRequest.length > 0) {
             await db.insert(shareRequest).values(filteredChildShareRequest);
+          }
+          if (
+            returnedUserShareRequest.status === "accepted" &&
+            returnedUserShareRequest.sharedWithId !== null
+          ) {
+            const [returnedSharedGame] = await db
+              .insert(sharedGame)
+              .values({
+                ownerId: returnedUserShareRequest.ownerId,
+                sharedWithId: returnedUserShareRequest.sharedWithId,
+                gameId: returnedGame.id,
+                permission: returnedUserShareRequest.permission,
+              })
+              .returning();
+            if (!returnedSharedGame) {
+              throw new Error("Failed to create shared game");
+            }
+            const childShareRequest = await db.query.shareRequest.findMany({
+              where: and(
+                eq(shareRequest.parentShareId, returnedUserShareRequest.id),
+                eq(shareRequest.status, "accepted"),
+              ),
+              orderBy: shareRequest.createdAt,
+            });
+            for (const cShareRequest of childShareRequest) {
+              if (cShareRequest.itemType === "match") {
+                await db.insert(sharedMatch).values({
+                  ownerId: returnedUserShareRequest.ownerId,
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
+                  matchId: cShareRequest.itemId,
+                  sharedGameId: returnedSharedGame.id,
+                  permission: cShareRequest.permission,
+                });
+              }
+              if (cShareRequest.itemType === "player") {
+                await db.insert(sharedPlayer).values({
+                  ownerId: returnedUserShareRequest.ownerId,
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
+                  playerId: cShareRequest.itemId,
+                  permission: cShareRequest.permission,
+                });
+              }
+              if (cShareRequest.itemType === "scoresheet") {
+                await db.insert(sharedScoresheet).values({
+                  ownerId: returnedUserShareRequest.ownerId,
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
+                  scoresheetId: cShareRequest.itemId,
+                  permission: cShareRequest.permission,
+                  sharedGameId: returnedSharedGame.id,
+                });
+              }
+            }
           }
         }
       }
@@ -1050,7 +1115,16 @@ export async function seed() {
             eq(match.userId, returnedUserShareRequest.ownerId),
           ),
           with: {
-            game: true,
+            game: {
+              with: {
+                scoresheets: {
+                  where: or(
+                    eq(scoresheet.type, "Default"),
+                    eq(scoresheet.type, "Game"),
+                  ),
+                },
+              },
+            },
             matchPlayers: true,
           },
         });
@@ -1068,6 +1142,19 @@ export async function seed() {
             permission: "view",
             sharedWithId: returnedUserShareRequest.sharedWithId,
           });
+          for (const childScoresheet of returnedMatch.game.scoresheets) {
+            childShareRequest.push({
+              createdAt: returnedUserShareRequest.createdAt,
+              itemId: childScoresheet.id,
+              parentShareId: returnedUserShareRequest.id,
+              status: returnedUserShareRequest.status,
+              itemType: "scoresheet",
+              ownerId: returnedUserShareRequest.ownerId,
+              expiresAt: returnedUserShareRequest.expiresAt,
+              permission: "view",
+              sharedWithId: returnedUserShareRequest.sharedWithId,
+            });
+          }
 
           if (faker.datatype.boolean(0.8)) {
             returnedMatch.matchPlayers.forEach((mPlayer) => {
@@ -1100,14 +1187,79 @@ export async function seed() {
             uniqueMap.values(),
           ).filter(
             (cShareRequest) =>
-              !currentShareRequest.find(
+              !currentShareRequests.find(
                 (existing) =>
                   existing.itemType === cShareRequest.itemType &&
-                  existing.itemId === cShareRequest.itemId,
+                  existing.itemId === cShareRequest.itemId &&
+                  existing.sharedWithId === cShareRequest.sharedWithId &&
+                  existing.ownerId === cShareRequest.ownerId &&
+                  existing.status === cShareRequest.status,
               ),
           );
           if (filteredChildShareRequest.length > 0) {
             await db.insert(shareRequest).values(filteredChildShareRequest);
+          }
+          if (
+            returnedUserShareRequest.status === "accepted" &&
+            returnedUserShareRequest.sharedWithId !== null
+          ) {
+            const childShareRequest = await db.query.shareRequest.findMany({
+              where: and(
+                eq(shareRequest.parentShareId, returnedUserShareRequest.id),
+                eq(shareRequest.status, "accepted"),
+              ),
+              orderBy: shareRequest.createdAt,
+            });
+            for (const cShareRequest of childShareRequest) {
+              if (cShareRequest.itemType === "game") {
+                await db.insert(sharedGame).values({
+                  ownerId: returnedUserShareRequest.ownerId,
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
+                  gameId: cShareRequest.itemId,
+                  permission: cShareRequest.permission,
+                });
+              }
+              if (cShareRequest.itemType === "player") {
+                await db.insert(sharedPlayer).values({
+                  ownerId: returnedUserShareRequest.ownerId,
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
+                  playerId: cShareRequest.itemId,
+                  permission: cShareRequest.permission,
+                });
+              }
+            }
+            const returnedSharedGame = await db.query.sharedGame.findFirst({
+              where: and(
+                eq(sharedGame.ownerId, returnedUserShareRequest.ownerId),
+                eq(
+                  sharedGame.sharedWithId,
+                  returnedUserShareRequest.sharedWithId,
+                ),
+                eq(sharedGame.gameId, returnedMatch.gameId),
+              ),
+            });
+            if (returnedSharedGame) {
+              for (const cShareRequest of childShareRequest.filter(
+                (c) => c.itemType === "scoresheet",
+              )) {
+                if (cShareRequest.itemType === "scoresheet") {
+                  await db.insert(sharedScoresheet).values({
+                    ownerId: returnedUserShareRequest.ownerId,
+                    sharedWithId: returnedUserShareRequest.sharedWithId,
+                    scoresheetId: cShareRequest.itemId,
+                    permission: cShareRequest.permission,
+                    sharedGameId: returnedSharedGame.id,
+                  });
+                }
+              }
+              await db.insert(sharedMatch).values({
+                ownerId: returnedUserShareRequest.ownerId,
+                sharedWithId: returnedUserShareRequest.sharedWithId,
+                matchId: returnedMatch.id,
+                sharedGameId: returnedSharedGame.id,
+                permission: returnedUserShareRequest.permission,
+              });
+            }
           }
         }
       }
@@ -1127,6 +1279,16 @@ export async function seed() {
                         matchPlayer.playerId,
                         returnedUserShareRequest.itemId,
                       ),
+                    },
+                    game: {
+                      with: {
+                        scoresheets: {
+                          where: or(
+                            eq(scoresheet.type, "Default"),
+                            eq(scoresheet.type, "Game"),
+                          ),
+                        },
+                      },
                     },
                   },
                 },
@@ -1158,6 +1320,30 @@ export async function seed() {
                   permission: faker.helpers.arrayElement(["view", "edit"]),
                   sharedWithId: returnedUserShareRequest.sharedWithId,
                 });
+                childShareRequest.push({
+                  createdAt: returnedUserShareRequest.createdAt,
+                  itemId: mPlayer.match.gameId,
+                  parentShareId: returnedUserShareRequest.id,
+                  status: returnedUserShareRequest.status,
+                  itemType: "game",
+                  ownerId: returnedUserShareRequest.ownerId,
+                  expiresAt: returnedUserShareRequest.expiresAt,
+                  permission: "view",
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
+                });
+                for (const childScoresheet of mPlayer.match.game.scoresheets) {
+                  childShareRequest.push({
+                    createdAt: returnedUserShareRequest.createdAt,
+                    itemId: childScoresheet.id,
+                    parentShareId: returnedUserShareRequest.id,
+                    status: returnedUserShareRequest.status,
+                    itemType: "scoresheet",
+                    ownerId: returnedUserShareRequest.ownerId,
+                    expiresAt: returnedUserShareRequest.expiresAt,
+                    permission: "view",
+                    sharedWithId: returnedUserShareRequest.sharedWithId,
+                  });
+                }
                 if (faker.datatype.boolean(0.8)) {
                   mPlayer.match.matchPlayers.forEach((mPlayer) => {
                     if (mPlayer.playerId !== returnedUserShareRequest.itemId) {
@@ -1193,14 +1379,125 @@ export async function seed() {
             uniqueMap.values(),
           ).filter(
             (cShareRequest) =>
-              !currentShareRequest.find(
+              !currentShareRequests.find(
                 (existing) =>
                   existing.itemType === cShareRequest.itemType &&
-                  existing.itemId === cShareRequest.itemId,
+                  existing.itemId === cShareRequest.itemId &&
+                  existing.sharedWithId === cShareRequest.sharedWithId,
               ),
           );
+          console.log(
+            "About to insert childShareRequests",
+            uniqueMap.size,
+            filteredChildShareRequest.length,
+          );
+
           if (filteredChildShareRequest.length > 0) {
-            await db.insert(shareRequest).values(filteredChildShareRequest);
+            const inserted = await db
+              .insert(shareRequest)
+              .values(filteredChildShareRequest)
+              .returning();
+            if (inserted.length !== filteredChildShareRequest.length) {
+              console.warn(
+                "Some share requests may not have been inserted:",
+                inserted,
+              );
+            }
+          }
+          if (
+            returnedUserShareRequest.status === "accepted" &&
+            returnedUserShareRequest.sharedWithId !== null
+          ) {
+            const childShareRequest = await db.query.shareRequest.findMany({
+              where: and(
+                eq(shareRequest.parentShareId, returnedUserShareRequest.id),
+                eq(shareRequest.status, "accepted"),
+              ),
+              orderBy: shareRequest.createdAt,
+            });
+            for (const cShareRequest of childShareRequest) {
+              if (cShareRequest.itemType === "game") {
+                await db.insert(sharedGame).values({
+                  ownerId: returnedUserShareRequest.ownerId,
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
+                  gameId: cShareRequest.itemId,
+                  permission: cShareRequest.permission,
+                });
+              }
+              if (cShareRequest.itemType === "player") {
+                await db.insert(sharedPlayer).values({
+                  ownerId: returnedUserShareRequest.ownerId,
+                  sharedWithId: returnedUserShareRequest.sharedWithId,
+                  playerId: cShareRequest.itemId,
+                  permission: cShareRequest.permission,
+                });
+              }
+            }
+
+            for (const cShareRequest of childShareRequest.filter(
+              (c) => c.itemType === "scoresheet" || c.itemType === "match",
+            )) {
+              if (cShareRequest.itemType === "scoresheet") {
+                const returnedScoresheet = await db.query.scoresheet.findFirst({
+                  where: and(
+                    eq(scoresheet.id, cShareRequest.itemId),
+                    eq(scoresheet.userId, returnedUserShareRequest.ownerId),
+                  ),
+                });
+                if (!returnedScoresheet) {
+                  throw new Error("Scoresheet not found.");
+                }
+                const returnedSharedGame = await db.query.sharedGame.findFirst({
+                  where: and(
+                    eq(sharedGame.ownerId, returnedUserShareRequest.ownerId),
+                    eq(
+                      sharedGame.sharedWithId,
+                      returnedUserShareRequest.sharedWithId,
+                    ),
+                    eq(sharedGame.gameId, returnedScoresheet.gameId),
+                  ),
+                });
+                if (returnedSharedGame) {
+                  await db.insert(sharedScoresheet).values({
+                    ownerId: returnedUserShareRequest.ownerId,
+                    sharedWithId: returnedUserShareRequest.sharedWithId,
+                    scoresheetId: cShareRequest.itemId,
+                    permission: cShareRequest.permission,
+                    sharedGameId: returnedSharedGame.id,
+                  });
+                }
+              }
+              if (cShareRequest.itemType === "match") {
+                const returnedMatch = await db.query.match.findFirst({
+                  where: and(
+                    eq(match.id, cShareRequest.itemId),
+                    eq(match.userId, returnedUserShareRequest.ownerId),
+                  ),
+                });
+                if (!returnedMatch) {
+                  throw new Error("Match not found.");
+                }
+                const returnedSharedGame = await db.query.sharedGame.findFirst({
+                  where: and(
+                    eq(sharedGame.ownerId, returnedUserShareRequest.ownerId),
+                    eq(
+                      sharedGame.sharedWithId,
+                      returnedUserShareRequest.sharedWithId,
+                    ),
+                    eq(sharedGame.gameId, returnedMatch.gameId),
+                  ),
+                });
+                if (returnedSharedGame) {
+                  await db.insert(sharedMatch).values({
+                    ownerId: returnedUserShareRequest.ownerId,
+                    sharedWithId: returnedUserShareRequest.sharedWithId,
+                    matchId: cShareRequest.itemId,
+                    sharedGameId: returnedSharedGame.id,
+                    permission: returnedUserShareRequest.permission,
+                  });
+                }
+              }
+            }
           }
         }
       }
