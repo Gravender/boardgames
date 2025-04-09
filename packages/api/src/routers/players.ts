@@ -23,6 +23,7 @@ import {
   groupPlayer,
   image,
   insertPlayerSchema,
+  location,
   match,
   matchPlayer,
   player,
@@ -389,6 +390,90 @@ export const playerRouter = createTRPCRouter({
       }
       outPlayer.matches.sort((a, b) => compareAsc(b.date, a.date));
       return outPlayer;
+    }),
+  getPlayerToShare: protectedUserProcedure
+    .input(selectPlayerSchema.pick({ id: true }))
+    .query(async ({ ctx, input }) => {
+      const returnedPlayer = await ctx.db.query.player.findFirst({
+        where: and(eq(player.id, input.id), eq(player.createdBy, ctx.userId)),
+        with: {
+          image: true,
+          matchesByPlayer: {
+            with: {
+              match: {
+                with: {
+                  matchPlayers: {
+                    with: {
+                      player: true,
+                      team: true,
+                    },
+                  },
+                  game: {
+                    with: {
+                      image: true,
+                    },
+                  },
+                  location: true,
+                  teams: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!returnedPlayer) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Player not found.",
+        });
+      }
+      const filteredMatches = returnedPlayer.matchesByPlayer
+        .filter((mPlayer) => mPlayer.match.finished)
+        .map((mPlayer) => ({
+          id: mPlayer.match.id,
+          name: mPlayer.match.name,
+          date: mPlayer.match.date,
+          duration: mPlayer.match.duration,
+          locationName: mPlayer.match.location?.name,
+          comment: mPlayer.match.comment,
+          gameId: mPlayer.match.gameId,
+          gameName: mPlayer.match.game.name,
+          gameImageUrl: mPlayer.match.game.image?.url,
+          gameYearPublished: mPlayer.match.game.yearPublished,
+          players: mPlayer.match.matchPlayers
+            .map((matchPlayer) => ({
+              id: matchPlayer.player.id,
+              name: matchPlayer.player.name,
+              score: matchPlayer.score,
+              isWinner: matchPlayer.winner,
+              playerId: matchPlayer.player.id,
+              team: matchPlayer.team,
+            }))
+            .toSorted((a, b) => {
+              if (a.team === null || b.team === null) {
+                if (a.score === b.score) {
+                  return a.name.localeCompare(b.name);
+                }
+                if (a.score === null) return 1;
+                if (b.score === null) return -1;
+                return b.score - a.score;
+              }
+              if (a.team.id === b.team.id) return 0;
+              if (a.score === b.score) {
+                return a.name.localeCompare(b.name);
+              }
+              if (a.score === null) return 1;
+              if (b.score === null) return -1;
+              return b.score - a.score;
+            }),
+          teams: mPlayer.match.teams,
+        }));
+      return {
+        id: returnedPlayer.id,
+        name: returnedPlayer.name,
+        imageUrl: returnedPlayer.image?.url,
+        matches: filteredMatches,
+      };
     }),
   create: protectedUserProcedure
     .input(insertPlayerSchema.pick({ name: true, imageId: true }))

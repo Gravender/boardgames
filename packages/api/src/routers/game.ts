@@ -402,6 +402,16 @@ export const gameRouter = createTRPCRouter({
         ),
         with: {
           matches: {
+            with: {
+              matchPlayers: {
+                with: {
+                  player: true,
+                  team: true,
+                },
+              },
+              location: true,
+              teams: true,
+            },
             orderBy: (matches, { desc }) => [desc(matches.date)],
           },
           scoresheets: {
@@ -410,15 +420,68 @@ export const gameRouter = createTRPCRouter({
               eq(scoresheet.type, "Default"),
             ),
           },
+          image: true,
         },
       });
+
       if (!result) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Game not found",
         });
       }
-      return result;
+      const filteredMatches = result.matches
+        .filter((rMatch) => rMatch.finished)
+        .map((rMatch) => ({
+          id: rMatch.id,
+          name: rMatch.name,
+          date: rMatch.date,
+          duration: rMatch.duration,
+          locationName: rMatch.location?.name,
+          players: rMatch.matchPlayers
+            .map((matchPlayer) => ({
+              id: matchPlayer.player.id,
+              name: matchPlayer.player.name,
+              score: matchPlayer.score,
+              isWinner: matchPlayer.winner,
+              playerId: matchPlayer.player.id,
+              team: matchPlayer.team,
+            }))
+            .toSorted((a, b) => {
+              if (a.team === null || b.team === null) {
+                if (a.score === b.score) {
+                  return a.name.localeCompare(b.name);
+                }
+                if (a.score === null) return 1;
+                if (b.score === null) return -1;
+                return b.score - a.score;
+              }
+              if (a.team.id === b.team.id) return 0;
+              if (a.score === b.score) {
+                return a.name.localeCompare(b.name);
+              }
+              if (a.score === null) return 1;
+              if (b.score === null) return -1;
+              return b.score - a.score;
+            }),
+          teams: rMatch.teams,
+        }));
+      return {
+        id: result.id,
+        name: result.name,
+        imageUrl: result.image?.url,
+        players: {
+          min: result.playersMin,
+          max: result.playersMax,
+        },
+        playtime: {
+          min: result.playtimeMin,
+          max: result.playtimeMax,
+        },
+        yearPublished: result.yearPublished,
+        matches: filteredMatches,
+        scoresheets: result.scoresheets,
+      };
     }),
   getGames: protectedUserProcedure.query(async ({ ctx }) => {
     const games = await ctx.db

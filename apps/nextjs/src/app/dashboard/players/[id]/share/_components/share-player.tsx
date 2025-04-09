@@ -114,7 +114,7 @@ const formSchema = z
 
 type FormValues = z.infer<typeof formSchema>;
 
-export default function ShareGamePage({ gameId }: { gameId: number }) {
+export default function SharePlayerPage({ playerId }: { playerId: number }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFriends, setSelectedFriends] = useState<
@@ -123,15 +123,15 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
   const { toast } = useToast();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { data: gameToShare } = useSuspenseQuery(
-    trpc.game.getGameToShare.queryOptions({ id: gameId }),
+  const { data: playerToShare } = useSuspenseQuery(
+    trpc.player.getPlayerToShare.queryOptions({ id: playerId }),
   );
   const { data: friends } = useSuspenseQuery(
     trpc.friend.getFriends.queryOptions(),
   );
 
-  const shareGameMutation = useMutation(
-    trpc.sharing.requestShareGame.mutationOptions({
+  const sharePlayerMutation = useMutation(
+    trpc.sharing.requestSharePlayer.mutationOptions({
       onSuccess: async (response) => {
         await queryClient.invalidateQueries(
           trpc.sharing.getIncomingShareRequests.queryOptions(),
@@ -181,18 +181,6 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
       permission: "view",
       linkExpiry: "7days",
       matchIds: [],
-      scoresheetIds: gameToShare.scoresheets.find(
-        (scoresheet) => scoresheet.type === "Default",
-      )
-        ? [
-            {
-              id: gameToShare.scoresheets.find(
-                (scoresheet) => scoresheet.type === "Default",
-              )?.id,
-              permission: "view",
-            },
-          ]
-        : [],
       friendIds: [],
     },
   });
@@ -223,18 +211,14 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
       return 0;
     };
     if (data.shareMethod === "link") {
-      shareGameMutation.mutate({
-        gameId: gameToShare.id,
+      sharePlayerMutation.mutate({
+        playerId: playerToShare.id,
         permission: data.permission,
         expiresAt:
           data.linkExpiry === "never"
             ? undefined
             : addDays(new Date(), numberOfDays()),
         type: "link",
-        scoresheetsToShare: data.scoresheetIds.map((s) => ({
-          scoresheetId: s.id,
-          permission: s.permission,
-        })),
         sharedMatches: data.matchIds.map((m) => ({
           matchId: m.id,
           permission: m.permission,
@@ -242,8 +226,8 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
         })),
       });
     } else {
-      shareGameMutation.mutate({
-        gameId: gameToShare.id,
+      sharePlayerMutation.mutate({
+        playerId: playerToShare.id,
         permission: data.permission,
         friends:
           data.friendIds?.map((friendId) => ({
@@ -254,10 +238,6 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
             ? undefined
             : addDays(new Date(), numberOfDays()),
         type: "friends",
-        scoresheetsToShare: data.scoresheetIds.map((s) => ({
-          scoresheetId: s.id,
-          permission: s.permission,
-        })),
         sharedMatches: data.matchIds.map((m) => ({
           matchId: m.id,
           permission: m.permission,
@@ -270,39 +250,9 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <div className="relative flex h-14 w-14 shrink-0 overflow-hidden rounded shadow">
-            {gameToShare.imageUrl ? (
-              <Image
-                fill
-                src={gameToShare.imageUrl}
-                alt={`${gameToShare.name} game image`}
-                className="aspect-square h-full w-full rounded-md object-cover"
-              />
-            ) : (
-              <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-            )}
-          </div>
-          <span>{gameToShare.name}</span>
-          {gameToShare.yearPublished && (
-            <span className="mr-2">({gameToShare.yearPublished})</span>
-          )}
-        </CardTitle>
+        <CardTitle>Sharing {playerToShare.name}</CardTitle>
         <CardDescription>
-          {gameToShare.players.min && gameToShare.players.max && (
-            <span className="mr-2">
-              {gameToShare.players.min === gameToShare.players.max
-                ? `${gameToShare.players.min} players`
-                : `${gameToShare.players.min}-${gameToShare.players.max} players`}
-            </span>
-          )}
-          {gameToShare.playtime.min && gameToShare.playtime.max && (
-            <span>
-              {gameToShare.playtime.min === gameToShare.playtime.max
-                ? `${gameToShare.playtime.min} min`
-                : `${gameToShare.playtime.min}-${gameToShare.playtime.max} min`}
-            </span>
-          )}
+          Select how you want to share this player.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -607,14 +557,14 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="view" id="view" />
                         <Label htmlFor="view" className="font-normal">
-                          View Only - Recipients can only view the game and its
-                          details
+                          View Only - Recipients can only view the player and
+                          its details
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="edit" id="edit" />
                         <Label htmlFor="edit" className="font-normal">
-                          Edit - Recipients can edit the game details and add
+                          Edit - Recipients can edit the player details and add
                           matches
                         </Label>
                       </div>
@@ -628,370 +578,260 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
             <div className="space-y-4">
               <Separator />
 
-              <Tabs defaultValue="matches">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="matches">Include Matches</TabsTrigger>
-                  <TabsTrigger value="scoresheets">
-                    Include Scoresheets
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="matches" className="space-y-4 pt-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">
-                      Select matches to share along with this game
-                    </p>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="select-all-matches"
-                        checked={
-                          gameToShare.matches.length > 0 &&
-                          form.watch("matchIds").length ===
-                            gameToShare.matches.length
+              <div className="space-y-4 pt-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Select matches to share along with this player
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="select-all-matches"
+                      checked={
+                        playerToShare.matches.length > 0 &&
+                        form.watch("matchIds").length ===
+                          playerToShare.matches.length
+                      }
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          form.setValue(
+                            "matchIds",
+                            playerToShare.matches.map((match) => ({
+                              id: match.id,
+                              permission: form.getValues("permission"),
+                              includePlayers: true,
+                            })),
+                          );
+                        } else {
+                          form.setValue("matchIds", []);
                         }
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            form.setValue(
-                              "matchIds",
-                              gameToShare.matches.map((match) => ({
-                                id: match.id,
-                                permission: form.getValues("permission"),
-                                includePlayers: true,
-                              })),
-                            );
-                          } else {
-                            form.setValue("matchIds", []);
-                          }
-                        }}
-                      />
-                      <Label
-                        htmlFor="select-all-matches"
-                        className="text-sm font-medium"
-                      >
-                        Select All
-                      </Label>
-                    </div>
+                      }}
+                    />
+                    <Label
+                      htmlFor="select-all-matches"
+                      className="text-sm font-medium"
+                    >
+                      Select All
+                    </Label>
                   </div>
+                </div>
 
-                  <FormField
-                    control={form.control}
-                    name="matchIds"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <ScrollArea className="h-[500px] rounded-md border p-3">
-                            <div className="mr-1 mt-2 space-y-4">
-                              {gameToShare.matches.map((match) => (
-                                <div
-                                  key={match.id}
-                                  className="rounded-md border p-2"
-                                >
-                                  <div className="flex items-center justify-between space-x-2">
-                                    <div className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={`match-${match.id}`}
-                                        checked={
-                                          field.value.find(
-                                            (m) => m.id === match.id,
-                                          ) !== undefined
-                                        }
-                                        onCheckedChange={(checked) => {
-                                          if (checked) {
-                                            field.onChange([
-                                              ...field.value,
-                                              {
-                                                id: match.id,
-                                                permission:
-                                                  form.getValues("permission"),
-                                                includePlayers: true,
-                                              },
-                                            ]);
-                                          } else {
-                                            field.onChange(
-                                              field.value.filter(
-                                                (m) => m.id !== match.id,
-                                              ),
-                                            );
-                                          }
-                                        }}
-                                      />
-                                      <div className="grid gap-1.5">
-                                        <Label
-                                          htmlFor={`match-${match.id}`}
-                                          className="font-medium"
-                                        >
-                                          {match.name}
-                                        </Label>
-                                        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                                          <span
-                                            className="flex items-center gap-1"
-                                            suppressHydrationWarning
-                                          >
-                                            <Calendar className="h-3 w-3" />
-                                            {format(match.date, "PPP")}
-                                          </span>
-                                          <span className="flex items-center gap-1">
-                                            <Clock className="h-3 w-3" />
-                                            {formatDuration(match.duration)}
-                                          </span>
-                                          {match.locationName && (
-                                            <span className="flex items-center gap-1">
-                                              <MapPin className="h-3 w-3" />
-                                              {match.locationName}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    {field.value.find(
-                                      (m) => m.id === match.id,
-                                    ) !== undefined && (
-                                      <div className="flex items-center gap-3">
-                                        <FormField
-                                          control={form.control}
-                                          name={`matchIds.${field.value.findIndex((m) => m.id === match.id)}.includePlayers`}
-                                          render={({ field: playersField }) => (
-                                            <div className="flex items-center gap-2">
-                                              <Checkbox
-                                                id={`include-players-${match.id}`}
-                                                checked={playersField.value}
-                                                onCheckedChange={
-                                                  playersField.onChange
-                                                }
-                                              />
-                                              <Label
-                                                htmlFor={`include-players-${match.id}`}
-                                                className="whitespace-nowrap text-xs"
-                                              >
-                                                Include Players
-                                              </Label>
-                                            </div>
-                                          )}
-                                        />
-                                        <FormField
-                                          control={form.control}
-                                          name={`matchIds.${field.value.findIndex((m) => m.id === match.id)}.permission`}
-                                          render={({
-                                            field: permissionField,
-                                          }) => (
-                                            <Select
-                                              value={permissionField.value}
-                                              onValueChange={(value) => {
-                                                const permission =
-                                                  value === "view"
-                                                    ? "view"
-                                                    : "edit";
-                                                permissionField.onChange(
-                                                  permission,
-                                                );
-                                              }}
-                                            >
-                                              <SelectTrigger className="w-24">
-                                                <SelectValue />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                <SelectItem value="view">
-                                                  View
-                                                </SelectItem>
-                                                <SelectItem value="edit">
-                                                  Edit
-                                                </SelectItem>
-                                              </SelectContent>
-                                            </Select>
-                                          )}
-                                        />
-                                      </div>
-                                    )}
-                                  </div>
-                                  <Accordion type="single" collapsible>
-                                    <AccordionItem
-                                      value="item-1"
-                                      className="border-none"
-                                    >
-                                      <AccordionTrigger>
-                                        Players
-                                      </AccordionTrigger>
-                                      <AccordionContent>
-                                        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                          {match.players.map((p) => {
-                                            const teamIndex =
-                                              match.teams.findIndex(
-                                                (t) => t.id === p.team?.id,
-                                              );
-                                            return (
-                                              <div
-                                                key={p.id}
-                                                className="flex items-center gap-1 rounded bg-muted/50 p-1.5 text-xs"
-                                              >
-                                                <User className="h-3 w-3 text-muted-foreground" />
-                                                <span>{p.name}</span>
-                                                {p.team !== null && (
-                                                  <span
-                                                    className={cn(
-                                                      "text-muted-foreground",
-                                                      teamIndex === 0 &&
-                                                        "text-blue-500",
-                                                      teamIndex === 1 &&
-                                                        "text-green-500",
-                                                      teamIndex === 2 &&
-                                                        "text-yellow-500",
-                                                      !(
-                                                        teamIndex < 3 &&
-                                                        teamIndex > -1
-                                                      ) && "text-red-500",
-                                                    )}
-                                                  >
-                                                    {`(${p.team.name})`}
-                                                  </span>
-                                                )}
-                                                {p.score !== null && (
-                                                  <span className="ml-auto text-muted-foreground">
-                                                    {p.score} pts
-                                                  </span>
-                                                )}
-                                                {p.isWinner && (
-                                                  <Trophy className="ml-1 h-3 w-3 text-amber-500" />
-                                                )}
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      </AccordionContent>
-                                    </AccordionItem>
-                                  </Accordion>
-                                </div>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </TabsContent>
-
-                <TabsContent value="scoresheets" className="space-y-4 pt-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">
-                      Select scoresheets to share along with this game
-                    </p>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="select-all-scoresheets"
-                        checked={
-                          gameToShare.scoresheets.length > 0 &&
-                          form.watch("scoresheetIds").length ===
-                            gameToShare.scoresheets.length
-                        }
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            form.setValue(
-                              "scoresheetIds",
-                              gameToShare.scoresheets.map((sheet) => ({
-                                id: sheet.id,
-                                permission: form.getValues("permission"),
-                              })),
-                            );
-                          } else {
-                            form.setValue("scoresheetIds", []);
-                          }
-                        }}
-                      />
-                      <Label
-                        htmlFor="select-all-scoresheets"
-                        className="text-sm font-medium"
-                      >
-                        Select All
-                      </Label>
-                    </div>
-                  </div>
-                  {/* TODO - Add Scoresheet information */}
-                  <FormField
-                    control={form.control}
-                    name="scoresheetIds"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <ScrollArea className="h-[200px] rounded-md border p-4">
-                            <div className="mr-1 mt-2 space-y-4">
-                              {gameToShare.scoresheets.map((sheet) => (
-                                <div
-                                  key={sheet.id}
-                                  className="flex items-center justify-between space-x-2"
-                                >
+                <FormField
+                  control={form.control}
+                  name="matchIds"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <ScrollArea className="h-[500px] rounded-md border p-3">
+                          <div className="space-y-4">
+                            {playerToShare.matches.map((match) => (
+                              <div
+                                key={match.id}
+                                className="rounded-md border p-2"
+                              >
+                                <div className="flex items-center justify-between space-x-2">
                                   <div className="flex items-center space-x-2">
                                     <Checkbox
-                                      id={`sheet-${sheet.id}`}
+                                      id={`match-${match.id}`}
                                       checked={
                                         field.value.find(
-                                          (s) => s.id === sheet.id,
+                                          (m) => m.id === match.id,
                                         ) !== undefined
                                       }
                                       onCheckedChange={(checked) => {
                                         if (checked) {
                                           field.onChange([
                                             ...field.value,
-                                            sheet.id,
+                                            {
+                                              id: match.id,
+                                              permission:
+                                                form.getValues("permission"),
+                                              includePlayers: true,
+                                            },
                                           ]);
                                         } else {
                                           field.onChange(
                                             field.value.filter(
-                                              (s) => s.id !== sheet.id,
+                                              (m) => m.id !== match.id,
                                             ),
                                           );
                                         }
                                       }}
                                     />
-                                    <Label
-                                      htmlFor={`sheet-${sheet.id}`}
-                                      className="font-medium"
-                                    >
-                                      {`${sheet.name}${sheet.type === "Default" && " (Default)"}`}
-                                    </Label>
+                                    <div className="grid gap-1.5">
+                                      <Label
+                                        htmlFor={`match-${match.id}`}
+                                        className="font-medium"
+                                      >
+                                        {match.name}
+                                      </Label>
+                                      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                                        <span
+                                          className="flex items-center gap-1"
+                                          suppressHydrationWarning
+                                        >
+                                          <Calendar className="h-3 w-3" />
+                                          {format(match.date, "PPP")}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                          <Clock className="h-3 w-3" />
+                                          {formatDuration(match.duration)}
+                                        </span>
+                                        {match.locationName && (
+                                          <span className="flex items-center gap-1">
+                                            <MapPin className="h-3 w-3" />
+                                            {match.locationName}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      <div className="mt-1 flex items-center gap-2">
+                                        <div className="relative flex h-5 w-5 shrink-0 overflow-hidden rounded shadow">
+                                          {match.gameImageUrl ? (
+                                            <Image
+                                              fill
+                                              src={match.gameImageUrl}
+                                              alt={`${match.gameName} game image`}
+                                              className="aspect-square h-full w-full rounded-md object-cover"
+                                            />
+                                          ) : (
+                                            <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
+                                          )}
+                                        </div>
+                                        <span className="text-xs">
+                                          {match.gameName}
+                                        </span>
+                                        {match.gameYearPublished && (
+                                          <span className="text-xs">
+                                            ({match.gameYearPublished})
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
                                   {field.value.find(
-                                    (s) => s.id === sheet.id,
+                                    (m) => m.id === match.id,
                                   ) !== undefined && (
-                                    <FormField
-                                      control={form.control}
-                                      name={`scoresheetIds.${field.value.findIndex((s) => s.id === sheet.id)}.permission`}
-                                      render={({ field: permissionField }) => (
-                                        <Select
-                                          value={permissionField.value}
-                                          onValueChange={(value) => {
-                                            const permission =
-                                              value === "view"
-                                                ? "view"
-                                                : "edit";
-                                            permissionField.onChange(
-                                              permission,
-                                            );
-                                          }}
-                                        >
-                                          <SelectTrigger className="w-24">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="view">
-                                              View
-                                            </SelectItem>
-                                            <SelectItem value="edit">
-                                              Edit
-                                            </SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                      )}
-                                    />
+                                    <div className="flex items-center gap-3">
+                                      <FormField
+                                        control={form.control}
+                                        name={`matchIds.${field.value.findIndex((m) => m.id === match.id)}.includePlayers`}
+                                        render={({ field: playersField }) => (
+                                          <div className="flex items-center gap-2">
+                                            <Checkbox
+                                              id={`include-players-${match.id}`}
+                                              checked={playersField.value}
+                                              onCheckedChange={
+                                                playersField.onChange
+                                              }
+                                            />
+                                            <Label
+                                              htmlFor={`include-players-${match.id}`}
+                                              className="whitespace-nowrap text-xs"
+                                            >
+                                              Include Players
+                                            </Label>
+                                          </div>
+                                        )}
+                                      />
+                                      <FormField
+                                        control={form.control}
+                                        name={`matchIds.${field.value.findIndex((m) => m.id === match.id)}.permission`}
+                                        render={({
+                                          field: permissionField,
+                                        }) => (
+                                          <Select
+                                            value={permissionField.value}
+                                            onValueChange={(value) => {
+                                              const permission =
+                                                value === "view"
+                                                  ? "view"
+                                                  : "edit";
+                                              permissionField.onChange(
+                                                permission,
+                                              );
+                                            }}
+                                          >
+                                            <SelectTrigger className="w-24">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="view">
+                                                View
+                                              </SelectItem>
+                                              <SelectItem value="edit">
+                                                Edit
+                                              </SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        )}
+                                      />
+                                    </div>
                                   )}
                                 </div>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </TabsContent>
-              </Tabs>
+
+                                <Accordion type="single" collapsible>
+                                  <AccordionItem
+                                    value="item-1"
+                                    className="border-none"
+                                  >
+                                    <AccordionTrigger>Players</AccordionTrigger>
+                                    <AccordionContent>
+                                      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                        {match.players.map((p) => {
+                                          const teamIndex =
+                                            match.teams.findIndex(
+                                              (t) => t.id === p.team?.id,
+                                            );
+                                          return (
+                                            <div
+                                              key={p.id}
+                                              className="flex items-center gap-1 rounded bg-muted/50 p-1.5 text-xs"
+                                            >
+                                              <User className="h-3 w-3 text-muted-foreground" />
+                                              <span>{p.name}</span>
+                                              {p.team !== null && (
+                                                <span
+                                                  className={cn(
+                                                    "text-muted-foreground",
+                                                    teamIndex === 0 &&
+                                                      "text-blue-500",
+                                                    teamIndex === 1 &&
+                                                      "text-green-500",
+                                                    teamIndex === 2 &&
+                                                      "text-yellow-500",
+                                                    !(
+                                                      teamIndex < 3 &&
+                                                      teamIndex > -1
+                                                    ) && "text-red-500",
+                                                  )}
+                                                >
+                                                  {`(${p.team.name})`}
+                                                </span>
+                                              )}
+                                              {p.score !== null && (
+                                                <span className="ml-auto text-muted-foreground">
+                                                  {p.score} pts
+                                                </span>
+                                              )}
+                                              {p.isWinner && (
+                                                <Trophy className="ml-1 h-3 w-3 text-amber-500" />
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </AccordionContent>
+                                  </AccordionItem>
+                                </Accordion>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
@@ -1012,7 +852,7 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
               ) : (
                 <>
                   <Share2 className="mr-2 h-4 w-4" />
-                  Share Game
+                  Share Player
                 </>
               )}
             </Button>
