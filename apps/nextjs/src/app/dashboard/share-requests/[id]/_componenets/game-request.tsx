@@ -3,7 +3,11 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import {
   Check,
   ChevronDown,
@@ -88,6 +92,7 @@ export default function GameRequestPage({
   requestId: number;
 }) {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   const { data: usersGames } = useSuspenseQuery(
     trpc.sharing.getUserGamesForLinking.queryOptions(),
@@ -95,9 +100,17 @@ export default function GameRequestPage({
   const router = useRouter();
   const acceptGameRequestMutation = useMutation(
     trpc.sharing.acceptGameShareRequest.mutationOptions({
-      onSuccess: (response) => {
+      onSuccess: async (response) => {
         setSubmitting(false);
-        router.push(`/dashboard/games/shared/[${response.id}]`);
+        await Promise.all([
+          queryClient.invalidateQueries(
+            trpc.sharing.getIncomingShareRequests.queryOptions(),
+          ),
+          queryClient.invalidateQueries(
+            trpc.sharing.getOutgoingShareRequests.queryOptions(),
+          ),
+        ]);
+        router.push(`/dashboard/games/shared/${response.id}`);
       },
     }),
   );
