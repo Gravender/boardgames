@@ -3,7 +3,7 @@ import { drizzle as LocalDrizzle } from "drizzle-orm/postgres-js";
 import { drizzle as VercelDrizzle } from "drizzle-orm/vercel-postgres";
 import postgres from "postgres";
 
-import * as schema from "./schema";
+import { relations } from "./schema";
 
 /**
  * Cache the database connection in development. This avoids creating a new connection on every HMR
@@ -22,5 +22,5 @@ globalForDb.conn = conn;
 
 export const db =
   process.env.NODE_ENV === "development"
-    ? LocalDrizzle(conn, { schema, logger: true })
-    : VercelDrizzle(sql, { schema });
+    ? LocalDrizzle(conn, { relations, logger: true })
+    : VercelDrizzle(sql, { relations });

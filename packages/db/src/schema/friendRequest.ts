@@ -1,6 +1,5 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { integer, serial, text, timestamp, unique } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
 import user from "./user";
@@ -32,22 +31,5 @@ const friendRequest = createTable(
     ),
   ],
 );
-
-export const friendRequestRelations = relations(friendRequest, ({ one }) => ({
-  user: one(user, {
-    fields: [friendRequest.userId],
-    references: [user.id],
-    relationName: "requester",
-  }),
-  requestee: one(user, {
-    fields: [friendRequest.requesteeId],
-    references: [user.id],
-    relationName: "requestee",
-  }),
-}));
-
-export const insertFriendRequestSchema = createInsertSchema(friendRequest);
-
-export const selectFriendRequestSchema = createSelectSchema(friendRequest);
 
 export default friendRequest;

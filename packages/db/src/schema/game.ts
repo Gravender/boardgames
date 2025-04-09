@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -8,13 +8,9 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
 import image from "./image";
-import match from "./match";
-import scoresheet from "./scoresheet";
-import sharedGame from "./sharedGame";
 import user from "./user";
 
 const games = createTable(
@@ -45,28 +41,5 @@ const games = createTable(
     index("boardgames_game_id_index").on(table.id),
   ],
 );
-
-export const gameRelations = relations(games, ({ one, many }) => ({
-  user: one(user, {
-    fields: [games.userId],
-    references: [user.id],
-  }),
-  image: one(image, {
-    fields: [games.imageId],
-    references: [image.id],
-  }),
-  matches: many(match),
-  scoresheets: many(scoresheet),
-  sharedGames: many(sharedGame, {
-    relationName: "original_game",
-  }),
-  linkedGames: many(sharedGame, {
-    relationName: "linked_game",
-  }),
-}));
-
-export const insertGameSchema = createInsertSchema(games);
-
-export const selectGameSchema = createSelectSchema(games);
 
 export default games;

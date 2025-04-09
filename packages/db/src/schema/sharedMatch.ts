@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { index, integer, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
@@ -45,26 +45,6 @@ const sharedMatch = createTable(
     index("boardgames_shared_match_id_index").on(table.id),
   ],
 );
-export const sharedMatchRelations = relations(sharedMatch, ({ one }) => ({
-  owner: one(user, {
-    fields: [sharedMatch.ownerId],
-    references: [user.id],
-    relationName: "owner",
-  }),
-  sharedWith: one(user, {
-    fields: [sharedMatch.sharedWithId],
-    references: [user.id],
-    relationName: "shared_with",
-  }),
-  match: one(match, {
-    fields: [sharedMatch.matchId],
-    references: [match.id],
-  }),
-  sharedGame: one(sharedGame, {
-    fields: [sharedMatch.sharedGameId],
-    references: [sharedGame.id],
-  }),
-}));
 
 export const insertSharedMatchSchema = createInsertSchema(sharedMatch);
 

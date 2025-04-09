@@ -1,6 +1,5 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { integer, serial, timestamp, unique } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
 import group from "./group";
@@ -30,20 +29,5 @@ const groupPlayers = createTable(
     ),
   ],
 );
-
-export const groupPlayerRelations = relations(groupPlayers, ({ one }) => ({
-  group: one(group, {
-    fields: [groupPlayers.groupId],
-    references: [group.id],
-  }),
-  player: one(player, {
-    fields: [groupPlayers.playerId],
-    references: [player.id],
-  }),
-}));
-
-export const insertGroupPlayerSchema = createInsertSchema(groupPlayers);
-
-export const selectGroupPlayerSchema = createSelectSchema(groupPlayers);
 
 export default groupPlayers;

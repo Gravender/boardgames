@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -53,30 +53,6 @@ const shareRequest = createTable(
     ),
     index("boardgames_share_request_id_index").on(table.id),
   ],
-);
-
-export const shareRequestRelations = relations(
-  shareRequest,
-  ({ one, many }) => ({
-    owner: one(user, {
-      fields: [shareRequest.ownerId],
-      references: [user.id],
-      relationName: "owner",
-    }),
-    sharedWith: one(user, {
-      fields: [shareRequest.sharedWithId],
-      references: [user.id],
-      relationName: "shared_with",
-    }),
-    parentShareRequest: one(shareRequest, {
-      fields: [shareRequest.parentShareId],
-      references: [shareRequest.id],
-      relationName: "child_share_request",
-    }),
-    childShareRequests: many(shareRequest, {
-      relationName: "child_share_request",
-    }),
-  }),
 );
 
 export const insertShareRequestSchema = createInsertSchema(shareRequest);

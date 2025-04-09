@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   boolean,
   integer,
@@ -7,12 +7,10 @@ import {
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
 import match from "./match";
 import player from "./player";
-import roundPlayers from "./roundPlayer";
 import team from "./team";
 
 const matchPlayers = createTable(
@@ -45,28 +43,5 @@ const matchPlayers = createTable(
     ),
   ],
 );
-
-export const matchPlayerRelations = relations(
-  matchPlayers,
-  ({ one, many }) => ({
-    match: one(match, {
-      fields: [matchPlayers.matchId],
-      references: [match.id],
-    }),
-    player: one(player, {
-      fields: [matchPlayers.playerId],
-      references: [player.id],
-    }),
-    team: one(team, {
-      fields: [matchPlayers.teamId],
-      references: [team.id],
-    }),
-    roundPlayers: many(roundPlayers),
-  }),
-);
-
-export const insertMatchPlayerSchema = createInsertSchema(matchPlayers);
-
-export const selectMatchPlayerSchema = createSelectSchema(matchPlayers);
 
 export default matchPlayers;

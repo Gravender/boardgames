@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { index, integer, serial, timestamp, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
@@ -31,19 +31,6 @@ const friend = createTable(
     index("boardgames_friend__friend_id").on(table.friendId),
   ],
 );
-
-export const friendRelations = relations(friend, ({ one }) => ({
-  user: one(user, {
-    fields: [friend.userId],
-    references: [user.id],
-    relationName: "user",
-  }),
-  friend: one(user, {
-    fields: [friend.friendId],
-    references: [user.id],
-    relationName: "friend",
-  }),
-}));
 
 export const insertFriendSchema = createInsertSchema(friend);
 

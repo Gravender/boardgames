@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -12,9 +12,6 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
 import game from "./game";
-import match from "./match";
-import round from "./round";
-import sharedScoresheet from "./sharedScoresheet";
 import user from "./user";
 
 const scoresheets = createTable(
@@ -58,16 +55,6 @@ const scoresheets = createTable(
   },
   (table) => [index("boardgames_scoresheet_game_id_index").on(table.gameId)],
 );
-export const scoresheetRelations = relations(scoresheets, ({ one, many }) => ({
-  game: one(game, { fields: [scoresheets.gameId], references: [game.id] }),
-  user: one(user, {
-    fields: [scoresheets.userId],
-    references: [user.id],
-  }),
-  rounds: many(round),
-  matches: many(match),
-  sharedScoresheet: many(sharedScoresheet),
-}));
 
 export const insertScoreSheetSchema = createInsertSchema(scoresheets);
 

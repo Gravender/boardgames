@@ -1,6 +1,5 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { integer, serial, text, timestamp, unique } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
 import user from "./user";
@@ -29,24 +28,6 @@ const userSharingPreference = createTable(
       table.userId,
     ),
   ],
-);
-
-export const userSharingPreferenceRelations = relations(
-  userSharingPreference,
-  ({ one }) => ({
-    user: one(user, {
-      fields: [userSharingPreference.userId],
-      references: [user.id],
-    }),
-  }),
-);
-
-export const insertUserSharingPreferenceSchema = createInsertSchema(
-  userSharingPreference,
-);
-
-export const selectUserSharingPreferenceSchema = createSelectSchema(
-  userSharingPreference,
 );
 
 export default userSharingPreference;
