@@ -18,7 +18,6 @@ import {
 import { Button } from "@board-games/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,

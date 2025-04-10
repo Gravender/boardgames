@@ -1,14 +1,8 @@
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
-import {
-  friend,
-  friendRequest,
-  sharedGame,
-  sharedMatch,
-  sharedPlayer,
-} from "@board-games/db/schema";
+import { friend, friendRequest } from "@board-games/db/schema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 
@@ -100,10 +94,10 @@ export const friendsRouter = createTRPCRouter({
 
   getFriendRequests: protectedUserProcedure.query(async ({ ctx }) => {
     return await ctx.db.query.friendRequest.findMany({
-      where: and(
-        eq(friendRequest.requesteeId, ctx.userId),
-        eq(friendRequest.status, "pending"),
-      ),
+      where: {
+        requesteeId: ctx.userId,
+        status: "pending",
+      },
       with: {
         user: true,
       },
@@ -112,18 +106,20 @@ export const friendsRouter = createTRPCRouter({
 
   getSentFriendRequests: protectedUserProcedure.query(async ({ ctx }) => {
     return await ctx.db.query.friendRequest.findMany({
-      where: and(
-        eq(friendRequest.userId, ctx.userId),
-        eq(friendRequest.status, "pending"),
-      ),
+      where: {
+        userId: ctx.userId,
+        status: "pending",
+      },
       with: {
-        user: true,
+        requestee: true,
       },
     });
   }),
   getFriends: protectedUserProcedure.query(async ({ ctx }) => {
     return await ctx.db.query.friend.findMany({
-      where: eq(friend.userId, ctx.userId),
+      where: {
+        userId: ctx.userId,
+      },
       with: {
         friend: true,
       },
@@ -140,10 +136,10 @@ export const friendsRouter = createTRPCRouter({
           updatedAt: false,
           id: true,
         },
-        where: and(
-          eq(friend.userId, ctx.userId),
-          eq(friend.friendId, input.friendId),
-        ),
+        where: {
+          userId: ctx.userId,
+          friendId: input.friendId,
+        },
         with: {
           friend: {
             columns: {
@@ -155,7 +151,7 @@ export const friendsRouter = createTRPCRouter({
               id: false,
             },
             with: {
-              gamesShared: {
+              sharedGamesOwner: {
                 columns: {
                   gameId: false,
                   linkedGameId: true,
@@ -166,11 +162,23 @@ export const friendsRouter = createTRPCRouter({
                   updatedAt: false,
                   id: true,
                 },
-                where: eq(sharedGame.sharedWithId, ctx.userId),
-                orderBy: desc(sharedGame.createdAt),
+                where: {
+                  sharedWithId: ctx.userId,
+                },
+                orderBy: {
+                  createdAt: "desc",
+                },
                 with: {
-                  matches: true,
-                  scoresheets: true,
+                  sharedMatches: {
+                    with: {
+                      match: true,
+                    },
+                  },
+                  sharedScoresheets: {
+                    with: {
+                      scoresheet: true,
+                    },
+                  },
                   game: {
                     columns: {
                       name: true,
@@ -178,7 +186,7 @@ export const friendsRouter = createTRPCRouter({
                   },
                 },
               },
-              playersShared: {
+              sharedPlayersOwner: {
                 columns: {
                   playerId: false,
                   linkedPlayerId: true,
@@ -189,8 +197,12 @@ export const friendsRouter = createTRPCRouter({
                   updatedAt: false,
                   id: true,
                 },
-                where: eq(sharedPlayer.sharedWithId, ctx.userId),
-                orderBy: desc(sharedPlayer.createdAt),
+                where: {
+                  sharedWithId: ctx.userId,
+                },
+                orderBy: {
+                  createdAt: "desc",
+                },
                 with: {
                   player: {
                     columns: {
@@ -211,7 +223,7 @@ export const friendsRouter = createTRPCRouter({
               id: false,
             },
             with: {
-              gamesShared: {
+              sharedGamesOwner: {
                 columns: {
                   gameId: false,
                   linkedGameId: true,
@@ -222,11 +234,23 @@ export const friendsRouter = createTRPCRouter({
                   updatedAt: false,
                   id: true,
                 },
-                where: eq(sharedGame.ownerId, ctx.userId),
-                orderBy: desc(sharedGame.createdAt),
+                where: {
+                  sharedWithId: input.friendId,
+                },
+                orderBy: {
+                  createdAt: "desc",
+                },
                 with: {
-                  matches: true,
-                  scoresheets: true,
+                  sharedMatches: {
+                    with: {
+                      match: true,
+                    },
+                  },
+                  sharedScoresheets: {
+                    with: {
+                      scoresheet: true,
+                    },
+                  },
                   game: {
                     columns: {
                       name: true,
@@ -234,7 +258,7 @@ export const friendsRouter = createTRPCRouter({
                   },
                 },
               },
-              playersShared: {
+              sharedPlayersOwner: {
                 columns: {
                   playerId: false,
                   linkedPlayerId: true,
@@ -245,8 +269,12 @@ export const friendsRouter = createTRPCRouter({
                   updatedAt: false,
                   id: true,
                 },
-                where: eq(sharedPlayer.ownerId, ctx.userId),
-                orderBy: desc(sharedPlayer.createdAt),
+                where: {
+                  sharedWithId: input.friendId,
+                },
+                orderBy: {
+                  createdAt: "desc",
+                },
                 with: {
                   player: {
                     columns: {
@@ -269,10 +297,10 @@ export const friendsRouter = createTRPCRouter({
     .input(z.object({ friendId: z.number() }))
     .query(async ({ ctx, input }) => {
       return await ctx.db.query.friend.findFirst({
-        where: and(
-          eq(friend.userId, ctx.userId),
-          eq(friend.friendId, input.friendId),
-        ),
+        where: {
+          userId: ctx.userId,
+          friendId: input.friendId,
+        },
         with: {
           friend: true,
         },

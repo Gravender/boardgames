@@ -23,7 +23,6 @@ import {
   groupPlayer,
   image,
   insertPlayerSchema,
-  location,
   match,
   matchPlayer,
   player,
@@ -31,6 +30,8 @@ import {
   selectGameSchema,
   selectGroupSchema,
   selectPlayerSchema,
+  sharedMatch,
+  sharedPlayer,
 } from "@board-games/db/schema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
@@ -199,197 +200,250 @@ export const playerRouter = createTRPCRouter({
   getPlayer: protectedUserProcedure
     .input(selectPlayerSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      const matchPlayers = aliasedTable(matchPlayer, "matchPlayers");
-      const players = aliasedTable(player, "players");
-      const sq = ctx.db
-        .select({
-          matchId: sql<number>`${match.id}`.as("matchId"),
-          matchDate: match.date,
-          matchName: match.name,
-          matchDuration: match.duration,
-          matchFinished: match.finished,
-          gameId: sql`${match.gameId}`.as("matchGameId"),
-          gameName: sql<string>`${game.name}`.as("matchGameName"),
-          gameImageUrl: image.url,
-          players: sql<
-            {
-              id: number;
-              name: string;
-              score: number | null;
-              isWinner: boolean | null;
-              playerId: number;
-            }[]
-          >`
-      json_agg(
-        json_build_object(
-          'matchPlayerId', ${matchPlayers.id},
-          'name', ${players.name},
-          'score', ${matchPlayers.score},
-          'isWinner', ${matchPlayers.winner},
-          'playerId', ${players.id}
-        )
-      ) OVER (PARTITION BY ${match.id})
-    `.as("players"),
-          outcome: sql<{
-            score: number | null;
-            isWinner: boolean | null;
-          }>`
-      json_build_object(
-        'score', CASE WHEN ${matchPlayer.playerId} = ${input.id} THEN ${matchPlayer.score} END,
-        'isWinner', CASE WHEN ${matchPlayer.playerId} = ${input.id} AND ${matchPlayer.winner} THEN true ELSE false END
-      )
-    `.as("outcome"),
-          rowNumber:
-            sql<number>`ROW_NUMBER() OVER (PARTITION BY ${match.id} ORDER BY ${match.date} DESC)`.as(
-              "rowNumber",
-            ),
-        })
-        .from(match)
-        .innerJoin(
-          game,
-          and(eq(game.id, match.gameId), eq(game.deleted, false)),
-        )
-        .rightJoin(
-          matchPlayer,
-          and(
-            eq(match.id, matchPlayer.matchId),
-            eq(matchPlayer.playerId, input.id),
-          ),
-        )
-        .leftJoin(image, eq(game.imageId, image.id))
-        .leftJoin(matchPlayers, eq(match.id, matchPlayers.matchId))
-        .leftJoin(players, eq(players.id, matchPlayers.playerId))
-        .where(eq(match.finished, true))
-        .as("sq");
-      const gamesSubquery = ctx.db
-        .select({
-          id: sql<number>`${game.id}`.as("gameDistinctId"),
-          name: game.name,
-          imageUrl: max(image.url).as("gameImageUrl"),
-          wins: sql<number>`SUM(CASE WHEN ${matchPlayer.playerId} = ${input.id} AND ${matchPlayer.winner} AND ${match.finished}  THEN 1 ELSE 0 END)`.as(
-            "wins",
-          ),
-          plays:
-            sql<number>`SUM(CASE WHEN ${matchPlayer.playerId} = ${input.id} AND ${match.finished} THEN 1 ELSE 0 END)`.as(
-              "plays",
-            ),
-          winRate:
-            sql<number>`SUM(CASE WHEN ${matchPlayer.playerId} = ${input.id} AND ${matchPlayer.winner} AND ${match.finished} THEN 1 ELSE 0 END) * 1.0 / 
-            NULLIF(SUM(CASE WHEN ${matchPlayer.playerId} = ${input.id} AND ${match.finished} THEN 1 ELSE 0 END),0)`.as(
-              "winRate",
-            ),
-        })
-        .from(game)
-        .rightJoin(match, eq(match.gameId, game.id))
-        .rightJoin(
-          matchPlayer,
-          and(
-            eq(match.id, matchPlayer.matchId),
-            eq(matchPlayer.playerId, input.id),
-          ),
-        )
-        .leftJoin(image, eq(game.imageId, image.id))
-        .where(eq(game.deleted, false))
-        .groupBy(game.id, game.name)
-        .orderBy(game.name)
-        .as("gamesSubquery");
-      const [outPlayer] = await ctx.db
-        .select({
-          id: player.id,
-          name: player.name,
-          imageUrl: max(image.url).as("imageUrl"),
-          players: countDistinct(matchPlayers.playerId)
-            .mapWith(Number)
-            .as("players"),
-          winRate:
-            sql<number>`SUM(CASE WHEN ${matchPlayer.winner} THEN 1 ELSE 0 END)::FLOAT / COUNT(${matchPlayer.id})`.as(
-              "winRate",
-            ),
-          duration: sumDistinct(match.duration).mapWith(Number).as("duration"),
-          matches: sql<
-            {
-              id: number;
-              name: string;
-              date: Date;
-              duration: number;
-              finished: boolean;
-              gameId: number;
-              gameName: string;
-              gameImageUrl: string | undefined;
-              players: {
-                id: number;
-                name: string;
-                score: number | null;
-                isWinner: boolean | null;
-                playerId: number;
-              }[];
-              outcome: {
-                score: number | null;
-                isWinner: boolean | null;
-              };
-            }[]
-          >`
-      json_agg(
-         DISTINCT jsonb_build_object(
-          'id', ${sq.matchId},
-          'name', ${sq.matchName},
-          'date', ${sq.matchDate},
-          'duration', ${sq.matchDuration},
-          'finished', ${sq.matchFinished},
-          'gameName', ${sq.gameName},
-          'gameId', ${sq.gameId},
-          'gameImageUrl', ${sq.gameImageUrl},
-          'players', ${sq.players},
-          'outcome', ${sq.outcome}
-        )
-      )
-          `.as("matches"),
-          games: sql<
-            {
-              id: number;
-              name: string;
-              imageUrl: string;
-              wins: number;
-              plays: number;
-              winRate: number;
-            }[]
-          >`
-    json_agg(
-      DISTINCT jsonb_build_object(
-        'id', ${gamesSubquery.id},
-        'name', ${gamesSubquery.name},
-        'imageUrl', ${gamesSubquery.imageUrl},
-        'wins', ${gamesSubquery.wins},
-        'plays', ${gamesSubquery.plays},
-        'winRate', ${gamesSubquery.winRate}
-      )
-    )
-    `.as("games"),
-        })
-        .from(player)
-        .leftJoin(image, eq(image.id, player.imageId))
-        .leftJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
-        .leftJoin(match, eq(match.id, matchPlayer.matchId))
-        .leftJoin(
-          matchPlayers,
-          and(
-            eq(match.id, matchPlayers.matchId),
-            ne(matchPlayers.playerId, input.id),
-          ),
-        )
-        .leftJoin(game, eq(game.id, match.gameId))
-        .leftJoin(gamesSubquery, eq(game.id, gamesSubquery.id))
-        .leftJoin(
-          sq,
-          and(eq(sq.rowNumber, 1), eq(sq.matchId, matchPlayer.matchId)),
-        )
-        .where(eq(player.id, input.id))
-        .groupBy(player.id);
-      if (!outPlayer) {
-        return null;
+      const sharedMatches = await ctx.db.query.sharedMatch.findMany({
+        where: eq(sharedMatch.sharedWithId, ctx.userId),
+        with: {
+          sharedGame: true,
+        },
+      });
+      const returnedPlayer = await ctx.db.query.player.findFirst({
+        where: and(eq(player.id, input.id), eq(player.createdBy, ctx.userId)),
+        with: {
+          image: true,
+          matchesByPlayer: {
+            with: {
+              match: {
+                with: {
+                  game: {
+                    with: {
+                      image: true,
+                    },
+                  },
+                  matchPlayers: {
+                    with: {
+                      player: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          linkedPlayers: {
+            with: {
+              player: {
+                with: {
+                  matchesByPlayer: {
+                    where: inArray(
+                      matchPlayer.matchId,
+                      sharedMatches.map((m) => m.matchId),
+                    ),
+                    with: {
+                      match: {
+                        with: {
+                          game: {
+                            with: {
+                              image: true,
+                            },
+                          },
+                          matchPlayers: {
+                            with: {
+                              player: {
+                                with: {
+                                  linkedPlayers: {
+                                    where: eq(
+                                      sharedPlayer.sharedWithId,
+                                      ctx.userId,
+                                    ),
+                                  },
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!returnedPlayer) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Player not found.",
+        });
       }
-      outPlayer.matches.sort((a, b) => compareAsc(b.date, a.date));
-      return outPlayer;
+      const playerGames: {
+        type: "Shared" | "Original";
+        id: number;
+        name: string;
+        imageUrl: string | null;
+        wins: number;
+        plays: number;
+        winRate: number;
+      }[] = [];
+      const playerUniquePlayers = new Set<number>();
+      const playerMatches = returnedPlayer.matchesByPlayer.map<{
+        type: "Shared" | "Original";
+        id: number;
+        name: string;
+        date: Date;
+        duration: number;
+        finished: boolean;
+        gameId: number;
+        gameName: string;
+        gameImageUrl: string | undefined;
+        players: {
+          id: number;
+          name: string;
+          score: number | null;
+          isWinner: boolean;
+          playerId: number;
+          placement: number | null;
+        }[];
+        outcome: {
+          score: number | null;
+          isWinner: boolean;
+          placement: number | null;
+        };
+      }>((mPlayer) => {
+        const filteredPlayers = mPlayer.match.matchPlayers.filter(
+          (mPlayer) => mPlayer.playerId === returnedPlayer.id,
+        );
+        const foundGame = playerGames.find(
+          (pGame) => pGame.id === mPlayer.match.gameId,
+        );
+        if (foundGame) {
+          foundGame.plays += 1;
+          foundGame.wins += (mPlayer.winner ?? false) ? 1 : 0;
+          foundGame.winRate = foundGame.wins / foundGame.plays;
+        } else {
+          playerGames.push({
+            type: "Original",
+            id: mPlayer.match.gameId,
+            name: mPlayer.match.game.name,
+            imageUrl: mPlayer.match.game.image?.url ?? null,
+            plays: 1,
+            wins: (mPlayer.winner ?? false) ? 1 : 0,
+            winRate: (mPlayer.winner ?? false) ? 1 : 0,
+          });
+        }
+        filteredPlayers.forEach((fPlayer) => {
+          playerUniquePlayers.add(fPlayer.playerId);
+        });
+        return {
+          type: "Original",
+          id: mPlayer.matchId,
+          name: mPlayer.match.name,
+          date: mPlayer.match.date,
+          duration: mPlayer.match.duration,
+          finished: mPlayer.match.finished,
+          gameId: mPlayer.match.gameId,
+          gameName: mPlayer.match.game.name,
+          gameImageUrl: mPlayer.match.game.image?.url,
+          players: filteredPlayers.map((mPlayer) => {
+            return {
+              id: mPlayer.player.id,
+              name: mPlayer.player.name,
+              score: mPlayer.score,
+              isWinner: mPlayer.winner ?? false,
+              playerId: mPlayer.player.id,
+              placement: mPlayer.placement,
+            };
+          }),
+          outcome: {
+            score: mPlayer.score,
+            isWinner: mPlayer.winner ?? false,
+            placement: mPlayer.placement,
+          },
+        };
+      }, []);
+      returnedPlayer.linkedPlayers.forEach((linkedPlayer) => {
+        linkedPlayer.player.matchesByPlayer.forEach((mPlayer) => {
+          const foundSharedMatch = sharedMatches.find(
+            (sMatch) => sMatch.matchId === mPlayer.matchId,
+          );
+          if (!foundSharedMatch) return;
+          const filteredPlayers = mPlayer.match.matchPlayers.filter(
+            (mPlayer) => mPlayer.playerId === linkedPlayer.playerId,
+          );
+          const foundGame = playerGames.find(
+            (pGame) =>
+              pGame.id ===
+              (foundSharedMatch.sharedGame.linkedGameId ??
+                foundSharedMatch.sharedGame.gameId),
+          );
+          if (foundGame) {
+            foundGame.plays += 1;
+            foundGame.wins += (mPlayer.winner ?? false) ? 1 : 0;
+            foundGame.winRate = foundGame.wins / foundGame.plays;
+          } else {
+            playerGames.push({
+              type: "Shared",
+              id: foundSharedMatch.sharedGame.id,
+              name: mPlayer.match.game.name,
+              imageUrl: mPlayer.match.game.image?.url ?? null,
+              plays: 1,
+              wins: (mPlayer.winner ?? false) ? 1 : 0,
+              winRate: (mPlayer.winner ?? false) ? 1 : 0,
+            });
+          }
+          filteredPlayers.forEach((fPlayer) => {
+            if (
+              !fPlayer.player.linkedPlayers.find(
+                (lPlayer) =>
+                  lPlayer.linkedPlayerId &&
+                  playerUniquePlayers.has(lPlayer.linkedPlayerId),
+              )
+            ) {
+              playerUniquePlayers.add(fPlayer.playerId);
+            }
+          });
+          playerMatches.push({
+            type: "Shared",
+            id: foundSharedMatch.id,
+            name: mPlayer.match.name,
+            date: mPlayer.match.date,
+            duration: mPlayer.match.duration,
+            finished: mPlayer.match.finished,
+            gameId: mPlayer.match.gameId,
+            gameName: mPlayer.match.game.name,
+            gameImageUrl: mPlayer.match.game.image?.url,
+            players: filteredPlayers.map((mPlayer) => {
+              return {
+                id: mPlayer.player.id,
+                name: mPlayer.player.name,
+                score: mPlayer.score,
+                isWinner: mPlayer.winner ?? false,
+                playerId: mPlayer.player.id,
+                placement: mPlayer.placement,
+              };
+            }),
+            outcome: {
+              score: mPlayer.score,
+              isWinner: mPlayer.winner ?? false,
+              placement: mPlayer.placement,
+            },
+          });
+        });
+      });
+      playerMatches.sort((a, b) => compareAsc(b.date, a.date));
+      return {
+        id: returnedPlayer.id,
+        name: returnedPlayer.name,
+        imageUrl: returnedPlayer.image?.url,
+        players: playerUniquePlayers.size,
+        winRate:
+          playerMatches.reduce(
+            (acc, cur) => acc + (cur.outcome.isWinner ? 1 : 0),
+            0,
+          ) / playerMatches.length,
+        duration: playerMatches.reduce((acc, cur) => acc + cur.duration, 0),
+        matches: playerMatches,
+        games: playerGames,
+      };
     }),
   getPlayerToShare: protectedUserProcedure
     .input(selectPlayerSchema.pick({ id: true }))

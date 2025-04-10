@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import { index, integer, serial, timestamp, unique } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
 import user from "./user";
@@ -31,9 +30,5 @@ const friend = createTable(
     index("boardgames_friend__friend_id").on(table.friendId),
   ],
 );
-
-export const insertFriendSchema = createInsertSchema(friend);
-
-export const selectFriendSchema = createSelectSchema(friend);
 
 export default friend;

@@ -3,7 +3,8 @@ import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { player, selectUserSchema, user } from "@board-games/db/schema";
+import { player, user } from "@board-games/db/schema";
+import { selectUserSchema } from "@board-games/db/zodSchema";
 
 import {
   createTRPCRouter,
