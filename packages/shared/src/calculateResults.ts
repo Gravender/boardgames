@@ -3,7 +3,7 @@ import type { z } from "zod";
 import type {
   insertRoundSchema,
   insertScoreSheetSchema,
-} from "@board-games/db/schema";
+} from "@board-games/db/zodSchema";
 
 interface scoreSheet {
   roundsScore: NonNullable<
