@@ -8,7 +8,7 @@ import { PortalHost } from "@rn-primitives/portal";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { insertScoreSheetSchema } from "@board-games/db/schema";
+import { insertScoreSheetSchema } from "@board-games/db/zodSchema";
 
 import type { RoundsType, ScoreSheetType } from "./AddGame";
 import { Copy } from "~/lib/icons/Copy";

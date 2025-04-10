@@ -9,7 +9,7 @@ import { PlusIcon, User } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { insertPlayerSchema } from "@board-games/db/schema";
+import { insertPlayerSchema } from "@board-games/db/zodSchema";
 import { Button } from "@board-games/ui/button";
 import {
   Dialog,

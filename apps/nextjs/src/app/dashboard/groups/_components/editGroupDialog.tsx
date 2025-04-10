@@ -8,7 +8,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
 import type { RouterOutputs } from "@board-games/api";
-import { insertGroupSchema } from "@board-games/db/schema";
+import { insertGroupSchema } from "@board-games/db/zodSchema";
 import { Button } from "@board-games/ui/button";
 import {
   DialogContent,

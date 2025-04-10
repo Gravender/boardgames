@@ -13,7 +13,7 @@ import { ListPlus, Pause, Play, RotateCcw } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import type { RouterOutputs } from "@board-games/api";
-import { insertRoundSchema } from "@board-games/db/schema";
+import { insertRoundSchema } from "@board-games/db/zodSchema";
 import {
   calculateFinalScore,
   calculatePlacement,

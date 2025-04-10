@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import type { RouterOutputs } from "@board-games/api";
-import { insertPlayerSchema } from "@board-games/db/schema";
+import { insertPlayerSchema } from "@board-games/db/zodSchema";
 import { Button } from "@board-games/ui/button";
 import {
   DialogContent,
