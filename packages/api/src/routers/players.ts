@@ -1,38 +1,26 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
-import {
-  aliasedTable,
-  and,
-  count,
-  countDistinct,
-  desc,
-  eq,
-  inArray,
-  max,
-  ne,
-  sql,
-  sumDistinct,
-} from "drizzle-orm";
+import { and, count, desc, eq, inArray, max, sql } from "drizzle-orm";
 import { z } from "zod";
 
-import type { selectScoreSheetSchema } from "@board-games/db/schema";
+import type { selectScoreSheetSchema } from "@board-games/db/zodSchema";
 import {
   game,
   group,
   groupPlayer,
   image,
-  insertPlayerSchema,
   match,
   matchPlayer,
   player,
   roundPlayer,
+} from "@board-games/db/schema";
+import {
+  insertPlayerSchema,
   selectGameSchema,
   selectGroupSchema,
   selectPlayerSchema,
-  sharedMatch,
-  sharedPlayer,
-} from "@board-games/db/schema";
+} from "@board-games/db/zodSchema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 
@@ -81,7 +69,9 @@ export const playerRouter = createTRPCRouter({
           name: user?.fullName ?? "Me",
         });
         const returnedPlayer = await ctx.db.query.player.findFirst({
-          where: and(eq(player.createdBy, ctx.userId)),
+          where: {
+            createdBy: ctx.userId,
+          },
           with: { image: true },
         });
         if (!returnedPlayer) {
@@ -201,16 +191,21 @@ export const playerRouter = createTRPCRouter({
     .input(selectPlayerSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       const sharedMatches = await ctx.db.query.sharedMatch.findMany({
-        where: eq(sharedMatch.sharedWithId, ctx.userId),
+        where: {
+          sharedWithId: ctx.userId,
+        },
         with: {
           sharedGame: true,
         },
       });
       const returnedPlayer = await ctx.db.query.player.findFirst({
-        where: and(eq(player.id, input.id), eq(player.createdBy, ctx.userId)),
+        where: {
+          id: input.id,
+          createdBy: ctx.userId,
+        },
         with: {
           image: true,
-          matchesByPlayer: {
+          matchPlayers: {
             with: {
               match: {
                 with: {
@@ -228,15 +223,16 @@ export const playerRouter = createTRPCRouter({
               },
             },
           },
-          linkedPlayers: {
+          sharedLinkedPlayers: {
             with: {
               player: {
                 with: {
-                  matchesByPlayer: {
-                    where: inArray(
-                      matchPlayer.matchId,
-                      sharedMatches.map((m) => m.matchId),
-                    ),
+                  matchPlayers: {
+                    where: {
+                      matchId: {
+                        in: sharedMatches.map((m) => m.matchId),
+                      },
+                    },
                     with: {
                       match: {
                         with: {
@@ -249,11 +245,10 @@ export const playerRouter = createTRPCRouter({
                             with: {
                               player: {
                                 with: {
-                                  linkedPlayers: {
-                                    where: eq(
-                                      sharedPlayer.sharedWithId,
-                                      ctx.userId,
-                                    ),
+                                  sharedPlayers: {
+                                    where: {
+                                      sharedWithId: ctx.userId,
+                                    },
                                   },
                                 },
                               },
@@ -285,7 +280,7 @@ export const playerRouter = createTRPCRouter({
         winRate: number;
       }[] = [];
       const playerUniquePlayers = new Set<number>();
-      const playerMatches = returnedPlayer.matchesByPlayer.map<{
+      const playerMatches = returnedPlayer.matchPlayers.map<{
         type: "Shared" | "Original";
         id: number;
         name: string;
@@ -360,8 +355,8 @@ export const playerRouter = createTRPCRouter({
           },
         };
       }, []);
-      returnedPlayer.linkedPlayers.forEach((linkedPlayer) => {
-        linkedPlayer.player.matchesByPlayer.forEach((mPlayer) => {
+      returnedPlayer.sharedLinkedPlayers.forEach((linkedPlayer) => {
+        linkedPlayer.player.matchPlayers.forEach((mPlayer) => {
           const foundSharedMatch = sharedMatches.find(
             (sMatch) => sMatch.matchId === mPlayer.matchId,
           );
@@ -392,7 +387,7 @@ export const playerRouter = createTRPCRouter({
           }
           filteredPlayers.forEach((fPlayer) => {
             if (
-              !fPlayer.player.linkedPlayers.find(
+              !fPlayer.player.sharedPlayers.find(
                 (lPlayer) =>
                   lPlayer.linkedPlayerId &&
                   playerUniquePlayers.has(lPlayer.linkedPlayerId),
@@ -449,10 +444,13 @@ export const playerRouter = createTRPCRouter({
     .input(selectPlayerSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       const returnedPlayer = await ctx.db.query.player.findFirst({
-        where: and(eq(player.id, input.id), eq(player.createdBy, ctx.userId)),
+        where: {
+          id: input.id,
+          createdBy: ctx.userId,
+        },
         with: {
           image: true,
-          matchesByPlayer: {
+          matchPlayers: {
             with: {
               match: {
                 with: {
@@ -481,7 +479,7 @@ export const playerRouter = createTRPCRouter({
           message: "Player not found.",
         });
       }
-      const filteredMatches = returnedPlayer.matchesByPlayer
+      const filteredMatches = returnedPlayer.matchPlayers
         .filter((mPlayer) => mPlayer.match.finished)
         .map((mPlayer) => ({
           id: mPlayer.match.id,
@@ -532,7 +530,7 @@ export const playerRouter = createTRPCRouter({
   create: protectedUserProcedure
     .input(insertPlayerSchema.pick({ name: true, imageId: true }))
     .mutation(async ({ ctx, input }) => {
-      const returnedPlayer = await ctx.db
+      const [returnedPlayer] = await ctx.db
         .insert(player)
         .values({
           createdBy: ctx.userId,
@@ -540,21 +538,21 @@ export const playerRouter = createTRPCRouter({
           name: input.name,
         })
         .returning();
-      if (!returnedPlayer[0]) {
+      if (!returnedPlayer) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       }
       const returnedPlayerImage = await ctx.db.query.player.findFirst({
-        where: and(
-          eq(player.id, returnedPlayer[0].id),
-          eq(player.createdBy, ctx.userId),
-        ),
+        where: {
+          id: returnedPlayer.id,
+          createdBy: ctx.userId,
+        },
         with: {
           image: true,
         },
       });
       return {
-        id: returnedPlayer[0].id,
-        name: returnedPlayer[0].name,
+        id: returnedPlayer.id,
+        name: returnedPlayer.name,
         imageUrl: returnedPlayerImage?.image?.url ?? null,
         matches: 0,
         team: 0,
@@ -596,10 +594,11 @@ export const playerRouter = createTRPCRouter({
         ),
       );
       const matches = await ctx.db.query.match.findMany({
-        where: inArray(
-          match.id,
-          matchPlayers.map((matchPlayer) => matchPlayer.matchId),
-        ),
+        where: {
+          id: {
+            in: matchPlayers.map((matchPlayer) => matchPlayer.matchId),
+          },
+        },
         with: {
           matchPlayers: true,
           scoresheet: true,

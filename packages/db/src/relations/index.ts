@@ -27,6 +27,7 @@ export const relations = defineRelations(schema, (r) => ({
     player: r.one.player({
       from: r.matchPlayer.playerId,
       to: r.player.id,
+      optional: false,
     }),
     team: r.one.team({
       from: r.matchPlayer.teamId,
@@ -153,10 +154,16 @@ export const relations = defineRelations(schema, (r) => ({
     game: r.one.game({
       from: r.sharedGame.gameId,
       to: r.game.id,
+      optional: false,
+    }),
+    linkedGame: r.one.game({
+      from: r.sharedGame.linkedGameId,
+      to: r.game.id,
     }),
     owner: r.one.user({
       from: r.sharedGame.ownerId,
       to: r.user.id,
+      optional: false,
     }),
     sharedWith: r.one.user({
       from: r.sharedGame.sharedWithId,
@@ -225,6 +232,7 @@ export const relations = defineRelations(schema, (r) => ({
     createdBy: r.one.user({
       from: r.player.createdBy,
       to: r.user.id,
+      optional: false,
     }),
     image: r.one.image({
       from: r.player.imageId,
@@ -259,14 +267,17 @@ export const relations = defineRelations(schema, (r) => ({
     player: r.one.player({
       from: r.sharedPlayer.playerId,
       to: r.player.id,
+      optional: false,
     }),
     owner: r.one.user({
       from: r.sharedPlayer.ownerId,
       to: r.user.id,
+      optional: false,
     }),
     sharedWith: r.one.user({
       from: r.sharedPlayer.sharedWithId,
       to: r.user.id,
+      optional: false,
     }),
     linkedPlayer: r.one.player({
       from: r.sharedPlayer.linkedPlayerId,
@@ -295,22 +306,27 @@ export const relations = defineRelations(schema, (r) => ({
     match: r.one.match({
       from: r.sharedMatch.matchId,
       to: r.match.id,
+      optional: false,
     }),
     owner: r.one.user({
       from: r.sharedMatch.ownerId,
       to: r.user.id,
+      optional: false,
     }),
     sharedWith: r.one.user({
       from: r.sharedMatch.sharedWithId,
       to: r.user.id,
+      optional: false,
     }),
     sharedGame: r.one.sharedGame({
       from: r.sharedMatch.sharedGameId,
       to: r.sharedGame.id,
+      optional: false,
     }),
     sharedGamePassthrough: r.one.game({
       from: r.sharedMatch.sharedGameId.through(r.sharedGame.id),
       to: r.game.id.through(r.sharedGame.gameId),
+      optional: false,
     }),
   },
   match: {
@@ -330,6 +346,7 @@ export const relations = defineRelations(schema, (r) => ({
     scoresheet: r.one.scoresheet({
       from: r.match.scoresheetId,
       to: r.scoresheet.id,
+      optional: false,
     }),
     matchPlayers: r.many.matchPlayer({
       from: r.match.id,
@@ -356,10 +373,12 @@ export const relations = defineRelations(schema, (r) => ({
     owner: r.one.user({
       from: r.sharedScoresheet.ownerId,
       to: r.user.id,
+      optional: false,
     }),
     sharedWith: r.one.user({
       from: r.sharedScoresheet.sharedWithId,
       to: r.user.id,
+      optional: false,
     }),
     scoresheet: r.one.scoresheet({
       from: r.sharedScoresheet.scoresheetId,
@@ -414,6 +433,7 @@ export const relations = defineRelations(schema, (r) => ({
     owner: r.one.user({
       from: r.shareRequest.ownerId,
       to: r.user.id,
+      optional: false,
     }),
     sharedWith: r.one.user({
       from: r.shareRequest.sharedWithId,

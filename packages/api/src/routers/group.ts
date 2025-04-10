@@ -2,22 +2,23 @@ import { TRPCError } from "@trpc/server";
 import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
+import { group, groupPlayer } from "@board-games/db/schema";
 import {
-  group,
-  groupPlayer,
   insertGroupSchema,
   insertPlayerSchema,
   selectGroupSchema,
-} from "@board-games/db/schema";
+} from "@board-games/db/zodSchema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 
 export const groupRouter = createTRPCRouter({
   getGroups: protectedUserProcedure.query(async ({ ctx }) => {
     return ctx.db.query.group.findMany({
-      where: eq(group.createdBy, ctx.userId),
+      where: {
+        createdBy: ctx.userId,
+      },
       with: {
-        groupsByPlayer: true,
+        players: true,
       },
     });
   }),
