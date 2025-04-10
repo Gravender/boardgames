@@ -172,7 +172,7 @@ export default function MatchRequestPage({
     if (!match.sharedGame) {
       return [];
     }
-    const sharedMatches = match.sharedGame.matches.filter((m) =>
+    const sharedMatches = match.sharedGame.sharedMatches.filter((m) =>
       isSameDay(match.item.date, m.match.date),
     );
     const linkedMatches = match.sharedGame.linkedGame?.matches.filter((m) =>

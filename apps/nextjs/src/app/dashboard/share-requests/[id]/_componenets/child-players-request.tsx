@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Check, ChevronDown, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Check, ChevronDown, ThumbsDown, ThumbsUp, User } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import {
@@ -9,6 +9,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@board-games/ui/accordion";
+import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import {
@@ -30,8 +31,10 @@ import { cn } from "@board-games/ui/utils";
 
 import { useTRPC } from "~/trpc/react";
 
-type ChildItem =
-  RouterOutputs["sharing"]["getShareRequest"]["childItems"][number];
+type ChildItem = Extract<
+  RouterOutputs["sharing"]["getShareRequest"],
+  { itemType: "game" }
+>["childItems"][number];
 type Player = Extract<ChildItem, { itemType: "player" }>;
 type Players = Player[];
 interface PlayerState {
@@ -170,7 +173,17 @@ function PlayerRequest({
       <AccordionItem value={`player-${player.item.id}`}>
         <div className="flex w-full items-center justify-between pr-4">
           <AccordionTrigger className="hover:no-underline">
-            <div className="flex w-full">
+            <div className="flex w-full gap-2">
+              <Avatar className="h-6 w-6 shadow">
+                <AvatarImage
+                  className="object-cover"
+                  src={player.item.image?.url ?? ""}
+                  alt={player.item.name}
+                />
+                <AvatarFallback className="bg-slate-300">
+                  <User />
+                </AvatarFallback>
+              </Avatar>
               <div className="text-left">
                 <span className="font-medium">{player.item.name} </span>
                 <span className="font-medium text-green-600">
@@ -289,11 +302,11 @@ function PlayerRequest({
                           <PopoverContent className="w-[300px] p-0">
                             <Command>
                               <CommandInput
-                                placeholder="Search games..."
+                                placeholder="Search players..."
                                 value={playerSearchQuery}
                                 onValueChange={setPlayerSearchQuery}
                               />
-                              <CommandEmpty>No games found.</CommandEmpty>
+                              <CommandEmpty>No players found.</CommandEmpty>
                               <CommandList>
                                 <CommandGroup>
                                   {sortedPlayers.map((existingPlayer) => (
@@ -307,18 +320,20 @@ function PlayerRequest({
                                         )
                                       }
                                     >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4",
-                                          playerState.linkedId ===
-                                            existingPlayer.id
-                                            ? "opacity-100"
-                                            : "opacity-0",
-                                        )}
-                                      />
-                                      <div>
+                                      <div className="flex items-center gap-2">
+                                        <Avatar className="h-6 w-6 shadow">
+                                          <AvatarImage
+                                            className="object-cover"
+                                            src={
+                                              existingPlayer.image?.url ?? ""
+                                            }
+                                            alt={existingPlayer.name}
+                                          />
+                                          <AvatarFallback className="bg-slate-300">
+                                            <User />
+                                          </AvatarFallback>
+                                        </Avatar>
                                         <p>{existingPlayer.name}</p>
-
                                         {existingPlayer.name.toLowerCase() ===
                                           player.item.name.toLowerCase() && (
                                           <span className="text-xs text-green-600">
@@ -326,6 +341,15 @@ function PlayerRequest({
                                           </span>
                                         )}
                                       </div>
+                                      <Check
+                                        className={cn(
+                                          "ml-auto h-4 w-4",
+                                          playerState.linkedId ===
+                                            existingPlayer.id
+                                            ? "opacity-100"
+                                            : "opacity-0",
+                                        )}
+                                      />
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
