@@ -22,7 +22,7 @@ import {
   team,
   user,
   userSharingPreference,
-} from "./schema";
+} from "../schema";
 
 export const insertMatchSchema = createInsertSchema(match);
 export const selectMatchSchema = createSelectSchema(match);

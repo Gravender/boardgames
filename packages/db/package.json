@@ -15,6 +15,10 @@
     "./schema": {
       "types": "./dist/schema.d.ts",
       "default": "./src/schema/index.ts"
+    },
+    "./zodSchema": {
+      "types": "./dist/zodSchema.d.ts",
+      "default": "./src/zodSchema/index.ts"
     }
   },
   "license": "MIT",

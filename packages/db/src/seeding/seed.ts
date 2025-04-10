@@ -4,17 +4,7 @@ import type { z } from "zod";
 import { faker } from "@faker-js/faker";
 import { randomLcg, randomNormal, randomUniform } from "d3";
 import { endOfMonth, getDaysInMonth, subMonths } from "date-fns";
-import {
-  and,
-  eq,
-  getTableName,
-  gt,
-  inArray,
-  isNotNull,
-  ne,
-  or,
-  sql,
-} from "drizzle-orm";
+import { eq, getTableName, inArray, sql } from "drizzle-orm";
 
 import type {
   insertFriendRequestSchema,
@@ -27,10 +17,12 @@ import type {
   insertMatchPlayerSchema,
   insertMatchSchema,
   insertPlayerSchema,
+  insertRoundPlayerSchema,
+  insertRoundSchema,
   insertScoreSheetSchema,
   insertTeamSchema,
   insertUserSchema,
-} from "@board-games/db/schema";
+} from "@board-games/db/zodSchema";
 import { db } from "@board-games/db/client";
 import {
   friend,
@@ -39,7 +31,6 @@ import {
   group,
   groupPlayer,
   image,
-  insertShareRequestSchema,
   location,
   match,
   matchPlayer,
@@ -56,8 +47,7 @@ import {
   user,
   userSharingPreference,
 } from "@board-games/db/schema";
-
-import type { insertRoundPlayerSchema, insertRoundSchema } from "../schema";
+import { insertShareRequestSchema } from "@board-games/db/zodSchema";
 
 function weightedRandomSample<T>(
   weightedPlayers: { weight: number; value: T }[],
@@ -932,11 +922,11 @@ export async function seed() {
       .returning();
     for (const returnedUserShareRequest of returnedUserShareRequests) {
       const currentShareRequests = await db.query.shareRequest.findMany({
-        where: and(
-          eq(shareRequest.ownerId, returnedUserShareRequest.ownerId),
-          eq(shareRequest.status, "accepted"),
-          isNotNull(shareRequest.sharedWithId),
-        ),
+        where: {
+          ownerId: returnedUserShareRequest.ownerId,
+          status: "accepted",
+          sharedWith: true,
+        },
       });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const childShareRequestSchema = insertShareRequestSchema
@@ -944,17 +934,12 @@ export async function seed() {
         .omit({ updatedAt: true, id: true, token: true });
       if (returnedUserShareRequest.itemType === "game") {
         const returnedGame = await db.query.game.findFirst({
-          where: and(
-            eq(game.id, returnedUserShareRequest.itemId),
-            eq(game.userId, returnedUserShareRequest.ownerId),
-          ),
+          where: {
+            id: returnedUserShareRequest.itemId,
+            userId: returnedUserShareRequest.ownerId,
+          },
           with: {
-            scoresheets: {
-              where: or(
-                eq(scoresheet.type, "Default"),
-                eq(scoresheet.type, "Game"),
-              ),
-            },
+            scoresheets: true,
             matches: {
               with: {
                 matchPlayers: true,
@@ -1071,11 +1056,11 @@ export async function seed() {
               throw new Error("Failed to create shared game");
             }
             const childShareRequest = await db.query.shareRequest.findMany({
-              where: and(
-                eq(shareRequest.parentShareId, returnedUserShareRequest.id),
-                eq(shareRequest.status, "accepted"),
-              ),
-              orderBy: shareRequest.createdAt,
+              where: {
+                parentShareId: returnedUserShareRequest.id,
+                status: "accepted",
+              },
+              orderBy: { createdAt: "asc" },
             });
             for (const cShareRequest of childShareRequest) {
               if (cShareRequest.itemType === "match") {
@@ -1110,19 +1095,14 @@ export async function seed() {
       }
       if (returnedUserShareRequest.itemType === "match") {
         const returnedMatch = await db.query.match.findFirst({
-          where: and(
-            eq(match.id, returnedUserShareRequest.itemId),
-            eq(match.userId, returnedUserShareRequest.ownerId),
-          ),
+          where: {
+            id: returnedUserShareRequest.itemId,
+            userId: returnedUserShareRequest.ownerId,
+          },
           with: {
             game: {
               with: {
-                scoresheets: {
-                  where: or(
-                    eq(scoresheet.type, "Default"),
-                    eq(scoresheet.type, "Game"),
-                  ),
-                },
+                scoresheets: true,
               },
             },
             matchPlayers: true,
@@ -1204,11 +1184,13 @@ export async function seed() {
             returnedUserShareRequest.sharedWithId !== null
           ) {
             const childShareRequest = await db.query.shareRequest.findMany({
-              where: and(
-                eq(shareRequest.parentShareId, returnedUserShareRequest.id),
-                eq(shareRequest.status, "accepted"),
-              ),
-              orderBy: shareRequest.createdAt,
+              where: {
+                parentShareId: returnedUserShareRequest.id,
+                status: "accepted",
+              },
+              orderBy: {
+                createdAt: "asc",
+              },
             });
             for (const cShareRequest of childShareRequest) {
               if (cShareRequest.itemType === "game") {
@@ -1229,14 +1211,11 @@ export async function seed() {
               }
             }
             const returnedSharedGame = await db.query.sharedGame.findFirst({
-              where: and(
-                eq(sharedGame.ownerId, returnedUserShareRequest.ownerId),
-                eq(
-                  sharedGame.sharedWithId,
-                  returnedUserShareRequest.sharedWithId,
-                ),
-                eq(sharedGame.gameId, returnedMatch.gameId),
-              ),
+              where: {
+                ownerId: returnedUserShareRequest.ownerId,
+                sharedWithId: returnedUserShareRequest.sharedWithId,
+                gameId: returnedMatch.gameId,
+              },
             });
             if (returnedSharedGame) {
               for (const cShareRequest of childShareRequest.filter(
@@ -1265,29 +1244,25 @@ export async function seed() {
       }
       if (returnedUserShareRequest.itemType === "player") {
         const returnedPlayer = await db.query.player.findFirst({
-          where: and(
-            eq(player.id, returnedUserShareRequest.itemId),
-            eq(player.createdBy, returnedUserShareRequest.ownerId),
-          ),
+          where: {
+            id: returnedUserShareRequest.itemId,
+            createdBy: returnedUserShareRequest.ownerId,
+          },
           with: {
-            matchesByPlayer: {
+            matchPlayers: {
               with: {
                 match: {
                   with: {
                     matchPlayers: {
-                      where: ne(
-                        matchPlayer.playerId,
-                        returnedUserShareRequest.itemId,
-                      ),
+                      where: {
+                        NOT: {
+                          playerId: returnedUserShareRequest.itemId,
+                        },
+                      },
                     },
                     game: {
                       with: {
-                        scoresheets: {
-                          where: or(
-                            eq(scoresheet.type, "Default"),
-                            eq(scoresheet.type, "Game"),
-                          ),
-                        },
+                        scoresheets: true,
                       },
                     },
                   },
@@ -1300,13 +1275,13 @@ export async function seed() {
           const childShareRequest: z.infer<typeof childShareRequestSchema>[] =
             [];
           if (
-            returnedPlayer.matchesByPlayer.length > 0 &&
+            returnedPlayer.matchPlayers.length > 0 &&
             faker.datatype.boolean()
           ) {
             faker.helpers
-              .arrayElements(returnedPlayer.matchesByPlayer, {
+              .arrayElements(returnedPlayer.matchPlayers, {
                 min: 1,
-                max: returnedPlayer.matchesByPlayer.length,
+                max: returnedPlayer.matchPlayers.length,
               })
               .forEach((mPlayer) => {
                 childShareRequest.push({
@@ -1409,11 +1384,13 @@ export async function seed() {
             returnedUserShareRequest.sharedWithId !== null
           ) {
             const childShareRequest = await db.query.shareRequest.findMany({
-              where: and(
-                eq(shareRequest.parentShareId, returnedUserShareRequest.id),
-                eq(shareRequest.status, "accepted"),
-              ),
-              orderBy: shareRequest.createdAt,
+              where: {
+                parentShareId: returnedUserShareRequest.id,
+                status: "accepted",
+              },
+              orderBy: {
+                createdAt: "asc",
+              },
             });
             for (const cShareRequest of childShareRequest) {
               if (cShareRequest.itemType === "game") {
@@ -1439,23 +1416,20 @@ export async function seed() {
             )) {
               if (cShareRequest.itemType === "scoresheet") {
                 const returnedScoresheet = await db.query.scoresheet.findFirst({
-                  where: and(
-                    eq(scoresheet.id, cShareRequest.itemId),
-                    eq(scoresheet.userId, returnedUserShareRequest.ownerId),
-                  ),
+                  where: {
+                    id: cShareRequest.itemId,
+                    userId: returnedUserShareRequest.ownerId,
+                  },
                 });
                 if (!returnedScoresheet) {
                   throw new Error("Scoresheet not found.");
                 }
                 const returnedSharedGame = await db.query.sharedGame.findFirst({
-                  where: and(
-                    eq(sharedGame.ownerId, returnedUserShareRequest.ownerId),
-                    eq(
-                      sharedGame.sharedWithId,
-                      returnedUserShareRequest.sharedWithId,
-                    ),
-                    eq(sharedGame.gameId, returnedScoresheet.gameId),
-                  ),
+                  where: {
+                    ownerId: returnedUserShareRequest.ownerId,
+                    sharedWithId: returnedUserShareRequest.sharedWithId,
+                    gameId: returnedScoresheet.gameId,
+                  },
                 });
                 if (returnedSharedGame) {
                   await db.insert(sharedScoresheet).values({
@@ -1469,23 +1443,20 @@ export async function seed() {
               }
               if (cShareRequest.itemType === "match") {
                 const returnedMatch = await db.query.match.findFirst({
-                  where: and(
-                    eq(match.id, cShareRequest.itemId),
-                    eq(match.userId, returnedUserShareRequest.ownerId),
-                  ),
+                  where: {
+                    id: cShareRequest.itemId,
+                    userId: returnedUserShareRequest.ownerId,
+                  },
                 });
                 if (!returnedMatch) {
                   throw new Error("Match not found.");
                 }
                 const returnedSharedGame = await db.query.sharedGame.findFirst({
-                  where: and(
-                    eq(sharedGame.ownerId, returnedUserShareRequest.ownerId),
-                    eq(
-                      sharedGame.sharedWithId,
-                      returnedUserShareRequest.sharedWithId,
-                    ),
-                    eq(sharedGame.gameId, returnedMatch.gameId),
-                  ),
+                  where: {
+                    ownerId: returnedUserShareRequest.ownerId,
+                    sharedWithId: returnedUserShareRequest.sharedWithId,
+                    gameId: returnedMatch.gameId,
+                  },
                 });
                 if (returnedSharedGame) {
                   await db.insert(sharedMatch).values({

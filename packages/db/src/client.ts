@@ -3,7 +3,7 @@ import { drizzle as LocalDrizzle } from "drizzle-orm/postgres-js";
 import { drizzle as VercelDrizzle } from "drizzle-orm/vercel-postgres";
 import postgres from "postgres";
 
-import { relations } from "./schema";
+import { relations } from "./relations";
 
 /**
  * Cache the database connection in development. This avoids creating a new connection on every HMR

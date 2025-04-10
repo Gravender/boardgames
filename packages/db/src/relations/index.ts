@@ -1,6 +1,6 @@
-import { defineRelations, or } from "drizzle-orm";
+import { defineRelations } from "drizzle-orm";
 
-import * as schema from "./schema";
+import * as schema from "../schema";
 
 export const relations = defineRelations(schema, (r) => ({
   matchPlayer: {
@@ -15,6 +15,7 @@ export const relations = defineRelations(schema, (r) => ({
     match: r.one.match({
       from: r.matchPlayer.matchId,
       to: r.match.id,
+      optional: false,
     }),
     game: r.one.game({
       from: r.matchPlayer.matchId.through(r.match.gameId),
@@ -320,9 +321,7 @@ export const relations = defineRelations(schema, (r) => ({
     game: r.one.game({
       from: r.match.gameId,
       to: r.game.id,
-      where: {
-        deleted: false,
-      },
+      optional: false,
     }),
     location: r.one.location({
       from: r.match.locationId,
