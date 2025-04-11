@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -11,6 +12,7 @@ import {
 import {
   Check,
   ChevronDown,
+  Dices,
   Loader2,
   ThumbsDown,
   ThumbsUp,
@@ -214,27 +216,49 @@ export default function GameRequestPage({
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>{game.item.name}</CardTitle>
-                <CardDescription>
-                  {game.item.yearPublished && (
-                    <span className="mr-2">({game.item.yearPublished})</span>
+              <div className="flex items-center gap-2">
+                <div className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded">
+                  {game.item.image ? (
+                    <Image
+                      fill
+                      src={game.item.image.url}
+                      alt={`${game.item.name} game image`}
+                      className="aspect-square h-full w-full rounded-md object-cover"
+                    />
+                  ) : (
+                    <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
                   )}
-                  {game.item.playersMin && game.item.playersMax && (
-                    <span className="mr-2">
-                      {game.item.playersMin === game.item.playersMax
-                        ? `${game.item.playersMin} players`
-                        : `${game.item.playersMin}-${game.item.playersMax} players`}
-                    </span>
-                  )}
-                  {game.item.playtimeMin && game.item.playtimeMax && (
-                    <span>
-                      {game.item.playtimeMin === game.item.playtimeMax
-                        ? `${game.item.playtimeMin} min`
-                        : `${game.item.playtimeMin}-${game.item.playtimeMax} min`}
-                    </span>
-                  )}
-                </CardDescription>
+                </div>
+                <div>
+                  <CardTitle>
+                    {game.item.name}{" "}
+                    {game.item.yearPublished && (
+                      <span className="mr-2">({game.item.yearPublished})</span>
+                    )}
+                  </CardTitle>
+                  <CardDescription>
+                    <div className="flex gap-2">
+                      {game.item.playersMin && game.item.playersMax && (
+                        <span className="mr-2">
+                          {game.item.playersMin === game.item.playersMax
+                            ? `Players: ${game.item.playersMin}`
+                            : `Players: ${game.item.playersMin}-${game.item.playersMax}`}
+                        </span>
+                      )}
+                      {game.item.playtimeMin && game.item.playtimeMax && (
+                        <span>
+                          {game.item.playtimeMin === game.item.playtimeMax
+                            ? `Playtime: ${game.item.playtimeMin} min`
+                            : `Playtime: ${game.item.playtimeMin}-${game.item.playtimeMax} min`}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {childMatches.length} shared matches,{" "}
+                      {childPlayers.length} shared players
+                    </p>
+                  </CardDescription>
+                </div>
               </div>
               <Badge
                 variant={game.permission === "edit" ? "default" : "secondary"}
@@ -351,37 +375,55 @@ export default function GameRequestPage({
                                                       handleGameSelect(fGame.id)
                                                     }
                                                   >
+                                                    <div className="flex items-center gap-2">
+                                                      <div className="relative flex h-6 w-6 shrink-0 overflow-hidden rounded">
+                                                        {fGame.image ? (
+                                                          <Image
+                                                            fill
+                                                            src={
+                                                              fGame.image.url
+                                                            }
+                                                            alt={`${fGame.name} game image`}
+                                                            className="aspect-square h-full w-full rounded-md object-cover"
+                                                          />
+                                                        ) : (
+                                                          <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
+                                                        )}
+                                                      </div>
+                                                      <div>
+                                                        <p>
+                                                          {fGame.name}
+                                                          {fGame.name.toLowerCase() ===
+                                                          game.item.name.toLowerCase()
+                                                            ? " (Possible Duplicate Found)"
+                                                            : ""}
+                                                        </p>
+                                                        {(fGame.yearPublished ??
+                                                          fGame.playersMin) && (
+                                                          <p className="text-xs text-muted-foreground">
+                                                            {
+                                                              fGame.yearPublished
+                                                            }
+                                                            {fGame.playersMin &&
+                                                              fGame.playersMax && (
+                                                                <span className="ml-2">
+                                                                  {fGame.playersMin ===
+                                                                  fGame.playersMax
+                                                                    ? `${fGame.playersMin} players`
+                                                                    : `${fGame.playersMin}-${fGame.playersMax} players`}
+                                                                </span>
+                                                              )}
+                                                          </p>
+                                                        )}
+                                                      </div>
+                                                    </div>
                                                     <Check
-                                                      className={`mr-2 h-4 w-4 ${
+                                                      className={`mr-auto h-4 w-4 ${
                                                         field.value === fGame.id
                                                           ? "opacity-100"
                                                           : "opacity-0"
                                                       }`}
                                                     />
-                                                    <div>
-                                                      <p>
-                                                        {fGame.name}
-                                                        {fGame.name.toLowerCase() ===
-                                                        game.item.name.toLowerCase()
-                                                          ? " (Possible Duplicate Found)"
-                                                          : ""}
-                                                      </p>
-                                                      {(fGame.yearPublished ??
-                                                        fGame.playersMin) && (
-                                                        <p className="text-xs text-muted-foreground">
-                                                          {fGame.yearPublished}
-                                                          {fGame.playersMin &&
-                                                            fGame.playersMax && (
-                                                              <span className="ml-2">
-                                                                {fGame.playersMin ===
-                                                                fGame.playersMax
-                                                                  ? `${fGame.playersMin} players`
-                                                                  : `${fGame.playersMin}-${fGame.playersMax} players`}
-                                                              </span>
-                                                            )}
-                                                        </p>
-                                                      )}
-                                                    </div>
                                                   </CommandItem>
                                                 ))}
                                               </CommandGroup>

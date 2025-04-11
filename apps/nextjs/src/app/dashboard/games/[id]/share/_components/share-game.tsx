@@ -271,7 +271,7 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <div className="relative flex h-14 w-14 shrink-0 overflow-hidden rounded shadow">
+          <div className="relative flex h-14 w-14 shrink-0 overflow-hidden rounded">
             {gameToShare.imageUrl ? (
               <Image
                 fill

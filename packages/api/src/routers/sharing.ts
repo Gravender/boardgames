@@ -12,7 +12,6 @@ import type {
 import {
   game,
   match,
-  player,
   scoresheet,
   sharedGame,
   sharedMatch,
@@ -2826,6 +2825,9 @@ export const sharingRouter = createTRPCRouter({
           where: {
             id: sharedItem.itemId,
           },
+          with: {
+            image: true,
+          },
         });
         if (!returnedGame) {
           throw new TRPCError({
@@ -3122,6 +3124,7 @@ export const sharingRouter = createTRPCRouter({
             location: true,
           },
         },
+        image: true,
       },
     });
     return games;
