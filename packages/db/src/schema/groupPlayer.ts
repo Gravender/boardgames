@@ -1,6 +1,5 @@
-import { relations } from "drizzle-orm";
-import { integer, serial, unique } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { sql } from "drizzle-orm";
+import { integer, serial, timestamp, unique } from "drizzle-orm/pg-core";
 
 import { createTable } from "./baseTable";
 import group from "./group";
@@ -16,6 +15,12 @@ const groupPlayers = createTable(
     playerId: integer("player_id")
       .notNull()
       .references(() => player.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
   },
   (table) => [
     unique("boardgames_group_player_group_id_player_id_unique").on(
@@ -24,20 +29,5 @@ const groupPlayers = createTable(
     ),
   ],
 );
-
-export const groupPlayerRelations = relations(groupPlayers, ({ one }) => ({
-  group: one(group, {
-    fields: [groupPlayers.groupId],
-    references: [group.id],
-  }),
-  player: one(player, {
-    fields: [groupPlayers.playerId],
-    references: [player.id],
-  }),
-}));
-
-export const insertGroupPlayerSchema = createInsertSchema(groupPlayers);
-
-export const selectGroupPlayerSchema = createSelectSchema(groupPlayers);
 
 export default groupPlayers;

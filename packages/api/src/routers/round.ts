@@ -1,12 +1,11 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { round, roundPlayer } from "@board-games/db/schema";
 import {
   insertRoundPlayerSchema,
   insertRoundSchema,
-  round,
-  roundPlayer,
-} from "@board-games/db/schema";
+} from "@board-games/db/zodSchema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 

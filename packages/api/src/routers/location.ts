@@ -1,20 +1,21 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
+import { location, match } from "@board-games/db/schema";
 import {
   insertLocationSchema,
-  location,
-  match,
   selectLocationSchema,
-} from "@board-games/db/schema";
+} from "@board-games/db/zodSchema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 
 export const locationRouter = createTRPCRouter({
   getLocations: protectedUserProcedure.query(async ({ ctx }) => {
     return ctx.db.query.location.findMany({
-      where: eq(location.createdBy, ctx.userId),
+      where: {
+        createdBy: ctx.userId,
+      },
       with: {
         matches: true,
       },
@@ -29,10 +30,10 @@ export const locationRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.location.findFirst({
-        where: and(
-          eq(location.id, input.id),
-          eq(location.createdBy, ctx.userId),
-        ),
+        where: {
+          id: input.id,
+          createdBy: ctx.userId,
+        },
         with: {
           matches: true,
         },
@@ -47,10 +48,10 @@ export const locationRouter = createTRPCRouter({
     }),
   getDefaultLocation: protectedUserProcedure.query(async ({ ctx }) => {
     const result = await ctx.db.query.location.findFirst({
-      where: and(
-        eq(location.createdBy, ctx.userId),
-        eq(location.isDefault, true),
-      ),
+      where: {
+        isDefault: true,
+        createdBy: ctx.userId,
+      },
       with: {
         matches: true,
       },

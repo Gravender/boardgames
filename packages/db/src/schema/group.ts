@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -6,10 +6,8 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
-import groupPlayer from "./groupPlayer";
 import user from "./user";
 
 const groups = createTable(
@@ -29,16 +27,5 @@ const groups = createTable(
   },
   (table) => [index("boardgames_group_name_index").on(table.name)],
 );
-
-export const groupRelations = relations(groups, ({ one, many }) => ({
-  createdBy: one(user, {
-    fields: [groups.createdBy],
-    references: [user.id],
-  }),
-  groupsByPlayer: many(groupPlayer),
-}));
-export const insertGroupSchema = createInsertSchema(groups);
-
-export const selectGroupSchema = createSelectSchema(groups);
 
 export default groups;

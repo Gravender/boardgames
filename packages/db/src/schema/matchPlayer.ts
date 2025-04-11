@@ -1,11 +1,16 @@
-import { relations } from "drizzle-orm";
-import { boolean, integer, serial, text, unique } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { sql } from "drizzle-orm";
+import {
+  boolean,
+  integer,
+  serial,
+  text,
+  timestamp,
+  unique,
+} from "drizzle-orm/pg-core";
 
 import { createTable } from "./baseTable";
 import match from "./match";
 import player from "./player";
-import roundPlayers from "./roundPlayer";
 import team from "./team";
 
 const matchPlayers = createTable(
@@ -24,6 +29,12 @@ const matchPlayers = createTable(
     placement: integer("placement").default(0),
     order: integer("order"),
     details: text("details"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
   },
   (table) => [
     unique("boardgames_match_player_match_id_player_id_unique").on(
@@ -32,28 +43,5 @@ const matchPlayers = createTable(
     ),
   ],
 );
-
-export const matchPlayerRelations = relations(
-  matchPlayers,
-  ({ one, many }) => ({
-    match: one(match, {
-      fields: [matchPlayers.matchId],
-      references: [match.id],
-    }),
-    player: one(player, {
-      fields: [matchPlayers.playerId],
-      references: [player.id],
-    }),
-    team: one(team, {
-      fields: [matchPlayers.teamId],
-      references: [team.id],
-    }),
-    roundPlayers: many(roundPlayers),
-  }),
-);
-
-export const insertMatchPlayerSchema = createInsertSchema(matchPlayers);
-
-export const selectMatchPlayerSchema = createSelectSchema(matchPlayers);
 
 export default matchPlayers;

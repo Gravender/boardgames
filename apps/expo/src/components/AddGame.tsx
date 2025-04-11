@@ -11,7 +11,7 @@ import { z } from "zod";
 import {
   insertRoundSchema,
   insertScoreSheetSchema,
-} from "@board-games/db/schema";
+} from "@board-games/db/zodSchema";
 
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";

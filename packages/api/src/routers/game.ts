@@ -1,6 +1,6 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { and, count, eq, inArray, or, sql } from "drizzle-orm";
+import { and, count, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type {
@@ -8,13 +8,10 @@ import type {
   insertMatchSchema,
   insertPlayerSchema,
   insertRoundPlayerSchema,
-} from "@board-games/db/schema";
+} from "@board-games/db/zodSchema";
 import {
   game,
   image,
-  insertGameSchema,
-  insertRoundSchema,
-  insertScoreSheetSchema,
   location,
   match,
   matchPlayer,
@@ -22,8 +19,13 @@ import {
   round,
   roundPlayer,
   scoresheet,
-  selectGameSchema,
 } from "@board-games/db/schema";
+import {
+  insertGameSchema,
+  insertRoundSchema,
+  insertScoreSheetSchema,
+  selectGameSchema,
+} from "@board-games/db/zodSchema";
 import { baseRoundSchema, editScoresheetSchema } from "@board-games/shared";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
@@ -130,7 +132,11 @@ export const gameRouter = createTRPCRouter({
     .input(selectGameSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.game.findFirst({
-        where: and(eq(game.id, input.id), eq(game.userId, ctx.userId)),
+        where: {
+          id: input.id,
+          userId: ctx.userId,
+          deleted: false,
+        },
         with: {
           image: {
             columns: {
@@ -145,8 +151,9 @@ export const gameRouter = createTRPCRouter({
                 },
               },
             },
-            orderBy: (matches, { desc }) => [desc(matches.date)],
-            where: (matches, { eq }) => eq(matches.userId, ctx.userId),
+            orderBy: {
+              date: "desc",
+            },
           },
         },
       });
@@ -202,11 +209,18 @@ export const gameRouter = createTRPCRouter({
     .input(z.object({ gameId: z.number() }))
     .query(async ({ ctx, input }) => {
       const returnedScoresheets = await ctx.db.query.scoresheet.findMany({
-        where: and(
-          eq(scoresheet.userId, ctx.userId),
-          eq(scoresheet.gameId, input.gameId),
-          or(eq(scoresheet.type, "Default"), eq(scoresheet.type, "Game")),
-        ),
+        where: {
+          userId: ctx.userId,
+          gameId: input.gameId,
+          OR: [
+            {
+              type: "Default",
+            },
+            {
+              type: "Game",
+            },
+          ],
+        },
       });
       return returnedScoresheets;
     }),
@@ -224,7 +238,11 @@ export const gameRouter = createTRPCRouter({
           yearPublished: true,
           ownedBy: true,
         },
-        where: and(eq(game.id, input.id), eq(game.userId, ctx.userId)),
+        where: {
+          id: input.id,
+          userId: ctx.userId,
+          deleted: false,
+        },
         with: {
           image: true,
           scoresheets: {
@@ -248,10 +266,11 @@ export const gameRouter = createTRPCRouter({
                   modifier: true,
                   order: true,
                 },
-                orderBy: round.order,
+                orderBy: {
+                  order: "asc",
+                },
               },
             },
-            where: inArray(scoresheet.type, ["Game", "Default"]),
           },
         },
       });
@@ -281,7 +300,11 @@ export const gameRouter = createTRPCRouter({
     .input(selectGameSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.game.findFirst({
-        where: eq(game.id, input.id),
+        where: {
+          id: input.id,
+          userId: ctx.userId,
+          deleted: false,
+        },
         with: {
           image: true,
           matches: {
@@ -383,13 +406,104 @@ export const gameRouter = createTRPCRouter({
     .input(selectGameSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query.game.findFirst({
-        where: eq(game.id, input.id),
+        where: {
+          id: input.id,
+          userId: ctx.userId,
+          deleted: false,
+        },
         columns: {
           name: true,
         },
       });
       if (!result) return null;
       return result.name;
+    }),
+  getGameToShare: protectedUserProcedure
+    .input(selectGameSchema.pick({ id: true }))
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.db.query.game.findFirst({
+        where: {
+          id: input.id,
+          userId: ctx.userId,
+          deleted: false,
+        },
+        with: {
+          matches: {
+            with: {
+              matchPlayers: {
+                with: {
+                  player: true,
+                  team: true,
+                },
+              },
+              location: true,
+              teams: true,
+            },
+            orderBy: (matches, { desc }) => [desc(matches.date)],
+          },
+          scoresheets: true,
+          image: true,
+        },
+      });
+
+      if (!result) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Game not found",
+        });
+      }
+      const filteredMatches = result.matches
+        .filter((rMatch) => rMatch.finished)
+        .map((rMatch) => ({
+          id: rMatch.id,
+          name: rMatch.name,
+          date: rMatch.date,
+          duration: rMatch.duration,
+          locationName: rMatch.location?.name,
+          players: rMatch.matchPlayers
+            .map((matchPlayer) => ({
+              id: matchPlayer.player.id,
+              name: matchPlayer.player.name,
+              score: matchPlayer.score,
+              isWinner: matchPlayer.winner,
+              playerId: matchPlayer.player.id,
+              team: matchPlayer.team,
+            }))
+            .toSorted((a, b) => {
+              if (a.team === null || b.team === null) {
+                if (a.score === b.score) {
+                  return a.name.localeCompare(b.name);
+                }
+                if (a.score === null) return 1;
+                if (b.score === null) return -1;
+                return b.score - a.score;
+              }
+              if (a.team.id === b.team.id) return 0;
+              if (a.score === b.score) {
+                return a.name.localeCompare(b.name);
+              }
+              if (a.score === null) return 1;
+              if (b.score === null) return -1;
+              return b.score - a.score;
+            }),
+          teams: rMatch.teams,
+        }));
+      return {
+        id: result.id,
+        name: result.name,
+        imageUrl: result.image?.url,
+        players: {
+          min: result.playersMin,
+          max: result.playersMax,
+        },
+        playtime: {
+          min: result.playtimeMin,
+          max: result.playtimeMax,
+        },
+        yearPublished: result.yearPublished,
+        matches: filteredMatches,
+        scoresheets: result.scoresheets,
+      };
     }),
   getGames: protectedUserProcedure.query(async ({ ctx }) => {
     const games = await ctx.db
@@ -745,7 +859,10 @@ export const gameRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const currentGames = await ctx.db.query.game.findMany({
-        where: eq(game.userId, ctx.userId),
+        where: {
+          userId: ctx.userId,
+          deleted: false,
+        },
       });
       if (currentGames.length > 0) {
         return null;

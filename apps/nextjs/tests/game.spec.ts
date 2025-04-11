@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { eq } from "drizzle-orm";
 
 import { db } from "@board-games/db/client";
-import { game, round, scoresheet, user } from "@board-games/db/schema";
+import { game, round, scoresheet, user } from "@board-games/db/zodSchema";
 
 test.describe("Game Page", () => {
   test.afterAll(async () => {

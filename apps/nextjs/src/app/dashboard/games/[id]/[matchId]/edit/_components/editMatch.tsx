@@ -12,7 +12,10 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import type { RouterOutputs } from "@board-games/api";
-import { insertMatchSchema, insertPlayerSchema } from "@board-games/db/schema";
+import {
+  insertMatchSchema,
+  insertPlayerSchema,
+} from "@board-games/db/zodSchema";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Calendar } from "@board-games/ui/calendar";

@@ -3,7 +3,8 @@ import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { selectUserSchema, user } from "@board-games/db/schema";
+import { player, user } from "@board-games/db/schema";
+import { selectUserSchema } from "@board-games/db/zodSchema";
 
 import {
   createTRPCRouter,
@@ -40,12 +41,26 @@ export const userRouter = createTRPCRouter({
             .values({
               clerkUserId: input.userId,
               email: clerkUser?.emailAddresses[0]?.emailAddress,
+              name: clerkUser?.fullName,
             })
             .returning();
           if (!insertedUser)
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
               message: "Could not insert user",
+            });
+          const [insertedPlayer] = await tx
+            .insert(player)
+            .values({
+              name: clerkUser?.fullName ?? "",
+              createdBy: insertedUser.id,
+              userId: insertedUser.id,
+            })
+            .returning();
+          if (!insertedPlayer)
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Could not insert player",
             });
           return "User created";
         } else {

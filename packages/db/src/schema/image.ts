@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -24,13 +24,6 @@ const images = createTable(
   },
   (table) => [index("boardgames_image_user_id_index").on(table.userId)],
 );
-
-export const matchPlayerRelations = relations(images, ({ one }) => ({
-  user: one(user, {
-    fields: [images.userId],
-    references: [user.id],
-  }),
-}));
 
 export const insertImageSchema = createInsertSchema(images);
 
