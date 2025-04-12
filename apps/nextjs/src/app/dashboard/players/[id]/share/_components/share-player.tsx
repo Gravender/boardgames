@@ -94,9 +94,6 @@ const formSchema = z
         permission: z.enum(["view", "edit"]),
       }),
     ),
-    scoresheetIds: z
-      .array(z.object({ id: z.number(), permission: z.enum(["view", "edit"]) }))
-      .min(1),
   })
   .superRefine((values, ctx) => {
     if (
@@ -160,6 +157,7 @@ export default function SharePlayerPage({ playerId }: { playerId: number }) {
             variant: "destructive",
           });
         }
+        router.push(`/dashboard/`);
       },
       onError: (error) => {
         toast({
@@ -843,8 +841,11 @@ export default function SharePlayerPage({ playerId }: { playerId: number }) {
               Cancel
             </Button>
 
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
+            <Button
+              type="submit"
+              disabled={isLoading || sharePlayerMutation.isPending}
+            >
+              {isLoading || sharePlayerMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Sharing...

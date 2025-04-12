@@ -13,8 +13,10 @@ import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Label } from "@board-games/ui/label";
 
-type ChildItem =
-  RouterOutputs["sharing"]["getShareRequest"]["childItems"][number];
+type ChildItem = Extract<
+  RouterOutputs["sharing"]["getShareRequest"],
+  { itemType: "game" }
+>["childItems"][number];
 type Matches = Extract<ChildItem, { itemType: "match" }>[];
 type GameMatches =
   RouterOutputs["sharing"]["getUserGamesForLinking"][number]["matches"];

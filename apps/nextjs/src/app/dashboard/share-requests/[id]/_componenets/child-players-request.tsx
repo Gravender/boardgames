@@ -27,6 +27,7 @@ import {
   PopoverTrigger,
 } from "@board-games/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@board-games/ui/radio-group";
+import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
 import { useTRPC } from "~/trpc/react";
@@ -104,31 +105,35 @@ export default function ChildPlayersRequest({
           of {childPlayers.length} selected
         </p>
       </div>
-
-      {childPlayers.map((playerItem) => {
-        const isAccepted =
-          players.find((p) => p.sharedId === playerItem.shareId)?.accept ??
-          false;
-        const playerState = players.find(
-          (p) => p.sharedId === playerItem.shareId,
-        );
-        if (!playerState) return null;
-        const foundPlayer = usersPlayers.find(
-          (p) => p.name.toLowerCase() === playerItem.item.name.toLowerCase(),
-        );
-        return (
-          <PlayerRequest
-            key={playerItem.item.id}
-            player={playerItem}
-            isAccepted={isAccepted}
-            playerState={playerState}
-            foundPlayer={foundPlayer}
-            usersPlayers={usersPlayers}
-            updatePlayerAcceptance={updatePlayerAcceptance}
-            updatePlayerLink={updatePlayerLink}
-          />
-        );
-      })}
+      <ScrollArea className="p-2">
+        <div className="grid max-h-[20rem] gap-2">
+          {childPlayers.map((playerItem) => {
+            const isAccepted =
+              players.find((p) => p.sharedId === playerItem.shareId)?.accept ??
+              false;
+            const playerState = players.find(
+              (p) => p.sharedId === playerItem.shareId,
+            );
+            if (!playerState) return null;
+            const foundPlayer = usersPlayers.find(
+              (p) =>
+                p.name.toLowerCase() === playerItem.item.name.toLowerCase(),
+            );
+            return (
+              <PlayerRequest
+                key={playerItem.item.id}
+                player={playerItem}
+                isAccepted={isAccepted}
+                playerState={playerState}
+                foundPlayer={foundPlayer}
+                usersPlayers={usersPlayers}
+                updatePlayerAcceptance={updatePlayerAcceptance}
+                updatePlayerLink={updatePlayerLink}
+              />
+            );
+          })}
+        </div>
+      </ScrollArea>
     </div>
   );
 }

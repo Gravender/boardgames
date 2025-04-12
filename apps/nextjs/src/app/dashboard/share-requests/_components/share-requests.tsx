@@ -59,22 +59,14 @@ export default function ShareRequestsPage() {
   const { data: outgoingRequests } = useSuspenseQuery(
     trpc.sharing.getOutgoingShareRequests.queryOptions(),
   );
-  const respondToShareRequestMutation = useMutation(
-    trpc.sharing.respondToShareRequest.mutationOptions({
+  const rejectShareMutation = useMutation(
+    trpc.sharing.rejectShareRequest.mutationOptions({
       onSuccess: (response) => {
-        if (response.accept) {
-          setLoading({ ...loading, [`accept-${response.id}`]: false });
-          toast({
-            title: "Share request accepted",
-            description: "The shared item has been added to your collection",
-          });
-        } else {
-          setLoading({ ...loading, [`reject-${response.id}`]: false });
-          toast({
-            title: "Share request rejected",
-            description: "The share request has been rejected",
-          });
-        }
+        setLoading({ ...loading, [`reject-${response.id}`]: false });
+        toast({
+          title: "Share request rejected",
+          description: "The share request has been rejected",
+        });
 
         void queryClient.invalidateQueries(
           trpc.sharing.getIncomingShareRequests.queryOptions(),
@@ -106,9 +98,8 @@ export default function ShareRequestsPage() {
   const handleReject = (id: number) => {
     setLoading({ ...loading, [`reject-${id}`]: true });
 
-    respondToShareRequestMutation.mutate({
+    rejectShareMutation.mutate({
       requestId: id,
-      accept: false,
     });
   };
 
