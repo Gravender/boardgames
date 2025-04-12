@@ -96,7 +96,7 @@ export default function ChildPlayersRequest({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Players</h3>
+        <h3 className="text-lg font-medium">Players from shared matches</h3>
         <p className="text-sm text-muted-foreground">
           {players.reduce((acc, curr) => {
             if (curr.accept) return acc + 1;

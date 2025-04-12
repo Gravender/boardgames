@@ -10,8 +10,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { compareAsc, format, isSameDay } from "date-fns";
-import { set } from "lodash";
+import { compareDesc, format, isSameDay } from "date-fns";
 import {
   Calendar,
   Check,
@@ -24,7 +23,6 @@ import {
   ThumbsUp,
   User,
 } from "lucide-react";
-import scoresheets from "node_modules/@board-games/db/src/schema/scoresheet";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -221,6 +219,7 @@ export default function PlayerRequestPage({
 
   const playerOption = form.watch("playerOption");
   const existingPlayerId = form.watch("existingPlayerId");
+  const games = form.watch("games");
   const onSubmit = (data: FormValues) => {
     setSubmitting(true);
     acceptPlayerMutation.mutate({
@@ -242,6 +241,22 @@ export default function PlayerRequestPage({
     form.setValue("existingPlayerId", playerId);
     setPlayerSearchOpen(false);
   };
+
+  const playerScoresheets = useMemo(() => {
+    return games.reduce((acc, curr) => {
+      if (curr.type === "request" && curr.accept) {
+        return acc + curr.scoresheets.length;
+      }
+      return acc;
+    }, 0);
+  }, [games]);
+
+  const playerMatches = useMemo(() => {
+    return games.reduce((acc, curr) => {
+      return acc + curr.matches.length;
+    }, 0);
+  }, [games]);
+
   const sharedPlayers = useMemo(() => {
     return players.reduce((acc, curr) => {
       if (curr.linkedId) return acc + 1;
@@ -254,6 +269,37 @@ export default function PlayerRequestPage({
       return acc;
     }, 0);
   }, [players]);
+  const acceptedGames = useMemo(() => {
+    return games.reduce((acc, curr) => {
+      if (curr.type === "request" && curr.accept) return acc + 1;
+      return acc;
+    }, 0);
+  }, [games]);
+  const acceptedScoresheets = useMemo(() => {
+    return games.reduce((acc, curr) => {
+      if (curr.type === "request" && curr.accept) {
+        return (
+          acc +
+          curr.scoresheets.reduce((acc, curr) => {
+            if (curr.accept) return acc + 1;
+            return acc;
+          }, 0)
+        );
+      }
+      return acc;
+    }, 0);
+  }, [games]);
+  const acceptedMatches = useMemo(() => {
+    return games.reduce((acc, curr) => {
+      return (
+        acc +
+        curr.matches.reduce((acc, curr) => {
+          if (curr.accept) return acc + 1;
+          return acc;
+        }, 0)
+      );
+    }, 0);
+  }, [games]);
 
   return (
     <Form {...form}>
@@ -293,7 +339,7 @@ export default function PlayerRequestPage({
               <Badge
                 variant={player.permission === "edit" ? "default" : "secondary"}
               >
-                {player.permission === "edit" ? "Edit Access" : "View Only"}
+                {player.permission === "edit" ? "Edit" : "View"}
               </Badge>
             </div>
           </CardHeader>
@@ -501,6 +547,24 @@ export default function PlayerRequestPage({
                     <span> ({sharedPlayers} linked)</span>
                   </li>
                 )}
+                {player.games.length > 0 && acceptedGames && (
+                  <li>
+                    {acceptedGames} Game
+                    {acceptedGames !== 1 ? "s" : ""}
+                  </li>
+                )}
+                {playerScoresheets > 0 && acceptedScoresheets && (
+                  <li>
+                    {acceptedScoresheets} Scoresheet
+                    {acceptedScoresheets !== 1 ? "s" : ""}
+                  </li>
+                )}
+                {playerMatches > 0 && acceptedMatches && (
+                  <li>
+                    {acceptedMatches} Match
+                    {acceptedMatches !== 1 ? "es" : ""}
+                  </li>
+                )}
               </ul>
             </div>
           </CardContent>
@@ -561,7 +625,7 @@ function ChildGamesRequest({
       </div>
 
       <ScrollArea className="p-2">
-        <Accordion type="single" collapsible className="max-h-[40rem] gap-2">
+        <Accordion type="single" collapsible className="max-h-[45rem] gap-2">
           {games.map((game) => {
             const gameIndex = gameDecisions.findIndex(
               (g) => g.shareId === game.shareId,
@@ -914,8 +978,8 @@ function RequestShareGame({
                                       }
                                     >
                                       {scoresheetItem.permission === "edit"
-                                        ? "Edit Access"
-                                        : "View Only"}
+                                        ? "Edit"
+                                        : "View"}
                                     </Badge>
                                     <FormField
                                       control={form.control}
@@ -1110,7 +1174,7 @@ function MatchRequests({
         if (potentialA.length > 0) return -1;
         if (potentialB.length > 0) return 1;
       }
-      return compareAsc(a.item.date, b.item.date);
+      return compareDesc(a.item.date, b.item.date);
     });
     return temp;
   }, [childMatches, potentialMatches]);
@@ -1139,7 +1203,7 @@ function MatchRequests({
         </p>
       </div>
       <ScrollArea className="p-2">
-        <div className="grid max-h-[15rem] gap-2">
+        <div className="grid max-h-[20rem] gap-2">
           {sortedMatches.map((matchItem) => {
             const matchState = matches.find(
               (m) => m.sharedId === matchItem.shareId,
@@ -1169,7 +1233,7 @@ function MatchRequests({
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           {format(matchItem.item.date, "d MMM yyyy")}
@@ -1178,10 +1242,12 @@ function MatchRequests({
                           <Clock className="h-4 w-4" />
                           {formatDuration(matchItem.item.duration)}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          {matchItem.item.location?.name}
-                        </span>
+                        {matchItem.item.location && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-4 w-4" />
+                            {matchItem.item.location.name}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 pr-2">
@@ -1237,11 +1303,7 @@ function MatchRequests({
                       <div className="space-y-4">
                         {potentialMatches(matchItem.item.date).length > 0 ? (
                           <div className="space-y-3">
-                            <Label>Link to existing match</Label>
-
-                            <div className="mt-2 text-sm font-medium">
-                              Potential matches on same date:
-                            </div>
+                            <Label>Potential matches on same date:</Label>
                             {potentialMatches(matchItem.item.date).map(
                               (potentialMatch) => (
                                 <div
@@ -1253,19 +1315,27 @@ function MatchRequests({
                                   >
                                     <div>
                                       <p>{potentialMatch.name}</p>
-                                      <ul className="text-xs text-muted-foreground">
-                                        <li>
-                                          Date:{" "}
-                                          {new Date(
+                                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <span className="flex items-center gap-1">
+                                          <Calendar className="h-4 w-4" />
+                                          {format(
                                             potentialMatch.date,
-                                          ).toLocaleDateString()}
-                                        </li>
+                                            "d MMM yyyy",
+                                          )}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                          <Clock className="h-4 w-4" />
+                                          {formatDuration(
+                                            potentialMatch.duration,
+                                          )}
+                                        </span>
                                         {potentialMatch.location && (
-                                          <li>
-                                            {`Location: ${potentialMatch.location.name}`}
-                                          </li>
+                                          <span className="flex items-center gap-1">
+                                            <MapPin className="h-4 w-4" />
+                                            {potentialMatch.location.name}
+                                          </span>
                                         )}
-                                      </ul>
+                                      </div>
                                     </div>
                                   </Label>
                                   <Button
