@@ -19,3 +19,4 @@ export { default as userSharingPreference } from "./userSharingPreferences";
 export { default as sharedPlayer } from "./sharedPlayer";
 export { default as shareRequest } from "./shareRequest";
 export { default as sharedScoresheet } from "./sharedScoresheet";
+export { default as sharedMatchPlayer } from "./sharedMatchPlayer";
