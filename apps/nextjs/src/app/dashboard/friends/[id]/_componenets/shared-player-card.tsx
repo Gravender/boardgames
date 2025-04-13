@@ -14,8 +14,8 @@ import {
 } from "@board-games/ui/card";
 
 type Player =
-  | RouterOutputs["friend"]["getFriend"]["friend"]["playersShared"][number]
-  | RouterOutputs["friend"]["getFriend"]["user"]["playersShared"][number];
+  | RouterOutputs["friend"]["getFriend"]["friend"]["sharedPlayersOwner"][number]
+  | RouterOutputs["friend"]["getFriend"]["user"]["sharedPlayersOwner"][number];
 
 export function SharedPlayerCard({ player }: { player: Player }) {
   const formatDate = (date: Date) => {

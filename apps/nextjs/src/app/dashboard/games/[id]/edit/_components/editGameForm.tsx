@@ -438,7 +438,7 @@ const GameForm = ({
                       id: foundScoresheet.id,
                       name: scoresheetName,
                       winCondition: scoresheetWinCondition,
-                      isCoop: scoresheetIsCoop,
+                      isCoop: scoresheetIsCoop ?? foundScoresheet.isCoop,
                       roundsScore: scoresheetRoundsScore,
                       targetScore: scoresheetTargetScore,
                     }
@@ -456,7 +456,7 @@ const GameForm = ({
                   id: foundScoresheet.id,
                   name: scoresheetName,
                   winCondition: scoresheetWinCondition,
-                  isCoop: scoresheetIsCoop,
+                  isCoop: scoresheetIsCoop ?? foundScoresheet.isCoop,
                   roundsScore: scoresheetRoundsScore,
                   targetScore: scoresheetTargetScore,
                 },

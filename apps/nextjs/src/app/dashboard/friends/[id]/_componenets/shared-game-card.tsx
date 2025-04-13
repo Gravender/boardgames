@@ -14,8 +14,8 @@ import {
 } from "@board-games/ui/card";
 
 type Game =
-  | RouterOutputs["friend"]["getFriend"]["friend"]["gamesShared"][number]
-  | RouterOutputs["friend"]["getFriend"]["user"]["gamesShared"][number];
+  | RouterOutputs["friend"]["getFriend"]["friend"]["sharedGamesOwner"][number]
+  | RouterOutputs["friend"]["getFriend"]["user"]["sharedGamesOwner"][number];
 
 export function SharedGameCard({ game }: { game: Game }) {
   const formatDate = (date: Date) => {
@@ -40,22 +40,21 @@ export function SharedGameCard({ game }: { game: Game }) {
         <div className="space-y-2">
           <p className="text-sm font-medium">This share includes:</p>
           <ul className="ml-5 list-disc text-sm text-muted-foreground">
-            {game.matches.length > 0 && (
+            {game.sharedMatches.length > 0 && (
               <li>
-                {game.matches.length} match
-                {game.matches.length !== 1 ? "es" : ""}
+                {game.sharedMatches.length} match
+                {game.sharedMatches.length !== 1 ? "es" : ""}
               </li>
             )}
-            {game.scoresheets.length > 0 && (
+            {game.sharedScoresheets.length > 0 && (
               <li>
-                {game.scoresheets.length} scoresheet
-                {game.scoresheets.length !== 1 ? "s" : ""}
+                {game.sharedScoresheets.length} scoresheet
+                {game.sharedScoresheets.length !== 1 ? "s" : ""}
               </li>
             )}
 
-            {game.matches.length === 0 && game.scoresheets.length === 0 && (
-              <li>Game only</li>
-            )}
+            {game.sharedMatches.length === 0 &&
+              game.sharedScoresheets.length === 0 && <li>Game only</li>}
           </ul>
           <div className="mt-4 flex justify-end">
             <Button size="sm">View Game</Button>

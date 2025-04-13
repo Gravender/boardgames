@@ -178,8 +178,8 @@ export function FriendsList() {
               {sentFriendRequests.map((request) => (
                 <Card key={request.id}>
                   <CardHeader>
-                    <CardTitle>{request.user.name}</CardTitle>
-                    <CardDescription>{request.user.email}</CardDescription>
+                    <CardTitle>{request.requestee.name}</CardTitle>
+                    <CardDescription>{request.requestee.email}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground">

@@ -128,7 +128,7 @@ const GroupContent = ({
                 <span>Navigating...</span>
               </>
             ) : (
-              `${group.groupsByPlayer.length} Players`
+              `${group.players.length} Players`
             )}
           </Button>
           <DialogFooter className="gap-2">

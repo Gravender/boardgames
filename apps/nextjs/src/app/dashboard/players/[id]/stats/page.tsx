@@ -31,7 +31,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const player = await caller.player.getPlayer({
     id: Number(id),
   });
-  if (!player) return { title: "Player" };
   if (!player.imageUrl)
     return {
       title: `${player.name}'s Stats`,
@@ -56,7 +55,6 @@ export default async function Page({ params }: Props) {
   const player = await caller.player.getPlayer({
     id: Number(playerId),
   });
-  if (player === null) redirect("/dashboard/players");
   const lastPlayed = player.matches[0];
   return (
     <div className="flex w-full items-center justify-center">

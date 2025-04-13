@@ -2,10 +2,9 @@
 
 import { useMemo } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { GamepadIcon as GameController, Share } from "lucide-react";
+import { GamepadIcon as GameController } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
-import { Button } from "@board-games/ui/button";
 import { Card, CardContent } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
@@ -23,38 +22,38 @@ export default function FriendProfilePage({ friendId }: { friendId: number }) {
   );
 
   const sharedByItems: (
-    | (RouterOutputs["friend"]["getFriend"]["friend"]["playersShared"][number] & {
+    | (RouterOutputs["friend"]["getFriend"]["friend"]["sharedPlayersOwner"][number] & {
         type: "player";
       })
-    | (RouterOutputs["friend"]["getFriend"]["friend"]["gamesShared"][number] & {
+    | (RouterOutputs["friend"]["getFriend"]["friend"]["sharedGamesOwner"][number] & {
         type: "game";
       })
   )[] = useMemo(() => {
     return [
-      ...friend.friend.gamesShared.map((gS) => ({
+      ...friend.friend.sharedGamesOwner.map((gS) => ({
         ...gS,
         type: "game" as const,
       })),
-      ...friend.friend.playersShared.map((pS) => ({
+      ...friend.friend.sharedPlayersOwner.map((pS) => ({
         ...pS,
         type: "player" as const,
       })),
     ];
   }, [friend]);
   const sharedWithItems: (
-    | (RouterOutputs["friend"]["getFriend"]["user"]["playersShared"][number] & {
+    | (RouterOutputs["friend"]["getFriend"]["user"]["sharedPlayersOwner"][number] & {
         type: "player";
       })
-    | (RouterOutputs["friend"]["getFriend"]["user"]["gamesShared"][number] & {
+    | (RouterOutputs["friend"]["getFriend"]["user"]["sharedGamesOwner"][number] & {
         type: "game";
       })
   )[] = useMemo(() => {
     return [
-      ...friend.user.gamesShared.map((gS) => ({
+      ...friend.user.sharedGamesOwner.map((gS) => ({
         ...gS,
         type: "game" as const,
       })),
-      ...friend.user.playersShared.map((pS) => ({
+      ...friend.user.sharedPlayersOwner.map((pS) => ({
         ...pS,
         type: "player" as const,
       })),

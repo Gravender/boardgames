@@ -480,10 +480,12 @@ export const relations = defineRelations(schema, (r) => ({
     user: r.one.user({
       from: r.friendRequest.userId,
       to: r.user.id,
+      optional: false,
     }),
     requestee: r.one.user({
       from: r.friendRequest.requesteeId,
       to: r.user.id,
+      optional: false,
     }),
   },
 }));
