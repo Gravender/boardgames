@@ -58,7 +58,7 @@ export const matchRouter = createTRPCRouter({
         }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.transaction(async (transaction) => {
+      const response = await ctx.db.transaction(async (transaction) => {
         const returnedScoresheet = await transaction.query.scoresheet.findFirst(
           {
             where: {
@@ -132,10 +132,10 @@ export const matchRouter = createTRPCRouter({
             .values(playersToInsert)
             .returning();
 
-          insertedMatchPlayers.concat(
-            returnedMatchPlayers.map((returnedMatchPlayer) => ({
+          returnedMatchPlayers.forEach((returnedMatchPlayer) =>
+            insertedMatchPlayers.push({
               id: returnedMatchPlayer.id,
-            })),
+            }),
           );
         } else {
           for (const inputTeam of input.teams) {
@@ -152,10 +152,11 @@ export const matchRouter = createTRPCRouter({
                 .insert(matchPlayer)
                 .values(playersToInsert)
                 .returning();
-              insertedMatchPlayers.concat(
-                returnedMatchPlayers.map((returnedMatchPlayer) => ({
+
+              returnedMatchPlayers.forEach((returnedMatchPlayer) =>
+                insertedMatchPlayers.push({
                   id: returnedMatchPlayer.id,
-                })),
+                }),
               );
             } else {
               const [returningTeam] = await transaction
@@ -182,16 +183,17 @@ export const matchRouter = createTRPCRouter({
                 .insert(matchPlayer)
                 .values(playersToInsert)
                 .returning();
-              insertedMatchPlayers.concat(
-                returnedMatchPlayers.map((returnedMatchPlayer) => ({
+
+              returnedMatchPlayers.forEach((returnedMatchPlayer) =>
+                insertedMatchPlayers.push({
                   id: returnedMatchPlayer.id,
-                })),
+                }),
               );
             }
           }
         }
         if (
-          returnedScoresheet.rounds.length === 0 &&
+          returnedScoresheet.rounds.length > 0 &&
           insertedMatchPlayers.length > 0
         ) {
           const returnedRounds = returnedScoresheet.rounds.map<
@@ -223,6 +225,7 @@ export const matchRouter = createTRPCRouter({
         }
         return returningMatch;
       });
+      return response;
     }),
   getMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
