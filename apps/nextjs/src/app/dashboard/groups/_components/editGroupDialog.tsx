@@ -1,5 +1,3 @@
-"use client";
-
 import type { z } from "zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
