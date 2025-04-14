@@ -1010,6 +1010,25 @@ export const matchRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const returnedMatch = await ctx.db.query.match.findFirst({
+        where: {
+          id: input.match.id,
+          userId: ctx.userId,
+        },
+        with: {
+          scoresheet: {
+            with: {
+              rounds: true,
+            },
+          },
+        },
+      });
+      if (!returnedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Match not found.",
+        });
+      }
       //Update Match Details
       if (input.match.name || input.match.date) {
         await ctx.db
@@ -1054,18 +1073,13 @@ export const matchRouter = createTRPCRouter({
           ];
         }
         //Insert players into match
+
         const returnedMatchPlayers = await ctx.db
           .insert(matchPlayer)
           .values(playersToInsert)
           .returning();
-        const rounds = await ctx.db
-          .select({
-            id: round.id,
-          })
-          .from(round)
-          .innerJoin(scoresheet, eq(round.scoresheetId, scoresheet.id));
         const roundPlayersToInsert: z.infer<typeof insertRoundPlayerSchema>[] =
-          rounds.flatMap((round) => {
+          returnedMatch.scoresheet.rounds.flatMap((round) => {
             return returnedMatchPlayers.map((player) => ({
               roundId: round.id,
               matchPlayerId: player.id,
