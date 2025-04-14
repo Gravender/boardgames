@@ -93,7 +93,7 @@ export default function AddScoresheetModal({
               {
                 name: "Round 1",
                 type: "Numeric",
-                color: "#E2E2E2",
+                color: "#cbd5e1",
                 score: 0,
               },
             ],
@@ -331,7 +331,7 @@ export default function AddScoresheetModal({
                               name: `Round ${fields.length + 1}`,
                               type: round?.type ?? "Numeric",
                               score: round?.score,
-                              color: round?.color ?? "#E2E2E2",
+                              color: round?.color ?? "#cbd5e1",
                             });
                           }}
                         >
@@ -373,7 +373,7 @@ export default function AddScoresheetModal({
                       name: `Round ${fields.length + 1}`,
                       type: "Numeric",
                       score: 0,
-                      color: "#E2E2E2",
+                      color: "#cbd5e1",
                     })
                   }
                 >

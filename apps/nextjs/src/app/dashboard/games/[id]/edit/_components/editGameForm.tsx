@@ -152,7 +152,7 @@ export function EditGameForm({
                   roundId: null,
                   name: "Round 1",
                   type: "Numeric",
-                  color: "#E2E2E2",
+                  color: "#cbd5e1",
                   score: 0,
                   order: 0,
                 },

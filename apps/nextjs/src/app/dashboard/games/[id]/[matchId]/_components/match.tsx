@@ -98,16 +98,14 @@ export function Match({ matchId }: { matchId: number }) {
   const [duration, setDuration] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
-    if (match && isInitialLoad) {
+    if (match && match.scoresheet.rounds.length !== players[0]?.rounds.length) {
       setDuration(match.duration);
       setIsRunning(match.running);
       setPlayers(match.players);
-      setIsInitialLoad(false);
     }
-  }, [match, isInitialLoad]);
+  }, [match, players]);
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -599,14 +597,13 @@ const BodyRow = ({
           scope="row"
           className={cn(
             "sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg",
-            round.color &&
-              "text-slate-600 hover:opacity-50 hover:dark:opacity-80",
+            round.color && "over:opacity-50 hover:dark:opacity-80",
           )}
           style={{
             backgroundColor: round.color ?? "",
           }}
         >
-          {round.name}
+          <span style={{ WebkitTextStroke: "1px white" }}>{round.name}</span>
         </TableHead>
         {match.teams
           .filter((team) => players.find((player) => player.teamId === team.id))
@@ -1029,6 +1026,7 @@ const AddRoundDialogContent = ({
 }) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof RoundSchema>>({
@@ -1036,7 +1034,7 @@ const AddRoundDialogContent = ({
     defaultValues: {
       name: `Round ${match.scoresheet.rounds.length + 1}`,
       type: "Numeric",
-      color: "#E2E2E2",
+      color: "#cbd5e1",
       score: 0,
     },
   });
@@ -1044,10 +1042,11 @@ const AddRoundDialogContent = ({
   const addRound = useMutation(
     trpc.round.addRound.mutationOptions({
       onSuccess: async () => {
-        setIsSubmitting(false);
         await queryClient.invalidateQueries(
           trpc.match.getMatch.queryOptions({ id: match.id }),
         );
+        router.refresh();
+        setIsSubmitting(false);
         setOpen(false);
         form.reset();
       },
