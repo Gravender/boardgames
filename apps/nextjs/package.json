@@ -6,7 +6,7 @@
   "scripts": {
     "build": "pnpm with-env next build",
     "clean": "git clean -xdf .cache .next .turbo node_modules",
-    "dev": "pnpm with-env next dev ",
+    "dev": "pnpm with-env next dev --turbo",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
     "start": "pnpm with-env next start",
@@ -35,7 +35,7 @@
     "date-fns": "^4.1.0",
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",
-    "next": "^15.2.3",
+    "next": "^15.3",
     "react": "catalog:react19",
     "react-day-picker": "8.10.1",
     "react-dom": "catalog:react19",
