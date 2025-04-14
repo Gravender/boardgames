@@ -53,6 +53,11 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.sharedMatch.id,
       optional: false,
     }),
+    match: r.one.match({
+      from: r.sharedMatchPlayer.sharedMatchId.through(r.sharedMatch.id),
+      to: r.match.id.through(r.sharedMatch.matchId),
+      optional: false,
+    }),
   },
   round: {
     matchPlayers: r.many.matchPlayer({
@@ -312,9 +317,10 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.player.id,
     }),
     sharedMatches: r.many.sharedMatch({
-      from: r.sharedPlayer.playerId.through(r.matchPlayer.playerId),
-      to: r.sharedMatch.matchId.through(r.matchPlayer.matchId),
+      from: r.sharedPlayer.playerId.through(r.sharedMatchPlayer.sharedPlayerId),
+      to: r.sharedMatch.id.through(r.sharedMatchPlayer.sharedMatchId),
     }),
+
     sharedMatchPlayers: r.many.sharedMatchPlayer({
       from: r.sharedPlayer.playerId.through(r.matchPlayer.playerId),
       to: r.sharedMatchPlayer.matchPlayerId.through(r.matchPlayer.id),

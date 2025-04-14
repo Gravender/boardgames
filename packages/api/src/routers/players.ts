@@ -1,7 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
-import { compareAsc } from "date-fns";
-import { and, count, desc, eq, inArray, max, sql } from "drizzle-orm";
+import { compareAsc, compareDesc } from "date-fns";
+import { and, count, eq, inArray, max, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type { selectScoreSheetSchema } from "@board-games/db/zodSchema";
@@ -14,7 +14,6 @@ import {
   matchPlayer,
   player,
   roundPlayer,
-  sharedMatch,
 } from "@board-games/db/schema";
 import {
   insertPlayerSchema,
@@ -33,36 +32,53 @@ export const playerRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const sq = ctx.db
-        .select({
-          playerId: player.id,
-          matches: sql<number>`count(${match.id})`.as("matches"),
-          name: player.name,
-          imageId: player.imageId,
-        })
-        .from(player)
-        .leftJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
-        .leftJoin(
-          match,
-          and(
-            eq(match.id, matchPlayer.matchId),
-            eq(match.gameId, input.game.id),
-          ),
-        )
-        .where(and(eq(player.createdBy, ctx.userId)))
-        .groupBy(player.id)
-        .orderBy(desc(count(match.id)))
-        .as("sq");
-      const players = await ctx.db
-        .select({
-          playerId: sq.playerId,
-          matches: sq.matches,
-          name: sq.name,
-          imageUrl: image.url,
-        })
-        .from(image)
-        .rightJoin(sq, eq(image.id, sq.imageId));
-      if (players.length === 0) {
+      const playersQuery = await ctx.db.query.player.findMany({
+        where: {
+          createdBy: ctx.userId,
+        },
+        columns: {
+          id: true,
+          name: true,
+        },
+        with: {
+          image: {
+            columns: {
+              url: true,
+            },
+          },
+          matches: {
+            where: {
+              finished: true,
+              gameId: input.game.id,
+            },
+            columns: {
+              id: true,
+            },
+          },
+          sharedLinkedPlayers: {
+            with: {
+              sharedMatches: {
+                with: {
+                  match: {
+                    where: {
+                      finished: true,
+                    },
+                    columns: {
+                      id: true,
+                    },
+                  },
+                  sharedGame: {
+                    where: {
+                      linkedGameId: input.game.id,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      if (playersQuery.length === 0) {
         const user = await currentUser();
         await ctx.db.insert(player).values({
           createdBy: ctx.userId,
@@ -91,19 +107,24 @@ export const playerRouter = createTRPCRouter({
         };
         return [returnPlay];
       }
-      return players.map<{
-        id: number;
-        name: string;
-        matches: number;
-        imageUrl: string;
-      }>((player) => {
+      const mappedPlayers = playersQuery.map((player) => {
+        const linkedMatches = player.sharedLinkedPlayers
+          .flatMap((linkedPlayer) =>
+            linkedPlayer.sharedMatches.map(
+              (sharedMatch) =>
+                sharedMatch.match !== null && sharedMatch.sharedGame !== null,
+            ),
+          )
+          .filter((match) => match);
         return {
-          id: player.playerId,
+          id: player.id,
           name: player.name,
-          matches: player.matches,
-          imageUrl: player.imageUrl ?? "",
+          imageUrl: player.image?.url ?? 0,
+          matches: player.matches.length + linkedMatches.length,
         };
       });
+      mappedPlayers.sort((a, b) => a.matches - b.matches);
+      return mappedPlayers;
     }),
   getPlayersByGroup: protectedUserProcedure
     .input(
@@ -120,7 +141,7 @@ export const playerRouter = createTRPCRouter({
         .leftJoin(groupPlayer, eq(group.id, groupPlayer.groupId))
         .where(eq(group.id, input.group.id))
         .as("queriedGroup");
-      return ctx.db
+      const response = await ctx.db
         .select({
           id: player.id,
           name: player.name,
@@ -144,49 +165,98 @@ export const playerRouter = createTRPCRouter({
           sql<boolean>`MAX(${queriedGroup.playerId}) IS NOT NULL`.as("ingroup"),
           player.name,
         );
+      return response;
     }),
   getPlayers: protectedUserProcedure.query(async ({ ctx }) => {
-    const latestMatchesQuery = ctx.db
-      .select({
-        playerId: matchPlayer.playerId,
-        lastPlayed: match.date,
-        matches:
-          sql<number>`COUNT(${matchPlayer.id}) OVER (PARTITION BY ${matchPlayer.playerId})`.as(
-            "matches",
-          ),
-        gameName: game.name,
-        gameId: game.id,
-        rowNumber: sql<number>`ROW_NUMBER() OVER (
-      PARTITION BY ${matchPlayer.playerId}
-      ORDER BY ${match.date} DESC
-    )`.as("rowNumber"),
-      })
-      .from(matchPlayer)
-      .leftJoin(match, eq(match.id, matchPlayer.matchId))
-      .innerJoin(game, and(eq(game.id, match.gameId), eq(game.deleted, false)))
-      .as("latestMatches");
-    const players = await ctx.db
-      .select({
+    const playersQuery = await ctx.db.query.player.findMany({
+      columns: {
+        id: true,
+        name: true,
+      },
+      where: {
+        createdBy: ctx.userId,
+      },
+      with: {
+        image: true,
+        matches: {
+          columns: {
+            date: true,
+          },
+          with: {
+            game: {
+              columns: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: {
+            date: "desc",
+          },
+        },
+        sharedLinkedPlayers: {
+          with: {
+            sharedMatches: {
+              with: {
+                match: {
+                  where: {
+                    finished: true,
+                  },
+                  columns: {
+                    date: true,
+                  },
+                  with: {
+                    game: {
+                      columns: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const mappedPlayers = playersQuery.map((player) => {
+      const linkedMatches = player.sharedLinkedPlayers.flatMap((linkedPlayer) =>
+        linkedPlayer.sharedMatches
+          .map((sharedMatch) => sharedMatch.match)
+          .filter((match) => match !== null),
+      );
+      linkedMatches.sort((a, b) => compareDesc(a.date, b.date));
+      const firstPlayerMatch = player.matches[0];
+      const firstLinkedMatch = linkedMatches[0];
+      const getFirstMatch = () => {
+        if (firstPlayerMatch !== undefined && firstLinkedMatch !== undefined) {
+          return compareDesc(firstPlayerMatch.date, firstLinkedMatch.date) === 1
+            ? firstPlayerMatch
+            : firstLinkedMatch;
+        }
+        if (firstPlayerMatch !== undefined) {
+          return firstPlayerMatch;
+        }
+        if (firstLinkedMatch !== undefined) {
+          return firstLinkedMatch;
+        }
+
+        return null;
+      };
+      const firstMatch = getFirstMatch();
+
+      return {
         id: player.id,
-        matches: latestMatchesQuery.matches,
         name: player.name,
-        imageUrl: image.url,
-        lastPlayed: latestMatchesQuery.lastPlayed,
-        gameName: latestMatchesQuery.gameName,
-        gameId: latestMatchesQuery.gameId,
-      })
-      .from(player)
-      .leftJoin(image, eq(image.id, player.imageId))
-      .leftJoin(
-        latestMatchesQuery,
-        and(
-          eq(latestMatchesQuery.playerId, player.id),
-          eq(latestMatchesQuery.rowNumber, 1),
-        ),
-      )
-      .where(eq(player.createdBy, ctx.userId))
-      .orderBy(desc(latestMatchesQuery.matches));
-    return players;
+        imageUrl: player.image?.url,
+        matches: player.matches.length + linkedMatches.length,
+        lastPlayed: firstMatch?.date,
+        gameName: firstMatch?.game.name,
+        gameId: firstMatch?.game.id,
+      };
+    });
+    return mappedPlayers;
   }),
   getPlayer: protectedUserProcedure
     .input(selectPlayerSchema.pick({ id: true }))
