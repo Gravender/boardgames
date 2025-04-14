@@ -1234,7 +1234,10 @@ function MatchRequests({
                         </div>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
+                        <span
+                          className="flex items-center gap-1"
+                          suppressHydrationWarning
+                        >
                           <Calendar className="h-4 w-4" />
                           {format(matchItem.item.date, "d MMM yyyy")}
                         </span>

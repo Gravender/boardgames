@@ -38,6 +38,22 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.sharedMatchPlayer.matchPlayerId,
     }),
   },
+  sharedMatchPlayer: {
+    matchPlayer: r.one.matchPlayer({
+      from: r.sharedMatchPlayer.matchPlayerId,
+      to: r.matchPlayer.id,
+      optional: false,
+    }),
+    sharedPlayer: r.one.sharedPlayer({
+      from: r.sharedMatchPlayer.sharedPlayerId,
+      to: r.sharedPlayer.id,
+    }),
+    sharedMatch: r.one.sharedMatch({
+      from: r.sharedMatchPlayer.sharedMatchId,
+      to: r.sharedMatch.id,
+      optional: false,
+    }),
+  },
   round: {
     matchPlayers: r.many.matchPlayer({
       from: r.round.id.through(r.roundPlayer.roundId),

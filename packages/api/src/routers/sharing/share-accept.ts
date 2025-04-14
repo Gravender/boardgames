@@ -230,13 +230,33 @@ export const shareAcceptanceRouter = createTRPCRouter({
                   },
                 });
               if (!existingSharedMatchPlayer) {
-                await tx.insert(sharedMatchPlayer).values({
-                  ownerId: returnedMatchRequest.ownerId,
-                  sharedWithId: ctx.userId,
-                  matchPlayerId: matchPlayer.id,
-                  sharedMatchId: sharedMatchExists.id,
-                  permission: returnedMatchRequest.permission,
-                });
+                const sharedMatchPlayerExists =
+                  await tx.query.sharedMatchPlayer.findFirst({
+                    where: {
+                      ownerId: returnedMatchRequest.ownerId,
+                      sharedWithId: ctx.userId,
+                      matchPlayerId: matchPlayer.id,
+                      sharedMatchId: sharedMatchExists.id,
+                    },
+                  });
+                if (!sharedMatchPlayerExists) {
+                  const sharedPlayerExists =
+                    await tx.query.sharedPlayer.findFirst({
+                      where: {
+                        ownerId: returnedMatchRequest.ownerId,
+                        sharedWithId: ctx.userId,
+                        playerId: matchPlayer.playerId,
+                      },
+                    });
+                  await tx.insert(sharedMatchPlayer).values({
+                    ownerId: returnedMatchRequest.ownerId,
+                    sharedWithId: ctx.userId,
+                    matchPlayerId: matchPlayer.id,
+                    sharedPlayerId: sharedPlayerExists?.id ?? undefined,
+                    sharedMatchId: sharedMatchExists.id,
+                    permission: returnedMatchRequest.permission,
+                  });
+                }
               }
             }
           }
@@ -260,6 +280,20 @@ export const shareAcceptanceRouter = createTRPCRouter({
             where: {
               id: returnedPlayerRequest.itemId,
               createdBy: returnedPlayerRequest.ownerId,
+            },
+            with: {
+              matchPlayers: {
+                with: {
+                  sharedMatchPlayers: {
+                    where: {
+                      sharedPlayerId: {
+                        isNull: true,
+                      },
+                      sharedWithId: ctx.userId,
+                    },
+                  },
+                },
+              },
             },
           });
           if (!returnedPlayer) {
@@ -298,13 +332,37 @@ export const shareAcceptanceRouter = createTRPCRouter({
                   });
                 }
               }
-              await tx.insert(sharedPlayer).values({
-                ownerId: returnedPlayerRequest.ownerId,
-                sharedWithId: ctx.userId,
-                playerId: returnedPlayerRequest.itemId,
-                permission: returnedPlayerRequest.permission,
-                linkedPlayerId: playerShareRequest.linkedId,
-              });
+              const [returnedSharedPlayer] = await tx
+                .insert(sharedPlayer)
+                .values({
+                  ownerId: returnedPlayerRequest.ownerId,
+                  sharedWithId: ctx.userId,
+                  playerId: returnedPlayerRequest.itemId,
+                  permission: returnedPlayerRequest.permission,
+                  linkedPlayerId: playerShareRequest.linkedId,
+                })
+                .returning();
+              if (!returnedSharedPlayer) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: "Shared Player not created successfully",
+                });
+              }
+              for (const returnedSharedMatchPlayer of returnedPlayer.matchPlayers.flatMap(
+                (returnedMatchPlayer) => returnedMatchPlayer.sharedMatchPlayers,
+              )) {
+                await tx
+                  .update(sharedMatchPlayer)
+                  .set({
+                    sharedPlayerId: returnedSharedPlayer.id,
+                  })
+                  .where(
+                    and(
+                      eq(sharedMatchPlayer.sharedWithId, ctx.userId),
+                      eq(sharedMatchPlayer.id, returnedSharedMatchPlayer.id),
+                    ),
+                  );
+              }
             }
           }
         }
@@ -608,6 +666,20 @@ export const shareAcceptanceRouter = createTRPCRouter({
                 id: returnedPlayerRequest.itemId,
                 createdBy: returnedPlayerRequest.ownerId,
               },
+              with: {
+                matchPlayers: {
+                  with: {
+                    sharedMatchPlayers: {
+                      where: {
+                        sharedPlayerId: {
+                          isNull: true,
+                        },
+                        sharedWithId: ctx.userId,
+                      },
+                    },
+                  },
+                },
+              },
             });
             if (!returnedPlayer) {
               throw new TRPCError({
@@ -623,13 +695,37 @@ export const shareAcceptanceRouter = createTRPCRouter({
               },
             });
             if (!sharedPlayerExists) {
-              await tx.insert(sharedPlayer).values({
-                ownerId: returnedPlayerRequest.ownerId,
-                sharedWithId: ctx.userId,
-                playerId: returnedPlayerRequest.itemId,
-                permission: returnedPlayerRequest.permission,
-                linkedPlayerId: matchPlayer.linkedId,
-              });
+              const [returnedSharedPlayer] = await tx
+                .insert(sharedPlayer)
+                .values({
+                  ownerId: returnedPlayerRequest.ownerId,
+                  sharedWithId: ctx.userId,
+                  playerId: returnedPlayerRequest.itemId,
+                  permission: returnedPlayerRequest.permission,
+                  linkedPlayerId: matchPlayer.linkedId,
+                })
+                .returning();
+              if (!returnedSharedPlayer) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: "Shared Player not created successfully",
+                });
+              }
+              for (const returnedSharedMatchPlayer of returnedPlayer.matchPlayers.flatMap(
+                (returnedMatchPlayer) => returnedMatchPlayer.sharedMatchPlayers,
+              )) {
+                await tx
+                  .update(sharedMatchPlayer)
+                  .set({
+                    sharedPlayerId: returnedSharedPlayer.id,
+                  })
+                  .where(
+                    and(
+                      eq(sharedMatchPlayer.sharedWithId, ctx.userId),
+                      eq(sharedMatchPlayer.id, returnedSharedMatchPlayer.id),
+                    ),
+                  );
+              }
             }
           }
         }
@@ -657,13 +753,32 @@ export const shareAcceptanceRouter = createTRPCRouter({
               },
             });
           if (!existingSharedMatchPlayer) {
-            await tx.insert(sharedMatchPlayer).values({
-              ownerId: existingRequest.ownerId,
-              sharedWithId: ctx.userId,
-              matchPlayerId: matchPlayer.id,
-              sharedMatchId: sharedMatchExists.id,
-              permission: existingRequest.permission,
-            });
+            const sharedMatchPlayerExists =
+              await tx.query.sharedMatchPlayer.findFirst({
+                where: {
+                  ownerId: existingRequest.ownerId,
+                  sharedWithId: ctx.userId,
+                  matchPlayerId: matchPlayer.id,
+                  sharedMatchId: sharedMatchExists.id,
+                },
+              });
+            if (!sharedMatchPlayerExists) {
+              const sharedPlayerExists = await tx.query.sharedPlayer.findFirst({
+                where: {
+                  ownerId: existingRequest.ownerId,
+                  sharedWithId: ctx.userId,
+                  playerId: matchPlayer.playerId,
+                },
+              });
+              await tx.insert(sharedMatchPlayer).values({
+                ownerId: existingRequest.ownerId,
+                sharedWithId: ctx.userId,
+                matchPlayerId: matchPlayer.id,
+                sharedPlayerId: sharedPlayerExists?.id ?? undefined,
+                sharedMatchId: sharedMatchExists.id,
+                permission: existingRequest.permission,
+              });
+            }
           }
         }
         if (matchAndGame.gameId !== -1) {
@@ -740,6 +855,20 @@ export const shareAcceptanceRouter = createTRPCRouter({
             id: existingRequest.itemId,
             createdBy: existingRequest.ownerId,
           },
+          with: {
+            matchPlayers: {
+              with: {
+                sharedMatchPlayers: {
+                  where: {
+                    sharedPlayerId: {
+                      isNull: true,
+                    },
+                    sharedWithId: ctx.userId,
+                  },
+                },
+              },
+            },
+          },
         });
         if (!returnedPlayer) {
           throw new TRPCError({
@@ -778,6 +907,20 @@ export const shareAcceptanceRouter = createTRPCRouter({
                 id: returnedPlayerRequest.itemId,
                 createdBy: returnedPlayerRequest.ownerId,
               },
+              with: {
+                matchPlayers: {
+                  with: {
+                    sharedMatchPlayers: {
+                      where: {
+                        sharedPlayerId: {
+                          isNull: true,
+                        },
+                        sharedWithId: ctx.userId,
+                      },
+                    },
+                  },
+                },
+              },
             });
             if (!returnedPlayer) {
               throw new TRPCError({
@@ -785,7 +928,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
                 message: "Player not found.",
               });
             }
-            const sharedPlayerExists = await tx.query.sharedPlayer.findFirst({
+            let sharedPlayerExists = await tx.query.sharedPlayer.findFirst({
               where: {
                 ownerId: returnedPlayerRequest.ownerId,
                 sharedWithId: ctx.userId,
@@ -793,13 +936,38 @@ export const shareAcceptanceRouter = createTRPCRouter({
               },
             });
             if (!sharedPlayerExists) {
-              await tx.insert(sharedPlayer).values({
-                ownerId: returnedPlayerRequest.ownerId,
-                sharedWithId: ctx.userId,
-                playerId: returnedPlayerRequest.itemId,
-                permission: returnedPlayerRequest.permission,
-                linkedPlayerId: inputSharedPlayer.linkedId,
-              });
+              const [returnedSharedPlayer] = await tx
+                .insert(sharedPlayer)
+                .values({
+                  ownerId: returnedPlayerRequest.ownerId,
+                  sharedWithId: ctx.userId,
+                  playerId: returnedPlayerRequest.itemId,
+                  permission: returnedPlayerRequest.permission,
+                  linkedPlayerId: inputSharedPlayer.linkedId,
+                })
+                .returning();
+              if (!returnedSharedPlayer) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: "Shared Player not created successfully",
+                });
+              }
+              sharedPlayerExists = returnedSharedPlayer;
+            }
+            for (const returnedSharedMatchPlayer of returnedPlayer.matchPlayers.flatMap(
+              (returnedMatchPlayer) => returnedMatchPlayer.sharedMatchPlayers,
+            )) {
+              await tx
+                .update(sharedMatchPlayer)
+                .set({
+                  sharedPlayerId: sharedPlayerExists.id,
+                })
+                .where(
+                  and(
+                    eq(sharedMatchPlayer.sharedWithId, ctx.userId),
+                    eq(sharedMatchPlayer.id, returnedSharedMatchPlayer.id),
+                  ),
+                );
             }
           }
         }
@@ -928,13 +1096,33 @@ export const shareAcceptanceRouter = createTRPCRouter({
                       });
                     }
                     for (const returnedMatchPlayer of returnedMatch.matchPlayers) {
-                      await tx.insert(sharedMatchPlayer).values({
-                        ownerId: matchShareRequest.ownerId,
-                        sharedWithId: ctx.userId,
-                        matchPlayerId: returnedMatchPlayer.id,
-                        sharedMatchId: returnedSharedMatch.id,
-                        permission: matchShareRequest.permission,
-                      });
+                      const sharedMatchPlayerExists =
+                        await tx.query.sharedMatchPlayer.findFirst({
+                          where: {
+                            ownerId: matchShareRequest.ownerId,
+                            sharedWithId: ctx.userId,
+                            matchPlayerId: returnedMatchPlayer.id,
+                            sharedMatchId: returnedSharedMatch.id,
+                          },
+                        });
+                      if (!sharedMatchPlayerExists) {
+                        const sharedPlayerExists =
+                          await tx.query.sharedPlayer.findFirst({
+                            where: {
+                              ownerId: matchShareRequest.ownerId,
+                              sharedWithId: ctx.userId,
+                              playerId: returnedMatchPlayer.playerId,
+                            },
+                          });
+                        await tx.insert(sharedMatchPlayer).values({
+                          ownerId: matchShareRequest.ownerId,
+                          sharedWithId: ctx.userId,
+                          matchPlayerId: returnedMatchPlayer.id,
+                          sharedPlayerId: sharedPlayerExists?.id ?? undefined,
+                          sharedMatchId: returnedSharedMatch.id,
+                          permission: matchShareRequest.permission,
+                        });
+                      }
                     }
                   }
                 }
@@ -1071,13 +1259,33 @@ export const shareAcceptanceRouter = createTRPCRouter({
                       });
                     }
                     for (const returnedMatchPlayer of returnedMatch.matchPlayers) {
-                      await tx.insert(sharedMatchPlayer).values({
-                        ownerId: matchShareRequest.ownerId,
-                        sharedWithId: ctx.userId,
-                        matchPlayerId: returnedMatchPlayer.id,
-                        sharedMatchId: returnedSharedMatch.id,
-                        permission: matchShareRequest.permission,
-                      });
+                      const sharedMatchPlayerExists =
+                        await tx.query.sharedMatchPlayer.findFirst({
+                          where: {
+                            ownerId: matchShareRequest.ownerId,
+                            sharedWithId: ctx.userId,
+                            matchPlayerId: returnedMatchPlayer.id,
+                            sharedMatchId: returnedSharedMatch.id,
+                          },
+                        });
+                      if (!sharedMatchPlayerExists) {
+                        const sharedPlayerExists =
+                          await tx.query.sharedPlayer.findFirst({
+                            where: {
+                              ownerId: matchShareRequest.ownerId,
+                              sharedWithId: ctx.userId,
+                              playerId: returnedMatchPlayer.playerId,
+                            },
+                          });
+                        await tx.insert(sharedMatchPlayer).values({
+                          ownerId: matchShareRequest.ownerId,
+                          sharedWithId: ctx.userId,
+                          matchPlayerId: returnedMatchPlayer.id,
+                          sharedPlayerId: sharedPlayerExists?.id ?? undefined,
+                          sharedMatchId: returnedSharedMatch.id,
+                          permission: matchShareRequest.permission,
+                        });
+                      }
                     }
                   }
                 }
@@ -1100,6 +1308,21 @@ export const shareAcceptanceRouter = createTRPCRouter({
             code: "INTERNAL_SERVER_ERROR",
             message: "Shared player not created successfully",
           });
+        }
+        for (const returnedSharedMatchPlayer of returnedPlayer.matchPlayers.flatMap(
+          (returnedMatchPlayer) => returnedMatchPlayer.sharedMatchPlayers,
+        )) {
+          await tx
+            .update(sharedMatchPlayer)
+            .set({
+              sharedPlayerId: returnedSharedPlayer.id,
+            })
+            .where(
+              and(
+                eq(sharedMatchPlayer.sharedWithId, ctx.userId),
+                eq(sharedMatchPlayer.id, returnedSharedMatchPlayer.id),
+              ),
+            );
         }
         return returnedSharedPlayer;
       });
