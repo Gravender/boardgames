@@ -9,7 +9,7 @@ import { z } from "zod";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
-import { Button } from "@board-games/ui/button";
+import { Button, buttonVariants } from "@board-games/ui/button";
 import { CardFooter } from "@board-games/ui/card";
 import { Checkbox } from "@board-games/ui/checkbox";
 import {
@@ -21,7 +21,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { ScrollArea } from "@board-games/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@board-games/ui/tooltip";
 import { cn } from "@board-games/ui/utils";
 
 import { Spinner } from "~/components/spinner";
@@ -78,8 +84,8 @@ export default function SelectPlayersForm({
                       Select the players for the match
                     </FormDescription>
                   </div>
-                  <ScrollArea className="h-[65dvh] pt-0 sm:h-[75dvh] sm:p-6">
-                    <div className="flex flex-col gap-2 rounded-lg">
+                  <ScrollArea className="sm:p-6">
+                    <div className="grid max-h-[25rem] gap-2 rounded-lg sm:max-h-[40rem]">
                       {players.map((player) => (
                         <FormField
                           key={player.id}
@@ -90,7 +96,7 @@ export default function SelectPlayersForm({
                               <FormItem
                                 key={player.id}
                                 className={cn(
-                                  "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-2",
+                                  "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-1 sm:p-2",
                                   field.value.findIndex(
                                     (i) => i.id === player.id,
                                   ) > -1
@@ -117,8 +123,8 @@ export default function SelectPlayersForm({
                                     }}
                                   />
                                 </FormControl>
-                                <FormLabel className="flex w-full items-center justify-between gap-2 text-sm font-normal">
-                                  <div className="flex items-center gap-2">
+                                <FormLabel className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2">
+                                  <div className="flex items-center gap-1 sm:gap-2">
                                     <Avatar>
                                       <AvatarImage
                                         className="object-cover"
@@ -129,59 +135,99 @@ export default function SelectPlayersForm({
                                         <User />
                                       </AvatarFallback>
                                     </Avatar>
-                                    <span className="font-semibold sm:text-lg">
+                                    <span className="max-w-16 text-sm font-semibold sm:max-w-20 sm:text-lg">
                                       {player.name}
                                     </span>
                                   </div>
                                   {field.value.findIndex(
                                     (i) => i.id === player.id,
                                   ) > -1 && (
-                                    <div className="flex gap-1 sm:gap-2">
-                                      {Array.from({ length: 6 }).map(
-                                        (_, index) => (
-                                          <Button
-                                            key={index}
-                                            className="size-8 rounded-sm text-xs sm:size-10"
-                                            variant={
-                                              field.value.find(
-                                                (i) => i.id === player.id,
-                                              )?.team ===
-                                              index + 1
-                                                ? "default"
-                                                : "secondary"
-                                            }
-                                            onClick={(e) => {
-                                              e.preventDefault();
-                                              e.stopPropagation();
-                                              const foundPlayer =
-                                                field.value.find(
-                                                  (i) => i.id === player.id,
-                                                );
-                                              if (foundPlayer) {
-                                                if (
-                                                  foundPlayer.team ===
-                                                  index + 1
-                                                ) {
-                                                  foundPlayer.team = null;
-                                                } else {
-                                                  foundPlayer.team = index + 1;
-                                                }
+                                    <ScrollArea>
+                                      <div className="mr-auto flex max-w-40 gap-1 sm:max-w-60 sm:gap-2">
+                                        {Array.from({ length: 6 }).map(
+                                          (_, index) => (
+                                            <TooltipProvider key={index}>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Button
+                                                    className="size-8 rounded-sm text-xs sm:size-10"
+                                                    variant={
+                                                      field.value.find(
+                                                        (i) =>
+                                                          i.id === player.id,
+                                                      )?.team ===
+                                                      index + 1
+                                                        ? "default"
+                                                        : "secondary"
+                                                    }
+                                                    onClick={(e) => {
+                                                      e.preventDefault();
+                                                      e.stopPropagation();
+                                                      const foundPlayer =
+                                                        field.value.find(
+                                                          (i) =>
+                                                            i.id === player.id,
+                                                        );
+                                                      if (foundPlayer) {
+                                                        if (
+                                                          foundPlayer.team ===
+                                                          index + 1
+                                                        ) {
+                                                          foundPlayer.team =
+                                                            null;
+                                                        } else {
+                                                          foundPlayer.team =
+                                                            index + 1;
+                                                        }
 
-                                                update(
-                                                  field.value.findIndex(
-                                                    (i) => i.id === player.id,
-                                                  ),
-                                                  foundPlayer,
-                                                );
-                                              }
-                                            }}
-                                          >
-                                            {index + 1}
-                                          </Button>
-                                        ),
-                                      )}
-                                    </div>
+                                                        update(
+                                                          field.value.findIndex(
+                                                            (i) =>
+                                                              i.id ===
+                                                              player.id,
+                                                          ),
+                                                          foundPlayer,
+                                                        );
+                                                      }
+                                                    }}
+                                                  >
+                                                    {index + 1}
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>
+                                                    Add Player to Team{" "}
+                                                    {index + 1}
+                                                  </p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </TooltipProvider>
+                                          ),
+                                        )}
+                                      </div>
+                                      <ScrollBar orientation="horizontal" />
+                                    </ScrollArea>
                                   )}
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <div
+                                          className={buttonVariants({
+                                            variant: "default",
+                                            size: "icon",
+                                          })}
+                                        >
+                                          {player.matches}
+                                        </div>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>
+                                          Player's previous matches for this
+                                          game
+                                        </p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                 </FormLabel>
                               </FormItem>
                             );
