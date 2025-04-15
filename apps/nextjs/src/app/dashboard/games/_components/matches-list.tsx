@@ -425,11 +425,14 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
       </div>
 
       {/* Matches list */}
-      <ScrollArea className="h-[65vh] sm:h-[65vh]">
-        <div className="grid gap-2">
+      <ScrollArea className="h-[50vh] xs:h-[60vh] sm:h-[65vh]">
+        <div className="grid gap-2 pb-20">
           {filteredMatches.length > 0 ? (
             filteredMatches.map((match) => (
-              <Card key={match.id} className="overflow-hidden">
+              <Card
+                key={`${match.type}-${match.id}`}
+                className="overflow-hidden"
+              >
                 <CardContent className="p-0">
                   <div className="flex flex-row">
                     {/* Match outcome indicator */}
