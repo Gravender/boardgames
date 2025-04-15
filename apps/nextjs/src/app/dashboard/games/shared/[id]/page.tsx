@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
-import { prefetch, trpc } from "~/trpc/server";
+import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { GamePageSkeleton } from "../../_components/game-page-skeleton";
 import SharedGameDetails from "./_components/share-game-details";
 
@@ -18,10 +18,12 @@ export default async function SharedGamePage({ params }: Props) {
   );
   void prefetch(trpc.location.getDefaultLocation.queryOptions());
   return (
-    <div className="container px-3 py-1 md:px-6 md:py-2">
-      <Suspense fallback={<GamePageSkeleton />}>
-        <SharedGameDetails gameId={Number(id)} />
-      </Suspense>
-    </div>
+    <HydrateClient>
+      <div className="container px-3 py-1 md:px-6 md:py-2">
+        <Suspense fallback={<GamePageSkeleton />}>
+          <SharedGameDetails gameId={Number(id)} />
+        </Suspense>
+      </div>
+    </HydrateClient>
   );
 }
