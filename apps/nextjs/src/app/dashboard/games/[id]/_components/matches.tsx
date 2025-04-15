@@ -14,8 +14,8 @@ import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
 import { useTRPC } from "~/trpc/react";
+import { MatchDropDown } from "../../_components/matchesDropDown";
 import { AddMatchDialog } from "./addMatch";
-import { MatchDropDown } from "./matchesDropDown";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 
