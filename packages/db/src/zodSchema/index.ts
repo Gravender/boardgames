@@ -16,6 +16,7 @@ import {
   scoresheet,
   sharedGame,
   sharedMatch,
+  sharedMatchPlayer,
   sharedPlayer,
   sharedScoresheet,
   shareRequest,
@@ -92,3 +93,9 @@ export const insertUserSharingPreferenceSchema = createInsertSchema(
 export const selectUserSharingPreferenceSchema = createSelectSchema(
   userSharingPreference,
 );
+
+export const insertSharedMatchPlayerSchema =
+  createInsertSchema(sharedMatchPlayer);
+
+export const selectSharedMatchPlayerSchema =
+  createSelectSchema(sharedMatchPlayer);
