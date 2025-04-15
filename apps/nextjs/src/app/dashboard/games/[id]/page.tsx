@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
-import { Table, TableBody } from "@board-games/ui/table";
-
 import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
-import { Matches, MatchSkeleton } from "./_components/matches";
+import { GamePageSkeleton } from "../_components/game-page-skeleton";
+import GameDetails from "./_components/game-detail";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -40,21 +39,9 @@ export default async function Page({ params }: Props) {
   void prefetch(trpc.location.getDefaultLocation.queryOptions());
   return (
     <HydrateClient>
-      <div className="flex w-full items-center justify-center">
-        <Suspense
-          fallback={
-            <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
-              <Table className="flex flex-col gap-2">
-                <TableBody>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <MatchSkeleton key={i} />
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          }
-        >
-          <Matches gameId={Number(id)} />
+      <div className="container px-3 py-1 md:px-6 md:py-2">
+        <Suspense fallback={<GamePageSkeleton />}>
+          <GameDetails gameId={Number(id)} />
         </Suspense>
       </div>
     </HydrateClient>

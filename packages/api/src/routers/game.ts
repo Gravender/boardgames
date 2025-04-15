@@ -9,6 +9,8 @@ import type {
   insertMatchSchema,
   insertPlayerSchema,
   insertRoundPlayerSchema,
+  selectRoundSchema,
+  selectScoreSheetSchema,
 } from "@board-games/db/zodSchema";
 import {
   game,
@@ -186,6 +188,7 @@ export const gameRouter = createTRPCRouter({
         return {
           type: "shared" as const,
           id: mMatch.id,
+          gameId: mMatch.sharedGameId,
           date: mMatch.match.date,
           name: mMatch.match.name,
           finished: mMatch.match.finished,
@@ -218,6 +221,7 @@ export const gameRouter = createTRPCRouter({
           ...result.matches.map<{
             type: "shared" | "original";
             id: number;
+            gameId: number;
             date: Date;
             name: string;
             finished: boolean;
@@ -228,6 +232,7 @@ export const gameRouter = createTRPCRouter({
             return {
               type: "original" as const,
               id: match.id,
+              gameId: match.gameId,
               date: match.date,
               won:
                 match.matchPlayers.findIndex(
@@ -303,24 +308,45 @@ export const gameRouter = createTRPCRouter({
           },
         },
       });
-      const mappedLinkedScoresheet = linkedGames.flatMap((linkedGame) => {
-        return linkedGame.sharedScoresheets.map((returnedSharedScoresheet) => {
+      /*  const mappedLinkedScoresheet: {
+        scoresheetType: "shared";
+        id: number;
+        name: string;
+        type: z.infer<typeof selectScoreSheetSchema>["type"];
+      }[] = linkedGames
+        .flatMap((linkedGame) => {
+          return linkedGame.sharedScoresheets.map(
+            (returnedSharedScoresheet) => {
+              if (!returnedSharedScoresheet.scoresheet) {
+                return null;
+              }
+              return {
+                scoresheetType: "shared" as const,
+                id: returnedSharedScoresheet.id,
+                name: returnedSharedScoresheet.scoresheet.name,
+                type: returnedSharedScoresheet.scoresheet.type,
+              };
+            },
+          );
+        })
+        .filter((scoresheet) => scoresheet !== null); */
+      //TODO add Shared scoresheets for now
+      const mappedScoresheets: {
+        scoresheetType: "shared" | "original";
+        id: number;
+        name: string;
+        type: z.infer<typeof selectScoreSheetSchema>["type"];
+      }[] = [
+        ...returnedScoresheets.map((returnedScoresheet) => {
           return {
-            scoresheetType: "shared",
-            shareId: returnedSharedScoresheet.id,
-            ...returnedSharedScoresheet.scoresheet,
-          };
-        });
-      });
-      return [
-        returnedScoresheets.map((returnedScoresheets) => {
-          return {
-            scoresheetType: "original",
-            ...returnedScoresheets,
+            scoresheetType: "original" as const,
+            id: returnedScoresheet.id,
+            name: returnedScoresheet.name,
+            type: returnedScoresheet.type,
           };
         }),
-        ...mappedLinkedScoresheet,
       ];
+      return mappedScoresheets;
     }),
   getEditGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))
