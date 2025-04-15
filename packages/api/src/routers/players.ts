@@ -107,7 +107,12 @@ export const playerRouter = createTRPCRouter({
         };
         return [returnPlay];
       }
-      const mappedPlayers = playersQuery.map((player) => {
+      const mappedPlayers: {
+        id: number;
+        name: string;
+        imageUrl: string | null;
+        matches: number;
+      }[] = playersQuery.map((player) => {
         const linkedMatches = player.sharedLinkedPlayers
           .flatMap((linkedPlayer) =>
             linkedPlayer.sharedMatches.map(
@@ -119,7 +124,7 @@ export const playerRouter = createTRPCRouter({
         return {
           id: player.id,
           name: player.name,
-          imageUrl: player.image?.url ?? 0,
+          imageUrl: player.image?.url ?? null,
           matches: player.matches.length + linkedMatches.length,
         };
       });

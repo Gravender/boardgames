@@ -128,7 +128,7 @@ export default function SelectPlayersForm({
                                     <Avatar>
                                       <AvatarImage
                                         className="object-cover"
-                                        src={player.imageUrl}
+                                        src={player.imageUrl ?? ""}
                                         alt={player.name}
                                       />
                                       <AvatarFallback className="bg-slate-300">
