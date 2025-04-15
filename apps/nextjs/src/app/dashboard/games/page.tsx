@@ -10,7 +10,7 @@ export default function Page() {
   return (
     <HydrateClient>
       <div className="container flex items-center justify-center px-4 md:px-6">
-        <div className="relative h-[90vh] max-w-3xl px-1 sm:px-4">
+        <div className="relative h-[90vh] w-full max-w-3xl px-1 sm:px-4">
           <Suspense fallback={<GamesListSkeleton />}>
             <GamesData />
           </Suspense>
