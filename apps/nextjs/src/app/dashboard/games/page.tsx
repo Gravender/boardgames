@@ -1,39 +1,18 @@
 import { Suspense } from "react";
 
-import { CardHeader, CardTitle } from "@board-games/ui/card";
-import { Table, TableBody } from "@board-games/ui/table";
-
 import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { AddGameDialog } from "./_components/addGameDialog";
-import { Games, GameSkeleton } from "./_components/games";
-
-function GamesContentFallback() {
-  return (
-    <>
-      <CardHeader>
-        <CardTitle>Games</CardTitle>
-      </CardHeader>
-      <div className="h-[75vh] sm:h-[80vh]">
-        <Table className="hidden pb-14 xs:block">
-          <TableBody className="flex w-full flex-col gap-2 pb-14 xs:p-4 xs:pb-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <GameSkeleton key={i} />
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </>
-  );
-}
+import { GamesData } from "./_components/games-list";
+import { GamesListSkeleton } from "./_components/games-list-skeleton";
 
 export default function Page() {
   void prefetch(trpc.game.getGames.queryOptions());
   return (
     <HydrateClient>
-      <div className="flex w-full items-center justify-center">
-        <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
-          <Suspense fallback={<GamesContentFallback />}>
-            <Games />
+      <div className="container flex items-center justify-center px-4 md:px-6">
+        <div className="relative h-[90vh] max-w-3xl px-1 sm:px-4">
+          <Suspense fallback={<GamesListSkeleton />}>
+            <GamesData />
           </Suspense>
           <div className="absolute bottom-4 right-6 z-10 sm:right-10">
             <AddGameDialog />
