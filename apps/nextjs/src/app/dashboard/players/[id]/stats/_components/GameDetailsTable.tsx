@@ -112,9 +112,14 @@ export function GameDetails({ data }: { data: Games }) {
                         <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
                       )}
                     </div>
-                    <span className="font-medium sm:font-semibold">
-                      {game.name}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium sm:font-semibold">
+                        {game.name}
+                      </span>
+                      {game.type === "Shared" && (
+                        <span className="text-muted-foreground">(Shared)</span>
+                      )}
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell>{game.plays}</TableCell>

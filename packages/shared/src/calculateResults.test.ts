@@ -1,7 +1,7 @@
 import type { z } from "zod";
 import { describe, expect, it } from "vitest";
 
-import type { insertScoreSheetSchema } from "@board-games/db/schema";
+import type { insertScoreSheetSchema } from "@board-games/db/zodSchema";
 
 import {
   calculateFinalScore,

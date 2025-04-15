@@ -19,16 +19,7 @@ export default async function Page({
 
   return (
     <HydrateClient>
-      <PlayersTable
-        gameId={Number(id)}
-        data={players.map((player) => ({
-          id: player.id,
-          name: player.name,
-          imageUrl: player.imageUrl,
-          matches: Number(player.matches),
-        }))}
-      />
-      ;
+      <PlayersTable gameId={Number(id)} data={players} />;
     </HydrateClient>
   );
 }

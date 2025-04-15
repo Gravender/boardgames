@@ -50,6 +50,7 @@ export function MatchDropDown({
   const onDelete = () => {
     deleteMatch.mutate({ id: match.id });
   };
+  //TODO add shared match support
   return (
     <Dialog>
       <DropdownMenu>
@@ -60,28 +61,32 @@ export function MatchDropDown({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem asChild>
-            <Link href={`/dashboard/games/${gameId}/${match.id}/edit`}>
-              Edit
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href={`/dashboard/games/${gameId}/${match.id}`}>
-              ScoreSheet
-            </Link>
-          </DropdownMenuItem>
-          {match.finished && (
-            <DropdownMenuItem asChild>
-              <Link href={`/dashboard/games/${gameId}/${match.id}/summary`}>
-                Summary
-              </Link>
-            </DropdownMenuItem>
+          {match.type === "original" && (
+            <>
+              <DropdownMenuItem asChild>
+                <Link href={`/dashboard/games/${gameId}/${match.id}/edit`}>
+                  Edit
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/dashboard/games/${gameId}/${match.id}`}>
+                  ScoreSheet
+                </Link>
+              </DropdownMenuItem>
+              {match.finished && (
+                <DropdownMenuItem asChild>
+                  <Link href={`/dashboard/games/${gameId}/${match.id}/summary`}>
+                    Summary
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              <DialogTrigger asChild>
+                <DropdownMenuItem className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground">
+                  Delete
+                </DropdownMenuItem>
+              </DialogTrigger>
+            </>
           )}
-          <DialogTrigger asChild>
-            <DropdownMenuItem className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground">
-              Delete
-            </DropdownMenuItem>
-          </DialogTrigger>
         </DropdownMenuContent>
       </DropdownMenu>
       <DialogContent className="sm:max-w-md">

@@ -1,5 +1,3 @@
-"use client";
-
 import type { z } from "zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -8,7 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
 import type { RouterOutputs } from "@board-games/api";
-import { insertGroupSchema } from "@board-games/db/schema";
+import { insertGroupSchema } from "@board-games/db/zodSchema";
 import { Button } from "@board-games/ui/button";
 import {
   DialogContent,
@@ -128,7 +126,7 @@ const GroupContent = ({
                 <span>Navigating...</span>
               </>
             ) : (
-              `${group.groupsByPlayer.length} Players`
+              `${group.players.length} Players`
             )}
           </Button>
           <DialogFooter className="gap-2">

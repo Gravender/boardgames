@@ -1,6 +1,5 @@
 "use client";
 
-/* eslint-disable react-compiler/react-compiler */
 import type { ReactNode } from "react";
 import { createContext, useContext, useRef } from "react";
 import { useStore } from "zustand";
@@ -22,9 +21,7 @@ export const AddGroupStoreProvider = ({
   children,
 }: AddGroupStoreProviderProps) => {
   const storeRef = useRef<AddGroupStoreApi>(null);
-  if (!storeRef.current) {
-    storeRef.current = createAddGroupStore();
-  }
+  storeRef.current ??= createAddGroupStore();
 
   return (
     <AddGroupStoreContext.Provider value={storeRef.current}>

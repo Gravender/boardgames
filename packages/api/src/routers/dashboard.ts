@@ -26,7 +26,7 @@ export const dashboardRouter = {
     .query(async ({ ctx, input }) => {
       if (input.type === "games") {
         const result = await ctx.db.query.game.findFirst({
-          where: eq(game.id, input.path),
+          where: { id: input.path },
           columns: {
             id: true,
             name: true,
@@ -39,7 +39,7 @@ export const dashboardRouter = {
       }
       if (input.type === "players") {
         const result = await ctx.db.query.player.findFirst({
-          where: eq(player.id, input.path),
+          where: { id: input.path },
           columns: {
             id: true,
             name: true,
@@ -52,7 +52,7 @@ export const dashboardRouter = {
       }
       if (input.type === "match") {
         const result = await ctx.db.query.match.findFirst({
-          where: eq(match.id, input.path),
+          where: { id: input.path },
           with: {
             game: true,
           },
@@ -67,7 +67,7 @@ export const dashboardRouter = {
       }
       if (input.type === "groups") {
         const result = await ctx.db.query.group.findFirst({
-          where: eq(group.id, input.path),
+          where: { id: input.path },
         });
         if (result)
           return {

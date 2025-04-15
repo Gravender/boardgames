@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -7,10 +7,8 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
-import matches from "./match";
 import user from "./user";
 
 const locations = createTable(
@@ -31,16 +29,5 @@ const locations = createTable(
   },
   (table) => [index("boardgames_location_name_index").on(table.name)],
 );
-
-export const locationRelations = relations(locations, ({ one, many }) => ({
-  createdBy: one(user, {
-    fields: [locations.createdBy],
-    references: [user.id],
-  }),
-  matches: many(matches),
-}));
-export const insertLocationSchema = createInsertSchema(locations);
-
-export const selectLocationSchema = createSelectSchema(locations);
 
 export default locations;

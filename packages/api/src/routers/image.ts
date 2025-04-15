@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
-import { image, insertImageSchema } from "@board-games/db/schema";
+import { image } from "@board-games/db/schema";
+import { insertImageSchema } from "@board-games/db/zodSchema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 

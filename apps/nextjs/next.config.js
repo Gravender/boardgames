@@ -19,7 +19,6 @@ let nextConfig = {
   },
   transpilePackages: [
     "@board-games/api",
-    "@board-games/auth",
     "@board-games/db",
     "@board-games/ui",
     "@board-games/shared",

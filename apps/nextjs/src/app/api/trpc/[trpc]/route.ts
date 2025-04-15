@@ -1,5 +1,4 @@
 import type { NextRequest } from "next/server";
-import { redirect } from "next/navigation";
 import { getAuth } from "@clerk/nextjs/server";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
@@ -31,9 +30,6 @@ const handler = (req: NextRequest) =>
             console.error(
               `❌ tRPC failed on ${path ?? "<no-path>"}: ${error.message}`,
             );
-            if (error.code === "NOT_FOUND") {
-              redirect("/dashboard");
-            }
           }
         : undefined,
   });

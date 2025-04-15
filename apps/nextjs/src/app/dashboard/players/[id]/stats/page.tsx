@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
-import { Dices, User } from "lucide-react";
+import { Calendar, Dices, MapPin, User } from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
 import {
@@ -31,7 +31,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const player = await caller.player.getPlayer({
     id: Number(id),
   });
-  if (!player) return { title: "Player" };
   if (!player.imageUrl)
     return {
       title: `${player.name}'s Stats`,
@@ -56,7 +55,6 @@ export default async function Page({ params }: Props) {
   const player = await caller.player.getPlayer({
     id: Number(playerId),
   });
-  if (player === null) redirect("/dashboard/players");
   const lastPlayed = player.matches[0];
   return (
     <div className="flex w-full items-center justify-center">
@@ -117,7 +115,12 @@ export default async function Page({ params }: Props) {
                     <span>{(player.winRate * 100).toFixed(2)}%</span>
                   </div>
                 </div>
-                <div className="flex w-24 items-center gap-2"></div>
+                <div className="flex w-24 flex-col items-center gap-2">
+                  <h4 className="font-medium">Wins:</h4>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>{player.wins}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -145,11 +148,25 @@ export default async function Page({ params }: Props) {
                       {lastPlayed.gameName}
                     </span>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium">Play Date:</h4>
-                      <div className="flex justify-between text-muted-foreground">
-                        <span suppressHydrationWarning>
+                      <div className="flex flex-col gap-2 text-muted-foreground">
+                        <span
+                          className="flex items-center gap-1"
+                          suppressHydrationWarning
+                        >
+                          <Calendar className="h-4 w-4" />
                           {format(lastPlayed.date, "d MMM yyyy")}
                         </span>
+                        {lastPlayed.locationName && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-4 w-4" />
+                            {lastPlayed.locationName}
+                          </span>
+                        )}
+                        {lastPlayed.type === "Shared" && (
+                          <span className="flex items-center gap-1">
+                            Shared Match
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -225,7 +242,7 @@ export default async function Page({ params }: Props) {
                   <div className="flex space-x-4 p-1 sm:p-4">
                     {player.matches.map((match) => (
                       <Link
-                        href={`/dashboard/games/${match.gameId}/${match.id}/summary`}
+                        href={`/dashboard/games/${match.type === "Shared" ? "shared/" : ""}${match.gameId}/${match.id}/summary`}
                         className="flex shrink-0 flex-col items-center gap-2 text-sm text-secondary-foreground"
                         key={match.id}
                       >

@@ -1,0 +1,95 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { BarChart2, Dice1Icon as Dice, Dices } from "lucide-react";
+
+import { Badge } from "@board-games/ui/badge";
+import { Button } from "@board-games/ui/button";
+
+import { useTRPC } from "~/trpc/react";
+import { GameDetails as GameDetailsComponent } from "../../_components/game-details";
+import { MatchesList } from "../../_components/matches-list";
+import { AddMatchDialog } from "./addMatch";
+
+export default function GameDetails({ gameId }: { gameId: number }) {
+  const trpc = useTRPC();
+  const { data: game } = useSuspenseQuery(
+    trpc.game.getGame.queryOptions({ id: gameId }),
+  );
+  const router = useRouter();
+  if (!game) {
+    router.back();
+    return <div>Not Found</div>;
+  }
+
+  return (
+    <div className="space-y-6 md:space-y-8">
+      {/* Game details section */}
+      <div className="flex flex-row gap-2 sm:gap-4 md:gap-6">
+        {/* Game image - smaller on mobile */}
+        <div className="mx-auto hidden xs:block xs:w-1/3 sm:w-1/4 md:mx-0 md:w-1/5 lg:w-1/6">
+          <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-lg border shadow">
+            {game.imageUrl ? (
+              <Image
+                fill
+                src={game.imageUrl}
+                alt={`${game.name} game image`}
+                className="aspect-square h-full w-full rounded-md object-cover"
+              />
+            ) : (
+              <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
+            )}
+          </div>
+        </div>
+
+        {/* Game info - more compact on mobile */}
+        <div className="flex-1">
+          <div className="mb-2 flex items-center justify-between">
+            <h1 className="text-2xl font-bold md:text-3xl">{game.name}</h1>
+            {game.ownedBy && (
+              <Badge variant="outline" className="bg-green-600 text-white">
+                Owned
+              </Badge>
+            )}
+          </div>
+          <div className="pb-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                href={`/dashboard/games/${game.id}/stats`}
+                className="flex items-center"
+              >
+                <BarChart2 className="mr-2 h-4 w-4" />
+                View Statistics
+              </Link>
+            </Button>
+          </div>
+
+          <GameDetailsComponent
+            players={game.players}
+            playtime={game.playtime}
+            yearPublished={game.yearPublished}
+            matchesCount={game.matches.length}
+          />
+        </div>
+      </div>
+
+      {/* Match history section - more compact header on mobile */}
+      <div className="relative">
+        <div className="mb-3 flex items-center justify-between md:mb-4">
+          <h2 className="text-xl font-semibold md:text-2xl">Match History</h2>
+        </div>
+        <MatchesList matches={game.matches} />
+        <div className="absolute bottom-4 right-6 z-10 sm:right-10">
+          <AddMatchDialog
+            gameId={gameId}
+            gameName={game.name ?? "Game"}
+            matches={game.matches.length ?? 0}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
