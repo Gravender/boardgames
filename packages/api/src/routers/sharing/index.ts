@@ -1,5 +1,6 @@
 import { mergeRouters } from "../../trpc";
 import { shareAcceptanceRouter } from "./share-accept";
+import { shareGameRouter } from "./share-game";
 import { shareLinkRouter } from "./share-link";
 import { shareLinkingRouter } from "./share-linking";
 import { shareMetaRouter } from "./share-meta";
@@ -11,4 +12,5 @@ export const sharingRouter = mergeRouters(
   shareLinkingRouter,
   shareMetaRouter,
   shareRequestRouter,
+  shareGameRouter,
 );
