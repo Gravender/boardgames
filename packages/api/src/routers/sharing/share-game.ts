@@ -295,6 +295,7 @@ export const shareGameRouter = createTRPCRouter({
       matches.sort((a, b) => compareAsc(a.date, b.date));
       const players = matches.reduce(
         (acc, match) => {
+          if (!match.finished) return acc;
           match.players.forEach((player) => {
             const accPlayer = acc[player.id];
             if (!accPlayer) {
@@ -316,7 +317,6 @@ export const shareGameRouter = createTRPCRouter({
             } else {
               accPlayer.plays++;
               if (player.isWinner) accPlayer.wins++;
-              accPlayer.winRate = accPlayer.wins / accPlayer.plays;
               if (match.scoresheet.winCondition === "Highest Score") {
                 accPlayer.bestScore = Math.max(
                   accPlayer.bestScore ?? 0,
@@ -360,10 +360,24 @@ export const shareGameRouter = createTRPCRouter({
           }
         >,
       );
+
       const duration = matches.reduce((acc, match) => {
         return acc + match.duration;
       }, 0);
       const linkedGame = returnedGame.linkedGame;
+
+      const userMatches = matches.filter((match) =>
+        match.players.some((p) => p.isUser),
+      );
+
+      const finishedUserMatches = userMatches.filter((match) => match.finished);
+      const wonMatches = finishedUserMatches.filter(
+        (match) => match.won,
+      ).length;
+      const totalMatches = finishedUserMatches.length;
+
+      const userWinRate =
+        totalMatches > 0 ? Math.round((wonMatches / totalMatches) * 100) : 0;
       return {
         id: returnedGame.id,
         name: linkedGame ? linkedGame.name : returnedGame.game.name,
@@ -376,7 +390,13 @@ export const shareGameRouter = createTRPCRouter({
         ownedBy: linkedGame ? linkedGame.ownedBy : returnedGame.game.ownedBy,
         matches: matches,
         duration: duration,
-        players: Object.values(players),
+        players: Object.values(players).map((player) => ({
+          ...player,
+          winRate: player.wins / player.plays,
+        })),
+        winRate: userWinRate,
+        totalMatches: totalMatches,
+        wonMatches: wonMatches,
       };
     }),
 });

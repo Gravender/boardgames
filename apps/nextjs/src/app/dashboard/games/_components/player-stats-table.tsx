@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, User } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
+import { Badge } from "@board-games/ui/badge";
 import {
   Card,
   CardContent,
@@ -21,12 +22,14 @@ import {
   TableRow,
 } from "@board-games/ui/table";
 
-type Players = NonNullable<
-  RouterOutputs["sharing"]["getShareGameStats"]
->["players"];
+type Player =
+  | NonNullable<
+      RouterOutputs["sharing"]["getShareGameStats"]
+    >["players"][number]
+  | NonNullable<RouterOutputs["game"]["getGameStats"]>["players"][number];
 type SortField = "name" | "plays" | "wins" | "winRate";
 type SortOrder = "asc" | "desc";
-export function PlayerStatsTable({ data }: { data: Players }) {
+export function PlayerStatsTable({ data }: { data: Player[] }) {
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
@@ -126,6 +129,22 @@ export function PlayerStatsTable({ data }: { data: Players }) {
                         <span className="font-medium sm:font-semibold">
                           {player.name}
                         </span>
+                        {player.type === "shared" && (
+                          <>
+                            <Badge
+                              variant="outline"
+                              className="bg-blue-600 px-1 text-xs text-white xs:hidden"
+                            >
+                              S
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className="hidden bg-blue-600 text-xs text-white xs:inline-flex"
+                            >
+                              Shared
+                            </Badge>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>{player.plays}</TableCell>

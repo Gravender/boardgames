@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
@@ -43,13 +44,11 @@ import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 
 import { useTRPC } from "~/trpc/react";
-import { MatchDurationTrendChart } from "../../../../_components/match-duration-trend-chart";
-import { PlayerStatsTable } from "../../../../_components/player-stats-table";
-import { WinLoseRatioChart } from "../../../../_components/win-lose-chart";
+import { MatchDurationTrendChart } from "../../../_components/match-duration-trend-chart";
+import { PlayerStatsTable } from "../../../_components/player-stats-table";
+import { WinLoseRatioChart } from "../../../_components/win-lose-chart";
 
-// Colors for charts
-
-// Helper function to get ordinal suffix
+// Add at the top of the file, below the imports
 function getOrdinalSuffix(number: number): string {
   if (number % 100 >= 11 && number % 100 <= 13) {
     return "th";
@@ -66,20 +65,25 @@ function getOrdinalSuffix(number: number): string {
   }
 }
 
-// Helper function to get day of week
-
-export default function SharedGameStats({ gameId }: { gameId: number }) {
+export default function GameStats({ gameId }: { gameId: number }) {
   const trpc = useTRPC();
   const { data: gameStats } = useSuspenseQuery(
-    trpc.sharing.getShareGameStats.queryOptions({ id: gameId }),
+    trpc.game.getGameStats.queryOptions({ id: gameId }),
   );
-  // Calculate overall stats\
+  const router = useRouter();
+  if (gameStats === null) {
+    router.push("/dashboard/games");
+    return null;
+  }
+
+  // Calculate overall stats
   const finishedMatches = gameStats.matches.filter((match) => match.finished);
   const totalMatches = gameStats.totalMatches;
   const averageDuration = Math.round(gameStats.duration / 60); // Convert seconds to minutes
   const totalPlayers = gameStats.players.length;
   const lastMatch = finishedMatches[0]; // Assuming matches are sorted with most recent first
 
+  // Prepare data for charts
   const winLossData = [
     { name: "Won", value: gameStats.wonMatches },
     { name: "Lost", value: gameStats.totalMatches - gameStats.wonMatches },
@@ -94,8 +98,9 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
 
   // Current player (you) data
   const currentPlayer = gameStats.players.find((p) => p.isUser);
-
+  console.log(gameStats.players.filter((p) => p.isUser));
   // Score over time data
+
   const scoreOverTimeData = [...gameStats.matches]
     .reverse() // Show chronological order
     .map((match) => {
@@ -108,16 +113,18 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
     .filter((data) => data.score !== null);
 
   return (
-    <div className="flex w-full max-w-4xl flex-col gap-2">
+    <div className="flex w-full max-w-4xl flex-col gap-4">
+      {/* Back button and header */}
       <div>
         <div className="flex flex-col justify-between gap-2 md:flex-row md:items-center">
           <h1 className="text-2xl font-bold md:text-3xl">
             {gameStats.name} Statistics
           </h1>
-
-          <Badge variant="outline" className="w-fit bg-blue-600 text-white">
-            Shared
-          </Badge>
+          {gameStats.yearPublished && (
+            <Badge variant="outline" className="w-fit">
+              Published in {gameStats.yearPublished}
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -212,6 +219,9 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                   </span>
                   <Badge variant={lastMatch.won ? "default" : "destructive"}>
                     {lastMatch.won ? "Won" : "Lost"}
+                  </Badge>
+                  <Badge variant="outline">
+                    {lastMatch.type === "original" ? "Original" : "Shared"}
                   </Badge>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -377,6 +387,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
           </CardContent>
         </Card>
       )}
+
       {gameStats.matches.length > 0 && (
         <Card className="w-full">
           <CardHeader>
@@ -412,6 +423,14 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                           ) : (
                             <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
                           )}
+                          {match.type === "shared" && (
+                            <Badge
+                              variant="outline"
+                              className="absolute left-1 top-1 bg-blue-600 px-1 text-xs text-white"
+                            >
+                              S
+                            </Badge>
+                          )}
                         </div>
                         <div className="text-muted-foreground">
                           <span suppressHydrationWarning>
@@ -428,6 +447,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
           </CardContent>
         </Card>
       )}
+
       {/* Charts */}
       <Tabs defaultValue="overview">
         <TabsList className="mb-4">

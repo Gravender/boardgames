@@ -3,7 +3,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { CalendarIcon, Clock, Dices, GamepadIcon, Users } from "lucide-react";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
 import { Card } from "@board-games/ui/card";
 

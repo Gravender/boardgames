@@ -2,13 +2,13 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { HydrateClient, prefetch, trpc } from "~/trpc/server";
+import { StatsPageSkeleton } from "../../../_components/game-stats-skeleton";
 import SharedGameStats from "./_components/shared-game-stats";
-import { StatsPageSkeleton } from "./_components/shared-game-stats-skeleton";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
-export default async function SharedGamePage({ params }: Props) {
+export default async function SharedGameStatsPage({ params }: Props) {
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/games");

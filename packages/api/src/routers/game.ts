@@ -9,7 +9,6 @@ import type {
   insertMatchSchema,
   insertPlayerSchema,
   insertRoundPlayerSchema,
-  selectRoundSchema,
   selectScoreSheetSchema,
 } from "@board-games/db/zodSchema";
 import {
@@ -512,6 +511,7 @@ export const gameRouter = createTRPCRouter({
                 },
               },
               location: true,
+              scoresheet: true,
             },
           },
           sharedGameMatches: {
@@ -522,6 +522,7 @@ export const gameRouter = createTRPCRouter({
               match: {
                 with: {
                   location: true,
+                  scoresheet: true,
                 },
               },
               sharedMatchPlayers: {
@@ -563,11 +564,17 @@ export const gameRouter = createTRPCRouter({
         name: string;
         duration: number;
         finished: boolean;
+        scoresheet: {
+          winCondition: z.infer<typeof selectScoreSheetSchema>["winCondition"];
+          targetScore: z.infer<typeof selectScoreSheetSchema>["targetScore"];
+          isCoop: z.infer<typeof selectScoreSheetSchema>["isCoop"];
+        };
         players: {
           id: number;
           type: "original" | "shared";
           name: string;
           isWinner: boolean | null;
+          isUser: boolean;
           score: number | null;
           placement: number;
           imageUrl: string | undefined;
@@ -594,51 +601,53 @@ export const gameRouter = createTRPCRouter({
             updatedAt: Date | null;
           } | null;
         }[];
-      }[] = result.matches
-        .map((match) => {
-          if (!match.finished) return null;
-          const winners = match.matchPlayers.filter((player) => player.winner);
-          const foundPlayer = match.matchPlayers.find(
-            (p) => p.player.userId === ctx.userId,
-          );
+      }[] = result.matches.map((match) => {
+        const winners = match.matchPlayers.filter((player) => player.winner);
+        const foundPlayer = match.matchPlayers.find(
+          (p) => p.player.userId === ctx.userId,
+        );
 
-          return {
-            type: "original" as const,
-            id: match.id,
-            date: match.date,
-            location: match.location?.name ?? null,
-            won: foundPlayer?.winner ?? false,
-            placement: foundPlayer?.placement ?? null,
-            score: foundPlayer?.score ?? null,
-            name: match.name,
-            duration: match.duration,
-            finished: match.finished,
-            players: match.matchPlayers.map((player) => {
-              return {
-                id: player.player.id,
-                type: "original" as const,
-                name: player.player.name,
-                isWinner: player.winner,
-                score: player.score,
-                imageUrl: player.player.image?.url,
-                team: player.team,
-                placement: player.placement ?? 0,
-              };
-            }),
-            winners: winners.map((player) => {
-              return {
-                id: player.player.id,
-                name: player.player.name,
-                isWinner: player.winner,
-                score: player.score,
-                team: player.team,
-              };
-            }),
-          };
-        })
-        .filter((match) => match !== null);
+        return {
+          type: "original" as const,
+          id: match.id,
+          date: match.date,
+          location: match.location?.name ?? null,
+          won: match.finished ? (foundPlayer?.winner ?? false) : false,
+          placement: match.finished ? (foundPlayer?.placement ?? null) : null,
+          score: match.finished ? (foundPlayer?.score ?? null) : null,
+          name: match.name,
+          duration: match.duration,
+          finished: match.finished,
+          scoresheet: {
+            winCondition: match.scoresheet.winCondition,
+            targetScore: match.scoresheet.targetScore,
+            isCoop: match.scoresheet.isCoop,
+          },
+          players: match.matchPlayers.map((player) => {
+            return {
+              id: player.player.id,
+              type: "original" as const,
+              name: player.player.name,
+              isWinner: player.winner,
+              isUser: player.player.userId === ctx.userId,
+              score: player.score,
+              imageUrl: player.player.image?.url,
+              team: player.team,
+              placement: player.placement ?? 0,
+            };
+          }),
+          winners: winners.map((player) => {
+            return {
+              id: player.player.id,
+              name: player.player.name,
+              isWinner: player.winner,
+              score: player.score,
+              team: player.team,
+            };
+          }),
+        };
+      });
       for (const returnedShareMatch of result.sharedGameMatches) {
-        if (!match.finished) continue;
         const winners = returnedShareMatch.sharedMatchPlayers.filter(
           (returnedSharedMatchPlayer) =>
             returnedSharedMatchPlayer.matchPlayer.winner,
@@ -655,9 +664,20 @@ export const gameRouter = createTRPCRouter({
           location: returnedShareMatch.match.location?.name ?? null,
           duration: returnedShareMatch.match.duration,
           finished: returnedShareMatch.match.finished,
-          won: foundSharedPlayer?.winner ?? false,
-          placement: foundSharedPlayer?.placement ?? null,
-          score: foundSharedPlayer?.score ?? null,
+          scoresheet: {
+            winCondition: returnedShareMatch.match.scoresheet.winCondition,
+            targetScore: returnedShareMatch.match.scoresheet.targetScore,
+            isCoop: returnedShareMatch.match.scoresheet.isCoop,
+          },
+          won: returnedShareMatch.match.finished
+            ? (foundSharedPlayer?.winner ?? false)
+            : false,
+          placement: returnedShareMatch.match.finished
+            ? (foundSharedPlayer?.placement ?? null)
+            : null,
+          score: returnedShareMatch.match.finished
+            ? (foundSharedPlayer?.score ?? null)
+            : null,
           players: returnedShareMatch.sharedMatchPlayers
             .map((returnedSharedMatchPlayer) => {
               if (returnedSharedMatchPlayer.sharedPlayer === null) return null;
@@ -673,6 +693,9 @@ export const gameRouter = createTRPCRouter({
                   linkedPlayer !== null
                     ? linkedPlayer.name
                     : returnedSharedMatchPlayer.sharedPlayer.player.name,
+                isUser:
+                  returnedSharedMatchPlayer.sharedPlayer.linkedPlayer
+                    ?.userId === ctx.userId,
                 isWinner: returnedSharedMatchPlayer.matchPlayer.winner,
                 score: returnedSharedMatchPlayer.matchPlayer.score,
                 placement: returnedSharedMatchPlayer.matchPlayer.placement ?? 0,
@@ -708,6 +731,7 @@ export const gameRouter = createTRPCRouter({
       matches.sort((a, b) => b.date.getTime() - a.date.getTime());
       const players = matches.reduce(
         (acc, match) => {
+          if (!match.finished) return acc;
           match.players.forEach((player) => {
             const accPlayer = acc[player.id];
             if (!accPlayer) {
@@ -718,15 +742,39 @@ export const gameRouter = createTRPCRouter({
                 type: player.type,
                 name: player.name,
                 plays: 1,
+                isUser: player.isUser,
                 wins: player.isWinner ? 1 : 0,
                 winRate: player.isWinner ? 1 : 0,
                 imageUrl: player.imageUrl ?? "",
+                bestScore: player.score,
+                worstScore: player.score,
                 placements: tempPlacements,
               };
             } else {
               accPlayer.plays++;
               if (player.isWinner) accPlayer.wins++;
-              accPlayer.winRate = accPlayer.wins / accPlayer.plays;
+              if (match.scoresheet.winCondition === "Highest Score") {
+                accPlayer.bestScore = Math.max(
+                  accPlayer.bestScore ?? 0,
+                  player.score ?? 0,
+                );
+                accPlayer.worstScore = Math.min(
+                  accPlayer.worstScore ?? 0,
+                  player.score ?? 0,
+                );
+              } else if (match.scoresheet.winCondition === "Lowest Score") {
+                accPlayer.bestScore = Math.min(
+                  accPlayer.bestScore ?? 0,
+                  player.score ?? 0,
+                );
+                accPlayer.worstScore = Math.max(
+                  accPlayer.worstScore ?? 0,
+                  player.score ?? 0,
+                );
+              } else {
+                accPlayer.bestScore = null;
+                accPlayer.worstScore = null;
+              }
             }
           });
           return acc;
@@ -737,17 +785,33 @@ export const gameRouter = createTRPCRouter({
             id: number;
             type: "original" | "shared";
             name: string;
+            isUser: boolean;
             plays: number;
             wins: number;
+            bestScore: number | null;
+            worstScore: number | null;
             winRate: number;
             imageUrl: string;
             placements: Record<number, number>;
           }
         >,
       );
+
       const duration = matches.reduce((acc, match) => {
         return acc + match.duration;
       }, 0);
+      const userMatches = matches.filter((match) =>
+        match.players.some((p) => p.isUser),
+      );
+
+      const finishedUserMatches = userMatches.filter((match) => match.finished);
+      const wonMatches = finishedUserMatches.filter(
+        (match) => match.won,
+      ).length;
+      const totalMatches = finishedUserMatches.length;
+
+      const userWinRate =
+        totalMatches > 0 ? Math.round((wonMatches / totalMatches) * 100) : 0;
       return {
         id: result.id,
         name: result.name,
@@ -756,7 +820,13 @@ export const gameRouter = createTRPCRouter({
         ownedBy: result.ownedBy,
         matches: matches,
         duration: duration,
-        players: Object.values(players),
+        players: Object.values(players).map((player) => ({
+          ...player,
+          winRate: player.wins / player.plays,
+        })),
+        winRate: userWinRate,
+        totalMatches: totalMatches,
+        wonMatches: wonMatches,
       };
     }),
   getGameName: protectedUserProcedure
