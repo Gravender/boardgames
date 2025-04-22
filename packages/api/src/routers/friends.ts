@@ -290,7 +290,6 @@ export const friendsRouter = createTRPCRouter({
       if (!returnedFriend) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Friend not found" });
       }
-      console.log(returnedFriend.user);
       return returnedFriend;
     }),
   getFriendMetaData: protectedUserProcedure

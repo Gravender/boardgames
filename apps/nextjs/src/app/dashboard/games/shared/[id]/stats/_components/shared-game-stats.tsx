@@ -120,17 +120,16 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
           <h1 className="text-2xl font-bold md:text-3xl">
             {gameStats.name} Statistics
           </h1>
-          {gameStats.yearPublished && (
-            <Badge variant="outline" className="w-fit">
-              Published in {gameStats.yearPublished}
-            </Badge>
-          )}
+
+          <Badge variant="outline" className="w-fit bg-blue-600 text-white">
+            Shared
+          </Badge>
         </div>
       </div>
 
       {/* Game image and overview cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-        <Card className="row-span-2">
+        <Card className="row-span-2 hidden xs:block">
           <CardContent className="flex items-center justify-center p-0">
             <div className="relative flex aspect-square w-full overflow-hidden rounded-lg">
               {gameStats.imageUrl ? (
@@ -208,7 +207,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
       {lastMatch && (
         <Card>
           <CardHeader>
-            <CardTitle>Last Match</CardTitle>
+            <CardTitle>Recent Match</CardTitle>
             <CardDescription>
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">

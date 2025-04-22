@@ -6,14 +6,10 @@ import { format } from "date-fns";
 import {
   CalendarIcon,
   ClockIcon,
-  EyeIcon,
   MapPinIcon,
-  MoreVertical,
   PauseIcon,
-  PencilIcon,
   SearchIcon,
   SlidersHorizontal,
-  Trash2Icon,
   TrophyIcon,
   XIcon,
 } from "lucide-react";
@@ -23,14 +19,6 @@ import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Calendar } from "@board-games/ui/calendar";
 import { Card, CardContent } from "@board-games/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@board-games/ui/dropdown-menu";
 import { Input } from "@board-games/ui/input";
 import {
   Popover,
@@ -97,7 +85,6 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [availableLocations, setAvailableLocations] = useState<string[]>([]);
-  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
 
   // Fetch available locations
   useEffect(() => {
@@ -392,19 +379,9 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
           {/* Location Filter */}
           <div>
             <label className="mb-1 block text-sm font-medium">Location</label>
-            <Select
-              value={locationFilter}
-              onValueChange={setLocationFilter}
-              disabled={isLoadingLocations}
-            >
+            <Select value={locationFilter} onValueChange={setLocationFilter}>
               <SelectTrigger className="w-full">
-                <SelectValue
-                  placeholder={
-                    isLoadingLocations
-                      ? "Loading locations..."
-                      : "Select location"
-                  }
-                />
+                <SelectValue placeholder={"Select location"} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Locations</SelectItem>

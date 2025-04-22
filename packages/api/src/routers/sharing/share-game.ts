@@ -1,11 +1,9 @@
+import type { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
-import { z } from "zod";
 
-import {
-  selectScoreSheetSchema,
-  selectSharedGameSchema,
-} from "@board-games/db/zodSchema";
+import type { selectScoreSheetSchema } from "@board-games/db/zodSchema";
+import { selectSharedGameSchema } from "@board-games/db/zodSchema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
 
@@ -362,7 +360,6 @@ export const shareGameRouter = createTRPCRouter({
           }
         >,
       );
-      console.log(players);
       const duration = matches.reduce((acc, match) => {
         return acc + match.duration;
       }, 0);
