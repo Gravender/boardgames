@@ -12,7 +12,7 @@ import {
   Search,
 } from "lucide-react";
 
-import { RouterOutputs } from "@board-games/api";
+import type { RouterOutputs } from "@board-games/api";
 import { Input } from "@board-games/ui/input";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import {
@@ -82,23 +82,23 @@ function GamesList({ initialGames }: GamesListProps) {
         }
 
         // Player count filter
-        const minPlayers = game.players.min || 0;
+        const minPlayers = game.players.min ?? 0;
         if (minPlayers < filters.minPlayers) {
           return false;
         }
 
-        const maxPlayers = game.players.max || 10;
+        const maxPlayers = game.players.max ?? 10;
         if (maxPlayers > filters.maxPlayers) {
           return false;
         }
 
         // Playtime filter
-        const minPlaytime = game.playtime.min || 0;
+        const minPlaytime = game.playtime.min ?? 0;
         if (minPlaytime < filters.minPlaytime) {
           return false;
         }
 
-        const maxPlaytime = game.playtime.max || 180;
+        const maxPlaytime = game.playtime.max ?? 180;
         if (maxPlaytime > filters.maxPlaytime) {
           return false;
         }
@@ -111,14 +111,15 @@ function GamesList({ initialGames }: GamesListProps) {
         if (sortField === "name") {
           comparison = a.name.localeCompare(b.name);
         } else if (sortField === "yearPublished") {
-          const yearA = a.yearPublished || 0;
-          const yearB = b.yearPublished || 0;
+          const yearA = a.yearPublished ?? 0;
+          const yearB = b.yearPublished ?? 0;
           comparison = yearA - yearB;
         } else if (sortField === "lastPlayed") {
           if (!a.lastPlayed.date) return 1;
           if (!b.lastPlayed.date) return -1;
           comparison = compareDesc(a.lastPlayed.date, b.lastPlayed.date);
-        } else if (sortField === "matches") {
+        }
+        if (sortField === "matches") {
           comparison = a.games - b.games;
         }
 
@@ -141,9 +142,11 @@ function GamesList({ initialGames }: GamesListProps) {
       );
     } else if (sortField === "yearPublished") {
       return <Calendar className="mr-2 h-4 w-4" />;
-    } else if (sortField === "lastPlayed") {
+    }
+    if (sortField === "lastPlayed") {
       return <CalendarClock className="mr-2 h-4 w-4" />;
-    } else if (sortField === "matches") {
+    }
+    if (sortField === "matches") {
       return <GamepadIcon className="mr-2 h-4 w-4" />;
     }
   };

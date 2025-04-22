@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   BarChart2Icon,
-  BookOpenIcon,
   MoreVertical,
   PencilIcon,
   Trash2Icon,
@@ -55,34 +54,50 @@ export function GamesDropDown({
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Game Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {data.type === "original" && (
+          <DropdownMenuItem asChild>
+            <Link
+              href={`/dashboard/games/${data.id}/edit`}
+              className="flex items-center justify-between gap-2"
+            >
+              <PencilIcon className="mr-2 h-4 w-4" />
+              Edit
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
-          <PencilIcon className="mr-2 h-4 w-4" />
-          <Link href={`/dashboard/games/${data.id}/edit`}>Edit</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <BarChart2Icon className="mr-2 h-4 w-4" />
           <Link
             href={
               data.type === "shared"
                 ? `/dashboard/games/shared/${data.id}/stats`
                 : `/dashboard/games/${data.id}/stats`
             }
+            className="flex items-center justify-between gap-2"
           >
+            <BarChart2Icon className="mr-2 h-4 w-4" />
             View Stats
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <BookOpenIcon className="mr-2 h-4 w-4" />
-          <span>View Rules</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
-          onClick={onDelete}
-        >
-          <Trash2Icon className="mr-2 h-4 w-4" />
-          <span>Delete Game</span>
-        </DropdownMenuItem>
+        {/* <DropdownMenuItem>
+          <div className="flex items-center justify-between gap-2">
+            <BookOpenIcon className="mr-2 h-4 w-4" />
+            <span>View Rules</span>
+          </div>
+        </DropdownMenuItem> */}
+        {data.type === "original" && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
+              onClick={onDelete}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <Trash2Icon className="mr-2 h-4 w-4" />
+                <span>Delete Game</span>
+              </div>
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
