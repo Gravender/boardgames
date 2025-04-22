@@ -10,8 +10,10 @@ import {
   Clock,
   Dices,
   Globe,
+  LinkIcon,
   Share2,
   Trophy,
+  UserPlus,
   Users,
 } from "lucide-react";
 
@@ -58,6 +60,12 @@ export default async function Home() {
               className="text-sm font-medium hover:text-primary"
             >
               Matches
+            </Link>
+            <Link
+              href="#sharing"
+              className="text-sm font-medium hover:text-primary"
+            >
+              Sharing
             </Link>
             <Link
               href="#stats"
@@ -335,11 +343,138 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Match Scoresheet Section */}
+        {/* Sharing System Section */}
         <section
-          id="matches"
+          id="sharing"
           className="w-full bg-muted py-12 md:py-24 lg:py-32"
         >
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="space-y-2">
+                <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">
+                  Sharing System
+                </div>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+                  Share Your Gaming Experience
+                </h2>
+                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  Easily share games, players, and matches with friends and
+                  gaming groups with granular permission controls.
+                </p>
+              </div>
+            </div>
+            <div className="mx-auto mt-12 max-w-5xl">
+              <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold">
+                      Flexible Sharing Options
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Share with specific friends or create shareable links with
+                      customizable expiration dates.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold">Permission Controls</h3>
+                    <p className="text-muted-foreground">
+                      Set view-only or edit permissions to control what others
+                      can do with your shared content.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold">Selective Sharing</h3>
+                    <p className="text-muted-foreground">
+                      Choose exactly which matches, players, or scoresheets to
+                      include when sharing your content.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <FeatureInfoModal
+                      title="Sharing System Features"
+                      description="Our robust sharing system makes it easy to collaborate with friends and gaming groups."
+                      features={[
+                        "Share games, players, and matches with specific friends",
+                        "Create shareable links with customizable expiration dates",
+                        "Set granular permission levels (view-only or edit)",
+                        "Choose exactly which content to include when sharing",
+                        "Manage all your shared content from a central dashboard",
+                        "Revoke access at any time with a single click",
+                      ]}
+                    >
+                      <div className="mt-4 rounded-md bg-muted p-4">
+                        <p className="mb-2 text-sm font-medium">
+                          Sharing Methods:
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                            <UserPlus className="h-4 w-4 text-primary" />
+                            <span className="text-sm">
+                              Direct sharing with friends
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <LinkIcon className="h-4 w-4 text-primary" />
+                            <span className="text-sm">
+                              Shareable links with expiration options
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </FeatureInfoModal>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="overflow-hidden rounded-lg border shadow-lg">
+                    <div className="border-b bg-background p-4">
+                      <h3 className="text-lg font-bold">Share Player</h3>
+                    </div>
+                    <div className="bg-background">
+                      <Image
+                        src="https://ji5jeyxujf.ufs.sh/f/FArKeeZnAmUS6sNln8wnONTZjAy7b1MV82dpE5FsBgkwvRCa"
+                        alt="Share Player Interface Light Mode"
+                        width={600}
+                        height={800}
+                        className="h-auto w-full dark:hidden"
+                      />
+                      <Image
+                        src="https://ji5jeyxujf.ufs.sh/f/FArKeeZnAmUS33gAK0EMCdjsulX1LzwHhYNeQ5A2ogkDRZ9W"
+                        alt="Share Player Interface Dark Mode"
+                        width={600}
+                        height={800}
+                        className="hidden h-auto w-full dark:block"
+                      />
+                    </div>
+                  </div>
+                  <div className="overflow-hidden rounded-lg border shadow-lg">
+                    <div className="border-b bg-background p-4">
+                      <h3 className="text-lg font-bold">Share Game</h3>
+                    </div>
+                    <div className="bg-background">
+                      <Image
+                        src="https://ji5jeyxujf.ufs.sh/f/FArKeeZnAmUSzBBDIW0QICkOBWJs8YnL3eSTFmjH1QrpDwKb"
+                        alt="Share Game Interface Light Mode"
+                        width={600}
+                        height={800}
+                        className="h-auto w-full dark:hidden"
+                      />
+                      <Image
+                        src="https://ji5jeyxujf.ufs.sh/f/FArKeeZnAmUSDFM7F9n9d4qUp0eijhaLBTV8ztv7l1wxfk2G"
+                        alt="Share Game Interface Dark Mode"
+                        width={600}
+                        height={800}
+                        className="hidden h-auto w-full dark:block"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Match Scoresheet Section */}
+        <section id="matches" className="w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
