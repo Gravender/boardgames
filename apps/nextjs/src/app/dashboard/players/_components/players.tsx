@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { User } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
+import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
@@ -61,9 +62,19 @@ export function PlayersTable() {
                       <div className="flex flex-col gap-2">
                         <div className="flex w-full items-center justify-between">
                           <div className="flex flex-col">
-                            <h2 className="text-md text-left font-semibold">
-                              {player.name}
-                            </h2>
+                            <div className="flex items-center gap-2">
+                              <h2 className="text-md text-left font-semibold">
+                                {player.name}
+                              </h2>
+                              {player.type === "shared" && (
+                                <Badge
+                                  variant="outline"
+                                  className="ml-2 bg-blue-600 text-white"
+                                >
+                                  Shared
+                                </Badge>
+                              )}
+                            </div>
                             <div className="flex min-w-20 items-center gap-1 text-sm">
                               <span>Game:</span>
                               <span className="text-muted-foreground">

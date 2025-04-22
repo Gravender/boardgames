@@ -42,6 +42,7 @@ export function PlayerDropDown({
     deletePlayer.mutate({ id: data.id });
   };
   const [isOpen, setIsOpen] = useState(false);
+  //TODO add edit player for shared players
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenu>
@@ -52,18 +53,26 @@ export function PlayerDropDown({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DialogTrigger asChild>
-            <DropdownMenuItem>Edit</DropdownMenuItem>
-          </DialogTrigger>
+          {data.type === "original" && (
+            <DialogTrigger asChild>
+              <DropdownMenuItem>Edit</DropdownMenuItem>
+            </DialogTrigger>
+          )}
           <DropdownMenuItem asChild>
-            <Link href={`/dashboard/players/${data.id}/stats`}>Stats</Link>
+            <Link
+              href={`/dashboard/players${data.type === "original" ? "/" : "/shared/"}${data.id}/stats`}
+            >
+              Stats
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
-            onClick={onDelete}
-          >
-            Delete
-          </DropdownMenuItem>
+          {data.type === "original" && (
+            <DropdownMenuItem
+              className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
+              onClick={onDelete}
+            >
+              Delete
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <EditPlayerDialog player={data} setOpen={setIsOpen} />

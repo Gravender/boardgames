@@ -17,3 +17,19 @@ export const formatDuration = (seconds: number) => {
   const remainingSeconds = seconds % 60;
   return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
 };
+
+export function getOrdinalSuffix(number: number): string {
+  if (number % 100 >= 11 && number % 100 <= 13) {
+    return "th";
+  }
+  switch (number % 10) {
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
+  }
+}

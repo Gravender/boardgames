@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
   insertRoundSchema,
   insertScoreSheetSchema,
-} from "@board-games/db/schema";
+} from "@board-games/db/zodSchema";
 
 export const baseGameSchema = z.object({
   name: z.string().min(1, {

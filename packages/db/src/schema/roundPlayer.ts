@@ -1,5 +1,5 @@
-import { relations } from "drizzle-orm";
-import { integer, serial, unique } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { integer, serial, timestamp, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
@@ -17,6 +17,12 @@ const roundPlayers = createTable(
     matchPlayerId: integer("match_player_id")
       .notNull()
       .references(() => matchPlayer.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
   },
   (table) => [
     unique("boardgames_round_player_round_match_player_id_unique").on(
@@ -25,16 +31,6 @@ const roundPlayers = createTable(
     ),
   ],
 );
-export const roundPlayerRelations = relations(roundPlayers, ({ one }) => ({
-  round: one(round, {
-    fields: [roundPlayers.roundId],
-    references: [round.id],
-  }),
-  matchPlayer: one(matchPlayer, {
-    fields: [roundPlayers.matchPlayerId],
-    references: [matchPlayer.id],
-  }),
-}));
 
 export const insertRoundPlayerSchema = createInsertSchema(roundPlayers);
 

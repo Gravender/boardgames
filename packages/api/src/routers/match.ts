@@ -1,28 +1,30 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
-import { and, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
+import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type {
   insertMatchPlayerSchema,
   insertRoundPlayerSchema,
   insertRoundSchema,
-} from "@board-games/db/schema";
+} from "@board-games/db/zodSchema";
 import {
-  insertMatchSchema,
-  insertPlayerSchema,
   match,
   matchPlayer,
   player,
   round,
   roundPlayer,
   scoresheet,
+  team,
+} from "@board-games/db/schema";
+import {
+  insertMatchSchema,
+  insertPlayerSchema,
   selectMatchPlayerSchema,
   selectMatchSchema,
   selectRoundPlayerSchema,
-  team,
-} from "@board-games/db/schema";
+} from "@board-games/db/zodSchema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 
@@ -56,17 +58,19 @@ export const matchRouter = createTRPCRouter({
         }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.transaction(async (transaction) => {
+      const response = await ctx.db.transaction(async (transaction) => {
         const returnedScoresheet = await transaction.query.scoresheet.findFirst(
           {
-            where: and(
-              eq(match.gameId, input.gameId),
-              eq(scoresheet.userId, ctx.userId),
-              eq(scoresheet.id, input.scoresheetId),
-            ),
+            where: {
+              gameId: input.gameId,
+              userId: ctx.userId,
+              id: input.scoresheetId,
+            },
             with: {
               rounds: {
-                orderBy: round.order,
+                orderBy: {
+                  order: "asc",
+                },
               },
             },
           },
@@ -128,10 +132,10 @@ export const matchRouter = createTRPCRouter({
             .values(playersToInsert)
             .returning();
 
-          insertedMatchPlayers.concat(
-            returnedMatchPlayers.map((returnedMatchPlayer) => ({
+          returnedMatchPlayers.forEach((returnedMatchPlayer) =>
+            insertedMatchPlayers.push({
               id: returnedMatchPlayer.id,
-            })),
+            }),
           );
         } else {
           for (const inputTeam of input.teams) {
@@ -148,10 +152,11 @@ export const matchRouter = createTRPCRouter({
                 .insert(matchPlayer)
                 .values(playersToInsert)
                 .returning();
-              insertedMatchPlayers.concat(
-                returnedMatchPlayers.map((returnedMatchPlayer) => ({
+
+              returnedMatchPlayers.forEach((returnedMatchPlayer) =>
+                insertedMatchPlayers.push({
                   id: returnedMatchPlayer.id,
-                })),
+                }),
               );
             } else {
               const [returningTeam] = await transaction
@@ -178,16 +183,17 @@ export const matchRouter = createTRPCRouter({
                 .insert(matchPlayer)
                 .values(playersToInsert)
                 .returning();
-              insertedMatchPlayers.concat(
-                returnedMatchPlayers.map((returnedMatchPlayer) => ({
+
+              returnedMatchPlayers.forEach((returnedMatchPlayer) =>
+                insertedMatchPlayers.push({
                   id: returnedMatchPlayer.id,
-                })),
+                }),
               );
             }
           }
         }
         if (
-          returnedScoresheet.rounds.length === 0 &&
+          returnedScoresheet.rounds.length > 0 &&
           insertedMatchPlayers.length > 0
         ) {
           const returnedRounds = returnedScoresheet.rounds.map<
@@ -219,17 +225,23 @@ export const matchRouter = createTRPCRouter({
         }
         return returningMatch;
       });
+      return response;
     }),
   getMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       const returnedMatch = await ctx.db.query.match.findFirst({
-        where: and(eq(match.id, input.id), eq(match.userId, ctx.userId)),
+        where: {
+          id: input.id,
+          userId: ctx.userId,
+        },
         with: {
           scoresheet: {
             with: {
               rounds: {
-                orderBy: round.order,
+                orderBy: {
+                  order: "asc",
+                },
               },
             },
           },
@@ -240,7 +252,7 @@ export const matchRouter = createTRPCRouter({
                   image: true,
                 },
               },
-              roundPlayers: true,
+              playerRounds: true,
             },
           },
           teams: true,
@@ -253,7 +265,7 @@ export const matchRouter = createTRPCRouter({
         return {
           name: matchPlayer.player.name,
           rounds: returnedMatch.scoresheet.rounds.map((scoresheetRound) => {
-            const matchPlayerRound = matchPlayer.roundPlayers.find(
+            const matchPlayerRound = matchPlayer.playerRounds.find(
               (roundPlayer) => roundPlayer.roundId === scoresheetRound.id,
             );
             if (!matchPlayerRound) {
@@ -291,7 +303,10 @@ export const matchRouter = createTRPCRouter({
     .input(selectMatchSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       const returnedMatch = await ctx.db.query.match.findFirst({
-        where: and(eq(match.id, input.id), eq(match.userId, ctx.userId)),
+        where: {
+          id: input.id,
+          userId: ctx.userId,
+        },
         with: {
           scoresheet: true,
           matchPlayers: {
@@ -316,13 +331,69 @@ export const matchRouter = createTRPCRouter({
                   },
                 },
               },
-              roundPlayers: true,
+              playerRounds: true,
             },
             orderBy: (matchPlayer, { asc }) => asc(matchPlayer.placement),
           },
           game: {
             with: {
               image: true,
+              linkedGames: {
+                with: {
+                  sharedMatches: {
+                    where: {
+                      sharedWithId: ctx.userId,
+                    },
+                    with: {
+                      match: {
+                        with: {
+                          location: true,
+                        },
+                      },
+                      sharedMatchPlayers: {
+                        with: {
+                          matchPlayer: {
+                            with: {
+                              team: true,
+                            },
+                          },
+                          sharedPlayer: {
+                            where: {
+                              sharedWithId: ctx.userId,
+                            },
+                            with: {
+                              linkedPlayer: {
+                                with: {
+                                  image: true,
+                                },
+                              },
+                              player: true,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              matches: {
+                orderBy: {
+                  date: "desc",
+                },
+                with: {
+                  matchPlayers: {
+                    with: {
+                      player: {
+                        columns: {
+                          id: true,
+                          name: true,
+                        },
+                      },
+                    },
+                  },
+                  location: true,
+                },
+              },
             },
           },
           location: true,
@@ -332,56 +403,104 @@ export const matchRouter = createTRPCRouter({
       if (!returnedMatch) {
         return null;
       }
-      const previousMatches = (
-        await ctx.db.query.match.findMany({
-          columns: {
-            gameId: true,
-            id: true,
-            name: true,
-            date: true,
-            createdAt: true,
-            finished: true,
-          },
-          where: and(
-            eq(match.userId, ctx.userId),
-            eq(match.gameId, returnedMatch.gameId),
-          ),
-          with: {
-            matchPlayers: {
-              columns: {
-                id: true,
-                score: true,
-                placement: true,
-                winner: true,
-              },
-              with: {
-                player: {
-                  columns: {
-                    id: true,
-                    name: true,
-                  },
-                },
-              },
-              orderBy: (matchPlayer, { asc }) => asc(matchPlayer.placement),
-            },
-          },
-          orderBy: (match) => desc(match.date),
-        })
-      ).filter((match) =>
+      const previousMatches = returnedMatch.game.matches.map<{
+        type: "original" | "shared";
+        id: number;
+        gameId: number;
+        date: Date;
+        name: string;
+        finished: boolean;
+        createdAt: Date;
+        locationName: string | null;
+        matchPlayers: {
+          id: number;
+          type: "original" | "shared";
+          playerId: number;
+          name: string;
+          score: number | null;
+          placement: number | null;
+          winner: boolean | null;
+          teamId: number | null;
+        }[];
+      }>((match) => ({
+        type: "original" as const,
+        id: match.id,
+        gameId: match.gameId,
+        date: match.date,
+        name: match.name,
+        finished: match.finished,
+        createdAt: match.createdAt,
+        locationName: match.location?.name ?? null,
+        matchPlayers: match.matchPlayers.map((matchPlayer) => ({
+          type: "original" as const,
+          id: matchPlayer.id,
+          playerId: matchPlayer.player.id,
+          name: matchPlayer.player.name,
+          score: matchPlayer.score,
+          placement: matchPlayer.placement,
+          winner: matchPlayer.winner,
+          teamId: matchPlayer.teamId,
+        })),
+      }));
+      for (const sharedMatch of returnedMatch.game.linkedGames.flatMap(
+        (linkedGame) => linkedGame.sharedMatches,
+      )) {
+        previousMatches.push({
+          type: "shared" as const,
+          id: sharedMatch.id,
+          gameId: sharedMatch.sharedGameId,
+          date: sharedMatch.match.date,
+          name: sharedMatch.match.name,
+          finished: sharedMatch.match.finished,
+          createdAt: sharedMatch.match.createdAt,
+          locationName: sharedMatch.match.location?.name ?? null,
+          matchPlayers: sharedMatch.sharedMatchPlayers
+            .map((sharedMatchPlayer) => {
+              const sharedPlayer = sharedMatchPlayer.sharedPlayer;
+              if (sharedPlayer === null) return null;
+              const linkedPlayer = sharedPlayer.linkedPlayer;
+              if (linkedPlayer)
+                return {
+                  type: "original" as const,
+                  id: sharedMatchPlayer.matchPlayerId,
+                  playerId: linkedPlayer.id,
+                  name: linkedPlayer.name,
+                  score: sharedMatchPlayer.matchPlayer.score,
+                  placement: sharedMatchPlayer.matchPlayer.placement,
+                  winner: sharedMatchPlayer.matchPlayer.winner,
+                  teamId: sharedMatchPlayer.matchPlayer.teamId,
+                };
+
+              return {
+                type: "shared" as const,
+                id: sharedMatchPlayer.id,
+                playerId: sharedPlayer.playerId,
+                name: sharedPlayer.player.name,
+                score: sharedMatchPlayer.matchPlayer.score,
+                placement: sharedMatchPlayer.matchPlayer.placement,
+                winner: sharedMatchPlayer.matchPlayer.winner,
+                teamId: sharedMatchPlayer.matchPlayer.teamId,
+              };
+            })
+            .filter((player) => player !== null),
+        });
+      }
+      const filteredPreviousMatches = previousMatches.filter((match) =>
         match.matchPlayers.some((prevMatchPlayer) =>
           returnedMatch.matchPlayers.some(
             (returnedMatchPlayer) =>
-              returnedMatchPlayer.player.id === prevMatchPlayer.player.id,
+              returnedMatchPlayer.player.id === prevMatchPlayer.playerId,
           ),
         ),
       );
 
       const refinedPlayers = returnedMatch.matchPlayers.map((matchPlayer) => {
         return {
+          type: "original" as const,
           id: matchPlayer.id,
           playerId: matchPlayer.player.id,
           name: matchPlayer.player.name,
-          imageUrl: matchPlayer.player.image?.url,
+          imageUrl: matchPlayer.player.image?.url ?? null,
           score: matchPlayer.score,
           placement: matchPlayer.placement,
           winner: matchPlayer.winner,
@@ -404,6 +523,7 @@ export const matchRouter = createTRPCRouter({
       });
 
       interface AccPlayer {
+        type: "original" | "shared";
         name: string;
         scores: number[]; // from matches that contain scores
         dates: { matchId: number; date: Date; createdAt: Date }[];
@@ -415,49 +535,50 @@ export const matchRouter = createTRPCRouter({
       }
 
       const playerStats: Record<number, AccPlayer> = {};
-      previousMatches.forEach((match) => {
+      filteredPreviousMatches.forEach((match) => {
         if (match.finished) {
           match.matchPlayers.forEach((matchPlayer) => {
             if (
               refinedPlayers.find(
-                (player) => player.playerId === matchPlayer.player.id,
+                (player) => player.playerId === matchPlayer.playerId,
               )
             ) {
-              const { id: playerId, name } = matchPlayer.player;
-
               // If this player hasn't been seen yet, initialize
-              playerStats[playerId] ??= {
-                name,
+              playerStats[matchPlayer.playerId] ??= {
+                type: "original" as const,
+                name: matchPlayer.name,
                 id: matchPlayer.id,
-                playerId: playerId,
+                playerId: matchPlayer.playerId,
                 scores: [],
                 dates: [],
                 placements: {},
                 wins: 0,
                 plays: 0,
               };
+              const currentPlayerStats = playerStats[matchPlayer.playerId];
+              if (currentPlayerStats !== undefined) {
+                // Add score info for this match
+                if (matchPlayer.score)
+                  currentPlayerStats.scores.push(matchPlayer.score);
+                if (matchPlayer.winner) currentPlayerStats.wins++;
 
-              // Add score info for this match
-              if (matchPlayer.score)
-                playerStats[playerId].scores.push(matchPlayer.score);
-              if (matchPlayer.winner) playerStats[playerId].wins++;
+                // Add date info for this match
+                currentPlayerStats.dates.push({
+                  matchId: match.id,
+                  date: match.date,
+                  createdAt: match.createdAt,
+                });
 
-              // Add date info for this match
-              playerStats[playerId].dates.push({
-                matchId: match.id,
-                date: match.date,
-                createdAt: match.createdAt,
-              });
+                // Increase the count for this placement
+                const placement = matchPlayer.placement;
+                if (placement != null) {
+                  currentPlayerStats.placements[placement] =
+                    (currentPlayerStats.placements[placement] ?? 0) + 1;
+                }
 
-              // Increase the count for this placement
-              const placement = matchPlayer.placement;
-              if (placement != null) {
-                playerStats[playerId].placements[placement] =
-                  (playerStats[playerId].placements[placement] ?? 0) + 1;
+                // This counts as one "play"
+                currentPlayerStats.plays += 1;
               }
-
-              // This counts as one "play"
-              playerStats[playerId].plays += 1;
             }
           });
         }
@@ -503,9 +624,34 @@ export const matchRouter = createTRPCRouter({
         players: refinedPlayers,
         teams: returnedMatch.teams,
         duration: returnedMatch.duration,
-        previousMatches: previousMatches,
+        previousMatches: filteredPreviousMatches,
         playerStats: finalPlayersWithFirstGame,
       };
+    }),
+  getMatchToShare: protectedUserProcedure
+    .input(selectMatchSchema.pick({ id: true }))
+    .query(async ({ ctx, input }) => {
+      const returnedMatch = await ctx.db.query.match.findFirst({
+        where: {
+          id: input.id,
+          userId: ctx.userId,
+        },
+        with: {
+          location: true,
+          game: {
+            with: {
+              image: true,
+            },
+          },
+        },
+      });
+      if (!returnedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Match not found.",
+        });
+      }
+      return returnedMatch;
     }),
   getMatchesByCalender: protectedUserProcedure.query(async ({ ctx }) => {
     const matches = await ctx.db
@@ -527,12 +673,10 @@ export const matchRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const matches = await ctx.db.query.match.findMany({
-        where: and(
-          sql`
-    date_trunc('day', ${match.date}) = date_trunc('day', ${input.date.toISOString().split("T")[0]}::date)
-  `,
-          eq(match.userId, ctx.userId),
-        ),
+        where: {
+          RAW: sql`date_trunc('day', ${match.date}) = date_trunc('day', ${input.date.toISOString().split("T")[0]}::date)`,
+          userId: ctx.userId,
+        },
         with: {
           game: {
             with: {
@@ -571,10 +715,10 @@ export const matchRouter = createTRPCRouter({
     .input(z.object({ locationId: z.number() }))
     .query(async ({ ctx, input }) => {
       const matches = await ctx.db.query.match.findMany({
-        where: and(
-          eq(match.userId, ctx.userId),
-          eq(match.locationId, input.locationId),
-        ),
+        where: {
+          userId: ctx.userId,
+          locationId: input.locationId,
+        },
         with: {
           game: {
             with: {
@@ -613,7 +757,10 @@ export const matchRouter = createTRPCRouter({
     .input(selectMatchSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
       const deletedMatch = await ctx.db.query.match.findFirst({
-        where: and(eq(match.id, input.id), eq(match.userId, ctx.userId)),
+        where: {
+          id: input.id,
+          userId: ctx.userId,
+        },
       });
       if (!deletedMatch)
         throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
@@ -969,6 +1116,25 @@ export const matchRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const returnedMatch = await ctx.db.query.match.findFirst({
+        where: {
+          id: input.match.id,
+          userId: ctx.userId,
+        },
+        with: {
+          scoresheet: {
+            with: {
+              rounds: true,
+            },
+          },
+        },
+      });
+      if (!returnedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Match not found.",
+        });
+      }
       //Update Match Details
       if (input.match.name || input.match.date) {
         await ctx.db
@@ -1013,18 +1179,13 @@ export const matchRouter = createTRPCRouter({
           ];
         }
         //Insert players into match
+
         const returnedMatchPlayers = await ctx.db
           .insert(matchPlayer)
           .values(playersToInsert)
           .returning();
-        const rounds = await ctx.db
-          .select({
-            id: round.id,
-          })
-          .from(round)
-          .innerJoin(scoresheet, eq(round.scoresheetId, scoresheet.id));
         const roundPlayersToInsert: z.infer<typeof insertRoundPlayerSchema>[] =
-          rounds.flatMap((round) => {
+          returnedMatch.scoresheet.rounds.flatMap((round) => {
             return returnedMatchPlayers.map((player) => ({
               roundId: round.id,
               matchPlayerId: player.id,

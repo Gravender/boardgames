@@ -19,7 +19,7 @@ export function PlayersTable({
   const [players, setPlayers] = useState(data);
 
   return (
-    <div className="container relative mx-auto h-[90vh] max-w-3xl px-1 sm:px-4">
+    <div className="container relative mx-auto h-[90vh] max-w-3xl justify-center px-1 sm:px-4">
       <CardHeader>
         <CardTitle>Select Players</CardTitle>
       </CardHeader>
@@ -27,13 +27,13 @@ export function PlayersTable({
         items={data}
         setItems={setPlayers}
         sortFields={["name", "matches"]}
-        defaultSortField="name"
-        defaultSortOrder="asc"
+        defaultSortField="matches"
+        defaultSortOrder="desc"
         searchField="name"
         searchPlaceholder="Search Players..."
       />
       <SelectPlayersForm gameId={gameId} players={players} />
-      <div className="absolute bottom-4 right-4 z-10 sm:right-10">
+      <div className="relative z-10 mb-auto mr-8">
         <AddPlayerDialog gameId={gameId} />
       </div>
     </div>

@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 
 export default async function Page() {
   const locations = await caller.location.getLocations();
+  //TODO add shared matches
   return (
     <HydrateClient>
       <div className="flex w-full items-center justify-center">

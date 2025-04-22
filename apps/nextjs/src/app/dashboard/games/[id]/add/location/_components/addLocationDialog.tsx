@@ -8,7 +8,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 
-import { insertLocationSchema } from "@board-games/db/schema";
+import { insertLocationSchema } from "@board-games/db/zodSchema";
 import { Button } from "@board-games/ui/button";
 import {
   Dialog,

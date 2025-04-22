@@ -1,7 +1,10 @@
 import { z } from "zod";
 import { createStore } from "zustand/vanilla";
 
-import { insertMatchSchema, insertPlayerSchema } from "@board-games/db/schema";
+import {
+  insertMatchSchema,
+  insertPlayerSchema,
+} from "@board-games/db/zodSchema";
 
 export const playersSchema = z
   .array(

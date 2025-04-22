@@ -4,7 +4,7 @@ import { Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFieldArray } from "react-hook-form";
 
-import { insertRoundSchema } from "@board-games/db/schema";
+import { insertRoundSchema } from "@board-games/db/zodSchema";
 
 import type { FormSchemaType } from "./AddScoresheetModal";
 import { Settings } from "~/lib/icons/Settings";

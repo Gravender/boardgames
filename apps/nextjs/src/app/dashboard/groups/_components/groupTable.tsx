@@ -74,7 +74,7 @@ export function GroupTable() {
 
                   <div className="flex items-center justify-center gap-4">
                     <Button size={"icon"} variant={"outline"}>
-                      {group.groupsByPlayer.length}
+                      {group.players.length}
                     </Button>
                     <GroupDropDown data={group} />
                   </div>

@@ -3,7 +3,7 @@ import type { z } from "zod";
 import { Settings } from "lucide-react";
 import { useFieldArray } from "react-hook-form";
 
-import { insertRoundSchema } from "@board-games/db/schema";
+import { insertRoundSchema } from "@board-games/db/zodSchema";
 import { Button } from "@board-games/ui/button";
 import {
   FormControl,

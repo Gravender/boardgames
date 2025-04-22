@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -7,10 +7,8 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import { createTable } from "./baseTable";
-import roundPlayer from "./roundPlayer";
 import scoresheet from "./scoresheet";
 
 const rounds = createTable(
@@ -44,16 +42,5 @@ const rounds = createTable(
     index("boardgames_round_scoresheet_id_index").on(table.scoresheetId),
   ],
 );
-export const roundRelations = relations(rounds, ({ one, many }) => ({
-  scoresheet: one(scoresheet, {
-    fields: [rounds.scoresheetId],
-    references: [scoresheet.id],
-  }),
-  roundPlayers: many(roundPlayer),
-}));
-
-export const insertRoundSchema = createInsertSchema(rounds);
-
-export const selectRoundSchema = createSelectSchema(rounds);
 
 export default rounds;

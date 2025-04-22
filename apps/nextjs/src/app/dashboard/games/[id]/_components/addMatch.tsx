@@ -152,10 +152,10 @@ function Content({
   });
   const createMatch = useMutation(
     trpc.match.createMatch.mutationOptions({
-      onSuccess: async (match) => {
+      onSuccess: async (response) => {
         reset();
         setIsSubmitting(false);
-        router.push(`/dashboard/games/${gameId}/${match.id}`);
+        router.push(`/dashboard/games/${gameId}/${response.id}`);
         await queryClient.invalidateQueries(
           trpc.player.getPlayersByGame.queryFilter({ game: { id: gameId } }),
         );

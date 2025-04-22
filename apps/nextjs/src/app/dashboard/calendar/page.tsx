@@ -10,6 +10,7 @@ export default async function Page() {
   const matchDayMap = new Map(
     dates.map((md) => [format(md.date, "MM-dd-yy"), md.ids]),
   );
+  //TODO add shared matches
   return (
     <HydrateClient>
       <div className="flex min-h-screen flex-col items-center justify-center bg-background">

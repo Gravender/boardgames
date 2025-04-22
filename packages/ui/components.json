@@ -12,10 +12,10 @@
   },
   "aliases": {
     "components": "src/",
-    "utils": "@board-games/ui/",
+    "utils": "@board-games/ui/utils",
     "ui": "src/",
-    "lib": "lib/",
-    "hooks": "hooks/"
+    "lib": "@board-games/ui/lib",
+    "hooks": "@board-games/ui/hooks"
   },
   "iconLibrary": "lucide"
 }

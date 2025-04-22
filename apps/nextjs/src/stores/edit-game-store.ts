@@ -4,7 +4,7 @@ import { createStore } from "zustand/vanilla";
 import {
   insertRoundSchema,
   insertScoreSheetSchema,
-} from "@board-games/db/schema";
+} from "@board-games/db/zodSchema";
 
 export const scoreSheetSchema = insertScoreSheetSchema.omit({
   id: true,

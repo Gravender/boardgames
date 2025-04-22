@@ -1,11 +1,11 @@
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 
+import { scoresheet } from "@board-games/db/schema";
 import {
   insertScoreSheetSchema,
-  scoresheet,
   selectScoreSheetSchema,
-} from "@board-games/db/schema";
+} from "@board-games/db/zodSchema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 
