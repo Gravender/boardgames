@@ -13,6 +13,7 @@ let nextConfig = {
   images: {
     remotePatterns: [
       { hostname: "utfs.io" },
+      { hostname: "ji5jeyxujf.ufs.sh" },
       { hostname: "picsum.photos" },
       { hostname: "avatars.githubusercontent.com" },
     ],
