@@ -1,14 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
-import { notFound } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { set } from "lodash";
-import { Dice1Icon as Dice, Dices, EyeIcon, PencilIcon } from "lucide-react";
+import { Dices, EyeIcon, PencilIcon } from "lucide-react";
 
 import { Badge } from "@board-games/ui/badge";
-import { Dialog, DialogContent } from "@board-games/ui/dialog";
 
 import { useTRPC } from "~/trpc/react";
 import { GameDetails } from "../../../_components/game-details";

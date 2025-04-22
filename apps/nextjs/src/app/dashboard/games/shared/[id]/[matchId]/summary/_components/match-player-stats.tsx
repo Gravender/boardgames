@@ -35,19 +35,30 @@ export default function MatchSummaryPlayerStats({
         <CardTitle>Player Statistics</CardTitle>
       </CardHeader>
       <CardContent className="p-2 md:p-6">
-        <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
+        <Table
+          className="min-w-full"
+          containerClassname="max-h-[65vh] h-fit w-full rounded-lg"
+        >
           <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
             <TableRow>
               <TableHead className="bg-sidebar sticky left-0">Player</TableHead>
               <TableHead className="text-center">Games</TableHead>
               <TableHead className="text-center">Wins</TableHead>
               <TableHead className="text-center">Win Rate</TableHead>
-              <TableHead className="text-center">Avg Score</TableHead>
-              <TableHead className="text-center">Top Placement</TableHead>
+              <TableHead className="hidden text-center lg:table-cell">
+                Avg Score
+              </TableHead>
+              <TableHead className="hidden text-center lg:table-cell">
+                Top Placement
+              </TableHead>
               {scoresheet.winCondition !== "Manual" && (
                 <>
-                  <TableHead className="text-center">Best</TableHead>
-                  <TableHead className="text-center">Worst</TableHead>
+                  <TableHead className="hidden text-center md:table-cell">
+                    Best
+                  </TableHead>
+                  <TableHead className="hidden text-center md:table-cell">
+                    Worst
+                  </TableHead>
                 </>
               )}
             </TableRow>
@@ -124,18 +135,22 @@ export default function MatchSummaryPlayerStats({
                   <TableCell className="text-center">
                     {winRate.toFixed(1)}%
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="hidden text-center lg:table-cell">
                     {avgScore.toFixed(1)}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="hidden text-center lg:table-cell">
                     {topPlacement
                       ? `${topPlacement}${getOrdinalSuffix(topPlacement)}`
                       : "-"}
                   </TableCell>
                   {scoresheet.winCondition !== "Manual" && (
                     <>
-                      <TableCell>{Best ?? ""}</TableCell>
-                      <TableCell>{Worst ?? ""}</TableCell>
+                      <TableCell className="hidden text-center md:table-cell">
+                        {Best ?? ""}
+                      </TableCell>
+                      <TableCell className="hidden text-center md:table-cell">
+                        {Worst ?? ""}
+                      </TableCell>
                     </>
                   )}
                 </TableRow>

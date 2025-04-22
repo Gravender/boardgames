@@ -17,7 +17,7 @@ export default async function Page({ params }: Props) {
   );
   return (
     <HydrateClient>
-      <div className="container flex w-full items-center justify-center px-3 py-4 md:px-6 md:py-8">
+      <div className="container flex w-full items-center justify-center p-2 sm:px-3 sm:py-4 md:px-6 md:py-8">
         <Suspense fallback={<MatchSummarySkeleton />}>
           <SharedMatchSummary matchId={Number(matchId)} />
         </Suspense>

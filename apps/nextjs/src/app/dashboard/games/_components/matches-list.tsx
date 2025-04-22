@@ -105,7 +105,7 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
           const searchLower = searchQuery.toLowerCase();
           const nameMatch = match.name.toLowerCase().includes(searchLower);
           const locationMatch =
-            match.location?.toLowerCase().includes(searchLower) || false;
+            match.location?.toLowerCase().includes(searchLower) ?? false;
           if (!nameMatch && !locationMatch) return false;
         }
 

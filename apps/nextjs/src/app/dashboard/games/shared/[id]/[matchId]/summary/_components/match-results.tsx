@@ -99,7 +99,7 @@ export default function ShareMatchResults({
       <CardHeader>
         <CardTitle>Match Results</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-2 pt-0 sm:p-6">
         {matchResults().map((data) => {
           if (data.teamType === "Team") {
             return (

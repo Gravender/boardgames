@@ -117,7 +117,7 @@ export default function SharedMatchSummary({ matchId }: { matchId: number }) {
                 <div className="flex gap-2 p-1 sm:p-4">
                   {match.previousMatches.map((match) => (
                     <Link
-                      href={`/dashboard/games${match.type === "shared" && "/shared"}/${match.gameId}/${match.id}${match.finished && "/summary"}`}
+                      href={`/dashboard/games${match.type === "shared" ? "/shared" : ""}/${match.gameId}/${match.id}${match.finished ? "/summary" : ""}`}
                       key={match.id}
                       className="block h-40 w-64 rounded-lg border p-4 transition-colors hover:bg-muted/50"
                     >
@@ -125,7 +125,9 @@ export default function SharedMatchSummary({ matchId }: { matchId: number }) {
 
                       <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                         <CalendarIcon className="h-4 w-4" />
-                        <span>{format(new Date(match.date), "PP")}</span>
+                        <span suppressHydrationWarning>
+                          {format(new Date(match.date), "PP")}
+                        </span>
                       </div>
 
                       <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
