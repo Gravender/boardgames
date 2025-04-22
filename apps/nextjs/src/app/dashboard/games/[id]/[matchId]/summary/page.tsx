@@ -37,7 +37,7 @@ interface Props {
 type teamWithPlayers = NonNullable<
   RouterOutputs["match"]["getSummary"]
 >["teams"][number] & {
-  type: "Team";
+  teamType: "Team";
   players: NonNullable<RouterOutputs["match"]["getSummary"]>["players"];
   placement: number;
   score: number;
@@ -46,7 +46,7 @@ type teamWithPlayers = NonNullable<
 type playerWithoutTeams = NonNullable<
   RouterOutputs["match"]["getSummary"]
 >["players"][number] & {
-  type: "Player";
+  teamType: "Player";
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -114,7 +114,7 @@ export default async function Page({ params }: Props) {
   const matchResults = () => {
     const playersWithoutTeams = summary.players
       .filter((player) => player.teamId === null)
-      .map<playerWithoutTeams>((player) => ({ ...player, type: "Player" }));
+      .map<playerWithoutTeams>((player) => ({ ...player, teamType: "Player" }));
 
     const teamsWithTeams = summary.teams.map<teamWithPlayers>((team) => {
       const teamPlayers = summary.players.filter(
@@ -127,7 +127,7 @@ export default async function Page({ params }: Props) {
         placement: firstTeamPlayer?.placement ?? 0,
         score: firstTeamPlayer?.placement ?? 0,
         winner: firstTeamPlayer?.winner ?? false,
-        type: "Team",
+        teamType: "Team",
       };
     });
     const sortedPlayersAndTeams: (playerWithoutTeams | teamWithPlayers)[] = [
@@ -235,12 +235,16 @@ export default async function Page({ params }: Props) {
                           : `/dashboard/games/${match.gameId}/${match.id}`
                       }
                     >
-                      <span className="flex max-w-28 truncate font-medium">
+                      <span className="max-w-24 truncate font-semibold sm:max-w-28">
                         {match.finished
-                          ? match.matchPlayers
-                              .filter((player) => player.placement === 1)
-                              .map((player) => player.player.name)
-                              .join(", ")
+                          ? match.matchPlayers.filter(
+                              (player) => player.placement === 1,
+                            ).length > 0
+                            ? match.matchPlayers
+                                .filter((player) => player.placement === 1)
+                                .map((player) => player.name)
+                                .join(", ")
+                            : "No Winners"
                           : "Not Finished"}
                       </span>
                       <div className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded shadow">
@@ -253,6 +257,14 @@ export default async function Page({ params }: Props) {
                           />
                         ) : (
                           <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
+                        )}
+                        {match.type === "shared" && (
+                          <Badge
+                            variant="outline"
+                            className="absolute left-1 top-1 bg-blue-600 px-1 text-xs text-white"
+                          >
+                            S
+                          </Badge>
                         )}
                       </div>
                       <div className="text-muted-foreground">
@@ -285,7 +297,7 @@ export default async function Page({ params }: Props) {
                   )}
                   key={`match-${data.id}`}
                 >
-                  {data.type === "Player" ? (
+                  {data.teamType === "Player" ? (
                     <div className="flex items-center justify-center gap-2">
                       <span>
                         {summary.scoresheet.winCondition === "Manual"

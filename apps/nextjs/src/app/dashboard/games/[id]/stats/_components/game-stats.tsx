@@ -81,7 +81,6 @@ export default function GameStats({ gameId }: { gameId: number }) {
 
   // Current player (you) data
   const currentPlayer = gameStats.players.find((p) => p.isUser);
-  console.log(gameStats.players.filter((p) => p.isUser));
   // Score over time data
 
   const scoreOverTimeData = [...gameStats.matches]
