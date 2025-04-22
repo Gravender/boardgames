@@ -25,7 +25,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { formatDuration } from "@board-games/shared";
+import { formatDuration, getOrdinalSuffix } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import {
@@ -47,23 +47,6 @@ import { useTRPC } from "~/trpc/react";
 import { MatchDurationTrendChart } from "../../../_components/match-duration-trend-chart";
 import { PlayerStatsTable } from "../../../_components/player-stats-table";
 import { WinLoseRatioChart } from "../../../_components/win-lose-chart";
-
-// Add at the top of the file, below the imports
-function getOrdinalSuffix(number: number): string {
-  if (number % 100 >= 11 && number % 100 <= 13) {
-    return "th";
-  }
-  switch (number % 10) {
-    case 1:
-      return "st";
-    case 2:
-      return "nd";
-    case 3:
-      return "rd";
-    default:
-      return "th";
-  }
-}
 
 export default function GameStats({ gameId }: { gameId: number }) {
   const trpc = useTRPC();
