@@ -225,7 +225,47 @@ export const playerRouter = createTRPCRouter({
         },
       },
     });
-    const mappedPlayers = playersQuery.map((player) => {
+    const sharedPlayersQuery = await ctx.db.query.sharedPlayer.findMany({
+      where: {
+        sharedWithId: ctx.userId,
+        linkedPlayerId: {
+          isNull: true,
+        },
+      },
+      with: {
+        player: {
+          with: {
+            image: true,
+          },
+        },
+        sharedMatches: {
+          where: {
+            sharedWithId: ctx.userId,
+          },
+          with: {
+            match: true,
+            sharedGame: {
+              with: {
+                game: true,
+                linkedGame: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    const mappedPlayers: {
+      type: "original" | "shared";
+      id: number;
+      name: string;
+      imageUrl: string | null;
+      matches: number;
+      lastPlayed: Date | undefined;
+      gameName: string | undefined;
+      gameId: number | undefined;
+      gameType: "original" | "shared";
+      permissions: "view" | "edit";
+    }[] = playersQuery.map((player) => {
       const linkedMatches = player.sharedLinkedPlayers.flatMap((linkedPlayer) =>
         linkedPlayer.sharedMatches
           .map((sharedMatch) => sharedMatch.match)
@@ -252,15 +292,42 @@ export const playerRouter = createTRPCRouter({
       const firstMatch = getFirstMatch();
 
       return {
+        type: "original" as const,
         id: player.id,
         name: player.name,
-        imageUrl: player.image?.url,
+        imageUrl: player.image?.url ?? null,
         matches: player.matches.length + linkedMatches.length,
         lastPlayed: firstMatch?.date,
         gameName: firstMatch?.game.name,
         gameId: firstMatch?.game.id,
+        gameType: "original" as const,
+        permissions: "edit" as const,
       };
     });
+    for (const returnedSharedPlayer of sharedPlayersQuery) {
+      const sharedMatches = returnedSharedPlayer.sharedMatches.toSorted(
+        (a, b) => compareDesc(a.match.date, b.match.date),
+      );
+      const firstMatch = sharedMatches[0];
+      mappedPlayers.push({
+        type: "shared" as const,
+        id: returnedSharedPlayer.id,
+        name: returnedSharedPlayer.player.name,
+        imageUrl: returnedSharedPlayer.player.image?.url ?? null,
+        matches: sharedMatches.length,
+        lastPlayed: firstMatch?.match.date,
+        gameName: firstMatch?.sharedGame.linkedGame
+          ? firstMatch.sharedGame.linkedGame.name
+          : firstMatch?.sharedGame.game.name,
+        gameId: firstMatch?.sharedGame.linkedGame
+          ? firstMatch.sharedGame.linkedGame.id
+          : firstMatch?.sharedGame.id,
+        gameType: firstMatch?.sharedGame.linkedGame
+          ? ("original" as const)
+          : ("shared" as const),
+        permissions: returnedSharedPlayer.permission,
+      });
+    }
     return mappedPlayers;
   }),
   getPlayer: protectedUserProcedure
