@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { HydrateClient, prefetch, trpc } from "~/trpc/server";
-import MatchSummarySkeleton from "./_components/match-summary-skeleton";
+import MatchSummarySkeleton from "../../../../_components/match-summary-skeleton";
 import SharedMatchSummary from "./_components/shared-match-summary";
 
 interface Props {

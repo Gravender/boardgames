@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Trophy } from "lucide-react";
+import { Trophy } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { getOrdinalSuffix } from "@board-games/shared";
@@ -44,21 +44,19 @@ export default function MatchSummaryPlayerStats({
               <TableHead className="bg-sidebar sticky left-0">Player</TableHead>
               <TableHead className="text-center">Games</TableHead>
               <TableHead className="text-center">Wins</TableHead>
-              <TableHead className="text-center">Win Rate</TableHead>
-              <TableHead className="hidden text-center lg:table-cell">
-                Avg Score
-              </TableHead>
-              <TableHead className="hidden text-center lg:table-cell">
-                Top Placement
+              <TableHead className="hidden text-center md:table-cell">
+                Win Rate
               </TableHead>
               {scoresheet.winCondition !== "Manual" && (
                 <>
-                  <TableHead className="hidden text-center md:table-cell">
-                    Best
+                  <TableHead className="hidden text-center lg:table-cell">
+                    Avg Score
                   </TableHead>
-                  <TableHead className="hidden text-center md:table-cell">
-                    Worst
+                  <TableHead className="hidden text-center lg:table-cell">
+                    Top Placement
                   </TableHead>
+                  <TableHead className="text-center">Best</TableHead>
+                  <TableHead className="text-center">Worst</TableHead>
                 </>
               )}
             </TableRow>
@@ -112,8 +110,8 @@ export default function MatchSummaryPlayerStats({
                 placements.length > 0 ? placements[0]?.placement : null;
 
               return (
-                <TableRow key={player.id}>
-                  <TableCell className="sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border">
+                <TableRow key={player.id} className="base:text-sm text-xs">
+                  <TableCell className="sticky left-0 z-10 max-w-24 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:max-w-32">
                     <div className="flex items-center gap-2">
                       {player.name}
                       {player.type === "shared" && (
@@ -127,28 +125,25 @@ export default function MatchSummaryPlayerStats({
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1">
                       {player.wins}
-                      {player.wins > 0 && (
-                        <Trophy className="h-4 w-4 text-yellow-500" />
-                      )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="hidden text-center md:table-cell">
                     {winRate.toFixed(1)}%
-                  </TableCell>
-                  <TableCell className="hidden text-center lg:table-cell">
-                    {avgScore.toFixed(1)}
-                  </TableCell>
-                  <TableCell className="hidden text-center lg:table-cell">
-                    {topPlacement
-                      ? `${topPlacement}${getOrdinalSuffix(topPlacement)}`
-                      : "-"}
                   </TableCell>
                   {scoresheet.winCondition !== "Manual" && (
                     <>
-                      <TableCell className="hidden text-center md:table-cell">
+                      <TableCell className="hidden text-center lg:table-cell">
+                        {avgScore.toFixed(1)}
+                      </TableCell>
+                      <TableCell className="hidden text-center lg:table-cell">
+                        {topPlacement
+                          ? `${topPlacement}${getOrdinalSuffix(topPlacement)}`
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="text-center">
                         {Best ?? ""}
                       </TableCell>
-                      <TableCell className="hidden text-center md:table-cell">
+                      <TableCell className="text-center">
                         {Worst ?? ""}
                       </TableCell>
                     </>

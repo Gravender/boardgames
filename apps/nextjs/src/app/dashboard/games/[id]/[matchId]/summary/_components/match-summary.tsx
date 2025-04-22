@@ -18,16 +18,15 @@ import { formatDuration } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
-import { cn } from "@board-games/ui/utils";
 
+import MatchSummaryPlayerStats from "~/app/dashboard/games/_components/match-player-stats";
+import ShareMatchResults from "~/app/dashboard/games/shared/[id]/[matchId]/summary/_components/match-results";
 import { useTRPC } from "~/trpc/react";
-import MatchSummaryPlayerStats from "../../../../../_components/match-player-stats";
-import ShareMatchResults from "./match-results";
 
-export default function SharedMatchSummary({ matchId }: { matchId: number }) {
+export default function MatchSummary({ matchId }: { matchId: number }) {
   const trpc = useTRPC();
   const { data: match } = useSuspenseQuery(
-    trpc.sharing.getSharedMatchSummary.queryOptions({ id: matchId }),
+    trpc.match.getSummary.queryOptions({ id: matchId }),
   );
 
   if (!match) {
@@ -58,16 +57,6 @@ export default function SharedMatchSummary({ matchId }: { matchId: number }) {
                   <h1 className="text-3xl font-bold">{match.name}</h1>
                   <div className="mt-1 flex items-center gap-2">
                     <Badge variant="outline">{match.gameName}</Badge>
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        match.gameType === "shared" && "bg-blue-600 text-white",
-                      )}
-                    >
-                      {match.gameType === "linked"
-                        ? "Linked Game"
-                        : "Shared Game"}
-                    </Badge>
                   </div>
                 </div>
 

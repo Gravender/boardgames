@@ -7,15 +7,13 @@ import { Badge } from "@board-games/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { cn } from "@board-games/ui/utils";
 
-type SharedMatchStats = NonNullable<
-  RouterOutputs["sharing"]["getSharedMatchSummary"]
->;
+type SharedMatchStats =
+  | NonNullable<RouterOutputs["match"]["getSummary"]>
+  | NonNullable<RouterOutputs["sharing"]["getSharedMatchSummary"]>;
 
 type teamWithPlayers = SharedMatchStats["teams"][number] & {
   teamType: "Team";
-  players: NonNullable<
-    RouterOutputs["sharing"]["getSharedMatchSummary"]
-  >["players"];
+  players: SharedMatchStats["players"];
   placement: number;
   score: number;
   winner: boolean;
