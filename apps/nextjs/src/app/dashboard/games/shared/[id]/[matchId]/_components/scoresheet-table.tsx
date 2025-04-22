@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   useMutation,
@@ -406,7 +406,7 @@ export function ScoreSheetTable({ matchId }: { matchId: number }) {
     }
   };
 
-  if (!match) return null;
+  if (!match) return notFound();
   return (
     <div className="flex w-full justify-center">
       <div className="w-full max-w-6xl sm:px-4">
