@@ -217,20 +217,21 @@ export function ScoreSheetTable({ matchId }: { matchId: number }) {
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isRunning) {
+    if (isRunning && match?.permission === "edit") {
       interval = setInterval(() => {
         setDuration((prevDuration) => prevDuration + 1);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isRunning]);
+  }, [isRunning, match]);
 
   useEffect(() => {
     if (
       match !== null &&
       isRunning &&
       duration % 15 === 0 &&
-      match.duration !== duration
+      match.duration !== duration &&
+      match.permission === "edit"
     ) {
       const debounce = setTimeout(() => {
         updateSharedMatchDuration.mutate({
