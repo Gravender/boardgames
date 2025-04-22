@@ -10,7 +10,7 @@ export default function GameNotFound() {
         The game you're looking for doesn't exist or has been removed.
       </p>
       <Button asChild>
-        <Link href="/games">Back to Games</Link>
+        <Link href="/dashboard/games">Back to Games</Link>
       </Button>
     </div>
   );

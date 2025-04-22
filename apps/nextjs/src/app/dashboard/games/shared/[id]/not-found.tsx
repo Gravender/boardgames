@@ -11,7 +11,7 @@ export default function SharedGameNotFound() {
         access to it.
       </p>
       <Button asChild>
-        <Link href="/games">Back to Games</Link>
+        <Link href="/dashboard/games">Back to Games</Link>
       </Button>
     </div>
   );
