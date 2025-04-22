@@ -1,7 +1,7 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
-import { and, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
+import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type {
@@ -338,6 +338,61 @@ export const matchRouter = createTRPCRouter({
           game: {
             with: {
               image: true,
+              linkedGames: {
+                with: {
+                  sharedMatches: {
+                    where: {
+                      sharedWithId: ctx.userId,
+                    },
+                    with: {
+                      match: {
+                        with: {
+                          location: true,
+                        },
+                      },
+                      sharedMatchPlayers: {
+                        with: {
+                          matchPlayer: {
+                            with: {
+                              team: true,
+                            },
+                          },
+                          sharedPlayer: {
+                            where: {
+                              sharedWithId: ctx.userId,
+                            },
+                            with: {
+                              linkedPlayer: {
+                                with: {
+                                  image: true,
+                                },
+                              },
+                              player: true,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              matches: {
+                orderBy: {
+                  date: "desc",
+                },
+                with: {
+                  matchPlayers: {
+                    with: {
+                      player: {
+                        columns: {
+                          id: true,
+                          name: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
           location: true,
@@ -347,52 +402,97 @@ export const matchRouter = createTRPCRouter({
       if (!returnedMatch) {
         return null;
       }
-      const previousMatches = (
-        await ctx.db.query.match.findMany({
-          columns: {
-            gameId: true,
-            id: true,
-            name: true,
-            date: true,
-            createdAt: true,
-            finished: true,
-          },
-          where: {
-            userId: ctx.userId,
-            gameId: returnedMatch.gameId,
-          },
-          with: {
-            matchPlayers: {
-              columns: {
-                id: true,
-                score: true,
-                placement: true,
-                winner: true,
-              },
-              with: {
-                player: {
-                  columns: {
-                    id: true,
-                    name: true,
-                  },
-                },
-              },
-              orderBy: (matchPlayer, { asc }) => asc(matchPlayer.placement),
-            },
-          },
-          orderBy: (match) => desc(match.date),
-        })
-      ).filter((match) =>
+      const previousMatches = returnedMatch.game.matches.map<{
+        type: "original" | "shared";
+        id: number;
+        gameId: number;
+        date: Date;
+        name: string;
+        finished: boolean;
+        createdAt: Date;
+        matchPlayers: {
+          id: number;
+          type: "original" | "shared";
+          playerId: number;
+          name: string;
+          score: number | null;
+          placement: number | null;
+          winner: boolean | null;
+          teamId: number | null;
+        }[];
+      }>((match) => ({
+        type: "original" as const,
+        id: match.id,
+        gameId: match.gameId,
+        date: match.date,
+        name: match.name,
+        finished: match.finished,
+        createdAt: match.createdAt,
+        matchPlayers: match.matchPlayers.map((matchPlayer) => ({
+          type: "original" as const,
+          id: matchPlayer.id,
+          playerId: matchPlayer.player.id,
+          name: matchPlayer.player.name,
+          score: matchPlayer.score,
+          placement: matchPlayer.placement,
+          winner: matchPlayer.winner,
+          teamId: matchPlayer.teamId,
+        })),
+      }));
+      for (const sharedMatch of returnedMatch.game.linkedGames.flatMap(
+        (linkedGame) => linkedGame.sharedMatches,
+      )) {
+        previousMatches.push({
+          type: "shared" as const,
+          id: sharedMatch.id,
+          gameId: sharedMatch.sharedGameId,
+          date: sharedMatch.match.date,
+          name: sharedMatch.match.name,
+          finished: sharedMatch.match.finished,
+          createdAt: sharedMatch.match.createdAt,
+          matchPlayers: sharedMatch.sharedMatchPlayers
+            .map((sharedMatchPlayer) => {
+              const sharedPlayer = sharedMatchPlayer.sharedPlayer;
+              if (sharedPlayer === null) return null;
+              const linkedPlayer = sharedPlayer.linkedPlayer;
+              if (linkedPlayer)
+                return {
+                  type: "original" as const,
+                  id: sharedMatchPlayer.matchPlayerId,
+                  playerId: linkedPlayer.id,
+                  name: linkedPlayer.name,
+                  score: sharedMatchPlayer.matchPlayer.score,
+                  placement: sharedMatchPlayer.matchPlayer.placement,
+                  winner: sharedMatchPlayer.matchPlayer.winner,
+                  teamId: sharedMatchPlayer.matchPlayer.teamId,
+                };
+
+              return {
+                type: "shared" as const,
+                id: sharedMatchPlayer.id,
+                playerId: sharedPlayer.playerId,
+                name: sharedPlayer.player.name,
+                score: sharedMatchPlayer.matchPlayer.score,
+                placement: sharedMatchPlayer.matchPlayer.placement,
+                winner: sharedMatchPlayer.matchPlayer.winner,
+                teamId: sharedMatchPlayer.matchPlayer.teamId,
+              };
+            })
+            .filter((player) => player !== null),
+        });
+      }
+      const filteredPreviousMatches = previousMatches.filter((match) =>
         match.matchPlayers.some((prevMatchPlayer) =>
           returnedMatch.matchPlayers.some(
             (returnedMatchPlayer) =>
-              returnedMatchPlayer.player.id === prevMatchPlayer.player.id,
+              returnedMatchPlayer.player.id === prevMatchPlayer.playerId,
           ),
         ),
       );
 
       const refinedPlayers = returnedMatch.matchPlayers.map((matchPlayer) => {
         return {
+          type: "original" as const,
           id: matchPlayer.id,
           playerId: matchPlayer.player.id,
           name: matchPlayer.player.name,
@@ -419,6 +519,7 @@ export const matchRouter = createTRPCRouter({
       });
 
       interface AccPlayer {
+        type: "original" | "shared";
         name: string;
         scores: number[]; // from matches that contain scores
         dates: { matchId: number; date: Date; createdAt: Date }[];
@@ -430,49 +531,50 @@ export const matchRouter = createTRPCRouter({
       }
 
       const playerStats: Record<number, AccPlayer> = {};
-      previousMatches.forEach((match) => {
+      filteredPreviousMatches.forEach((match) => {
         if (match.finished) {
           match.matchPlayers.forEach((matchPlayer) => {
             if (
               refinedPlayers.find(
-                (player) => player.playerId === matchPlayer.player.id,
+                (player) => player.playerId === matchPlayer.playerId,
               )
             ) {
-              const { id: playerId, name } = matchPlayer.player;
-
               // If this player hasn't been seen yet, initialize
-              playerStats[playerId] ??= {
-                name,
+              playerStats[matchPlayer.playerId] ??= {
+                type: "original" as const,
+                name: matchPlayer.name,
                 id: matchPlayer.id,
-                playerId: playerId,
+                playerId: matchPlayer.playerId,
                 scores: [],
                 dates: [],
                 placements: {},
                 wins: 0,
                 plays: 0,
               };
+              const currentPlayerStats = playerStats[matchPlayer.playerId];
+              if (currentPlayerStats !== undefined) {
+                // Add score info for this match
+                if (matchPlayer.score)
+                  currentPlayerStats.scores.push(matchPlayer.score);
+                if (matchPlayer.winner) currentPlayerStats.wins++;
 
-              // Add score info for this match
-              if (matchPlayer.score)
-                playerStats[playerId].scores.push(matchPlayer.score);
-              if (matchPlayer.winner) playerStats[playerId].wins++;
+                // Add date info for this match
+                currentPlayerStats.dates.push({
+                  matchId: match.id,
+                  date: match.date,
+                  createdAt: match.createdAt,
+                });
 
-              // Add date info for this match
-              playerStats[playerId].dates.push({
-                matchId: match.id,
-                date: match.date,
-                createdAt: match.createdAt,
-              });
+                // Increase the count for this placement
+                const placement = matchPlayer.placement;
+                if (placement != null) {
+                  currentPlayerStats.placements[placement] =
+                    (currentPlayerStats.placements[placement] ?? 0) + 1;
+                }
 
-              // Increase the count for this placement
-              const placement = matchPlayer.placement;
-              if (placement != null) {
-                playerStats[playerId].placements[placement] =
-                  (playerStats[playerId].placements[placement] ?? 0) + 1;
+                // This counts as one "play"
+                currentPlayerStats.plays += 1;
               }
-
-              // This counts as one "play"
-              playerStats[playerId].plays += 1;
             }
           });
         }
@@ -518,7 +620,7 @@ export const matchRouter = createTRPCRouter({
         players: refinedPlayers,
         teams: returnedMatch.teams,
         duration: returnedMatch.duration,
-        previousMatches: previousMatches,
+        previousMatches: filteredPreviousMatches,
         playerStats: finalPlayersWithFirstGame,
       };
     }),
