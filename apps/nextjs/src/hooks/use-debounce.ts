@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { debounce } from "lodash";
 
@@ -32,20 +34,19 @@ export function useDebouncedInput<T>(
 
   return [value, setValue] as const;
 }
-export const useDebouncedCallback = (callback: () => void, delay?: number) => {
+export function useDebouncedCallback<T extends (...args: never[]) => void>(
+  callback: T,
+  delay = 1000,
+): (...args: Parameters<T>) => void {
   const ref = useRef(callback);
 
   useEffect(() => {
     ref.current = callback;
   }, [callback]);
 
-  const debouncedCallback = useMemo(() => {
-    const func = () => {
-      ref.current();
-    };
-    // eslint-disable-next-line react-compiler/react-compiler
-    return debounce(func, delay ?? 1000);
+  return useMemo(() => {
+    return debounce((...args: Parameters<T>) => {
+      ref.current(...args);
+    }, delay);
   }, [delay]);
-
-  return debouncedCallback;
-};
+}

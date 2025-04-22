@@ -1,10 +1,155 @@
+import type { SQL } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
+import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
+import { z } from "zod";
 
-import { selectSharedMatchSchema } from "@board-games/db/zodSchema";
+import { match, matchPlayer, roundPlayer, team } from "@board-games/db/schema";
+import {
+  selectRoundPlayerSchema,
+  selectSharedMatchPlayerSchema,
+  selectSharedMatchSchema,
+} from "@board-games/db/zodSchema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
 
 export const shareMatchRouter = createTRPCRouter({
+  getSharedMatch: protectedUserProcedure
+    .input(selectSharedMatchSchema.pick({ id: true }))
+    .query(async ({ ctx, input }) => {
+      const returnedSharedMatch = await ctx.db.query.sharedMatch.findFirst({
+        where: {
+          id: input.id,
+          sharedWithId: ctx.userId,
+        },
+        with: {
+          match: {
+            with: {
+              scoresheet: {
+                with: {
+                  rounds: {
+                    orderBy: {
+                      order: "asc",
+                    },
+                  },
+                },
+              },
+              teams: true,
+            },
+          },
+          sharedMatchPlayers: {
+            with: {
+              matchPlayer: {
+                with: {
+                  playerRounds: true,
+                  player: {
+                    with: {
+                      image: true,
+                    },
+                  },
+                },
+              },
+              sharedPlayer: {
+                with: {
+                  linkedPlayer: {
+                    with: {
+                      image: true,
+                    },
+                  },
+                  player: {
+                    with: {
+                      image: true,
+                    },
+                  },
+                },
+                where: {
+                  sharedWithId: ctx.userId,
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!returnedSharedMatch) {
+        return null;
+      }
+      const refinedPlayers = returnedSharedMatch.sharedMatchPlayers.map(
+        (sharedMatchPlayer) => {
+          const playerRounds = returnedSharedMatch.match.scoresheet.rounds.map(
+            (scoresheetRound) => {
+              const sharedMatchPlayerRound =
+                sharedMatchPlayer.matchPlayer.playerRounds.find(
+                  (round) => round.roundId === scoresheetRound.id,
+                );
+              if (!sharedMatchPlayerRound) {
+                const message = `Shared Match Player Round not found with roundId: ${scoresheetRound.id} and matchPlayerId: ${sharedMatchPlayer.matchPlayerId}`;
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: message,
+                });
+              }
+              return sharedMatchPlayerRound;
+            },
+          );
+          const sharedPlayer = sharedMatchPlayer.sharedPlayer;
+          if (sharedPlayer === null) {
+            return {
+              permission: sharedMatchPlayer.permission,
+              name: sharedMatchPlayer.matchPlayer.player.name,
+              rounds: playerRounds,
+              score: sharedMatchPlayer.matchPlayer.score,
+              id: sharedMatchPlayer.id,
+              matchPlayerId: sharedMatchPlayer.matchPlayer.id,
+              playerId: sharedMatchPlayer.matchPlayer.player.id,
+              imageUrl: sharedMatchPlayer.matchPlayer.player.image?.url,
+              details: sharedMatchPlayer.matchPlayer.details,
+              teamId: sharedMatchPlayer.matchPlayer.teamId,
+            };
+          }
+          const linkedPlayer = sharedPlayer.linkedPlayer;
+          if (linkedPlayer === null) {
+            return {
+              permission: sharedMatchPlayer.permission,
+              name: sharedPlayer.player.name,
+              rounds: playerRounds,
+              score: sharedMatchPlayer.matchPlayer.score,
+              id: sharedMatchPlayer.id,
+              matchPlayerId: sharedMatchPlayer.matchPlayer.id,
+              playerId: sharedPlayer.player.id,
+              imageUrl: sharedPlayer.player.image?.url,
+              details: sharedMatchPlayer.matchPlayer.details,
+              teamId: sharedMatchPlayer.matchPlayer.teamId,
+            };
+          }
+          return {
+            permission: sharedMatchPlayer.permission,
+            name: linkedPlayer.name,
+            rounds: playerRounds,
+            score: sharedMatchPlayer.matchPlayer.score,
+            id: sharedMatchPlayer.id,
+            matchPlayerId: sharedMatchPlayer.matchPlayer.id,
+            playerId: linkedPlayer.id,
+            imageUrl: linkedPlayer.image?.url,
+            details: sharedMatchPlayer.matchPlayer.details,
+            teamId: sharedMatchPlayer.matchPlayer.teamId,
+          };
+        },
+      );
+      return {
+        permission: returnedSharedMatch.permission,
+        id: returnedSharedMatch.id,
+        date: returnedSharedMatch.match.date,
+        name: returnedSharedMatch.match.name,
+        scoresheet: returnedSharedMatch.match.scoresheet,
+        gameId: returnedSharedMatch.sharedGameId,
+        players: refinedPlayers,
+        teams: returnedSharedMatch.match.teams,
+        duration: returnedSharedMatch.match.duration,
+        finished: returnedSharedMatch.match.finished,
+        running: returnedSharedMatch.match.running,
+        comment: returnedSharedMatch.match.comment,
+      };
+    }),
   getSharedMatchSummary: protectedUserProcedure
     .input(selectSharedMatchSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
@@ -391,5 +536,650 @@ export const shareMatchRouter = createTRPCRouter({
         previousMatches: filteredPreviousMatches,
         playerStats: finalPlayersWithFirstGame,
       };
+    }),
+  updateSharedMatchComment: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectSharedMatchSchema.pick({ id: true }),
+        comment: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const response = await ctx.db.transaction(async (transaction) => {
+        const returnedSharedMatch =
+          await transaction.query.sharedMatch.findFirst({
+            where: {
+              id: input.match.id,
+              sharedWithId: ctx.userId,
+            },
+          });
+        if (!returnedSharedMatch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared match not found.",
+          });
+        }
+        if (returnedSharedMatch.permission === "view") {
+          return {
+            success: false,
+            message: "You do not have permission to update this shared match.",
+          };
+        }
+        const [updatedMatch] = await transaction
+          .update(match)
+          .set({
+            comment: input.comment,
+          })
+          .where(eq(match.id, returnedSharedMatch.matchId))
+          .returning();
+        if (!updatedMatch) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to update shared match.",
+          });
+        }
+        return {
+          success: true,
+          message: "Shared match updated successfully.",
+        };
+      });
+      return response;
+    }),
+  updateSharedMatchPlayer: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectSharedMatchSchema.pick({ id: true }),
+        sharedMatchPlayer: selectSharedMatchPlayerSchema.pick({ id: true }),
+        round: selectRoundPlayerSchema.pick({ id: true, score: true }),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const response = await ctx.db.transaction(async (transaction) => {
+        const returnedSharedMatch =
+          await transaction.query.sharedMatch.findFirst({
+            where: {
+              id: input.match.id,
+              sharedWithId: ctx.userId,
+            },
+          });
+        if (!returnedSharedMatch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared match not found.",
+          });
+        }
+        const returnedSharedMatchPlayer =
+          await transaction.query.sharedMatchPlayer.findFirst({
+            where: {
+              id: input.sharedMatchPlayer.id,
+              sharedWithId: ctx.userId,
+            },
+          });
+        if (!returnedSharedMatchPlayer) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared match player not found.",
+          });
+        }
+
+        const [updatedRound] = await transaction
+          .update(roundPlayer)
+          .set({
+            score: input.round.score,
+          })
+          .where(
+            and(
+              eq(roundPlayer.id, input.round.id),
+              eq(
+                roundPlayer.matchPlayerId,
+                returnedSharedMatchPlayer.matchPlayerId,
+              ),
+            ),
+          )
+          .returning();
+        if (!updatedRound) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to update shared match player round.",
+          });
+        }
+        return {
+          success: true,
+          message: "Shared match player updated successfully.",
+        };
+      });
+      return response;
+    }),
+  updateShareMatchTeam: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectSharedMatchSchema.pick({ id: true }),
+        team: z.object({ id: z.number() }),
+        round: selectRoundPlayerSchema.pick({ id: true, score: true }),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const response = await ctx.db.transaction(async (transaction) => {
+        const returnedSharedMatch =
+          await transaction.query.sharedMatch.findFirst({
+            where: {
+              id: input.match.id,
+              sharedWithId: ctx.userId,
+            },
+          });
+        if (!returnedSharedMatch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared match not found.",
+          });
+        }
+        if (returnedSharedMatch.permission === "view") {
+          return {
+            success: false,
+            message: "You do not have permission to update this shared match.",
+          };
+        }
+        const returnedMatchPlayers =
+          await transaction.query.matchPlayer.findMany({
+            where: {
+              matchId: input.match.id,
+              teamId: input.team.id,
+            },
+          });
+
+        await transaction
+          .update(roundPlayer)
+          .set({
+            score: input.round.score,
+          })
+          .where(
+            and(
+              eq(roundPlayer.id, input.round.id),
+              inArray(
+                roundPlayer.matchPlayerId,
+                returnedMatchPlayers.map((matchPlayer) => matchPlayer.id),
+              ),
+            ),
+          );
+
+        return {
+          success: true,
+          message: "Shared match player updated successfully.",
+        };
+      });
+      return response;
+    }),
+  updateSharedMatchToggleRunning: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectSharedMatchSchema.pick({ id: true }),
+        running: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const response = await ctx.db.transaction(async (transaction) => {
+        const returnedSharedMatch =
+          await transaction.query.sharedMatch.findFirst({
+            where: {
+              id: input.match.id,
+              sharedWithId: ctx.userId,
+            },
+          });
+        if (!returnedSharedMatch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared match not found.",
+          });
+        }
+        if (returnedSharedMatch.permission === "view") {
+          return {
+            success: false,
+            message: "You do not have permission to update this shared match.",
+          };
+        }
+        const [updatedMatch] = await transaction
+          .update(match)
+          .set({
+            running: input.running,
+          })
+          .where(eq(match.id, returnedSharedMatch.matchId))
+          .returning();
+        if (!updatedMatch) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to update shared match.",
+          });
+        }
+        return {
+          success: true,
+          message: "Shared match updated successfully.",
+        };
+      });
+      return response;
+    }),
+  updateSharedMatchFinish: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectSharedMatchSchema.pick({ id: true }),
+        finished: z.boolean(),
+        duration: z.number(),
+        playersPlacement: z.array(
+          z.object({
+            matchPlayerId: z.number(),
+            placement: z.number(),
+            score: z.number(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const response = await ctx.db.transaction(async (transaction) => {
+        const returnedSharedMatch =
+          await transaction.query.sharedMatch.findFirst({
+            where: {
+              id: input.match.id,
+              sharedWithId: ctx.userId,
+            },
+          });
+        if (!returnedSharedMatch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared match not found.",
+          });
+        }
+        if (returnedSharedMatch.permission === "view") {
+          return {
+            success: false,
+            message: "You do not have permission to update this shared match.",
+          };
+        }
+        const [updatedMatch] = await transaction
+          .update(match)
+          .set({
+            finished: input.finished,
+            duration: input.duration,
+            running: false,
+          })
+          .where(eq(match.id, returnedSharedMatch.matchId))
+          .returning();
+        if (!updatedMatch) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to update shared match.",
+          });
+        }
+        if (input.playersPlacement.length > 0) {
+          const ids = input.playersPlacement.map((p) => p.matchPlayerId);
+          const scoreSqlChunks: SQL[] = [sql`(case`];
+          const placementSqlChunks: SQL[] = [sql`(case`];
+          const winnerSqlChunks: SQL[] = [sql`(case`];
+
+          for (const inputPlayer of input.playersPlacement) {
+            scoreSqlChunks.push(
+              sql`when ${matchPlayer.id} = ${inputPlayer.matchPlayerId} then ${sql`${inputPlayer.score}::integer`}`,
+            );
+            placementSqlChunks.push(
+              sql`when ${matchPlayer.id} = ${inputPlayer.matchPlayerId} then ${sql`${inputPlayer.placement}::integer`}`,
+            );
+            winnerSqlChunks.push(
+              sql`when ${matchPlayer.id} = ${inputPlayer.matchPlayerId} then ${inputPlayer.placement === 1}::boolean`,
+            );
+          }
+
+          scoreSqlChunks.push(sql`end)`);
+          placementSqlChunks.push(sql`end)`);
+          winnerSqlChunks.push(sql`end)`);
+
+          // Join each array of CASE chunks into a single SQL expression
+          const finalScoreSql = sql.join(scoreSqlChunks, sql.raw(" "));
+          const finalPlacementSql = sql.join(placementSqlChunks, sql.raw(" "));
+          const finalWinnerSql = sql.join(winnerSqlChunks, sql.raw(" "));
+
+          // Perform the bulk update
+          await transaction
+            .update(matchPlayer)
+            .set({
+              score: finalScoreSql,
+              placement: finalPlacementSql,
+              winner: finalWinnerSql,
+            })
+            .where(inArray(matchPlayer.id, ids));
+        }
+        return {
+          success: true,
+          message: "Shared match updated successfully.",
+        };
+      });
+      return response;
+    }),
+  updateShareMatchScores: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectSharedMatchSchema.pick({ id: true }),
+        duration: z.number(),
+        players: z.array(
+          z.object({
+            matchPlayerId: z.number(),
+            placement: z.number().optional(),
+            score: z.number(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const response = await ctx.db.transaction(async (transaction) => {
+        const returnedSharedMatch =
+          await transaction.query.sharedMatch.findFirst({
+            where: {
+              id: input.match.id,
+              sharedWithId: ctx.userId,
+            },
+          });
+        if (!returnedSharedMatch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared match not found.",
+          });
+        }
+        if (returnedSharedMatch.permission === "view") {
+          return {
+            success: false,
+            message: "You do not have permission to update this shared match.",
+          };
+        }
+        const [updatedMatch] = await transaction
+          .update(match)
+          .set({
+            duration: input.duration,
+          })
+          .where(eq(match.id, returnedSharedMatch.matchId))
+          .returning();
+        if (!updatedMatch) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to update shared match.",
+          });
+        }
+        if (input.players.length > 0) {
+          const ids = input.players.map((p) => p.matchPlayerId);
+          const scoreSqlChunks: SQL[] = [sql`(case`];
+          const placementSqlChunks: SQL[] = [sql`(case`];
+          const winnerSqlChunks: SQL[] = [sql`(case`];
+
+          for (const inputPlayer of input.players) {
+            scoreSqlChunks.push(
+              sql`when ${matchPlayer.id} = ${inputPlayer.matchPlayerId} then ${sql`${inputPlayer.score}::integer`}`,
+            );
+            placementSqlChunks.push(
+              sql`when ${matchPlayer.id} = ${inputPlayer.matchPlayerId} then ${sql`${inputPlayer.placement}::integer`}`,
+            );
+            winnerSqlChunks.push(
+              sql`when ${matchPlayer.id} = ${inputPlayer.matchPlayerId} then ${inputPlayer.placement === 1}::boolean`,
+            );
+          }
+
+          scoreSqlChunks.push(sql`end)`);
+          placementSqlChunks.push(sql`end)`);
+          winnerSqlChunks.push(sql`end)`);
+
+          // Join each array of CASE chunks into a single SQL expression
+          const finalScoreSql = sql.join(scoreSqlChunks, sql.raw(" "));
+          const finalPlacementSql = sql.join(placementSqlChunks, sql.raw(" "));
+          const finalWinnerSql = sql.join(winnerSqlChunks, sql.raw(" "));
+
+          // Perform the bulk update
+          await transaction
+            .update(matchPlayer)
+            .set({
+              score: finalScoreSql,
+              placement: finalPlacementSql,
+              winner: finalWinnerSql,
+            })
+            .where(inArray(matchPlayer.id, ids));
+        }
+        return {
+          success: true,
+          message: "Shared match updated successfully.",
+        };
+      });
+      return response;
+    }),
+  updateSharedMatchDuration: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectSharedMatchSchema.pick({ id: true }),
+        duration: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const response = await ctx.db.transaction(async (transaction) => {
+        const returnedSharedMatch =
+          await transaction.query.sharedMatch.findFirst({
+            where: {
+              id: input.match.id,
+              sharedWithId: ctx.userId,
+            },
+          });
+        if (!returnedSharedMatch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared match not found.",
+          });
+        }
+        if (returnedSharedMatch.permission === "view") {
+          return {
+            success: false,
+            message: "You do not have permission to update this shared match.",
+          };
+        }
+        const [updatedMatch] = await transaction
+          .update(match)
+          .set({
+            duration: input.duration,
+          })
+          .where(eq(match.id, returnedSharedMatch.matchId))
+          .returning();
+        if (!updatedMatch) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to update shared match.",
+          });
+        }
+        return {
+          success: true,
+          message: "Shared match updated successfully.",
+        };
+      });
+      return response;
+    }),
+  updateSharedMatchPlayerDetails: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectSharedMatchSchema.pick({ id: true }),
+        id: z.number(),
+        details: z.string(),
+        type: z.enum(["Player", "Team"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const response = await ctx.db.transaction(async (transaction) => {
+        const returnedSharedMatch =
+          await transaction.query.sharedMatch.findFirst({
+            where: {
+              id: input.match.id,
+              sharedWithId: ctx.userId,
+            },
+          });
+        if (!returnedSharedMatch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared match not found.",
+          });
+        }
+        if (returnedSharedMatch.permission === "view") {
+          return {
+            success: false,
+            message: "You do not have permission to update this shared match.",
+          };
+        }
+        if (input.type === "Player") {
+          const [updatedMatchPlayer] = await transaction
+            .update(matchPlayer)
+            .set({
+              details: input.details,
+            })
+            .where(eq(matchPlayer.id, input.id))
+            .returning();
+          if (!updatedMatchPlayer) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to update shared match player.",
+            });
+          }
+          return {
+            success: true,
+            message: "Shared match player updated successfully.",
+          };
+        }
+        const [updatedTeam] = await transaction
+          .update(team)
+          .set({
+            details: input.details,
+          })
+          .where(eq(team.id, input.id))
+          .returning();
+        if (!updatedTeam) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to update shared match team.",
+          });
+        }
+        return {
+          success: true,
+          message: "Shared match updated successfully.",
+        };
+      });
+      return response;
+    }),
+  updateSharedMatchPlacement: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectSharedMatchSchema.pick({ id: true }),
+        playersPlacement: z
+          .array(
+            selectSharedMatchPlayerSchema
+              .pick({ id: true })
+              .and(z.object({ placement: z.number() })),
+          )
+          .refine((placements) => placements.length > 0),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const response = await ctx.db.transaction(async (transaction) => {
+        const returnedSharedMatch =
+          await transaction.query.sharedMatch.findFirst({
+            where: {
+              id: input.match.id,
+              sharedWithId: ctx.userId,
+            },
+          });
+        if (!returnedSharedMatch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared match not found.",
+          });
+        }
+        if (returnedSharedMatch.permission === "view") {
+          return {
+            success: false,
+            message: "You do not have permission to update this shared match.",
+          };
+        }
+        for (const inputPlayer of input.playersPlacement) {
+          const [updatedMatchPlayer] = await transaction
+            .update(matchPlayer)
+            .set({
+              placement: inputPlayer.placement,
+            })
+            .where(eq(matchPlayer.id, inputPlayer.id))
+            .returning();
+          if (!updatedMatchPlayer) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to update shared match player.",
+            });
+          }
+        }
+        return {
+          success: true,
+          message: "Shared match updated successfully.",
+        };
+      });
+      return response;
+    }),
+  updateSharedMatchManualWinner: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectSharedMatchSchema.pick({ id: true }),
+        winners: z.array(z.object({ matchPlayerId: z.number() })),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const response = await ctx.db.transaction(async (transaction) => {
+        const returnedSharedMatch =
+          await transaction.query.sharedMatch.findFirst({
+            where: {
+              id: input.match.id,
+              sharedWithId: ctx.userId,
+            },
+          });
+        if (!returnedSharedMatch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared match not found.",
+          });
+        }
+        if (returnedSharedMatch.permission === "view") {
+          return {
+            success: false,
+            message: "You do not have permission to update this shared match.",
+          };
+        }
+        if (input.winners.length > 0) {
+          await transaction
+            .update(matchPlayer)
+            .set({
+              winner: false,
+            })
+            .where(
+              and(
+                eq(matchPlayer.matchId, returnedSharedMatch.matchId),
+                notInArray(
+                  matchPlayer.id,
+                  input.winners.map((winner) => winner.matchPlayerId),
+                ),
+              ),
+            );
+          await transaction
+            .update(matchPlayer)
+            .set({
+              winner: true,
+            })
+            .where(
+              and(
+                eq(matchPlayer.matchId, returnedSharedMatch.matchId),
+                inArray(
+                  matchPlayer.id,
+                  input.winners.map((winner) => winner.matchPlayerId),
+                ),
+              ),
+            );
+        }
+        return {
+          success: true,
+          message: "Shared match updated successfully.",
+        };
+      });
+      return response;
     }),
 });
