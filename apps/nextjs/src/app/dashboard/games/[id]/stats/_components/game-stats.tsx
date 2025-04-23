@@ -6,10 +6,12 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
   Activity,
+  Award,
   Calendar1Icon,
   Clock,
   Dices,
   MapPinIcon,
+  Medal,
   Trophy,
   Users,
 } from "lucide-react";
@@ -259,7 +261,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                               {teams.map((team) => (
                                 <div key={team?.id} className="mb-4">
                                   <h5 className="mb-2 text-sm font-semibold">
-                                    {team?.name}
+                                    Team: {team?.name}
                                   </h5>
                                   <div className="grid grid-cols-1 gap-3 border-l-2 border-muted-foreground/20 pl-2 sm:grid-cols-2">
                                     {lastMatch.players
@@ -285,14 +287,44 @@ export default function GameStats({ gameId }: { gameId: number }) {
                                             <p className="font-medium">
                                               {player.name}
                                             </p>
+
                                             <div className="flex items-center gap-2">
-                                              {player.isWinner && (
-                                                <Trophy className="h-3 w-3 text-amber-500" />
-                                              )}
-                                              {player.score !== null && (
-                                                <span className="text-sm">
-                                                  Score: {player.score}
-                                                </span>
+                                              {player.score !== null &&
+                                                lastMatch.scoresheet
+                                                  .winCondition !==
+                                                  "Manual" && (
+                                                  <span className="text-sm">
+                                                    Score: {player.score}
+                                                  </span>
+                                                )}
+                                              {lastMatch.scoresheet
+                                                .winCondition === "Manual" ? (
+                                                player.isWinner ? (
+                                                  "✔️"
+                                                ) : (
+                                                  "❌"
+                                                )
+                                              ) : (
+                                                <>
+                                                  {player.placement === 1 && (
+                                                    <Trophy className="ml-auto h-5 w-5 text-yellow-500" />
+                                                  )}
+                                                  {player.placement === 2 && (
+                                                    <Medal className="ml-auto h-5 w-5 text-gray-400" />
+                                                  )}
+                                                  {player.placement === 3 && (
+                                                    <Award className="ml-auto h-5 w-5 text-amber-700" />
+                                                  )}
+                                                  {player.placement &&
+                                                    player.placement > 3 && (
+                                                      <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
+                                                        {player.placement}
+                                                        {getOrdinalSuffix(
+                                                          player.placement,
+                                                        )}
+                                                      </div>
+                                                    )}
+                                                </>
                                               )}
                                             </div>
                                           </div>
@@ -326,13 +358,41 @@ export default function GameStats({ gameId }: { gameId: number }) {
                                   <div>
                                     <p className="font-medium">{player.name}</p>
                                     <div className="flex items-center gap-2">
-                                      {player.isWinner && (
-                                        <Trophy className="h-3 w-3 text-amber-500" />
-                                      )}
-                                      {player.score !== null && (
-                                        <span className="text-sm">
-                                          Score: {player.score}
-                                        </span>
+                                      {player.score !== null &&
+                                        lastMatch.scoresheet.winCondition !==
+                                          "Manual" && (
+                                          <span className="text-sm">
+                                            Score: {player.score}
+                                          </span>
+                                        )}
+                                      {lastMatch.scoresheet.winCondition ===
+                                      "Manual" ? (
+                                        player.isWinner ? (
+                                          "✔️"
+                                        ) : (
+                                          "❌"
+                                        )
+                                      ) : (
+                                        <>
+                                          {player.placement === 1 && (
+                                            <Trophy className="ml-auto h-5 w-5 text-yellow-500" />
+                                          )}
+                                          {player.placement === 2 && (
+                                            <Medal className="ml-auto h-5 w-5 text-gray-400" />
+                                          )}
+                                          {player.placement === 3 && (
+                                            <Award className="ml-auto h-5 w-5 text-amber-700" />
+                                          )}
+                                          {player.placement &&
+                                            player.placement > 3 && (
+                                              <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
+                                                {player.placement}
+                                                {getOrdinalSuffix(
+                                                  player.placement,
+                                                )}
+                                              </div>
+                                            )}
+                                        </>
                                       )}
                                     </div>
                                   </div>

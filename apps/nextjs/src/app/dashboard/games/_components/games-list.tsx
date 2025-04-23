@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { compareDesc } from "date-fns";
+import { compareAsc } from "date-fns";
 import {
   ArrowDownAZ,
   ArrowUpAZ,
@@ -52,9 +52,9 @@ function GamesList({ initialGames }: GamesListProps) {
   const [filters, setFilters] = useState({
     type: "all",
     minPlayers: 0,
-    maxPlayers: 10,
+    maxPlayers: games.reduce((a, b) => Math.max(a, b.players.max ?? 0), 10),
     minPlaytime: 0,
-    maxPlaytime: 180,
+    maxPlaytime: games.reduce((a, b) => Math.max(a, b.playtime.max ?? 0), 10),
   });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -115,9 +115,9 @@ function GamesList({ initialGames }: GamesListProps) {
           const yearB = b.yearPublished ?? 0;
           comparison = yearA - yearB;
         } else if (sortField === "lastPlayed") {
-          if (!a.lastPlayed.date) return 1;
-          if (!b.lastPlayed.date) return -1;
-          comparison = compareDesc(a.lastPlayed.date, b.lastPlayed.date);
+          if (!a.lastPlayed.date) return -1;
+          if (!b.lastPlayed.date) return 1;
+          comparison = compareAsc(a.lastPlayed.date, b.lastPlayed.date);
         }
         if (sortField === "matches") {
           comparison = a.games - b.games;
@@ -232,6 +232,14 @@ function GamesList({ initialGames }: GamesListProps) {
           setFilters={setFilters}
           isOpen={isFilterOpen}
           setIsOpen={setIsFilterOpen}
+          players={games.reduce(
+            (a, b) => ({ max: Math.max(a.max, b.players.max ?? 0) }),
+            { max: 0 },
+          )}
+          playtime={games.reduce(
+            (a, b) => ({ max: Math.max(a.max, b.playtime.max ?? 0) }),
+            { max: 0 },
+          )}
         />
       </div>
 

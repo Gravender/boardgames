@@ -27,6 +27,12 @@ interface GameFiltersProps {
   setFilters: Dispatch<SetStateAction<FilterState>>;
   isOpen: boolean;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
+  players: {
+    max: number;
+  };
+  playtime: {
+    max: number;
+  };
 }
 
 export function GameFilters({
@@ -34,6 +40,8 @@ export function GameFilters({
   setFilters,
   isOpen,
   setIsOpen,
+  players,
+  playtime,
 }: GameFiltersProps) {
   // State to track if we're on desktop or mobile
   const [isMobile, setIsMobile] = useState(false);
@@ -58,9 +66,9 @@ export function GameFilters({
     setFilters({
       type: "all",
       minPlayers: 0,
-      maxPlayers: 10,
+      maxPlayers: players.max,
       minPlaytime: 0,
-      maxPlaytime: 180,
+      maxPlaytime: playtime.max,
     });
   };
 
@@ -134,13 +142,13 @@ export function GameFilters({
                   <DualRangeSlider
                     value={[filters.minPlayers, filters.maxPlayers]}
                     min={0}
-                    max={10}
+                    max={players.max}
                     step={1}
                     onValueChange={(value) =>
                       setFilters({
                         ...filters,
                         minPlayers: value[0] ?? 0,
-                        maxPlayers: value[1] ?? 10,
+                        maxPlayers: value[1] ?? players.max,
                       })
                     }
                   />
@@ -158,13 +166,13 @@ export function GameFilters({
                   <DualRangeSlider
                     value={[filters.minPlaytime, filters.maxPlaytime]}
                     min={0}
-                    max={180}
+                    max={playtime.max}
                     step={5}
                     onValueChange={(value) =>
                       setFilters({
                         ...filters,
                         minPlaytime: value[0] ?? 0,
-                        maxPlaytime: value[1] ?? 180,
+                        maxPlaytime: value[1] ?? playtime.max,
                       })
                     }
                   />
@@ -218,13 +226,13 @@ export function GameFilters({
                   <DualRangeSlider
                     value={[filters.minPlayers, filters.maxPlayers]}
                     min={0}
-                    max={10}
+                    max={players.max}
                     step={1}
                     onValueChange={(value) =>
                       setFilters({
                         ...filters,
                         minPlayers: value[0] ?? 0,
-                        maxPlayers: value[1] ?? 10,
+                        maxPlayers: value[1] ?? players.max,
                       })
                     }
                   />
@@ -242,13 +250,13 @@ export function GameFilters({
                   <DualRangeSlider
                     value={[filters.minPlaytime, filters.maxPlaytime]}
                     min={0}
-                    max={180}
+                    max={playtime.max}
                     step={5}
                     onValueChange={(value) =>
                       setFilters({
                         ...filters,
                         minPlaytime: value[0] ?? 0,
-                        maxPlaytime: value[1] ?? 180,
+                        maxPlaytime: value[1] ?? playtime.max,
                       })
                     }
                   />
