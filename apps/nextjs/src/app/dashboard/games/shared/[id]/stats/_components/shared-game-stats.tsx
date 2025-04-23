@@ -12,6 +12,7 @@ import {
   MapPinIcon,
   Medal,
   Trophy,
+  User,
   Users,
 } from "lucide-react";
 import {
@@ -43,6 +44,7 @@ import {
 } from "@board-games/ui/chart";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
+import { cn } from "@board-games/ui/utils";
 
 import { useTRPC } from "~/trpc/react";
 import { MatchDurationTrendChart } from "../../../../_components/match-duration-trend-chart";
@@ -249,80 +251,95 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                           {/* Display team groups if there are teams */}
                           {teams.length > 0 && (
                             <>
-                              {teams.map((team) => (
-                                <div key={team?.id} className="mb-4">
-                                  <h5 className="mb-2 text-sm font-semibold">
-                                    {team?.name}
-                                  </h5>
-                                  <div className="grid grid-cols-1 gap-3 border-l-2 border-muted-foreground/20 pl-2 sm:grid-cols-2">
-                                    {lastMatch.players
-                                      .filter(
-                                        (player) =>
-                                          player.team?.id === team?.id,
-                                      )
-                                      .map((player) => (
-                                        <div
+                              {teams.map((team) => {
+                                const teamPlayers = lastMatch.players.filter(
+                                  (player) => player.team?.id === team?.id,
+                                );
+                                if (teamPlayers.length === 0) return null;
+                                return (
+                                  <div
+                                    key={team?.id}
+                                    className={cn(
+                                      "rounded-lg border p-4",
+                                      teamPlayers[0]?.isWinner
+                                        ? "border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20"
+                                        : "",
+                                    )}
+                                  >
+                                    <div className="flex items-center justify-between gap-2 pb-4">
+                                      <div className="flex items-center gap-2">
+                                        <Users className="h-5 w-5 text-muted-foreground" />
+                                        <h3 className="font-semibold">
+                                          {`Team: ${team?.name}`}
+                                        </h3>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <div className="text-sm font-medium">
+                                          {teamPlayers[0]?.score} pts
+                                        </div>
+                                        {lastMatch.scoresheet.winCondition ===
+                                        "Manual" ? (
+                                          teamPlayers[0]?.isWinner ? (
+                                            "✔️"
+                                          ) : (
+                                            "❌"
+                                          )
+                                        ) : (
+                                          <>
+                                            {teamPlayers[0]?.placement ===
+                                              1 && (
+                                              <Trophy className="ml-auto h-5 w-5 text-yellow-500" />
+                                            )}
+                                            {teamPlayers[0]?.placement ===
+                                              2 && (
+                                              <Medal className="ml-auto h-5 w-5 text-gray-400" />
+                                            )}
+                                            {teamPlayers[0]?.placement ===
+                                              3 && (
+                                              <Award className="ml-auto h-5 w-5 text-amber-700" />
+                                            )}
+                                            {teamPlayers[0]?.placement &&
+                                              teamPlayers[0]?.placement > 3 && (
+                                                <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
+                                                  {teamPlayers[0]?.placement}
+                                                  {getOrdinalSuffix(
+                                                    teamPlayers[0]?.placement,
+                                                  )}
+                                                </div>
+                                              )}
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-3 border-l-2 border-muted-foreground/20 pl-2 sm:grid-cols-2">
+                                      {teamPlayers.map((player) => (
+                                        <li
                                           key={player.id}
-                                          className="flex items-center gap-3"
+                                          className="flex items-center"
                                         >
-                                          <Avatar className="h-8 w-8">
+                                          <Avatar className="mr-3 h-8 w-8">
                                             <AvatarImage
                                               src={player.imageUrl ?? ""}
                                               alt={player.name}
                                             />
                                             <AvatarFallback>
-                                              {player.name.charAt(0)}
+                                              <User />
                                             </AvatarFallback>
                                           </Avatar>
-                                          <div>
-                                            <p className="font-medium">
-                                              {player.name}
-                                            </p>
+
+                                          <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2">
-                                              {player.score !== null &&
-                                                lastMatch.scoresheet
-                                                  .winCondition !==
-                                                  "Manual" && (
-                                                  <span className="text-sm">
-                                                    Score: {player.score}
-                                                  </span>
-                                                )}
-                                              {lastMatch.scoresheet
-                                                .winCondition === "Manual" ? (
-                                                player.isWinner ? (
-                                                  "✔️"
-                                                ) : (
-                                                  "❌"
-                                                )
-                                              ) : (
-                                                <>
-                                                  {player.placement === 1 && (
-                                                    <Trophy className="ml-auto h-5 w-5 text-yellow-500" />
-                                                  )}
-                                                  {player.placement === 2 && (
-                                                    <Medal className="ml-auto h-5 w-5 text-gray-400" />
-                                                  )}
-                                                  {player.placement === 3 && (
-                                                    <Award className="ml-auto h-5 w-5 text-amber-700" />
-                                                  )}
-                                                  {player.placement &&
-                                                    player.placement > 3 && (
-                                                      <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
-                                                        {player.placement}
-                                                        {getOrdinalSuffix(
-                                                          player.placement,
-                                                        )}
-                                                      </div>
-                                                    )}
-                                                </>
-                                              )}
+                                              <p className="truncate font-medium">
+                                                {player.name}
+                                              </p>
                                             </div>
                                           </div>
-                                        </div>
+                                        </li>
                                       ))}
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </>
                           )}
 
@@ -334,7 +351,12 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                               {noTeamPlayers.map((player) => (
                                 <div
                                   key={player.id}
-                                  className="flex items-center gap-3"
+                                  className={cn(
+                                    "flex items-center gap-3 rounded-lg",
+                                    player.isWinner
+                                      ? "bg-yellow-50 dark:bg-yellow-950/20"
+                                      : "",
+                                  )}
                                 >
                                   <Avatar className="h-8 w-8">
                                     <AvatarImage
