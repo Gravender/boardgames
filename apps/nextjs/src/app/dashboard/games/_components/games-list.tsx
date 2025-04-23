@@ -52,9 +52,15 @@ function GamesList({ initialGames }: GamesListProps) {
   const [filters, setFilters] = useState({
     type: "all",
     minPlayers: 0,
-    maxPlayers: games.reduce((a, b) => Math.max(a, b.players.max ?? 0), 10),
+    maxPlayers: initialGames.reduce(
+      (a, b) => Math.max(a, b.players.max ?? 0),
+      10,
+    ),
     minPlaytime: 0,
-    maxPlaytime: games.reduce((a, b) => Math.max(a, b.playtime.max ?? 0), 10),
+    maxPlaytime: initialGames.reduce(
+      (a, b) => Math.max(a, b.playtime.max ?? 0),
+      10,
+    ),
   });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -232,13 +238,13 @@ function GamesList({ initialGames }: GamesListProps) {
           setFilters={setFilters}
           isOpen={isFilterOpen}
           setIsOpen={setIsFilterOpen}
-          players={games.reduce(
+          players={initialGames.reduce(
             (a, b) => ({ max: Math.max(a.max, b.players.max ?? 0) }),
-            { max: 0 },
+            { max: 10 },
           )}
-          playtime={games.reduce(
+          playtime={initialGames.reduce(
             (a, b) => ({ max: Math.max(a.max, b.playtime.max ?? 0) }),
-            { max: 0 },
+            { max: 120 },
           )}
         />
       </div>
