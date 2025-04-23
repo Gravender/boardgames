@@ -250,7 +250,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                         <>
                           {/* Display team groups if there are teams */}
                           {teams.length > 0 && (
-                            <>
+                            <div className="flex flex-col gap-2">
                               {teams.map((team) => {
                                 const teamPlayers = lastMatch.players.filter(
                                   (player) => player.team?.id === team?.id,
@@ -340,7 +340,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                                   </div>
                                 );
                               })}
-                            </>
+                            </div>
                           )}
 
                           {/* Display players with no team */}
@@ -367,7 +367,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                                       {player.name.charAt(0)}
                                     </AvatarFallback>
                                   </Avatar>
-                                  <div>
+                                  <div className="flex items-center gap-2">
                                     <p className="font-medium">{player.name}</p>
                                     <div className="flex items-center gap-2">
                                       {player.score !== null &&
