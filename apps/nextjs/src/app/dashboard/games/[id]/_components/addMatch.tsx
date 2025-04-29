@@ -1,24 +1,31 @@
 "use client";
 
+import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   useMutation,
+  useQuery,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
-import { CalendarIcon, Plus, X } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { CalendarIcon, Plus, User, X } from "lucide-react";
+import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import type { RouterOutputs } from "@board-games/api";
-import { Button } from "@board-games/ui/button";
+import { insertPlayerSchema } from "@board-games/db/zodSchema";
+import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
+import { Button, buttonVariants } from "@board-games/ui/button";
 import { Calendar } from "@board-games/ui/calendar";
+import { Checkbox } from "@board-games/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -26,17 +33,20 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
+import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@board-games/ui/popover";
+import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -44,15 +54,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@board-games/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@board-games/ui/tooltip";
+import { cn } from "@board-games/ui/utils";
 
 import { Spinner } from "~/components/spinner";
-import { useAddMatchStore } from "~/providers/add-match-provider";
-import {
-  locationSchema,
-  matchSchema,
-  playersSchema,
-} from "~/stores/add-match-store";
+import { locationSchema, matchSchema } from "~/stores/add-match-store";
 import { useTRPC } from "~/trpc/react";
+import { useUploadThing } from "~/utils/uploadthing";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 
@@ -66,7 +79,7 @@ export function AddMatchDialog({
   matches: number;
 }) {
   const trpc = useTRPC();
-  const { isOpen, setIsOpen } = useAddMatchStore((state) => state);
+  const [isOpen, setIsOpen] = useState(false);
   const { data: locations } = useSuspenseQuery(
     trpc.location.getLocations.queryOptions(),
   );
@@ -82,6 +95,7 @@ export function AddMatchDialog({
           matches={matches}
           locations={locations}
           scoresheets={scoreSheets}
+          setIsOpen={setIsOpen}
         />
       </DialogContent>
       <div className="flex h-full w-full flex-col justify-end">
@@ -100,20 +114,86 @@ export function AddMatchDialog({
     </Dialog>
   );
 }
-
+const playersSchema = z
+  .array(
+    insertPlayerSchema
+      .pick({ name: true, id: true })
+      .required({ name: true, id: true })
+      .extend({
+        imageUrl: z.string().nullable(),
+        matches: z.number(),
+        team: z.number().nullable(),
+      }),
+  )
+  .refine((players) => players.length > 0, {
+    message: "You must add at least one player",
+  });
+type matchPlayers = z.infer<typeof playersSchema>;
 function Content({
   matches,
   gameId,
   gameName,
   locations,
   scoresheets,
+  setIsOpen,
 }: {
   gameId: Game["id"];
   gameName: Game["name"];
   matches: number;
   locations: RouterOutputs["location"]["getLocations"];
   scoresheets: RouterOutputs["game"]["getGameScoresheets"];
+  setIsOpen: Dispatch<SetStateAction<boolean>>;
 }) {
+  const trpc = useTRPC();
+  const { data: players } = useQuery(
+    trpc.player.getPlayersByGame.queryOptions({ game: { id: gameId } }),
+  );
+  const [isPlayers, setIsPlayers] = useState(false);
+  const [matchPlayers, setMatchPlayers] = useState<matchPlayers>([]);
+  return (
+    <>
+      {isPlayers ? (
+        <AddPlayersForm
+          matchPlayers={matchPlayers}
+          setMatchPlayers={setMatchPlayers}
+          players={players ?? []}
+          setIsPlayers={setIsPlayers}
+        />
+      ) : (
+        <AddMatchForm
+          gameId={gameId}
+          gameName={gameName}
+          matches={matches}
+          locations={locations}
+          scoresheets={scoresheets}
+          matchPlayers={matchPlayers}
+          setIsOpen={setIsOpen}
+          setIsPlayers={setIsPlayers}
+        />
+      )}
+    </>
+  );
+}
+
+const AddMatchForm = ({
+  gameId,
+  gameName,
+  matches,
+  locations,
+  scoresheets,
+  matchPlayers,
+  setIsOpen,
+  setIsPlayers,
+}: {
+  gameId: Game["id"];
+  gameName: Game["name"];
+  matches: number;
+  locations: RouterOutputs["location"]["getLocations"];
+  scoresheets: RouterOutputs["game"]["getGameScoresheets"];
+  matchPlayers: matchPlayers;
+  setIsOpen: Dispatch<SetStateAction<boolean>>;
+  setIsPlayers: Dispatch<SetStateAction<boolean>>;
+}) => {
   const formSchema = matchSchema.extend({
     players: playersSchema,
     location: locationSchema,
@@ -129,10 +209,8 @@ function Content({
   type formSchemaType = z.infer<typeof formSchema>;
 
   const trpc = useTRPC();
-  const { isOpen, match, setMatch, setLocation, setScoresheetId, reset } =
-    useAddMatchStore((state) => state);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGettingPlayers, setIsGettingPlayers] = useState(false);
   const [showAddLocation, setShowAddLocation] = useState(false);
   const [newLocation, setNewLocation] = useState("");
 
@@ -141,33 +219,30 @@ function Content({
   const form = useForm<formSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: match.name || `${gameName} #${matches + 1}`,
-      date: match.date,
-      players: match.players,
+      name: `${gameName} #${matches + 1}`,
+      date: new Date(),
+      players: matchPlayers,
       location: locations.find((location) => location.isDefault),
       scoresheetId:
-        match.scoresheetId === -1
-          ? (scoresheets.find((scoresheet) => scoresheet.type === "Default")
-              ?.id ?? 0)
-          : match.scoresheetId,
+        scoresheets.find((scoresheet) => scoresheet.type === "Default")?.id ??
+        0,
     },
   });
   const createMatch = useMutation(
     trpc.match.createMatch.mutationOptions({
-      onSuccess: async (response) => {
-        reset();
+      onSuccess: (response) => {
         setIsSubmitting(false);
         router.push(`/dashboard/games/${gameId}/${response.id}`);
-        await queryClient.invalidateQueries(
-          trpc.player.getPlayersByGame.queryFilter({ game: { id: gameId } }),
-        );
-        await queryClient.invalidateQueries(
-          trpc.player.getPlayers.queryOptions(),
-        );
-        await queryClient.invalidateQueries(
-          trpc.game.getGame.queryOptions({ id: gameId }),
-        );
-        await queryClient.invalidateQueries(trpc.dashboard.pathFilter());
+        void Promise.all([
+          queryClient.invalidateQueries(
+            trpc.player.getPlayersByGame.queryFilter({ game: { id: gameId } }),
+          ),
+          queryClient.invalidateQueries(trpc.player.getPlayers.queryOptions()),
+          queryClient.invalidateQueries(
+            trpc.game.getGame.queryOptions({ id: gameId }),
+          ),
+          queryClient.invalidateQueries(trpc.dashboard.pathFilter()),
+        ]);
       },
     }),
   );
@@ -184,13 +259,6 @@ function Content({
       },
     }),
   );
-
-  useEffect(() => {
-    if (!isOpen) reset();
-    return () => {
-      if (!isOpen) reset();
-    };
-  }, [isOpen, reset]);
 
   const onSubmit = (values: formSchemaType) => {
     setIsSubmitting(true);
@@ -299,24 +367,12 @@ function Content({
                     className="w-full"
                     variant="outline"
                     type="button"
-                    disabled={isGettingPlayers || createLocation.isPending}
+                    disabled={createLocation.isPending}
                     onClick={() => {
-                      setIsGettingPlayers(true);
-                      setMatch({
-                        name: form.getValues("name"),
-                        date: form.getValues("date"),
-                      });
-                      router.push(`/dashboard/games/${gameId}/add/players`);
+                      setIsPlayers(true);
                     }}
                   >
-                    {isGettingPlayers ? (
-                      <>
-                        <Spinner />
-                        <span>Navigating...</span>
-                      </>
-                    ) : (
-                      `${field.value.length} Players`
-                    )}
+                    {`${field.value.length} Players`}
                   </Button>
                   <FormMessage />
                 </FormItem>
@@ -392,7 +448,6 @@ function Content({
                       className="rounded-full"
                       onClick={() => {
                         field.onChange(null);
-                        setLocation(null);
                       }}
                     >
                       <X />
@@ -439,7 +494,6 @@ function Content({
                 <Select
                   onValueChange={(e) => {
                     field.onChange(Number.parseInt(e));
-                    setScoresheetId(Number.parseInt(e));
                   }}
                   defaultValue={field.value.toString()}
                 >
@@ -468,16 +522,14 @@ function Content({
               type="reset"
               variant="secondary"
               onClick={() => {
-                reset();
+                setIsOpen(false);
               }}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={
-                isSubmitting || isGettingPlayers || createLocation.isPending
-              }
+              disabled={isSubmitting || createLocation.isPending}
             >
               {isSubmitting ? (
                 <>
@@ -493,4 +545,407 @@ function Content({
       </Form>
     </>
   );
-}
+};
+
+const AddPlayersFormSchema = z.object({
+  players: playersSchema,
+});
+type addPlayersFormType = z.infer<typeof AddPlayersFormSchema>;
+const AddPlayersForm = ({
+  matchPlayers,
+  setMatchPlayers,
+  players,
+  setIsPlayers,
+}: {
+  matchPlayers: matchPlayers;
+  setMatchPlayers: Dispatch<SetStateAction<matchPlayers>>;
+  players: NonNullable<RouterOutputs["player"]["getPlayersByGame"]>;
+  setIsPlayers: Dispatch<SetStateAction<boolean>>;
+}) => {
+  const form = useForm<addPlayersFormType>({
+    resolver: zodResolver(AddPlayersFormSchema),
+    defaultValues: { players: matchPlayers },
+  });
+  const { update, append, remove } = useFieldArray({
+    control: form.control,
+    name: "players",
+  });
+  const onSubmit = (data: addPlayersFormType) => {
+    setMatchPlayers(data.players);
+    setIsPlayers(false);
+  };
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Select Players</DialogTitle>
+        <DialogDescription>Add players to your match</DialogDescription>
+      </DialogHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <FormField
+            control={form.control}
+            name="players"
+            render={() => (
+              <FormItem>
+                <div className="mb-4">
+                  <FormLabel className="hidden">Players</FormLabel>
+                  <FormDescription className="hidden">
+                    Select the players for the match
+                  </FormDescription>
+                </div>
+                <ScrollArea className="sm:p-6">
+                  <div className="grid max-h-[25rem] gap-2 rounded-lg sm:max-h-[40rem]">
+                    {players.map((player) => (
+                      <FormField
+                        key={player.id}
+                        control={form.control}
+                        name="players"
+                        render={({ field }) => {
+                          return (
+                            <FormItem
+                              key={player.id}
+                              className={cn(
+                                "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-1 sm:p-2",
+                                field.value.findIndex(
+                                  (i) => i.id === player.id,
+                                ) > -1
+                                  ? "bg-violet-400"
+                                  : "bg-border",
+                              )}
+                            >
+                              <FormControl>
+                                <Checkbox
+                                  className="hidden"
+                                  checked={
+                                    field.value.findIndex(
+                                      (i) => i.id === player.id,
+                                    ) > -1
+                                  }
+                                  onCheckedChange={(checked) => {
+                                    return checked
+                                      ? append({ ...player, team: null })
+                                      : remove(
+                                          field.value.findIndex(
+                                            (i) => i.id === player.id,
+                                          ),
+                                        );
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2">
+                                <div className="flex items-center gap-1 sm:gap-2">
+                                  <Avatar>
+                                    <AvatarImage
+                                      className="object-cover"
+                                      src={player.imageUrl ?? ""}
+                                      alt={player.name}
+                                    />
+                                    <AvatarFallback className="bg-slate-300">
+                                      <User />
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="max-w-16 text-sm font-semibold sm:max-w-20 sm:text-lg">
+                                    {player.name}
+                                  </span>
+                                </div>
+                                {field.value.findIndex(
+                                  (i) => i.id === player.id,
+                                ) > -1 && (
+                                  <ScrollArea>
+                                    <div className="mr-auto flex max-w-40 gap-1 sm:max-w-60 sm:gap-2">
+                                      {Array.from({ length: 6 }).map(
+                                        (_, index) => (
+                                          <TooltipProvider key={index}>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <Button
+                                                  className="size-8 rounded-sm text-xs sm:size-10"
+                                                  variant={
+                                                    field.value.find(
+                                                      (i) => i.id === player.id,
+                                                    )?.team ===
+                                                    index + 1
+                                                      ? "default"
+                                                      : "secondary"
+                                                  }
+                                                  onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    const foundPlayer =
+                                                      field.value.find(
+                                                        (i) =>
+                                                          i.id === player.id,
+                                                      );
+                                                    if (foundPlayer) {
+                                                      if (
+                                                        foundPlayer.team ===
+                                                        index + 1
+                                                      ) {
+                                                        foundPlayer.team = null;
+                                                      } else {
+                                                        foundPlayer.team =
+                                                          index + 1;
+                                                      }
+
+                                                      update(
+                                                        field.value.findIndex(
+                                                          (i) =>
+                                                            i.id === player.id,
+                                                        ),
+                                                        foundPlayer,
+                                                      );
+                                                    }
+                                                  }}
+                                                >
+                                                  {index + 1}
+                                                </Button>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <p>
+                                                  Add Player to Team {index + 1}
+                                                </p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        ),
+                                      )}
+                                    </div>
+                                    <ScrollBar orientation="horizontal" />
+                                  </ScrollArea>
+                                )}
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <div
+                                        className={buttonVariants({
+                                          variant: "default",
+                                          size: "icon",
+                                        })}
+                                      >
+                                        {player.matches}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>
+                                        Player's previous matches for this game
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </FormLabel>
+                            </FormItem>
+                          );
+                        }}
+                      />
+                    ))}
+                  </div>
+                </ScrollArea>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <DialogFooter className="gap-2 pt-2">
+            <Button
+              type="reset"
+              variant="secondary"
+              onClick={() => setIsPlayers(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit">Save</Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </>
+  );
+};
+const addPlayerSchema = insertPlayerSchema.pick({ name: true }).extend({
+  imageUrl: z
+    .instanceof(File)
+    .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
+    .refine(
+      (file) => file.type === "image/jpeg" || file.type === "image/png",
+      "Only .jpg and .png formats are supported.",
+    )
+    .nullable(),
+});
+const AddPlayerForm = ({
+  gameId,
+  setMatchPlayers,
+  setIsAddPlayer,
+}: {
+  gameId: number;
+  setMatchPlayers: Dispatch<SetStateAction<matchPlayers>>;
+  setIsAddPlayer: Dispatch<SetStateAction<boolean>>;
+}) => {
+  const trpc = useTRPC();
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const { toast } = useToast();
+  const { startUpload } = useUploadThing("imageUploader");
+
+  const queryClient = useQueryClient();
+
+  const form = useForm<z.infer<typeof addPlayerSchema>>({
+    resolver: zodResolver(addPlayerSchema),
+    defaultValues: {
+      name: "",
+      imageUrl: null,
+    },
+  });
+  const createPlayer = useMutation(
+    trpc.player.create.mutationOptions({
+      onSuccess: (player) => {
+        setIsUploading(false);
+        setMatchPlayers((prev) => {
+          return [...prev, player];
+        });
+        void Promise.all([
+          queryClient.invalidateQueries(
+            trpc.player.getPlayersByGame.queryFilter({
+              game: { id: gameId },
+            }),
+          ),
+          queryClient.invalidateQueries(trpc.player.getPlayers.queryOptions()),
+          queryClient.invalidateQueries(
+            trpc.dashboard.getPlayers.queryOptions(),
+          ),
+        ]);
+        setIsAddPlayer(false);
+        toast({
+          title: "Player created successfully!",
+        });
+      },
+    }),
+  );
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
+  async function onSubmit(values: z.infer<typeof addPlayerSchema>) {
+    setIsUploading(true);
+    if (!values.imageUrl) {
+      createPlayer.mutate({
+        name: values.name,
+        imageId: null,
+      });
+      return;
+    }
+
+    try {
+      const imageFile = values.imageUrl;
+
+      const uploadResult = await startUpload([imageFile]);
+      if (!uploadResult) {
+        throw new Error("Image upload failed");
+      }
+
+      const imageId = uploadResult[0]
+        ? uploadResult[0].serverData.imageId
+        : null;
+
+      createPlayer.mutate({
+        name: values.name,
+        imageId: imageId,
+      });
+      form.reset();
+      setImagePreview(null); // Clear the image preview
+    } catch (error) {
+      console.error("Error uploading Image:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem uploading your Image.",
+        variant: "destructive",
+      });
+    }
+  }
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Add Player</DialogTitle>
+      </DialogHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Player Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Player name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="imageUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Image</FormLabel>
+                <FormControl>
+                  <div className="flex items-center space-x-4">
+                    <div className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded-full">
+                      {imagePreview ? (
+                        <Image
+                          src={imagePreview}
+                          alt="Player image"
+                          className="aspect-square h-full w-full rounded-sm object-cover"
+                          fill
+                        />
+                      ) : (
+                        <User className="h-full w-full items-center justify-center rounded-full bg-muted p-2" />
+                      )}
+                    </div>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        field.onChange(file);
+                        if (file) {
+                          const url = URL.createObjectURL(file);
+                          setImagePreview(url);
+                        }
+                      }}
+                    />
+                  </div>
+                </FormControl>
+                <FormDescription>Upload an image (max 4MB).</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <DialogFooter className="gap-2">
+            <Button
+              type="reset"
+              variant="secondary"
+              onClick={() => setIsAddPlayer(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isUploading}>
+              {isUploading ? (
+                <>
+                  <Spinner />
+                  <span>Uploading...</span>
+                </>
+              ) : (
+                "Submit"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </>
+  );
+};
