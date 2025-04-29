@@ -229,6 +229,7 @@ export function EditMatchForm({
             values.date.getTime() === match.date.getTime()
               ? undefined
               : values.date,
+          locationId: values.location?.id,
         },
         addPlayers: playersToAdd.map((player) => ({ id: player.id })),
         removePlayers: playersToRemove.map((player) => ({
