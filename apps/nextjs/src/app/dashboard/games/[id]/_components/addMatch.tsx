@@ -575,9 +575,12 @@ const AddPlayersForm = ({
   const [showGroups, setShowGroups] = useState(false);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [teamCount, setTeamCount] = useState(
-    new Set(
-      matchPlayers.map((player) => player.team).filter((team) => team !== null),
-    ).size,
+    matchPlayers.reduce((acc, player) => {
+      if (player.team !== null) {
+        return Math.max(acc, player.team);
+      }
+      return acc;
+    }, 0),
   );
 
   const { data: groups } = useQuery(trpc.group.getGroups.queryOptions());
