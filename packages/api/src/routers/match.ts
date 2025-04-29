@@ -1210,15 +1210,15 @@ export const matchRouter = createTRPCRouter({
         await ctx.db.delete(roundPlayer).where(
           inArray(
             roundPlayer.matchPlayerId,
-            matchPlayers.map((player) => player.id),
+            matchPlayers.map((returnedMatchPlayer) => returnedMatchPlayer.id),
           ),
         );
         await ctx.db.delete(matchPlayer).where(
           and(
             eq(matchPlayer.matchId, input.match.id),
             inArray(
-              matchPlayer.playerId,
-              input.removePlayers.map((player) => player.id),
+              matchPlayer.id,
+              matchPlayers.map((returnedMatchPlayer) => returnedMatchPlayer.id),
             ),
           ),
         );

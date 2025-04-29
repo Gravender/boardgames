@@ -67,8 +67,8 @@ export function AddMatchDialog({
 }) {
   const trpc = useTRPC();
   const { isOpen, setIsOpen } = useAddMatchStore((state) => state);
-  const { data: defaultLocation } = useSuspenseQuery(
-    trpc.location.getDefaultLocation.queryOptions(),
+  const { data: locations } = useSuspenseQuery(
+    trpc.location.getLocations.queryOptions(),
   );
   const { data: scoreSheets } = useSuspenseQuery(
     trpc.game.getGameScoresheets.queryOptions({ gameId: gameId }),
@@ -80,7 +80,7 @@ export function AddMatchDialog({
           gameId={gameId}
           gameName={gameName}
           matches={matches}
-          defaultLocation={defaultLocation ?? null}
+          locations={locations}
           scoresheets={scoreSheets}
         />
       </DialogContent>
@@ -105,13 +105,13 @@ function Content({
   matches,
   gameId,
   gameName,
-  defaultLocation,
+  locations,
   scoresheets,
 }: {
   gameId: Game["id"];
   gameName: Game["name"];
   matches: number;
-  defaultLocation: RouterOutputs["location"]["getDefaultLocation"];
+  locations: RouterOutputs["location"]["getLocations"];
   scoresheets: RouterOutputs["game"]["getGameScoresheets"];
 }) {
   const formSchema = matchSchema.extend({
@@ -133,7 +133,9 @@ function Content({
     useAddMatchStore((state) => state);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingPlayers, setIsGettingPlayers] = useState(false);
-  const [isGettingLocations, setIsGettingLocations] = useState(false);
+  const [showAddLocation, setShowAddLocation] = useState(false);
+  const [newLocation, setNewLocation] = useState("");
+
   const queryClient = useQueryClient();
   const router = useRouter();
   const form = useForm<formSchemaType>({
@@ -142,7 +144,7 @@ function Content({
       name: match.name || `${gameName} #${matches + 1}`,
       date: match.date,
       players: match.players,
-      location: match.location === undefined ? defaultLocation : match.location,
+      location: locations.find((location) => location.isDefault),
       scoresheetId:
         match.scoresheetId === -1
           ? (scoresheets.find((scoresheet) => scoresheet.type === "Default")
@@ -166,6 +168,19 @@ function Content({
           trpc.game.getGame.queryOptions({ id: gameId }),
         );
         await queryClient.invalidateQueries(trpc.dashboard.pathFilter());
+      },
+    }),
+  );
+
+  const createLocation = useMutation(
+    trpc.location.create.mutationOptions({
+      onSuccess: async (result) => {
+        await queryClient.invalidateQueries(
+          trpc.location.getLocations.queryOptions(),
+        );
+        setNewLocation("");
+        setShowAddLocation(false);
+        form.setValue("location", result);
       },
     }),
   );
@@ -284,7 +299,7 @@ function Content({
                     className="w-full"
                     variant="outline"
                     type="button"
-                    disabled={isGettingPlayers || isGettingLocations}
+                    disabled={isGettingPlayers || createLocation.isPending}
                     onClick={() => {
                       setIsGettingPlayers(true);
                       setMatch({
@@ -314,45 +329,103 @@ function Content({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="hidden">Location: - (Optional)</FormLabel>
-                <div className="flex w-full gap-2">
-                  <Button
-                    variant="outline"
-                    type="button"
-                    className="flex-grow"
-                    disabled={isGettingPlayers || isGettingLocations}
-                    onClick={() => {
-                      setIsGettingLocations(true);
-                      setMatch({
-                        name: form.getValues("name"),
-                        date: form.getValues("date"),
-                      });
-                      router.push(`/dashboard/games/${gameId}/add/location`);
-                    }}
-                  >
-                    {isGettingLocations ? (
-                      <>
-                        <Spinner />
-                        <span>Navigating...</span>
-                      </>
-                    ) : field.value ? (
-                      `Location: ${field.value.name}`
-                    ) : (
-                      "Location: - (Optional)"
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size={"icon"}
-                    type="button"
-                    className="rounded-full"
-                    onClick={() => {
-                      field.onChange(null);
-                      setLocation(null);
-                    }}
-                  >
-                    <X />
-                  </Button>
-                </div>
+                {!showAddLocation ? (
+                  <div className="flex w-full gap-2">
+                    <Select
+                      onValueChange={(value) => {
+                        if (value === "add-new") {
+                          setShowAddLocation(true);
+                          return;
+                        }
+
+                        if (value === "none") {
+                          field.onChange(null);
+                          return;
+                        }
+
+                        const locationId = Number.parseInt(value);
+                        const selectedLocation = locations.find(
+                          (loc) => loc.id === locationId,
+                        );
+                        field.onChange(
+                          selectedLocation
+                            ? {
+                                id: selectedLocation.id,
+                                name: selectedLocation.name,
+                              }
+                            : null,
+                        );
+                      }}
+                      value={field.value?.id.toString() ?? "none"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Location: - (Optional)">
+                            {field.value
+                              ? `Location: ${field.value.name}${locations.find((location) => location.id === field.value?.id && location.isDefault) ? " (Default)" : ""}`
+                              : "Location: - (Optional)"}
+                          </SelectValue>
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">No location</SelectItem>
+                        {locations.filter(Boolean).map((location) => (
+                          <SelectItem
+                            key={location.id}
+                            value={location.id.toString()}
+                          >
+                            {location.name} {location.isDefault && "(Default)"}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="add-new" className="text-primary">
+                          <div className="flex items-center">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add new location
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="ghost"
+                      size={"icon"}
+                      type="button"
+                      className="rounded-full"
+                      onClick={() => {
+                        field.onChange(null);
+                        setLocation(null);
+                      }}
+                    >
+                      <X />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="New location name"
+                      value={newLocation}
+                      onChange={(e) => setNewLocation(e.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        createLocation.mutate({
+                          name: newLocation,
+                        });
+                      }}
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setShowAddLocation(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -400,7 +473,12 @@ function Content({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || isGettingPlayers}>
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting || isGettingPlayers || createLocation.isPending
+              }
+            >
               {isSubmitting ? (
                 <>
                   <Spinner />
