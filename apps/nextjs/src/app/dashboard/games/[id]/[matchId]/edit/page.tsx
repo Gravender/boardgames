@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { caller, HydrateClient } from "~/trpc/server";
+import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { EditMatchForm } from "./_components/editMatch";
 
 export default async function Page({
@@ -22,6 +22,7 @@ export default async function Page({
   const players = await caller.player.getPlayersByGame({
     game: { id: match.gameId },
   });
+  prefetch(trpc.location.getLocations.queryOptions());
   return (
     <HydrateClient>
       <div className="flex w-full items-center justify-center">

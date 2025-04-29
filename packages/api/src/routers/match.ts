@@ -256,6 +256,7 @@ export const matchRouter = createTRPCRouter({
             },
           },
           teams: true,
+          location: true,
         },
       });
       if (!returnedMatch) {
@@ -287,6 +288,12 @@ export const matchRouter = createTRPCRouter({
       });
       return {
         id: returnedMatch.id,
+        location: returnedMatch.location
+          ? {
+              id: returnedMatch.location.id,
+              name: returnedMatch.location.name,
+            }
+          : null,
         date: returnedMatch.date,
         name: returnedMatch.name,
         scoresheet: returnedMatch.scoresheet,

@@ -5,9 +5,13 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
-import { CalendarIcon, PlusIcon, Trash, User } from "lucide-react";
+import { CalendarIcon, Plus, PlusIcon, Trash, User, X } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -52,6 +56,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@board-games/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@board-games/ui/select";
 import { cn } from "@board-games/ui/utils";
 
 import { Spinner } from "~/components/spinner";
@@ -89,6 +100,12 @@ const matchSchema = insertMatchSchema
       .refine((players) => players.length > 0, {
         message: "You must add at least one player",
       }),
+    location: z
+      .object({
+        id: z.number(),
+        name: z.string(),
+      })
+      .nullish(),
   });
 type addedPlayers = {
   id: number;
@@ -104,12 +121,18 @@ export function EditMatchForm({
   players: RouterOutputs["player"]["getPlayersByGame"];
 }) {
   const trpc = useTRPC();
+  const { data: locations } = useSuspenseQuery(
+    trpc.location.getLocations.queryOptions(),
+  );
   const { startUpload } = useUploadThing("imageUploader");
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
   const [addedPlayers, setAddedPlayers] = useState<addedPlayers>([]);
+
+  const [showAddLocation, setShowAddLocation] = useState(false);
+  const [newLocation, setNewLocation] = useState("");
   const form = useForm<z.infer<typeof matchSchema>>({
     resolver: zodResolver(matchSchema),
     defaultValues: {
@@ -122,6 +145,7 @@ export function EditMatchForm({
         matches: Number(players.find((p) => p.id === player.id)?.matches ?? 0),
         playerId: player.playerId,
       })),
+      location: match.location,
     },
   });
   const editMatch = useMutation(
@@ -144,16 +168,31 @@ export function EditMatchForm({
       },
     }),
   );
+  const createLocation = useMutation(
+    trpc.location.create.mutationOptions({
+      onSuccess: async (result) => {
+        await queryClient.invalidateQueries(
+          trpc.location.getLocations.queryOptions(),
+        );
+        setNewLocation("");
+        setShowAddLocation(false);
+        form.setValue("location", result);
+      },
+    }),
+  );
+
   const onSubmit = async (values: z.infer<typeof matchSchema>) => {
     setIsSubmitting(true);
     const playersToRemove = match.players.filter(
       (player) =>
         values.players.findIndex(
-          (p) => p.playerId && p.playerId === player.playerId,
+          (p) => p.playerId !== undefined && p.playerId === player.playerId,
         ) === -1,
     );
     const playersToAdd = values.players.filter(
-      (player) => player.playerId === undefined && player.matches !== -1,
+      (player) =>
+        player.playerId === undefined &&
+        match.players.findIndex((p) => p.playerId === player.playerId) === -1,
     );
     const newPlayers = values.players.filter((player) => player.matches === -1);
     try {
@@ -216,7 +255,7 @@ export function EditMatchForm({
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <CardContent className="gap-2">
+          <CardContent className="flex flex-col gap-2">
             <FormField
               control={form.control}
               name="name"
@@ -236,7 +275,7 @@ export function EditMatchForm({
                 name="date"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel className="hidden">Date</FormLabel>
                     <Popover modal={true}>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -290,6 +329,115 @@ export function EditMatchForm({
                 }))}
               />
             </div>
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="hidden">
+                    Location: - (Optional)
+                  </FormLabel>
+                  {!showAddLocation ? (
+                    <div className="flex w-full gap-2">
+                      <Select
+                        onValueChange={(value) => {
+                          if (value === "add-new") {
+                            setShowAddLocation(true);
+                            return;
+                          }
+
+                          if (value === "none") {
+                            field.onChange(null);
+                            return;
+                          }
+
+                          const locationId = Number.parseInt(value);
+                          const selectedLocation = locations.find(
+                            (loc) => loc.id === locationId,
+                          );
+                          field.onChange(
+                            selectedLocation
+                              ? {
+                                  id: selectedLocation.id,
+                                  name: selectedLocation.name,
+                                }
+                              : null,
+                          );
+                        }}
+                        value={field.value?.id.toString() ?? "none"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Location: - (Optional)">
+                              {field.value
+                                ? `Location: ${field.value.name}${locations.find((location) => location.id === field.value?.id && location.isDefault) ? " (Default)" : ""}`
+                                : "Location: - (Optional)"}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">No location</SelectItem>
+                          {locations.filter(Boolean).map((location) => (
+                            <SelectItem
+                              key={location.id}
+                              value={location.id.toString()}
+                            >
+                              {location.name}{" "}
+                              {location.isDefault && "(Default)"}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="add-new" className="text-primary">
+                            <div className="flex items-center">
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add new location
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="ghost"
+                        size={"icon"}
+                        type="button"
+                        className="rounded-full"
+                        onClick={() => {
+                          field.onChange(null);
+                        }}
+                      >
+                        <X />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="New location name"
+                        value={newLocation}
+                        onChange={(e) => setNewLocation(e.target.value)}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          createLocation.mutate({
+                            name: newLocation,
+                          });
+                        }}
+                      >
+                        Add
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setShowAddLocation(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
 
           <CardFooter className="justify-end gap-2">
@@ -346,7 +494,7 @@ const AddPlayersDialog = ({
         />
       </DialogContent>
       <DialogTrigger asChild>
-        <Button variant="default" type="button">
+        <Button variant="outline" type="button" className="w-full">
           {`${form.getValues("players").length} Players`}
         </Button>
       </DialogTrigger>
@@ -438,7 +586,7 @@ const PlayersContent = ({
                             <Avatar>
                               <AvatarImage
                                 className="object-cover"
-                                src={player.imageUrl}
+                                src={player.imageUrl ?? ""}
                                 alt={player.name}
                               />
                               <AvatarFallback className="bg-slate-300">
