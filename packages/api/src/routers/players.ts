@@ -39,6 +39,7 @@ export const playerRouter = createTRPCRouter({
         columns: {
           id: true,
           name: true,
+          userId: true,
         },
         with: {
           image: {
@@ -96,6 +97,7 @@ export const playerRouter = createTRPCRouter({
         }
         const returnPlay: {
           id: number;
+          isUser: boolean;
           name: string;
           matches: number;
           imageUrl: string;
@@ -103,6 +105,7 @@ export const playerRouter = createTRPCRouter({
           id: returnedPlayer.id,
           name: returnedPlayer.name,
           matches: 0,
+          isUser: true,
           imageUrl: returnedPlayer.image?.url ?? "",
         };
         return [returnPlay];
@@ -110,6 +113,7 @@ export const playerRouter = createTRPCRouter({
       const mappedPlayers: {
         id: number;
         name: string;
+        isUser: boolean;
         imageUrl: string | null;
         matches: number;
       }[] = playersQuery.map((player) => {
@@ -123,12 +127,13 @@ export const playerRouter = createTRPCRouter({
           .filter((match) => match);
         return {
           id: player.id,
+          isUser: player.userId === ctx.userId,
           name: player.name,
           imageUrl: player.image?.url ?? null,
           matches: player.matches.length + linkedMatches.length,
         };
       });
-      mappedPlayers.sort((a, b) => a.matches - b.matches);
+      mappedPlayers.sort((a, b) => b.matches - a.matches);
       return mappedPlayers;
     }),
   getPlayersByGroup: protectedUserProcedure

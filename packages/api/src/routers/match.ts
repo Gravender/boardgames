@@ -5,7 +5,6 @@ import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type {
-  insertMatchPlayerSchema,
   insertRoundPlayerSchema,
   insertRoundSchema,
 } from "@board-games/db/zodSchema";
@@ -19,6 +18,7 @@ import {
   team,
 } from "@board-games/db/schema";
 import {
+  insertMatchPlayerSchema,
   insertMatchSchema,
   insertPlayerSchema,
   selectMatchPlayerSchema,
@@ -284,6 +284,7 @@ export const matchRouter = createTRPCRouter({
           imageUrl: matchPlayer.player.image?.url,
           details: matchPlayer.details,
           teamId: matchPlayer.teamId,
+          isUser: matchPlayer.player.userId === ctx.userId,
         };
       });
       return {
@@ -1103,7 +1104,8 @@ export const matchRouter = createTRPCRouter({
             .pick({
               id: true,
             })
-            .required({ id: true }),
+            .required({ id: true })
+            .extend({ teamId: z.number().nullable() }),
         ),
         removePlayers: z.array(
           insertPlayerSchema
@@ -1118,7 +1120,16 @@ export const matchRouter = createTRPCRouter({
               name: true,
               imageId: true,
             })
-            .required({ name: true }),
+            .required({ name: true })
+            .extend({ teamId: z.number().nullable() }),
+        ),
+        updatedPlayers: z.array(
+          insertMatchPlayerSchema
+            .pick({
+              id: true,
+              teamId: true,
+            })
+            .required({ id: true }),
         ),
       }),
     )
@@ -1143,7 +1154,7 @@ export const matchRouter = createTRPCRouter({
         });
       }
       //Update Match Details
-      if (input.match.name || input.match.date) {
+      if (input.match.name || input.match.date || input.match.locationId) {
         await ctx.db
           .update(match)
           .set({
@@ -1158,22 +1169,27 @@ export const matchRouter = createTRPCRouter({
         let playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] = [];
         //Create New Players
         if (input.newPlayers.length > 0) {
-          const newPlayersReturned = (
-            await ctx.db
+          for (const newPlayer of input.newPlayers) {
+            const [returnedPlayer] = await ctx.db
               .insert(player)
-              .values(
-                input.newPlayers.map((player) => ({
-                  createdBy: ctx.userId,
-                  imageId: player.imageId,
-                  name: player.name,
-                })),
-              )
-              .returning()
-          ).map((player) => ({
-            matchId: input.match.id,
-            playerId: player.id,
-          }));
-          playersToInsert = [...newPlayersReturned];
+              .values({
+                createdBy: ctx.userId,
+                imageId: newPlayer.imageId,
+                name: newPlayer.name,
+              })
+              .returning();
+            if (!returnedPlayer) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Failed to create player",
+              });
+            }
+            playersToInsert.push({
+              matchId: input.match.id,
+              playerId: returnedPlayer.id,
+              teamId: newPlayer.teamId,
+            });
+          }
         }
         //Players to insert
         if (input.addPlayers.length > 0) {
@@ -1182,6 +1198,7 @@ export const matchRouter = createTRPCRouter({
             ...input.addPlayers.map((player) => ({
               matchId: input.match.id,
               playerId: player.id,
+              teamId: player.teamId,
             })),
           ];
         }
@@ -1229,6 +1246,16 @@ export const matchRouter = createTRPCRouter({
             ),
           ),
         );
+      }
+      if (input.updatedPlayers.length > 0) {
+        for (const updatedPlayer of input.updatedPlayers) {
+          await ctx.db
+            .update(matchPlayer)
+            .set({
+              teamId: updatedPlayer.teamId,
+            })
+            .where(eq(matchPlayer.id, updatedPlayer.id));
+        }
       }
     }),
 });
