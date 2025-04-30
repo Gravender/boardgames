@@ -850,7 +850,7 @@ const TotalRow = ({
       <TableRow>
         <TableHead
           scope="row"
-          className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+          className="sticky left-0 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
         >
           Total
         </TableHead>

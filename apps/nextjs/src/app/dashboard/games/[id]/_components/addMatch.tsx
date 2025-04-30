@@ -731,9 +731,38 @@ const AddPlayersForm = ({
                         <span className="text-sm">Teams:</span>
                         <Select
                           value={teamCount.toString()}
-                          onValueChange={(value) =>
-                            setTeamCount(Number.parseInt(value))
-                          }
+                          onValueChange={(value) => {
+                            setTeamCount(Number.parseInt(value));
+                            if (value === "0") {
+                              const currentPlayers = form.getValues("players");
+                              const newPlayers = currentPlayers.map(
+                                (player) => {
+                                  return {
+                                    ...player,
+                                    team: null,
+                                  };
+                                },
+                              );
+                              form.setValue("players", newPlayers);
+                            } else {
+                              const currentPlayers = form.getValues("players");
+                              const newPlayers = currentPlayers.map(
+                                (player) => {
+                                  if (
+                                    player.team !== null &&
+                                    player.team > Number.parseInt(value)
+                                  ) {
+                                    return {
+                                      ...player,
+                                      team: null,
+                                    };
+                                  }
+                                  return player;
+                                },
+                              );
+                              form.setValue("players", newPlayers);
+                            }
+                          }}
                         >
                           <SelectTrigger className="h-8 w-[80px]">
                             <SelectValue />
