@@ -164,6 +164,14 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.user.id,
       to: r.sharedMatchPlayer.sharedWithId,
     }),
+    sharedLocationsOwner: r.many.sharedLocation({
+      from: r.user.id,
+      to: r.sharedLocation.ownerId,
+    }),
+    sharedLocationsSharedWith: r.many.sharedLocation({
+      from: r.user.id,
+      to: r.sharedLocation.sharedWithId,
+    }),
     shareRequestsReceived: r.many.shareRequest({
       from: r.user.id,
       to: r.shareRequest.sharedWithId,
@@ -263,6 +271,35 @@ export const relations = defineRelations(schema, (r) => ({
     matches: r.many.match({
       from: r.location.id,
       to: r.match.locationId,
+    }),
+    linkedLocations: r.many.sharedLocation({
+      from: r.location.id,
+      to: r.sharedLocation.linkedLocationId,
+    }),
+  },
+  sharedLocation: {
+    owner: r.one.user({
+      from: r.sharedLocation.ownerId,
+      to: r.user.id,
+      optional: false,
+    }),
+    sharedWith: r.one.user({
+      from: r.sharedLocation.sharedWithId,
+      to: r.user.id,
+      optional: false,
+    }),
+    location: r.one.location({
+      from: r.sharedLocation.locationId,
+      to: r.location.id,
+      optional: false,
+    }),
+    linkedLocation: r.one.location({
+      from: r.sharedLocation.linkedLocationId,
+      to: r.location.id,
+    }),
+    sharedMatches: r.many.sharedMatch({
+      from: r.sharedLocation.id,
+      to: r.sharedMatch.sharedLocationId,
     }),
   },
   player: {
@@ -373,6 +410,16 @@ export const relations = defineRelations(schema, (r) => ({
     sharedMatchPlayers: r.many.sharedMatchPlayer({
       from: r.sharedMatch.id,
       to: r.sharedMatchPlayer.sharedMatchId,
+    }),
+    sharedLocation: r.one.sharedLocation({
+      from: r.sharedMatch.sharedLocationId,
+      to: r.sharedLocation.id,
+      optional: false,
+    }),
+    sharedLocationPassthrough: r.one.location({
+      from: r.sharedMatch.sharedLocationId.through(r.sharedLocation.id),
+      to: r.location.id.through(r.sharedLocation.locationId),
+      optional: false,
     }),
   },
   match: {
