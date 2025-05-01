@@ -35,6 +35,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
+import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import {
   Card,
@@ -77,6 +78,8 @@ import { useUploadThing } from "~/utils/uploadthing";
 import { RoundPopOver } from "./roundPopOver";
 
 export const scoresheetSchema = editScoresheetSchema.extend({
+  scoresheetType: z.literal("original").or(z.literal("shared")),
+  permission: z.literal("view").or(z.literal("edit")).nullable(),
   scoresheetId: z.number().nullable(),
   rounds: roundsSchema,
   scoreSheetChanged: z.boolean(),
@@ -96,6 +99,7 @@ export function EditGameForm({
   >(
     data.scoresheets.map((scoresheet) => ({
       ...scoresheet,
+      permission: "permission" in scoresheet ? scoresheet.permission : null,
       scoresheetId: scoresheet.id,
       scoreSheetChanged: false,
       roundChanged: false,
@@ -136,6 +140,8 @@ export function EditGameForm({
           scoresheet={
             scoresheets[activeScoreSheet] ?? {
               scoresheetId: null,
+              permission: null,
+              scoresheetType: "original",
               name:
                 scoresheets.length === 0
                   ? "Default"
@@ -839,8 +845,22 @@ const GameForm = ({
                               setActiveScoreSheet(index);
                             }}
                             type="button"
+                            disabled={
+                              scoreSheet.scoresheetType === "shared" &&
+                              scoreSheet.permission === "view"
+                            }
                           >
-                            <span className="text-lg">{scoreSheet.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{scoreSheet.name}</span>
+                              {scoreSheet.scoresheetType === "shared" && (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-blue-600 text-xs"
+                                >
+                                  Shared
+                                </Badge>
+                              )}
+                            </div>
                             <div className="mb-2 flex w-full items-center gap-3 text-sm">
                               <div className="flex min-w-20 items-center gap-1">
                                 <span>Win Condition:</span>
@@ -871,6 +891,10 @@ const GameForm = ({
                               setActiveScoreSheet(index);
                               setOpenAlert(true);
                             }}
+                            disabled={
+                              scoreSheet.scoresheetType === "shared" &&
+                              scoreSheet.permission === "view"
+                            }
                           >
                             <Trash />
                           </Button>

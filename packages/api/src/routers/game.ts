@@ -467,21 +467,34 @@ export const gameRouter = createTRPCRouter({
           },
         },
       });
-      const mappedLinkedScoresheet = linkedGames.flatMap((linkedGame) => {
-        return linkedGame.sharedScoresheets.map((returnedSharedScoresheet) => {
-          return {
-            scoresheetType: "shared",
-            shareId: returnedSharedScoresheet.id,
-            ...returnedSharedScoresheet.scoresheet,
-            rounds: returnedSharedScoresheet.scoresheet?.rounds.map(
-              (round) => ({
-                ...round,
-                roundId: round.id,
-              }),
-            ),
-          };
-        });
-      });
+      const mappedLinkedScoresheet = linkedGames
+        .flatMap((linkedGame) => {
+          return linkedGame.sharedScoresheets.map(
+            (returnedSharedScoresheet) => {
+              if (!returnedSharedScoresheet.scoresheet) {
+                return null;
+              }
+              return {
+                scoresheetType: "shared" as const,
+                permission: returnedSharedScoresheet.permission,
+                shareId: returnedSharedScoresheet.id,
+                id: returnedSharedScoresheet.scoresheet.id,
+                name: returnedSharedScoresheet.scoresheet.name,
+                winCondition: returnedSharedScoresheet.scoresheet.winCondition,
+                isCoop: returnedSharedScoresheet.scoresheet.isCoop,
+                roundsScore: returnedSharedScoresheet.scoresheet.roundsScore,
+                targetScore: returnedSharedScoresheet.scoresheet.targetScore,
+                rounds: returnedSharedScoresheet.scoresheet.rounds.map(
+                  (round) => ({
+                    ...round,
+                    roundId: round.id,
+                  }),
+                ),
+              };
+            },
+          );
+        })
+        .filter((scoresheet) => scoresheet !== null);
       return {
         game: {
           id: result.id,
@@ -496,8 +509,13 @@ export const gameRouter = createTRPCRouter({
         },
         scoresheets: [
           ...result.scoresheets.map((scoresheet) => ({
-            scoresheetType: "original",
-            ...scoresheet,
+            scoresheetType: "original" as const,
+            id: scoresheet.id,
+            name: scoresheet.name,
+            winCondition: scoresheet.winCondition,
+            isCoop: scoresheet.isCoop,
+            roundsScore: scoresheet.roundsScore,
+            targetScore: scoresheet.targetScore,
             rounds: scoresheet.rounds.map((round) => ({
               ...round,
               roundId: round.id,
