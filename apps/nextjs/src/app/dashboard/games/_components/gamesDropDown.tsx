@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   BarChart2Icon,
+  Link2Icon,
   MoreVertical,
   PencilIcon,
   Trash2Icon,
@@ -58,7 +59,7 @@ export function GamesDropDown({
           <DropdownMenuItem asChild>
             <Link
               href={`/dashboard/games/${data.id}/edit`}
-              className="flex items-center justify-between gap-2"
+              className="flex items-center gap-2"
             >
               <PencilIcon className="mr-2 h-4 w-4" />
               Edit
@@ -72,7 +73,7 @@ export function GamesDropDown({
                 ? `/dashboard/games/shared/${data.id}/stats`
                 : `/dashboard/games/${data.id}/stats`
             }
-            className="flex items-center justify-between gap-2"
+            className="flex items-center gap-2"
           >
             <BarChart2Icon className="mr-2 h-4 w-4" />
             View Stats
@@ -86,12 +87,21 @@ export function GamesDropDown({
         </DropdownMenuItem> */}
         {data.type === "original" && (
           <>
+            <DropdownMenuItem asChild>
+              <Link
+                href={`/dashboard/games/${data.id}/share`}
+                className="flex items-center gap-2"
+              >
+                <Link2Icon className="mr-2 h-4 w-4" />
+                Share
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
               onClick={onDelete}
             >
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
                 <Trash2Icon className="mr-2 h-4 w-4" />
                 <span>Delete Game</span>
               </div>

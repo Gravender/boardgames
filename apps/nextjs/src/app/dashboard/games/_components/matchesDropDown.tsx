@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { MoreVertical } from "lucide-react";
+import {
+  BookText,
+  Link2Icon,
+  MoreVertical,
+  PencilIcon,
+  Table,
+  Trash2Icon,
+} from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
@@ -20,6 +27,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
@@ -62,27 +70,62 @@ export function MatchDropDown({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {match.type === "original" && (
+            <DropdownMenuItem asChild>
+              <Link
+                href={`/dashboard/games/${gameId}/${match.id}/edit`}
+                className="flex items-center gap-2"
+              >
+                <PencilIcon className="mr-2 h-4 w-4" />
+                Edit
+              </Link>
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem asChild>
+            <Link
+              href={
+                match.type === "shared"
+                  ? `/dashboard/games/shared/${match.gameId}/${match.id}`
+                  : `/dashboard/games/${gameId}/${match.id}`
+              }
+              className="flex items-center gap-2"
+            >
+              <Table className="mr-2 h-4 w-4" />
+              ScoreSheet
+            </Link>
+          </DropdownMenuItem>
+          {match.finished && (
+            <DropdownMenuItem asChild>
+              <Link
+                href={
+                  match.type === "shared"
+                    ? `/dashboard/games/shared/${match.gameId}/${match.id}/summary`
+                    : `/dashboard/games/${gameId}/${match.id}/summary`
+                }
+                className="flex items-center gap-2"
+              >
+                <BookText className="mr-2 h-4 w-4" />
+                Summary
+              </Link>
+            </DropdownMenuItem>
+          )}
+          {match.type === "original" && (
             <>
               <DropdownMenuItem asChild>
-                <Link href={`/dashboard/games/${gameId}/${match.id}/edit`}>
-                  Edit
+                <Link
+                  href={`/dashboard/games/${gameId}/${match.id}/share`}
+                  className="flex items-center gap-2"
+                >
+                  <Link2Icon className="mr-2 h-4 w-4" />
+                  Share
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={`/dashboard/games/${gameId}/${match.id}`}>
-                  ScoreSheet
-                </Link>
-              </DropdownMenuItem>
-              {match.finished && (
-                <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/games/${gameId}/${match.id}/summary`}>
-                    Summary
-                  </Link>
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuSeparator />
               <DialogTrigger asChild>
                 <DropdownMenuItem className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground">
-                  Delete
+                  <div className="flex items-center gap-2">
+                    <Trash2Icon className="mr-2 h-4 w-4" />
+                    <span>Delete</span>
+                  </div>
                 </DropdownMenuItem>
               </DialogTrigger>
             </>
