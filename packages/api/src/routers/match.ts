@@ -7,6 +7,8 @@ import { z } from "zod";
 import type {
   insertRoundPlayerSchema,
   insertRoundSchema,
+  selectRoundSchema,
+  selectScoreSheetSchema,
 } from "@board-games/db/zodSchema";
 import {
   match,
@@ -54,17 +56,25 @@ export const matchRouter = createTRPCRouter({
               }),
             )
             .min(1),
-          scoresheetId: z.number(),
+          scoresheet: z.object({
+            id: z.number(),
+            scoresheetType: z.literal("original").or(z.literal("shared")),
+          }),
         }),
     )
     .mutation(async ({ ctx, input }) => {
       const response = await ctx.db.transaction(async (transaction) => {
-        const returnedScoresheet = await transaction.query.scoresheet.findFirst(
-          {
+        let returnedScoresheet:
+          | (z.infer<typeof selectScoreSheetSchema> & {
+              rounds: z.infer<typeof selectRoundSchema>[];
+            })
+          | undefined;
+        if (input.scoresheet.scoresheetType === "original") {
+          returnedScoresheet = await transaction.query.scoresheet.findFirst({
             where: {
               gameId: input.gameId,
               userId: ctx.userId,
-              id: input.scoresheetId,
+              id: input.scoresheet.id,
             },
             with: {
               rounds: {
@@ -73,8 +83,35 @@ export const matchRouter = createTRPCRouter({
                 },
               },
             },
-          },
-        );
+          });
+        } else {
+          const sharedScoresheet =
+            await transaction.query.sharedScoresheet.findFirst({
+              where: {
+                id: input.scoresheet.id,
+                sharedWithId: ctx.userId,
+              },
+            });
+          if (!sharedScoresheet) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Shared Scoresheet not found.",
+            });
+          }
+          returnedScoresheet = await transaction.query.scoresheet.findFirst({
+            where: {
+              id: sharedScoresheet.scoresheetId,
+              userId: ctx.userId,
+            },
+            with: {
+              rounds: {
+                orderBy: {
+                  order: "asc",
+                },
+              },
+            },
+          });
+        }
         if (!returnedScoresheet) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",

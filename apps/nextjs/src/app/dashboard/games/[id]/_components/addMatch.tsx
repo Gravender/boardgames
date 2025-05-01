@@ -203,12 +203,18 @@ const AddMatchForm = ({
   const formSchema = matchSchema.extend({
     players: playersSchema,
     location: locationSchema,
-    scoresheetId: z
-      .number()
+    scoresheet: z
+      .object({
+        id: z.number(),
+        scoresheetType: z.literal("original").or(z.literal("shared")),
+      })
       .refine(
-        (scoresheetId) =>
-          scoresheets.find((scoresheet) => scoresheet.id === scoresheetId) !==
-          undefined,
+        (s) =>
+          scoresheets.find(
+            (scoresheet) =>
+              scoresheet.id === s.id &&
+              scoresheet.scoresheetType === s.scoresheetType,
+          ) !== undefined,
         { message: "Must select a scoresheet" },
       ),
   });
@@ -229,9 +235,20 @@ const AddMatchForm = ({
       date: new Date(),
       players: matchPlayers,
       location: locations.find((location) => location.isDefault),
-      scoresheetId:
-        scoresheets.find((scoresheet) => scoresheet.type === "Default")?.id ??
-        0,
+      scoresheet:
+        scoresheets.find(
+          (scoresheet) =>
+            scoresheet.type === "Default" &&
+            scoresheet.scoresheetType === "original",
+        ) ??
+        scoresheets.find(
+          (scoresheet) =>
+            scoresheet.type === "Default" &&
+            scoresheet.scoresheetType === "shared",
+        ) ??
+        scoresheets.find((scoresheet) => scoresheet.type === "Default") ??
+        scoresheets[0] ??
+        undefined,
     },
   });
   const createMatch = useMutation(
@@ -299,7 +316,7 @@ const AddMatchForm = ({
       name: values.name,
       date: values.date,
       teams: Object.values(teams),
-      scoresheetId: values.scoresheetId,
+      scoresheet: values.scoresheet,
       locationId: values.location?.id,
     });
   };
@@ -493,7 +510,7 @@ const AddMatchForm = ({
           />
           <FormField
             control={form.control}
-            name="scoresheetId"
+            name="scoresheet"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Scoresheet:</FormLabel>
@@ -501,7 +518,7 @@ const AddMatchForm = ({
                   onValueChange={(e) => {
                     field.onChange(Number.parseInt(e));
                   }}
-                  defaultValue={field.value.toString()}
+                  defaultValue={`${field.value.id}-${field.value.scoresheetType}`}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -511,8 +528,17 @@ const AddMatchForm = ({
                   <SelectContent>
                     {scoresheets.map((scoresheet) => {
                       return (
-                        <SelectItem value={scoresheet.id.toString()}>
-                          {scoresheet.name}
+                        <SelectItem
+                          value={`${scoresheet.id}-${scoresheet.scoresheetType}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span>{scoresheet.name}</span>
+                            {scoresheet.scoresheetType === "shared" && (
+                              <Badge variant="outline" className="bg-blue-500">
+                                Shared
+                              </Badge>
+                            )}
+                          </div>
                         </SelectItem>
                       );
                     })}

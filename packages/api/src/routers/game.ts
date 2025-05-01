@@ -307,7 +307,7 @@ export const gameRouter = createTRPCRouter({
           },
         },
       });
-      /*  const mappedLinkedScoresheet: {
+      const mappedLinkedScoresheet: {
         scoresheetType: "shared";
         id: number;
         name: string;
@@ -328,7 +328,7 @@ export const gameRouter = createTRPCRouter({
             },
           );
         })
-        .filter((scoresheet) => scoresheet !== null); */
+        .filter((scoresheet) => scoresheet !== null);
       //TODO add Shared scoresheets for now
       const mappedScoresheets: {
         scoresheetType: "shared" | "original";
@@ -344,6 +344,7 @@ export const gameRouter = createTRPCRouter({
             type: returnedScoresheet.type,
           };
         }),
+        ...mappedLinkedScoresheet,
       ];
       return mappedScoresheets;
     }),
