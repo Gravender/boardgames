@@ -2,9 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
+import type { selectSharedLocationSchema } from "@board-games/db/zodSchema";
 import {
   game,
   sharedGame,
+  sharedLocation,
   sharedMatch,
   sharedMatchPlayer,
   sharedPlayer,
@@ -201,6 +203,34 @@ export const shareAcceptanceRouter = createTRPCRouter({
               },
             });
             if (!sharedMatchExists) {
+              let sharedLocationForMatch: z.infer<
+                typeof selectSharedLocationSchema
+              > | null = null;
+              if (returnedMatch.locationId !== null) {
+                const existingSharedLocation =
+                  await tx.query.sharedLocation.findFirst({
+                    where: {
+                      ownerId: returnedMatchRequest.ownerId,
+                      sharedWithId: ctx.userId,
+                      locationId: returnedMatch.locationId,
+                    },
+                  });
+                if (!existingSharedLocation) {
+                  const [insertedSharedLocation] = await tx
+                    .insert(sharedLocation)
+                    .values({
+                      ownerId: returnedMatchRequest.ownerId,
+                      sharedWithId: ctx.userId,
+                      locationId: returnedMatch.locationId,
+                      permission: returnedMatchRequest.permission,
+                    })
+                    .returning();
+                  if (!insertedSharedLocation) {
+                    throw Error("Shared Location not found");
+                  }
+                  sharedLocationForMatch = insertedSharedLocation;
+                }
+              }
               const [returnedSharedMatch] = await tx
                 .insert(sharedMatch)
                 .values({
@@ -208,6 +238,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
                   sharedWithId: ctx.userId,
                   matchId: returnedMatchRequest.itemId,
                   sharedGameId: sharedGameExists.id,
+                  sharedLocationId: sharedLocationForMatch?.id ?? null,
                   permission: returnedMatchRequest.permission,
                 })
                 .returning();
@@ -494,6 +525,34 @@ export const shareAcceptanceRouter = createTRPCRouter({
             },
           });
           if (!existingSharedMatch) {
+            let sharedLocationForMatch: z.infer<
+              typeof selectSharedLocationSchema
+            > | null = null;
+            if (returnedMatch.locationId !== null) {
+              const existingSharedLocation =
+                await tx.query.sharedLocation.findFirst({
+                  where: {
+                    ownerId: existingRequest.ownerId,
+                    sharedWithId: ctx.userId,
+                    locationId: returnedMatch.locationId,
+                  },
+                });
+              if (!existingSharedLocation) {
+                const [insertedSharedLocation] = await tx
+                  .insert(sharedLocation)
+                  .values({
+                    ownerId: existingRequest.ownerId,
+                    sharedWithId: ctx.userId,
+                    locationId: returnedMatch.locationId,
+                    permission: existingRequest.permission,
+                  })
+                  .returning();
+                if (!insertedSharedLocation) {
+                  throw Error("Shared Location not found");
+                }
+                sharedLocationForMatch = insertedSharedLocation;
+              }
+            }
             const [returnedSharedMatch] = await tx
               .insert(sharedMatch)
               .values({
@@ -501,6 +560,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
                 sharedWithId: ctx.userId,
                 matchId: existingRequest.itemId,
                 sharedGameId: sharedGameExists.id,
+                sharedLocationId: sharedLocationForMatch?.id ?? null,
                 permission: existingRequest.permission,
               })
               .returning();
@@ -612,6 +672,34 @@ export const shareAcceptanceRouter = createTRPCRouter({
             },
           });
           if (!existingSharedMatch) {
+            let sharedLocationForMatch: z.infer<
+              typeof selectSharedLocationSchema
+            > | null = null;
+            if (returnedMatch.locationId !== null) {
+              const existingSharedLocation =
+                await tx.query.sharedLocation.findFirst({
+                  where: {
+                    ownerId: existingRequest.ownerId,
+                    sharedWithId: ctx.userId,
+                    locationId: returnedMatch.locationId,
+                  },
+                });
+              if (!existingSharedLocation) {
+                const [insertedSharedLocation] = await tx
+                  .insert(sharedLocation)
+                  .values({
+                    ownerId: existingRequest.ownerId,
+                    sharedWithId: ctx.userId,
+                    locationId: returnedMatch.locationId,
+                    permission: existingRequest.permission,
+                  })
+                  .returning();
+                if (!insertedSharedLocation) {
+                  throw Error("Shared Location not found");
+                }
+                sharedLocationForMatch = insertedSharedLocation;
+              }
+            }
             const [returnedSharedMatch] = await tx
               .insert(sharedMatch)
               .values({
@@ -619,6 +707,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
                 sharedWithId: ctx.userId,
                 matchId: existingRequest.itemId,
                 sharedGameId: returnedSharedGame.id,
+                sharedLocationId: sharedLocationForMatch?.id ?? null,
                 permission: existingRequest.permission,
               })
               .returning();
@@ -1079,6 +1168,34 @@ export const shareAcceptanceRouter = createTRPCRouter({
                     },
                   );
                   if (!shareMatchExists) {
+                    let sharedLocationForMatch: z.infer<
+                      typeof selectSharedLocationSchema
+                    > | null = null;
+                    if (returnedMatch.locationId !== null) {
+                      const existingSharedLocation =
+                        await tx.query.sharedLocation.findFirst({
+                          where: {
+                            ownerId: existingRequest.ownerId,
+                            sharedWithId: ctx.userId,
+                            locationId: returnedMatch.locationId,
+                          },
+                        });
+                      if (!existingSharedLocation) {
+                        const [insertedSharedLocation] = await tx
+                          .insert(sharedLocation)
+                          .values({
+                            ownerId: existingRequest.ownerId,
+                            sharedWithId: ctx.userId,
+                            locationId: returnedMatch.locationId,
+                            permission: matchShareRequest.permission,
+                          })
+                          .returning();
+                        if (!insertedSharedLocation) {
+                          throw Error("Shared Location not found");
+                        }
+                        sharedLocationForMatch = insertedSharedLocation;
+                      }
+                    }
                     const [returnedSharedMatch] = await tx
                       .insert(sharedMatch)
                       .values({
@@ -1086,6 +1203,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
                         sharedWithId: ctx.userId,
                         matchId: returnedMatch.id,
                         sharedGameId: shareGameExists.id,
+                        sharedLocationId: sharedLocationForMatch?.id ?? null,
                         permission: matchShareRequest.permission,
                       })
                       .returning();
@@ -1242,6 +1360,34 @@ export const shareAcceptanceRouter = createTRPCRouter({
                     },
                   );
                   if (!shareMatchExists) {
+                    let sharedLocationForMatch: z.infer<
+                      typeof selectSharedLocationSchema
+                    > | null = null;
+                    if (returnedMatch.locationId !== null) {
+                      const existingSharedLocation =
+                        await tx.query.sharedLocation.findFirst({
+                          where: {
+                            ownerId: existingRequest.ownerId,
+                            sharedWithId: ctx.userId,
+                            locationId: returnedMatch.locationId,
+                          },
+                        });
+                      if (!existingSharedLocation) {
+                        const [insertedSharedLocation] = await tx
+                          .insert(sharedLocation)
+                          .values({
+                            ownerId: existingRequest.ownerId,
+                            sharedWithId: ctx.userId,
+                            locationId: returnedMatch.locationId,
+                            permission: matchShareRequest.permission,
+                          })
+                          .returning();
+                        if (!insertedSharedLocation) {
+                          throw Error("Shared Location not found");
+                        }
+                        sharedLocationForMatch = insertedSharedLocation;
+                      }
+                    }
                     const [returnedSharedMatch] = await tx
                       .insert(sharedMatch)
                       .values({
@@ -1249,6 +1395,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
                         sharedWithId: ctx.userId,
                         matchId: returnedMatch.id,
                         sharedGameId: returnedSharedGame.id,
+                        sharedLocationId: sharedLocationForMatch?.id ?? null,
                         permission: matchShareRequest.permission,
                       })
                       .returning();
