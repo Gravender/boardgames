@@ -414,7 +414,6 @@ export const relations = defineRelations(schema, (r) => ({
     sharedLocation: r.one.sharedLocation({
       from: r.sharedMatch.sharedLocationId,
       to: r.sharedLocation.id,
-      optional: false,
     }),
     sharedLocationPassthrough: r.one.location({
       from: r.sharedMatch.sharedLocationId.through(r.sharedLocation.id),

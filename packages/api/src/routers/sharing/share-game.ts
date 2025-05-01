@@ -27,9 +27,11 @@ export const shareGameRouter = createTRPCRouter({
               sharedWithId: ctx.userId,
             },
             with: {
-              match: {
+              match: true,
+              sharedLocation: {
                 with: {
                   location: true,
+                  linkedLocation: true,
                 },
               },
               sharedMatchPlayers: {
@@ -86,7 +88,16 @@ export const shareGameRouter = createTRPCRouter({
           id: mMatch.id,
           gameId: returnedGame.id,
           date: mMatch.match.date,
-          location: mMatch.match.location?.name,
+          location: mMatch.sharedLocation
+            ? {
+                type: mMatch.sharedLocation.linkedLocation
+                  ? ("linked" as const)
+                  : ("shared" as const),
+                name:
+                  mMatch.sharedLocation.linkedLocation?.name ??
+                  mMatch.sharedLocation.location.name,
+              }
+            : null,
           finished: mMatch.match.finished,
           name: mMatch.match.name,
           duration: mMatch.match.duration,
