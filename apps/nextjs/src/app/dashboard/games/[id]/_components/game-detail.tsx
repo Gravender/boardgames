@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { BarChart2, Dice1Icon as Dice, Dices } from "lucide-react";
+import { BarChart2, Dices } from "lucide-react";
 
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
@@ -85,8 +85,8 @@ export default function GameDetails({ gameId }: { gameId: number }) {
         <div className="absolute bottom-4 right-6 z-10 sm:right-10">
           <AddMatchDialog
             gameId={gameId}
-            gameName={game.name ?? "Game"}
-            matches={game.matches.length ?? 0}
+            gameName={game.name}
+            matches={game.matches.length}
           />
         </div>
       </div>

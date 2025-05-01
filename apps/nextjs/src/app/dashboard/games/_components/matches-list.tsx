@@ -43,7 +43,10 @@ interface BaseMatch {
   date: Date;
   name: string;
   finished: boolean;
-  location: string | undefined;
+  location: {
+    type: "shared" | "linked" | "original";
+    name: string;
+  } | null;
   won: boolean;
   duration: number;
 }
@@ -90,7 +93,7 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
   useEffect(() => {
     const locations = new Set(
       matches
-        .map((match) => match.location)
+        .map((match) => match.location?.name)
         .filter((location) => location !== undefined),
     );
     setAvailableLocations(Array.from(locations));
@@ -105,7 +108,7 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
           const searchLower = searchQuery.toLowerCase();
           const nameMatch = match.name.toLowerCase().includes(searchLower);
           const locationMatch =
-            match.location?.toLowerCase().includes(searchLower) ?? false;
+            match.location?.name.toLowerCase().includes(searchLower) ?? false;
           if (!nameMatch && !locationMatch) return false;
         }
 
@@ -137,7 +140,10 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
         }
 
         // Location filter
-        if (locationFilter !== "all" && match.location !== locationFilter) {
+        if (
+          locationFilter !== "all" &&
+          match.location?.name !== locationFilter
+        ) {
           return false;
         }
 
@@ -494,7 +500,17 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
                         {match.location && (
                           <div className="flex items-center gap-1 text-sm sm:text-base">
                             <MapPinIcon className="h-4 w-4" />
-                            <span>{match.location}</span>
+                            <span>{match.location.name}</span>
+                            {match.location.type === "linked" && (
+                              <Badge variant="outline" className="text-xs">
+                                Linked
+                              </Badge>
+                            )}
+                            {match.location.type === "shared" && (
+                              <Badge variant="outline" className="text-xs">
+                                Shared
+                              </Badge>
+                            )}
                           </div>
                         )}
 

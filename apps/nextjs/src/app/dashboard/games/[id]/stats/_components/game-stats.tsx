@@ -224,7 +224,17 @@ export default function GameStats({ gameId }: { gameId: number }) {
                   {lastMatch.location && (
                     <div className="flex items-center gap-2">
                       <MapPinIcon className="h-5 w-5" />
-                      <span>{lastMatch.location}</span>
+                      <span>{lastMatch.location.name}</span>
+                      {lastMatch.location.type === "linked" && (
+                        <Badge variant="outline" className="text-xs">
+                          Linked
+                        </Badge>
+                      )}
+                      {lastMatch.location.type === "shared" && (
+                        <Badge variant="outline" className="text-xs">
+                          Shared
+                        </Badge>
+                      )}
                     </div>
                   )}
                 </div>

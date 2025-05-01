@@ -1,7 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, Dices, GamepadIcon, Users } from "lucide-react";
+import {
+  CalendarIcon,
+  Clock,
+  Dices,
+  GamepadIcon,
+  MapPinIcon,
+  Users,
+} from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
@@ -95,14 +102,26 @@ export function GameCard({ game }: GameCardProps) {
             </div>
             <GamesDropDown data={game} />
           </div>
-          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <div className="flex flex-shrink-0 items-center gap-1">
-              <Users className="h-3 w-3" />
-              <span>{playerCount()}</span>
+          <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              <div className="flex flex-shrink-0 items-center gap-1">
+                <Users className="h-3 w-3" />
+                <span>{playerCount()}</span>
+              </div>
+              <div className="flex flex-shrink-0 items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span>{playtime()}</span>
+              </div>
             </div>
-            <div className="flex flex-shrink-0 items-center gap-1">
-              <Clock className="h-3 w-3" />
-              <span>{playtime()}</span>
+            <div>
+              {game.lastPlayed.location && (
+                <div className="flex items-center gap-1">
+                  <MapPinIcon className="h-3 w-3 flex-shrink-0" />
+                  <span className="truncate">
+                    {game.lastPlayed.location.name}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
@@ -115,9 +134,7 @@ export function GameCard({ game }: GameCardProps) {
             {formattedLastPlayed && (
               <div className="flex items-center gap-1">
                 <CalendarIcon className="h-3 w-3 flex-shrink-0" />
-                <span className="truncate" suppressHydrationWarning>
-                  {formattedLastPlayed}
-                </span>
+                <span suppressHydrationWarning>{formattedLastPlayed}</span>
               </div>
             )}
           </div>

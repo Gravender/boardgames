@@ -1,5 +1,3 @@
-import { Trophy } from "lucide-react";
-
 import type { RouterOutputs } from "@board-games/api";
 import { getOrdinalSuffix } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";

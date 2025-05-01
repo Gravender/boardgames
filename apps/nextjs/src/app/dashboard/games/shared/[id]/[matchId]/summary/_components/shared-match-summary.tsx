@@ -83,10 +83,20 @@ export default function SharedMatchSummary({ matchId }: { matchId: number }) {
                     </span>
                   </div>
 
-                  {match.locationName && (
+                  {match.location && (
                     <div className="flex items-center gap-2">
                       <MapPinIcon className="h-4 w-4 text-muted-foreground" />
-                      <span>{match.locationName}</span>
+                      <span>{match.location.name}</span>
+                      {match.location.type === "linked" && (
+                        <Badge variant="outline" className="text-xs">
+                          Linked
+                        </Badge>
+                      )}
+                      {match.location.type === "shared" && (
+                        <Badge variant="outline" className="text-xs">
+                          Shared
+                        </Badge>
+                      )}
                     </div>
                   )}
 
@@ -136,7 +146,21 @@ export default function SharedMatchSummary({ matchId }: { matchId: number }) {
                       </div>
                       <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPinIcon className="h-4 w-4" />
-                        <span>{match.locationName}</span>
+                        {match.location && (
+                          <>
+                            <span>{match.location.name}</span>
+                            {match.location.type === "linked" && (
+                              <Badge variant="outline" className="text-xs">
+                                Linked
+                              </Badge>
+                            )}
+                            {match.location.type === "shared" && (
+                              <Badge variant="outline" className="text-xs">
+                                Shared
+                              </Badge>
+                            )}
+                          </>
+                        )}
                       </div>
 
                       <div className="mt-3 flex flex-wrap gap-2">
