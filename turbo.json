@@ -40,6 +40,10 @@
       "cache": false,
       "persistent": true
     },
+    "seed": {
+      "cache": false,
+      "persistent": false
+    },
     "ui-add": {
       "cache": false,
       "interactive": true

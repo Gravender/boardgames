@@ -12,6 +12,7 @@
     "clean:workspaces": "turbo run clean",
     "db:push": "turbo -F @board-games/db push",
     "db:studio": "turbo -F @board-games/db studio",
+    "db:seed": "turbo -F @board-games/db seed",
     "dev": "turbo watch dev --continue",
     "dev:next": "turbo watch dev -F @board-games/nextjs...",
     "format": "turbo run format --continue -- --cache --cache-location .cache/.prettiercache",
