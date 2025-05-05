@@ -364,6 +364,9 @@ export default function ShareRequestsPage() {
                               {request.players > 0 && (
                                 <li>{`${request.players} players`}</li>
                               )}
+                              {(request.locations ?? 0) > 0 && (
+                                <li>{`${request.locations} locations`}</li>
+                              )}
                             </ul>
                           </div>
                         )}
@@ -581,6 +584,9 @@ export default function ShareRequestsPage() {
                               )}
                               {request.players > 0 && (
                                 <li>{`${request.players} players`}</li>
+                              )}
+                              {(request.locations ?? 0) > 0 && (
+                                <li>{`${request.locations} locations`}</li>
                               )}
                             </ul>
                           </div>

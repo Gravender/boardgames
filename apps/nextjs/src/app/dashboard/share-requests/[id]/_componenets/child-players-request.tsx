@@ -93,10 +93,27 @@ export default function ChildPlayersRequest({
     });
     setPlayers(temp);
   };
+  const possibleMatches = useMemo(() => {
+    return childPlayers.reduce((acc, curr) => {
+      const foundPlayer = usersPlayers.find(
+        (p) => p.name.toLowerCase() === curr.item.name.toLowerCase(),
+      );
+      if (foundPlayer) {
+        return acc + 1;
+      }
+      return acc;
+    }, 0);
+  }, [childPlayers, usersPlayers]);
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Players from shared matches</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-medium">Players from shared matches</h3>
+          <span className="font-medium text-green-600">
+            {possibleMatches > 0 &&
+              ` (${possibleMatches} possible ${possibleMatches === 1 ? "match" : "matches"})`}
+          </span>
+        </div>
         <p className="text-sm text-muted-foreground">
           {players.reduce((acc, curr) => {
             if (curr.accept) return acc + 1;
@@ -107,31 +124,42 @@ export default function ChildPlayersRequest({
       </div>
       <ScrollArea className="p-2">
         <div className="grid max-h-[20rem] gap-2">
-          {childPlayers.map((playerItem) => {
-            const isAccepted =
-              players.find((p) => p.sharedId === playerItem.shareId)?.accept ??
-              false;
-            const playerState = players.find(
-              (p) => p.sharedId === playerItem.shareId,
-            );
-            if (!playerState) return null;
-            const foundPlayer = usersPlayers.find(
-              (p) =>
-                p.name.toLowerCase() === playerItem.item.name.toLowerCase(),
-            );
-            return (
-              <PlayerRequest
-                key={playerItem.item.id}
-                player={playerItem}
-                isAccepted={isAccepted}
-                playerState={playerState}
-                foundPlayer={foundPlayer}
-                usersPlayers={usersPlayers}
-                updatePlayerAcceptance={updatePlayerAcceptance}
-                updatePlayerLink={updatePlayerLink}
-              />
-            );
-          })}
+          {childPlayers
+            .toSorted((a, b) => {
+              return (
+                usersPlayers.filter(
+                  (p) => p.name.toLowerCase() === b.item.name.toLowerCase(),
+                ).length -
+                usersPlayers.filter(
+                  (p) => p.name.toLowerCase() === a.item.name.toLowerCase(),
+                ).length
+              );
+            })
+            .map((playerItem) => {
+              const isAccepted =
+                players.find((p) => p.sharedId === playerItem.shareId)
+                  ?.accept ?? false;
+              const playerState = players.find(
+                (p) => p.sharedId === playerItem.shareId,
+              );
+              if (!playerState) return null;
+              const foundPlayer = usersPlayers.find(
+                (p) =>
+                  p.name.toLowerCase() === playerItem.item.name.toLowerCase(),
+              );
+              return (
+                <PlayerRequest
+                  key={playerItem.item.id}
+                  player={playerItem}
+                  isAccepted={isAccepted}
+                  playerState={playerState}
+                  foundPlayer={foundPlayer}
+                  usersPlayers={usersPlayers}
+                  updatePlayerAcceptance={updatePlayerAcceptance}
+                  updatePlayerLink={updatePlayerLink}
+                />
+              );
+            })}
         </div>
       </ScrollArea>
     </div>
@@ -317,7 +345,7 @@ function PlayerRequest({
                                   {sortedPlayers.map((existingPlayer) => (
                                     <CommandItem
                                       key={existingPlayer.id}
-                                      value={existingPlayer.name}
+                                      value={existingPlayer.id.toString()}
                                       onSelect={() =>
                                         updatePlayerLink(
                                           playerState.sharedId,
