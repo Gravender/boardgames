@@ -72,6 +72,12 @@ export const shareMetaRouter = createTRPCRouter({
             };
             permission: "view" | "edit";
           }
+        | {
+            itemType: "location";
+            shareId: number;
+            item: z.infer<typeof selectLocationSchema>;
+            permission: "view" | "edit";
+          }
       )[] = [];
       if (sharedItem.childShareRequests.length > 0) {
         for (const childShareRequest of sharedItem.childShareRequests) {
@@ -170,6 +176,26 @@ export const shareMetaRouter = createTRPCRouter({
               itemType: "player",
               shareId: childShareRequest.id,
               item: returnedPlayer,
+              permission: childShareRequest.permission,
+            });
+          }
+          if (childShareRequest.itemType === "location") {
+            const returnedLocation = await ctx.db.query.location.findFirst({
+              where: {
+                id: childShareRequest.itemId,
+                createdBy: sharedItem.ownerId,
+              },
+            });
+            if (!returnedLocation) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Location not found",
+              });
+            }
+            childItems.push({
+              itemType: "location",
+              shareId: childShareRequest.id,
+              item: returnedLocation,
               permission: childShareRequest.permission,
             });
           }
@@ -468,6 +494,9 @@ export const shareMetaRouter = createTRPCRouter({
           item: returnedPlayer,
           permission: sharedItem.permission,
           players: childItems.filter((cItem) => cItem.itemType === "player"),
+          locations: childItems.filter(
+            (cItem) => cItem.itemType === "location",
+          ),
           games: Object.values(mappedGame),
         };
       } else {
@@ -554,6 +583,14 @@ export const shareMetaRouter = createTRPCRouter({
     });
     return players;
   }),
+  getUserLocationsForLinking: protectedUserProcedure.query(async ({ ctx }) => {
+    const locations = await ctx.db.query.location.findMany({
+      where: {
+        createdBy: ctx.userId,
+      },
+    });
+    return locations;
+  }),
   getIncomingShareRequests: protectedUserProcedure.query(async ({ ctx }) => {
     const sharedItems = await ctx.db.query.shareRequest.findMany({
       where: {
@@ -610,6 +647,9 @@ export const shareMetaRouter = createTRPCRouter({
               players: sharedItem.childShareRequests.filter(
                 (child) => child.itemType === "player",
               ).length,
+              locations: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "location",
+              ).length,
             };
           }
           if (sharedItem.itemType === "match") {
@@ -649,6 +689,9 @@ export const shareMetaRouter = createTRPCRouter({
               players: sharedItem.childShareRequests.filter(
                 (child) => child.itemType === "player",
               ).length,
+              locations: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "location",
+              ).length,
             };
           }
           if (sharedItem.itemType === "player") {
@@ -683,6 +726,9 @@ export const shareMetaRouter = createTRPCRouter({
               ).length,
               players: sharedItem.childShareRequests.filter(
                 (child) => child.itemType === "player",
+              ).length,
+              locations: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "location",
               ).length,
             };
           }
@@ -749,6 +795,9 @@ export const shareMetaRouter = createTRPCRouter({
               players: sharedItem.childShareRequests.filter(
                 (child) => child.itemType === "player",
               ).length,
+              locations: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "location",
+              ).length,
             };
           }
           if (sharedItem.itemType === "match") {
@@ -789,6 +838,9 @@ export const shareMetaRouter = createTRPCRouter({
               players: sharedItem.childShareRequests.filter(
                 (child) => child.itemType === "player",
               ).length,
+              locations: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "location",
+              ).length,
             };
           }
           if (sharedItem.itemType === "player") {
@@ -824,6 +876,9 @@ export const shareMetaRouter = createTRPCRouter({
               ).length,
               players: sharedItem.childShareRequests.filter(
                 (child) => child.itemType === "player",
+              ).length,
+              locations: sharedItem.childShareRequests.filter(
+                (child) => child.itemType === "location",
               ).length,
             };
           }
