@@ -56,6 +56,7 @@ import { RadioGroup, RadioGroupItem } from "@board-games/ui/radio-group";
 import { Separator } from "@board-games/ui/separator";
 
 import { useTRPC } from "~/trpc/react";
+import ChildLocationsRequest from "./child-locations-request";
 import ChildMatchesRequest from "./child-match-request";
 import ChildPlayersRequest from "./child-players-request";
 
@@ -127,6 +128,13 @@ export default function GameRequestPage({
   const [matches, setMatches] = useState<
     { sharedId: number; accept: boolean }[]
   >([]);
+  const [locations, setLocations] = useState<
+    { sharedId: number; accept: boolean; linkedId: number | null }[]
+  >([]);
+
+  const childLocations = useMemo(() => {
+    return game.childItems.filter((item) => item.itemType === "location");
+  }, [game.childItems]);
 
   const childMatches = useMemo(() => {
     return game.childItems.filter((item) => item.itemType === "match");
@@ -169,6 +177,11 @@ export default function GameRequestPage({
         sharedId: scoresheet.sharedId,
         accept: scoresheet.accept,
       })),
+      locations: locations.map((location) => ({
+        sharedId: location.sharedId,
+        accept: location.accept,
+        linkedId: location.linkedId ?? undefined,
+      })),
       matches: matches.map((match) => ({
         sharedId: match.sharedId,
         accept: match.accept,
@@ -197,6 +210,12 @@ export default function GameRequestPage({
       return acc;
     }, 0);
   }, [players]);
+  const acceptedLocations = useMemo(() => {
+    return locations.reduce((acc, curr) => {
+      if (curr.accept) return acc + 1;
+      return acc;
+    }, 0);
+  }, [locations]);
   const acceptedMatches = useMemo(() => {
     return matches.reduce((acc, curr) => {
       if (curr.accept) return acc + 1;
@@ -370,7 +389,7 @@ export default function GameRequestPage({
                                                 {filteredGames.map((fGame) => (
                                                   <CommandItem
                                                     key={fGame.id}
-                                                    value={fGame.name}
+                                                    value={fGame.id.toString()}
                                                     onSelect={() =>
                                                       handleGameSelect(fGame.id)
                                                     }
@@ -550,6 +569,18 @@ export default function GameRequestPage({
               </>
             )}
 
+            {childLocations.length > 0 && (
+              <>
+                <Separator />
+
+                <ChildLocationsRequest
+                  childLocations={childLocations}
+                  locations={locations}
+                  setLocations={setLocations}
+                />
+              </>
+            )}
+
             {childMatches.length > 0 && (
               <>
                 <Separator />
@@ -644,11 +675,21 @@ export default function GameRequestPage({
                     <span> ({sharedPlayers} linked)</span>
                   </li>
                 )}
+                {childLocations.length > 0 && acceptedLocations > 0 && (
+                  <li>
+                    {acceptedLocations} Location
+                    {acceptedLocations !== 1 ? "s" : ""}
+                  </li>
+                )}
               </ul>
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => router.push(`/dashboard/share-requests`)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>

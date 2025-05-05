@@ -71,6 +71,7 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
 
 import { useTRPC } from "~/trpc/react";
+import ChildLocationsRequest from "./child-locations-request";
 import ChildPlayersRequest from "./child-players-request";
 
 type Player = Extract<
@@ -161,6 +162,9 @@ export default function PlayerRequestPage({
   const [players, setPlayers] = useState<
     { sharedId: number; accept: boolean; linkedId: number | null }[]
   >([]);
+  const [locations, setLocations] = useState<
+    { sharedId: number; accept: boolean; linkedId: number | null }[]
+  >([]);
 
   const filteredPlayers = useMemo(() => {
     return usersPlayers.filter((player) =>
@@ -233,6 +237,11 @@ export default function PlayerRequestPage({
         accept: player.accept,
         linkedId: player.linkedId ?? undefined,
       })),
+      locations: locations.map((location) => ({
+        sharedId: location.sharedId,
+        accept: location.accept,
+        linkedId: location.linkedId ?? undefined,
+      })),
       games: data.games,
     });
   };
@@ -269,6 +278,13 @@ export default function PlayerRequestPage({
       return acc;
     }, 0);
   }, [players]);
+
+  const acceptedLocations = useMemo(() => {
+    return locations.reduce((acc, curr) => {
+      if (curr.accept) return acc + 1;
+      return acc;
+    }, 0);
+  }, [locations]);
   const acceptedGames = useMemo(() => {
     return games.reduce((acc, curr) => {
       if (curr.type === "request" && curr.accept) return acc + 1;
@@ -444,7 +460,7 @@ export default function PlayerRequestPage({
                                                   (fPlayer) => (
                                                     <CommandItem
                                                       key={fPlayer.id}
-                                                      value={fPlayer.name}
+                                                      value={fPlayer.id.toString()}
                                                       onSelect={() =>
                                                         handlePlayerSelect(
                                                           fPlayer.id,
@@ -502,6 +518,17 @@ export default function PlayerRequestPage({
                 )}
               />
             </div>
+            {player.locations.length > 0 && (
+              <>
+                <Separator />
+
+                <ChildLocationsRequest
+                  childLocations={player.locations}
+                  locations={locations}
+                  setLocations={setLocations}
+                />
+              </>
+            )}
             {player.games.length > 0 && (
               <>
                 <Separator />
@@ -565,11 +592,21 @@ export default function PlayerRequestPage({
                     {acceptedMatches !== 1 ? "es" : ""}
                   </li>
                 )}
+                {player.locations.length > 0 && acceptedLocations > 0 && (
+                  <li>
+                    {acceptedLocations} Location
+                    {acceptedLocations !== 1 ? "s" : ""}
+                  </li>
+                )}
               </ul>
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => router.push(`/dashboard/share-requests`)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>
@@ -602,10 +639,32 @@ function ChildGamesRequest({
     trpc.sharing.getUserGamesForLinking.queryOptions(),
   );
 
+  const potentialMatches = useMemo(() => {
+    return games.reduce((acc, curr) => {
+      if (curr.type === "request") {
+        const foundGame = usersGames.find(
+          (g) => g.name.toLowerCase() === curr.item.name.toLowerCase(),
+        );
+        if (foundGame) {
+          return acc + 1;
+        }
+      }
+      return acc;
+    }, 0);
+  }, [games, usersGames]);
+
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Games</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-medium">Games</h3>
+          {potentialMatches > 0 && (
+            <span className="font-medium text-green-600">
+              ({potentialMatches} possible{" "}
+              {potentialMatches == 1 ? "duplicate" : "duplicates"} found)
+            </span>
+          )}
+        </div>
         <p className="text-sm text-muted-foreground">
           {gameDecisions.reduce((acc, curr) => {
             if (curr.type === "request" && curr.accept) {
@@ -851,7 +910,7 @@ function RequestShareGame({
                                 {sortedGames.map((existingGame) => (
                                   <CommandItem
                                     key={existingGame.id}
-                                    value={existingGame.name}
+                                    value={existingGame.id.toString()}
                                     onSelect={() => {
                                       form.setValue(
                                         `games.${gameIndex}.existingGameId`,
@@ -874,13 +933,18 @@ function RequestShareGame({
                                         )}
                                       </div>
                                       <div>
-                                        <p>
-                                          {existingGame.name}
+                                        <div className="flex items-center gap-1">
+                                          <span>{existingGame.name}</span>
+
                                           {existingGame.name.toLowerCase() ===
-                                          game.item.name.toLowerCase()
-                                            ? " (Possible Duplicate Found)"
-                                            : ""}
-                                        </p>
+                                          game.item.name.toLowerCase() ? (
+                                            <span className="text-xs text-green-500">
+                                              (Duplicate)
+                                            </span>
+                                          ) : (
+                                            ""
+                                          )}
+                                        </div>
                                         {(existingGame.yearPublished ??
                                           existingGame.playersMin) && (
                                           <p className="text-xs text-muted-foreground">
@@ -1219,41 +1283,44 @@ function MatchRequests({
                 className="w-full"
               >
                 <AccordionItem value={`match-${matchItem.item.id}`}>
-                  <AccordionTrigger className="flex w-full items-center justify-between pr-4 hover:no-underline">
-                    <div className="flex w-full flex-col">
-                      <div className="flex w-full">
-                        <div className="text-left">
-                          <span className="font-medium">
-                            {matchItem.item.name}{" "}
+                  <div className="flex w-full items-center justify-between pr-4">
+                    <AccordionTrigger className="flex w-full items-center justify-between pr-4 hover:no-underline">
+                      <div className="flex w-full flex-col">
+                        <div className="flex w-full">
+                          <div className="text-left">
+                            <span className="font-medium">
+                              {matchItem.item.name}{" "}
+                            </span>
+                            {potentialMatches(matchItem.item.date).length >
+                              0 && (
+                              <span className="font-medium text-green-600">
+                                (Possible Match Found)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span
+                            className="flex items-center gap-1"
+                            suppressHydrationWarning
+                          >
+                            <Calendar className="h-4 w-4" />
+                            {format(matchItem.item.date, "d MMM yyyy")}
                           </span>
-                          {potentialMatches(matchItem.item.date).length > 0 && (
-                            <span className="font-medium text-green-600">
-                              (Possible Match Found)
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {formatDuration(matchItem.item.duration)}
+                          </span>
+                          {matchItem.item.location && (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-4 w-4" />
+                              {matchItem.item.location.name}
                             </span>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span
-                          className="flex items-center gap-1"
-                          suppressHydrationWarning
-                        >
-                          <Calendar className="h-4 w-4" />
-                          {format(matchItem.item.date, "d MMM yyyy")}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {formatDuration(matchItem.item.duration)}
-                        </span>
-                        {matchItem.item.location && (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            {matchItem.item.location.name}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 pr-2">
+                    </AccordionTrigger>
+                    <div className="flex items-center gap-2">
                       <Badge
                         variant={
                           matchItem.permission === "edit"
@@ -1299,7 +1366,7 @@ function MatchRequests({
                         </Button>
                       </div>
                     </div>
-                  </AccordionTrigger>
+                  </div>
 
                   <AccordionContent>
                     {matchState.accept ? (
