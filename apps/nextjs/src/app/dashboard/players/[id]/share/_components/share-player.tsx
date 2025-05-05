@@ -375,9 +375,7 @@ export default function SharePlayerPage({ playerId }: { playerId: number }) {
                                         {friends.map((friend) => (
                                           <CommandItem
                                             key={friend.friendId}
-                                            value={
-                                              friend.friend.name ?? "Unknown"
-                                            }
+                                            value={friend.friendId.toString()}
                                             onSelect={() => {
                                               setSelectedFriends((current) => {
                                                 if (
