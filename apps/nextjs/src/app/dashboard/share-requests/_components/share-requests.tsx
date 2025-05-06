@@ -364,7 +364,7 @@ export default function ShareRequestsPage() {
                               {request.players > 0 && (
                                 <li>{`${request.players} players`}</li>
                               )}
-                              {(request.locations ?? 0) > 0 && (
+                              {request.locations > 0 && (
                                 <li>{`${request.locations} locations`}</li>
                               )}
                             </ul>
@@ -532,7 +532,7 @@ export default function ShareRequestsPage() {
                           {!request.sharedWith &&
                           request.status === "pending" ? (
                             <>
-                              <LinkIcon className="h-4 w-4 text-blue-500" />
+                              <LinkIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                               <span
                                 className="text-sm"
                                 suppressHydrationWarning

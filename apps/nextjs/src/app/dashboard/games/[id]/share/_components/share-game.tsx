@@ -828,15 +828,16 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
                                                     className={cn(
                                                       "text-muted-foreground",
                                                       teamIndex === 0 &&
-                                                        "text-blue-500",
+                                                        "text-blue-500 dark:text-blue-400",
                                                       teamIndex === 1 &&
-                                                        "text-green-500",
+                                                        "text-green-500 dark:text-green-400",
                                                       teamIndex === 2 &&
-                                                        "text-yellow-500",
+                                                        "text-yellow-500 dark:text-yellow-400",
                                                       !(
                                                         teamIndex < 3 &&
                                                         teamIndex > -1
-                                                      ) && "text-red-500",
+                                                      ) &&
+                                                        "text-red-500 dark:text-red-400",
                                                     )}
                                                   >
                                                     {`(${p.team.name})`}

@@ -84,7 +84,9 @@ export function Matches({ locationId }: { locationId: number }) {
                             {match.name}
                           </h2>
 
-                          <span className="text-blue-500">(Shared)</span>
+                          <span className="text-blue-500 dark:text-blue-400">
+                            (Shared)
+                          </span>
                         </div>
                         <div className="flex min-w-20 items-center gap-1">
                           <span>Play Date:</span>

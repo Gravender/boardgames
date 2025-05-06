@@ -80,7 +80,7 @@ export function LocationsTable() {
                         </h2>
                         {location.isDefault && <span>{"(Default)"}</span>}
                         {location.type === "shared" && (
-                          <span className="text-blue-500">{`(Shared)`}</span>
+                          <span className="text-blue-500 dark:text-blue-400">{`(Shared)`}</span>
                         )}
                       </div>
                     </div>
