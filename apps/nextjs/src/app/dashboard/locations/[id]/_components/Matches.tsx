@@ -7,6 +7,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns/format";
 import { Dices } from "lucide-react";
 
+import type { RouterOutputs } from "@board-games/api";
 import { CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
@@ -14,17 +15,19 @@ import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
 import { useTRPC } from "~/trpc/react";
 
+type Matches = NonNullable<RouterOutputs["location"]["getLocation"]>["matches"];
 export function Matches({ locationId }: { locationId: number }) {
   const trpc = useTRPC();
-  const { data: data } = useSuspenseQuery(
-    trpc.match.getMatchesByLocation.queryOptions({ locationId: locationId }),
-  );
   const { data: location } = useSuspenseQuery(
     trpc.location.getLocation.queryOptions({
       id: locationId,
     }),
   );
-  const [matches, setMatches] = useState(data);
+  const [matches, setMatches] = useState<Matches>(
+    location !== null ? location.matches : [],
+  );
+
+  if (location === null) return null;
 
   return (
     <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
@@ -34,7 +37,7 @@ export function Matches({ locationId }: { locationId: number }) {
         >{`Matches at ${location.name}`}</CardTitle>
       </CardHeader>
       <FilterAndSearch
-        items={data}
+        items={location.matches}
         setItems={setMatches}
         sortFields={["date", "name", "finished"]}
         defaultSortField="date"
@@ -54,8 +57,8 @@ export function Matches({ locationId }: { locationId: number }) {
                   <Link
                     href={
                       match.finished
-                        ? `/dashboard/games/${match.gameId}/${match.id}/summary`
-                        : `/dashboard/games/${match.gameId}/${match.id}`
+                        ? `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}/summary`
+                        : `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}`
                     }
                     className="flex w-full items-center gap-3 font-medium"
                   >
@@ -74,9 +77,14 @@ export function Matches({ locationId }: { locationId: number }) {
                     </div>
                     <div className="flex w-full items-center justify-between">
                       <div className="flex flex-col items-start">
-                        <h2 className="text-md text-left font-semibold">
-                          {match.name}
-                        </h2>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-md text-left font-semibold">
+                            {match.name}
+                          </h2>
+                          {match.type === "shared" && (
+                            <span className="text-blue-500">(Shared)</span>
+                          )}
+                        </div>
                         <div className="flex min-w-20 items-center gap-1">
                           <span>Play Date:</span>
                           <span

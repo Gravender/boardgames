@@ -72,30 +72,165 @@ export const locationRouter = createTRPCRouter({
           createdBy: ctx.userId,
         },
         with: {
-          matches: true,
+          matches: {
+            with: {
+              game: {
+                with: {
+                  image: true,
+                },
+              },
+              matchPlayers: {
+                with: {
+                  player: true,
+                },
+              },
+            },
+          },
+          sharedMatches: {
+            where: {
+              sharedWithId: ctx.userId,
+            },
+            with: {
+              match: true,
+              sharedGame: {
+                with: {
+                  linkedGame: {
+                    with: {
+                      image: true,
+                    },
+                  },
+                  game: {
+                    with: {
+                      image: true,
+                    },
+                  },
+                },
+              },
+              sharedMatchPlayers: {
+                with: {
+                  matchPlayer: true,
+                  sharedPlayer: {
+                    with: {
+                      linkedPlayer: true,
+
+                      player: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       });
-      if (!result)
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Location not found",
-          cause: input.id,
-        });
-      return result;
+      if (!result) return null;
+      const locationMatches: {
+        type: "original" | "shared";
+        id: number;
+        gameId: number;
+        date: Date;
+        name: string;
+        finished: boolean;
+        won: boolean;
+        players: {
+          id: number;
+          name: string;
+        }[];
+        gameImageUrl: string | undefined;
+        gameName: string | undefined;
+      }[] = [
+        ...result.matches.map((m) => {
+          return {
+            type: "original" as const,
+            id: m.id,
+            gameId: m.gameId,
+            date: m.date,
+            name: m.name,
+            finished: m.finished,
+            won:
+              m.matchPlayers.findIndex(
+                (player) =>
+                  player.winner && player.player.userId === ctx.userId,
+              ) !== -1,
+            players: m.matchPlayers.map((matchPlayer) => {
+              return {
+                id: matchPlayer.player.id,
+                name: matchPlayer.player.name,
+              };
+            }),
+            gameImageUrl: m.game.image?.url,
+            gameName: m.game.name,
+          };
+        }),
+        ...result.sharedMatches.map((m) => {
+          const linkedGame = m.sharedGame.linkedGame;
+          const mPlayers = m.sharedMatchPlayers
+            .map((sharedMatchPlayer) => {
+              if (sharedMatchPlayer.sharedPlayer === null) {
+                return null;
+              }
+              if (sharedMatchPlayer.sharedPlayer.linkedPlayer === null) {
+                return {
+                  type: "shared" as const,
+                  isUser: false,
+                  id: sharedMatchPlayer.sharedPlayer.id,
+                  name: sharedMatchPlayer.sharedPlayer.player.name,
+                  placement: sharedMatchPlayer.matchPlayer.placement,
+                  winner: sharedMatchPlayer.matchPlayer.winner,
+                };
+              }
+              return {
+                type: "original" as const,
+                isUser:
+                  sharedMatchPlayer.sharedPlayer.linkedPlayer.userId ===
+                  ctx.userId,
+
+                id: sharedMatchPlayer.sharedPlayer.linkedPlayer.id,
+                name: sharedMatchPlayer.sharedPlayer.linkedPlayer.name,
+                placement: sharedMatchPlayer.matchPlayer.placement,
+                winner: sharedMatchPlayer.matchPlayer.winner,
+              };
+            })
+            .filter((p) => p !== null);
+          if (linkedGame) {
+            return {
+              type: "shared" as const,
+              id: m.id,
+              gameId: m.sharedGame.id,
+              date: m.match.date,
+              name: m.match.name,
+              finished: m.match.finished,
+              won:
+                mPlayers.findIndex(
+                  (player) => player.winner && player.isUser,
+                ) !== -1,
+              players: mPlayers,
+              gameImageUrl: linkedGame.image?.url,
+              gameName: linkedGame.name,
+            };
+          }
+          return {
+            type: "shared" as const,
+            id: m.id,
+            gameId: m.sharedGame.id,
+            date: m.match.date,
+            name: m.match.name,
+            finished: m.match.finished,
+            won:
+              mPlayers.findIndex((player) => player.winner && player.isUser) !==
+              -1,
+            players: mPlayers,
+            gameImageUrl: m.sharedGame.game.image?.url,
+            gameName: m.sharedGame.game.name,
+          };
+        }),
+      ];
+      return {
+        id: result.id,
+        name: result.name,
+        isDefault: result.isDefault,
+        matches: locationMatches,
+      };
     }),
-  getDefaultLocation: protectedUserProcedure.query(async ({ ctx }) => {
-    const result = await ctx.db.query.location.findFirst({
-      where: {
-        isDefault: true,
-        createdBy: ctx.userId,
-      },
-      with: {
-        matches: true,
-      },
-    });
-    if (!result) return null;
-    return result;
-  }),
   create: protectedUserProcedure
     .input(insertLocationSchema.pick({ name: true, isDefault: true }))
     .mutation(async ({ ctx, input }) => {
@@ -123,21 +258,13 @@ export const locationRouter = createTRPCRouter({
       z.object({
         id: z.number(),
         name: z.string().optional(),
-        isDefault: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (input.isDefault) {
-        await ctx.db
-          .update(location)
-          .set({ isDefault: false })
-          .where(eq(location.createdBy, ctx.userId));
-      }
       await ctx.db
         .update(location)
         .set({
           name: input.name,
-          isDefault: input.isDefault,
         })
         .where(eq(location.id, input.id))
         .returning();

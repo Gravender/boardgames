@@ -756,48 +756,6 @@ export const matchRouter = createTRPCRouter({
         gameId: match.game.id,
       }));
     }),
-  getMatchesByLocation: protectedUserProcedure
-    .input(z.object({ locationId: z.number() }))
-    .query(async ({ ctx, input }) => {
-      const matches = await ctx.db.query.match.findMany({
-        where: {
-          userId: ctx.userId,
-          locationId: input.locationId,
-        },
-        with: {
-          game: {
-            with: {
-              image: true,
-            },
-          },
-          matchPlayers: {
-            with: {
-              player: true,
-            },
-          },
-          location: true,
-        },
-      });
-      return matches.map((match) => ({
-        id: match.id,
-        date: match.date,
-        name: match.name,
-        finished: match.finished,
-        won:
-          match.matchPlayers.findIndex(
-            (player) => player.winner && player.player.userId === ctx.userId,
-          ) !== -1,
-        players: match.matchPlayers.map((matchPlayer) => {
-          return {
-            id: matchPlayer.player.id,
-            name: matchPlayer.player.name,
-          };
-        }),
-        gameImageUrl: match.game.image?.url,
-        gameName: match.game.name,
-        gameId: match.game.id,
-      }));
-    }),
   deleteMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
