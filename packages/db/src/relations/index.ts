@@ -276,6 +276,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.location.id,
       to: r.sharedLocation.linkedLocationId,
     }),
+    sharedMatches: r.many.sharedMatch({
+      from: r.location.id.through(r.sharedLocation.linkedLocationId),
+      to: r.sharedMatch.sharedLocationId.through(r.sharedLocation.id),
+    }),
   },
   sharedLocation: {
     owner: r.one.user({

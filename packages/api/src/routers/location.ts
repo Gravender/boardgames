@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { location, match } from "@board-games/db/schema";
+import { location, match, sharedLocation } from "@board-games/db/schema";
 import {
   insertLocationSchema,
   selectLocationSchema,
@@ -12,15 +12,52 @@ import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 
 export const locationRouter = createTRPCRouter({
   getLocations: protectedUserProcedure.query(async ({ ctx }) => {
-    return ctx.db.query.location.findMany({
+    const userLocations = await ctx.db.query.location.findMany({
       where: {
         createdBy: ctx.userId,
       },
       with: {
         matches: true,
+        sharedMatches: {
+          where: {
+            sharedWithId: ctx.userId,
+          },
+        },
       },
       orderBy: (location, { asc }) => asc(location.name),
     });
+    const sharedLocations = await ctx.db.query.sharedLocation.findMany({
+      where: {
+        sharedWithId: ctx.userId,
+        linkedLocationId: {
+          isNull: true,
+        },
+      },
+      with: {
+        sharedMatches: {
+          where: {
+            sharedWithId: ctx.userId,
+          },
+        },
+        location: true,
+      },
+    });
+    return [
+      ...userLocations.map((location) => ({
+        type: "original" as const,
+        ...location,
+        matches: location.matches.length + location.sharedMatches.length,
+      })),
+      ...sharedLocations.map((sharedLocation) => ({
+        type: "shared" as const,
+        ...sharedLocation.location,
+        isDefault: sharedLocation.isDefault,
+        permission: sharedLocation.permission,
+        id: sharedLocation.id,
+        locationId: sharedLocation.locationId,
+        matches: sharedLocation.sharedMatches.length,
+      })),
+    ];
   }),
   getLocation: protectedUserProcedure
     .input(
@@ -104,6 +141,37 @@ export const locationRouter = createTRPCRouter({
         })
         .where(eq(location.id, input.id))
         .returning();
+    }),
+  editDefaultLocation: protectedUserProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        isDefault: z.boolean(),
+        type: z.enum(["original", "shared"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.transaction(async (tx) => {
+        await tx
+          .update(location)
+          .set({ isDefault: false })
+          .where(eq(location.createdBy, ctx.userId));
+        await tx
+          .update(sharedLocation)
+          .set({ isDefault: false })
+          .where(eq(sharedLocation.sharedWithId, ctx.userId));
+        if (input.type === "original") {
+          await tx
+            .update(location)
+            .set({ isDefault: input.isDefault })
+            .where(eq(location.id, input.id));
+        } else {
+          await tx
+            .update(sharedLocation)
+            .set({ isDefault: input.isDefault })
+            .where(eq(sharedLocation.id, input.id));
+        }
+      });
     }),
   deleteLocation: protectedUserProcedure
     .input(selectLocationSchema.pick({ id: true }))

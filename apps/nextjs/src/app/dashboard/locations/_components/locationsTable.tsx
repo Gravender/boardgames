@@ -2,23 +2,22 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { MapPin, Search } from "lucide-react";
 
-import type { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { Input } from "@board-games/ui/input";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
+import { useTRPC } from "~/trpc/react";
 import { AddLocationDialog } from "./addLocationDialog";
 import { LocationDropDown } from "./locationDropDown";
 
-export function LocationsTable({
-  data,
-}: {
-  data: RouterOutputs["location"]["getLocations"];
-}) {
+export function LocationsTable() {
+  const trpc = useTRPC();
+  const { data } = useSuspenseQuery(trpc.location.getLocations.queryOptions());
   const [locations, setLocations] = useState(data);
   const [search, setSearch] = useState("");
   const filteredLocations = useMemo(() => {
@@ -62,7 +61,11 @@ export function LocationsTable({
               >
                 <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">
                   <Link
-                    href={`/dashboard/locations/${location.id}`}
+                    href={
+                      location.type === "shared"
+                        ? `/dashboard/locations/shared/${location.id}`
+                        : `/dashboard/locations/${location.id}`
+                    }
                     className="flex items-center gap-2"
                   >
                     <div className="relative flex h-14 w-14 shrink-0 overflow-hidden rounded-full shadow">
@@ -71,12 +74,13 @@ export function LocationsTable({
                       </div>
                     </div>
                     <div className="flex flex-col gap-2">
-                      <div className="flex w-full items-center justify-between">
+                      <div className="flex w-full items-center gap-2">
                         <h2 className="text-md text-left font-semibold">
                           {`${location.name}`}
                         </h2>
-                        {location.isDefault && (
-                          <span className="pl-2">{"(Default)"}</span>
+                        {location.isDefault && <span>{"(Default)"}</span>}
+                        {location.type === "shared" && (
+                          <span className="text-blue-500">{`(Shared)`}</span>
                         )}
                       </div>
                     </div>
@@ -84,7 +88,7 @@ export function LocationsTable({
 
                   <div className="flex items-center justify-center gap-4">
                     <Button size={"icon"} variant={"outline"}>
-                      {location.matches.length}
+                      {location.matches}
                     </Button>
                     <LocationDropDown data={location} />
                   </div>

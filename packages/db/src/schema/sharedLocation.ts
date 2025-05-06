@@ -1,5 +1,12 @@
 import { sql } from "drizzle-orm";
-import { index, integer, serial, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  serial,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 import { createTable } from "./baseTable";
 import location from "./location";
@@ -21,6 +28,7 @@ const sharedLocation = createTable(
     linkedLocationId: integer("linked_location_id").references(
       () => location.id,
     ),
+    isDefault: boolean("is_default").default(false).notNull(),
     permission: text("permission", { enum: ["view", "edit"] })
       .default("view")
       .notNull(),
