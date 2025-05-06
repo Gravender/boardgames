@@ -1,12 +1,15 @@
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { location, match, sharedLocation } from "@board-games/db/schema";
 import {
-  insertLocationSchema,
-  selectLocationSchema,
-} from "@board-games/db/zodSchema";
+  location,
+  match,
+  sharedLocation,
+  sharedMatch,
+  shareRequest,
+} from "@board-games/db/schema";
+import { insertLocationSchema } from "@board-games/db/zodSchema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 
@@ -15,6 +18,9 @@ export const locationRouter = createTRPCRouter({
     const userLocations = await ctx.db.query.location.findMany({
       where: {
         createdBy: ctx.userId,
+        deletedAt: {
+          isNull: true,
+        },
       },
       with: {
         matches: true,
@@ -70,6 +76,9 @@ export const locationRouter = createTRPCRouter({
         where: {
           id: input.id,
           createdBy: ctx.userId,
+          deletedAt: {
+            isNull: true,
+          },
         },
         with: {
           matches: {
@@ -301,12 +310,48 @@ export const locationRouter = createTRPCRouter({
       });
     }),
   deleteLocation: protectedUserProcedure
-    .input(selectLocationSchema.pick({ id: true }))
+    .input(z.object({ id: z.number(), type: z.enum(["original", "shared"]) }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.db
-        .update(match)
-        .set({ locationId: null })
-        .where(eq(match.locationId, input.id));
-      await ctx.db.delete(location).where(eq(location.id, input.id));
+      await ctx.db.transaction(async (tx) => {
+        if (input.type === "original") {
+          await tx
+            .update(sharedLocation)
+            .set({ linkedLocationId: null })
+            .where(eq(sharedLocation.linkedLocationId, input.id));
+          await tx
+            .update(match)
+            .set({ locationId: null })
+            .where(eq(match.locationId, input.id));
+          await tx
+            .update(location)
+            .set({ deletedAt: new Date() })
+            .where(eq(location.id, input.id));
+        }
+        if (input.type === "shared") {
+          await tx
+            .update(sharedMatch)
+            .set({ sharedLocationId: null })
+            .where(eq(sharedMatch.sharedLocationId, input.id));
+          const [deletedLocation] = await tx
+            .delete(sharedLocation)
+            .where(eq(sharedLocation.id, input.id))
+            .returning();
+          if (deletedLocation) {
+            await tx
+              .update(shareRequest)
+              .set({
+                status: "rejected",
+              })
+              .where(
+                and(
+                  eq(shareRequest.sharedWithId, ctx.userId),
+                  eq(shareRequest.itemType, "location"),
+                  eq(shareRequest.itemId, deletedLocation.id),
+                  eq(shareRequest.status, "accepted"),
+                ),
+              );
+          }
+        }
+      });
     }),
 });

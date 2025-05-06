@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { BarChart2Icon, MoreVertical } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
@@ -44,7 +43,7 @@ export function LocationDropDown({
     }),
   );
   const onDelete = () => {
-    deleteLocation.mutate({ id: data.id });
+    deleteLocation.mutate({ id: data.id, type: data.type });
   };
   const onEditDefault = () => {
     if (data.type === "shared") {
@@ -72,19 +71,6 @@ export function LocationDropDown({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem asChild>
-            <Link
-              href={
-                data.type === "shared"
-                  ? `/dashboard/location/shared/${data.id}/stats`
-                  : `/dashboard/location/${data.id}/stats`
-              }
-              className="flex items-center gap-2"
-            >
-              <BarChart2Icon className="mr-2 h-4 w-4" />
-              View Stats
-            </Link>
-          </DropdownMenuItem>
           <DropdownMenuItem onClick={onEditDefault}>
             {data.isDefault ? "Unset Default" : "Set Default"}
           </DropdownMenuItem>

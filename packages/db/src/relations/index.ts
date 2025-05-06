@@ -95,6 +95,11 @@ export const relations = defineRelations(schema, (r) => ({
     locations: r.many.location({
       from: r.user.id,
       to: r.location.createdBy,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     linkedPlayers: r.many.player({
       from: r.user.id,
@@ -300,6 +305,11 @@ export const relations = defineRelations(schema, (r) => ({
     linkedLocation: r.one.location({
       from: r.sharedLocation.linkedLocationId,
       to: r.location.id,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     sharedMatches: r.many.sharedMatch({
       from: r.sharedLocation.id,
@@ -419,11 +429,6 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.sharedMatch.sharedLocationId,
       to: r.sharedLocation.id,
     }),
-    sharedLocationPassthrough: r.one.location({
-      from: r.sharedMatch.sharedLocationId.through(r.sharedLocation.id),
-      to: r.location.id.through(r.sharedLocation.locationId),
-      optional: false,
-    }),
   },
   match: {
     createdBy: r.one.user({
@@ -438,6 +443,11 @@ export const relations = defineRelations(schema, (r) => ({
     location: r.one.location({
       from: r.match.locationId,
       to: r.location.id,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     scoresheet: r.one.scoresheet({
       from: r.match.scoresheetId,

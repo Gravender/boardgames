@@ -26,6 +26,7 @@ const locations = createTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
       () => new Date(),
     ),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [index("boardgames_location_name_index").on(table.name)],
 );
