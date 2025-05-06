@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import type { RouterOutputs } from "@board-games/api";
+import { insertPlayerSchema } from "@board-games/db/zodSchema";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { CardFooter } from "@board-games/ui/card";
@@ -26,8 +27,21 @@ import { cn } from "@board-games/ui/utils";
 
 import { Spinner } from "~/components/spinner";
 import { useAddGroupStore } from "~/providers/add-group-provider";
-import { playersSchema } from "~/stores/add-match-store";
 
+const playersSchema = z
+  .array(
+    insertPlayerSchema
+      .pick({ name: true, id: true })
+      .required({ name: true, id: true })
+      .extend({
+        imageUrl: z.string().nullable(),
+        matches: z.number(),
+        team: z.number().nullable(),
+      }),
+  )
+  .refine((players) => players.length > 0, {
+    message: "You must add at least one player",
+  });
 const formSchema = z.object({
   players: playersSchema,
 });
