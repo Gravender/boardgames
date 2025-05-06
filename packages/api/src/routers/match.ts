@@ -11,12 +11,14 @@ import type {
   selectScoreSheetSchema,
 } from "@board-games/db/zodSchema";
 import {
+  location,
   match,
   matchPlayer,
   player,
   round,
   roundPlayer,
   scoresheet,
+  sharedLocation,
   team,
 } from "@board-games/db/schema";
 import {
@@ -38,7 +40,6 @@ export const matchRouter = createTRPCRouter({
           name: true,
           date: true,
           gameId: true,
-          locationId: true,
         })
         .required({ name: true })
         .extend({
@@ -60,6 +61,12 @@ export const matchRouter = createTRPCRouter({
             id: z.number(),
             scoresheetType: z.literal("original").or(z.literal("shared")),
           }),
+          location: z
+            .object({
+              id: z.number(),
+              type: z.literal("original").or(z.literal("shared")),
+            })
+            .nullable(),
         }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -137,10 +144,57 @@ export const matchRouter = createTRPCRouter({
             message: "Scoresheet Not Created Successfully",
           });
         }
+        let locationId: number | null = null;
+        if (input.location) {
+          if (input.location.type === "original") {
+            locationId = input.location.id;
+          } else {
+            const returnedSharedLocation =
+              await transaction.query.sharedLocation.findFirst({
+                where: {
+                  ownerId: ctx.userId,
+                  sharedWithId: ctx.userId,
+                  locationId: input.location.id,
+                },
+                with: {
+                  location: true,
+                },
+              });
+            if (!returnedSharedLocation) {
+              throw new TRPCError({
+                code: "NOT_FOUND",
+                message: "Shared location not found.",
+              });
+            } else {
+              const [newLocation] = await transaction
+                .insert(location)
+                .values({
+                  name: returnedSharedLocation.location.name,
+                  isDefault: returnedSharedLocation.isDefault,
+                  createdBy: ctx.userId,
+                })
+                .returning();
+              if (!newLocation) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: "Failed to create location.",
+                });
+              }
+              await transaction
+                .update(sharedLocation)
+                .set({ linkedLocationId: newLocation.id, isDefault: false })
+                .where(eq(sharedLocation.id, returnedSharedLocation.id));
+              locationId = newLocation.id;
+            }
+          }
+        }
         const [returningMatch] = await transaction
           .insert(match)
           .values({
-            ...input,
+            name: input.name,
+            date: input.date,
+            gameId: input.gameId,
+            locationId: locationId,
             userId: ctx.userId,
             scoresheetId: insertedScoresheet.id,
           })

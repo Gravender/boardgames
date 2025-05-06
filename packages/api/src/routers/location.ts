@@ -243,22 +243,28 @@ export const locationRouter = createTRPCRouter({
   create: protectedUserProcedure
     .input(insertLocationSchema.pick({ name: true, isDefault: true }))
     .mutation(async ({ ctx, input }) => {
-      if (input.isDefault) {
-        await ctx.db
-          .update(location)
-          .set({ isDefault: false })
-          .where(eq(location.createdBy, ctx.userId));
-      }
-      const result = (
-        await ctx.db
-          .insert(location)
-          .values({
-            name: input.name,
-            isDefault: input.isDefault,
-            createdBy: ctx.userId,
-          })
-          .returning()
-      )[0];
+      const result = await ctx.db.transaction(async (transaction) => {
+        if (input.isDefault) {
+          await transaction
+            .update(location)
+            .set({ isDefault: false })
+            .where(eq(location.createdBy, ctx.userId));
+          await transaction
+            .update(sharedLocation)
+            .set({ isDefault: false })
+            .where(eq(sharedLocation.sharedWithId, ctx.userId));
+        }
+        return (
+          await transaction
+            .insert(location)
+            .values({
+              name: input.name,
+              isDefault: input.isDefault,
+              createdBy: ctx.userId,
+            })
+            .returning()
+        )[0];
+      });
       if (!result) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       return result;
     }),

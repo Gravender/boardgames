@@ -18,7 +18,10 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import type { RouterOutputs } from "@board-games/api";
-import { insertPlayerSchema } from "@board-games/db/zodSchema";
+import {
+  insertMatchSchema,
+  insertPlayerSchema,
+} from "@board-games/db/zodSchema";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
@@ -66,7 +69,6 @@ import {
 import { cn } from "@board-games/ui/utils";
 
 import { Spinner } from "~/components/spinner";
-import { locationSchema, matchSchema } from "~/stores/add-match-store";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
@@ -121,6 +123,20 @@ export function AddMatchDialog({
     </Dialog>
   );
 }
+const matchSchema = insertMatchSchema
+  .pick({
+    name: true,
+    date: true,
+  })
+  .required({ name: true, date: true });
+const locationSchema = z
+  .object({
+    id: z.number(),
+    name: z.string(),
+    type: z.literal("original").or(z.literal("shared")),
+    isDefault: z.boolean(),
+  })
+  .nullish();
 const playersSchema = z
   .array(
     insertPlayerSchema
@@ -278,7 +294,12 @@ const AddMatchForm = ({
         );
         setNewLocation("");
         setShowAddLocation(false);
-        form.setValue("location", result);
+        form.setValue("location", {
+          id: result.id,
+          type: "original",
+          name: result.name,
+          isDefault: result.isDefault,
+        });
       },
     }),
   );
@@ -317,7 +338,12 @@ const AddMatchForm = ({
       date: values.date,
       teams: Object.values(teams),
       scoresheet: values.scoresheet,
-      locationId: values.location?.id,
+      location: values.location
+        ? {
+            id: values.location.id,
+            type: values.location.type,
+          }
+        : null,
     });
   };
   return (
@@ -413,6 +439,7 @@ const AddMatchForm = ({
                     <Select
                       onValueChange={(value) => {
                         if (value === "add-new") {
+                          field.onChange(null);
                           setShowAddLocation(true);
                           return;
                         }
@@ -421,39 +448,76 @@ const AddMatchForm = ({
                           field.onChange(null);
                           return;
                         }
-
-                        const locationId = Number.parseInt(value);
+                        console.log(value);
+                        const [locationId, locationType] = value.split("-");
+                        console.log(locationId, locationType);
                         const selectedLocation = locations.find(
-                          (loc) => loc.id === locationId,
+                          (loc) =>
+                            loc.id === Number(locationId) &&
+                            loc.type === locationType,
                         );
+                        console.log(selectedLocation);
                         field.onChange(
                           selectedLocation
                             ? {
                                 id: selectedLocation.id,
                                 name: selectedLocation.name,
+                                type: selectedLocation.type,
+                                isDefault: selectedLocation.isDefault,
                               }
                             : null,
                         );
                       }}
-                      value={field.value?.id.toString() ?? "none"}
+                      value={
+                        field.value
+                          ? `${field.value.id}-${field.value.type}`
+                          : "none"
+                      }
                     >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Location: - (Optional)">
-                            {field.value
-                              ? `Location: ${field.value.name}${locations.find((location) => location.id === field.value?.id && location.isDefault) ? " (Default)" : ""}`
-                              : "Location: - (Optional)"}
+                            {field.value ? (
+                              <div className="flex items-center gap-2">
+                                <span>Location:</span>
+                                <span>{field.value.name}</span>
+                                {field.value.isDefault && (
+                                  <span className="font-semibold">
+                                    (Default)
+                                  </span>
+                                )}
+                                {field.value.type === "shared" && (
+                                  <span className="text-blue-500 dark:text-blue-400">
+                                    (Shared)
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              "Location: - (Optional)"
+                            )}
                           </SelectValue>
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="none">No location</SelectItem>
+                        <SelectItem value="none" className="hidden">
+                          No location
+                        </SelectItem>
                         {locations.filter(Boolean).map((location) => (
                           <SelectItem
-                            key={location.id}
-                            value={location.id.toString()}
+                            key={`${location.id}-${location.type}`}
+                            value={`${location.id}-${location.type}`}
                           >
-                            {location.name} {location.isDefault && "(Default)"}
+                            <div className="flex items-center gap-2">
+                              <span>{location.name}</span>
+                              {location.isDefault && (
+                                <span className="font-semibold">(Default)</span>
+                              )}
+                              {location.type === "shared" && (
+                                <span className="text-blue-500 dark:text-blue-400">
+                                  (Shared)
+                                </span>
+                              )}
+                            </div>
                           </SelectItem>
                         ))}
                         <SelectItem value="add-new" className="text-primary">
