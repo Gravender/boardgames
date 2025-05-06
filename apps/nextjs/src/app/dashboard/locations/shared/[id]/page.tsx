@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/locations");
-  const location = await caller.location.getLocation({ id: Number(id) });
+  const location = await caller.sharing.getSharedLocation({ id: Number(id) });
   if (location === null) redirect("/dashboard/locations");
   return {
     title: location.name,
@@ -29,7 +29,9 @@ export default async function Page({ params }: Props) {
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/locations");
-  void prefetch(trpc.location.getLocation.queryOptions({ id: Number(id) }));
+  void prefetch(
+    trpc.sharing.getSharedLocation.queryOptions({ id: Number(id) }),
+  );
   return (
     <HydrateClient>
       <div className="flex w-full items-center justify-center">

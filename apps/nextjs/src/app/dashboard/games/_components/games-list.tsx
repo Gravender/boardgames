@@ -152,6 +152,7 @@ function GamesList({ initialGames }: GamesListProps) {
     if (sortField === "lastPlayed") {
       return <CalendarClock className="mr-2 h-4 w-4" />;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (sortField === "matches") {
       return <GamepadIcon className="mr-2 h-4 w-4" />;
     }

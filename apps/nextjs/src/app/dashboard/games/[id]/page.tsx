@@ -36,7 +36,6 @@ export default async function Page({ params }: Props) {
   void prefetch(
     trpc.game.getGameScoresheets.queryOptions({ gameId: Number(id) }),
   );
-  void prefetch(trpc.location.getDefaultLocation.queryOptions());
   return (
     <HydrateClient>
       <div className="container px-3 py-1 md:px-6 md:py-2">

@@ -15,6 +15,7 @@ import {
   roundPlayer,
   scoresheet,
   sharedGame,
+  sharedLocation,
   sharedMatch,
   sharedMatchPlayer,
   sharedPlayer,
@@ -99,3 +100,6 @@ export const insertSharedMatchPlayerSchema =
 
 export const selectSharedMatchPlayerSchema =
   createSelectSchema(sharedMatchPlayer);
+
+export const insertSharedLocationSchema = createInsertSchema(sharedLocation);
+export const selectSharedLocationSchema = createSelectSchema(sharedLocation);

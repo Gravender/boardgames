@@ -23,6 +23,7 @@ import type {
   insertSharedMatchPlayerSchema,
   insertTeamSchema,
   insertUserSchema,
+  selectSharedLocationSchema,
 } from "@board-games/db/zodSchema";
 import { db } from "@board-games/db/client";
 import {
@@ -40,6 +41,7 @@ import {
   roundPlayer,
   scoresheet,
   sharedGame,
+  sharedLocation,
   sharedMatch,
   sharedMatchPlayer,
   sharedPlayer,
@@ -124,14 +126,15 @@ for (const table of [
   team,
   user,
   userSharingPreference,
+  sharedLocation,
 ]) {
   // await db.delete(table); // clear tables without truncating / resetting ids
   await resetTable(table);
 }
 export async function seed() {
-  const totalUsers = 30;
-  const totalGames = 10 * totalUsers;
-  const maxMatches = 40 * totalGames; // Control total number of matches across all games
+  const totalUsers = 20;
+  const totalGames = 20 * totalUsers;
+  const maxMatches = 200 * totalGames; // Control total number of matches across all games
   const userData: z.infer<typeof insertUserSchema>[] = Array.from(
     { length: totalUsers },
     () => ({
@@ -164,7 +167,7 @@ export async function seed() {
   const friendsData: z.infer<typeof insertFriendSchema>[] = [];
 
   for (const userA of users) {
-    const friendCount = faker.number.int({ min: 0, max: 8 });
+    const friendCount = faker.number.int({ min: 1, max: 8 });
     if (friendCount === 0) continue;
     const potentialFriends = faker.helpers.arrayElements(
       users.filter((u) => u.id !== userA.id),
@@ -229,6 +232,10 @@ export async function seed() {
 
   const normalGames = randomNormal.source(randomLcg(d3Seed))(30, 10);
 
+  const gameNames = Array.from({ length: totalGames / totalUsers }, () =>
+    faker.commerce.productName(),
+  );
+
   const gameData: z.infer<typeof insertGameSchema>[] = Array.from(
     { length: totalGames },
     () => {
@@ -249,7 +256,7 @@ export async function seed() {
         { probability: 0.5 },
       );
       return {
-        name: faker.commerce.productName(),
+        name: faker.helpers.arrayElement(gameNames),
         userId: faker.helpers.arrayElement(users).id,
         imageId: faker.helpers.maybe(
           () => faker.helpers.arrayElement(gameImages).id,
@@ -286,10 +293,14 @@ export async function seed() {
   });
   const matchCount = gameMatchCounts.reduce((acc, curr) => acc + curr, 0);
 
+  const locationNames = Array.from({ length: totalUsers }, () =>
+    faker.location.city(),
+  );
+
   const locationData: z.infer<typeof insertLocationSchema>[] = Array.from(
-    { length: 12 },
+    { length: 5 * totalUsers },
     () => ({
-      name: faker.location.city(),
+      name: faker.helpers.arrayElement(locationNames),
       createdBy: faker.helpers.arrayElement(users).id,
     }),
   );
@@ -310,10 +321,14 @@ export async function seed() {
     .values(imagePlayerData)
     .returning();
 
+  const playerNames = Array.from({ length: totalUsers * 10 }, () =>
+    faker.person.fullName(),
+  );
+
   const playerData: z.infer<typeof insertPlayerSchema>[] = Array.from(
-    { length: Math.round(matchCount / 20) },
+    { length: Math.round(totalUsers * 30) },
     () => ({
-      name: faker.person.fullName(),
+      name: faker.helpers.arrayElement(playerNames),
       createdBy: faker.helpers.arrayElement(users).id,
       userId: null,
       imageId: faker.helpers.maybe(
@@ -328,7 +343,7 @@ export async function seed() {
   const players = await db.select().from(player);
 
   const groupData: z.infer<typeof insertGroupSchema>[] = Array.from(
-    { length: 10 },
+    { length: totalUsers * 2 },
     () => ({
       name: faker.company.name(),
       createdBy: faker.helpers.arrayElement(users).id,
@@ -341,13 +356,21 @@ export async function seed() {
       min: 2,
       max: 10,
     });
-    const groupPlayers = faker.helpers.arrayElements(players, playerCount);
-    const groupPlayersData: z.infer<typeof insertGroupPlayerSchema>[] =
-      groupPlayers.map((player) => ({
-        groupId: group.id,
-        playerId: player.id,
-      }));
-    await db.insert(groupPlayer).values(groupPlayersData);
+    const playersFiltered = players.filter(
+      (p) => p.createdBy === group.createdBy,
+    );
+    if (playersFiltered.length >= playerCount) {
+      const groupPlayers = faker.helpers.arrayElements(
+        playersFiltered,
+        playerCount,
+      );
+      const groupPlayersData: z.infer<typeof insertGroupPlayerSchema>[] =
+        groupPlayers.map((player) => ({
+          groupId: group.id,
+          playerId: player.id,
+        }));
+      await db.insert(groupPlayer).values(groupPlayersData);
+    }
   }
 
   const playerAppearances = new Map<number, number>();
@@ -449,6 +472,10 @@ export async function seed() {
         const subbedDate = subMonths(today, monthsAgo);
         const matchDate = endOfMonth(subbedDate);
 
+        const userLocations = locations.filter(
+          (l) => l.createdBy === returnedGame.userId,
+        );
+
         return {
           name: faker.helpers.weightedArrayElement([
             {
@@ -463,7 +490,13 @@ export async function seed() {
           userId: returnedGame.userId,
           gameId: returnedGame.id,
           scoresheetId: returnedScoresheet.id,
-          locationId: faker.helpers.arrayElement(locations).id,
+          locationId:
+            userLocations.length > 0
+              ? faker.helpers.maybe(
+                  () => faker.helpers.arrayElement(userLocations).id,
+                  { probability: 0.5 },
+                )
+              : null,
           date: faker.date.recent({
             days: getDaysInMonth(subbedDate),
             refDate: matchDate,
@@ -831,7 +864,7 @@ export async function seed() {
     const userShareRequests: z.infer<typeof parentShareRequestSchema>[] = (
       await Promise.all(
         Array.from(
-          { length: faker.number.int({ min: 16, max: 50 }) },
+          { length: faker.number.int({ min: 8, max: 30 }) },
           async () => {
             const isLink =
               faker.datatype.boolean(0.2) || userAFriends.length === 0;
@@ -841,8 +874,8 @@ export async function seed() {
               "player",
             ]);
             const status = faker.helpers.weightedArrayElement([
-              { weight: 0.7, value: "accepted" },
-              { weight: 0.2, value: "pending" },
+              { weight: 0.5, value: "accepted" },
+              { weight: 0.4, value: "pending" },
               { weight: 0.1, value: "rejected" },
             ]);
             const pastDate = faker.date.past();
@@ -960,6 +993,19 @@ export async function seed() {
                 max: returnedGame.matches.length,
               })
               .forEach((m) => {
+                if (m.locationId !== null) {
+                  childShareRequest.push({
+                    createdAt: returnedUserShareRequest.createdAt,
+                    itemId: m.locationId,
+                    parentShareId: returnedUserShareRequest.id,
+                    status: returnedUserShareRequest.status,
+                    itemType: "location",
+                    ownerId: returnedUserShareRequest.ownerId,
+                    expiresAt: returnedUserShareRequest.expiresAt,
+                    permission: faker.helpers.arrayElement(["view", "edit"]),
+                    sharedWithId: returnedUserShareRequest.sharedWithId,
+                  });
+                }
                 childShareRequest.push({
                   createdAt: returnedUserShareRequest.createdAt,
                   itemId: m.id,
@@ -1070,6 +1116,22 @@ export async function seed() {
             if (!returnedSharedGame) {
               throw new Error("Failed to create shared game");
             }
+            const sharedUserPlayers = await db.query.player.findMany({
+              where: {
+                userId: returnedUserShareRequest.sharedWithId,
+              },
+            });
+            const sharedUserPlayerIds = sharedUserPlayers.map(
+              (player) => player.id,
+            );
+            const sharedUserLocations = await db.query.location.findMany({
+              where: {
+                createdBy: returnedUserShareRequest.sharedWithId,
+              },
+            });
+            const sharedUserLocationIds = sharedUserLocations.map(
+              (location) => location.id,
+            );
             const childShareRequest = await db.query.shareRequest.findMany({
               where: {
                 parentShareId: returnedUserShareRequest.id,
@@ -1081,22 +1143,15 @@ export async function seed() {
               (cShareRequest) => cShareRequest.itemType === "player",
             )) {
               if (cShareRequest.itemType === "player") {
-                const existingSharedPlayer = db.query.sharedPlayer.findFirst({
-                  where: {
-                    ownerId: returnedUserShareRequest.ownerId,
-                    sharedWithId: returnedUserShareRequest.sharedWithId,
-                    playerId: cShareRequest.itemId,
-                  },
-                });
-                if (!existingSharedPlayer) {
-                  const sharedUserPlayers = await db.query.player.findMany({
+                const existingSharedPlayer =
+                  await db.query.sharedPlayer.findFirst({
                     where: {
-                      userId: returnedUserShareRequest.sharedWithId,
+                      ownerId: returnedUserShareRequest.ownerId,
+                      sharedWithId: returnedUserShareRequest.sharedWithId,
+                      playerId: cShareRequest.itemId,
                     },
                   });
-                  const sharedUserPlayerIds = sharedUserPlayers.map(
-                    (player) => player.id,
-                  );
+                if (!existingSharedPlayer) {
                   await db.insert(sharedPlayer).values({
                     ownerId: returnedUserShareRequest.ownerId,
                     sharedWithId: returnedUserShareRequest.sharedWithId,
@@ -1115,17 +1170,90 @@ export async function seed() {
               }
             }
             for (const cShareRequest of childShareRequest.filter(
+              (c) => c.itemType === "location",
+            )) {
+              if (cShareRequest.itemType === "location") {
+                const existingLocation = await db.query.location.findFirst({
+                  where: {
+                    createdBy: returnedUserShareRequest.ownerId,
+                    id: cShareRequest.itemId,
+                  },
+                });
+                if (!existingLocation) {
+                  throw new Error("Location not found.");
+                }
+                const existingSharedLocation =
+                  await db.query.sharedLocation.findFirst({
+                    where: {
+                      ownerId: returnedUserShareRequest.ownerId,
+                      sharedWithId: returnedUserShareRequest.sharedWithId,
+                      locationId: cShareRequest.itemId,
+                    },
+                  });
+                if (!existingSharedLocation) {
+                  const [insertedSharedLocation] = await db
+                    .insert(sharedLocation)
+                    .values({
+                      ownerId: returnedUserShareRequest.ownerId,
+                      sharedWithId: returnedUserShareRequest.sharedWithId,
+                      locationId: cShareRequest.itemId,
+                      permission: cShareRequest.permission,
+                      linkedLocationId:
+                        sharedUserLocationIds.length > 0
+                          ? faker.helpers.maybe(
+                              () =>
+                                faker.helpers.arrayElement(
+                                  sharedUserLocationIds,
+                                ),
+                              { probability: 0.5 },
+                            )
+                          : null,
+                    })
+                    .returning();
+                  if (!insertedSharedLocation) {
+                    throw Error("Shared Location not found");
+                  }
+                }
+              }
+            }
+            for (const cShareRequest of childShareRequest.filter(
               (cShareRequest) => cShareRequest.itemType === "match",
             )) {
               if (cShareRequest.itemType === "match") {
-                const existingSharedMatch = db.query.sharedMatch.findFirst({
+                const existingMatch = await db.query.match.findFirst({
                   where: {
-                    ownerId: returnedUserShareRequest.ownerId,
-                    sharedWithId: returnedUserShareRequest.sharedWithId,
-                    matchId: cShareRequest.itemId,
+                    userId: returnedUserShareRequest.ownerId,
+                    id: cShareRequest.itemId,
                   },
                 });
+                if (!existingMatch) {
+                  throw Error("Match not found");
+                }
+                const existingSharedMatch =
+                  await db.query.sharedMatch.findFirst({
+                    where: {
+                      ownerId: returnedUserShareRequest.ownerId,
+                      sharedWithId: returnedUserShareRequest.sharedWithId,
+                      matchId: cShareRequest.itemId,
+                    },
+                  });
                 if (!existingSharedMatch) {
+                  let sharedLocationForMatch: z.infer<
+                    typeof selectSharedLocationSchema
+                  > | null = null;
+                  if (existingMatch.locationId !== null) {
+                    const existingSharedLocation =
+                      await db.query.sharedLocation.findFirst({
+                        where: {
+                          ownerId: returnedUserShareRequest.ownerId,
+                          sharedWithId: returnedUserShareRequest.sharedWithId,
+                          locationId: existingMatch.locationId,
+                        },
+                      });
+                    if (existingSharedLocation) {
+                      sharedLocationForMatch = existingSharedLocation;
+                    }
+                  }
                   const [returnedSharedMatch] = await db
                     .insert(sharedMatch)
                     .values({
@@ -1133,6 +1261,7 @@ export async function seed() {
                       sharedWithId: returnedUserShareRequest.sharedWithId,
                       matchId: cShareRequest.itemId,
                       sharedGameId: returnedSharedGame.id,
+                      sharedLocationId: sharedLocationForMatch?.id ?? null,
                       permission: cShareRequest.permission,
                     })
                     .returning();
@@ -1227,9 +1356,22 @@ export async function seed() {
             itemType: "game",
             ownerId: returnedUserShareRequest.ownerId,
             expiresAt: returnedUserShareRequest.expiresAt,
-            permission: "view",
+            permission: faker.helpers.arrayElement(["view", "edit"]),
             sharedWithId: returnedUserShareRequest.sharedWithId,
           });
+          if (returnedMatch.locationId) {
+            childShareRequest.push({
+              createdAt: returnedUserShareRequest.createdAt,
+              itemId: returnedMatch.locationId,
+              parentShareId: returnedUserShareRequest.id,
+              status: returnedUserShareRequest.status,
+              itemType: "location",
+              ownerId: returnedUserShareRequest.ownerId,
+              expiresAt: returnedUserShareRequest.expiresAt,
+              permission: faker.helpers.arrayElement(["view", "edit"]),
+              sharedWithId: returnedUserShareRequest.sharedWithId,
+            });
+          }
           for (const childScoresheet of returnedMatch.game.scoresheets) {
             childShareRequest.push({
               createdAt: returnedUserShareRequest.createdAt,
@@ -1239,7 +1381,7 @@ export async function seed() {
               itemType: "scoresheet",
               ownerId: returnedUserShareRequest.ownerId,
               expiresAt: returnedUserShareRequest.expiresAt,
-              permission: "view",
+              permission: faker.helpers.arrayElement(["view", "edit"]),
               sharedWithId: returnedUserShareRequest.sharedWithId,
             });
           }
@@ -1254,7 +1396,7 @@ export async function seed() {
                 itemType: "player",
                 ownerId: returnedUserShareRequest.ownerId,
                 expiresAt: returnedUserShareRequest.expiresAt,
-                permission: "view",
+                permission: faker.helpers.arrayElement(["view", "edit"]),
                 sharedWithId: returnedUserShareRequest.sharedWithId,
               });
             });
@@ -1291,6 +1433,22 @@ export async function seed() {
             returnedUserShareRequest.status === "accepted" &&
             returnedUserShareRequest.sharedWithId !== null
           ) {
+            const sharedUserPlayers = await db.query.player.findMany({
+              where: {
+                userId: returnedUserShareRequest.sharedWithId,
+              },
+            });
+            const sharedUserPlayerIds = sharedUserPlayers.map(
+              (player) => player.id,
+            );
+            const sharedUserLocations = await db.query.location.findMany({
+              where: {
+                createdBy: returnedUserShareRequest.sharedWithId,
+              },
+            });
+            const sharedUserLocationIds = sharedUserLocations.map(
+              (location) => location.id,
+            );
             const childShareRequest = await db.query.shareRequest.findMany({
               where: {
                 parentShareId: returnedUserShareRequest.id,
@@ -1300,6 +1458,41 @@ export async function seed() {
                 createdAt: "asc",
               },
             });
+            const locationChildShareRequest = childShareRequest.find(
+              (cShareRequest) => cShareRequest.itemType === "location",
+            );
+            if (locationChildShareRequest) {
+              const existingSharedLocation =
+                await db.query.sharedLocation.findFirst({
+                  where: {
+                    ownerId: returnedUserShareRequest.ownerId,
+                    sharedWithId: returnedUserShareRequest.sharedWithId,
+                    locationId: locationChildShareRequest.itemId,
+                  },
+                });
+              if (!existingSharedLocation) {
+                const [insertedSharedLocation] = await db
+                  .insert(sharedLocation)
+                  .values({
+                    ownerId: returnedUserShareRequest.ownerId,
+                    sharedWithId: returnedUserShareRequest.sharedWithId,
+                    locationId: locationChildShareRequest.itemId,
+                    permission: locationChildShareRequest.permission,
+                    linkedLocationId:
+                      sharedUserLocationIds.length > 0
+                        ? faker.helpers.maybe(
+                            () =>
+                              faker.helpers.arrayElement(sharedUserLocationIds),
+                            { probability: 0.5 },
+                          )
+                        : null,
+                  })
+                  .returning();
+                if (!insertedSharedLocation) {
+                  throw Error("Shared Location not found");
+                }
+              }
+            }
             for (const cShareRequest of childShareRequest) {
               if (cShareRequest.itemType === "game") {
                 const sharedWithGames = await db.query.game.findMany({
@@ -1322,14 +1515,6 @@ export async function seed() {
                 });
               }
               if (cShareRequest.itemType === "player") {
-                const sharedUserPlayers = await db.query.player.findMany({
-                  where: {
-                    userId: returnedUserShareRequest.sharedWithId,
-                  },
-                });
-                const sharedUserPlayerIds = sharedUserPlayers.map(
-                  (player) => player.id,
-                );
                 await db.insert(sharedPlayer).values({
                   ownerId: returnedUserShareRequest.ownerId,
                   sharedWithId: returnedUserShareRequest.sharedWithId,
@@ -1366,59 +1551,96 @@ export async function seed() {
                   });
                 }
               }
-              const [returnedSharedMatch] = await db
-                .insert(sharedMatch)
-                .values({
+              const existingMatch = await db.query.match.findFirst({
+                where: {
+                  id: returnedMatch.id,
+                  userId: returnedUserShareRequest.ownerId,
+                },
+              });
+              if (!existingMatch) {
+                throw new Error("Match not found");
+              }
+              const existingSharedMatch = await db.query.sharedMatch.findFirst({
+                where: {
                   ownerId: returnedUserShareRequest.ownerId,
                   sharedWithId: returnedUserShareRequest.sharedWithId,
                   matchId: returnedMatch.id,
-                  sharedGameId: returnedSharedGame.id,
-                  permission: returnedUserShareRequest.permission,
-                })
-                .returning();
-              if (!returnedSharedMatch) {
-                throw new Error("Shared Match not created successfully");
-              }
-              const returnedMatchPlayers = await db.query.matchPlayer.findMany({
-                where: {
-                  matchId: returnedMatch.id,
                 },
               });
-              const sharedMatchPlayersToInsert: z.infer<
-                typeof insertSharedMatchPlayerSchema
-              >[] = await Promise.all(
-                returnedMatchPlayers.map(async (returnedMatchPlayer) => {
-                  const existingSharedPlayer =
-                    await db.query.sharedPlayer.findFirst({
+              if (!existingSharedMatch) {
+                let sharedLocationForMatch: z.infer<
+                  typeof selectSharedLocationSchema
+                > | null = null;
+                if (existingMatch.locationId !== null) {
+                  const existingSharedLocation =
+                    await db.query.sharedLocation.findFirst({
                       where: {
+                        ownerId: returnedUserShareRequest.ownerId,
+                        sharedWithId: returnedUserShareRequest.sharedWithId,
+                        locationId: existingMatch.locationId,
+                      },
+                    });
+                  if (existingSharedLocation) {
+                    sharedLocationForMatch = existingSharedLocation;
+                  }
+                }
+                const [returnedSharedMatch] = await db
+                  .insert(sharedMatch)
+                  .values({
+                    ownerId: returnedUserShareRequest.ownerId,
+                    sharedWithId: returnedUserShareRequest.sharedWithId,
+                    matchId: returnedMatch.id,
+                    sharedGameId: returnedSharedGame.id,
+                    sharedLocationId: sharedLocationForMatch?.id ?? null,
+                    permission: returnedUserShareRequest.permission,
+                  })
+                  .returning();
+                if (!returnedSharedMatch) {
+                  throw new Error("Shared Match not created successfully");
+                }
+                const returnedMatchPlayers =
+                  await db.query.matchPlayer.findMany({
+                    where: {
+                      matchId: returnedMatch.id,
+                    },
+                  });
+                const sharedMatchPlayersToInsert: z.infer<
+                  typeof insertSharedMatchPlayerSchema
+                >[] = await Promise.all(
+                  returnedMatchPlayers.map(async (returnedMatchPlayer) => {
+                    const existingSharedPlayer =
+                      await db.query.sharedPlayer.findFirst({
+                        where: {
+                          ownerId: returnedUserShareRequest.ownerId,
+                          sharedWithId:
+                            returnedUserShareRequest.sharedWithId ?? 0,
+                          playerId: returnedMatchPlayer.playerId,
+                        },
+                      });
+                    if (existingSharedPlayer) {
+                      return {
+                        matchPlayerId: returnedMatchPlayer.id,
+                        sharedPlayerId: existingSharedPlayer.id,
                         ownerId: returnedUserShareRequest.ownerId,
                         sharedWithId:
                           returnedUserShareRequest.sharedWithId ?? 0,
-                        playerId: returnedMatchPlayer.playerId,
-                      },
-                    });
-                  if (existingSharedPlayer) {
+                        sharedMatchId: returnedSharedMatch.id,
+                        permission: returnedUserShareRequest.permission,
+                      };
+                    }
                     return {
                       matchPlayerId: returnedMatchPlayer.id,
-                      sharedPlayerId: existingSharedPlayer.id,
                       ownerId: returnedUserShareRequest.ownerId,
                       sharedWithId: returnedUserShareRequest.sharedWithId ?? 0,
                       sharedMatchId: returnedSharedMatch.id,
                       permission: returnedUserShareRequest.permission,
                     };
-                  }
-                  return {
-                    matchPlayerId: returnedMatchPlayer.id,
-                    ownerId: returnedUserShareRequest.ownerId,
-                    sharedWithId: returnedUserShareRequest.sharedWithId ?? 0,
-                    sharedMatchId: returnedSharedMatch.id,
-                    permission: returnedUserShareRequest.permission,
-                  };
-                }),
-              );
-              await db
-                .insert(sharedMatchPlayer)
-                .values(sharedMatchPlayersToInsert);
+                  }),
+                );
+                await db
+                  .insert(sharedMatchPlayer)
+                  .values(sharedMatchPlayersToInsert);
+              }
             }
           }
         }
@@ -1439,6 +1661,9 @@ export async function seed() {
                         NOT: {
                           playerId: returnedUserShareRequest.itemId,
                         },
+                      },
+                      with: {
+                        match: true,
                       },
                     },
                     game: {
@@ -1476,6 +1701,19 @@ export async function seed() {
                   permission: faker.helpers.arrayElement(["view", "edit"]),
                   sharedWithId: returnedUserShareRequest.sharedWithId,
                 });
+                if (mPlayer.match.locationId !== null) {
+                  childShareRequest.push({
+                    createdAt: returnedUserShareRequest.createdAt,
+                    itemId: mPlayer.match.locationId,
+                    parentShareId: returnedUserShareRequest.id,
+                    status: returnedUserShareRequest.status,
+                    itemType: "location",
+                    ownerId: returnedUserShareRequest.ownerId,
+                    expiresAt: returnedUserShareRequest.expiresAt,
+                    permission: faker.helpers.arrayElement(["view", "edit"]),
+                    sharedWithId: returnedUserShareRequest.sharedWithId,
+                  });
+                }
                 childShareRequest.push({
                   createdAt: returnedUserShareRequest.createdAt,
                   itemId: mPlayer.match.gameId,
@@ -1484,7 +1722,7 @@ export async function seed() {
                   itemType: "game",
                   ownerId: returnedUserShareRequest.ownerId,
                   expiresAt: returnedUserShareRequest.expiresAt,
-                  permission: "view",
+                  permission: faker.helpers.arrayElement(["view", "edit"]),
                   sharedWithId: returnedUserShareRequest.sharedWithId,
                 });
                 for (const childScoresheet of mPlayer.match.game.scoresheets) {
@@ -1496,7 +1734,7 @@ export async function seed() {
                     itemType: "scoresheet",
                     ownerId: returnedUserShareRequest.ownerId,
                     expiresAt: returnedUserShareRequest.expiresAt,
-                    permission: "view",
+                    permission: faker.helpers.arrayElement(["view", "edit"]),
                     sharedWithId: returnedUserShareRequest.sharedWithId,
                   });
                 }
@@ -1511,7 +1749,10 @@ export async function seed() {
                         itemType: "player",
                         ownerId: returnedUserShareRequest.ownerId,
                         expiresAt: returnedUserShareRequest.expiresAt,
-                        permission: "view",
+                        permission: faker.helpers.arrayElement([
+                          "view",
+                          "edit",
+                        ]),
                         sharedWithId: returnedUserShareRequest.sharedWithId,
                       });
                     }
@@ -1573,13 +1814,29 @@ export async function seed() {
                 createdAt: "asc",
               },
             });
+            const sharedUserPlayers = await db.query.player.findMany({
+              where: {
+                userId: returnedUserShareRequest.sharedWithId,
+              },
+            });
+            const sharedUserPlayerIds = sharedUserPlayers.map(
+              (player) => player.id,
+            );
+            const sharedUserLocations = await db.query.location.findMany({
+              where: {
+                createdBy: returnedUserShareRequest.sharedWithId,
+              },
+            });
+            const sharedUserLocationIds = sharedUserLocations.map(
+              (location) => location.id,
+            );
+            const sharedWithGames = await db.query.game.findMany({
+              where: {
+                userId: returnedUserShareRequest.sharedWithId,
+              },
+            });
             for (const cShareRequest of childShareRequest) {
               if (cShareRequest.itemType === "game") {
-                const sharedWithGames = await db.query.game.findMany({
-                  where: {
-                    userId: returnedUserShareRequest.sharedWithId,
-                  },
-                });
                 await db.insert(sharedGame).values({
                   ownerId: returnedUserShareRequest.ownerId,
                   sharedWithId: returnedUserShareRequest.sharedWithId,
@@ -1595,14 +1852,6 @@ export async function seed() {
                 });
               }
               if (cShareRequest.itemType === "player") {
-                const sharedUserPlayers = await db.query.player.findMany({
-                  where: {
-                    userId: returnedUserShareRequest.sharedWithId,
-                  },
-                });
-                const sharedUserPlayerIds = sharedUserPlayers.map(
-                  (player) => player.id,
-                );
                 await db.insert(sharedPlayer).values({
                   ownerId: returnedUserShareRequest.ownerId,
                   sharedWithId: returnedUserShareRequest.sharedWithId,
@@ -1616,6 +1865,50 @@ export async function seed() {
                         )
                       : undefined,
                 });
+              }
+            }
+
+            for (const cShareRequest of childShareRequest.filter(
+              (cShareRequest) => cShareRequest.itemType === "location",
+            )) {
+              const existingLocation = await db.query.location.findFirst({
+                where: {
+                  createdBy: returnedUserShareRequest.ownerId,
+                  id: cShareRequest.itemId,
+                },
+              });
+              if (!existingLocation) {
+                throw new Error("Location not found.");
+              }
+              const existingSharedLocation =
+                await db.query.sharedLocation.findFirst({
+                  where: {
+                    ownerId: returnedUserShareRequest.ownerId,
+                    sharedWithId: returnedUserShareRequest.sharedWithId,
+                    locationId: cShareRequest.itemId,
+                  },
+                });
+              if (!existingSharedLocation) {
+                const [insertedSharedLocation] = await db
+                  .insert(sharedLocation)
+                  .values({
+                    ownerId: returnedUserShareRequest.ownerId,
+                    sharedWithId: returnedUserShareRequest.sharedWithId,
+                    locationId: cShareRequest.itemId,
+                    permission: cShareRequest.permission,
+                    linkedLocationId:
+                      sharedUserLocationIds.length > 0
+                        ? faker.helpers.maybe(
+                            () =>
+                              faker.helpers.arrayElement(sharedUserLocationIds),
+                            { probability: 0.5 },
+                          )
+                        : null,
+                  })
+                  .returning();
+                if (!insertedSharedLocation) {
+                  throw Error("Shared Location not found");
+                }
               }
             }
 
@@ -1667,62 +1960,99 @@ export async function seed() {
                   },
                 });
                 if (returnedSharedGame) {
-                  const [returnedSharedMatch] = await db
-                    .insert(sharedMatch)
-                    .values({
-                      ownerId: returnedUserShareRequest.ownerId,
-                      sharedWithId: returnedUserShareRequest.sharedWithId,
-                      matchId: cShareRequest.itemId,
-                      sharedGameId: returnedSharedGame.id,
-                      permission: returnedUserShareRequest.permission,
-                    })
-                    .returning();
-                  if (!returnedSharedMatch) {
-                    throw new Error("Shared Match not created successfully");
+                  const existingMatch = await db.query.match.findFirst({
+                    where: {
+                      id: cShareRequest.itemId,
+                      userId: returnedUserShareRequest.ownerId,
+                    },
+                  });
+                  if (!existingMatch) {
+                    throw new Error("Match not found.");
                   }
-                  const returnedMatchPlayers =
-                    await db.query.matchPlayer.findMany({
+                  const existingSharedMatch =
+                    await db.query.sharedMatch.findFirst({
                       where: {
+                        ownerId: returnedUserShareRequest.ownerId,
+                        sharedWithId: returnedUserShareRequest.sharedWithId,
                         matchId: cShareRequest.itemId,
                       },
                     });
-                  const sharedMatchPlayersToInsert: z.infer<
-                    typeof insertSharedMatchPlayerSchema
-                  >[] = await Promise.all(
-                    returnedMatchPlayers.map(async (returnedMatchPlayer) => {
-                      const existingSharedPlayer =
-                        await db.query.sharedPlayer.findFirst({
+                  if (!existingSharedMatch) {
+                    let sharedLocationForMatch: z.infer<
+                      typeof selectSharedLocationSchema
+                    > | null = null;
+                    if (existingMatch.locationId !== null) {
+                      const existingSharedLocation =
+                        await db.query.sharedLocation.findFirst({
                           where: {
+                            ownerId: returnedUserShareRequest.ownerId,
+                            sharedWithId: returnedUserShareRequest.sharedWithId,
+                            locationId: existingMatch.locationId,
+                          },
+                        });
+                      if (existingSharedLocation) {
+                        sharedLocationForMatch = existingSharedLocation;
+                      }
+                    }
+                    const [returnedSharedMatch] = await db
+                      .insert(sharedMatch)
+                      .values({
+                        ownerId: returnedUserShareRequest.ownerId,
+                        sharedWithId: returnedUserShareRequest.sharedWithId,
+                        matchId: cShareRequest.itemId,
+                        sharedGameId: returnedSharedGame.id,
+                        sharedLocationId: sharedLocationForMatch?.id ?? null,
+                        permission: cShareRequest.permission,
+                      })
+                      .returning();
+                    if (!returnedSharedMatch) {
+                      throw new Error("Shared Match not created successfully");
+                    }
+
+                    const returnedMatchPlayers =
+                      await db.query.matchPlayer.findMany({
+                        where: {
+                          matchId: cShareRequest.itemId,
+                        },
+                      });
+                    const sharedMatchPlayersToInsert: z.infer<
+                      typeof insertSharedMatchPlayerSchema
+                    >[] = await Promise.all(
+                      returnedMatchPlayers.map(async (returnedMatchPlayer) => {
+                        const existingSharedPlayer =
+                          await db.query.sharedPlayer.findFirst({
+                            where: {
+                              ownerId: returnedUserShareRequest.ownerId,
+                              sharedWithId:
+                                returnedUserShareRequest.sharedWithId ?? 0,
+                              playerId: returnedMatchPlayer.playerId,
+                            },
+                          });
+                        if (existingSharedPlayer) {
+                          return {
+                            matchPlayerId: returnedMatchPlayer.id,
+                            sharedPlayerId: existingSharedPlayer.id,
                             ownerId: returnedUserShareRequest.ownerId,
                             sharedWithId:
                               returnedUserShareRequest.sharedWithId ?? 0,
-                            playerId: returnedMatchPlayer.playerId,
-                          },
-                        });
-                      if (existingSharedPlayer) {
+                            sharedMatchId: returnedSharedMatch.id,
+                            permission: cShareRequest.permission,
+                          };
+                        }
                         return {
                           matchPlayerId: returnedMatchPlayer.id,
-                          sharedPlayerId: existingSharedPlayer.id,
                           ownerId: returnedUserShareRequest.ownerId,
                           sharedWithId:
                             returnedUserShareRequest.sharedWithId ?? 0,
                           sharedMatchId: returnedSharedMatch.id,
                           permission: cShareRequest.permission,
                         };
-                      }
-                      return {
-                        matchPlayerId: returnedMatchPlayer.id,
-                        ownerId: returnedUserShareRequest.ownerId,
-                        sharedWithId:
-                          returnedUserShareRequest.sharedWithId ?? 0,
-                        sharedMatchId: returnedSharedMatch.id,
-                        permission: cShareRequest.permission,
-                      };
-                    }),
-                  );
-                  await db
-                    .insert(sharedMatchPlayer)
-                    .values(sharedMatchPlayersToInsert);
+                      }),
+                    );
+                    await db
+                      .insert(sharedMatchPlayer)
+                      .values(sharedMatchPlayersToInsert);
+                  }
                 }
               }
             }

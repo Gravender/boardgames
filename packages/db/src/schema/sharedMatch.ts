@@ -5,6 +5,7 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { createTable } from "./baseTable";
 import match from "./match";
 import sharedGame from "./sharedGame";
+import sharedLocation from "./sharedLocation";
 import user from "./user";
 
 const sharedMatch = createTable(
@@ -23,6 +24,9 @@ const sharedMatch = createTable(
     sharedGameId: integer("shared_game_id")
       .references(() => sharedGame.id)
       .notNull(),
+    sharedLocationId: integer("shared_location_id").references(
+      () => sharedLocation.id,
+    ),
     permission: text("permission", { enum: ["view", "edit"] })
       .default("view")
       .notNull(),

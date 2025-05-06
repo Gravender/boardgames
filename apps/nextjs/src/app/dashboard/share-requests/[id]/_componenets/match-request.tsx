@@ -82,6 +82,7 @@ import {
 } from "@board-games/ui/tooltip";
 
 import { useTRPC } from "~/trpc/react";
+import ChildLocationsRequest from "./child-locations-request";
 import ChildPlayersRequest from "./child-players-request";
 
 type Match = Extract<
@@ -147,7 +148,13 @@ export default function MatchRequestPage({
   const [players, setPlayers] = useState<
     { sharedId: number; accept: boolean; linkedId: number | null }[]
   >([]);
+  const [locations, setLocations] = useState<
+    { sharedId: number; accept: boolean; linkedId: number | null }[]
+  >([]);
 
+  const childLocations = useMemo(() => {
+    return match.childItems.filter((item) => item.itemType === "location");
+  }, [match.childItems]);
   const childScoresheets = useMemo(() => {
     return match.childItems.filter((item) => item.itemType === "scoresheet");
   }, [match.childItems]);
@@ -256,6 +263,13 @@ export default function MatchRequestPage({
           accept: player.accept,
           linkedId: player.linkedId ?? undefined,
         })),
+        location: locations[0]
+          ? {
+              sharedId: locations[0].sharedId,
+              accept: locations[0].accept,
+              linkedId: locations[0].linkedId ?? undefined,
+            }
+          : undefined,
       });
     }
   };
@@ -468,6 +482,15 @@ export default function MatchRequestPage({
                 </AccordionItem>
               </Accordion>
             )}
+            {childLocations.length > 0 && (
+              <>
+                <ChildLocationsRequest
+                  childLocations={childLocations}
+                  locations={locations}
+                  setLocations={setLocations}
+                />
+              </>
+            )}
             {childPlayers.length > 0 && (
               <>
                 <ChildPlayersRequest
@@ -479,7 +502,11 @@ export default function MatchRequestPage({
             )}
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => router.push(`/dashboard/share-requests`)}
+            >
               Cancel
             </Button>
             <Button
@@ -760,7 +787,7 @@ export default function MatchRequestPage({
                                                         (fGame) => (
                                                           <CommandItem
                                                             key={fGame.id}
-                                                            value={fGame.name}
+                                                            value={fGame.id.toString()}
                                                             onSelect={() =>
                                                               handleGameSelect(
                                                                 fGame.id,

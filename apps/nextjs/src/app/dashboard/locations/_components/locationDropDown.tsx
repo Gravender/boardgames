@@ -24,6 +24,15 @@ export function LocationDropDown({
 }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const editDefaultLocation = useMutation(
+    trpc.location.editDefaultLocation.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.location.getLocations.queryOptions(),
+        );
+      },
+    }),
+  );
   const deleteLocation = useMutation(
     trpc.location.deleteLocation.mutationOptions({
       onSuccess: async () => {
@@ -34,7 +43,22 @@ export function LocationDropDown({
     }),
   );
   const onDelete = () => {
-    deleteLocation.mutate({ id: data.id });
+    deleteLocation.mutate({ id: data.id, type: data.type });
+  };
+  const onEditDefault = () => {
+    if (data.type === "shared") {
+      editDefaultLocation.mutate({
+        id: data.id,
+        isDefault: !data.isDefault,
+        type: "shared",
+      });
+    } else {
+      editDefaultLocation.mutate({
+        id: data.id,
+        isDefault: !data.isDefault,
+        type: "original",
+      });
+    }
   };
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -47,9 +71,14 @@ export function LocationDropDown({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DialogTrigger asChild>
-            <DropdownMenuItem>Edit</DropdownMenuItem>
-          </DialogTrigger>
+          <DropdownMenuItem onClick={onEditDefault}>
+            {data.isDefault ? "Unset Default" : "Set Default"}
+          </DropdownMenuItem>
+          {(data.type === "original" || data.permission === "edit") && (
+            <DialogTrigger asChild>
+              <DropdownMenuItem>Edit</DropdownMenuItem>
+            </DialogTrigger>
+          )}
           <DropdownMenuItem
             className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
             onClick={onDelete}

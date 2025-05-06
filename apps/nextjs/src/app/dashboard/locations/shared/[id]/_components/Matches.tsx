@@ -15,11 +15,13 @@ import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
 import { useTRPC } from "~/trpc/react";
 
-type Matches = NonNullable<RouterOutputs["location"]["getLocation"]>["matches"];
+type Matches = NonNullable<
+  RouterOutputs["sharing"]["getSharedLocation"]
+>["matches"];
 export function Matches({ locationId }: { locationId: number }) {
   const trpc = useTRPC();
   const { data: location } = useSuspenseQuery(
-    trpc.location.getLocation.queryOptions({
+    trpc.sharing.getSharedLocation.queryOptions({
       id: locationId,
     }),
   );
@@ -57,8 +59,8 @@ export function Matches({ locationId }: { locationId: number }) {
                   <Link
                     href={
                       match.finished
-                        ? `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}/summary`
-                        : `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}`
+                        ? `/dashboard/games/shared/${match.gameId}/${match.id}/summary`
+                        : `/dashboard/games/shared/${match.gameId}/${match.id}`
                     }
                     className="flex w-full items-center gap-3 font-medium"
                   >
@@ -81,9 +83,8 @@ export function Matches({ locationId }: { locationId: number }) {
                           <h2 className="text-md text-left font-semibold">
                             {match.name}
                           </h2>
-                          {match.type === "shared" && (
-                            <span className="text-blue-500">(Shared)</span>
-                          )}
+
+                          <span className="text-blue-500">(Shared)</span>
                         </div>
                         <div className="flex min-w-20 items-center gap-1">
                           <span>Play Date:</span>

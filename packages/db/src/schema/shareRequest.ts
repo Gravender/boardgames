@@ -25,7 +25,14 @@ const shareRequest = createTable(
       .unique()
       .notNull(),
     itemType: text("item_type", {
-      enum: ["game", "match", "player", "scoresheet"],
+      enum: [
+        "game",
+        "match",
+        "player",
+        "scoresheet",
+        "location",
+        "matchPlayer",
+      ],
     }).notNull(),
     itemId: integer("item_id").notNull(),
     permission: text("permission", { enum: ["view", "edit"] })

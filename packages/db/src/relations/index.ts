@@ -95,6 +95,11 @@ export const relations = defineRelations(schema, (r) => ({
     locations: r.many.location({
       from: r.user.id,
       to: r.location.createdBy,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     linkedPlayers: r.many.player({
       from: r.user.id,
@@ -163,6 +168,14 @@ export const relations = defineRelations(schema, (r) => ({
     sharedMatchPlayersSharedWith: r.many.sharedMatchPlayer({
       from: r.user.id,
       to: r.sharedMatchPlayer.sharedWithId,
+    }),
+    sharedLocationsOwner: r.many.sharedLocation({
+      from: r.user.id,
+      to: r.sharedLocation.ownerId,
+    }),
+    sharedLocationsSharedWith: r.many.sharedLocation({
+      from: r.user.id,
+      to: r.sharedLocation.sharedWithId,
     }),
     shareRequestsReceived: r.many.shareRequest({
       from: r.user.id,
@@ -263,6 +276,44 @@ export const relations = defineRelations(schema, (r) => ({
     matches: r.many.match({
       from: r.location.id,
       to: r.match.locationId,
+    }),
+    linkedLocations: r.many.sharedLocation({
+      from: r.location.id,
+      to: r.sharedLocation.linkedLocationId,
+    }),
+    sharedMatches: r.many.sharedMatch({
+      from: r.location.id.through(r.sharedLocation.linkedLocationId),
+      to: r.sharedMatch.sharedLocationId.through(r.sharedLocation.id),
+    }),
+  },
+  sharedLocation: {
+    owner: r.one.user({
+      from: r.sharedLocation.ownerId,
+      to: r.user.id,
+      optional: false,
+    }),
+    sharedWith: r.one.user({
+      from: r.sharedLocation.sharedWithId,
+      to: r.user.id,
+      optional: false,
+    }),
+    location: r.one.location({
+      from: r.sharedLocation.locationId,
+      to: r.location.id,
+      optional: false,
+    }),
+    linkedLocation: r.one.location({
+      from: r.sharedLocation.linkedLocationId,
+      to: r.location.id,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
+    }),
+    sharedMatches: r.many.sharedMatch({
+      from: r.sharedLocation.id,
+      to: r.sharedMatch.sharedLocationId,
     }),
   },
   player: {
@@ -374,6 +425,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.sharedMatch.id,
       to: r.sharedMatchPlayer.sharedMatchId,
     }),
+    sharedLocation: r.one.sharedLocation({
+      from: r.sharedMatch.sharedLocationId,
+      to: r.sharedLocation.id,
+    }),
   },
   match: {
     createdBy: r.one.user({
@@ -388,6 +443,11 @@ export const relations = defineRelations(schema, (r) => ({
     location: r.one.location({
       from: r.match.locationId,
       to: r.location.id,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     scoresheet: r.one.scoresheet({
       from: r.match.scoresheetId,

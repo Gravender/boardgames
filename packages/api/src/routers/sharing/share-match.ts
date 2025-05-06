@@ -191,11 +191,7 @@ export const shareMatchRouter = createTRPCRouter({
                   sharedWithId: ctx.userId,
                 },
                 with: {
-                  match: {
-                    with: {
-                      location: true,
-                    },
-                  },
+                  match: {},
                   sharedMatchPlayers: {
                     with: {
                       matchPlayer: {
@@ -218,13 +214,18 @@ export const shareMatchRouter = createTRPCRouter({
                       },
                     },
                   },
+                  sharedLocation: {
+                    with: {
+                      location: true,
+                      linkedLocation: true,
+                    },
+                  },
                 },
               },
             },
           },
           match: {
             with: {
-              location: true,
               scoresheet: true,
               teams: true,
             },
@@ -258,6 +259,12 @@ export const shareMatchRouter = createTRPCRouter({
               },
             },
           },
+          sharedLocation: {
+            with: {
+              location: true,
+              linkedLocation: true,
+            },
+          },
         },
       });
       if (!returnedSharedMatch) {
@@ -271,7 +278,10 @@ export const shareMatchRouter = createTRPCRouter({
         name: string;
         finished: boolean;
         createdAt: Date;
-        locationName: string | null;
+        location: {
+          type: "shared" | "linked" | "original";
+          name: string;
+        } | null;
         matchPlayers: {
           id: number;
           type: "original" | "shared";
@@ -290,7 +300,16 @@ export const shareMatchRouter = createTRPCRouter({
         name: sharedMatch.match.name,
         finished: sharedMatch.match.finished,
         createdAt: sharedMatch.match.createdAt,
-        locationName: sharedMatch.match.location?.name ?? null,
+        location: sharedMatch.sharedLocation
+          ? {
+              type: sharedMatch.sharedLocation.linkedLocation
+                ? ("linked" as const)
+                : ("shared" as const),
+              name:
+                sharedMatch.sharedLocation.linkedLocation?.name ??
+                sharedMatch.sharedLocation.location.name,
+            }
+          : null,
         matchPlayers: sharedMatch.sharedMatchPlayers
           .map((sharedMatchPlayer) => {
             const sharedPlayer = sharedMatchPlayer.sharedPlayer;
@@ -332,7 +351,9 @@ export const shareMatchRouter = createTRPCRouter({
             name: returnedMatch.name,
             finished: returnedMatch.finished,
             createdAt: returnedMatch.createdAt,
-            locationName: returnedMatch.location?.name ?? null,
+            location: returnedMatch.location
+              ? { type: "original", name: returnedMatch.location.name }
+              : null,
             matchPlayers: returnedMatch.matchPlayers.map((matchPlayer) => ({
               type: "original" as const,
               id: matchPlayer.id,
@@ -516,7 +537,16 @@ export const shareMatchRouter = createTRPCRouter({
         date: returnedSharedMatch.match.date,
         name: returnedSharedMatch.match.name,
         scoresheet: returnedSharedMatch.match.scoresheet,
-        locationName: returnedSharedMatch.match.location?.name,
+        location: returnedSharedMatch.sharedLocation
+          ? {
+              type: returnedSharedMatch.sharedLocation.linkedLocation
+                ? ("linked" as const)
+                : ("shared" as const),
+              name:
+                returnedSharedMatch.sharedLocation.linkedLocation?.name ??
+                returnedSharedMatch.sharedLocation.location.name,
+            }
+          : null,
         comment: returnedSharedMatch.match.comment,
         gameType: returnedSharedMatch.sharedGame.linkedGame
           ? "linked"

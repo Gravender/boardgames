@@ -85,9 +85,7 @@ export default function ShareMatchPage({ matchId }: { matchId: number }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { data: matchToShare } = useSuspenseQuery(
-    trpc.match.getMatchToShare.queryOptions(
-      { id: matchId },
-    ),
+    trpc.match.getMatchToShare.queryOptions({ id: matchId }),
   );
   const { data: friends } = useSuspenseQuery(
     trpc.friend.getFriends.queryOptions(),
@@ -356,9 +354,7 @@ export default function ShareMatchPage({ matchId }: { matchId: number }) {
                                         {friends.map((friend) => (
                                           <CommandItem
                                             key={friend.friendId}
-                                            value={
-                                              friend.friend.name ?? "Unknown"
-                                            }
+                                            value={friend.friendId.toString()}
                                             onSelect={() => {
                                               setSelectedFriends((current) => {
                                                 if (

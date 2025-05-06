@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { caller, HydrateClient } from "~/trpc/server";
+import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { LocationsTable } from "./_components/locationsTable";
 
 export const metadata: Metadata = {
@@ -9,13 +9,13 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/map-pin.ico" }],
 };
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export default async function Page() {
-  const locations = await caller.location.getLocations();
-  //TODO add shared matches
+  void prefetch(trpc.location.getLocations.queryOptions());
   return (
     <HydrateClient>
       <div className="flex w-full items-center justify-center">
-        <LocationsTable data={locations} />
+        <LocationsTable />
       </div>
     </HydrateClient>
   );
