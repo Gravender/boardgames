@@ -1,0 +1,145 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { format } from "date-fns/format";
+import { Dices } from "lucide-react";
+
+import type { RouterOutputs } from "@board-games/api";
+import { CardHeader, CardTitle } from "@board-games/ui/card";
+import { ScrollArea } from "@board-games/ui/scroll-area";
+import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
+
+import { FilterAndSearch } from "~/app/_components/filterAndSearch";
+import { useTRPC } from "~/trpc/react";
+
+type Matches = NonNullable<
+  RouterOutputs["sharing"]["getSharedLocation"]
+>["matches"];
+export function Matches({ locationId }: { locationId: number }) {
+  const trpc = useTRPC();
+  const { data: location } = useSuspenseQuery(
+    trpc.sharing.getSharedLocation.queryOptions({
+      id: locationId,
+    }),
+  );
+  const [matches, setMatches] = useState<Matches>(
+    location !== null ? location.matches : [],
+  );
+
+  if (location === null) return null;
+
+  return (
+    <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
+      <CardHeader>
+        <CardTitle
+          suppressHydrationWarning
+        >{`Matches at ${location.name}`}</CardTitle>
+      </CardHeader>
+      <FilterAndSearch
+        items={location.matches}
+        setItems={setMatches}
+        sortFields={["date", "name", "finished"]}
+        defaultSortField="date"
+        defaultSortOrder="asc"
+        searchField="name"
+        searchPlaceholder="Search Matches..."
+      />
+      <ScrollArea className="h-[75vh] sm:h-[80vh]">
+        <Table>
+          <TableBody className="flex w-full flex-col gap-2 p-4">
+            {matches.map((match) => (
+              <TableRow
+                key={match.id}
+                className="flex w-full rounded-lg border bg-card text-card-foreground shadow-sm"
+              >
+                <TableCell className="flex w-full items-center font-medium">
+                  <Link
+                    href={
+                      match.finished
+                        ? `/dashboard/games/shared/${match.gameId}/${match.id}/summary`
+                        : `/dashboard/games/shared/${match.gameId}/${match.id}`
+                    }
+                    className="flex w-full items-center gap-3 font-medium"
+                  >
+                    <div className="relative flex h-12 w-12 shrink-0 overflow-hidden">
+                      {match.gameImageUrl ? (
+                        <Image
+                          src={match.gameImageUrl}
+                          alt={`${match.gameName} game image`}
+                          className="aspect-square h-full w-full rounded-md object-cover"
+                          width={48}
+                          height={48}
+                        />
+                      ) : (
+                        <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
+                      )}
+                    </div>
+                    <div className="flex w-full items-center justify-between">
+                      <div className="flex flex-col items-start">
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-md text-left font-semibold">
+                            {match.name}
+                          </h2>
+
+                          <span className="text-blue-500">(Shared)</span>
+                        </div>
+                        <div className="flex min-w-20 items-center gap-1">
+                          <span>Play Date:</span>
+                          <span
+                            className="text-muted-foreground"
+                            suppressHydrationWarning
+                          >
+                            {format(match.date, "d MMM yyyy")}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </TableCell>
+                <TableCell className="flex w-24 items-center justify-center">
+                  {!match.finished ? (
+                    <div className="inline-flex w-12 items-center justify-center rounded-sm bg-yellow-500 p-2 font-semibold text-destructive-foreground dark:bg-green-900">
+                      {"-"}
+                    </div>
+                  ) : match.won ? (
+                    <div className="inline-flex w-12 items-center justify-center rounded-sm bg-green-500 p-2 font-medium text-destructive-foreground dark:bg-green-900">
+                      {"Won"}
+                    </div>
+                  ) : (
+                    <div className="inline-flex w-12 items-center justify-center rounded-sm bg-destructive p-2 font-medium text-destructive-foreground">
+                      {"Lost"}
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </ScrollArea>
+    </div>
+  );
+}
+export function MatchSkeleton() {
+  return (
+    <TableRow className="flex w-full rounded-lg border bg-card text-card-foreground shadow-sm">
+      <TableCell className="flex w-full items-center font-medium">
+        <div className="flex w-full items-center gap-3 font-medium">
+          <div className="relative flex h-12 w-12 shrink-0 animate-pulse overflow-hidden rounded bg-card-foreground" />
+          <div className="flex w-full items-center justify-between">
+            <div className="flex flex-col items-start gap-2">
+              <h2 className="text-md h-3 w-36 animate-pulse rounded-lg bg-card-foreground text-left font-semibold" />
+              <div className="flex h-2 min-w-20 animate-pulse items-center gap-1 rounded-lg bg-card-foreground/50"></div>
+            </div>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="flex w-24 items-center justify-center">
+        <div className="inline-flex h-12 w-12 animate-pulse items-center justify-center rounded-sm bg-card-foreground/50 p-2 font-semibold text-destructive-foreground" />
+      </TableCell>
+      <TableCell className="flex w-24 items-center justify-center"></TableCell>
+    </TableRow>
+  );
+}
