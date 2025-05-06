@@ -25,7 +25,6 @@ import {
 } from "@board-games/ui/form";
 import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
-import { Switch } from "@board-games/ui/switch";
 
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
@@ -48,7 +47,6 @@ const locationSchema = z.object({
   name: z.string().min(1, {
     message: "Location name is required",
   }),
-  isDefault: z.boolean(),
 });
 const LocationContent = ({
   setOpen,
@@ -67,7 +65,6 @@ const LocationContent = ({
     resolver: zodResolver(locationSchema),
     defaultValues: {
       name: location.name,
-      isDefault: location.isDefault,
     },
   });
   const mutation = useMutation(
@@ -90,11 +87,17 @@ const LocationContent = ({
   );
   function onSubmit(values: z.infer<typeof locationSchema>) {
     setIsSubmitting(true);
-    mutation.mutate({
-      id: location.id,
-      name: values.name,
-      isDefault: values.isDefault,
-    });
+    if (location.type === "original") {
+      mutation.mutate({
+        id: location.id,
+        name: values.name,
+      });
+    } else {
+      mutation.mutate({
+        id: location.locationId,
+        name: values.name,
+      });
+    }
   }
   return (
     <>
@@ -116,23 +119,6 @@ const LocationContent = ({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="isDefault"
-            render={({ field }) => (
-              <FormItem className="flex w-full items-center justify-center gap-2">
-                <FormLabel>Is Default Location?</FormLabel>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    aria-readonly
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           <DialogFooter className="gap-2">
             <Button
               type="reset"
@@ -145,7 +131,7 @@ const LocationContent = ({
               {isSubmitting ? (
                 <>
                   <Spinner />
-                  <span>Submiting...</span>
+                  <span>Submitting...</span>
                 </>
               ) : (
                 "Submit"

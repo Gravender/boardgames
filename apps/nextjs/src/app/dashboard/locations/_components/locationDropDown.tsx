@@ -85,12 +85,14 @@ export function LocationDropDown({
               View Stats
             </Link>
           </DropdownMenuItem>
-          <DialogTrigger asChild>
-            <DropdownMenuItem>Edit</DropdownMenuItem>
-          </DialogTrigger>
           <DropdownMenuItem onClick={onEditDefault}>
             {data.isDefault ? "Unset Default" : "Set Default"}
           </DropdownMenuItem>
+          {(data.type === "original" || data.permission === "edit") && (
+            <DialogTrigger asChild>
+              <DropdownMenuItem>Edit</DropdownMenuItem>
+            </DialogTrigger>
+          )}
           <DropdownMenuItem
             className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
             onClick={onDelete}
