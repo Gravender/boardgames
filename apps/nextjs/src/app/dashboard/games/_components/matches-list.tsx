@@ -454,6 +454,7 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
                       {/* Match header with name and dropdown */}
                       <div className="flex items-start justify-between">
                         <Link
+                          prefetch={true}
                           href={
                             match.finished
                               ? `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}/summary`
