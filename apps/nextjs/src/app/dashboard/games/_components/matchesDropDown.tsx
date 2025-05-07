@@ -72,6 +72,7 @@ export function MatchDropDown({
           {match.type === "original" && (
             <DropdownMenuItem asChild>
               <Link
+                prefetch={true}
                 href={`/dashboard/games/${gameId}/${match.id}/edit`}
                 className="flex items-center gap-2"
               >
@@ -82,6 +83,7 @@ export function MatchDropDown({
           )}
           <DropdownMenuItem asChild>
             <Link
+              prefetch={true}
               href={
                 match.type === "shared"
                   ? `/dashboard/games/shared/${match.gameId}/${match.id}`
@@ -96,6 +98,7 @@ export function MatchDropDown({
           {match.finished && (
             <DropdownMenuItem asChild>
               <Link
+                prefetch={true}
                 href={
                   match.type === "shared"
                     ? `/dashboard/games/shared/${match.gameId}/${match.id}/summary`
@@ -112,6 +115,7 @@ export function MatchDropDown({
             <>
               <DropdownMenuItem asChild>
                 <Link
+                  prefetch={true}
                   href={`/dashboard/games/${gameId}/${match.id}/share`}
                   className="flex items-center gap-2"
                 >

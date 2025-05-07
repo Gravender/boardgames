@@ -106,8 +106,9 @@ export default function MatchSummary({ matchId }: { matchId: number }) {
                 <div className="flex gap-2 p-1 sm:p-4">
                   {match.previousMatches.map((match) => (
                     <Link
-                      href={`/dashboard/games${match.type === "shared" ? "/shared" : ""}/${match.gameId}/${match.id}${match.finished ? "/summary" : ""}`}
                       key={match.id}
+                      prefetch={true}
+                      href={`/dashboard/games${match.type === "shared" ? "/shared" : ""}/${match.gameId}/${match.id}${match.finished ? "/summary" : ""}`}
                       className="block h-40 w-64 rounded-lg border p-4 transition-colors hover:bg-muted/50"
                     >
                       <h3 className="truncate font-medium">{match.name}</h3>

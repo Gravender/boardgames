@@ -58,6 +58,7 @@ export function GamesDropDown({
         {data.type === "original" && (
           <DropdownMenuItem asChild>
             <Link
+              prefetch={true}
               href={`/dashboard/games/${data.id}/edit`}
               className="flex items-center gap-2"
             >
@@ -68,6 +69,7 @@ export function GamesDropDown({
         )}
         <DropdownMenuItem asChild>
           <Link
+            prefetch={true}
             href={
               data.type === "shared"
                 ? `/dashboard/games/shared/${data.id}/stats`
@@ -89,6 +91,7 @@ export function GamesDropDown({
           <>
             <DropdownMenuItem asChild>
               <Link
+                prefetch={true}
                 href={`/dashboard/games/${data.id}/share`}
                 className="flex items-center gap-2"
               >

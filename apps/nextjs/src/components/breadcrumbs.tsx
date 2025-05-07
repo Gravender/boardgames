@@ -158,7 +158,9 @@ const RenderBreadCrumbs = ({
                   <BreadcrumbPage>{item.name}</BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink asChild>
-                    <Link href={`/${item.path}`}>{item.name}</Link>
+                    <Link prefetch={true} href={`/${item.path}`}>
+                      {item.name}
+                    </Link>
                   </BreadcrumbLink>
                 )}
               </BreadcrumbItem>

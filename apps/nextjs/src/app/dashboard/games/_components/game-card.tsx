@@ -55,6 +55,7 @@ export function GameCard({ game }: GameCardProps) {
     <Card className="relative flex h-full flex-col overflow-hidden transition-shadow hover:shadow-md">
       <div className="flex flex-row items-center">
         <Link
+          prefetch={true}
           href={
             game.type === "shared"
               ? `/dashboard/games/shared/${game.id}`
@@ -68,6 +69,7 @@ export function GameCard({ game }: GameCardProps) {
                 src={game.image}
                 alt={`${game.name} game image`}
                 className="aspect-square h-full w-full rounded-md object-cover"
+                quality={65}
               />
             ) : (
               <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
