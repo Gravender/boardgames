@@ -1,5 +1,5 @@
 import { subMonths, subYears } from "date-fns";
-import { and, asc, count, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import {
@@ -84,7 +84,7 @@ export const dashboardRouter = {
         lastPlayed: sql`max(${match.date})`.mapWith(match.date),
       })
       .from(game)
-      .where(and(eq(game.userId, ctx.userId), eq(game.deleted, false)))
+      .where(and(eq(game.userId, ctx.userId), isNull(game.deletedAt)))
       .leftJoin(match, eq(game.id, match.gameId))
       .groupBy(game.id)
       .orderBy(desc(count(match)), asc(game.name))
@@ -98,13 +98,20 @@ export const dashboardRouter = {
         name: player.name,
       })
       .from(player)
-      .where(eq(player.createdBy, ctx.userId))
-      .innerJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
+      .where(and(eq(player.createdBy, ctx.userId), isNull(player.deletedAt)))
+      .innerJoin(
+        matchPlayer,
+        and(eq(matchPlayer.playerId, player.id), isNull(matchPlayer.deletedAt)),
+      )
       .innerJoin(
         match,
-        and(eq(match.id, matchPlayer.matchId), eq(match.finished, true)),
+        and(
+          eq(match.id, matchPlayer.matchId),
+          eq(match.finished, true),
+          isNull(match.deletedAt),
+        ),
       )
-      .innerJoin(game, and(eq(game.id, match.gameId), eq(game.deleted, false)))
+      .innerJoin(game, and(eq(game.id, match.gameId), isNull(game.deletedAt)))
       .groupBy(player.id)
       .orderBy(desc(count(matchPlayer)), asc(player.name))
       .limit(5);
@@ -131,8 +138,13 @@ export const dashboardRouter = {
         name: location.name,
       })
       .from(location)
-      .where(eq(location.createdBy, ctx.userId))
-      .innerJoin(match, eq(match.locationId, location.id))
+      .where(
+        and(eq(location.createdBy, ctx.userId), isNull(location.deletedAt)),
+      )
+      .innerJoin(
+        match,
+        and(eq(match.locationId, location.id), isNull(match.deletedAt)),
+      )
       .groupBy(location.id)
       .orderBy(desc(count(match)), location.name)
       .limit(5);
@@ -145,13 +157,19 @@ export const dashboardRouter = {
         date: match.date,
       })
       .from(match)
+      .where(
+        and(
+          eq(match.userId, ctx.userId),
+          eq(match.finished, true),
+          isNull(match.deletedAt),
+        ),
+      )
       .innerJoin(
         game,
         and(
           eq(match.gameId, game.id),
-          eq(match.finished, true),
           eq(game.userId, ctx.userId),
-          eq(game.deleted, false),
+          isNull(game.deletedAt),
         ),
       );
     type MonthName =
@@ -224,12 +242,13 @@ export const dashboardRouter = {
         matches: count(match.id),
       })
       .from(game)
-      .where(and(eq(game.userId, ctx.userId), eq(game.deleted, false)))
+      .where(and(eq(game.userId, ctx.userId), isNull(game.deletedAt)))
       .innerJoin(
         match,
         and(
           eq(match.gameId, game.id),
           gte(match.date, subYears(new Date(), 1)),
+          isNull(match.deletedAt),
         ),
       )
       .groupBy(game.id)
@@ -241,11 +260,12 @@ export const dashboardRouter = {
         matches: count(match.id),
       })
       .from(game)
-      .where(and(eq(game.userId, ctx.userId), eq(game.deleted, false)))
+      .where(and(eq(game.userId, ctx.userId), isNull(game.deletedAt)))
       .innerJoin(
         match,
         and(
           eq(match.gameId, game.id),
+          isNull(match.deletedAt),
           gte(match.date, subYears(new Date(), 2)),
           lte(match.date, subYears(new Date(), 1)),
         ),
@@ -268,15 +288,20 @@ export const dashboardRouter = {
         duration: sql<number>`sum(${match.duration})`.as("duration"),
       })
       .from(player)
-      .innerJoin(matchPlayer, eq(matchPlayer.playerId, player.id))
-      .innerJoin(match, eq(match.id, matchPlayer.matchId))
-      .innerJoin(game, eq(match.gameId, game.id))
+      .innerJoin(
+        matchPlayer,
+        and(eq(matchPlayer.playerId, player.id), isNull(matchPlayer.deletedAt)),
+      )
+      .innerJoin(
+        match,
+        and(eq(match.id, matchPlayer.matchId), isNull(match.deletedAt)),
+      )
+      .innerJoin(game, and(eq(match.gameId, game.id), isNull(game.deletedAt)))
       .where(
         and(
           eq(player.createdBy, ctx.userId),
           eq(match.userId, ctx.userId),
           sql`${match.date} >= now() - interval '1 year'`,
-          eq(game.deleted, false),
         ),
       )
       .groupBy(player.id)
@@ -302,15 +327,21 @@ export const dashboardRouter = {
         count: sql<number>`COUNT(*)`,
       })
       .from(matchPlayer)
-      .innerJoin(player, eq(player.id, matchPlayer.playerId))
-      .innerJoin(match, eq(match.id, matchPlayer.matchId))
-      .innerJoin(game, eq(match.gameId, game.id))
+      .innerJoin(
+        player,
+        and(eq(player.id, matchPlayer.playerId), isNull(player.deletedAt)),
+      )
+      .innerJoin(
+        match,
+        and(eq(match.id, matchPlayer.matchId), isNull(match.deletedAt)),
+      )
+      .innerJoin(game, and(eq(match.gameId, game.id), isNull(game.deletedAt)))
       .where(
         and(
           eq(player.userId, ctx.userId),
           eq(match.finished, true),
           sql`${match.date} >= now() - interval '1 year'`,
-          eq(game.deleted, false),
+          isNull(matchPlayer.deletedAt),
         ),
       )
       .groupBy(matchPlayer.placement);
@@ -352,15 +383,21 @@ export const dashboardRouter = {
         wins: sql<number>`SUM(CASE WHEN ${matchPlayer.winner} THEN 1 ELSE 0 END)`,
       })
       .from(match)
-      .innerJoin(matchPlayer, eq(match.id, matchPlayer.matchId))
-      .innerJoin(player, eq(matchPlayer.playerId, player.id))
-      .innerJoin(game, eq(match.gameId, game.id))
+      .innerJoin(
+        matchPlayer,
+        and(eq(match.id, matchPlayer.matchId), isNull(matchPlayer.deletedAt)),
+      )
+      .innerJoin(
+        player,
+        and(eq(matchPlayer.playerId, player.id), isNull(player.deletedAt)),
+      )
+      .innerJoin(game, and(eq(match.gameId, game.id), isNull(game.deletedAt)))
       .where(
         and(
           eq(player.userId, ctx.userId),
           sql`${match.date} >= now() - interval '2 year'`,
           eq(match.finished, true),
-          eq(game.deleted, false),
+          isNull(match.deletedAt),
         ),
       )
       .groupBy(
@@ -415,15 +452,21 @@ export const dashboardRouter = {
         matches: sql<number>`count(${match.id})`,
       })
       .from(match)
-      .innerJoin(matchPlayer, eq(match.id, matchPlayer.matchId))
-      .innerJoin(player, eq(matchPlayer.playerId, player.id))
-      .innerJoin(game, eq(match.gameId, game.id))
+      .innerJoin(
+        matchPlayer,
+        and(eq(match.id, matchPlayer.matchId), isNull(matchPlayer.deletedAt)),
+      )
+      .innerJoin(
+        player,
+        and(eq(matchPlayer.playerId, player.id), isNull(player.deletedAt)),
+      )
+      .innerJoin(game, and(eq(match.gameId, game.id), isNull(game.deletedAt)))
       .where(
         and(
           eq(player.userId, ctx.userId),
           sql`${match.date} >= now() - interval '1 year'`,
           eq(match.finished, true),
-          eq(game.deleted, false),
+          isNull(match.deletedAt),
         ),
       )
       .groupBy(

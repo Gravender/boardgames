@@ -509,7 +509,9 @@ export const shareMetaRouter = createTRPCRouter({
   getUserGamesForLinking: protectedUserProcedure.query(async ({ ctx }) => {
     const games = await ctx.db.query.game.findMany({
       where: {
-        deleted: false,
+        deletedAt: {
+          isNull: true,
+        },
         userId: ctx.userId,
       },
       with: {
@@ -576,6 +578,9 @@ export const shareMetaRouter = createTRPCRouter({
     const players = await ctx.db.query.player.findMany({
       where: {
         createdBy: ctx.userId,
+        deletedAt: {
+          isNull: true,
+        },
       },
       with: {
         image: true,
@@ -587,6 +592,9 @@ export const shareMetaRouter = createTRPCRouter({
     const locations = await ctx.db.query.location.findMany({
       where: {
         createdBy: ctx.userId,
+        deletedAt: {
+          isNull: true,
+        },
       },
     });
     return locations;
