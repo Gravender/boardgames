@@ -1473,7 +1473,7 @@ export const gameRouter = createTRPCRouter({
         const updatedMatches = await tx
           .update(match)
           .set({ deletedAt: new Date() })
-          .where(and(eq(match.gameId, input.id), eq(game.userId, ctx.userId)))
+          .where(and(eq(match.gameId, input.id), eq(match.userId, ctx.userId)))
           .returning();
         await tx
           .update(matchPlayer)

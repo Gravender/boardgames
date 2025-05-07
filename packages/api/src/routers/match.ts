@@ -783,7 +783,7 @@ export const matchRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const matches = await ctx.db.query.match.findMany({
         where: {
-          RAW: sql`date_trunc('day', ${match.date}) = date_trunc('day', ${input.date.toUTCString()}::date)`,
+          RAW: sql`date_trunc('day', ${match.date}) = date_trunc('day', ${input.date}::date)`,
           userId: ctx.userId,
           deletedAt: {
             isNull: true,
@@ -826,26 +826,31 @@ export const matchRouter = createTRPCRouter({
   deleteMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      const deletedMatch = await ctx.db.query.match.findFirst({
-        where: {
-          id: input.id,
-          userId: ctx.userId,
-        },
+      await ctx.db.transaction(async (tx) => {
+        const deletedMatch = await tx.query.match.findFirst({
+          where: {
+            id: input.id,
+            userId: ctx.userId,
+          },
+        });
+        if (!deletedMatch)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Match not found",
+          });
+        await tx
+          .update(matchPlayer)
+          .set({ deletedAt: new Date() })
+          .where(eq(matchPlayer.matchId, deletedMatch.id));
+        await tx
+          .update(match)
+          .set({ deletedAt: new Date() })
+          .where(eq(match.id, deletedMatch.id));
+        await tx
+          .update(scoresheet)
+          .set({ deletedAt: new Date() })
+          .where(eq(scoresheet.id, deletedMatch.scoresheetId));
       });
-      if (!deletedMatch)
-        throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
-      await ctx.db
-        .update(matchPlayer)
-        .set({ deletedAt: new Date() })
-        .where(eq(matchPlayer.matchId, deletedMatch.id));
-      await ctx.db
-        .update(match)
-        .set({ deletedAt: new Date() })
-        .where(eq(match.id, deletedMatch.id));
-      await ctx.db
-        .update(scoresheet)
-        .set({ deletedAt: new Date() })
-        .where(eq(scoresheet.id, deletedMatch.scoresheetId));
     }),
   updateMatch: protectedUserProcedure
     .input(
