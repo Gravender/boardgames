@@ -21,7 +21,9 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.matchPlayer.matchId.through(r.match.gameId),
       to: r.game.id.through(r.match.gameId),
       where: {
-        deleted: false,
+        deletedAt: {
+          isNull: true,
+        },
       },
     }),
     player: r.one.player({
@@ -71,6 +73,7 @@ export const relations = defineRelations(schema, (r) => ({
     scoresheet: r.one.scoresheet({
       from: r.round.scoresheetId,
       to: r.scoresheet.id,
+      optional: false,
     }),
   },
   userSharingPreference: {
@@ -108,14 +111,29 @@ export const relations = defineRelations(schema, (r) => ({
     createdPlayers: r.many.player({
       from: r.user.id,
       to: r.player.createdBy,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     games: r.many.game({
       from: r.user.id,
       to: r.game.userId,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     matches: r.many.match({
       from: r.user.id,
       to: r.match.userId,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     sharedGamesOwner: r.many.sharedGame({
       from: r.user.id,
@@ -194,6 +212,11 @@ export const relations = defineRelations(schema, (r) => ({
     players: r.many.player({
       from: r.group.id.through(r.groupPlayer.groupId),
       to: r.player.id.through(r.groupPlayer.playerId),
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
   },
   sharedGame: {
@@ -205,6 +228,11 @@ export const relations = defineRelations(schema, (r) => ({
     linkedGame: r.one.game({
       from: r.sharedGame.linkedGameId,
       to: r.game.id,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     owner: r.one.user({
       from: r.sharedGame.ownerId,
@@ -248,12 +276,20 @@ export const relations = defineRelations(schema, (r) => ({
     matches: r.many.match({
       from: r.game.id,
       to: r.match.gameId,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     finishedMatches: r.many.match({
       from: r.game.id,
       to: r.match.gameId,
       where: {
         finished: true,
+        deletedAt: {
+          isNull: true,
+        },
       },
     }),
     sharedGameMatches: r.many.sharedMatch({
@@ -265,6 +301,9 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.scoresheet.gameId,
       where: {
         OR: [{ type: "Default" }, { type: "Game" }],
+        deletedAt: {
+          isNull: true,
+        },
       },
     }),
   },
@@ -276,6 +315,11 @@ export const relations = defineRelations(schema, (r) => ({
     matches: r.many.match({
       from: r.location.id,
       to: r.match.locationId,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     linkedLocations: r.many.sharedLocation({
       from: r.location.id,
@@ -333,6 +377,11 @@ export const relations = defineRelations(schema, (r) => ({
     matches: r.many.match({
       from: r.player.id.through(r.matchPlayer.playerId),
       to: r.match.id.through(r.matchPlayer.matchId),
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     sharedPlayers: r.many.sharedPlayer({
       from: r.player.id,
@@ -349,6 +398,11 @@ export const relations = defineRelations(schema, (r) => ({
     matchPlayers: r.many.matchPlayer({
       from: r.player.id,
       to: r.matchPlayer.playerId,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
   },
   sharedPlayer: {
@@ -370,6 +424,11 @@ export const relations = defineRelations(schema, (r) => ({
     linkedPlayer: r.one.player({
       from: r.sharedPlayer.linkedPlayerId,
       to: r.player.id,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     sharedMatches: r.many.sharedMatch({
       from: r.sharedPlayer.playerId.through(r.sharedMatchPlayer.sharedPlayerId),
@@ -457,10 +516,20 @@ export const relations = defineRelations(schema, (r) => ({
     matchPlayers: r.many.matchPlayer({
       from: r.match.id,
       to: r.matchPlayer.matchId,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     players: r.many.player({
       from: r.match.id.through(r.matchPlayer.matchId),
       to: r.player.id.through(r.matchPlayer.playerId),
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     teams: r.many.team({
       from: r.match.id,
@@ -510,6 +579,7 @@ export const relations = defineRelations(schema, (r) => ({
     game: r.one.game({
       from: r.scoresheet.gameId,
       to: r.game.id,
+      optional: false,
     }),
     sharedScoresheets: r.many.sharedScoresheet({
       from: r.scoresheet.id,
@@ -532,10 +602,16 @@ export const relations = defineRelations(schema, (r) => ({
     players: r.many.player({
       from: r.team.id.through(r.matchPlayer.teamId),
       to: r.player.id.through(r.matchPlayer.playerId),
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     match: r.one.match({
       from: r.team.matchId,
       to: r.match.id,
+      optional: false,
     }),
   },
   shareRequest: {

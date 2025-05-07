@@ -33,6 +33,7 @@ const matches = createTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
       () => new Date(),
     ),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     date: timestamp("date", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

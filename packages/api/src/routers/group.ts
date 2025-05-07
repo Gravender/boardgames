@@ -62,15 +62,13 @@ export const groupRouter = createTRPCRouter({
       insertGroupSchema.pick({ name: true, id: true }).required({ id: true }),
     )
     .mutation(async ({ ctx, input }) => {
-      const result = (
-        await ctx.db
-          .update(group)
-          .set({
-            name: input.name,
-          })
-          .where(eq(group.id, input.id))
-          .returning()
-      )[0];
+      const [result] = await ctx.db
+        .update(group)
+        .set({
+          name: input.name,
+        })
+        .where(eq(group.id, input.id))
+        .returning();
       if (!result)
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
       return result;

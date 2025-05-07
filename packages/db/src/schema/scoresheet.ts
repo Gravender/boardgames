@@ -29,6 +29,7 @@ const scoresheets = createTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
       () => new Date(),
     ),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     isCoop: boolean("is_coop").default(false).notNull(),
     winCondition: text("win_condition", {
       enum: [

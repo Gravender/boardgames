@@ -34,7 +34,7 @@ const games = createTable(
     yearPublished: integer("year_published"),
     description: text("description"),
     rules: text("rules"),
-    deleted: boolean("deleted").default(false),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [
     index("boardgames_game_user_id_index").on(table.userId),

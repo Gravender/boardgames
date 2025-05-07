@@ -35,6 +35,7 @@ const matchPlayers = createTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
       () => new Date(),
     ),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [
     unique("boardgames_match_player_match_id_player_id_unique").on(

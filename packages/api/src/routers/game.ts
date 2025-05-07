@@ -1,7 +1,7 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareDesc } from "date-fns";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type {
@@ -21,6 +21,7 @@ import {
   round,
   roundPlayer,
   scoresheet,
+  sharedGame,
 } from "@board-games/db/schema";
 import {
   insertGameSchema,
@@ -137,7 +138,9 @@ export const gameRouter = createTRPCRouter({
         where: {
           id: input.id,
           userId: ctx.userId,
-          deleted: false,
+          deletedAt: {
+            isNull: true,
+          },
         },
         with: {
           image: {
@@ -270,14 +273,12 @@ export const gameRouter = createTRPCRouter({
   getGameMetaData: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      const result = (
-        await ctx.db
-          .select({ id: game.id, name: game.name, image: image.url })
-          .from(game)
-          .where(eq(game.id, input.id))
-          .leftJoin(image, eq(game.imageId, image.id))
-          .limit(1)
-      )[0];
+      const [result] = await ctx.db
+        .select({ id: game.id, name: game.name, image: image.url })
+        .from(game)
+        .where(and(eq(game.id, input.id), isNull(game.deletedAt)))
+        .leftJoin(image, eq(game.imageId, image.id))
+        .limit(1);
       if (!result) return null;
       return {
         id: result.id,
@@ -300,6 +301,9 @@ export const gameRouter = createTRPCRouter({
               type: "Game",
             },
           ],
+          deletedAt: {
+            isNull: true,
+          },
         },
       });
       const linkedGames = await ctx.db.query.sharedGame.findMany({
@@ -348,7 +352,6 @@ export const gameRouter = createTRPCRouter({
           );
         })
         .filter((scoresheet) => scoresheet !== null);
-      //TODO add Shared scoresheets for now
       const mappedScoresheets: {
         scoresheetType: "shared" | "original";
         id: number;
@@ -384,7 +387,9 @@ export const gameRouter = createTRPCRouter({
         where: {
           id: input.id,
           userId: ctx.userId,
-          deleted: false,
+          deletedAt: {
+            isNull: true,
+          },
         },
         with: {
           image: true,
@@ -532,7 +537,9 @@ export const gameRouter = createTRPCRouter({
         where: {
           id: input.id,
           userId: ctx.userId,
-          deleted: false,
+          deletedAt: {
+            isNull: true,
+          },
         },
         with: {
           image: true,
@@ -896,7 +903,9 @@ export const gameRouter = createTRPCRouter({
         where: {
           id: input.id,
           userId: ctx.userId,
-          deleted: false,
+          deletedAt: {
+            isNull: true,
+          },
         },
         columns: {
           name: true,
@@ -912,7 +921,9 @@ export const gameRouter = createTRPCRouter({
         where: {
           id: input.id,
           userId: ctx.userId,
-          deleted: false,
+          deletedAt: {
+            isNull: true,
+          },
         },
         with: {
           matches: {
@@ -1005,7 +1016,12 @@ export const gameRouter = createTRPCRouter({
         yearPublished: true,
         ownedBy: true,
       },
-      where: { userId: ctx.userId, deleted: false },
+      where: {
+        userId: ctx.userId,
+        deletedAt: {
+          isNull: true,
+        },
+      },
       with: {
         image: true,
         matches: {
@@ -1436,20 +1452,47 @@ export const gameRouter = createTRPCRouter({
       }
       if (input.scoresheetsToDelete.length > 0) {
         await ctx.db
-          .delete(round)
-          .where(inArray(round.scoresheetId, input.scoresheetsToDelete));
-        await ctx.db
-          .delete(scoresheet)
+          .update(scoresheet)
+          .set({ deletedAt: new Date() })
           .where(inArray(scoresheet.id, input.scoresheetsToDelete));
       }
     }),
   deleteGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.db
-        .update(game)
-        .set({ deleted: true })
-        .where(and(eq(game.id, input.id), eq(game.userId, ctx.userId)));
+      await ctx.db.transaction(async (tx) => {
+        await tx
+          .update(sharedGame)
+          .set({ linkedGameId: null })
+          .where(
+            and(
+              eq(sharedGame.linkedGameId, input.id),
+              eq(sharedGame.sharedWithId, ctx.userId),
+            ),
+          );
+        const updatedMatches = await tx
+          .update(match)
+          .set({ deletedAt: new Date() })
+          .where(and(eq(match.gameId, input.id), eq(match.userId, ctx.userId)))
+          .returning();
+        await tx
+          .update(matchPlayer)
+          .set({ deletedAt: new Date() })
+          .where(
+            inArray(
+              matchPlayer.matchId,
+              updatedMatches.map((uMatch) => uMatch.id),
+            ),
+          );
+        await tx
+          .update(scoresheet)
+          .set({ deletedAt: new Date() })
+          .where(eq(scoresheet.gameId, input.id));
+        await tx
+          .update(game)
+          .set({ deletedAt: new Date() })
+          .where(and(eq(game.id, input.id), eq(game.userId, ctx.userId)));
+      });
     }),
   insertGames: protectedUserProcedure
     .input(
@@ -1543,7 +1586,9 @@ export const gameRouter = createTRPCRouter({
       const currentGames = await ctx.db.query.game.findMany({
         where: {
           userId: ctx.userId,
-          deleted: false,
+          deletedAt: {
+            isNull: true,
+          },
         },
       });
       if (currentGames.length > 0) {
