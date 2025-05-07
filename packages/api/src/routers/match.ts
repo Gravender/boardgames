@@ -781,9 +781,18 @@ export const matchRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
+      const year = input.date.getUTCFullYear();
+      const month = input.date.getUTCMonth();
+      const day = input.date.getUTCDate();
+
+      const dayStartUtc = new Date(Date.UTC(year, month, day, 0, 0, 0));
+      const nextDayUtc = new Date(Date.UTC(year, month, day + 1, 0, 0, 0));
       const matches = await ctx.db.query.match.findMany({
         where: {
-          RAW: sql`date_trunc('day', ${match.date}) = date_trunc('day', ${input.date}::date)`,
+          date: {
+            gte: dayStartUtc,
+            lt: nextDayUtc,
+          },
           userId: ctx.userId,
           deletedAt: {
             isNull: true,

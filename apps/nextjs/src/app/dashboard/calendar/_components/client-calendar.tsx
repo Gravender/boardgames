@@ -8,7 +8,7 @@ import { Calendar } from "@board-games/ui/calendar";
 import { CalendarDay } from "./calendar-day";
 
 interface ClientCalendarProps {
-  matchDayMap: Map<string, number[]>;
+  matchDayMap: Map<string, { matches: number[]; date: Date }>;
 }
 
 export function ClientCalendar({ matchDayMap }: ClientCalendarProps) {
@@ -26,7 +26,7 @@ export function ClientCalendar({ matchDayMap }: ClientCalendarProps) {
         date.getMonth() === selectedMonthNum &&
         date.getFullYear() === selectedYear
       ) {
-        totalGames += ids.length;
+        totalGames += ids.matches.length;
       }
     });
 
@@ -70,7 +70,7 @@ export function ClientCalendar({ matchDayMap }: ClientCalendarProps) {
               return (
                 <CalendarDay
                   day={date}
-                  matchIds={matchDayMap.get(format(date, "MM-dd-yy")) ?? []}
+                  matches={matchDayMap.get(format(date, "MM-dd-yy"))}
                   {...props}
                 />
               );
