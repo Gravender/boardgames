@@ -47,7 +47,7 @@ export async function NavMain() {
           </Suspense>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link href="/dashboard/calendar">
+              <Link prefetch={true} href="/dashboard/calendar">
                 <Calendar1 />
                 <span>{"Calendar"}</span>
               </Link>

@@ -23,7 +23,7 @@ export function GameItem() {
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild>
-        <Link href="/dashboard/games">
+        <Link prefetch={true} href="/dashboard/games">
           <Dices />
           <span>{"Games"}</span>
         </Link>
@@ -42,11 +42,11 @@ export function GamesItem() {
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
           <SidebarMenuButton tooltip={"Games"}>
-            <Link href="/dashboard/games">
+            <Link prefetch={true} href="/dashboard/games">
               <Dices />
             </Link>
 
-            <Link href="/dashboard/games">
+            <Link prefetch={true} href="/dashboard/games">
               <span>{"Games"}</span>
             </Link>
             {games.length > 0 && (
@@ -60,7 +60,7 @@ export function GamesItem() {
               {games.map((game) => (
                 <SidebarMenuSubItem key={game.id}>
                   <SidebarMenuSubButton asChild>
-                    <Link href={`/dashboard/games/${game.id}`}>
+                    <Link prefetch={true} href={`/dashboard/games/${game.id}`}>
                       <span>{game.name}</span>
                     </Link>
                   </SidebarMenuSubButton>
@@ -78,7 +78,7 @@ export function PlayerItem() {
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild>
-        <Link href="/dashboard/players">
+        <Link prefetch={true} href="/dashboard/players">
           <User />
           <span>{"Players"}</span>
         </Link>
@@ -97,11 +97,11 @@ export function PlayersItem() {
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
           <SidebarMenuButton tooltip={"Players"}>
-            <Link href="/dashboard/players">
+            <Link prefetch={true} href="/dashboard/players">
               <User />
             </Link>
 
-            <Link href="/dashboard/players">
+            <Link prefetch={true} href="/dashboard/players">
               <span>{"Players"}</span>
             </Link>
             {players.length > 0 && (
@@ -115,7 +115,10 @@ export function PlayersItem() {
               {players.map((player) => (
                 <SidebarMenuSubItem key={player.id}>
                   <SidebarMenuSubButton asChild>
-                    <Link href={`/dashboard/players/${player.id}/stats`}>
+                    <Link
+                      prefetch={true}
+                      href={`/dashboard/players/${player.id}/stats`}
+                    >
                       <span>{player.name}</span>
                     </Link>
                   </SidebarMenuSubButton>
@@ -133,7 +136,7 @@ export function GroupItem() {
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild>
-        <Link href="/dashboard/groups">
+        <Link prefetch={true} href="/dashboard/groups">
           <UsersRound />
           <span>{"Groups"}</span>
         </Link>
@@ -151,11 +154,11 @@ export function GroupsItem() {
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
           <SidebarMenuButton tooltip={"Groups"}>
-            <Link href="/dashboard/groups">
+            <Link prefetch={true} href="/dashboard/groups">
               <UsersRound />
             </Link>
 
-            <Link href="/dashboard/groups">
+            <Link prefetch={true} href="/dashboard/groups">
               <span>{"Groups"}</span>
             </Link>
             {groups.length > 0 && (
@@ -169,7 +172,10 @@ export function GroupsItem() {
               {groups.map((group) => (
                 <SidebarMenuSubItem key={group.id}>
                   <SidebarMenuSubButton asChild>
-                    <Link href={`/dashboard/groups/${group.id}`}>
+                    <Link
+                      prefetch={true}
+                      href={`/dashboard/groups/${group.id}`}
+                    >
                       <span>{group.name}</span>
                     </Link>
                   </SidebarMenuSubButton>
@@ -187,7 +193,7 @@ export function LocationItem() {
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild>
-        <Link href="/dashboard/locations">
+        <Link prefetch={true} href="/dashboard/locations">
           <Map />
           <span>{"Locations"}</span>
         </Link>
@@ -205,11 +211,11 @@ export function LocationsItem() {
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
           <SidebarMenuButton tooltip={"Locations"}>
-            <Link href="/dashboard/locations">
+            <Link prefetch={true} href="/dashboard/locations">
               <Map />
             </Link>
 
-            <Link href="/dashboard/locations">
+            <Link prefetch={true} href="/dashboard/locations">
               <span>{"Locations"}</span>
             </Link>
             {locations.length > 0 && (
@@ -223,7 +229,10 @@ export function LocationsItem() {
               {locations.map((location) => (
                 <SidebarMenuSubItem key={location.id}>
                   <SidebarMenuSubButton asChild>
-                    <Link href={`/dashboard/locations/${location.id}`}>
+                    <Link
+                      prefetch={true}
+                      href={`/dashboard/locations/${location.id}`}
+                    >
                       <span>{location.name}</span>
                     </Link>
                   </SidebarMenuSubButton>

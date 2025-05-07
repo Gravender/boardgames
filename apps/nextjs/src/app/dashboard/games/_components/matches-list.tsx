@@ -430,6 +430,7 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
                       )}
                     >
                       <Link
+                        prefetch={true}
                         href={
                           match.finished
                             ? `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}/summary`

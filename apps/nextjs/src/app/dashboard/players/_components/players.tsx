@@ -47,7 +47,10 @@ export function PlayersTable() {
             return (
               <Card key={player.id}>
                 <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">
-                  <Link href={`/dashboard/players/${player.id}/stats`}>
+                  <Link
+                    prefetch={true}
+                    href={`/dashboard/players/${player.id}/stats`}
+                  >
                     <div className="flex items-center gap-2">
                       <Avatar className="h-14 w-14 shadow">
                         <AvatarImage
