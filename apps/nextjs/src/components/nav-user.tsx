@@ -85,6 +85,7 @@ export function NavUser() {
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <Link
+                  prefetch={true}
                   href="/dashboard/user-profile"
                   className="flex items-center gap-2"
                 >
