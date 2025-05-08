@@ -1,12 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { SignOutButton, useUser } from "@clerk/nextjs";
-import { ChevronsUpDown, LogOut } from "lucide-react";
+import { BadgeCheck, ChevronsUpDown, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -23,6 +25,7 @@ export function NavUser() {
   const { user } = useUser();
   const { isMobile } = useSidebar();
   if (!user) return null;
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -77,6 +80,20 @@ export function NavUser() {
                 </div>
               </div>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+
+            <DropdownMenuGroup>
+              <DropdownMenuItem>
+                <Link
+                  prefetch={true}
+                  href="/dashboard/user-profile"
+                  className="flex items-center gap-2"
+                >
+                  <BadgeCheck className="h-5 w-5" />
+                  Account
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <SignOutButton>

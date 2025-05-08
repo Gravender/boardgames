@@ -14,7 +14,7 @@
     "components": "src/",
     "utils": "@board-games/ui/utils",
     "ui": "src/",
-    "lib": "@board-games/ui/lib",
+    "lib": "/lib",
     "hooks": "@board-games/ui/hooks"
   },
   "iconLibrary": "lucide"
