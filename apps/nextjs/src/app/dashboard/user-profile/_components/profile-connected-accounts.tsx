@@ -101,7 +101,7 @@ export function ProfileConnectedAccounts({
       .finally(() => setIsConnectingGithub(false));
   };
 
-  const disconnectAccount = async (provider: string) => {
+  const disconnectAccount = async (provider: "google" | "github") => {
     if (!user) {
       toast({
         title: "Not logged in",
@@ -109,27 +109,26 @@ export function ProfileConnectedAccounts({
       });
       return;
     }
-    try {
-      // In a real implementation, you would use Clerk's API to disconnect the account
-      // For example:
-      await user.externalAccounts
-        .find((account) => account.provider === provider)
-        ?.destroy();
 
-      toast({
-        title: `${provider} account disconnected`,
-        description: `Your ${provider} account has been successfully unlinked.`,
-      });
+    await user.externalAccounts
+      .find((account) => account.provider === provider)
+      ?.destroy()
+      .then(() => {
+        toast({
+          title: `${provider} account disconnected`,
+          description: `Your ${provider} account has been successfully unlinked.`,
+        });
 
-      router.refresh();
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Disconnection failed",
-        description: `Failed to disconnect your ${provider} account. Please try again.`,
-        variant: "destructive",
+        router.refresh();
+      })
+      .catch((error) => {
+        console.error(error);
+        toast({
+          title: "Disconnection failed",
+          description: `Failed to disconnect your ${provider} account. Please try again.`,
+          variant: "destructive",
+        });
       });
-    }
   };
 
   return (
@@ -186,7 +185,7 @@ export function ProfileConnectedAccounts({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => disconnectAccount("Google")}
+                  onClick={() => disconnectAccount("google")}
                 >
                   Disconnect
                 </Button>
@@ -230,7 +229,7 @@ export function ProfileConnectedAccounts({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => disconnectAccount("GitHub")}
+                  onClick={() => disconnectAccount("github")}
                 >
                   Disconnect
                 </Button>

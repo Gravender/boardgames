@@ -38,8 +38,12 @@ export function ProfileSecurity() {
   useEffect(() => {
     async function getData() {
       if (!user) return;
-      const res = await user.getSessions();
-      setSessionList(res);
+      try {
+        const res = await user.getSessions();
+        setSessionList(res);
+      } catch (error) {
+        console.error("Failed to fetch sessions:", error);
+      }
     }
     void getData();
   }, [user]);

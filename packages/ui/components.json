@@ -12,7 +12,7 @@
   },
   "aliases": {
     "components": "src/",
-    "utils": "/lib/utils",
+    "utils": "@board-games/ui/utils",
     "ui": "src/",
     "lib": "/lib",
     "hooks": "@board-games/ui/hooks"

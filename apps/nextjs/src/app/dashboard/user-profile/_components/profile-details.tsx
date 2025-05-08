@@ -1,6 +1,5 @@
 "use client";
 
-import type { User } from "@clerk/nextjs/server";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
@@ -33,7 +32,13 @@ import type { SerializableUser } from "../page";
 const profileFormSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters."),
   lastName: z.string().min(2, "Last name must be at least 2 characters."),
-  username: z.string().min(2, "Username must be at least 2 characters."),
+  username: z
+    .string()
+    .min(2, "Username must be at least 2 characters.")
+    .regex(
+      /^[a-zA-Z0-9_]+$/,
+      "Username can only contain letters, numbers, and underscores.",
+    ),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
