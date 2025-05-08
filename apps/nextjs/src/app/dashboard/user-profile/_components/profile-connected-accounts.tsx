@@ -32,8 +32,6 @@ export function ProfileConnectedAccounts({
   const [isConnectingGithub, setIsConnectingGithub] = useState(false);
   const { user } = useUser();
 
-  // In a real app, these would come from the user object
-  // For this example, we'll simulate some connected accounts
   const connectedAccounts = {
     google: user?.externalAccounts.find(
       (account) => account.provider === "google",
@@ -53,8 +51,7 @@ export function ProfileConnectedAccounts({
         strategy: "oauth_google",
         redirectUrl: "/dashboard/user-profile/profile?tab=connected",
       })
-      .then((res) => {
-        console.log(res);
+      .then(() => {
         toast({
           title: "Google account connected",
           description: "Your Google account has been successfully linked.",
@@ -81,8 +78,7 @@ export function ProfileConnectedAccounts({
         strategy: "oauth_github",
         redirectUrl: "/dashboard/user-profile/profile?tab=connected",
       })
-      .then((res) => {
-        console.log(res);
+      .then(() => {
         toast({
           title: "GitHub account connected",
           description: "Your GitHub account has been successfully linked.",

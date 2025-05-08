@@ -51,23 +51,25 @@ export function ProfileSecurity() {
   const getDeviceIcon = (session: SessionWithActivitiesResource) => {
     const { deviceType, isMobile } = session.latestActivity;
 
+    const deviceTypeLower = deviceType?.toLowerCase() ?? "";
+
     if (
-      deviceType?.toLowerCase().includes("iphone") ||
-      deviceType?.toLowerCase().includes("android")
+      deviceTypeLower.includes("iphone") ||
+      deviceTypeLower.includes("android")
     ) {
       return <SmartphoneIcon className="h-5 w-5" />;
-    } else if (deviceType?.toLowerCase().includes("ipad")) {
+    } else if (deviceTypeLower.includes("ipad")) {
       return <Tablet className="h-5 w-5" />;
     } else if (
-      deviceType?.toLowerCase().includes("macbook") ||
-      deviceType?.toLowerCase().includes("laptop")
+      deviceTypeLower.includes("macbook") ||
+      deviceTypeLower.includes("laptop")
     ) {
       return <Laptop className="h-5 w-5" />;
     } else if (isMobile) {
       return <SmartphoneIcon className="h-5 w-5" />;
-    } else {
-      return <Monitor className="h-5 w-5" />;
     }
+
+    return <Monitor className="h-5 w-5" />;
   };
 
   return (

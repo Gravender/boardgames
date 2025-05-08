@@ -165,7 +165,6 @@ function EditProfilePictureContent({
   const initials = `${serializableUser.firstName?.[0] ?? ""}${serializableUser.lastName?.[0] ?? ""}`;
 
   async function onSubmit(data: z.infer<typeof EditProfileSchema>) {
-    console.log("submit");
     setIsLoading(true);
     if (!user) return;
     if (serializableUser.imageUrl === data.file) {
