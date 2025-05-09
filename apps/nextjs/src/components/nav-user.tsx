@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { SignOutButton, useUser } from "@clerk/nextjs";
-import { BadgeCheck, ChevronsUpDown, LogOut } from "lucide-react";
+import { ChevronsUpDown, LogOut, UserRoundPen } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import {
@@ -25,6 +25,8 @@ export function NavUser() {
   const { user } = useUser();
   const { isMobile } = useSidebar();
   if (!user) return null;
+
+  const initials = `${user.firstName ?? ""}${user.lastName?.[0] ?? ""}`;
 
   return (
     <SidebarMenu>
@@ -68,7 +70,9 @@ export function NavUser() {
                     src={user.imageUrl}
                     alt={user.fullName ?? ""}
                   />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">
@@ -86,11 +90,11 @@ export function NavUser() {
               <DropdownMenuItem>
                 <Link
                   prefetch={true}
-                  href="/dashboard/user-profile"
+                  href="/dashboard/settings/profile"
                   className="flex items-center gap-2"
                 >
-                  <BadgeCheck className="h-5 w-5" />
-                  Account
+                  <UserRoundPen className="h-5 w-5" />
+                  Profile
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>

@@ -1,7 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
-import { Dices } from "lucide-react";
+import { Calendar1, Dices, MapPin, User, UsersRound } from "lucide-react";
 
 import {
   Sidebar,
@@ -16,13 +16,37 @@ import {
 
 import { NavMain } from "~/components/nav-main";
 import { NavUser } from "~/components/nav-user";
+import { NavSecondary } from "./nav-secondary";
 
-// This is sample data.
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const navMain = [
+    {
+      title: "Games",
+      url: "/dashboard/games",
+      icon: Dices,
+    },
+    {
+      title: "Players",
+      url: "/dashboard/players",
+      icon: User,
+    },
+    {
+      title: "Groups",
+      url: "/dashboard/groups",
+      icon: UsersRound,
+    },
+    {
+      title: "Locations",
+      url: "/dashboard/locations",
+      icon: MapPin,
+    },
+    {
+      title: "Calendar",
+      url: "/dashboard/calendar",
+      icon: Calendar1,
+    },
+  ];
 
-// eslint-disable-next-line @typescript-eslint/require-await
-export async function AppSidebar({
-  ...props
-}: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -33,8 +57,10 @@ export async function AppSidebar({
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                   <Dices className="size-4" />
                 </div>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">Board Games Tracker</span>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">
+                    Board Games Tracker
+                  </span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -42,7 +68,8 @@ export async function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain />
+        <NavMain items={navMain} />
+        <NavSecondary className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <SignedIn>
