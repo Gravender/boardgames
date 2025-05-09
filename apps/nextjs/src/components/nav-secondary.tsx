@@ -44,7 +44,7 @@ export function NavSecondary({
               <SidebarMenuSub>
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton asChild>
-                    <Link prefetch={true} href="/dashboard//friends">
+                    <Link prefetch={true} href="/dashboard/friends">
                       Friends
                     </Link>
                   </SidebarMenuSubButton>

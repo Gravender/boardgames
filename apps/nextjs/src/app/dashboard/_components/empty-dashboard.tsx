@@ -33,7 +33,10 @@ export function EmptyDashboard() {
 
       <h2 className="mb-4 text-xl font-bold">Get Started</h2>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <section
+        aria-labelledby="get-started-heading"
+        className="grid grid-cols-1 gap-6 md:grid-cols-2"
+      >
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2">
@@ -53,7 +56,7 @@ export function EmptyDashboard() {
           <CardFooter>
             <Link
               prefetch={true}
-              href="dashboard/games?add=true"
+              href="/dashboard/games?add=true"
               className="w-full"
             >
               <Button className="w-full gap-2">
@@ -80,7 +83,7 @@ export function EmptyDashboard() {
           <CardFooter>
             <Link
               prefetch={true}
-              href="dashboard/players?add=true"
+              href="/dashboard/players?add=true"
               className="w-full"
             >
               <Button className="w-full gap-2">
@@ -89,7 +92,7 @@ export function EmptyDashboard() {
             </Link>
           </CardFooter>
         </Card>
-      </div>
+      </section>
     </div>
   );
 }

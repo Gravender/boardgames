@@ -15,15 +15,18 @@ import {
 
 export const userRouter = createTRPCRouter({
   hasGames: protectedUserProcedure.query(async ({ ctx }) => {
-    const returnedGame = await ctx.db.query.game.findFirst({
+    const gameExists = await ctx.db.query.game.findFirst({
       where: {
         userId: ctx.userId,
         deletedAt: {
           isNull: true,
         },
       },
+      columns: {
+        id: true,
+      },
     });
-    if (!returnedGame) {
+    if (!gameExists) {
       return false;
     }
     return true;
