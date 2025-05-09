@@ -5,8 +5,13 @@ import { AddGameDialog } from "./_components/addGameDialog";
 import { GamesData } from "./_components/games-list";
 import { GamesListSkeleton } from "./_components/games-list-skeleton";
 
-export default function Page() {
+export default function Page({
+  searchParams,
+}: {
+  searchParams: { add?: string };
+}) {
   void prefetch(trpc.game.getGames.queryOptions());
+  const addGame = searchParams.add === "true";
   return (
     <HydrateClient>
       <div className="container flex items-center justify-center px-4 md:px-6">
@@ -15,7 +20,7 @@ export default function Page() {
             <GamesData />
           </Suspense>
           <div className="absolute bottom-4 right-6 z-10 sm:right-10">
-            <AddGameDialog />
+            <AddGameDialog defaultIsOpen={addGame} />
           </div>
         </div>
       </div>

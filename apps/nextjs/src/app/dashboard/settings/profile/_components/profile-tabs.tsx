@@ -11,9 +11,13 @@ import { ProfileSecurity } from "./profile-security";
 
 interface ProfileTabsProps {
   user: SerializableUser;
+  defaultTab?: string;
 }
 
-export function ProfileTabs({ user }: ProfileTabsProps) {
+export function ProfileTabs({
+  user,
+  defaultTab = "details",
+}: ProfileTabsProps) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -22,7 +26,7 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
   };
   return (
     <Tabs
-      defaultValue="details"
+      defaultValue={defaultTab}
       className="w-full"
       onValueChange={handleTabChange}
     >

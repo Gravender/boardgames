@@ -30,7 +30,11 @@ function extractUserData(user: User): SerializableUser {
     publicMetadata: user.publicMetadata,
   };
 }
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: { tab?: string };
+}) {
   const user = await currentUser();
 
   if (!user) {
@@ -38,12 +42,13 @@ export default async function ProfilePage() {
   }
 
   const serializableUser = extractUserData(user);
+  const defaultTab = searchParams.tab ?? "details";
 
   return (
     <div className="container max-w-5xl py-8">
       <ProfileHeader user={serializableUser} />
       <Separator className="my-6" />
-      <ProfileTabs user={serializableUser} />
+      <ProfileTabs user={serializableUser} defaultTab={defaultTab} />
     </div>
   );
 }

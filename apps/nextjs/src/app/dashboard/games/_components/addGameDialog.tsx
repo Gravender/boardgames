@@ -65,8 +65,12 @@ import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 import { RoundPopOver } from "./roundPopOver";
 
-export function AddGameDialog() {
-  const [isOpen, setIsOpen] = useState(false);
+export function AddGameDialog({
+  defaultIsOpen = false,
+}: {
+  defaultIsOpen?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultIsOpen);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

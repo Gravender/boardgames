@@ -17,7 +17,11 @@ import { useTRPC } from "~/trpc/react";
 import { AddPlayerDialog } from "./addPlayerDialog";
 import { PlayerDropDown } from "./playerDropDown";
 
-export function PlayersTable() {
+export function PlayersTable({
+  defaultIsOpen = false,
+}: {
+  defaultIsOpen?: boolean;
+}) {
   const trpc = useTRPC();
   const { data: data } = useSuspenseQuery(
     trpc.player.getPlayers.queryOptions(),
@@ -111,7 +115,7 @@ export function PlayersTable() {
         </div>
       </ScrollArea>
       <div className="absolute bottom-4 right-4 z-10 sm:right-10">
-        <AddPlayerDialog />
+        <AddPlayerDialog defaultIsOpen={defaultIsOpen} />
       </div>
     </div>
   );
