@@ -49,7 +49,7 @@ export function ProfileConnectedAccounts({
     await user
       .createExternalAccount({
         strategy: "oauth_google",
-        redirectUrl: "/dashboard/user-profile/profile?tab=connected",
+        redirectUrl: "/dashboard/settings/user-profile/profile?tab=connected",
       })
       .then(() => {
         toast({
@@ -76,7 +76,7 @@ export function ProfileConnectedAccounts({
     await user
       .createExternalAccount({
         strategy: "oauth_github",
-        redirectUrl: "/dashboard/user-profile/profile?tab=connected",
+        redirectUrl: "/dashboard/settings/user-profile/profile?tab=connected",
       })
       .then(() => {
         toast({

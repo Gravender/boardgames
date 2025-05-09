@@ -1,15 +1,21 @@
 import { Suspense } from "react";
 
-import { HydrateClient, prefetch, trpc } from "~/trpc/server";
+import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { ChartCard } from "./_components/chart-card";
 import DaysPlayedChart from "./_components/day-played-chart";
+import { EmptyDashboard } from "./_components/empty-dashboard";
 import { PlayedChart } from "./_components/gamesPlayedChart";
 import PlacementsChart from "./_components/placements-chart";
 import { PlayersCard } from "./_components/playersCard";
 import { UniqueGamesChart } from "./_components/uniqueGamesChart";
 import WinPercentageChart from "./_components/win-percentage-chart";
 
-export default function Page() {
+export default async function Page() {
+  const hasData = await caller.user.hasGames();
+
+  if (!hasData) {
+    return <EmptyDashboard />;
+  }
   prefetch(trpc.dashboard.getMatchesByMonth.queryOptions());
   prefetch(trpc.dashboard.getUniqueGames.queryOptions());
   prefetch(trpc.dashboard.getPlayersWIthMatches.queryOptions());

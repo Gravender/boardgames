@@ -10,12 +10,17 @@ export function generateMetadata() {
   };
 }
 
-export default function Page() {
+export default function Page({
+  searchParams,
+}: {
+  searchParams: { add?: string };
+}) {
   void prefetch(trpc.player.getPlayers.queryOptions());
+  const addPlayer = searchParams.add === "true";
   return (
     <div className="flex w-full items-center justify-center">
       <Suspense>
-        <PlayersTable />
+        <PlayersTable defaultIsOpen={addPlayer} />
       </Suspense>
     </div>
   );

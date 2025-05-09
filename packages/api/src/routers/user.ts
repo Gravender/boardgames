@@ -8,12 +8,30 @@ import { selectUserSchema } from "@board-games/db/zodSchema";
 
 import {
   createTRPCRouter,
+  protectedProcedure,
   protectedUserProcedure,
   publicProcedure,
 } from "../trpc";
 
 export const userRouter = createTRPCRouter({
-  getUser: protectedUserProcedure
+  hasGames: protectedUserProcedure.query(async ({ ctx }) => {
+    const gameExists = await ctx.db.query.game.findFirst({
+      where: {
+        userId: ctx.userId,
+        deletedAt: {
+          isNull: true,
+        },
+      },
+      columns: {
+        id: true,
+      },
+    });
+    if (!gameExists) {
+      return false;
+    }
+    return true;
+  }),
+  getUser: protectedProcedure
     .input(selectUserSchema.pick({ clerkUserId: true }))
     .mutation(async ({ ctx, input }) => {
       const [result] = await ctx.db

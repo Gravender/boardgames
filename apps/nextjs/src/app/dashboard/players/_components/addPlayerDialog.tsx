@@ -35,8 +35,12 @@ import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
-export const AddPlayerDialog = () => {
-  const [isOpen, setIsOpen] = useState(false);
+export const AddPlayerDialog = ({
+  defaultIsOpen = false,
+}: {
+  defaultIsOpen?: boolean;
+}) => {
+  const [isOpen, setIsOpen] = useState(defaultIsOpen);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="min-h-80 sm:max-w-[465px]">
