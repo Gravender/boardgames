@@ -3,7 +3,21 @@ import { subDays } from "date-fns";
 import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
-import { game, shareRequest } from "@board-games/db/schema";
+import type {
+  selectSharedGameSchema,
+  selectSharedMatchSchema,
+  selectSharedPlayerSchema,
+} from "@board-games/db/zodSchema";
+import {
+  game,
+  sharedGame,
+  sharedLocation,
+  sharedMatch,
+  sharedMatchPlayer,
+  sharedPlayer,
+  sharedScoresheet,
+  shareRequest,
+} from "@board-games/db/schema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
 
@@ -50,175 +64,24 @@ export const shareRequestRouter = createTRPCRouter({
         ),
     )
     .mutation(async ({ ctx, input }) => {
-      const [returnedGame] = await ctx.db
-        .select()
-        .from(game)
-        .where(and(eq(game.id, input.gameId), eq(game.userId, ctx.userId)));
-      if (!returnedGame) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Shared Game not found",
-        });
-      }
-      if (input.type === "link") {
-        // Insert new share request
-        const [newShare] = await ctx.db
-          .insert(shareRequest)
-          .values({
-            ownerId: ctx.userId,
-            sharedWithId: null,
-            itemType: "game",
-            itemId: input.gameId,
-            permission: input.permission,
-            expiresAt: input.expiresAt ?? null,
-          })
-          .returning();
-
-        if (!newShare) {
+      const response = await ctx.db.transaction(async (tx) => {
+        const [returnedGame] = await tx
+          .select()
+          .from(game)
+          .where(and(eq(game.id, input.gameId), eq(game.userId, ctx.userId)));
+        if (!returnedGame) {
           throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to generate share.",
+            code: "NOT_FOUND",
+            message: "Shared Game not found",
           });
         }
-        const shareMessages: {
-          success: boolean;
-          message: string;
-        }[] = [];
-
-        for (const matchToShare of input.sharedMatches) {
-          const returnedMatch = await ctx.db.query.match.findFirst({
-            where: {
-              id: matchToShare.matchId,
-              userId: ctx.userId,
-            },
-            with: {
-              matchPlayers: {
-                with: {
-                  player: true,
-                },
-              },
-            },
-          });
-          if (!returnedMatch) {
-            shareMessages.push({
-              success: false,
-              message: `Match ${matchToShare.matchId} not found.`,
-            });
-            continue;
-          }
-
-          if (returnedMatch.locationId) {
-            await ctx.db.insert(shareRequest).values({
-              ownerId: ctx.userId,
-              sharedWithId: null,
-              itemType: "location",
-              itemId: returnedMatch.locationId,
-              permission: matchToShare.permission,
-              parentShareId: newShare.id,
-              expiresAt: input.expiresAt ?? null,
-            });
-          }
-
-          await ctx.db.insert(shareRequest).values({
-            ownerId: ctx.userId,
-            sharedWithId: null,
-            itemType: "match",
-            itemId: matchToShare.matchId,
-            permission: matchToShare.permission,
-            parentShareId: newShare.id,
-            expiresAt: input.expiresAt ?? null,
-          });
-          if (matchToShare.includePlayers) {
-            for (const matchPlayer of returnedMatch.matchPlayers) {
-              await ctx.db.insert(shareRequest).values({
-                ownerId: ctx.userId,
-                sharedWithId: null,
-                itemType: "player",
-                itemId: matchPlayer.player.id,
-                permission: "view",
-                parentShareId: newShare.id,
-                expiresAt: input.expiresAt ?? null,
-              });
-            }
-          }
-        }
-        for (const scoresheetToShare of input.scoresheetsToShare) {
-          await ctx.db.insert(shareRequest).values({
-            ownerId: ctx.userId,
-            sharedWithId: null,
-            itemType: "scoresheet",
-            itemId: scoresheetToShare.scoresheetId,
-            permission: scoresheetToShare.permission,
-            parentShareId: newShare.id,
-            expiresAt: input.expiresAt ?? null,
-          });
-        }
-        return {
-          success: true,
-          message: "Created share Link",
-          shareableUrl: `/share/${newShare.token}`,
-          shareMessages,
-        };
-      } else {
-        const shareMessages: {
-          success: boolean;
-          message: string;
-        }[] = [];
-        for (const friendToShareTo of input.friends) {
-          const recipientSettings =
-            await ctx.db.query.userSharingPreference.findFirst({
-              where: {
-                userId: friendToShareTo.id,
-              },
-            });
-
-          if (recipientSettings?.allowSharing === "none") {
-            shareMessages.push({
-              success: false,
-              message: `User ${recipientSettings.userId} does not allow sharing.`,
-            });
-            continue;
-          }
-
-          const existingShare = await ctx.db.query.shareRequest.findFirst({
-            where: {
-              itemId: input.gameId,
-              itemType: "game",
-              ownerId: ctx.userId,
-              sharedWithId: friendToShareTo.id,
-              OR: [
-                { status: "accepted" },
-                {
-                  status: "pending",
-                  createdAt: {
-                    gt: subDays(new Date(), 7),
-                  },
-                  parentShareId: {
-                    isNull: true,
-                  },
-                },
-              ],
-            },
-          });
-          if (existingShare && existingShare.status === "pending") {
-            shareMessages.push({
-              success: false,
-              message: "There is already a pending share",
-            });
-            continue;
-          }
-          if (existingShare && existingShare.status === "accepted") {
-            shareMessages.push({
-              success: false,
-              message: "This has already been accepted",
-            });
-            continue;
-          }
-          const [newShare] = await ctx.db
+        if (input.type === "link") {
+          // Insert new share request
+          const [newShare] = await tx
             .insert(shareRequest)
             .values({
               ownerId: ctx.userId,
-              sharedWithId: friendToShareTo.id,
+              sharedWithId: null,
               itemType: "game",
               itemId: input.gameId,
               permission: input.permission,
@@ -232,9 +95,13 @@ export const shareRequestRouter = createTRPCRouter({
               message: "Failed to generate share.",
             });
           }
+          const shareMessages: {
+            success: boolean;
+            message: string;
+          }[] = [];
 
           for (const matchToShare of input.sharedMatches) {
-            const returnedMatch = await ctx.db.query.match.findFirst({
+            const returnedMatch = await tx.query.match.findFirst({
               where: {
                 id: matchToShare.matchId,
                 userId: ctx.userId,
@@ -256,80 +123,44 @@ export const shareRequestRouter = createTRPCRouter({
             }
 
             if (returnedMatch.locationId) {
-              const existingShareLocation =
-                await ctx.db.query.shareRequest.findFirst({
-                  where: {
-                    OR: [
-                      {
-                        itemId: returnedMatch.locationId,
-                        itemType: "location",
-                        ownerId: ctx.userId,
-                        sharedWithId: friendToShareTo.id,
-                        parentShareId: newShare.id,
-                      },
-                      {
-                        itemId: returnedMatch.locationId,
-                        itemType: "location",
-                        ownerId: ctx.userId,
-                        sharedWithId: friendToShareTo.id,
-                        status: "accepted",
-                      },
-                    ],
-                  },
-                });
-              if (!existingShareLocation) {
-                await ctx.db.insert(shareRequest).values({
-                  ownerId: ctx.userId,
-                  sharedWithId: friendToShareTo.id,
-                  itemType: "location",
-                  itemId: returnedMatch.locationId,
-                  permission: matchToShare.permission,
-                  parentShareId: newShare.id,
-                  expiresAt: input.expiresAt ?? null,
-                });
-              }
+              await tx.insert(shareRequest).values({
+                ownerId: ctx.userId,
+                sharedWithId: null,
+                itemType: "location",
+                itemId: returnedMatch.locationId,
+                permission: matchToShare.permission,
+                parentShareId: newShare.id,
+                expiresAt: input.expiresAt ?? null,
+              });
             }
 
-            await ctx.db.insert(shareRequest).values({
+            await tx.insert(shareRequest).values({
               ownerId: ctx.userId,
-              sharedWithId: friendToShareTo.id,
+              sharedWithId: null,
               itemType: "match",
               itemId: matchToShare.matchId,
               permission: matchToShare.permission,
               parentShareId: newShare.id,
               expiresAt: input.expiresAt ?? null,
             });
-
             if (matchToShare.includePlayers) {
               for (const matchPlayer of returnedMatch.matchPlayers) {
-                const existingSharedMatchPlayer =
-                  await ctx.db.query.shareRequest.findFirst({
-                    where: {
-                      itemId: matchPlayer.player.id,
-                      itemType: "player",
-                      ownerId: ctx.userId,
-                      sharedWithId: friendToShareTo.id,
-                      status: "accepted",
-                    },
-                  });
-                if (!existingSharedMatchPlayer) {
-                  await ctx.db.insert(shareRequest).values({
-                    ownerId: ctx.userId,
-                    sharedWithId: friendToShareTo.id,
-                    itemType: "player",
-                    itemId: matchPlayer.player.id,
-                    permission: "view",
-                    parentShareId: newShare.id,
-                    expiresAt: input.expiresAt ?? null,
-                  });
-                }
+                await tx.insert(shareRequest).values({
+                  ownerId: ctx.userId,
+                  sharedWithId: null,
+                  itemType: "player",
+                  itemId: matchPlayer.player.id,
+                  permission: "view",
+                  parentShareId: newShare.id,
+                  expiresAt: input.expiresAt ?? null,
+                });
               }
             }
           }
           for (const scoresheetToShare of input.scoresheetsToShare) {
-            await ctx.db.insert(shareRequest).values({
+            await tx.insert(shareRequest).values({
               ownerId: ctx.userId,
-              sharedWithId: friendToShareTo.id,
+              sharedWithId: null,
               itemType: "scoresheet",
               itemId: scoresheetToShare.scoresheetId,
               permission: scoresheetToShare.permission,
@@ -337,17 +168,397 @@ export const shareRequestRouter = createTRPCRouter({
               expiresAt: input.expiresAt ?? null,
             });
           }
-          shareMessages.push({
+          return {
             success: true,
-            message: `Shared ${returnedGame.name} with ${friendToShareTo.id}`,
-          });
+            message: "Created share Link",
+            shareableUrl: `/share/${newShare.token}`,
+            shareMessages,
+          };
+        } else {
+          const shareMessages: {
+            success: boolean;
+            message: string;
+          }[] = [];
+          for (const friendToShareTo of input.friends) {
+            const result2 = await tx.transaction(async (tx2) => {
+              const recipientSettings =
+                await tx2.query.userSharingPreference.findFirst({
+                  where: {
+                    userId: friendToShareTo.id,
+                  },
+                });
+
+              if (recipientSettings?.allowSharing === "none") {
+                shareMessages.push({
+                  success: false,
+                  message: `User ${recipientSettings.userId} does not allow sharing.`,
+                });
+                return false;
+              }
+              const friendSettings = await tx2.query.friendSetting.findFirst({
+                where: {
+                  createdById: ctx.userId,
+                  friendId: friendToShareTo.id,
+                },
+              });
+              if (friendSettings?.allowSharedGames === false) {
+                shareMessages.push({
+                  success: false,
+                  message: `User ${friendToShareTo.id} does not allow sharing games with you.`,
+                });
+                return false;
+              }
+
+              const existingShare = await tx2.query.shareRequest.findFirst({
+                where: {
+                  itemId: input.gameId,
+                  itemType: "game",
+                  ownerId: ctx.userId,
+                  sharedWithId: friendToShareTo.id,
+                  OR: [
+                    { status: "accepted" },
+                    {
+                      status: "pending",
+                      createdAt: {
+                        gt: subDays(new Date(), 7),
+                      },
+                      parentShareId: {
+                        isNull: true,
+                      },
+                    },
+                  ],
+                },
+              });
+              if (existingShare && existingShare.status === "pending") {
+                shareMessages.push({
+                  success: false,
+                  message: "There is already a pending share",
+                });
+                return false;
+              }
+              if (existingShare && existingShare.status === "accepted") {
+                shareMessages.push({
+                  success: false,
+                  message: "This has already been accepted",
+                });
+                return false;
+              }
+              const [newShare] = await tx2
+                .insert(shareRequest)
+                .values({
+                  ownerId: ctx.userId,
+                  sharedWithId: friendToShareTo.id,
+                  itemType: "game",
+                  itemId: input.gameId,
+                  status: friendSettings?.autoAcceptGame
+                    ? "accepted"
+                    : "pending",
+                  permission: input.permission,
+                  expiresAt: input.expiresAt ?? null,
+                })
+                .returning();
+
+              if (!newShare) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: "Failed to generate share.",
+                });
+              }
+              let returnedShareGame: z.infer<
+                typeof selectSharedGameSchema
+              > | null = null;
+              if (friendSettings?.autoAcceptGame) {
+                const existingSharedGame = await tx2.query.sharedGame.findFirst(
+                  {
+                    where: {
+                      sharedWithId: friendToShareTo.id,
+                      ownerId: ctx.userId,
+                      gameId: returnedGame.id,
+                    },
+                  },
+                );
+                if (!existingSharedGame) {
+                  const [createdSharedGame] = await tx2
+                    .insert(sharedGame)
+                    .values({
+                      ownerId: ctx.userId,
+                      sharedWithId: friendToShareTo.id,
+                      gameId: returnedGame.id,
+                      permission: friendSettings.defaultPermissionForGame,
+                    })
+                    .returning();
+                  if (!createdSharedGame) {
+                    throw new TRPCError({
+                      code: "INTERNAL_SERVER_ERROR",
+                      message: "Failed to generate share.",
+                    });
+                  }
+                  returnedShareGame = createdSharedGame;
+                }
+              }
+
+              for (const matchToShare of input.sharedMatches) {
+                const returnedMatch = await tx2.query.match.findFirst({
+                  where: {
+                    id: matchToShare.matchId,
+                    userId: ctx.userId,
+                  },
+                  with: {
+                    matchPlayers: {
+                      with: {
+                        player: true,
+                      },
+                    },
+                  },
+                });
+                if (!returnedMatch) {
+                  shareMessages.push({
+                    success: false,
+                    message: `Match ${matchToShare.matchId} not found.`,
+                  });
+                  continue;
+                }
+
+                if (returnedMatch.locationId) {
+                  const existingShareLocation =
+                    await tx2.query.shareRequest.findFirst({
+                      where: {
+                        OR: [
+                          {
+                            itemId: returnedMatch.locationId,
+                            itemType: "location",
+                            ownerId: ctx.userId,
+                            sharedWithId: friendToShareTo.id,
+                            parentShareId: newShare.id,
+                          },
+                          {
+                            itemId: returnedMatch.locationId,
+                            itemType: "location",
+                            ownerId: ctx.userId,
+                            sharedWithId: friendToShareTo.id,
+                            status: "accepted",
+                          },
+                        ],
+                      },
+                    });
+                  if (!existingShareLocation) {
+                    await tx2.insert(shareRequest).values({
+                      ownerId: ctx.userId,
+                      sharedWithId: friendToShareTo.id,
+                      itemType: "location",
+                      itemId: returnedMatch.locationId,
+                      permission:
+                        friendSettings?.defaultPermissionForLocation ??
+                        input.permission,
+                      status: friendSettings?.autoAcceptMatches
+                        ? "accepted"
+                        : "pending",
+                      parentShareId: newShare.id,
+                      expiresAt: input.expiresAt ?? null,
+                    });
+                    if (friendSettings?.autoAcceptLocation) {
+                      const existingSharedLocation =
+                        await tx2.query.sharedLocation.findFirst({
+                          where: {
+                            locationId: returnedMatch.locationId,
+                            sharedWithId: friendToShareTo.id,
+                            ownerId: ctx.userId,
+                          },
+                        });
+                      if (!existingSharedLocation) {
+                        await tx2.insert(sharedLocation).values({
+                          ownerId: ctx.userId,
+                          sharedWithId: friendToShareTo.id,
+                          locationId: returnedMatch.locationId,
+                          permission:
+                            friendSettings.defaultPermissionForLocation,
+                        });
+                      }
+                    }
+                  }
+                }
+
+                await tx2.insert(shareRequest).values({
+                  ownerId: ctx.userId,
+                  sharedWithId: friendToShareTo.id,
+                  itemType: "match",
+                  itemId: matchToShare.matchId,
+                  permission: matchToShare.permission,
+                  parentShareId: newShare.id,
+                  expiresAt: input.expiresAt ?? null,
+                });
+                let returnedShareMatch: z.infer<
+                  typeof selectSharedMatchSchema
+                > | null = null;
+                if (friendSettings?.autoAcceptMatches) {
+                  const existingSharedMatch =
+                    await tx2.query.sharedMatch.findFirst({
+                      where: {
+                        matchId: matchToShare.matchId,
+                        sharedWithId: friendToShareTo.id,
+                        ownerId: ctx.userId,
+                      },
+                    });
+                  if (!existingSharedMatch && returnedShareGame) {
+                    const [createdSharedMatch] = await tx2
+                      .insert(sharedMatch)
+                      .values({
+                        ownerId: ctx.userId,
+                        sharedWithId: friendToShareTo.id,
+                        sharedGameId: returnedShareGame.id,
+                        matchId: matchToShare.matchId,
+                        permission: friendSettings.defaultPermissionForMatches,
+                      })
+                      .returning();
+                    if (!createdSharedMatch) {
+                      throw new TRPCError({
+                        code: "INTERNAL_SERVER_ERROR",
+                        message: "Failed to generate share.",
+                      });
+                    }
+                    returnedShareMatch = createdSharedMatch;
+                  }
+                }
+
+                if (matchToShare.includePlayers) {
+                  for (const matchPlayer of returnedMatch.matchPlayers) {
+                    const existingSharedMatchPlayer =
+                      await tx2.query.shareRequest.findFirst({
+                        where: {
+                          itemId: matchPlayer.player.id,
+                          itemType: "player",
+                          ownerId: ctx.userId,
+                          sharedWithId: friendToShareTo.id,
+                          status: "accepted",
+                        },
+                      });
+                    if (!existingSharedMatchPlayer) {
+                      await tx2.insert(shareRequest).values({
+                        ownerId: ctx.userId,
+                        sharedWithId: friendToShareTo.id,
+                        itemType: "player",
+                        itemId: matchPlayer.player.id,
+                        permission: "view",
+                        parentShareId: newShare.id,
+                        expiresAt: input.expiresAt ?? null,
+                      });
+                      let returnedSharePlayer: z.infer<
+                        typeof selectSharedPlayerSchema
+                      > | null = null;
+                      if (friendSettings?.autoAcceptPlayers) {
+                        const existingSharedPlayer =
+                          await tx2.query.sharedPlayer.findFirst({
+                            where: {
+                              playerId: matchPlayer.player.id,
+                              sharedWithId: friendToShareTo.id,
+                              ownerId: ctx.userId,
+                            },
+                          });
+                        if (!existingSharedPlayer) {
+                          const [createdSharePlayer] = await tx2
+                            .insert(sharedPlayer)
+                            .values({
+                              ownerId: ctx.userId,
+                              sharedWithId: friendToShareTo.id,
+                              playerId: matchPlayer.player.id,
+                              permission:
+                                friendSettings.defaultPermissionForPlayers,
+                            })
+                            .returning();
+                          if (!createdSharePlayer) {
+                            throw new TRPCError({
+                              code: "INTERNAL_SERVER_ERROR",
+                              message: "Failed to generate share.",
+                            });
+                          }
+                          returnedSharePlayer = createdSharePlayer;
+                        } else {
+                          returnedSharePlayer = existingSharedPlayer;
+                        }
+                      }
+                      if (returnedShareMatch) {
+                        const [returnedSharedMatchPlayer] = await tx2
+                          .insert(sharedMatchPlayer)
+                          .values({
+                            ownerId: ctx.userId,
+                            sharedWithId: friendToShareTo.id,
+                            sharedMatchId: returnedShareMatch.id,
+                            sharedPlayerId:
+                              returnedSharePlayer?.id ?? undefined,
+                            matchPlayerId: matchPlayer.id,
+                            permission:
+                              friendSettings?.defaultPermissionForMatches ??
+                              input.permission,
+                          })
+                          .returning();
+                        if (!returnedSharedMatchPlayer) {
+                          throw new TRPCError({
+                            code: "INTERNAL_SERVER_ERROR",
+                            message: "Failed to generate share.",
+                          });
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              for (const scoresheetToShare of input.scoresheetsToShare) {
+                await tx2.insert(shareRequest).values({
+                  ownerId: ctx.userId,
+                  sharedWithId: friendToShareTo.id,
+                  itemType: "scoresheet",
+                  itemId: scoresheetToShare.scoresheetId,
+                  permission: scoresheetToShare.permission,
+                  parentShareId: newShare.id,
+                  expiresAt: input.expiresAt ?? null,
+                });
+                if (friendSettings?.autoAcceptGame) {
+                  const existingSharedScoresheet =
+                    await tx2.query.sharedScoresheet.findFirst({
+                      where: {
+                        scoresheetId: scoresheetToShare.scoresheetId,
+                        sharedWithId: friendToShareTo.id,
+                        ownerId: ctx.userId,
+                      },
+                    });
+                  if (!existingSharedScoresheet && returnedShareGame) {
+                    const [createdSharedScoresheet] = await tx2
+                      .insert(sharedScoresheet)
+                      .values({
+                        ownerId: ctx.userId,
+                        sharedWithId: friendToShareTo.id,
+                        scoresheetId: scoresheetToShare.scoresheetId,
+                        sharedGameId: returnedShareGame.id,
+                        permission: scoresheetToShare.permission,
+                      })
+                      .returning();
+                    if (!createdSharedScoresheet) {
+                      throw new TRPCError({
+                        code: "INTERNAL_SERVER_ERROR",
+                        message: "Failed to generate share.",
+                      });
+                    }
+                  }
+                }
+              }
+              return true;
+            });
+            if (!result2) {
+              continue;
+            }
+            shareMessages.push({
+              success: true,
+              message: `Shared ${returnedGame.name} with ${friendToShareTo.id}`,
+            });
+          }
+          return {
+            success: shareMessages.filter((m) => m.success).length > 0,
+            message: `Shared ${returnedGame.name} with ${shareMessages.filter((m) => m.success).length} friends / ${shareMessages.length} friends`,
+            shareMessages,
+          };
         }
-        return {
-          success: shareMessages.filter((m) => m.success).length > 0,
-          message: `Shared ${returnedGame.name} with ${shareMessages.filter((m) => m.success).length} friends / ${shareMessages.length} friends`,
-          shareMessages,
-        };
-      }
+      });
+      return response;
     }),
   requestShareMatch: protectedUserProcedure
     .input(
