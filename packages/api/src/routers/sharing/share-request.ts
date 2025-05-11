@@ -440,6 +440,9 @@ export const shareRequestRouter = createTRPCRouter({
                         itemId: matchPlayer.player.id,
                         permission: "view",
                         parentShareId: newShare.id,
+                        status: friendSettings?.autoAcceptPlayers
+                          ? "accepted"
+                          : "pending",
                         expiresAt: input.expiresAt ?? null,
                       });
                       let returnedSharePlayer: z.infer<
@@ -509,6 +512,9 @@ export const shareRequestRouter = createTRPCRouter({
                   itemType: "scoresheet",
                   itemId: scoresheetToShare.scoresheetId,
                   permission: scoresheetToShare.permission,
+                  status: friendSettings?.autoAcceptGame
+                    ? "accepted"
+                    : "pending",
                   parentShareId: newShare.id,
                   expiresAt: input.expiresAt ?? null,
                 });
