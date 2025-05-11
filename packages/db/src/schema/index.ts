@@ -21,3 +21,5 @@ export { default as shareRequest } from "./shareRequest";
 export { default as sharedScoresheet } from "./sharedScoresheet";
 export { default as sharedMatchPlayer } from "./sharedMatchPlayer";
 export { default as sharedLocation } from "./sharedLocation";
+export { default as friendPlayer } from "./friendPlayer";
+export { default as friendSetting } from "./friendSetting";

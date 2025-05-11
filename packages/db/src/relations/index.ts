@@ -203,6 +203,14 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.user.id,
       to: r.shareRequest.ownerId,
     }),
+    friendPlayers: r.many.friendPlayer({
+      from: r.user.id,
+      to: r.friendPlayer.createdById,
+    }),
+    friendSettings: r.one.friendSetting({
+      from: r.user.id,
+      to: r.friendSetting.createdById,
+    }),
   },
   group: {
     createdBy: r.one.user({
@@ -403,6 +411,10 @@ export const relations = defineRelations(schema, (r) => ({
           isNull: true,
         },
       },
+    }),
+    friendPlayer: r.one.friendPlayer({
+      from: r.player.id,
+      to: r.friendPlayer.playerId,
     }),
   },
   sharedPlayer: {
@@ -640,6 +652,14 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.user.id,
       optional: false,
     }),
+    friendSetting: r.one.friendSetting({
+      from: r.friend.id,
+      to: r.friendSetting.friendId,
+    }),
+    friendPlayer: r.one.friendPlayer({
+      from: r.friend.id,
+      to: r.friendPlayer.friendId,
+    }),
   },
   friendRequest: {
     user: r.one.user({
@@ -650,6 +670,35 @@ export const relations = defineRelations(schema, (r) => ({
     requestee: r.one.user({
       from: r.friendRequest.requesteeId,
       to: r.user.id,
+      optional: false,
+    }),
+  },
+  friendSetting: {
+    createdBy: r.one.user({
+      from: r.friendSetting.createdById,
+      to: r.user.id,
+      optional: false,
+    }),
+    friend: r.one.friend({
+      from: r.friendSetting.friendId,
+      to: r.friend.id,
+      optional: false,
+    }),
+  },
+  friendPlayer: {
+    createdBy: r.one.user({
+      from: r.friendPlayer.createdById,
+      to: r.user.id,
+      optional: false,
+    }),
+    friend: r.one.friend({
+      from: r.friendPlayer.friendId,
+      to: r.friend.id,
+      optional: false,
+    }),
+    player: r.one.player({
+      from: r.friendPlayer.playerId,
+      to: r.player.id,
       optional: false,
     }),
   },
