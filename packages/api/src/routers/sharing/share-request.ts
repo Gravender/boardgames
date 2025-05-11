@@ -663,7 +663,7 @@ export const shareRequestRouter = createTRPCRouter({
           }
 
           if (returnedMatch.locationId) {
-            await ctx.db.insert(shareRequest).values({
+            await tx.insert(shareRequest).values({
               ownerId: ctx.userId,
               sharedWithId: null,
               itemType: "location",

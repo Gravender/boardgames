@@ -211,7 +211,7 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.user.id,
       to: r.friendPlayer.createdById,
     }),
-    friendSettings: r.one.friendSetting({
+    friendSettings: r.many.friendSetting({
       from: r.user.id,
       to: r.friendSetting.createdById,
     }),

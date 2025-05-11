@@ -42,9 +42,17 @@ const friendPlayer = createTable(
     index("boardgames_friend_player_friend_id_index").on(table.friendId),
     index("boardgames_friend_player_player_id_index").on(table.playerId),
     index("boardgames_friend_player_id_index").on(table.id),
-    unique("boardgames_friend_player_unique").on(
+    unique("boardgames_friend_player_unique_friend_player_unique").on(
       table.friendId,
       table.playerId,
+    ),
+    unique("boardgames_friend_player_created_by_id_player_id_unique").on(
+      table.playerId,
+      table.createdById,
+    ),
+    unique("boardgames_friend_player_friend_id_created_by_id_unique").on(
+      table.createdById,
+      table.friendId,
     ),
   ],
 );
