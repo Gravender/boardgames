@@ -786,7 +786,7 @@ export const shareRequestRouter = createTRPCRouter({
                   friendId: returnedFriend.id,
                 },
               });
-              const existingShare = await tx.query.shareRequest.findFirst({
+              const existingShare = await tx2.query.shareRequest.findFirst({
                 where: {
                   itemId: input.matchId,
                   itemType: "match",
@@ -820,7 +820,7 @@ export const shareRequestRouter = createTRPCRouter({
                 });
                 return false;
               }
-              const [newShare] = await tx
+              const [newShare] = await tx2
                 .insert(shareRequest)
                 .values({
                   ownerId: ctx.userId,
@@ -846,7 +846,7 @@ export const shareRequestRouter = createTRPCRouter({
 
               if (returnedMatch.locationId) {
                 const existingShareLocation =
-                  await ctx.db.query.shareRequest.findFirst({
+                  await tx2.query.shareRequest.findFirst({
                     where: {
                       OR: [
                         {
@@ -867,7 +867,7 @@ export const shareRequestRouter = createTRPCRouter({
                     },
                   });
                 if (!existingShareLocation) {
-                  await ctx.db.insert(shareRequest).values({
+                  await tx2.insert(shareRequest).values({
                     ownerId: ctx.userId,
                     sharedWithId: friendToShareTo.id,
                     itemType: "location",
@@ -910,7 +910,7 @@ export const shareRequestRouter = createTRPCRouter({
               }
 
               const returnedSharedGameRequest =
-                await tx.query.shareRequest.findFirst({
+                await tx2.query.shareRequest.findFirst({
                   where: {
                     itemId: returnedMatch.gameId,
                     itemType: "game",
@@ -924,7 +924,7 @@ export const shareRequestRouter = createTRPCRouter({
                 typeof selectSharedGameSchema
               > | null = null;
               if (!returnedSharedGameRequest) {
-                await tx.insert(shareRequest).values({
+                await tx2.insert(shareRequest).values({
                   ownerId: ctx.userId,
                   sharedWithId: friendToShareTo.id,
                   itemType: "game",
@@ -964,7 +964,7 @@ export const shareRequestRouter = createTRPCRouter({
                     returnedShareGame = createdSharedGame;
                   }
                 }
-                const gamesScoreSheets = await tx.query.scoresheet.findMany({
+                const gamesScoreSheets = await tx2.query.scoresheet.findMany({
                   where: {
                     gameId: returnedMatch.gameId,
                     userId: ctx.userId,
@@ -982,7 +982,7 @@ export const shareRequestRouter = createTRPCRouter({
                   (sheet) => sheet.type === "Default",
                 );
                 if (defaultScoreSheet) {
-                  await tx.insert(shareRequest).values({
+                  await tx2.insert(shareRequest).values({
                     ownerId: ctx.userId,
                     sharedWithId: null,
                     itemType: "scoresheet",
@@ -1024,7 +1024,7 @@ export const shareRequestRouter = createTRPCRouter({
                     }
                   }
                 } else if (gamesScoreSheets[0]) {
-                  await tx.insert(shareRequest).values({
+                  await tx2.insert(shareRequest).values({
                     ownerId: ctx.userId,
                     sharedWithId: null,
                     itemType: "scoresheet",
@@ -1110,7 +1110,7 @@ export const shareRequestRouter = createTRPCRouter({
               if (input.includePlayers) {
                 for (const matchPlayer of returnedMatch.matchPlayers) {
                   const existingSharedMatchPlayer =
-                    await tx.query.shareRequest.findFirst({
+                    await tx2.query.shareRequest.findFirst({
                       where: {
                         itemId: matchPlayer.playerId,
                         itemType: "player",
@@ -1120,7 +1120,7 @@ export const shareRequestRouter = createTRPCRouter({
                       },
                     });
                   if (!existingSharedMatchPlayer) {
-                    await tx.insert(shareRequest).values({
+                    await tx2.insert(shareRequest).values({
                       ownerId: ctx.userId,
                       sharedWithId: friendToShareTo.id,
                       itemType: "player",
