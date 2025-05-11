@@ -54,16 +54,12 @@ const friendSettings = createTable(
       .default(false)
       .notNull(),
     autoAcceptGame: boolean("auto_accept_game").default(false).notNull(),
-    allowSharedGames: boolean("allow_shared_games").default(false).notNull(),
-    allowSharedPlayers: boolean("allow_shared_players")
-      .default(false)
-      .notNull(),
+    allowSharedGames: boolean("allow_shared_games").default(true).notNull(),
+    allowSharedPlayers: boolean("allow_shared_players").default(true).notNull(),
     allowSharedLocation: boolean("allow_shared_location")
-      .default(false)
+      .default(true)
       .notNull(),
-    allowSharedMatches: boolean("allow_shared_matches")
-      .default(false)
-      .notNull(),
+    allowSharedMatches: boolean("allow_shared_matches").default(true).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
