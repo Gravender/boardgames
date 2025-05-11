@@ -341,15 +341,20 @@ export const matchRouter = createTRPCRouter({
                       },
                       with: {
                         friend: {
-                          where: {
-                            userId: ctx.userId,
-                          },
                           with: {
-                            friendSetting: {
-                              where: {
-                                createdById: ctx.userId,
+                            friend: {
+                              with: {
+                                friends: {
+                                  where: {
+                                    friendId: ctx.userId,
+                                  },
+                                  with: {
+                                    friendSetting: true,
+                                  },
+                                },
                               },
                             },
+                            friendSetting: true,
                           },
                         },
                       },
@@ -370,8 +375,39 @@ export const matchRouter = createTRPCRouter({
         const shareFriends = createdMatch.matchPlayers
           .flatMap((matchPlayer) => {
             const returnedFriend = matchPlayer.player.friendPlayer?.friend;
-            if (returnedFriend?.friendSetting?.allowSharedMatches === true) {
-              return returnedFriend;
+            const returnedFriendSetting = returnedFriend?.friend.friends.find(
+              (friend) => friend.friendId === ctx.userId,
+            )?.friendSetting;
+            if (
+              returnedFriend?.friendSetting?.autoShareMatches === true &&
+              returnedFriendSetting?.allowSharedMatches === true
+            ) {
+              return {
+                friendUserId: returnedFriend.friendId,
+                shareLocation:
+                  returnedFriend.friendSetting.includeLocationWithMatch ===
+                  true,
+                sharePlayers:
+                  returnedFriend.friendSetting.sharePlayersWithMatch === true,
+                defaultPermissionForMatches:
+                  returnedFriend.friendSetting.defaultPermissionForMatches,
+                defaultPermissionForPlayers:
+                  returnedFriend.friendSetting.defaultPermissionForPlayers,
+                defaultPermissionForLocation:
+                  returnedFriend.friendSetting.defaultPermissionForLocation,
+                defaultPermissionForGame:
+                  returnedFriend.friendSetting.defaultPermissionForGame,
+                allowSharedPlayers:
+                  returnedFriendSetting.allowSharedPlayers === true,
+                allowSharedLocation:
+                  returnedFriendSetting.allowSharedLocation === true,
+                autoAcceptMatches:
+                  returnedFriendSetting.autoAcceptMatches === true,
+                autoAcceptPlayers:
+                  returnedFriendSetting.autoAcceptPlayers === true,
+                autoAcceptLocation:
+                  returnedFriendSetting.autoAcceptLocation === true,
+              };
             }
             return false;
           })
@@ -385,14 +421,11 @@ export const matchRouter = createTRPCRouter({
               .insert(shareRequest)
               .values({
                 ownerId: ctx.userId,
-                sharedWithId: shareFriend.id,
+                sharedWithId: shareFriend.friendUserId,
                 itemType: "match",
                 itemId: returningMatch.id,
-                status: shareFriend.friendSetting?.autoAcceptMatches
-                  ? "accepted"
-                  : "pending",
-                permission:
-                  shareFriend.friendSetting?.defaultPermissionForMatches,
+                status: shareFriend.autoAcceptMatches ? "accepted" : "pending",
+                permission: shareFriend.defaultPermissionForMatches,
                 expiresAt: null,
               })
               .returning();
@@ -402,26 +435,27 @@ export const matchRouter = createTRPCRouter({
                 message: "Failed to generate share.",
               });
             }
-            if (createdMatch.location) {
+            if (
+              createdMatch.location &&
+              shareFriend.shareLocation &&
+              shareFriend.allowSharedLocation
+            ) {
               await tx.insert(shareRequest).values({
                 ownerId: ctx.userId,
-                sharedWithId: shareFriend.id,
+                sharedWithId: shareFriend.friendUserId,
                 itemType: "location",
                 itemId: createdMatch.location.id,
-                permission:
-                  shareFriend.friendSetting?.defaultPermissionForLocation,
-                status: shareFriend.friendSetting?.autoAcceptLocation
-                  ? "accepted"
-                  : "pending",
+                permission: shareFriend.defaultPermissionForLocation,
+                status: shareFriend.autoAcceptLocation ? "accepted" : "pending",
                 parentShareId: newShare.id,
                 expiresAt: null,
               });
-              if (shareFriend.friendSetting?.autoAcceptLocation) {
+              if (shareFriend.autoAcceptLocation) {
                 const existingSharedLocation =
                   await tx.query.sharedLocation.findFirst({
                     where: {
                       locationId: createdMatch.location.id,
-                      sharedWithId: shareFriend.id,
+                      sharedWithId: shareFriend.friendUserId,
                       ownerId: ctx.userId,
                     },
                   });
@@ -430,10 +464,9 @@ export const matchRouter = createTRPCRouter({
                     .insert(sharedLocation)
                     .values({
                       ownerId: ctx.userId,
-                      sharedWithId: shareFriend.id,
+                      sharedWithId: shareFriend.friendUserId,
                       locationId: createdMatch.location.id,
-                      permission:
-                        shareFriend.friendSetting.defaultPermissionForLocation,
+                      permission: shareFriend.defaultPermissionForLocation,
                     })
                     .returning();
                   if (!createdSharedLocation) {
@@ -455,32 +488,29 @@ export const matchRouter = createTRPCRouter({
             const existingSharedGame = await tx.query.sharedGame.findFirst({
               where: {
                 gameId: createdMatch.game.id,
-                sharedWithId: shareFriend.id,
+                sharedWithId: shareFriend.friendUserId,
                 ownerId: ctx.userId,
               },
             });
             if (!existingSharedGame) {
               await tx.insert(shareRequest).values({
                 ownerId: ctx.userId,
-                sharedWithId: shareFriend.id,
+                sharedWithId: shareFriend.friendUserId,
                 itemType: "game",
                 itemId: createdMatch.game.id,
-                permission: shareFriend.friendSetting?.defaultPermissionForGame,
-                status: shareFriend.friendSetting?.autoAcceptMatches
-                  ? "accepted"
-                  : "pending",
+                permission: shareFriend.defaultPermissionForGame,
+                status: shareFriend.autoAcceptMatches ? "accepted" : "pending",
                 parentShareId: newShare.id,
                 expiresAt: null,
               });
-              if (shareFriend.friendSetting?.autoAcceptMatches) {
+              if (shareFriend.autoAcceptMatches) {
                 const [createdSharedGame] = await tx
                   .insert(sharedGame)
                   .values({
                     ownerId: ctx.userId,
-                    sharedWithId: shareFriend.id,
+                    sharedWithId: shareFriend.friendUserId,
                     gameId: createdMatch.game.id,
-                    permission:
-                      shareFriend.friendSetting.defaultPermissionForGame,
+                    permission: shareFriend.defaultPermissionForGame,
                   })
                   .returning();
                 if (!createdSharedGame) {
@@ -497,20 +527,16 @@ export const matchRouter = createTRPCRouter({
             let returnedSharedMatch: z.infer<
               typeof selectSharedMatchSchema
             > | null = null;
-            if (
-              shareFriend.friendSetting?.autoAcceptMatches &&
-              returnedSharedGame
-            ) {
+            if (shareFriend.autoAcceptMatches && returnedSharedGame) {
               const [createdSharedMatch] = await tx
                 .insert(sharedMatch)
                 .values({
                   ownerId: ctx.userId,
-                  sharedWithId: shareFriend.id,
+                  sharedWithId: shareFriend.friendUserId,
                   sharedGameId: returnedSharedGame.id,
                   matchId: returningMatch.id,
                   sharedLocationId: returnedSharedLocation?.id ?? undefined,
-                  permission:
-                    shareFriend.friendSetting.defaultPermissionForMatches,
+                  permission: shareFriend.defaultPermissionForMatches,
                 })
                 .returning();
               if (!createdSharedMatch) {
@@ -525,64 +551,60 @@ export const matchRouter = createTRPCRouter({
               let returnedSharedPlayer: z.infer<
                 typeof selectSharedPlayerSchema
               > | null = null;
-              await tx.insert(shareRequest).values({
-                ownerId: ctx.userId,
-                sharedWithId: shareFriend.id,
-                itemType: "player",
-                itemId: matchPlayer.player.id,
-                permission:
-                  shareFriend.friendSetting?.defaultPermissionForPlayers,
-                status: shareFriend.friendSetting?.autoAcceptPlayers
-                  ? "accepted"
-                  : "pending",
-                parentShareId: newShare.id,
-                expiresAt: null,
-              });
-              if (shareFriend.friendSetting?.autoAcceptPlayers) {
-                const existingSharedPlayer =
-                  await tx.query.sharedPlayer.findFirst({
-                    where: {
-                      playerId: matchPlayer.player.id,
-                      sharedWithId: shareFriend.id,
-                      ownerId: ctx.userId,
-                    },
-                  });
-                if (!existingSharedPlayer) {
-                  const [createdSharedPlayer] = await tx
-                    .insert(sharedPlayer)
-                    .values({
-                      ownerId: ctx.userId,
-                      sharedWithId: shareFriend.id,
-                      playerId: matchPlayer.player.id,
-                      permission:
-                        shareFriend.friendSetting.defaultPermissionForPlayers,
-                    })
-                    .returning();
-                  if (!createdSharedPlayer) {
-                    throw new TRPCError({
-                      code: "INTERNAL_SERVER_ERROR",
-                      message: "Failed to generate share.",
+              if (shareFriend.sharePlayers && shareFriend.allowSharedPlayers) {
+                await tx.insert(shareRequest).values({
+                  ownerId: ctx.userId,
+                  sharedWithId: shareFriend.friendUserId,
+                  itemType: "player",
+                  itemId: matchPlayer.player.id,
+                  permission: shareFriend.defaultPermissionForPlayers,
+                  status: shareFriend.autoAcceptPlayers
+                    ? "accepted"
+                    : "pending",
+                  parentShareId: newShare.id,
+                  expiresAt: null,
+                });
+                if (shareFriend.autoAcceptPlayers) {
+                  const existingSharedPlayer =
+                    await tx.query.sharedPlayer.findFirst({
+                      where: {
+                        playerId: matchPlayer.player.id,
+                        sharedWithId: shareFriend.friendUserId,
+                        ownerId: ctx.userId,
+                      },
                     });
+                  if (!existingSharedPlayer) {
+                    const [createdSharedPlayer] = await tx
+                      .insert(sharedPlayer)
+                      .values({
+                        ownerId: ctx.userId,
+                        sharedWithId: shareFriend.friendUserId,
+                        playerId: matchPlayer.player.id,
+                        permission: shareFriend.defaultPermissionForPlayers,
+                      })
+                      .returning();
+                    if (!createdSharedPlayer) {
+                      throw new TRPCError({
+                        code: "INTERNAL_SERVER_ERROR",
+                        message: "Failed to generate share.",
+                      });
+                    }
+                    returnedSharedPlayer = createdSharedPlayer;
+                  } else {
+                    returnedSharedPlayer = existingSharedPlayer;
                   }
-                  returnedSharedPlayer = createdSharedPlayer;
-                } else {
-                  returnedSharedPlayer = existingSharedPlayer;
                 }
               }
-              if (
-                returnedSharedMatch &&
-                shareFriend.friendSetting?.autoAcceptMatches
-              ) {
+              if (returnedSharedMatch && shareFriend.autoAcceptMatches) {
                 const [createMatchPlayer] = await tx
                   .insert(sharedMatchPlayer)
                   .values({
                     ownerId: ctx.userId,
-                    sharedWithId: shareFriend.id,
+                    sharedWithId: shareFriend.friendUserId,
                     sharedMatchId: returnedSharedMatch.id,
                     sharedPlayerId: returnedSharedPlayer?.id ?? undefined,
                     matchPlayerId: matchPlayer.id,
-                    permission:
-                      shareFriend.friendSetting.defaultPermissionForMatches,
+                    permission: shareFriend.defaultPermissionForMatches,
                   })
                   .returning();
                 if (!createMatchPlayer) {

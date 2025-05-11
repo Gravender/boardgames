@@ -203,6 +203,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.user.id,
       to: r.shareRequest.ownerId,
     }),
+    friends: r.many.friend({
+      from: r.user.id,
+      to: r.friend.userId,
+    }),
     friendPlayers: r.many.friendPlayer({
       from: r.user.id,
       to: r.friendPlayer.createdById,
