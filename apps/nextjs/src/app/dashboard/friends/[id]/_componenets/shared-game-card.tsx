@@ -58,7 +58,7 @@ export function SharedGameCard({ game }: { game: Game }) {
               </li>
             )}
 
-            {game.matches.length === 0 && game.matches.length === 0 && (
+            {game.matches.length === 0 && game.scoresheets.length === 0 && (
               <li>Game only</li>
             )}
           </ul>
