@@ -615,7 +615,8 @@ export const shareRequestRouter = createTRPCRouter({
               } else {
                 throw new TRPCError({
                   code: "INTERNAL_SERVER_ERROR",
-                  message: "No games scoresheets found",
+                  message:
+                    "Expected share game request not found, but scoresheet creation requires it",
                 });
               }
               let returnedSharedMatch: z.infer<
@@ -1111,11 +1112,26 @@ export const shareRequestRouter = createTRPCRouter({
                     success: false,
                     message: `Match ${matchToShare.matchId} not found.`,
                   });
-                  return false;
+                  continue;
                 }
 
-                //check if the match is already shared with the user or the previous share request has expired
-
+                const existingMatchShare =
+                  await tx2.query.shareRequest.findFirst({
+                    where: {
+                      itemId: matchToShare.matchId,
+                      itemType: "match",
+                      ownerId: ctx.userId,
+                      sharedWithId: friendToShareTo.id,
+                      status: "accepted",
+                    },
+                  });
+                if (existingMatchShare) {
+                  shareMessages.push({
+                    success: false,
+                    message: `Match ${matchToShare.matchId} already shared.`,
+                  });
+                  continue;
+                }
                 await tx2.insert(shareRequest).values({
                   ownerId: ctx.userId,
                   sharedWithId: friendToShareTo.id,
