@@ -340,6 +340,19 @@ export async function seed() {
 
   console.log("Inserting players...\n");
   await db.insert(player).values(playerData);
+  for (const userA of users) {
+    const firstPlayer = await db.query.player.findFirst({
+      where: {
+        createdBy: userA.id,
+      },
+    });
+    if (firstPlayer) {
+      await db
+        .update(player)
+        .set({ isUser: true })
+        .where(eq(player.id, firstPlayer.id));
+    }
+  }
   const players = await db.select().from(player);
 
   const groupData: z.infer<typeof insertGroupSchema>[] = Array.from(
@@ -601,13 +614,9 @@ export async function seed() {
         : undefined;
 
       const weightedPlayers = filteredPlayers.map((player) => ({
-        weight:
-          player.userId === returnedMatch.userId
-            ? Math.max(
-                (playerAppearances.get(player.id) ?? 1) / matchCount,
-                0.75,
-              )
-            : (playerAppearances.get(player.id) ?? 1) / matchCount,
+        weight: player.isUser
+          ? Math.max((playerAppearances.get(player.id) ?? 1) / matchCount, 0.75)
+          : (playerAppearances.get(player.id) ?? 1) / matchCount,
         value: player.id,
       }));
 
@@ -1118,7 +1127,7 @@ export async function seed() {
             }
             const sharedUserPlayers = await db.query.player.findMany({
               where: {
-                userId: returnedUserShareRequest.sharedWithId,
+                createdBy: returnedUserShareRequest.sharedWithId,
               },
             });
             const sharedUserPlayerIds = sharedUserPlayers.map(
@@ -1435,7 +1444,7 @@ export async function seed() {
           ) {
             const sharedUserPlayers = await db.query.player.findMany({
               where: {
-                userId: returnedUserShareRequest.sharedWithId,
+                createdBy: returnedUserShareRequest.sharedWithId,
               },
             });
             const sharedUserPlayerIds = sharedUserPlayers.map(
@@ -1816,7 +1825,7 @@ export async function seed() {
             });
             const sharedUserPlayers = await db.query.player.findMany({
               where: {
-                userId: returnedUserShareRequest.sharedWithId,
+                createdBy: returnedUserShareRequest.sharedWithId,
               },
             });
             const sharedUserPlayerIds = sharedUserPlayers.map(

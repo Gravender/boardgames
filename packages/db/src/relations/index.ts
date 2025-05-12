@@ -104,9 +104,15 @@ export const relations = defineRelations(schema, (r) => ({
         },
       },
     }),
-    linkedPlayers: r.many.player({
+    linkedPlayer: r.many.player({
       from: r.user.id,
-      to: r.player.userId,
+      to: r.player.createdBy,
+      where: {
+        isUser: true,
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     createdPlayers: r.many.player({
       from: r.user.id,
@@ -206,10 +212,6 @@ export const relations = defineRelations(schema, (r) => ({
     friends: r.many.friend({
       from: r.user.id,
       to: r.friend.userId,
-    }),
-    friendPlayers: r.many.friendPlayer({
-      from: r.user.id,
-      to: r.friendPlayer.createdById,
     }),
     friendSettings: r.many.friendSetting({
       from: r.user.id,
@@ -382,9 +384,9 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.player.imageId,
       to: r.image.id,
     }),
-    linkedUser: r.one.user({
-      from: r.player.userId,
-      to: r.user.id,
+    linkedFriend: r.one.friend({
+      from: r.player.friendId,
+      to: r.friend.id,
     }),
     matches: r.many.match({
       from: r.player.id.through(r.matchPlayer.playerId),
@@ -415,10 +417,6 @@ export const relations = defineRelations(schema, (r) => ({
           isNull: true,
         },
       },
-    }),
-    friendPlayer: r.one.friendPlayer({
-      from: r.player.id,
-      to: r.friendPlayer.playerId,
     }),
   },
   sharedPlayer: {
@@ -660,9 +658,9 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.friend.id,
       to: r.friendSetting.friendId,
     }),
-    friendPlayer: r.one.friendPlayer({
+    friendPlayer: r.one.player({
       from: r.friend.id,
-      to: r.friendPlayer.friendId,
+      to: r.player.friendId,
     }),
   },
   friendRequest: {
@@ -686,23 +684,6 @@ export const relations = defineRelations(schema, (r) => ({
     friend: r.one.friend({
       from: r.friendSetting.friendId,
       to: r.friend.id,
-      optional: false,
-    }),
-  },
-  friendPlayer: {
-    createdBy: r.one.user({
-      from: r.friendPlayer.createdById,
-      to: r.user.id,
-      optional: false,
-    }),
-    friend: r.one.friend({
-      from: r.friendPlayer.friendId,
-      to: r.friend.id,
-      optional: false,
-    }),
-    player: r.one.player({
-      from: r.friendPlayer.playerId,
-      to: r.player.id,
       optional: false,
     }),
   },
