@@ -285,6 +285,7 @@ export const friendsRouter = createTRPCRouter({
               },
             },
           },
+          friendSetting: true,
         },
       });
       if (!returnedFriend) {
