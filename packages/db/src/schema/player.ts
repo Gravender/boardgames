@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -6,6 +6,7 @@ import {
   serial,
   timestamp,
   unique,
+  uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
 
@@ -36,9 +37,13 @@ const players = createTable(
   (table) => [
     index("name_idx").on(table.name),
     index("boardgames_player_id_index").on(table.id),
-    unique("boardgames_player_created_by_friend_id_unique")
-      .on(table.createdBy, table.friendId)
-      .nullsNotDistinct(),
+    unique("boardgames_player_created_by_friend_id_unique").on(
+      table.createdBy,
+      table.friendId,
+    ),
+    uniqueIndex("boardgames_player_is_user_created_by")
+      .on(table.createdBy)
+      .where(eq(table.isUser, true)),
   ],
 );
 

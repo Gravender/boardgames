@@ -264,9 +264,7 @@ export const shareGameRouter = createTRPCRouter({
                       ? linkedPlayer.name
                       : returnedSharedMatchPlayer.sharedPlayer.player.name,
                   isWinner: returnedSharedMatchPlayer.matchPlayer.winner,
-                  isUser:
-                    foundSharedPlayer?.sharedPlayer?.linkedPlayer?.isUser ??
-                    false,
+                  isUser: linkedPlayer?.isUser ?? false,
                   score: returnedSharedMatchPlayer.matchPlayer.score,
                   placement:
                     returnedSharedMatchPlayer.matchPlayer.placement ?? 0,

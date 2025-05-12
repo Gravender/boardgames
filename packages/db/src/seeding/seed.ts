@@ -151,7 +151,7 @@ export async function seed() {
     users.map((u) => ({
       name: u.name ?? "",
       createdBy: u.id,
-      userId: u.id,
+      isUser: true,
     })),
   );
 
@@ -340,19 +340,6 @@ export async function seed() {
 
   console.log("Inserting players...\n");
   await db.insert(player).values(playerData);
-  for (const userA of users) {
-    const firstPlayer = await db.query.player.findFirst({
-      where: {
-        createdBy: userA.id,
-      },
-    });
-    if (firstPlayer) {
-      await db
-        .update(player)
-        .set({ isUser: true })
-        .where(eq(player.id, firstPlayer.id));
-    }
-  }
   const players = await db.select().from(player);
 
   const groupData: z.infer<typeof insertGroupSchema>[] = Array.from(
