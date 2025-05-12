@@ -335,6 +335,9 @@ export const matchRouter = createTRPCRouter({
               with: {
                 player: {
                   columns: { id: true },
+                  with: {
+                    linkedFriend: true,
+                  },
                 },
               },
             },
@@ -347,28 +350,26 @@ export const matchRouter = createTRPCRouter({
             message: "Failed to create match.",
           });
         }
-        const playerIds = createdMatch.matchPlayers.map((mp) => mp.player.id);
+        const playerIds = createdMatch.matchPlayers
+          .map((mp) => mp.player.linkedFriend?.id ?? false)
+          .filter((id) => id !== false);
         // Auto-share matches with friends when:
         // 1. The friend has enabled auto-sharing matches (autoShareMatches)
         // 2. The friend allows receiving shared matches (allowSharedMatches)
-        const friendPlayers = await ctx.db.query.friendPlayer.findMany({
+        const friendPlayers = await ctx.db.query.friend.findMany({
           where: {
-            createdById: ctx.userId,
-            friendId: {
+            userId: ctx.userId,
+            id: {
               in: playerIds,
             },
           },
           with: {
+            friendSetting: true,
             friend: {
               with: {
-                friendSetting: true,
-                friend: {
-                  with: {
-                    friends: {
-                      where: { friendId: ctx.userId },
-                      with: { friendSetting: true },
-                    },
-                  },
+                friends: {
+                  where: { friendId: ctx.userId },
+                  with: { friendSetting: true },
                 },
               },
             },
@@ -377,8 +378,9 @@ export const matchRouter = createTRPCRouter({
         const shareFriends = createdMatch.matchPlayers
           .flatMap((matchPlayer) => {
             const returnedFriend = friendPlayers.find(
-              (friendPlayer) => friendPlayer.playerId === matchPlayer.player.id,
-            )?.friend;
+              (friendPlayer) =>
+                friendPlayer.id === matchPlayer.player.linkedFriend?.id,
+            );
             const returnedFriendSetting = returnedFriend?.friend.friends.find(
               (friend) => friend.friendId === ctx.userId,
             )?.friendSetting;
@@ -487,7 +489,7 @@ export const matchRouter = createTRPCRouter({
           imageUrl: matchPlayer.player.image?.url,
           details: matchPlayer.details,
           teamId: matchPlayer.teamId,
-          isUser: matchPlayer.player.userId === ctx.userId,
+          isUser: matchPlayer.player.isUser,
         };
       });
       return {
@@ -927,7 +929,7 @@ export const matchRouter = createTRPCRouter({
         finished: match.finished,
         won:
           match.matchPlayers.findIndex(
-            (player) => player.winner && player.player.userId === ctx.userId,
+            (player) => player.winner && player.player.isUser,
           ) !== -1,
         players: match.matchPlayers.map((matchPlayer) => {
           return {

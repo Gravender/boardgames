@@ -105,8 +105,7 @@ export const shareGameRouter = createTRPCRouter({
             mMatch.sharedMatchPlayers.findIndex(
               (sharedMatchPlayer) =>
                 sharedMatchPlayer.matchPlayer.winner &&
-                sharedMatchPlayer.sharedPlayer?.linkedPlayer?.userId ===
-                  ctx.userId,
+                sharedMatchPlayer.sharedPlayer?.linkedPlayer?.isUser,
             ) !== -1,
         })),
       };
@@ -229,7 +228,7 @@ export const shareGameRouter = createTRPCRouter({
             (player) => player.matchPlayer.winner,
           );
           const foundSharedPlayer = mMatch.sharedMatchPlayers.find(
-            (p) => p.sharedPlayer?.linkedPlayer?.userId === ctx.userId,
+            (p) => p.sharedPlayer?.linkedPlayer?.isUser,
           );
           const mappedShareMatch = {
             type: "shared" as const,
@@ -266,8 +265,8 @@ export const shareGameRouter = createTRPCRouter({
                       : returnedSharedMatchPlayer.sharedPlayer.player.name,
                   isWinner: returnedSharedMatchPlayer.matchPlayer.winner,
                   isUser:
-                    foundSharedPlayer?.sharedPlayer?.linkedPlayer?.userId ===
-                    ctx.userId,
+                    foundSharedPlayer?.sharedPlayer?.linkedPlayer?.isUser ??
+                    false,
                   score: returnedSharedMatchPlayer.matchPlayer.score,
                   placement:
                     returnedSharedMatchPlayer.matchPlayer.placement ?? 0,

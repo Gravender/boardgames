@@ -338,7 +338,7 @@ export const dashboardRouter = {
       .innerJoin(game, and(eq(match.gameId, game.id), isNull(game.deletedAt)))
       .where(
         and(
-          eq(player.userId, ctx.userId),
+          eq(player.isUser, true),
           eq(match.finished, true),
           sql`${match.date} >= now() - interval '1 year'`,
           isNull(matchPlayer.deletedAt),
@@ -394,7 +394,7 @@ export const dashboardRouter = {
       .innerJoin(game, and(eq(match.gameId, game.id), isNull(game.deletedAt)))
       .where(
         and(
-          eq(player.userId, ctx.userId),
+          eq(player.isUser, true),
           sql`${match.date} >= now() - interval '2 year'`,
           eq(match.finished, true),
           isNull(match.deletedAt),
@@ -463,7 +463,7 @@ export const dashboardRouter = {
       .innerJoin(game, and(eq(match.gameId, game.id), isNull(game.deletedAt)))
       .where(
         and(
-          eq(player.userId, ctx.userId),
+          eq(player.isUser, true),
           sql`${match.date} >= now() - interval '1 year'`,
           eq(match.finished, true),
           isNull(match.deletedAt),
