@@ -13,9 +13,14 @@ import {
   CardTitle,
 } from "@board-games/ui/card";
 
-type Game =
-  | RouterOutputs["friend"]["getFriend"]["friend"]["sharedGamesOwner"][number]
-  | RouterOutputs["friend"]["getFriend"]["user"]["sharedGamesOwner"][number];
+type SharedItem = RouterOutputs["friend"]["getFriend"]["sharedWith"][number];
+
+type Game = Extract<
+  SharedItem,
+  {
+    type: "game";
+  }
+>;
 
 export function SharedGameCard({ game }: { game: Game }) {
   const formatDate = (date: Date) => {
@@ -26,7 +31,7 @@ export function SharedGameCard({ game }: { game: Game }) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>{`${game.game.name} (Game)`}</CardTitle>
+            <CardTitle>{`${game.name} (Game)`}</CardTitle>
             <CardDescription suppressHydrationWarning>
               Shared on {formatDate(game.createdAt)}
             </CardDescription>
@@ -40,21 +45,22 @@ export function SharedGameCard({ game }: { game: Game }) {
         <div className="space-y-2">
           <p className="text-sm font-medium">This share includes:</p>
           <ul className="ml-5 list-disc text-sm text-muted-foreground">
-            {game.sharedMatches.length > 0 && (
+            {game.matches.length > 0 && (
               <li>
-                {game.sharedMatches.length} match
-                {game.sharedMatches.length !== 1 ? "es" : ""}
+                {game.matches.length} match
+                {game.matches.length !== 1 ? "es" : ""}
               </li>
             )}
-            {game.sharedScoresheets.length > 0 && (
+            {game.scoresheets.length > 0 && (
               <li>
-                {game.sharedScoresheets.length} scoresheet
-                {game.sharedScoresheets.length !== 1 ? "s" : ""}
+                {game.scoresheets.length} scoresheet
+                {game.scoresheets.length !== 1 ? "s" : ""}
               </li>
             )}
 
-            {game.sharedMatches.length === 0 &&
-              game.sharedScoresheets.length === 0 && <li>Game only</li>}
+            {game.matches.length === 0 && game.matches.length === 0 && (
+              <li>Game only</li>
+            )}
           </ul>
           <div className="mt-4 flex justify-end">
             <Button size="sm">View Game</Button>

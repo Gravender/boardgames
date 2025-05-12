@@ -13,9 +13,14 @@ import {
   CardTitle,
 } from "@board-games/ui/card";
 
-type Player =
-  | RouterOutputs["friend"]["getFriend"]["friend"]["sharedPlayersOwner"][number]
-  | RouterOutputs["friend"]["getFriend"]["user"]["sharedPlayersOwner"][number];
+type SharedItem = RouterOutputs["friend"]["getFriend"]["sharedWith"][number];
+
+type Player = Extract<
+  SharedItem,
+  {
+    type: "player";
+  }
+>;
 
 export function SharedPlayerCard({ player }: { player: Player }) {
   const formatDate = (date: Date) => {
@@ -26,7 +31,7 @@ export function SharedPlayerCard({ player }: { player: Player }) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>{`${player.player.name} (Player)`}</CardTitle>
+            <CardTitle>{`${player.name} (Player)`}</CardTitle>
             <CardDescription suppressHydrationWarning>
               Shared on {formatDate(player.createdAt)}
             </CardDescription>
