@@ -8,7 +8,10 @@
       "types": "./dist/index.d.ts",
       "default": "./src/index.ts"
     },
-    "./uploadthing": "./src/uploadthing.ts"
+    "./uploadthing": {
+      "types": "./dist/uploadthing.d.ts",
+      "default": "./src/uploadthing.ts"
+    }
   },
   "license": "MIT",
   "scripts": {
