@@ -49,7 +49,7 @@ export function PlayersTable({
               ? format(player.lastPlayed, "d MMM yyyy")
               : null;
             return (
-              <Card key={player.id}>
+              <Card key={`${player.id}-${player.type}`}>
                 <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">
                   <Link
                     prefetch={true}
