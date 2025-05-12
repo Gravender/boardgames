@@ -41,6 +41,7 @@ import {
 import { calculatePlacement } from "@board-games/shared";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import { handleLocationSharing } from "../utils/sharing";
 
 export const matchRouter = createTRPCRouter({
   createMatch: protectedUserProcedure
@@ -1570,7 +1571,9 @@ async function shareMatchWithFriends(
           tx,
           userId,
           createdMatch.location.id,
-          shareFriend,
+          shareFriend.friendUserId,
+          shareFriend.defaultPermissionForLocation,
+          shareFriend.autoAcceptLocation,
           newShare.id,
         );
       }
@@ -1607,69 +1610,7 @@ async function shareMatchWithFriends(
     });
   }
 }
-async function handleLocationSharing(
-  transaction: TransactionType,
-  ownerId: number,
-  locationId: number,
-  shareFriend: {
-    friendUserId: number;
-    shareLocation: boolean;
-    sharePlayers: boolean;
-    defaultPermissionForMatches: "view" | "edit";
-    defaultPermissionForPlayers: "view" | "edit";
-    defaultPermissionForLocation: "view" | "edit";
-    defaultPermissionForGame: "view" | "edit";
-    allowSharedPlayers: boolean;
-    allowSharedLocation: boolean;
-    autoAcceptMatches: boolean;
-    autoAcceptPlayers: boolean;
-    autoAcceptLocation: boolean;
-  },
-  newShareId: number,
-) {
-  await transaction.insert(shareRequest).values({
-    ownerId: ownerId,
-    sharedWithId: shareFriend.friendUserId,
-    itemType: "location",
-    itemId: locationId,
-    permission: shareFriend.defaultPermissionForLocation,
-    status: shareFriend.autoAcceptLocation ? "accepted" : "pending",
-    parentShareId: newShareId,
-    expiresAt: null,
-  });
-  if (shareFriend.autoAcceptLocation) {
-    const existingSharedLocation =
-      await transaction.query.sharedLocation.findFirst({
-        where: {
-          locationId: locationId,
-          sharedWithId: shareFriend.friendUserId,
-          ownerId: ownerId,
-        },
-      });
-    if (!existingSharedLocation) {
-      const [createdSharedLocation] = await transaction
-        .insert(sharedLocation)
-        .values({
-          ownerId: ownerId,
-          sharedWithId: shareFriend.friendUserId,
-          locationId: locationId,
-          permission: shareFriend.defaultPermissionForLocation,
-        })
-        .returning();
-      if (!createdSharedLocation) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to generate share.",
-        });
-      }
 
-      return createdSharedLocation;
-    } else {
-      return existingSharedLocation;
-    }
-  }
-  return null;
-}
 async function handleGameSharing(
   transaction: TransactionType,
   ownerId: number,
