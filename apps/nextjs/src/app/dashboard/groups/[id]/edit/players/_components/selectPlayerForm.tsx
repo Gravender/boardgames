@@ -54,7 +54,8 @@ export default function SelectPlayersForm({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const inGroup = players.filter((player) => player.ingroup);
+  //TODO FIX EDIT Group
+  const inGroup = players;
   const form = useForm<formSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
