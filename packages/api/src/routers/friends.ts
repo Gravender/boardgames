@@ -181,11 +181,11 @@ export const friendsRouter = createTRPCRouter({
             });
           });
         const getFullName = () => {
-          if (clerkUser.firstName) {
-            return clerkUser.firstName;
-          }
           if (clerkUser.firstName && clerkUser.lastName) {
             return `${clerkUser.firstName} ${clerkUser.lastName}`;
+          }
+          if (clerkUser.firstName) {
+            return clerkUser.firstName;
           }
           if (clerkUser.firstName) {
             return clerkUser.firstName;
@@ -596,9 +596,8 @@ export const friendsRouter = createTRPCRouter({
       allMatches.forEach((m) => {
         const key = m.gameId;
         const isWin = m.outcome.isWinner ? 1 : 0;
-        if (gameMap.has(key)) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const g = gameMap.get(key)!;
+        const g = gameMap.get(key);
+        if (g) {
           g.plays += 1;
           g.wins += isWin;
           g.winRate = g.wins / g.plays;

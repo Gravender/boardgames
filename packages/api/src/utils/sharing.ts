@@ -58,20 +58,19 @@ export async function handleLocationSharing(
     },
   });
 
-  if (existingReq) {
-    // If they already auto-accepted it, return the sharedLocation record
-    if (autoAcceptLocation) {
-      const existingShared = await transaction.query.sharedLocation.findFirst({
-        where: { locationId, sharedWithId: friendId, ownerId },
+  if (existingReq && existingReq.status === "accepted") {
+    const existingShared = await transaction.query.sharedLocation.findFirst({
+      where: { locationId, sharedWithId: friendId, ownerId },
+    });
+    if (!existingShared) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to find shared location.",
       });
-      if (!existingShared) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to find shared location.",
-        });
-      }
-      return existingShared;
     }
+    return existingShared;
+  }
+  if (existingReq) {
     return null;
   }
 
