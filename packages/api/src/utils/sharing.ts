@@ -116,3 +116,195 @@ export async function handleLocationSharing(
 
   return created;
 }
+
+export type SharedEntry = {
+  id: number;
+  name: string;
+  permission: "view" | "edit";
+  createdAt: Date;
+} & (
+  | {
+      type: "game";
+      matches: {
+        id: number;
+        permission: "view" | "edit";
+        name: string;
+        userId: number | null;
+        gameId: number;
+        scoresheetId: number;
+        createdAt: Date;
+        updatedAt: Date | null;
+        deletedAt: Date | null;
+        date: Date;
+        duration: number;
+        finished: boolean;
+        running: boolean;
+        locationId: number | null;
+        comment: string | null;
+      }[];
+      scoresheets: {
+        id: number;
+        permission: "view" | "edit";
+        name: string;
+        gameId: number;
+        userId: number | null;
+        createdAt: Date;
+        updatedAt: Date | null;
+        deletedAt: Date | null;
+        isCoop: boolean;
+        winCondition:
+          | "Manual"
+          | "Highest Score"
+          | "Lowest Score"
+          | "No Winner"
+          | "Target Score";
+        targetScore: number;
+        roundsScore: "Manual" | "Aggregate" | "Best Of";
+        type: "Template" | "Default" | "Match" | "Game";
+      }[];
+    }
+  | {
+      type: "player";
+    }
+  | {
+      type: "location";
+    }
+);
+export function collectShares(
+  gamesOwner: {
+    id: number;
+    createdAt: Date;
+    linkedGameId: number | null;
+    permission: "view" | "edit";
+    game: {
+      name: string;
+    };
+    sharedMatches: {
+      id: number;
+      ownerId: number;
+      sharedWithId: number;
+      matchId: number;
+      sharedGameId: number;
+      sharedLocationId: number | null;
+      permission: "view" | "edit";
+      createdAt: Date;
+      updatedAt: Date | null;
+      match: {
+        id: number;
+        name: string;
+        userId: number | null;
+        gameId: number;
+        scoresheetId: number;
+        createdAt: Date;
+        updatedAt: Date | null;
+        deletedAt: Date | null;
+        date: Date;
+        duration: number;
+        finished: boolean;
+        running: boolean;
+        locationId: number | null;
+        comment: string | null;
+      };
+    }[];
+    sharedScoresheets: {
+      id: number;
+      ownerId: number;
+      sharedWithId: number;
+      scoresheetId: number;
+      sharedGameId: number;
+      permission: "view" | "edit";
+      createdAt: Date;
+      updatedAt: Date | null;
+      scoresheet: {
+        id: number;
+        name: string;
+        gameId: number;
+        userId: number | null;
+        createdAt: Date;
+        updatedAt: Date | null;
+        deletedAt: Date | null;
+        isCoop: boolean;
+        winCondition:
+          | "Manual"
+          | "Highest Score"
+          | "Lowest Score"
+          | "No Winner"
+          | "Target Score";
+        targetScore: number;
+        roundsScore: "Manual" | "Aggregate" | "Best Of";
+        type: "Template" | "Default" | "Match" | "Game";
+      };
+    }[];
+  }[],
+  playersOwner: {
+    id: number;
+    createdAt: Date;
+    permission: "view" | "edit";
+    linkedPlayerId: number | null;
+    player: {
+      name: string;
+    };
+  }[],
+  locationOwner: {
+    id: number;
+    ownerId: number;
+    sharedWithId: number;
+    locationId: number;
+    linkedLocationId: number | null;
+    isDefault: boolean;
+    permission: "view" | "edit";
+    createdAt: Date;
+    updatedAt: Date | null;
+    location: {
+      name: string;
+    };
+  }[],
+) {
+  const targetArr: SharedEntry[] = [];
+  // game-level shares
+  for (const sg of gamesOwner) {
+    // the game itself
+
+    const matches = sg.sharedMatches.map((sm) => ({
+      ...sm.match,
+      id: sm.id,
+      permission: sm.permission,
+    }));
+    // matches under that game
+    const scoresheets = sg.sharedScoresheets.map((ss) => ({
+      ...ss.scoresheet,
+      id: ss.id,
+      permission: ss.permission,
+    }));
+    targetArr.push({
+      id: sg.id,
+      type: "game" as const,
+      name: sg.game.name,
+      permission: sg.permission,
+      createdAt: sg.createdAt,
+      matches,
+      scoresheets,
+    });
+  }
+
+  // player-level shares
+  for (const sp of playersOwner) {
+    targetArr.push({
+      id: sp.id,
+      name: sp.player.name,
+      type: "player" as const,
+      permission: sp.permission,
+      createdAt: sp.createdAt,
+    });
+  }
+  for (const sl of locationOwner) {
+    targetArr.push({
+      id: sl.id,
+      name: sl.location.name,
+      type: "location" as const,
+      permission: sl.permission,
+      createdAt: sl.createdAt,
+    });
+  }
+  return targetArr;
+}

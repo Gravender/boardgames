@@ -7,6 +7,7 @@ import { z } from "zod";
 import { friend, friendRequest } from "@board-games/db/schema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import { collectShares } from "../utils/sharing";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type GameAgg = {
@@ -152,7 +153,7 @@ export const friendsRouter = createTRPCRouter({
     });
   }),
   getFriends: protectedUserProcedure.query(async ({ ctx }) => {
-    return await ctx.db.query.friend.findMany({
+    const returnedFriends = await ctx.db.query.friend.findMany({
       where: {
         userId: ctx.userId,
       },
@@ -160,6 +161,51 @@ export const friendsRouter = createTRPCRouter({
         friend: true,
       },
     });
+    const client = await clerkClient();
+
+    const mappedFriends: {
+      id: number;
+      name: string;
+      userName: string | null;
+      email: string | null;
+      imageUrl: string | null;
+    }[] = await Promise.all(
+      returnedFriends.map(async (returnedFriend) => {
+        const clerkUser = await client.users
+          .getUser(returnedFriend.friend.clerkUserId)
+          .catch((error) => {
+            console.error(error);
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Friend not found",
+            });
+          });
+        const getFullName = () => {
+          if (clerkUser.firstName) {
+            return clerkUser.firstName;
+          }
+          if (clerkUser.firstName && clerkUser.lastName) {
+            return `${clerkUser.firstName} ${clerkUser.lastName}`;
+          }
+          if (clerkUser.firstName) {
+            return clerkUser.firstName;
+          }
+          if (clerkUser.lastName) {
+            return clerkUser.lastName;
+          }
+          return "Unknown";
+        };
+        return {
+          id: returnedFriend.friend.id,
+          name: getFullName(),
+          userName: clerkUser.username,
+          email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
+          imageUrl: clerkUser.imageUrl,
+          createdAt: returnedFriend.createdAt,
+        };
+      }),
+    );
+    return mappedFriends;
   }),
   getFriend: protectedUserProcedure
     .input(z.object({ friendId: z.number() }))
@@ -428,217 +474,16 @@ export const friendsRouter = createTRPCRouter({
             message: "Friend not found",
           });
         });
-      // … after fetching `returnedFriend` …
-
-      // --- 4) aggregate “shared with” (you → friend) and “shared to” (friend → you) ---
-
-      type SharedEntry = {
-        id: number;
-        name: string;
-        permission: "view" | "edit";
-        createdAt: Date;
-      } & (
-        | {
-            type: "game";
-            matches: {
-              id: number;
-              permission: "view" | "edit";
-              name: string;
-              userId: number | null;
-              gameId: number;
-              scoresheetId: number;
-              createdAt: Date;
-              updatedAt: Date | null;
-              deletedAt: Date | null;
-              date: Date;
-              duration: number;
-              finished: boolean;
-              running: boolean;
-              locationId: number | null;
-              comment: string | null;
-            }[];
-            scoresheets: {
-              id: number;
-              permission: "view" | "edit";
-              name: string;
-              gameId: number;
-              userId: number | null;
-              createdAt: Date;
-              updatedAt: Date | null;
-              deletedAt: Date | null;
-              isCoop: boolean;
-              winCondition:
-                | "Manual"
-                | "Highest Score"
-                | "Lowest Score"
-                | "No Winner"
-                | "Target Score";
-              targetScore: number;
-              roundsScore: "Manual" | "Aggregate" | "Best Of";
-              type: "Template" | "Default" | "Match" | "Game";
-            }[];
-          }
-        | {
-            type: "player";
-          }
-        | {
-            type: "location";
-          }
-      );
-
-      const sharedWith: SharedEntry[] = [];
-      const sharedTo: SharedEntry[] = [];
-
-      // helper to push entries
-      function collectShares(
-        targetArr: SharedEntry[],
-        gamesOwner: {
-          id: number;
-          createdAt: Date;
-          linkedGameId: number | null;
-          permission: "view" | "edit";
-          game: {
-            name: string;
-          };
-          sharedMatches: {
-            id: number;
-            ownerId: number;
-            sharedWithId: number;
-            matchId: number;
-            sharedGameId: number;
-            sharedLocationId: number | null;
-            permission: "view" | "edit";
-            createdAt: Date;
-            updatedAt: Date | null;
-            match: {
-              id: number;
-              name: string;
-              userId: number | null;
-              gameId: number;
-              scoresheetId: number;
-              createdAt: Date;
-              updatedAt: Date | null;
-              deletedAt: Date | null;
-              date: Date;
-              duration: number;
-              finished: boolean;
-              running: boolean;
-              locationId: number | null;
-              comment: string | null;
-            };
-          }[];
-          sharedScoresheets: {
-            id: number;
-            ownerId: number;
-            sharedWithId: number;
-            scoresheetId: number;
-            sharedGameId: number;
-            permission: "view" | "edit";
-            createdAt: Date;
-            updatedAt: Date | null;
-            scoresheet: {
-              id: number;
-              name: string;
-              gameId: number;
-              userId: number | null;
-              createdAt: Date;
-              updatedAt: Date | null;
-              deletedAt: Date | null;
-              isCoop: boolean;
-              winCondition:
-                | "Manual"
-                | "Highest Score"
-                | "Lowest Score"
-                | "No Winner"
-                | "Target Score";
-              targetScore: number;
-              roundsScore: "Manual" | "Aggregate" | "Best Of";
-              type: "Template" | "Default" | "Match" | "Game";
-            };
-          }[];
-        }[],
-        playersOwner: {
-          id: number;
-          createdAt: Date;
-          permission: "view" | "edit";
-          linkedPlayerId: number | null;
-          player: {
-            name: string;
-          };
-        }[],
-        locationOwner: {
-          id: number;
-          ownerId: number;
-          sharedWithId: number;
-          locationId: number;
-          linkedLocationId: number | null;
-          isDefault: boolean;
-          permission: "view" | "edit";
-          createdAt: Date;
-          updatedAt: Date | null;
-          location: {
-            name: string;
-          };
-        }[],
-      ) {
-        // game-level shares
-        for (const sg of gamesOwner) {
-          // the game itself
-
-          const matches = sg.sharedMatches.map((sm) => ({
-            ...sm.match,
-            id: sm.id,
-            permission: sm.permission,
-          }));
-          // matches under that game
-          const scoresheets = sg.sharedScoresheets.map((ss) => ({
-            ...ss.scoresheet,
-            id: ss.id,
-            permission: ss.permission,
-          }));
-          targetArr.push({
-            id: sg.id,
-            type: "game" as const,
-            name: sg.game.name,
-            permission: sg.permission,
-            createdAt: sg.createdAt,
-            matches,
-            scoresheets,
-          });
-        }
-
-        // player-level shares
-        for (const sp of playersOwner) {
-          targetArr.push({
-            id: sp.id,
-            name: sp.player.name,
-            type: "player" as const,
-            permission: sp.permission,
-            createdAt: sp.createdAt,
-          });
-        }
-        for (const sl of locationOwner) {
-          targetArr.push({
-            id: sl.id,
-            name: sl.location.name,
-            type: "location" as const,
-            permission: sl.permission,
-            createdAt: sl.createdAt,
-          });
-        }
-      }
 
       // “You → friend”
-      collectShares(
-        sharedWith,
+      const sharedWith = collectShares(
         returnedFriend.user.sharedGamesOwner,
         returnedFriend.user.sharedPlayersOwner,
         returnedFriend.user.sharedLocationsOwner,
       );
 
       // “Friend → you”
-      collectShares(
-        sharedTo,
+      const sharedTo = collectShares(
         returnedFriend.friend.sharedGamesOwner,
         returnedFriend.friend.sharedPlayersOwner,
         returnedFriend.friend.sharedLocationsOwner,

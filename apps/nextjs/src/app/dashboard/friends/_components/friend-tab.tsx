@@ -68,8 +68,8 @@ export function FriendsList() {
 
   const filteredFriends = friends.filter(
     (friend) =>
-      friend.friend.name?.toLowerCase().includes(searchQuery.toLowerCase()) ??
-      friend.friend.email?.toLowerCase().includes(searchQuery.toLowerCase()),
+      friend.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      friend.email?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -123,9 +123,9 @@ export function FriendsList() {
               {filteredFriends.map((friend) => (
                 <FriendCard
                   key={friend.id}
-                  id={friend.friend.id}
-                  name={friend.friend.name ?? "Unknown"}
-                  email={friend.friend.email ?? undefined}
+                  id={friend.id}
+                  name={friend.name}
+                  email={friend.email ?? undefined}
                 />
               ))}
             </div>
