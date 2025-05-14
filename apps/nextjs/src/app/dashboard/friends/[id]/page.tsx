@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
-import FriendProfilePage from "./_componenets/friend-profile-page";
+import FriendProfilePage from "./_components/friend-profile-page";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -20,8 +20,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!friend) redirect("/dashboard/friends");
 
   return {
-    title: friend.friend.name ?? "Friend",
+    title: friend.name,
     icons: [{ rel: "icon", url: "/user.ico" }],
+    openGraph: {
+      images: [friend.imageUrl],
+    },
   };
 }
 

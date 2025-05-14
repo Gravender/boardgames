@@ -650,7 +650,7 @@ export const friendsRouter = createTRPCRouter({
   getFriendMetaData: protectedUserProcedure
     .input(z.object({ friendId: z.number() }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.query.friend.findFirst({
+      const returnedFriend = await ctx.db.query.friend.findFirst({
         where: {
           userId: ctx.userId,
           friendId: input.friendId,
@@ -659,5 +659,41 @@ export const friendsRouter = createTRPCRouter({
           friend: true,
         },
       });
+      if (!returnedFriend) {
+        return null;
+      }
+      const client = await clerkClient();
+
+      const clerkUser = await client.users
+        .getUser(returnedFriend.friend.clerkUserId)
+        .catch((error) => {
+          console.error(error);
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Friend not found",
+          });
+        });
+      const getFullName = () => {
+        if (clerkUser.fullName) {
+          return clerkUser.fullName;
+        }
+        if (clerkUser.firstName && clerkUser.lastName) {
+          return `${clerkUser.firstName} ${clerkUser.lastName}`;
+        }
+        if (clerkUser.firstName) {
+          return clerkUser.firstName;
+        }
+        if (clerkUser.lastName) {
+          return clerkUser.lastName;
+        }
+        return "Unknown";
+      };
+      return {
+        id: returnedFriend.friend.id,
+        name: getFullName(),
+        userName: clerkUser.username,
+        email: clerkUser.emailAddresses[0]?.emailAddress,
+        imageUrl: clerkUser.imageUrl,
+      };
     }),
 });
