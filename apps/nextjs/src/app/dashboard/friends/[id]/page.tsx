@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: friend.name,
     icons: [{ rel: "icon", url: "/user.ico" }],
     openGraph: {
-      images: [friend.imageUrl],
+      images: friend.imageUrl ? [friend.imageUrl] : [],
     },
   };
 }

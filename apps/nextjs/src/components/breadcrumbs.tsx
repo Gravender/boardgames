@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 
-import type { RouterOutputs } from "@board-games/api";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -23,7 +22,7 @@ export function BreadCrumbs() {
 
   const segments = paths.split("/").slice(2);
 
-  const BreadCrumbsQuery = useQuery(
+  const { data } = useQuery(
     trpc.dashboard.getBreadCrumbs.queryOptions({
       rootHref: paths
         .split("/")
@@ -33,13 +32,11 @@ export function BreadCrumbs() {
       segments: segments,
     }),
   );
-  const data = BreadCrumbsQuery.data as
-    | RouterOutputs["dashboard"]["getBreadCrumbs"]
-    | undefined;
 
   return (
     <RenderBreadCrumbs
       pathItems={
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         data ??
         paths
           .split("/")

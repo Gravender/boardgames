@@ -24,9 +24,9 @@ export default function FriendProfilePage({ friendId }: { friendId: number }) {
       <div className="mb-2">
         <div className="flex">
           <div>
-            <h1 className="text-3xl font-bold">{`${friend.clerkUser.firstName} ${friend.clerkUser.lastName}`}</h1>
+            <h1 className="text-3xl font-bold">{`${friend.clerkUser.name}`}</h1>
             <p className="text-muted-foreground">
-              @{friend.clerkUser.username}
+              @{friend.clerkUser.username ?? "unknown"}
             </p>
           </div>
         </div>
@@ -37,8 +37,7 @@ export default function FriendProfilePage({ friendId }: { friendId: number }) {
       <Tabs defaultValue="shared-by-friend">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="shared-by-friend">
-            Shared by{" "}
-            {`${friend.clerkUser.firstName} ${friend.clerkUser.lastName}`}
+            Shared by {`${friend.clerkUser.name}`}
             {friend.sharedTo.length > 0 && (
               <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
                 {friend.sharedTo.length}
@@ -46,8 +45,7 @@ export default function FriendProfilePage({ friendId }: { friendId: number }) {
             )}
           </TabsTrigger>
           <TabsTrigger value="shared-with-friend">
-            Shared with{" "}
-            {`${friend.clerkUser.firstName} ${friend.clerkUser.lastName}`}
+            Shared with {`${friend.clerkUser.name}`}
             {friend.sharedWith.length > 0 && (
               <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
                 {friend.sharedWith.length}
@@ -63,8 +61,8 @@ export default function FriendProfilePage({ friendId }: { friendId: number }) {
                 <GameController className="h-10 w-10 text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-medium">No shared items</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {`${friend.clerkUser.firstName} ${friend.clerkUser.lastName}`}{" "}
-                  hasn't shared any games or players with you yet
+                  {`${friend.clerkUser.name}`} hasn't shared any games or
+                  players with you yet
                 </p>
               </CardContent>
             </Card>
@@ -91,8 +89,7 @@ export default function FriendProfilePage({ friendId }: { friendId: number }) {
                 <h3 className="mt-4 text-lg font-medium">No shared items</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   You haven't shared any games or players with{" "}
-                  {`${friend.clerkUser.firstName} ${friend.clerkUser.lastName}`}{" "}
-                  yet
+                  {`${friend.clerkUser.name}`} yet
                 </p>
               </CardContent>
             </Card>

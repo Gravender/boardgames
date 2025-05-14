@@ -140,48 +140,49 @@ export const friendsRouter = createTRPCRouter({
     });
     const client = await clerkClient();
 
+    const { data: clerkUsers } = await client.users.getUserList({
+      userId: returnedFriends.map((f) => f.friend.clerkUserId),
+    });
     const mappedFriends: {
       id: number;
       name: string;
       userName: string | null;
       email: string | null;
       imageUrl: string | null;
-    }[] = await Promise.all(
-      returnedFriends.map(async (returnedFriend) => {
-        const clerkUser = await client.users
-          .getUser(returnedFriend.friend.clerkUserId)
-          .catch((error) => {
-            console.error(error);
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Friend not found",
-            });
-          });
-        const getFullName = () => {
-          if (clerkUser.fullName) {
-            return clerkUser.fullName;
-          }
-          if (clerkUser.firstName && clerkUser.lastName) {
-            return `${clerkUser.firstName} ${clerkUser.lastName}`;
-          }
-          if (clerkUser.firstName) {
-            return clerkUser.firstName;
-          }
-          if (clerkUser.lastName) {
-            return clerkUser.lastName;
-          }
-          return "Unknown";
-        };
-        return {
-          id: returnedFriend.friend.id,
-          name: getFullName(),
-          userName: clerkUser.username,
-          email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
-          imageUrl: clerkUser.imageUrl,
-          createdAt: returnedFriend.createdAt,
-        };
-      }),
-    );
+      createdAt: Date;
+    }[] = returnedFriends.map((returnedFriend) => {
+      const clerkUser = clerkUsers.find(
+        (u) => u.id === returnedFriend.friend.clerkUserId,
+      );
+      if (!clerkUser)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Friend not found",
+        });
+      const getFullName = () => {
+        if (clerkUser.fullName) {
+          return clerkUser.fullName;
+        }
+        if (clerkUser.firstName && clerkUser.lastName) {
+          return `${clerkUser.firstName} ${clerkUser.lastName}`;
+        }
+        if (clerkUser.firstName) {
+          return clerkUser.firstName;
+        }
+        if (clerkUser.lastName) {
+          return clerkUser.lastName;
+        }
+        return "Unknown";
+      };
+      return {
+        id: returnedFriend.friend.id,
+        name: getFullName(),
+        userName: clerkUser.username,
+        email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
+        imageUrl: clerkUser.imageUrl,
+        createdAt: returnedFriend.createdAt,
+      };
+    });
     return mappedFriends;
   }),
   getFriend: protectedUserProcedure
@@ -639,12 +640,26 @@ export const friendsRouter = createTRPCRouter({
       );
 
       const rawFP = returnedFriend.friendPlayer;
+      const getFullName = () => {
+        if (clerkUser.fullName) {
+          return clerkUser.fullName;
+        }
+        if (clerkUser.firstName && clerkUser.lastName) {
+          return `${clerkUser.firstName} ${clerkUser.lastName}`;
+        }
+        if (clerkUser.firstName) {
+          return clerkUser.firstName;
+        }
+        if (clerkUser.lastName) {
+          return clerkUser.lastName;
+        }
+        return "Unknown";
+      };
       if (!rawFP)
         return {
           linkedPlayerFound: false as const,
           clerkUser: {
-            firstName: clerkUser.firstName,
-            lastName: clerkUser.lastName,
+            name: getFullName(),
             username: clerkUser.username,
             email: clerkUser.emailAddresses[0]?.emailAddress,
             imageUrl: clerkUser.imageUrl,
@@ -726,8 +741,7 @@ export const friendsRouter = createTRPCRouter({
       return {
         linkedPlayerFound: true as const,
         clerkUser: {
-          firstName: clerkUser.firstName,
-          lastName: clerkUser.lastName,
+          name: getFullName(),
           username: clerkUser.username,
           email: clerkUser.emailAddresses[0]?.emailAddress,
           imageUrl: clerkUser.imageUrl,
