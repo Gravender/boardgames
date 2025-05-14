@@ -1,3 +1,5 @@
+import { clerkClient } from "@clerk/nextjs/server";
+import { TRPCError } from "@trpc/server";
 import { subMonths, subYears } from "date-fns";
 import { and, asc, count, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -19,62 +21,247 @@ export const dashboardRouter = {
   getBreadCrumbs: protectedUserProcedure
     .input(
       z.object({
-        type: z.enum(["games", "players", "match", "groups"]),
-        path: z.number(),
+        rootHref: z.string(),
+        segments: z.array(z.string()),
       }),
     )
     .query(async ({ ctx, input }) => {
-      if (input.type === "games") {
-        const result = await ctx.db.query.game.findFirst({
-          where: { id: input.path },
-          columns: {
-            id: true,
-            name: true,
-          },
-        });
-        if (result)
-          return {
-            name: result.name,
-          };
+      const crumbs: { name: string; path: string }[] = [];
+      let href = input.rootHref;
+
+      // static labels for non-ID, non-shared segments
+      const STATIC: Record<string, string> = {
+        games: "Games",
+        players: "Players",
+        groups: "Groups",
+        locations: "Locations",
+        "share-requests": "Share Requests",
+        calendar: "Calendar",
+        friends: "Friends",
+        settings: "Settings",
+        profile: "Profile",
+        stats: "Stats",
+        share: "Share",
+        summary: "Summary",
+        add: "Add",
+        edit: "Edit",
+      };
+
+      for (let i = 0; i < input.segments.length; i++) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const seg = input.segments[i]!;
+        href += `/${seg}`;
+
+        if (
+          i >= 2 &&
+          /^\d+$/.test(seg) &&
+          /^\d+$/.test(input.segments[i - 1] ?? "") &&
+          input.segments[i - 2] === "shared"
+        ) {
+          const id = Number(seg);
+          const shared = await ctx.db.query.sharedMatch.findFirst({
+            where: { id, sharedWithId: ctx.userId },
+            with: { match: { columns: { name: true } } },
+          });
+          if (!shared) continue;
+          crumbs.push({ name: shared.match.name, path: href });
+          continue;
+        }
+
+        if (
+          i >= 2 &&
+          /^\d+$/.test(seg) &&
+          /^\d+$/.test(input.segments[i - 1] ?? "") &&
+          input.segments[i - 2] === "games"
+        ) {
+          const id = Number(seg);
+          const match = await ctx.db.query.match.findFirst({
+            where: { id, userId: ctx.userId },
+            with: { game: { columns: { name: true } } },
+          });
+          if (!match) continue;
+          crumbs.push({ name: match.name, path: href });
+          continue;
+        }
+        if (/^\d+$/.test(seg)) {
+          const id = Number(seg);
+          const parent = input.segments[i - 1];
+          const grand = input.segments[i - 2];
+
+          // A) “shared” → resolve from sharedXxx tables
+          if (parent === "shared" && grand) {
+            switch (grand) {
+              case "games": {
+                const shared = await ctx.db.query.sharedGame.findFirst({
+                  where: { id, sharedWithId: ctx.userId },
+                  with: {
+                    game: { columns: { name: true } },
+                    linkedGame: { columns: { name: true } },
+                  },
+                });
+                if (!shared) throw new TRPCError({ code: "NOT_FOUND" });
+                const getName = () => {
+                  if (shared.linkedGame) return shared.linkedGame.name;
+                  return shared.game.name;
+                };
+                crumbs.push({ name: getName(), path: href });
+                continue;
+              }
+              case "players": {
+                const shared = await ctx.db.query.sharedPlayer.findFirst({
+                  where: { id, sharedWithId: ctx.userId },
+                  with: {
+                    player: { columns: { name: true } },
+                    linkedPlayer: { columns: { name: true } },
+                  },
+                });
+                if (!shared) throw new TRPCError({ code: "NOT_FOUND" });
+                const getName = () => {
+                  if (shared.linkedPlayer) return shared.linkedPlayer.name;
+                  return shared.player.name;
+                };
+                crumbs.push({ name: getName(), path: href });
+                continue;
+              }
+              case "locations": {
+                const shared = await ctx.db.query.sharedLocation.findFirst({
+                  where: { id, sharedWithId: ctx.userId },
+                  with: {
+                    location: { columns: { name: true } },
+                    linkedLocation: { columns: { name: true } },
+                  },
+                });
+                if (!shared) throw new TRPCError({ code: "NOT_FOUND" });
+                const getName = () => {
+                  if (shared.linkedLocation) return shared.linkedLocation.name;
+                  return shared.location.name;
+                };
+                crumbs.push({ name: getName(), path: href });
+                continue;
+              }
+              case "share-requests": {
+                crumbs.push({ name: `Shared Request #${id}`, path: href });
+                continue;
+              }
+            }
+            continue;
+          }
+
+          // B) regular resource IDs
+          switch (parent) {
+            case "games": {
+              const row = await ctx.db.query.game.findFirst({
+                where: { id, userId: ctx.userId },
+                columns: { name: true },
+              });
+              if (!row) continue;
+              crumbs.push({ name: row.name, path: href });
+              break;
+            }
+            case "players": {
+              const row = await ctx.db.query.player.findFirst({
+                where: { id, createdBy: ctx.userId },
+                columns: { name: true },
+              });
+              if (!row) continue;
+              crumbs.push({ name: row.name, path: href });
+              break;
+            }
+            case "groups": {
+              const row = await ctx.db.query.group.findFirst({
+                where: { id, createdBy: ctx.userId },
+                columns: { name: true },
+              });
+              if (!row) continue;
+              crumbs.push({ name: row.name, path: href });
+              break;
+            }
+            case "locations": {
+              const row = await ctx.db.query.location.findFirst({
+                where: { id, createdBy: ctx.userId },
+                columns: { name: true },
+              });
+              if (!row) continue;
+              crumbs.push({ name: row.name, path: href });
+              break;
+            }
+            case "share-requests": {
+              crumbs.push({ name: `Request #${id}`, path: href });
+              break;
+            }
+            case "calendar": {
+              const dt = new Date(seg);
+              if (isNaN(dt.getTime())) {
+                throw new TRPCError({
+                  code: "BAD_REQUEST",
+                  message: "Invalid date",
+                });
+              }
+              crumbs.push({
+                name: "Date",
+                path: href,
+              });
+              break;
+            }
+            case "friends": {
+              const returnedFriend = await ctx.db.query.friend.findFirst({
+                where: {
+                  userId: ctx.userId,
+                  friendId: id,
+                },
+                with: {
+                  friend: true,
+                },
+              });
+              if (!returnedFriend) {
+                return null;
+              }
+              const client = await clerkClient();
+
+              const clerkUser = await client.users
+                .getUser(returnedFriend.friend.clerkUserId)
+                .catch((error) => {
+                  console.error(error);
+                });
+              if (!clerkUser) continue;
+              const getFullName = () => {
+                if (clerkUser.fullName) {
+                  return clerkUser.fullName;
+                }
+                if (clerkUser.firstName && clerkUser.lastName) {
+                  return `${clerkUser.firstName} ${clerkUser.lastName}`;
+                }
+                if (clerkUser.firstName) {
+                  return clerkUser.firstName;
+                }
+                if (clerkUser.lastName) {
+                  return clerkUser.lastName;
+                }
+                return "Unknown";
+              };
+              crumbs.push({ name: getFullName(), path: href });
+              break;
+            }
+            default: {
+              // catch-all
+              crumbs.push({ name: `#${id}`, path: href });
+            }
+          }
+          continue;
+        }
+
+        if (seg === "shared" && i > 0) {
+          continue;
+        }
+
+        //––– 3) Any other static segment –––
+        const label =
+          STATIC[seg] ??
+          seg.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        crumbs.push({ name: label, path: href });
       }
-      if (input.type === "players") {
-        const result = await ctx.db.query.player.findFirst({
-          where: { id: input.path },
-          columns: {
-            id: true,
-            name: true,
-          },
-        });
-        if (result)
-          return {
-            name: result.name,
-          };
-      }
-      if (input.type === "match") {
-        const result = await ctx.db.query.match.findFirst({
-          where: { id: input.path },
-          with: {
-            game: true,
-          },
-        });
-        if (result)
-          return {
-            name: result.name,
-            game: {
-              name: result.game.name,
-            },
-          };
-      }
-      if (input.type === "groups") {
-        const result = await ctx.db.query.group.findFirst({
-          where: { id: input.path },
-        });
-        if (result)
-          return {
-            name: result.name,
-          };
-      }
-      return null;
+
+      return crumbs;
     }),
   getGames: protectedUserProcedure.query(async ({ ctx }) => {
     const games = await ctx.db
