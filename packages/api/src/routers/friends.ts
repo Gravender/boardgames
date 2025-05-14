@@ -7,7 +7,7 @@ import { z } from "zod";
 import { friend, friendRequest } from "@board-games/db/schema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
-import { collectShares } from "../utils/sharing";
+import { collectShares, mapSharedMatchPlayers } from "../utils/sharing";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type GameAgg = {
@@ -181,11 +181,11 @@ export const friendsRouter = createTRPCRouter({
             });
           });
         const getFullName = () => {
+          if (clerkUser.fullName) {
+            return clerkUser.fullName;
+          }
           if (clerkUser.firstName && clerkUser.lastName) {
             return `${clerkUser.firstName} ${clerkUser.lastName}`;
-          }
-          if (clerkUser.firstName) {
-            return clerkUser.firstName;
           }
           if (clerkUser.firstName) {
             return clerkUser.firstName;
@@ -542,30 +542,10 @@ export const friendsRouter = createTRPCRouter({
         lp.sharedMatchPlayers.forEach((smp) => {
           const sm = smp.sharedMatch;
           const gameEntity = sm.sharedGame.linkedGame ?? sm.sharedGame.game;
-          const players = sm.sharedMatchPlayers
-            .filter((p) => p.sharedPlayer?.linkedPlayerId === rawFP.id)
-            .map((p) => {
-              const linkedPlayer = p.sharedPlayer?.linkedPlayer;
-              if (linkedPlayer) {
-                return {
-                  playerId: linkedPlayer.id,
-                  name: linkedPlayer.name,
-                  score: p.matchPlayer.score,
-                  isWinner: p.matchPlayer.winner ?? false,
-                  placement: p.matchPlayer.placement,
-                };
-              } else if (p.sharedPlayer) {
-                return {
-                  playerId: p.sharedPlayer.playerId,
-                  name: p.sharedPlayer.player.name,
-                  score: p.matchPlayer.score,
-                  isWinner: p.matchPlayer.winner ?? false,
-                  placement: p.matchPlayer.placement,
-                };
-              }
-              return false;
-            })
-            .filter((p) => p !== false);
+          const players = mapSharedMatchPlayers(
+            sm.sharedMatchPlayers,
+            rawFP.id,
+          );
           const locationName = sm.sharedLocation?.linkedLocation
             ? sm.sharedLocation.linkedLocation.name
             : sm.sharedLocation?.location.name;

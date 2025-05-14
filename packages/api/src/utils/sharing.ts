@@ -307,3 +307,92 @@ export function collectShares(
   }
   return targetArr;
 }
+
+export function mapSharedMatchPlayers(
+  sharedMatchPlayers: {
+    id: number;
+    ownerId: number;
+    sharedWithId: number;
+    matchPlayerId: number;
+    sharedMatchId: number;
+    sharedPlayerId: number | null;
+    permission: "view" | "edit";
+    createdAt: Date;
+    updatedAt: Date | null;
+    sharedPlayer: {
+      id: number;
+      ownerId: number;
+      sharedWithId: number;
+      playerId: number;
+      linkedPlayerId: number | null;
+      permission: "view" | "edit";
+      createdAt: Date;
+      updatedAt: Date | null;
+      player: {
+        id: number;
+        createdBy: number;
+        isUser: boolean;
+        friendId: number | null;
+        name: string;
+        imageId: number | null;
+        createdAt: Date;
+        updatedAt: Date | null;
+        deletedAt: Date | null;
+      };
+      linkedPlayer:
+        | {
+            id: number;
+            createdBy: number;
+            isUser: boolean;
+            friendId: number | null;
+            name: string;
+            imageId: number | null;
+            createdAt: Date;
+            updatedAt: Date | null;
+            deletedAt: Date | null;
+          }
+        | null
+        | undefined;
+    } | null;
+    matchPlayer: {
+      id: number;
+      matchId: number;
+      playerId: number;
+      teamId: number | null;
+      winner: boolean | null;
+      score: number | null;
+      placement: number | null;
+      order: number | null;
+      details: string | null;
+      createdAt: Date;
+      updatedAt: Date | null;
+      deletedAt: Date | null;
+    };
+  }[],
+  friendPlayerId: number,
+) {
+  return sharedMatchPlayers
+    .filter((p) => p.sharedPlayer?.linkedPlayerId === friendPlayerId)
+    .map((p) => {
+      const linkedPlayer = p.sharedPlayer?.linkedPlayer;
+      if (linkedPlayer) {
+        return {
+          playerId: linkedPlayer.id,
+          name: linkedPlayer.name,
+          score: p.matchPlayer.score,
+          isWinner: p.matchPlayer.winner ?? false,
+          placement: p.matchPlayer.placement,
+        };
+      } else if (p.sharedPlayer) {
+        return {
+          playerId: p.sharedPlayer.playerId,
+          name: p.sharedPlayer.player.name,
+          score: p.matchPlayer.score,
+          isWinner: p.matchPlayer.winner ?? false,
+          placement: p.matchPlayer.placement,
+        };
+      }
+      return null;
+    })
+    .filter((p) => p !== null);
+}

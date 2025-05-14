@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   useMutation,
   useQueryClient,
@@ -66,11 +66,17 @@ export function FriendsList() {
     }),
   );
 
-  const filteredFriends = friends.filter(
-    (friend) =>
-      friend.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      friend.email?.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredFriends = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return friends.filter((friend) => {
+      const name = friend.name;
+      const email = friend.email ?? "";
+      return (
+        name.toLowerCase().includes(query) ||
+        email.toLowerCase().includes(query)
+      );
+    });
+  }, [friends, searchQuery]);
 
   return (
     <Tabs defaultValue="friends">
