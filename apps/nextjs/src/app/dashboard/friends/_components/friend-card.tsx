@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MoreVertical } from "lucide-react";
 
+import type { RouterOutputs } from "@board-games/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,13 +16,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@board-games/ui/card";
+import { Card, CardContent } from "@board-games/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,12 +31,10 @@ import { useToast } from "@board-games/ui/hooks/use-toast";
 import { useTRPC } from "~/trpc/react";
 
 interface FriendCardProps {
-  id: number;
-  name: string;
-  email?: string;
+  friend: RouterOutputs["friend"]["getFriends"][number];
 }
 
-export function FriendCard({ id, name, email }: FriendCardProps) {
+export function FriendCard({ friend }: FriendCardProps) {
   const [unFriendDialogOpen, setUnfriendDialogOpen] = useState(false);
 
   const trpc = useTRPC();
@@ -56,6 +51,9 @@ export function FriendCard({ id, name, email }: FriendCardProps) {
         await queryClient.invalidateQueries(
           trpc.friend.getFriends.queryOptions(),
         );
+        await queryClient.invalidateQueries(
+          trpc.friend.getFriend.queryOptions({ friendId: friend.id }),
+        );
       },
       onError: (error) => {
         toast({
@@ -69,38 +67,60 @@ export function FriendCard({ id, name, email }: FriendCardProps) {
 
   const handleUnFriend = () => {
     unFriendMutation.mutate({
-      friendId: id,
+      friendId: friend.id,
     });
   };
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>{name}</CardTitle>
-          <CardDescription>{email}</CardDescription>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <Link
+            prefetch={true}
+            href={`/dashboard/friends/${friend.id}`}
+            className="flex items-center gap-4"
+          >
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={friend.imageUrl ?? ""} alt={friend.name} />
+              <AvatarFallback>
+                {friend.name.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+
+            <div className="flex-grow">
+              <p className="font-medium">{friend.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {friend.userName ? `@${friend.userName}` : friend.email}
+              </p>
+            </div>
+          </Link>
+
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                  <span className="sr-only">More options</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href={`/dashboard/friends/${friend.id}`}>
+                    View Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-500 focus:bg-red-50 focus:text-red-500"
+                  onClick={() => setUnfriendDialogOpen(true)}
+                >
+                  Unfriend
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">More options</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link href={`/dashboard/friends/${id}`}>View Profile</Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-red-500 focus:bg-red-50 focus:text-red-500"
-              onClick={() => setUnfriendDialogOpen(true)}
-            >
-              Unfriend
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </CardHeader>
+      </CardContent>
       <AlertDialog
         open={unFriendDialogOpen}
         onOpenChange={setUnfriendDialogOpen}
@@ -109,8 +129,8 @@ export function FriendCard({ id, name, email }: FriendCardProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove {name} from your friends list. They will need to
-              send you a new friend request to connect again.
+              This will remove {friend.name} from your friends list. They will
+              need to send you a new friend request to connect again.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -107,7 +107,7 @@ export const friendsRouter = createTRPCRouter({
     }),
 
   getFriendRequests: protectedUserProcedure.query(async ({ ctx }) => {
-    return await ctx.db.query.friendRequest.findMany({
+    const requests = await ctx.db.query.friendRequest.findMany({
       where: {
         requesteeId: ctx.userId,
         status: "pending",
@@ -116,10 +116,58 @@ export const friendsRouter = createTRPCRouter({
         user: true,
       },
     });
+    const client = await clerkClient();
+
+    const { data: clerkUsers } = await client.users.getUserList({
+      userId: requests.map((f) => f.user.clerkUserId),
+    });
+    const mappedRequests: {
+      id: number;
+      status: "pending" | "accepted" | "rejected";
+      name: string;
+      userName: string | null;
+      email: string | null;
+      imageUrl: string | null;
+      createdAt: Date;
+    }[] = requests.map((returnedRequest) => {
+      const clerkUser = clerkUsers.find(
+        (u) => u.id === returnedRequest.user.clerkUserId,
+      );
+      if (!clerkUser)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Friend not found",
+        });
+      const getFullName = () => {
+        if (clerkUser.fullName) {
+          return clerkUser.fullName;
+        }
+        if (clerkUser.firstName && clerkUser.lastName) {
+          return `${clerkUser.firstName} ${clerkUser.lastName}`;
+        }
+        if (clerkUser.firstName) {
+          return clerkUser.firstName;
+        }
+        if (clerkUser.lastName) {
+          return clerkUser.lastName;
+        }
+        return "Unknown";
+      };
+      return {
+        id: returnedRequest.id,
+        status: returnedRequest.status,
+        name: getFullName(),
+        userName: clerkUser.username,
+        email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
+        imageUrl: clerkUser.imageUrl,
+        createdAt: returnedRequest.createdAt,
+      };
+    });
+    return mappedRequests;
   }),
 
   getSentFriendRequests: protectedUserProcedure.query(async ({ ctx }) => {
-    return await ctx.db.query.friendRequest.findMany({
+    const requests = await ctx.db.query.friendRequest.findMany({
       where: {
         userId: ctx.userId,
         status: "pending",
@@ -128,6 +176,54 @@ export const friendsRouter = createTRPCRouter({
         requestee: true,
       },
     });
+    const client = await clerkClient();
+
+    const { data: clerkUsers } = await client.users.getUserList({
+      userId: requests.map((f) => f.requestee.clerkUserId),
+    });
+    const mappedRequests: {
+      id: number;
+      status: "pending" | "accepted" | "rejected";
+      name: string;
+      userName: string | null;
+      email: string | null;
+      imageUrl: string | null;
+      createdAt: Date;
+    }[] = requests.map((returnedRequest) => {
+      const clerkUser = clerkUsers.find(
+        (u) => u.id === returnedRequest.requestee.clerkUserId,
+      );
+      if (!clerkUser)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Friend not found",
+        });
+      const getFullName = () => {
+        if (clerkUser.fullName) {
+          return clerkUser.fullName;
+        }
+        if (clerkUser.firstName && clerkUser.lastName) {
+          return `${clerkUser.firstName} ${clerkUser.lastName}`;
+        }
+        if (clerkUser.firstName) {
+          return clerkUser.firstName;
+        }
+        if (clerkUser.lastName) {
+          return clerkUser.lastName;
+        }
+        return "Unknown";
+      };
+      return {
+        id: returnedRequest.id,
+        status: returnedRequest.status,
+        name: getFullName(),
+        userName: clerkUser.username,
+        email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
+        imageUrl: clerkUser.imageUrl,
+        createdAt: returnedRequest.createdAt,
+      };
+    });
+    return mappedRequests;
   }),
   getFriends: protectedUserProcedure.query(async ({ ctx }) => {
     const returnedFriends = await ctx.db.query.friend.findMany({
@@ -676,7 +772,6 @@ export const friendsRouter = createTRPCRouter({
       const allMatches = mapMatches(
         rawFP.matchPlayers,
         rawFP.sharedLinkedPlayers,
-        rawFP.id,
       );
       const gameMap = new Map<number, GameAgg>();
       allMatches.forEach((m) => {

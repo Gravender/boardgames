@@ -177,7 +177,6 @@ export function mapMatches(
       };
     }[];
   }[],
-  friendPlayerId: number,
 ) {
   const allMatches: {
     type: "Original" | "Shared";
@@ -235,10 +234,7 @@ export function mapMatches(
     lp.sharedMatchPlayers.forEach((smp) => {
       const sm = smp.sharedMatch;
       const gameEntity = sm.sharedGame.linkedGame ?? sm.sharedGame.game;
-      const players = mapSharedMatchPlayers(
-        sm.sharedMatchPlayers,
-        friendPlayerId,
-      );
+      const players = mapSharedMatchPlayers(sm.sharedMatchPlayers);
       const locationName = sm.sharedLocation?.linkedLocation
         ? sm.sharedLocation.linkedLocation.name
         : sm.sharedLocation?.location.name;
@@ -302,10 +298,8 @@ export function mapSharedMatchPlayers(
       placement: number | null;
     };
   }[],
-  friendPlayerId: number,
 ) {
   return sharedMatchPlayers
-    .filter((p) => p.sharedPlayer?.linkedPlayerId === friendPlayerId)
     .map((p) => {
       const linkedPlayer = p.sharedPlayer?.linkedPlayer;
       if (linkedPlayer) {
