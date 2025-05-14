@@ -1,13 +1,13 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
-import { compareAsc } from "date-fns";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { friend, friendRequest } from "@board-games/db/schema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
-import { collectShares, mapSharedMatchPlayers } from "../utils/sharing";
+import { mapMatches } from "../utils/game";
+import { collectShares } from "../utils/sharing";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type GameAgg = {
@@ -19,30 +19,7 @@ type GameAgg = {
   wins: number;
   winRate: number;
 };
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
-type MatchRecord = {
-  type: "Original" | "Shared";
-  id: number;
-  name: string;
-  date: Date;
-  duration: number;
-  finished: boolean;
-  gameId: number;
-  gameName: string;
-  locationName?: string;
-  players: {
-    playerId: number;
-    name: string;
-    score: number | null;
-    isWinner: boolean;
-    placement: number | null;
-  }[];
-  outcome: {
-    score: number | null;
-    isWinner: boolean;
-    placement: number | null;
-  };
-};
+
 export const friendsRouter = createTRPCRouter({
   sendFriendRequest: protectedUserProcedure
     .input(z.object({ requesteeId: z.number() }))
@@ -253,7 +230,16 @@ export const friendsRouter = createTRPCRouter({
                 with: {
                   sharedMatches: {
                     with: {
-                      match: true,
+                      match: {
+                        columns: {
+                          id: true,
+                          comment: true,
+                          name: true,
+                          date: true,
+                          finished: true,
+                          duration: true,
+                        },
+                      },
                     },
                   },
                   sharedScoresheets: {
@@ -330,7 +316,16 @@ export const friendsRouter = createTRPCRouter({
                 with: {
                   sharedMatches: {
                     with: {
-                      match: true,
+                      match: {
+                        columns: {
+                          id: true,
+                          comment: true,
+                          name: true,
+                          date: true,
+                          finished: true,
+                          duration: true,
+                        },
+                      },
                     },
                   },
                   sharedScoresheets: {
@@ -382,19 +377,76 @@ export const friendsRouter = createTRPCRouter({
             with: {
               image: true,
               matchPlayers: {
+                columns: {
+                  id: true,
+                  matchId: true,
+                  playerId: true,
+                  teamId: true,
+                  winner: true,
+                  score: true,
+                  placement: true,
+                  order: true,
+                },
                 with: {
                   match: {
+                    columns: {
+                      id: true,
+                      gameId: true,
+                      comment: true,
+                      name: true,
+                      date: true,
+                      finished: true,
+                      duration: true,
+                    },
                     with: {
                       game: {
+                        columns: {
+                          id: true,
+                          name: true,
+                          playersMax: true,
+                          playersMin: true,
+                          playtimeMax: true,
+                          playtimeMin: true,
+                          yearPublished: true,
+                        },
                         with: {
-                          image: true,
+                          image: {
+                            columns: {
+                              url: true,
+                            },
+                          },
                         },
                       },
-                      location: true,
-                      teams: true,
+                      location: {
+                        columns: {
+                          id: true,
+                          name: true,
+                        },
+                      },
+                      teams: {
+                        columns: {
+                          id: true,
+                          name: true,
+                        },
+                      },
                       matchPlayers: {
+                        columns: {
+                          id: true,
+                          matchId: true,
+                          playerId: true,
+                          teamId: true,
+                          winner: true,
+                          score: true,
+                          placement: true,
+                          order: true,
+                        },
                         with: {
-                          player: true,
+                          player: {
+                            columns: {
+                              id: true,
+                              name: true,
+                            },
+                          },
                         },
                       },
                     },
@@ -405,15 +457,40 @@ export const friendsRouter = createTRPCRouter({
                 where: {
                   sharedWithId: ctx.userId,
                 },
+                columns: {
+                  id: true,
+                  permission: true,
+                },
                 with: {
                   sharedMatchPlayers: {
                     where: {
                       sharedWithId: ctx.userId,
                     },
+                    columns: {
+                      id: true,
+                      permission: true,
+                      sharedMatchId: true,
+                      sharedPlayerId: true,
+                      matchPlayerId: true,
+                    },
                     with: {
                       sharedMatch: {
+                        columns: {
+                          id: true,
+                          permission: true,
+                          sharedGameId: true,
+                          sharedLocationId: true,
+                        },
                         with: {
                           match: {
+                            columns: {
+                              id: true,
+                              comment: true,
+                              name: true,
+                              date: true,
+                              finished: true,
+                              duration: true,
+                            },
                             with: {
                               teams: true,
                             },
@@ -421,37 +498,109 @@ export const friendsRouter = createTRPCRouter({
                           sharedGame: {
                             with: {
                               game: {
+                                columns: {
+                                  id: true,
+                                  name: true,
+                                  playersMax: true,
+                                  playersMin: true,
+                                  playtimeMax: true,
+                                  playtimeMin: true,
+                                  yearPublished: true,
+                                },
                                 with: {
-                                  image: true,
+                                  image: {
+                                    columns: {
+                                      url: true,
+                                    },
+                                  },
                                 },
                               },
                               linkedGame: {
+                                columns: {
+                                  id: true,
+                                  name: true,
+                                  playersMax: true,
+                                  playersMin: true,
+                                  playtimeMax: true,
+                                  playtimeMin: true,
+                                  yearPublished: true,
+                                },
                                 with: {
-                                  image: true,
+                                  image: {
+                                    columns: {
+                                      url: true,
+                                    },
+                                  },
                                 },
                               },
                             },
                           },
                           sharedLocation: {
+                            columns: {
+                              id: true,
+                              permission: true,
+                            },
                             with: {
-                              location: true,
-                              linkedLocation: true,
+                              location: {
+                                columns: {
+                                  id: true,
+                                  name: true,
+                                },
+                              },
+                              linkedLocation: {
+                                columns: {
+                                  id: true,
+                                  name: true,
+                                },
+                              },
                             },
                           },
                           sharedMatchPlayers: {
                             with: {
-                              matchPlayer: true,
+                              matchPlayer: {
+                                columns: {
+                                  id: true,
+                                  matchId: true,
+                                  playerId: true,
+                                  teamId: true,
+                                  winner: true,
+                                  score: true,
+                                  placement: true,
+                                  order: true,
+                                },
+                              },
                               sharedPlayer: {
                                 with: {
-                                  player: true,
-                                  linkedPlayer: true,
+                                  player: {
+                                    columns: {
+                                      id: true,
+                                      name: true,
+                                    },
+                                  },
+                                  linkedPlayer: {
+                                    columns: {
+                                      id: true,
+                                      name: true,
+                                    },
+                                  },
                                 },
                               },
                             },
                           },
                         },
                       },
-                      matchPlayer: true,
+                      matchPlayer: {
+                        columns: {
+                          id: true,
+                          matchId: true,
+                          playerId: true,
+                          teamId: true,
+                          winner: true,
+                          score: true,
+                          placement: true,
+                          order: true,
+                        },
+                      },
                     },
                   },
                 },
@@ -506,72 +655,14 @@ export const friendsRouter = createTRPCRouter({
           linkedPlayer: null,
         };
 
-      const allMatches: MatchRecord[] = [];
-
-      //— Original matches —
-      rawFP.matchPlayers.forEach((mp) => {
-        const m = mp.match;
-        const others = m.matchPlayers.map((p) => ({
-          playerId: p.playerId,
-          name: p.player.name,
-          score: p.score,
-          isWinner: p.winner ?? false,
-          placement: p.placement,
-        }));
-        allMatches.push({
-          type: "Original",
-          id: m.id,
-          name: m.name,
-          date: m.date,
-          duration: m.duration,
-          finished: m.finished,
-          gameId: m.gameId,
-          gameName: m.game.name,
-          locationName: m.location?.name ?? undefined,
-          players: others,
-          outcome: {
-            score: mp.score,
-            isWinner: mp.winner ?? false,
-            placement: mp.placement,
-          },
-        });
-      });
-
       //— Shared matches —
-      rawFP.sharedLinkedPlayers.forEach((lp) => {
-        lp.sharedMatchPlayers.forEach((smp) => {
-          const sm = smp.sharedMatch;
-          const gameEntity = sm.sharedGame.linkedGame ?? sm.sharedGame.game;
-          const players = mapSharedMatchPlayers(
-            sm.sharedMatchPlayers,
-            rawFP.id,
-          );
-          const locationName = sm.sharedLocation?.linkedLocation
-            ? sm.sharedLocation.linkedLocation.name
-            : sm.sharedLocation?.location.name;
-          allMatches.push({
-            type: "Shared",
-            id: sm.match.id,
-            name: sm.match.name,
-            date: sm.match.date,
-            duration: sm.match.duration,
-            finished: sm.match.finished,
-            gameId: gameEntity.id,
-            gameName: gameEntity.name,
-            locationName: locationName ?? undefined,
-            players,
-            outcome: {
-              score: smp.matchPlayer.score,
-              isWinner: smp.matchPlayer.winner ?? false,
-              placement: smp.matchPlayer.placement,
-            },
-          });
-        });
-      });
 
       // sort newest first
-      allMatches.sort((a, b) => compareAsc(b.date, a.date));
-
+      const allMatches = mapMatches(
+        rawFP.matchPlayers,
+        rawFP.sharedLinkedPlayers,
+        rawFP.id,
+      );
       const gameMap = new Map<number, GameAgg>();
       allMatches.forEach((m) => {
         const key = m.gameId;
