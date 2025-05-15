@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { friend, friendRequest } from "@board-games/db/schema";
+import { friend, friendRequest, friendSetting } from "@board-games/db/schema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 import { mapMatches } from "../utils/game";
@@ -734,6 +734,7 @@ export const friendsRouter = createTRPCRouter({
         returnedFriend.friend.sharedPlayersOwner,
         returnedFriend.friend.sharedLocationsOwner,
       );
+      console.log(returnedFriend);
 
       const rawFP = returnedFriend.friendPlayer;
       const getFullName = () => {
@@ -753,6 +754,7 @@ export const friendsRouter = createTRPCRouter({
       };
       if (!rawFP)
         return {
+          id: returnedFriend.id,
           linkedPlayerFound: false as const,
           clerkUser: {
             name: getFullName(),
@@ -834,6 +836,7 @@ export const friendsRouter = createTRPCRouter({
         friendGames,
       };
       return {
+        id: returnedFriend.id,
         linkedPlayerFound: true as const,
         clerkUser: {
           name: getFullName(),
@@ -895,5 +898,54 @@ export const friendsRouter = createTRPCRouter({
         email: clerkUser.emailAddresses[0]?.emailAddress,
         imageUrl: clerkUser.imageUrl,
       };
+    }),
+  updateFriendSettings: protectedUserProcedure
+    .input(
+      z.object({
+        friendId: z.number(),
+        settings: z.object({
+          autoShareMatches: z.boolean(),
+          sharePlayersWithMatch: z.boolean(),
+          includeLocationWithMatch: z.boolean(),
+          defaultPermissionForMatches: z.enum(["view", "edit"]),
+          defaultPermissionForPlayers: z.enum(["view", "edit"]),
+          defaultPermissionForLocation: z.enum(["view", "edit"]),
+          defaultPermissionForGame: z.enum(["view", "edit"]),
+          autoAcceptMatches: z.boolean(),
+          autoAcceptPlayers: z.boolean(),
+          autoAcceptLocation: z.boolean(),
+          autoAcceptGame: z.boolean(),
+          allowSharedGames: z.boolean(),
+          allowSharedPlayers: z.boolean(),
+          allowSharedLocation: z.boolean(),
+          allowSharedMatches: z.boolean(),
+        }),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const returnedFriend = await ctx.db.query.friend.findFirst({
+        where: {
+          userId: ctx.userId,
+          id: input.friendId,
+        },
+        with: {
+          friendSetting: true,
+        },
+      });
+      if (!returnedFriend) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      if (!returnedFriend.friendSetting) {
+        await ctx.db.insert(friendSetting).values({
+          createdById: ctx.userId,
+          friendId: input.friendId,
+          ...input.settings,
+        });
+      } else {
+        await ctx.db
+          .update(friendSetting)
+          .set(input.settings)
+          .where(eq(friendSetting.friendId, returnedFriend.friendSetting.id));
+      }
     }),
 });

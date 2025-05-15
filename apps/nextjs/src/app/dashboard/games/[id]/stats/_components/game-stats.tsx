@@ -318,11 +318,11 @@ export default function GameStats({ gameId }: { gameId: number }) {
                                               <Award className="ml-auto h-5 w-5 text-amber-700" />
                                             )}
                                             {teamPlayers[0]?.placement &&
-                                              teamPlayers[0]?.placement > 3 && (
+                                              teamPlayers[0].placement > 3 && (
                                                 <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
-                                                  {teamPlayers[0]?.placement}
+                                                  {teamPlayers[0].placement}
                                                   {getOrdinalSuffix(
-                                                    teamPlayers[0]?.placement,
+                                                    teamPlayers[0].placement,
                                                   )}
                                                 </div>
                                               )}
