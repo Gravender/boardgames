@@ -1,11 +1,24 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Clock, Trophy, Users } from "lucide-react";
+import { format } from "date-fns";
+import {
+  Calendar,
+  CalendarIcon,
+  Clock,
+  Dices,
+  GamepadIcon,
+  MapPin,
+  MapPinIcon,
+  Users,
+} from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
+import { Badge } from "@board-games/ui/badge";
 import {
   Card,
   CardContent,
@@ -13,8 +26,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@board-games/ui/card";
+import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
+import { Separator } from "@board-games/ui/separator";
 
 import { useTRPC } from "~/trpc/react";
+import { GameDetails } from "./game-details";
 
 export function FriendStatsPage({ friendId }: { friendId: number }) {
   const trpc = useTRPC();
@@ -28,60 +44,291 @@ export function FriendStatsPage({ friendId }: { friendId: number }) {
     return null;
   }
 
-  return (
-    <div className="space-y-8">
-      <Card>
-        <CardHeader className="flex flex-row items-center gap-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage
-              src={friend.clerkUser.imageUrl}
-              alt={friend.clerkUser.name}
-            />
-            <AvatarFallback>
-              {(friend.clerkUser.name.split(" ")[0]?.substring(0, 1) ?? "") +
-                friend.clerkUser.name.split(" ")[1]?.substring(0, 1)}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <CardTitle>{friend.clerkUser.name}</CardTitle>
-            <p className="text-sm text-muted-foreground">Player Stats</p>
-          </div>
-        </CardHeader>
-      </Card>
+  const lastPlayed = friend.linkedPlayer.matches[0];
 
-      <Card>
+  return (
+    <div className="flex w-full max-w-5xl flex-col items-center gap-4 p-2 pt-0 md:grid md:grid-cols-2">
+      <Card className="flex w-full flex-col md:col-span-1 md:h-full">
         <CardHeader>
-          <CardTitle>Player Statistics</CardTitle>
+          <CardTitle>Summary</CardTitle>
           <CardDescription>
-            Game statistics for {friend.linkedPlayer.name}
+            <div className="flex w-full flex-col items-center justify-center gap-2 text-secondary-foreground">
+              <Avatar className="h-16 w-16">
+                <AvatarImage
+                  src={friend.clerkUser.imageUrl}
+                  alt={friend.clerkUser.name}
+                />
+                <AvatarFallback>
+                  {(friend.clerkUser.name.split(" ")[0]?.substring(0, 1) ??
+                    "") + friend.clerkUser.name.split(" ")[1]?.substring(0, 1)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-xl font-semibold">
+                {friend.clerkUser.name}
+              </span>
+            </div>
           </CardDescription>
         </CardHeader>
+        <CardContent className="flex-grow">
+          <div className="flex h-full w-full flex-col justify-center gap-2">
+            <div className="flex w-full items-center justify-center gap-4 text-sm">
+              <div className="flex w-24 flex-col items-center gap-2">
+                <h4 className="font-medium">Plays:</h4>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{friend.linkedPlayer.matches.length}</span>
+                </div>
+              </div>
+              <div className="flex w-24 flex-col items-center gap-2">
+                <h4 className="font-medium">Duration:</h4>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{formatDuration(friend.linkedPlayer.duration)}</span>
+                </div>
+              </div>
+              <div className="flex w-24 flex-col items-center gap-2">
+                <h4 className="font-medium">Players:</h4>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{friend.linkedPlayer.players}</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex w-full items-center justify-center gap-4 text-sm">
+              <div className="flex w-24 flex-col items-center gap-2">
+                <h4 className="font-medium">Games:</h4>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{friend.linkedPlayer.friendGames.length}</span>
+                </div>
+              </div>
+              <div className="flex w-24 flex-col items-center gap-2">
+                <h4 className="font-medium">WinRate:</h4>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{(friend.linkedPlayer.winRate * 100).toFixed(2)}%</span>
+                </div>
+              </div>
+              <div className="flex w-24 flex-col items-center gap-2">
+                <h4 className="font-medium">Wins:</h4>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{friend.linkedPlayer.wins}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      {lastPlayed && (
+        <Card className="flex w-full flex-col md:col-span-1 md:h-full">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Last Play</span>
+              {lastPlayed.finished ? (
+                lastPlayed.outcome.isWinner ? (
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-100 text-xs dark:bg-green-900/30"
+                  >
+                    Won
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="bg-red-100 text-xs dark:bg-red-900/30"
+                  >
+                    Lost
+                  </Badge>
+                )
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="bg-yellow-100 text-xs dark:bg-yellow-900/30"
+                >
+                  In Progress
+                </Badge>
+              )}
+            </CardTitle>
+            <CardDescription>
+              <div className="flex w-full items-center gap-2 text-secondary-foreground">
+                <div className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded shadow">
+                  {lastPlayed.gameImg ? (
+                    <Image
+                      fill
+                      src={lastPlayed.gameImg}
+                      alt={`${lastPlayed.gameName} game image`}
+                      className="aspect-square h-full w-full rounded-md object-cover"
+                    />
+                  ) : (
+                    <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-semibold">
+                      {lastPlayed.name}
+                    </span>
+                    {lastPlayed.type === "Shared" && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs text-blue-500"
+                      >
+                        Shared
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-2 text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <span
+                          className="flex items-center gap-1"
+                          suppressHydrationWarning
+                        >
+                          <Calendar className="h-4 w-4" />
+                          {format(lastPlayed.date, "d MMM yyyy")}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          {formatDuration(lastPlayed.duration)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="flex items-center gap-1">
+                          <GamepadIcon className="h-4 w-4" />
+                          {lastPlayed.gameName}
+                        </span>
+
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" />
+                          {lastPlayed.locationName ?? "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-grow justify-between gap-1">
+            <div className="flex w-2/5 flex-col gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium">Players:</h4>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{lastPlayed.players.length}</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <h4 className="font-medium">Winner:</h4>
+                <div className="flex flex-wrap text-muted-foreground">
+                  {lastPlayed.players
+                    .filter((player) => player.isWinner)
+                    .map((player) => (
+                      <span
+                        key={player.playerId}
+                        className="after:content-[',_'] last:after:content-none"
+                      >
+                        {player.name}
+                      </span>
+                    ))}
+                </div>
+              </div>
+              <div className="flex gap-2 text-wrap">
+                <h4 className="shrink-0 font-medium">Participants:</h4>
+                <div className="flex flex-wrap text-muted-foreground">
+                  {lastPlayed.players.map((player) => (
+                    <span
+                      key={player.playerId}
+                      className="after:mr-1 after:content-[',_'] last:after:content-none"
+                    >
+                      {player.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <Separator className="md:hidden lg:block" orientation="vertical" />
+            <div className="flex w-2/5 flex-col gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium">Score:</h4>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{lastPlayed.outcome.score}</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      <Card className="w-full md:col-span-2">
+        <CardHeader>
+          <CardTitle>Previous Matches</CardTitle>
+        </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="flex flex-col items-center justify-center rounded-lg border p-4">
-              <Trophy className="mb-2 h-8 w-8 text-yellow-500" />
-              <p className="text-2xl font-bold">{friend.linkedPlayer.wins}</p>
-              <p className="text-sm text-muted-foreground">Wins</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Win Rate: {Math.round(friend.linkedPlayer.winRate * 100)}%
-              </p>
-            </div>
+          <div className="flex">
+            <ScrollArea className="w-1 flex-1">
+              <div className="flex gap-2 p-1 sm:p-4">
+                {friend.linkedPlayer.matches.map((match) => (
+                  <Link
+                    key={`${match.id}-${match.type}`}
+                    prefetch={true}
+                    href={`/dashboard/games${match.type === "Shared" ? "/shared" : ""}/${match.gameId}/${match.id}${match.finished ? "/summary" : ""}`}
+                    className="block h-40 w-64 rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                  >
+                    <h3 className="truncate font-medium">{match.name}</h3>
 
-            <div className="flex flex-col items-center justify-center rounded-lg border p-4">
-              <Users className="mb-2 h-8 w-8 text-blue-500" />
-              <p className="text-2xl font-bold">
-                {friend.linkedPlayer.players}
-              </p>
-              <p className="text-sm text-muted-foreground">Players</p>
-            </div>
+                    <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                      <CalendarIcon className="h-4 w-4" />
+                      <span suppressHydrationWarning>
+                        {format(new Date(match.date), "PP")}
+                      </span>
+                    </div>
 
-            <div className="flex flex-col items-center justify-center rounded-lg border p-4">
-              <Clock className="mb-2 h-8 w-8 text-green-500" />
-              <p className="text-2xl font-bold">
-                {formatDuration(friend.linkedPlayer.duration)}
-              </p>
-              <p className="text-sm text-muted-foreground">Play Time</p>
-            </div>
+                    <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                      <Users className="h-4 w-4" />
+                      <span>{match.players.length} players</span>
+                    </div>
+
+                    <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                      <MapPinIcon className="h-4 w-4" />
+                      <span>{match.locationName ?? "N/A"}</span>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {match.type === "Original" && (
+                        <Badge variant="outline" className="text-xs">
+                          Original
+                        </Badge>
+                      )}
+                      {match.type === "Shared" && (
+                        <Badge
+                          variant="outline"
+                          className="bg-blue-600 text-xs text-white"
+                        >
+                          Shared
+                        </Badge>
+                      )}
+                      {match.finished ? (
+                        <Badge variant="secondary" className="text-xs">
+                          Completed
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="bg-yellow-600 text-xs text-white"
+                        >
+                          In Progress
+                        </Badge>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="w-full md:col-span-2">
+        <CardHeader>
+          <CardTitle>Game Details</CardTitle>
+        </CardHeader>
+        <CardContent className="p-2 sm:p-6">
+          <div className="flex">
+            <GameDetails data={friend.linkedPlayer.friendGames} />
           </div>
         </CardContent>
       </Card>

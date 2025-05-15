@@ -254,7 +254,10 @@ function GameItem({
         <div className="flex-grow">
           <div className="flex items-center">
             <p className="font-medium">{item.name}</p>
-            <Badge variant={"outline"} className="text-xs text-blue-500">
+            <Badge
+              variant={"outline"}
+              className="bg-blue-600 text-xs text-white"
+            >
               Shared
             </Badge>
           </div>
@@ -292,7 +295,7 @@ function GameItem({
                         <p className="text-sm font-medium">{match.name}</p>
                         <Badge
                           variant={"outline"}
-                          className="text-xs text-blue-500"
+                          className="bg-blue-600 text-xs text-white"
                         >
                           Shared
                         </Badge>
@@ -370,7 +373,10 @@ function SimpleItem({
         <div>
           <div className="flex items-center gap-2">
             <p className="font-medium">{item.name}</p>
-            <Badge variant={"outline"} className="text-xs text-blue-500">
+            <Badge
+              variant={"outline"}
+              className="bg-blue-600 text-xs text-white"
+            >
               Shared
             </Badge>
           </div>

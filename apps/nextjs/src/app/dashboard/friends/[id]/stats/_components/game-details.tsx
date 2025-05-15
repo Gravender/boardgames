@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ChevronDown, ChevronUp, Dices } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
+import { Badge } from "@board-games/ui/badge";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import {
   Table,
@@ -15,7 +16,10 @@ import {
   TableRow,
 } from "@board-games/ui/table";
 
-type Games = NonNullable<RouterOutputs["player"]["getPlayer"]>["games"];
+type Games = Extract<
+  NonNullable<RouterOutputs["friend"]["getFriend"]>,
+  { linkedPlayerFound: true }
+>["linkedPlayer"]["friendGames"];
 type SortField = "name" | "plays" | "wins" | "winRate";
 type SortOrder = "asc" | "desc";
 export function GameDetails({ data }: { data: Games }) {
@@ -52,9 +56,12 @@ export function GameDetails({ data }: { data: Games }) {
     );
   };
   return (
-    <ScrollArea className="h-72 w-1 flex-1 md:h-[30rem]">
-      <Table>
-        <TableHeader className="sticky text-card-foreground">
+    <ScrollArea className="w-full">
+      <Table
+        containerClassname="rounded-lg h-72 md:h-[30rem] w-full"
+        className="w-full"
+      >
+        <TableHeader className="sticky top-0 z-20 bg-card text-card-foreground">
           <TableRow>
             <TableHead className="w-16 px-1 sm:w-full sm:px-4">
               <button
@@ -117,7 +124,12 @@ export function GameDetails({ data }: { data: Games }) {
                         {game.name}
                       </span>
                       {game.type === "Shared" && (
-                        <span className="text-muted-foreground">(Shared)</span>
+                        <Badge
+                          variant="outline"
+                          className="hidden bg-blue-600 text-xs text-white sm:block"
+                        >
+                          Shared
+                        </Badge>
                       )}
                     </div>
                   </div>

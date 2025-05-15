@@ -775,9 +775,9 @@ export const friendsRouter = createTRPCRouter({
         rawFP.matchPlayers,
         rawFP.sharedLinkedPlayers,
       );
-      const gameMap = new Map<number, GameAgg>();
+      const gameMap = new Map<string, GameAgg>();
       allMatches.forEach((m) => {
-        const key = m.gameId;
+        const key = `${m.gameId}-${m.type}`;
         const isWin = m.outcome.isWinner ? 1 : 0;
         const g = gameMap.get(key);
         if (g) {
@@ -801,7 +801,7 @@ export const friendsRouter = createTRPCRouter({
 
           gameMap.set(key, {
             type: m.type,
-            id: key,
+            id: m.gameId,
             name: m.gameName,
             imageUrl,
             plays: 1,
