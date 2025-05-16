@@ -23,11 +23,27 @@ type GameAgg = {
 
 export const friendsRouter = createTRPCRouter({
   sendFriendRequest: protectedUserProcedure
-    .input(z.object({ requesteeId: z.number() }))
+    .input(z.object({ userName: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const client = await clerkClient();
+      const { data } = await client.users.getUserList({
+        username: [input.userName],
+      });
+      const returnedClerkUser = data[0];
+      if (!returnedClerkUser) {
+        return { success: false, message: "Clerk User Not Found" };
+      }
+      const returnedUser = await ctx.db.query.user.findFirst({
+        where: {
+          clerkUserId: returnedClerkUser.id,
+        },
+      });
+      if (!returnedUser) {
+        return { success: false, message: "User Not Found" };
+      }
       await ctx.db.insert(friendRequest).values({
         userId: ctx.userId,
-        requesteeId: input.requesteeId,
+        requesteeId: returnedUser.id,
         status: "pending",
       });
 
