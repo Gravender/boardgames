@@ -182,7 +182,7 @@ export function FriendRequestCard({
                 onClick={handleCancel}
                 disabled={isLoading !== null}
               >
-                {isLoading ? (
+                {isLoading === "cancel" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   "Cancel"

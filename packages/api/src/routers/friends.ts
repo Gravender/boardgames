@@ -6,6 +6,7 @@ import { z } from "zod";
 import { friend, friendRequest, friendSetting } from "@board-games/db/schema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import { getFullName } from "../utils/clerk";
 import { mapMatches } from "../utils/game";
 import { collectShares } from "../utils/sharing";
 
@@ -138,25 +139,10 @@ export const friendsRouter = createTRPCRouter({
           code: "NOT_FOUND",
           message: "Friend not found",
         });
-      const getFullName = () => {
-        if (clerkUser.fullName) {
-          return clerkUser.fullName;
-        }
-        if (clerkUser.firstName && clerkUser.lastName) {
-          return `${clerkUser.firstName} ${clerkUser.lastName}`;
-        }
-        if (clerkUser.firstName) {
-          return clerkUser.firstName;
-        }
-        if (clerkUser.lastName) {
-          return clerkUser.lastName;
-        }
-        return "Unknown";
-      };
       return {
         id: returnedRequest.id,
         status: returnedRequest.status,
-        name: getFullName(),
+        name: getFullName(clerkUser),
         userName: clerkUser.username,
         email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
         imageUrl: clerkUser.imageUrl,
@@ -198,25 +184,10 @@ export const friendsRouter = createTRPCRouter({
           code: "NOT_FOUND",
           message: "Friend not found",
         });
-      const getFullName = () => {
-        if (clerkUser.fullName) {
-          return clerkUser.fullName;
-        }
-        if (clerkUser.firstName && clerkUser.lastName) {
-          return `${clerkUser.firstName} ${clerkUser.lastName}`;
-        }
-        if (clerkUser.firstName) {
-          return clerkUser.firstName;
-        }
-        if (clerkUser.lastName) {
-          return clerkUser.lastName;
-        }
-        return "Unknown";
-      };
       return {
         id: returnedRequest.id,
         status: returnedRequest.status,
-        name: getFullName(),
+        name: getFullName(clerkUser),
         userName: clerkUser.username,
         email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
         imageUrl: clerkUser.imageUrl,
@@ -255,24 +226,9 @@ export const friendsRouter = createTRPCRouter({
           code: "NOT_FOUND",
           message: "Friend not found",
         });
-      const getFullName = () => {
-        if (clerkUser.fullName) {
-          return clerkUser.fullName;
-        }
-        if (clerkUser.firstName && clerkUser.lastName) {
-          return `${clerkUser.firstName} ${clerkUser.lastName}`;
-        }
-        if (clerkUser.firstName) {
-          return clerkUser.firstName;
-        }
-        if (clerkUser.lastName) {
-          return clerkUser.lastName;
-        }
-        return "Unknown";
-      };
       return {
         id: returnedFriend.friend.id,
-        name: getFullName(),
+        name: getFullName(clerkUser),
         userName: clerkUser.username,
         email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
         imageUrl: clerkUser.imageUrl,
@@ -737,27 +693,12 @@ export const friendsRouter = createTRPCRouter({
       console.log(returnedFriend);
 
       const rawFP = returnedFriend.friendPlayer;
-      const getFullName = () => {
-        if (clerkUser.fullName) {
-          return clerkUser.fullName;
-        }
-        if (clerkUser.firstName && clerkUser.lastName) {
-          return `${clerkUser.firstName} ${clerkUser.lastName}`;
-        }
-        if (clerkUser.firstName) {
-          return clerkUser.firstName;
-        }
-        if (clerkUser.lastName) {
-          return clerkUser.lastName;
-        }
-        return "Unknown";
-      };
       if (!rawFP)
         return {
           id: returnedFriend.id,
           linkedPlayerFound: false as const,
           clerkUser: {
-            name: getFullName(),
+            name: getFullName(clerkUser),
             username: clerkUser.username,
             email: clerkUser.emailAddresses[0]?.emailAddress,
             imageUrl: clerkUser.imageUrl,
@@ -839,7 +780,7 @@ export const friendsRouter = createTRPCRouter({
         id: returnedFriend.id,
         linkedPlayerFound: true as const,
         clerkUser: {
-          name: getFullName(),
+          name: getFullName(clerkUser),
           username: clerkUser.username,
           email: clerkUser.emailAddresses[0]?.emailAddress,
           imageUrl: clerkUser.imageUrl,
@@ -876,24 +817,9 @@ export const friendsRouter = createTRPCRouter({
             message: "Friend not found",
           });
         });
-      const getFullName = () => {
-        if (clerkUser.fullName) {
-          return clerkUser.fullName;
-        }
-        if (clerkUser.firstName && clerkUser.lastName) {
-          return `${clerkUser.firstName} ${clerkUser.lastName}`;
-        }
-        if (clerkUser.firstName) {
-          return clerkUser.firstName;
-        }
-        if (clerkUser.lastName) {
-          return clerkUser.lastName;
-        }
-        return "Unknown";
-      };
       return {
         id: returnedFriend.friend.id,
-        name: getFullName(),
+        name: getFullName(clerkUser),
         userName: clerkUser.username,
         email: clerkUser.emailAddresses[0]?.emailAddress,
         imageUrl: clerkUser.imageUrl,
@@ -945,7 +871,7 @@ export const friendsRouter = createTRPCRouter({
         await ctx.db
           .update(friendSetting)
           .set(input.settings)
-          .where(eq(friendSetting.friendId, returnedFriend.friendSetting.id));
+          .where(eq(friendSetting.id, returnedFriend.friendSetting.id));
       }
     }),
 });
