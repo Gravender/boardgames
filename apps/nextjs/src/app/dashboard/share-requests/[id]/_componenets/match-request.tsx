@@ -9,7 +9,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { format, isSameDay } from "date-fns";
+import { isSameDay } from "date-fns";
 import {
   Calendar,
   Check,
@@ -81,6 +81,7 @@ import {
   TooltipTrigger,
 } from "@board-games/ui/tooltip";
 
+import { FormattedDate } from "~/components/formatted-date";
 import { useTRPC } from "~/trpc/react";
 import ChildLocationsRequest from "./child-locations-request";
 import ChildPlayersRequest from "./child-players-request";
@@ -305,10 +306,11 @@ export default function MatchRequestPage({
                   )}
                 </CardTitle>
                 <CardDescription className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {format(match.item.date, "d MMM yyyy")}
-                  </span>
+                  <FormattedDate
+                    date={match.item.date}
+                    className="flex items-center gap-1"
+                    Icon={Calendar}
+                  />
                   <span className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
                     {formatDuration(match.item.duration)}
@@ -369,9 +371,9 @@ export default function MatchRequestPage({
                               <div>
                                 <p>{potentialMatch.match.name}</p>
                                 <ul className="text-xs text-muted-foreground">
-                                  <li>
-                                    Date:{" "}
-                                    {format(match.item.date, "d MMM yyyy")}
+                                  <li className="flex flex-row gap-2">
+                                    <span className="font-semibold">Date:</span>
+                                    <FormattedDate date={match.item.date} />
                                   </li>
                                   {potentialMatch.match.location && (
                                     <li>
@@ -429,9 +431,9 @@ export default function MatchRequestPage({
                               <div>
                                 <p>{potentialMatch.name}</p>
                                 <ul className="text-xs text-muted-foreground">
-                                  <li>
-                                    Date:{" "}
-                                    {format(match.item.date, "d MMM yyyy")}
+                                  <li className="flex flex-row gap-2">
+                                    <span className="font-semibold">Date:</span>
+                                    <FormattedDate date={match.item.date} />
                                   </li>
                                   {potentialMatch.location && (
                                     <li>
@@ -594,10 +596,11 @@ export default function MatchRequestPage({
                       {match.item.name}
                     </CardTitle>
                     <CardDescription className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {format(match.item.date, "d MMM yyyy")}
-                      </span>
+                      <FormattedDate
+                        date={match.item.date}
+                        className="flex items-center gap-1"
+                        Icon={Calendar}
+                      />
                       <span className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
                         {formatDuration(match.item.duration)}
@@ -890,9 +893,7 @@ export default function MatchRequestPage({
                                       <span className="font-semibold">
                                         Date:
                                       </span>
-                                      <span>
-                                        {format(match.item.date, "d MMM yyyy")}
-                                      </span>
+                                      <FormattedDate date={match.item.date} />
                                     </li>
                                     {potentialMatch.location && (
                                       <li className="flex flex-row gap-2">

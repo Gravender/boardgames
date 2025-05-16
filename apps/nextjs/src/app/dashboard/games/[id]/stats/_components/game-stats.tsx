@@ -47,6 +47,7 @@ import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { cn } from "@board-games/ui/utils";
 
+import { FormattedDate } from "~/components/formatted-date";
 import { useTRPC } from "~/trpc/react";
 import { MatchDurationTrendChart } from "../../../_components/match-duration-trend-chart";
 import { PlayerStatsTable } from "../../../_components/player-stats-table";
@@ -211,12 +212,12 @@ export default function GameStats({ gameId }: { gameId: number }) {
                   </Badge>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <Calendar1Icon className="h-5 w-5" />
-                    <span suppressHydrationWarning>
-                      {format(lastMatch.date, "d MMM yyyy")}
-                    </span>
-                  </div>
+                  <FormattedDate
+                    date={lastMatch.date}
+                    Icon={Calendar1Icon}
+                    className="flex items-center gap-2"
+                    iconClassName="h-5 w-5"
+                  />
                   <div className="flex items-center gap-2">
                     <Clock className="h-5 w-5" />
                     <span>{formatDuration(lastMatch.duration)}</span>
@@ -505,11 +506,10 @@ export default function GameStats({ gameId }: { gameId: number }) {
                             </Badge>
                           )}
                         </div>
-                        <div className="text-muted-foreground">
-                          <span suppressHydrationWarning>
-                            {format(match.date, "d MMM yyyy")}
-                          </span>
-                        </div>
+                        <FormattedDate
+                          date={match.date}
+                          className="text-muted-foreground"
+                        />
                       </div>
                     );
                   })}

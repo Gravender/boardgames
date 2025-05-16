@@ -46,6 +46,7 @@ import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { cn } from "@board-games/ui/utils";
 
+import { FormattedDate } from "~/components/formatted-date";
 import { useTRPC } from "~/trpc/react";
 import { MatchDurationTrendChart } from "../../../../_components/match-duration-trend-chart";
 import { PlayerStatsTable } from "../../../../_components/player-stats-table";
@@ -202,12 +203,11 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                   </Badge>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <Calendar1Icon className="h-5 w-5" />
-                    <span suppressHydrationWarning>
-                      {format(lastMatch.date, "d MMM yyyy")}
-                    </span>
-                  </div>
+                  <FormattedDate
+                    date={lastMatch.date}
+                    iconClassName="h-5 w-5"
+                    Icon={Calendar1Icon}
+                  />
                   <div className="flex items-center gap-2">
                     <Clock className="h-5 w-5" />
                     <span>{formatDuration(lastMatch.duration)}</span>
@@ -299,11 +299,11 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                                               <Award className="ml-auto h-5 w-5 text-amber-700" />
                                             )}
                                             {teamPlayers[0]?.placement &&
-                                              teamPlayers[0]?.placement > 3 && (
+                                              teamPlayers[0].placement > 3 && (
                                                 <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
-                                                  {teamPlayers[0]?.placement}
+                                                  {teamPlayers[0].placement}
                                                   {getOrdinalSuffix(
-                                                    teamPlayers[0]?.placement,
+                                                    teamPlayers[0].placement,
                                                   )}
                                                 </div>
                                               )}
@@ -477,11 +477,10 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                             <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
                           )}
                         </div>
-                        <div className="text-muted-foreground">
-                          <span suppressHydrationWarning>
-                            {format(match.date, "d MMM yyyy")}
-                          </span>
-                        </div>
+                        <FormattedDate
+                          date={match.date}
+                          className="text-muted-foreground"
+                        />
                       </div>
                     );
                   })}

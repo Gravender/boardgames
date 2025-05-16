@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import {
   CalendarIcon,
   ClockIcon,
@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
+import { FormattedDate } from "~/components/formatted-date";
 import { useTRPC } from "~/trpc/react";
 import MatchSummaryPlayerStats from "../../../../../_components/match-player-stats";
 import ShareMatchResults from "./match-results";
@@ -74,8 +75,9 @@ export default function SharedMatchSummary({ matchId }: { matchId: number }) {
                 <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <FormattedDate date={match.date} />
                     <span suppressHydrationWarning>
-                      {format(new Date(match.date), "PPP")} (
+                      (
                       {formatDistanceToNow(new Date(match.date), {
                         addSuffix: true,
                       })}
@@ -133,12 +135,11 @@ export default function SharedMatchSummary({ matchId }: { matchId: number }) {
                     >
                       <h3 className="truncate font-medium">{match.name}</h3>
 
-                      <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                        <CalendarIcon className="h-4 w-4" />
-                        <span suppressHydrationWarning>
-                          {format(new Date(match.date), "PP")}
-                        </span>
-                      </div>
+                      <FormattedDate
+                        date={match.date}
+                        className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"
+                        Icon={CalendarIcon}
+                      />
 
                       <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                         <Users className="h-4 w-4" />

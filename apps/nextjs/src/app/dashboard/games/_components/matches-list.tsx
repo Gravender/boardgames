@@ -35,6 +35,7 @@ import {
 } from "@board-games/ui/select";
 import { cn } from "@board-games/ui/utils";
 
+import { FormattedDate } from "~/components/formatted-date";
 import { MatchDropDown } from "./matchesDropDown";
 
 interface BaseMatch {
@@ -492,12 +493,11 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
 
                       {/* Match details row */}
                       <div className="flex flex-row gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1 text-sm sm:text-base">
-                          <CalendarIcon className="h-4 w-4" />
-                          <span suppressHydrationWarning>
-                            {format(match.date, "d MMM yyyy")}
-                          </span>
-                        </div>
+                        <FormattedDate
+                          date={match.date}
+                          className="flex items-center gap-1 text-sm sm:text-base"
+                          Icon={CalendarIcon}
+                        />
 
                         {match.location && (
                           <div className="flex items-center gap-1 text-sm sm:text-base">

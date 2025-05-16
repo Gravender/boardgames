@@ -9,7 +9,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { addDays, format } from "date-fns";
+import { addDays } from "date-fns";
 import {
   Calendar,
   Check,
@@ -79,6 +79,7 @@ import { Separator } from "@board-games/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { cn } from "@board-games/ui/utils";
 
+import { FormattedDate } from "~/components/formatted-date";
 import { useTRPC } from "~/trpc/react";
 
 const formSchema = z
@@ -426,29 +427,25 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
                                       <CommandGroup>
                                         {friends.map((friend) => (
                                           <CommandItem
-                                            key={friend.friendId}
-                                            value={friend.friendId.toString()}
+                                            key={friend.id}
+                                            value={friend.id.toString()}
                                             onSelect={() => {
                                               setSelectedFriends((current) => {
                                                 if (
                                                   current.some(
-                                                    (f) =>
-                                                      f.id === friend.friendId,
+                                                    (f) => f.id === friend.id,
                                                   )
                                                 ) {
                                                   return current.filter(
-                                                    (f) =>
-                                                      f.id !== friend.friendId,
+                                                    (f) => f.id !== friend.id,
                                                   );
                                                 }
                                                 return [
                                                   ...current,
                                                   {
-                                                    id: friend.friendId,
-                                                    name:
-                                                      friend.friend.name ?? "",
-                                                    email:
-                                                      friend.friend.email ?? "",
+                                                    id: friend.id,
+                                                    name: friend.name,
+                                                    email: friend.email ?? "",
                                                   },
                                                 ];
                                               });
@@ -456,33 +453,30 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
                                               const currentIds =
                                                 field.value ?? [];
                                               if (
-                                                currentIds.includes(
-                                                  friend.friendId,
-                                                )
+                                                currentIds.includes(friend.id)
                                               ) {
                                                 field.onChange(
                                                   currentIds.filter(
-                                                    (id) =>
-                                                      id !== friend.friendId,
+                                                    (id) => id !== friend.id,
                                                   ),
                                                 );
                                               } else {
                                                 field.onChange([
                                                   ...currentIds,
-                                                  friend.friendId,
+                                                  friend.id,
                                                 ]);
                                               }
                                             }}
                                           >
                                             <div className="flex w-full items-center justify-between">
                                               <div>
-                                                <p>{friend.friend.name}</p>
+                                                <p>{friend.name}</p>
                                                 <p className="text-xs text-muted-foreground">
-                                                  {friend.friend.email}
+                                                  {friend.email}
                                                 </p>
                                               </div>
                                               {selectedFriends.some(
-                                                (f) => f.id === friend.friendId,
+                                                (f) => f.id === friend.id,
                                               ) && (
                                                 <Check className="h-4 w-4" />
                                               )}
@@ -721,13 +715,10 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
                                           {match.name}
                                         </Label>
                                         <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                                          <span
-                                            className="flex items-center gap-1"
-                                            suppressHydrationWarning
-                                          >
-                                            <Calendar className="h-3 w-3" />
-                                            {format(match.date, "PPP")}
-                                          </span>
+                                          <FormattedDate
+                                            date={match.date}
+                                            Icon={Calendar}
+                                          />
                                           <span className="flex items-center gap-1">
                                             <Clock className="h-3 w-3" />
                                             {formatDuration(match.duration)}

@@ -4,7 +4,6 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { format } from "date-fns/format";
 import { Dices } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -13,6 +12,7 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
+import { FormattedDate } from "~/components/formatted-date";
 import { useTRPC } from "~/trpc/react";
 
 type Matches = NonNullable<
@@ -90,12 +90,10 @@ export function Matches({ locationId }: { locationId: number }) {
                         </div>
                         <div className="flex min-w-20 items-center gap-1">
                           <span>Play Date:</span>
-                          <span
+                          <FormattedDate
+                            date={match.date}
                             className="text-muted-foreground"
-                            suppressHydrationWarning
-                          >
-                            {format(match.date, "d MMM yyyy")}
-                          </span>
+                          />
                         </div>
                       </div>
                     </div>

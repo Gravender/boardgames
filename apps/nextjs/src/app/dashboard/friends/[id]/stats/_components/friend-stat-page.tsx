@@ -29,6 +29,7 @@ import {
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
 
+import { FormattedDate } from "~/components/formatted-date";
 import { useTRPC } from "~/trpc/react";
 import { GameDetails } from "./game-details";
 
@@ -59,8 +60,14 @@ export function FriendStatsPage({ friendId }: { friendId: number }) {
                   alt={friend.clerkUser.name}
                 />
                 <AvatarFallback>
-                  {(friend.clerkUser.name.split(" ")[0]?.substring(0, 1) ??
-                    "") + friend.clerkUser.name.split(" ")[1]?.substring(0, 1)}
+                  {friend.clerkUser.name
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join("") ||
+                    friend.clerkUser.name.substring(0, 2) ||
+                    "??"}
                 </AvatarFallback>
               </Avatar>
               <span className="text-xl font-semibold">
@@ -175,13 +182,7 @@ export function FriendStatsPage({ friendId }: { friendId: number }) {
                   <div className="flex items-center gap-2">
                     <div className="flex flex-col gap-2 text-muted-foreground">
                       <div className="flex items-center gap-1">
-                        <span
-                          className="flex items-center gap-1"
-                          suppressHydrationWarning
-                        >
-                          <Calendar className="h-4 w-4" />
-                          {format(lastPlayed.date, "d MMM yyyy")}
-                        </span>
+                        <FormattedDate date={lastPlayed.date} Icon={Calendar} />
                         <span className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
                           {formatDuration(lastPlayed.duration)}
@@ -270,12 +271,11 @@ export function FriendStatsPage({ friendId }: { friendId: number }) {
                   >
                     <h3 className="truncate font-medium">{match.name}</h3>
 
-                    <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                      <CalendarIcon className="h-4 w-4" />
-                      <span suppressHydrationWarning>
-                        {format(new Date(match.date), "PP")}
-                      </span>
-                    </div>
+                    <FormattedDate
+                      className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"
+                      date={match.date}
+                      Icon={Calendar}
+                    />
 
                     <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                       <Users className="h-4 w-4" />
