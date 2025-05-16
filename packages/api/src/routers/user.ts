@@ -72,7 +72,7 @@ export const userRouter = createTRPCRouter({
             .values({
               name: clerkUser?.fullName ?? "",
               createdBy: insertedUser.id,
-              userId: insertedUser.id,
+              isUser: true,
             })
             .returning();
           if (!insertedPlayer)

@@ -85,9 +85,7 @@ export const shareLocationRouter = createTRPCRouter({
             }
             return {
               type: "original" as const,
-              isUser:
-                sharedMatchPlayer.sharedPlayer.linkedPlayer.userId ===
-                ctx.userId,
+              isUser: sharedMatchPlayer.sharedPlayer.linkedPlayer.isUser,
 
               id: sharedMatchPlayer.sharedPlayer.linkedPlayer.id,
               name: sharedMatchPlayer.sharedPlayer.linkedPlayer.name,

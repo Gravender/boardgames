@@ -16,6 +16,8 @@ let nextConfig = {
       { hostname: "ji5jeyxujf.ufs.sh" },
       { hostname: "picsum.photos" },
       { hostname: "avatars.githubusercontent.com" },
+      { hostname: "cdn.jsdelivr.net" },
+      { hostname: "picsum.photos" },
     ],
   },
   transpilePackages: [

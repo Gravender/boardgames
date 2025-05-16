@@ -157,8 +157,7 @@ export const locationRouter = createTRPCRouter({
             finished: m.finished,
             won:
               m.matchPlayers.findIndex(
-                (player) =>
-                  player.winner && player.player.userId === ctx.userId,
+                (player) => player.winner && player.player.isUser,
               ) !== -1,
             players: m.matchPlayers.map((matchPlayer) => {
               return {
@@ -189,9 +188,7 @@ export const locationRouter = createTRPCRouter({
               }
               return {
                 type: "original" as const,
-                isUser:
-                  sharedMatchPlayer.sharedPlayer.linkedPlayer.userId ===
-                  ctx.userId,
+                isUser: sharedMatchPlayer.sharedPlayer.linkedPlayer.isUser,
 
                 id: sharedMatchPlayer.sharedPlayer.linkedPlayer.id,
                 name: sharedMatchPlayer.sharedPlayer.linkedPlayer.name,

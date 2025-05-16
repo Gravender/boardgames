@@ -16,13 +16,13 @@
   "eslint.runtime": "node",
   "eslint.workingDirectories": [
     {
-      "pattern": "apps/*/"
+      "pattern": "./apps/*/"
     },
     {
-      "pattern": "packages/*/"
+      "pattern": "./packages/*/"
     },
     {
-      "pattern": "tooling/*/"
+      "pattern": "./tooling/*/"
     }
   ],
   "prettier.ignorePath": ".gitignore",

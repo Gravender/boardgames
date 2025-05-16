@@ -10,7 +10,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { compareDesc, format, isSameDay } from "date-fns";
+import { compareDesc, isSameDay } from "date-fns";
 import {
   Calendar,
   Check,
@@ -70,6 +70,7 @@ import { RadioGroup, RadioGroupItem } from "@board-games/ui/radio-group";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
 
+import { FormattedDate } from "~/components/formatted-date";
 import { useTRPC } from "~/trpc/react";
 import ChildLocationsRequest from "./child-locations-request";
 import ChildPlayersRequest from "./child-players-request";
@@ -1300,13 +1301,11 @@ function MatchRequests({
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span
+                          <FormattedDate
+                            date={matchItem.item.date}
                             className="flex items-center gap-1"
-                            suppressHydrationWarning
-                          >
-                            <Calendar className="h-4 w-4" />
-                            {format(matchItem.item.date, "d MMM yyyy")}
-                          </span>
+                            Icon={Calendar}
+                          />
                           <span className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />
                             {formatDuration(matchItem.item.duration)}
@@ -1386,13 +1385,11 @@ function MatchRequests({
                                     <div>
                                       <p>{potentialMatch.name}</p>
                                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <span className="flex items-center gap-1">
-                                          <Calendar className="h-4 w-4" />
-                                          {format(
-                                            potentialMatch.date,
-                                            "d MMM yyyy",
-                                          )}
-                                        </span>
+                                        <FormattedDate
+                                          date={potentialMatch.date}
+                                          Icon={Calendar}
+                                          className="flex items-center gap-1"
+                                        />
                                         <span className="flex items-center gap-1">
                                           <Clock className="h-4 w-4" />
                                           {formatDuration(

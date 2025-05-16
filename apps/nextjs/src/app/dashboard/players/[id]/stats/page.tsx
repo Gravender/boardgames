@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { format } from "date-fns";
 import { Calendar, Dices, MapPin, User } from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
@@ -16,6 +15,7 @@ import {
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
 
+import { FormattedDate } from "~/components/formatted-date";
 import { caller } from "~/trpc/server";
 import { GameDetails } from "./_components/GameDetailsTable";
 
@@ -149,13 +149,11 @@ export default async function Page({ params }: Props) {
                     </span>
                     <div className="flex items-center gap-2">
                       <div className="flex flex-col gap-2 text-muted-foreground">
-                        <span
+                        <FormattedDate
+                          date={lastPlayed.date}
                           className="flex items-center gap-1"
-                          suppressHydrationWarning
-                        >
-                          <Calendar className="h-4 w-4" />
-                          {format(lastPlayed.date, "d MMM yyyy")}
-                        </span>
+                          Icon={Calendar}
+                        />
                         {lastPlayed.locationName && (
                           <span className="flex items-center gap-1">
                             <MapPin className="h-4 w-4" />
@@ -261,11 +259,11 @@ export default async function Page({ params }: Props) {
                             <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
                           )}
                         </div>
-                        <div className="text-muted-foreground">
-                          <span suppressHydrationWarning>
-                            {format(match.date, "d MMM yyyy")}
-                          </span>
-                        </div>
+
+                        <FormattedDate
+                          date={match.date}
+                          className="text-muted-foreground"
+                        />
                       </Link>
                     ))}
                   </div>

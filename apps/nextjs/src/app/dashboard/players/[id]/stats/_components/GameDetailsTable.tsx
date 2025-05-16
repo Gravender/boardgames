@@ -97,7 +97,7 @@ export function GameDetails({ data }: { data: Games }) {
         <TableBody>
           {sortedGames.map((game) => {
             return (
-              <TableRow key={game.id}>
+              <TableRow key={`${game.id}-${game.type}`}>
                 <TableCell className="p-2 sm:p-4">
                   <div className="flex w-full items-center gap-2 text-xs sm:gap-4">
                     <div className="relative flex h-7 w-7 shrink-0 overflow-hidden sm:h-10 sm:w-10">

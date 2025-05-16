@@ -33,7 +33,7 @@ export const playerRouter = createTRPCRouter({
         columns: {
           id: true,
           name: true,
-          userId: true,
+          isUser: true,
         },
         with: {
           image: {
@@ -77,7 +77,7 @@ export const playerRouter = createTRPCRouter({
         const user = await currentUser();
         await ctx.db.insert(player).values({
           createdBy: ctx.userId,
-          userId: ctx.userId,
+          isUser: true,
           name: user?.fullName ?? "Me",
         });
         const returnedPlayer = await ctx.db.query.player.findFirst({
@@ -121,7 +121,7 @@ export const playerRouter = createTRPCRouter({
           .filter((match) => match);
         return {
           id: player.id,
-          isUser: player.userId === ctx.userId,
+          isUser: player.isUser,
           name: player.name,
           imageUrl: player.image?.url ?? null,
           matches: player.matches.length + linkedMatches.length,

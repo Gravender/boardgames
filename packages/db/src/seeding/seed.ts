@@ -53,6 +53,8 @@ import {
 } from "@board-games/db/schema";
 import { insertShareRequestSchema } from "@board-games/db/zodSchema";
 
+import friendSettings from "../schema/friendSetting";
+
 function weightedRandomSample<T>(
   weightedPlayers: { weight: number; value: T }[],
   count: number,
@@ -151,7 +153,7 @@ export async function seed() {
     users.map((u) => ({
       name: u.name ?? "",
       createdBy: u.id,
-      userId: u.id,
+      isUser: true,
     })),
   );
 
@@ -601,13 +603,9 @@ export async function seed() {
         : undefined;
 
       const weightedPlayers = filteredPlayers.map((player) => ({
-        weight:
-          player.userId === returnedMatch.userId
-            ? Math.max(
-                (playerAppearances.get(player.id) ?? 1) / matchCount,
-                0.75,
-              )
-            : (playerAppearances.get(player.id) ?? 1) / matchCount,
+        weight: player.isUser
+          ? Math.max((playerAppearances.get(player.id) ?? 1) / matchCount, 0.75)
+          : (playerAppearances.get(player.id) ?? 1) / matchCount,
         value: player.id,
       }));
 
@@ -1118,7 +1116,7 @@ export async function seed() {
             }
             const sharedUserPlayers = await db.query.player.findMany({
               where: {
-                userId: returnedUserShareRequest.sharedWithId,
+                createdBy: returnedUserShareRequest.sharedWithId,
               },
             });
             const sharedUserPlayerIds = sharedUserPlayers.map(
@@ -1435,7 +1433,7 @@ export async function seed() {
           ) {
             const sharedUserPlayers = await db.query.player.findMany({
               where: {
-                userId: returnedUserShareRequest.sharedWithId,
+                createdBy: returnedUserShareRequest.sharedWithId,
               },
             });
             const sharedUserPlayerIds = sharedUserPlayers.map(
@@ -1816,7 +1814,7 @@ export async function seed() {
             });
             const sharedUserPlayers = await db.query.player.findMany({
               where: {
-                userId: returnedUserShareRequest.sharedWithId,
+                createdBy: returnedUserShareRequest.sharedWithId,
               },
             });
             const sharedUserPlayerIds = sharedUserPlayers.map(
@@ -2061,7 +2059,58 @@ export async function seed() {
       }
     }
   }
+  await seedFriendSettings();
 
   exit();
+}
+async function seedFriendSettings() {
+  console.log("🔄 Resetting friend_setting table...");
+  await db.delete(friendSettings).execute();
+
+  console.log("📋 Inserting friend settings...");
+
+  const allFriends = await db.query.friend.findMany();
+  const settingsData = allFriends.map((f) => {
+    const allowSharedMatches = faker.datatype.boolean(0.8);
+    const allowSharedPlayers = faker.datatype.boolean(0.8);
+    const allowSharedLocation = faker.datatype.boolean(0.8);
+    const allowSharedGames = faker.datatype.boolean(0.8);
+    const autoShareMatches = faker.datatype.boolean(0.5);
+    return {
+      createdById: f.userId,
+      friendId: f.friendId,
+      autoShareMatches,
+      sharePlayersWithMatch: autoShareMatches
+        ? faker.datatype.boolean(0.3)
+        : false,
+      includeLocationWithMatch: autoShareMatches
+        ? faker.datatype.boolean(0.3)
+        : false,
+      defaultPermissionForMatches: faker.helpers.arrayElement(["view", "edit"]),
+      defaultPermissionForPlayers: faker.helpers.arrayElement(["view", "edit"]),
+      defaultPermissionForLocation: faker.helpers.arrayElement([
+        "view",
+        "edit",
+      ]),
+      defaultPermissionForGame: faker.helpers.arrayElement(["view", "edit"]),
+      allowSharedMatches,
+      allowSharedPlayers,
+      allowSharedLocation,
+      allowSharedGames,
+      autoAcceptMatches: allowSharedMatches
+        ? faker.datatype.boolean(0.2)
+        : false,
+      autoAcceptPlayers: allowSharedPlayers
+        ? faker.datatype.boolean(0.2)
+        : false,
+      autoAcceptLocation: allowSharedLocation
+        ? faker.datatype.boolean(0.2)
+        : false,
+      autoAcceptGame: allowSharedGames ? faker.datatype.boolean(0.2) : false,
+    };
+  });
+
+  await db.insert(friendSettings).values(settingsData);
+  console.log(`✅ Inserted ${settingsData.length} friend-setting rows.`);
 }
 await seed();
