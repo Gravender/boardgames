@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { HydrateClient, prefetch, trpc } from "~/trpc/server";
+import { AddFriendDialog } from "./_components/add-friend-dialog";
 import { FriendsList } from "./_components/friend-list";
 import { FriendsListSkeleton } from "./_components/friend-list-skeleton";
 import { FriendRequestsSkeleton } from "./_components/friend-requests-skeleton";
@@ -21,6 +22,7 @@ export default async function FriendsPage() {
               Manage your friends and friend requests
             </p>
           </div>
+          <AddFriendDialog />
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

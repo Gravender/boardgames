@@ -23,15 +23,36 @@ type GameAgg = {
 
 export const friendsRouter = createTRPCRouter({
   sendFriendRequest: protectedUserProcedure
-    .input(z.object({ userName: z.string() }))
+    .input(
+      z.discriminatedUnion("type", [
+        z.object({
+          type: z.literal("email"),
+          email: z.string().email({
+            message: "Please enter a valid email address.",
+          }),
+        }),
+
+        z.object({
+          type: z.literal("username"),
+          username: z.string().min(3, {
+            message: "Username must be at least 3 characters.",
+          }),
+        }),
+      ]),
+    )
     .mutation(async ({ ctx, input }) => {
       const client = await clerkClient();
-      const { data } = await client.users.getUserList({
-        username: [input.userName],
-      });
+      const { data } =
+        input.type === "email"
+          ? await client.users.getUserList({
+              emailAddress: [input.email],
+            })
+          : await client.users.getUserList({
+              username: [input.username],
+            });
       const returnedClerkUser = data[0];
       if (!returnedClerkUser) {
-        return { success: false, message: "Clerk User Not Found" };
+        return { success: false, message: "User Not Found" };
       }
       const returnedUser = await ctx.db.query.user.findFirst({
         where: {
@@ -41,13 +62,40 @@ export const friendsRouter = createTRPCRouter({
       if (!returnedUser) {
         return { success: false, message: "User Not Found" };
       }
+      if (returnedUser.id === ctx.userId) {
+        return {
+          success: false,
+          message: "You cannot send a friend request to yourself",
+        };
+      }
+      const existingRequest = await ctx.db.query.friendRequest.findFirst({
+        where: {
+          userId: ctx.userId,
+          requesteeId: returnedUser.id,
+        },
+      });
+      if (existingRequest) {
+        if (existingRequest.status === "rejected") {
+          return { success: false, message: "Friend request already rejected" };
+        }
+        if (existingRequest.status === "accepted") {
+          return { success: false, message: "Friend request already accepted" };
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (existingRequest.status === "pending") {
+          return { success: false, message: "Friend request already pending" };
+        }
+      }
       await ctx.db.insert(friendRequest).values({
         userId: ctx.userId,
         requesteeId: returnedUser.id,
         status: "pending",
       });
 
-      return { success: true, message: "Friend request sent." };
+      return {
+        success: true,
+        message: `Friend request sent to ${returnedClerkUser.fullName}`,
+      };
     }),
 
   acceptFriendRequest: protectedUserProcedure

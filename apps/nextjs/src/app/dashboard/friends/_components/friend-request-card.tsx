@@ -40,6 +40,9 @@ export function FriendRequestCard({
           trpc.friend.getFriendRequests.queryOptions(),
         );
         await queryClient.invalidateQueries(
+          trpc.friend.getSentFriendRequests.queryOptions(),
+        );
+        await queryClient.invalidateQueries(
           trpc.friend.getFriends.queryOptions(),
         );
         setIsLoading(null);
@@ -64,6 +67,9 @@ export function FriendRequestCard({
           trpc.friend.getFriendRequests.queryOptions(),
         );
         await queryClient.invalidateQueries(
+          trpc.friend.getSentFriendRequests.queryOptions(),
+        );
+        await queryClient.invalidateQueries(
           trpc.friend.getFriends.queryOptions(),
         );
         setIsLoading(null);
@@ -85,6 +91,9 @@ export function FriendRequestCard({
         });
         await queryClient.invalidateQueries(
           trpc.friend.getFriendRequests.queryOptions(),
+        );
+        await queryClient.invalidateQueries(
+          trpc.friend.getSentFriendRequests.queryOptions(),
         );
         await queryClient.invalidateQueries(
           trpc.friend.getFriends.queryOptions(),
