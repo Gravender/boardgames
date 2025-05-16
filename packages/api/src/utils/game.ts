@@ -311,7 +311,7 @@ export function mapSharedMatchPlayers(
     };
   }[],
 ) {
-  return sharedMatchPlayers
+  const mapped = sharedMatchPlayers
     .map((p) => {
       const linkedPlayer = p.sharedPlayer?.linkedPlayer;
       if (linkedPlayer) {
@@ -334,4 +334,5 @@ export function mapSharedMatchPlayers(
       return null;
     })
     .filter((p) => p !== null);
+  return Array.from(new Map(mapped.map((p) => [p.playerId, p])).values());
 }
