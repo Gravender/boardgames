@@ -219,6 +219,7 @@ export const friendsRouter = createTRPCRouter({
       },
       with: {
         friend: true,
+        friendPlayer: true,
       },
     });
     const client = await clerkClient();
@@ -233,6 +234,7 @@ export const friendsRouter = createTRPCRouter({
       email: string | null;
       imageUrl: string | null;
       createdAt: Date;
+      linkedPlayerFound: boolean;
     }[] = returnedFriends.map((returnedFriend) => {
       const clerkUser = clerkUsers.find(
         (u) => u.id === returnedFriend.friend.clerkUserId,
@@ -249,6 +251,7 @@ export const friendsRouter = createTRPCRouter({
         email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
         imageUrl: clerkUser.imageUrl,
         createdAt: returnedFriend.createdAt,
+        linkedPlayerFound: returnedFriend.friendPlayer !== null,
       };
     });
     return mappedFriends;
@@ -706,7 +709,6 @@ export const friendsRouter = createTRPCRouter({
         returnedFriend.friend.sharedPlayersOwner,
         returnedFriend.friend.sharedLocationsOwner,
       );
-      console.log(returnedFriend);
 
       const rawFP = returnedFriend.friendPlayer;
       if (!rawFP)
@@ -768,7 +770,9 @@ export const friendsRouter = createTRPCRouter({
         }
       });
 
-      const friendGames = Array.from(gameMap.values());
+      const friendGames = Array.from(gameMap.values()).sort((a, b) => {
+        return a.name.localeCompare(b.name);
+      });
 
       const uniqueOpponents = new Set<number>();
       allMatches.forEach((m) =>
