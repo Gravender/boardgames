@@ -181,9 +181,6 @@ export function EditMatchForm({
           await queryClient.invalidateQueries(
             trpc.match.getMatch.queryOptions({ id: result.id }),
           );
-          await queryClient.invalidateQueries(
-            trpc.match.getEditMatch.queryOptions({ id: result.id }),
-          );
         }
         router.back();
       },
