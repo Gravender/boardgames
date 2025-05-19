@@ -47,7 +47,6 @@ export function PlayerDropDown({
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     (data.type === "shared" && data.permissions === "edit");
   const [isOpen, setIsOpen] = useState(false);
-  //TODO add edit player for shared players
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenu>

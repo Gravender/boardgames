@@ -144,25 +144,8 @@ export const playerRouter = createTRPCRouter({
         },
         with: {
           players: {
-            with: {
-              matches: {
-                where: {
-                  finished: true,
-                },
-              },
-              image: true,
-              sharedLinkedPlayers: {
-                where: {
-                  sharedWithId: ctx.userId,
-                },
-                with: {
-                  sharedMatches: {
-                    where: {
-                      sharedWithId: ctx.userId,
-                    },
-                  },
-                },
-              },
+            columns: {
+              id: true,
             },
           },
         },
@@ -173,14 +156,49 @@ export const playerRouter = createTRPCRouter({
           message: "Group not found.",
         });
       }
+      const players = await ctx.db.query.player.findMany({
+        where: {
+          createdBy: ctx.userId,
+          deletedAt: {
+            isNull: true,
+          },
+        },
+        columns: {
+          id: true,
+          name: true,
+          isUser: true,
+        },
+        with: {
+          matches: {
+            where: {
+              finished: true,
+            },
+          },
+          image: true,
+          sharedLinkedPlayers: {
+            where: {
+              sharedWithId: ctx.userId,
+            },
+            with: {
+              sharedMatches: {
+                where: {
+                  sharedWithId: ctx.userId,
+                },
+              },
+            },
+          },
+        },
+      });
       const mappedGroupResponse: {
         id: number;
+        inGroup: boolean;
         name: string;
         imageUrl: string | null;
         matches: number;
-      }[] = groupResponse.players.map((p) => {
+      }[] = players.map((p) => {
         return {
           id: p.id,
+          inGroup: groupResponse.players.findIndex((g) => g.id === p.id) !== -1,
           name: p.name,
           imageUrl: p.image?.url ?? null,
           matches:
