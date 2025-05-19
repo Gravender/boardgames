@@ -249,6 +249,9 @@ const PlayerContent = ({
                           accept="image/*"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
+                            if (imagePreview) {
+                              URL.revokeObjectURL(imagePreview);
+                            }
                             field.onChange(file);
                             if (file) {
                               const url = URL.createObjectURL(file);

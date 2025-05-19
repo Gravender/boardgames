@@ -95,6 +95,12 @@ export function EditSharedMatchForm({
             : values.date,
       },
     });
+    if (
+      values.name === match.name &&
+      values.date.getTime() === match.date.getTime()
+    ) {
+      setIsSubmitting(false);
+    }
   };
   return (
     <Form {...form}>

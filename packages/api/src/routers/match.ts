@@ -887,10 +887,12 @@ export const matchRouter = createTRPCRouter({
       .where(
         or(
           and(eq(match.userId, ctx.userId), isNull(match.deletedAt)),
-          inArray(
-            match.id,
-            sharedMatches.map((m) => m.matchId),
-          ),
+          sharedMatches.length > 0
+            ? inArray(
+                match.id,
+                sharedMatches.map((m) => m.matchId),
+              )
+            : sql`false`,
         ),
       )
       .groupBy(sql`date_trunc('day', ${match.date})`)
@@ -928,11 +930,13 @@ export const matchRouter = createTRPCRouter({
                 isNull: true,
               },
             },
-            {
-              id: {
-                in: sharedMatches.map((m) => m.matchId),
-              },
-            },
+            sharedMatches.length > 0
+              ? {
+                  id: {
+                    in: sharedMatches.map((m) => m.matchId),
+                  },
+                }
+              : {},
           ],
         },
         with: {
@@ -949,30 +953,30 @@ export const matchRouter = createTRPCRouter({
           location: true,
         },
       });
-      return matches.map((match) => ({
-        id: sharedMatches.find((m) => m.matchId === match.id)?.id ?? match.id,
-        type: sharedMatches.find((m) => m.matchId === match.id)
-          ? ("shared" as const)
-          : ("original" as const),
-        date: match.date,
-        name: match.name,
-        finished: match.finished,
-        won:
-          match.matchPlayers.findIndex(
-            (player) => player.winner && player.player.isUser,
-          ) !== -1,
-        players: match.matchPlayers.map((matchPlayer) => {
-          return {
-            id: matchPlayer.player.id,
-            name: matchPlayer.player.name,
-          };
-        }),
-        gameImageUrl: match.game.image?.url,
-        gameName: match.game.name,
-        gameId:
-          sharedMatches.find((m) => m.matchId === match.id)?.sharedGameId ??
-          match.game.id,
-      }));
+      return matches.map((match) => {
+        const shared = sharedMatches.find((m) => m.matchId === match.id);
+
+        return {
+          id: shared?.id ?? match.id,
+          type: shared ? ("shared" as const) : ("original" as const),
+          date: match.date,
+          name: match.name,
+          finished: match.finished,
+          won:
+            match.matchPlayers.findIndex(
+              (player) => player.winner && player.player.isUser,
+            ) !== -1,
+          players: match.matchPlayers.map((matchPlayer) => {
+            return {
+              id: matchPlayer.player.id,
+              name: matchPlayer.player.name,
+            };
+          }),
+          gameImageUrl: match.game.image?.url,
+          gameName: match.game.name,
+          gameId: shared?.sharedGameId ?? match.game.id,
+        };
+      });
     }),
   deleteMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
@@ -1575,6 +1579,12 @@ export const matchRouter = createTRPCRouter({
             throw new TRPCError({
               code: "NOT_FOUND",
               message: "Shared match not found.",
+            });
+          }
+          if (returnedSharedMatch.permission !== "edit") {
+            throw new TRPCError({
+              code: "UNAUTHORIZED",
+              message: "Does not have permission to edit this match.",
             });
           }
           await tx

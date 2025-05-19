@@ -1,10 +1,15 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 import { compareAsc, compareDesc } from "date-fns";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
-import { matchPlayer, player, sharedPlayer } from "@board-games/db/schema";
+import {
+  groupPlayer,
+  matchPlayer,
+  player,
+  sharedPlayer,
+} from "@board-games/db/schema";
 import {
   insertPlayerSchema,
   selectGameSchema,
@@ -142,13 +147,6 @@ export const playerRouter = createTRPCRouter({
           createdBy: ctx.userId,
           id: input.group.id,
         },
-        with: {
-          players: {
-            columns: {
-              id: true,
-            },
-          },
-        },
       });
       if (!groupResponse) {
         throw new TRPCError({
@@ -188,6 +186,14 @@ export const playerRouter = createTRPCRouter({
             },
           },
         },
+        extras: {
+          inGroup: (table) => sql<boolean>`EXISTS (
+            SELECT 1
+            FROM ${groupPlayer}
+            WHERE ${groupPlayer.groupId} = ${input.group.id}
+              AND ${groupPlayer.playerId} = ${table.id}
+          )`,
+        },
       });
       const mappedGroupResponse: {
         id: number;
@@ -198,7 +204,7 @@ export const playerRouter = createTRPCRouter({
       }[] = players.map((p) => {
         return {
           id: p.id,
-          inGroup: groupResponse.players.findIndex((g) => g.id === p.id) !== -1,
+          inGroup: p.inGroup,
           name: p.name,
           imageUrl: p.image?.url ?? null,
           matches:
@@ -890,13 +896,11 @@ export const playerRouter = createTRPCRouter({
                   // how many tie on score but outrank p originally?
                   const tiedHigher = finalPlacements.filter((q) => {
                     const qPlacement = orig.get(q.id);
-                    if (!qPlacement) return false;
                     const pPlacement = orig.get(p.id);
-                    if (!pPlacement) return false;
+                    if (qPlacement == null || pPlacement == null) return false;
 
-                    if (q.score === p.score) {
-                      return qPlacement > pPlacement;
-                    }
+                    // Lower original placement outranks higher one
+                    return q.score === p.score && qPlacement < pPlacement;
                   }).length;
 
                   return {
