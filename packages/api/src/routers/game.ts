@@ -1140,7 +1140,7 @@ export const gameRouter = createTRPCRouter({
           firstLinkedMatch !== undefined
         ) {
           return compareDesc(firstOriginalMatch.date, firstLinkedMatch.date) ===
-            1
+            -1
             ? {
                 ...firstOriginalMatch,
                 location: firstOriginalMatch.location
