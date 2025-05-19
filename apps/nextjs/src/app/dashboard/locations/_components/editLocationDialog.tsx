@@ -74,9 +74,16 @@ const LocationContent = ({
         await queryClient.invalidateQueries(
           trpc.location.getLocations.queryOptions(),
         );
-        await queryClient.invalidateQueries(
-          trpc.dashboard.getLocations.queryOptions(),
-        );
+        if (location.type === "shared") {
+          await queryClient.invalidateQueries(
+            trpc.sharing.getSharedLocation.queryOptions({ id: location.id }),
+          );
+        }
+        if (location.type === "original") {
+          await queryClient.invalidateQueries(
+            trpc.location.getLocation.queryOptions({ id: location.id }),
+          );
+        }
         router.refresh();
         setOpen(false);
         toast({
