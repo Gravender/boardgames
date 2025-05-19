@@ -162,9 +162,8 @@ export const matchRouter = createTRPCRouter({
             const returnedSharedLocation =
               await transaction.query.sharedLocation.findFirst({
                 where: {
-                  ownerId: ctx.userId,
                   sharedWithId: ctx.userId,
-                  locationId: input.location.id,
+                  id: input.location.id,
                 },
                 with: {
                   location: true,
@@ -1308,9 +1307,17 @@ export const matchRouter = createTRPCRouter({
               scoresheetId: true,
               date: true,
               name: true,
-              locationId: true,
             })
-            .required({ id: true, scoresheetId: true }),
+            .required({ id: true, scoresheetId: true })
+            .extend({
+              location: z
+                .object({
+                  id: z.number(),
+                  type: z.literal("original").or(z.literal("shared")),
+                })
+                .nullable()
+                .optional(),
+            }),
           addPlayers: z.array(
             insertPlayerSchema
               .pick({
@@ -1387,13 +1394,57 @@ export const matchRouter = createTRPCRouter({
             });
           }
           //Update Match Details
-          if (input.match.name || input.match.date || input.match.locationId) {
+          if (input.match.name || input.match.date || input.match.location) {
+            let locationId: null | number | undefined;
+            if (input.match.location) {
+              if (input.match.location.type === "original") {
+                locationId = input.match.location.id;
+              } else {
+                console.log("input.match.location", input.match.location);
+                const returnedSharedLocation =
+                  await tx.query.sharedLocation.findFirst({
+                    where: {
+                      sharedWithId: ctx.userId,
+                      id: input.match.location.id,
+                    },
+                    with: {
+                      location: true,
+                    },
+                  });
+                if (!returnedSharedLocation) {
+                  throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Shared location not found.",
+                  });
+                } else {
+                  const [newLocation] = await tx
+                    .insert(location)
+                    .values({
+                      name: returnedSharedLocation.location.name,
+                      isDefault: returnedSharedLocation.isDefault,
+                      createdBy: ctx.userId,
+                    })
+                    .returning();
+                  if (!newLocation) {
+                    throw new TRPCError({
+                      code: "INTERNAL_SERVER_ERROR",
+                      message: "Failed to create location.",
+                    });
+                  }
+                  await tx
+                    .update(sharedLocation)
+                    .set({ linkedLocationId: newLocation.id, isDefault: false })
+                    .where(eq(sharedLocation.id, returnedSharedLocation.id));
+                  locationId = newLocation.id;
+                }
+              }
+            }
             await tx
               .update(match)
               .set({
                 name: input.match.name,
                 date: input.match.date,
-                locationId: input.match.locationId,
+                locationId: locationId,
               })
               .where(eq(match.id, input.match.id));
           }

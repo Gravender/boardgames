@@ -448,15 +448,12 @@ const AddMatchForm = ({
                           field.onChange(null);
                           return;
                         }
-                        console.log(value);
                         const [locationId, locationType] = value.split("-");
-                        console.log(locationId, locationType);
                         const selectedLocation = locations.find(
                           (loc) =>
                             loc.id === Number(locationId) &&
                             loc.type === locationType,
                         );
-                        console.log(selectedLocation);
                         field.onChange(
                           selectedLocation
                             ? {
