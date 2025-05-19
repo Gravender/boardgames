@@ -1,7 +1,7 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
-import { and, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type { TransactionType } from "@board-games/db/client";
@@ -873,13 +873,26 @@ export const matchRouter = createTRPCRouter({
       return returnedMatch;
     }),
   getMatchesByCalender: protectedUserProcedure.query(async ({ ctx }) => {
+    const sharedMatches = await ctx.db.query.sharedMatch.findMany({
+      where: {
+        sharedWithId: ctx.userId,
+      },
+    });
     const matches = await ctx.db
       .select({
         date: sql<Date>`date_trunc('day', ${match.date}) AS day`,
         ids: sql<number[]>`array_agg(${match.id})`,
       })
       .from(match)
-      .where(and(eq(match.userId, ctx.userId), isNull(match.deletedAt)))
+      .where(
+        or(
+          and(eq(match.userId, ctx.userId), isNull(match.deletedAt)),
+          inArray(
+            match.id,
+            sharedMatches.map((m) => m.matchId),
+          ),
+        ),
+      )
       .groupBy(sql`date_trunc('day', ${match.date})`)
       .orderBy(sql`date_trunc('day', ${match.date})`);
     return matches;
@@ -897,16 +910,30 @@ export const matchRouter = createTRPCRouter({
 
       const dayStartUtc = new Date(Date.UTC(year, month, day, 0, 0, 0));
       const nextDayUtc = new Date(Date.UTC(year, month, day + 1, 0, 0, 0));
+      const sharedMatches = await ctx.db.query.sharedMatch.findMany({
+        where: {
+          sharedWithId: ctx.userId,
+        },
+      });
       const matches = await ctx.db.query.match.findMany({
         where: {
           date: {
             gte: dayStartUtc,
             lt: nextDayUtc,
           },
-          userId: ctx.userId,
-          deletedAt: {
-            isNull: true,
-          },
+          OR: [
+            {
+              userId: ctx.userId,
+              deletedAt: {
+                isNull: true,
+              },
+            },
+            {
+              id: {
+                in: sharedMatches.map((m) => m.matchId),
+              },
+            },
+          ],
         },
         with: {
           game: {
@@ -923,7 +950,10 @@ export const matchRouter = createTRPCRouter({
         },
       });
       return matches.map((match) => ({
-        id: match.id,
+        id: sharedMatches.find((m) => m.matchId === match.id)?.id ?? match.id,
+        type: sharedMatches.find((m) => m.matchId === match.id)
+          ? ("shared" as const)
+          : ("original" as const),
         date: match.date,
         name: match.name,
         finished: match.finished,
@@ -939,7 +969,9 @@ export const matchRouter = createTRPCRouter({
         }),
         gameImageUrl: match.game.image?.url,
         gameName: match.game.name,
-        gameId: match.game.id,
+        gameId:
+          sharedMatches.find((m) => m.matchId === match.id)?.sharedGameId ??
+          match.game.id,
       }));
     }),
   deleteMatch: protectedUserProcedure

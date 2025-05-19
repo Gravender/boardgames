@@ -13,7 +13,6 @@ export default async function Page() {
       { matches: md.ids, date: md.date },
     ]),
   );
-  //TODO add shared matches
   return (
     <HydrateClient>
       <div className="flex min-h-screen flex-col items-center justify-center bg-background">
