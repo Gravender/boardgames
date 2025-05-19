@@ -86,6 +86,7 @@ export const shareGameRouter = createTRPCRouter({
         matches: returnedGame.sharedMatches.map((mMatch) => ({
           type: "shared" as const,
           id: mMatch.id,
+          permissions: mMatch.permission,
           gameId: returnedGame.id,
           date: mMatch.match.date,
           location: mMatch.sharedLocation

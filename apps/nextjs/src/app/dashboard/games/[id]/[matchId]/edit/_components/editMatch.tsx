@@ -240,6 +240,7 @@ export function EditMatchForm({
         }),
       );
       editMatch.mutate({
+        type: "original",
         match: {
           id: match.id,
           scoresheetId: match.scoresheet.id,
@@ -282,7 +283,7 @@ export function EditMatchForm({
         <CardTitle>Edit {match.name}</CardTitle>
       </CardHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <CardContent className="flex flex-col gap-2">
             <FormField
               control={form.control}

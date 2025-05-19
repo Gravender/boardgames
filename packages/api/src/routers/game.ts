@@ -193,6 +193,7 @@ export const gameRouter = createTRPCRouter({
         const linkedLocation = mSharedLocation?.linkedLocation;
         return {
           type: "shared" as const,
+          permissions: mMatch.permission,
           id: mMatch.id,
           gameId: mMatch.sharedGameId,
           date: mMatch.match.date,
@@ -230,20 +231,37 @@ export const gameRouter = createTRPCRouter({
         yearPublished: result.yearPublished,
         ownedBy: result.ownedBy,
         matches: [
-          ...result.matches.map<{
-            type: "shared" | "original";
-            id: number;
-            gameId: number;
-            date: Date;
-            name: string;
-            finished: boolean;
-            location: {
-              type: "shared" | "linked" | "original";
-              name: string;
-            } | null;
-            won: boolean;
-            duration: number;
-          }>((match) => {
+          ...result.matches.map<
+            | {
+                type: "original";
+                id: number;
+                gameId: number;
+                date: Date;
+                name: string;
+                finished: boolean;
+                location: {
+                  type: "original";
+                  name: string;
+                } | null;
+                won: boolean;
+                duration: number;
+              }
+            | {
+                type: "shared";
+                permissions: "view" | "edit";
+                id: number;
+                gameId: number;
+                date: Date;
+                name: string;
+                finished: boolean;
+                location: {
+                  type: "shared" | "linked";
+                  name: string;
+                } | null;
+                won: boolean;
+                duration: number;
+              }
+          >((match) => {
             return {
               type: "original" as const,
               id: match.id,

@@ -44,20 +44,26 @@ interface BaseMatch {
   date: Date;
   name: string;
   finished: boolean;
-  location: {
-    type: "shared" | "linked" | "original";
-    name: string;
-  } | null;
+
   won: boolean;
   duration: number;
 }
 
 interface OriginalMatch extends BaseMatch {
   type: "original";
+  location: {
+    type: "original";
+    name: string;
+  } | null;
 }
 
 interface SharedMatch extends BaseMatch {
   type: "shared";
+  permissions: "view" | "edit";
+  location: {
+    type: "shared" | "linked";
+    name: string;
+  } | null;
 }
 
 type Match = OriginalMatch | SharedMatch;
