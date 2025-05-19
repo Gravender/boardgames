@@ -90,11 +90,13 @@ const LocationContent = ({
     if (location.type === "original") {
       mutation.mutate({
         id: location.id,
+        type: "original",
         name: values.name,
       });
     } else {
       mutation.mutate({
-        id: location.locationId,
+        id: location.id,
+        type: "shared",
         name: values.name,
       });
     }
