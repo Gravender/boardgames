@@ -1392,7 +1392,6 @@ export const matchRouter = createTRPCRouter({
               if (input.match.location.type === "original") {
                 locationId = input.match.location.id;
               } else {
-                console.log("input.match.location", input.match.location);
                 const returnedSharedLocation =
                   await tx.query.sharedLocation.findFirst({
                     where: {

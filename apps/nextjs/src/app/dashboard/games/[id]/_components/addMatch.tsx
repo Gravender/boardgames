@@ -577,7 +577,11 @@ const AddMatchForm = ({
                 <FormLabel>Scoresheet:</FormLabel>
                 <Select
                   onValueChange={(e) => {
-                    field.onChange(Number.parseInt(e));
+                    const [id, type] = e.split("-");
+                    field.onChange({
+                      id: Number(id),
+                      scoresheetType: type as "original" | "shared",
+                    });
                   }}
                   defaultValue={`${field.value.id}-${field.value.scoresheetType}`}
                 >

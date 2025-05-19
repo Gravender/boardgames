@@ -72,7 +72,7 @@ export default function SharedGameDetails({ gameId }: { gameId: number }) {
       </div>
 
       {/* Match history section - more compact header on mobile */}
-      <div>
+      <div className="relative">
         <div className="mb-3 flex items-center justify-between md:mb-4">
           <h2 className="text-xl font-semibold md:text-2xl">Match History</h2>
         </div>

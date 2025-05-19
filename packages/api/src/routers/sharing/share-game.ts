@@ -948,8 +948,6 @@ export const shareGameRouter = createTRPCRouter({
                 };
               }),
             );
-          console.log("Before", inputPlayers);
-          console.log("playersToInsert", playersToInsert);
           const returnedMatchPlayers = await transaction
             .insert(matchPlayer)
             .values(playersToInsert)
@@ -984,7 +982,6 @@ export const shareGameRouter = createTRPCRouter({
                         },
                       });
                     if (!returnedSharedPlayer) {
-                      console.log("sharePLayerId", p.id);
                       throw new TRPCError({
                         code: "NOT_FOUND",
                         message: "Shared player not found.",
@@ -1023,8 +1020,6 @@ export const shareGameRouter = createTRPCRouter({
                     };
                   }),
                 );
-              console.log("Before", inputTeam.players);
-              console.log("playersToInsert", playersToInsert);
               const returnedMatchPlayers = await transaction
                 .insert(matchPlayer)
                 .values(playersToInsert)
@@ -1107,8 +1102,6 @@ export const shareGameRouter = createTRPCRouter({
                     };
                   }),
                 );
-              console.log("Before", inputTeam.players);
-              console.log("playersToInsert", playersToInsert);
               const returnedMatchPlayers = await transaction
                 .insert(matchPlayer)
                 .values(playersToInsert)

@@ -16,6 +16,20 @@ import {
 
 import { handleLocationSharing } from "./sharing";
 
+interface ShareFriendConfig {
+  friendUserId: number;
+  shareLocation: boolean;
+  sharePlayers: boolean;
+  defaultPermissionForMatches: "view" | "edit";
+  defaultPermissionForPlayers: "view" | "edit";
+  defaultPermissionForLocation: "view" | "edit";
+  defaultPermissionForGame: "view" | "edit";
+  allowSharedPlayers: boolean;
+  allowSharedLocation: boolean;
+  autoAcceptMatches: boolean;
+  autoAcceptPlayers: boolean;
+  autoAcceptLocation: boolean;
+}
 export async function shareMatchWithFriends(
   transaction: TransactionType,
   userId: number,
@@ -34,20 +48,7 @@ export async function shareMatchWithFriends(
       };
     }[];
   },
-  shareFriends: {
-    friendUserId: number;
-    shareLocation: boolean;
-    sharePlayers: boolean;
-    defaultPermissionForMatches: "view" | "edit";
-    defaultPermissionForPlayers: "view" | "edit";
-    defaultPermissionForLocation: "view" | "edit";
-    defaultPermissionForGame: "view" | "edit";
-    allowSharedPlayers: boolean;
-    allowSharedLocation: boolean;
-    autoAcceptMatches: boolean;
-    autoAcceptPlayers: boolean;
-    autoAcceptLocation: boolean;
-  }[],
+  shareFriends: ShareFriendConfig[],
 ) {
   for (const shareFriend of shareFriends) {
     await transaction.transaction(async (tx) => {
@@ -124,20 +125,7 @@ async function handleGameSharing(
   transaction: TransactionType,
   ownerId: number,
   gameId: number,
-  shareFriend: {
-    friendUserId: number;
-    shareLocation: boolean;
-    sharePlayers: boolean;
-    defaultPermissionForMatches: "view" | "edit";
-    defaultPermissionForPlayers: "view" | "edit";
-    defaultPermissionForLocation: "view" | "edit";
-    defaultPermissionForGame: "view" | "edit";
-    allowSharedPlayers: boolean;
-    allowSharedLocation: boolean;
-    autoAcceptMatches: boolean;
-    autoAcceptPlayers: boolean;
-    autoAcceptLocation: boolean;
-  },
+  shareFriend: ShareFriendConfig,
   newShareId: number,
 ) {
   const existingSharedGame = await transaction.query.sharedGame.findFirst({
@@ -185,20 +173,7 @@ async function createSharedMatch(
   transaction: TransactionType,
   ownerId: number,
   matchId: number,
-  shareFriend: {
-    friendUserId: number;
-    shareLocation: boolean;
-    sharePlayers: boolean;
-    defaultPermissionForMatches: "view" | "edit";
-    defaultPermissionForPlayers: "view" | "edit";
-    defaultPermissionForLocation: "view" | "edit";
-    defaultPermissionForGame: "view" | "edit";
-    allowSharedPlayers: boolean;
-    allowSharedLocation: boolean;
-    autoAcceptMatches: boolean;
-    autoAcceptPlayers: boolean;
-    autoAcceptLocation: boolean;
-  },
+  shareFriend: ShareFriendConfig,
   sharedGameId: number,
   sharedLocationId: number | undefined,
 ) {
@@ -230,20 +205,7 @@ async function handlePlayerSharing(
       id: number;
     };
   },
-  shareFriend: {
-    friendUserId: number;
-    shareLocation: boolean;
-    sharePlayers: boolean;
-    defaultPermissionForMatches: "view" | "edit";
-    defaultPermissionForPlayers: "view" | "edit";
-    defaultPermissionForLocation: "view" | "edit";
-    defaultPermissionForGame: "view" | "edit";
-    allowSharedPlayers: boolean;
-    allowSharedLocation: boolean;
-    autoAcceptMatches: boolean;
-    autoAcceptPlayers: boolean;
-    autoAcceptLocation: boolean;
-  },
+  shareFriend: ShareFriendConfig,
   parentShare: {
     id: number;
     expiresAt: Date | null;
@@ -275,35 +237,33 @@ async function createOrFindSharedPlayer(
   transaction: TransactionType,
   userId: number,
   playerId: number,
-  shareFriend: {
-    friendUserId: number;
-    shareLocation: boolean;
-    sharePlayers: boolean;
-    defaultPermissionForMatches: "view" | "edit";
-    defaultPermissionForPlayers: "view" | "edit";
-    defaultPermissionForLocation: "view" | "edit";
-    defaultPermissionForGame: "view" | "edit";
-    allowSharedPlayers: boolean;
-    allowSharedLocation: boolean;
-    autoAcceptMatches: boolean;
-    autoAcceptPlayers: boolean;
-    autoAcceptLocation: boolean;
-  },
+  shareFriend: ShareFriendConfig,
   parentShare: {
     id: number;
     expiresAt: Date | null;
   },
 ) {
-  await transaction.insert(shareRequest).values({
-    ownerId: userId,
-    sharedWithId: shareFriend.friendUserId,
-    itemType: "player",
-    itemId: playerId,
-    permission: shareFriend.defaultPermissionForPlayers,
-    status: shareFriend.autoAcceptPlayers ? "accepted" : "pending",
-    parentShareId: parentShare.id,
-    expiresAt: parentShare.expiresAt,
+  const alreadyExists = await transaction.query.shareRequest.findFirst({
+    where: {
+      ownerId: userId,
+      sharedWithId: shareFriend.friendUserId,
+      itemType: "player",
+      itemId: playerId,
+      status: "accepted",
+    },
   });
+  if (!alreadyExists) {
+    await transaction.insert(shareRequest).values({
+      ownerId: userId,
+      sharedWithId: shareFriend.friendUserId,
+      itemType: "player",
+      itemId: playerId,
+      permission: shareFriend.defaultPermissionForPlayers,
+      status: shareFriend.autoAcceptPlayers ? "accepted" : "pending",
+      parentShareId: parentShare.id,
+      expiresAt: parentShare.expiresAt,
+    });
+  }
   if (shareFriend.autoAcceptPlayers) {
     const existingSharedPlayer = await transaction.query.sharedPlayer.findFirst(
       {
@@ -347,20 +307,7 @@ async function createSharedMatchPlayer(
       id: number;
     };
   },
-  shareFriend: {
-    friendUserId: number;
-    shareLocation: boolean;
-    sharePlayers: boolean;
-    defaultPermissionForMatches: "view" | "edit";
-    defaultPermissionForPlayers: "view" | "edit";
-    defaultPermissionForLocation: "view" | "edit";
-    defaultPermissionForGame: "view" | "edit";
-    allowSharedPlayers: boolean;
-    allowSharedLocation: boolean;
-    autoAcceptMatches: boolean;
-    autoAcceptPlayers: boolean;
-    autoAcceptLocation: boolean;
-  },
+  shareFriend: ShareFriendConfig,
   returnedSharedMatch: {
     id: number;
   },
