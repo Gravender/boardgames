@@ -755,19 +755,66 @@ export const playerRouter = createTRPCRouter({
     }),
   update: protectedUserProcedure
     .input(
-      insertPlayerSchema
-        .pick({ id: true, imageId: true })
-        .required({ id: true })
-        .extend({ name: z.string().optional() }),
+      z.discriminatedUnion("type", [
+        z.object({
+          type: z.literal("original"),
+          id: z.number(),
+          imageId: z.number().nullable().optional(),
+          name: z.string().optional(),
+        }),
+        z.object({
+          type: z.literal("shared"),
+          id: z.number(),
+          name: z.string(),
+        }),
+      ]),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db
-        .update(player)
-        .set({
-          name: input.name,
-          imageId: input.imageId,
-        })
-        .where(eq(player.id, input.id));
+      await ctx.db.transaction(async (tx) => {
+        if (input.type === "shared") {
+          const returnedSharedPlayer = await tx.query.sharedPlayer.findFirst({
+            where: {
+              sharedWithId: ctx.userId,
+              id: input.id,
+            },
+            with: {
+              player: true,
+            },
+          });
+          if (!returnedSharedPlayer) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Player not found.",
+            });
+          }
+          if (returnedSharedPlayer.permission !== "edit") {
+            throw new TRPCError({
+              code: "UNAUTHORIZED",
+              message: "Does not have permission to edit this player.",
+            });
+          }
+          await tx
+            .update(player)
+            .set({
+              name: input.name,
+            })
+            .where(
+              and(
+                eq(player.id, returnedSharedPlayer.player.id),
+                eq(player.createdBy, returnedSharedPlayer.ownerId),
+              ),
+            );
+        }
+        if (input.type === "original") {
+          await tx
+            .update(player)
+            .set({
+              name: input.name,
+              imageId: input.imageId,
+            })
+            .where(eq(player.id, input.id));
+        }
+      });
     }),
   deletePlayer: protectedUserProcedure
     .input(selectPlayerSchema.pick({ id: true }))
@@ -808,7 +855,47 @@ export const playerRouter = createTRPCRouter({
                 })),
                 returnedMatch.scoresheet,
               );
-              for (const placement of finalPlacements) {
+              function recomputePlacements(
+                matchPlayers: { id: number; placement: number | null }[],
+                finalPlacements: { id: number; score: number }[],
+              ) {
+                // map id → original placement
+                const orig = new Map(
+                  matchPlayers.map((p) => [p.id, p.placement]),
+                );
+
+                return finalPlacements.map((p) => {
+                  // how many outrank p on score?
+                  const higher = finalPlacements.filter(
+                    (q) => q.score > p.score,
+                  ).length;
+                  // how many tie on score but outrank p originally?
+                  const tiedHigher = finalPlacements.filter((q) => {
+                    const qPlacement = orig.get(q.id);
+                    if (!qPlacement) return false;
+                    const pPlacement = orig.get(p.id);
+                    if (!pPlacement) return false;
+
+                    if (q.score === p.score) {
+                      return qPlacement > pPlacement;
+                    }
+                  }).length;
+
+                  return {
+                    id: p.id,
+                    score: p.score,
+                    placement: 1 + higher + tiedHigher,
+                  };
+                });
+              }
+              const recomputedPlacements = recomputePlacements(
+                returnedMatch.matchPlayers.map((mPlayer) => ({
+                  id: mPlayer.id,
+                  placement: mPlayer.placement,
+                })),
+                finalPlacements,
+              );
+              for (const placement of recomputedPlacements) {
                 await tx
                   .update(matchPlayer)
                   .set({

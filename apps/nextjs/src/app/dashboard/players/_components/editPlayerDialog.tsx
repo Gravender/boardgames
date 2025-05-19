@@ -34,6 +34,23 @@ import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
+const imageSchema = z
+  .instanceof(File)
+  .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
+  .refine(
+    (file) => file.type === "image/jpeg" || file.type === "image/png",
+    "Only .jpg and .png formats are supported.",
+  )
+  .nullable();
+const originalPlayerSchema = insertPlayerSchema.pick({ name: true }).extend({
+  imageUrl: imageSchema.or(z.string().nullable()),
+});
+const sharedPlayerSchema = insertPlayerSchema
+  .pick({ name: true })
+  .required({ name: true })
+  .extend({
+    imageUrl: imageSchema.or(z.string().nullable()),
+  });
 export const EditPlayerDialog = ({
   player,
   setOpen,
@@ -42,23 +59,12 @@ export const EditPlayerDialog = ({
   setOpen: (isOpen: boolean) => void;
 }) => {
   return (
-    <DialogContent className="min-h-80 sm:max-w-[465px]">
+    <DialogContent className="sm:max-w-[465px]">
       <PlayerContent setOpen={setOpen} player={player} />
     </DialogContent>
   );
 };
 
-const playerSchema = insertPlayerSchema.pick({ name: true }).extend({
-  imageUrl: z
-    .instanceof(File)
-    .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
-    .refine(
-      (file) => file.type === "image/jpeg" || file.type === "image/png",
-      "Only .jpg and .png formats are supported.",
-    )
-    .nullable()
-    .or(z.string().nullable()),
-});
 const PlayerContent = ({
   setOpen,
   player,
@@ -78,12 +84,30 @@ const PlayerContent = ({
   const queryClient = useQueryClient();
   const router = useRouter();
 
+  const playerSchema =
+    player.type === "original"
+      ? originalPlayerSchema
+      : sharedPlayerSchema.superRefine((values, ctx) => {
+          if (values.name === player.name)
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Name has not changed.",
+              path: ["name"],
+            });
+        });
+
   const form = useForm<z.infer<typeof playerSchema>>({
     resolver: zodResolver(playerSchema),
-    defaultValues: {
-      name: player.name,
-      imageUrl: player.imageUrl,
-    },
+    defaultValues:
+      player.type === "original"
+        ? {
+            name: player.name,
+            imageUrl: player.imageUrl,
+          }
+        : {
+            name: player.name,
+            imageUrl: null,
+          },
   });
   const mutation = useMutation(
     trpc.player.update.mutationOptions({
@@ -124,11 +148,19 @@ const PlayerContent = ({
   }) => {
     const nameChanged = values.name !== player.name;
     const imageIdChanged = imageId !== undefined;
-    if (nameChanged || imageIdChanged) {
+    if (player.type === "original" && (nameChanged || imageIdChanged)) {
       mutation.mutate({
+        type: "original" as const,
         id: player.id,
         name: nameChanged ? values.name : undefined,
         imageId: imageId,
+      });
+    }
+    if (player.type === "shared" && nameChanged) {
+      mutation.mutate({
+        type: "shared" as const,
+        id: player.id,
+        name: values.name,
       });
     }
   };
@@ -176,60 +208,65 @@ const PlayerContent = ({
         <DialogTitle>{`Edit ${player.name}`}</DialogTitle>
       </DialogHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Player Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Player name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="imageUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Image</FormLabel>
-                <FormControl>
-                  <div className="flex items-center space-x-4">
-                    <div className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded-full">
-                      {imagePreview ? (
-                        <Image
-                          src={imagePreview}
-                          alt="Player image"
-                          className="aspect-square h-full w-full rounded-sm object-cover"
-                          fill
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="flex flex-col gap-2">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Player Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Player name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {player.type === "original" && (
+              <FormField
+                control={form.control}
+                name="imageUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Image</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center space-x-4">
+                        <div className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded-full">
+                          {imagePreview ? (
+                            <Image
+                              src={imagePreview}
+                              alt="Player image"
+                              className="aspect-square h-full w-full rounded-sm object-cover"
+                              fill
+                            />
+                          ) : (
+                            <User className="h-full w-full items-center justify-center rounded-full bg-muted p-2" />
+                          )}
+                        </div>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            field.onChange(file);
+                            if (file) {
+                              const url = URL.createObjectURL(file);
+                              setImagePreview(url);
+                            }
+                          }}
                         />
-                      ) : (
-                        <User className="h-full w-full items-center justify-center rounded-full bg-muted p-2" />
-                      )}
-                    </div>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        field.onChange(file);
-                        if (file) {
-                          const url = URL.createObjectURL(file);
-                          setImagePreview(url);
-                        }
-                      }}
-                    />
-                  </div>
-                </FormControl>
-                <FormDescription>Upload an image (max 4MB).</FormDescription>
-                <FormMessage />
-              </FormItem>
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Upload an image (max 4MB).
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          />
+          </div>
           <DialogFooter className="gap-2">
             <Button
               type="reset"
@@ -240,9 +277,11 @@ const PlayerContent = ({
             </Button>
             <Button
               type="submit"
-              disabled={isUploading || !form.formState.isDirty}
+              disabled={
+                isUploading || !form.formState.isDirty || mutation.isPending
+              }
             >
-              {isUploading ? (
+              {isUploading || mutation.isPending ? (
                 <>
                   <Spinner />
                   <span>Uploading...</span>

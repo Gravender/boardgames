@@ -10,13 +10,13 @@ export function generateMetadata() {
   };
 }
 
-export default function Page({
+export default async function Page({
   searchParams,
 }: {
-  searchParams: { add?: string };
+  searchParams: Promise<{ add?: string }>;
 }) {
   void prefetch(trpc.player.getPlayers.queryOptions());
-  const addPlayer = searchParams.add === "true";
+  const addPlayer = (await searchParams).add === "true";
   return (
     <div className="flex w-full items-center justify-center">
       <Suspense>
