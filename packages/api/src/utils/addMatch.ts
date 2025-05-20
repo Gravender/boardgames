@@ -368,6 +368,21 @@ export async function processPlayer(
   }
 
   if (returnedSharedPlayer.linkedPlayerId !== null) {
+    // Verify that the linked player belongs to the current user
+    const linkedPlayer = await transaction.query.player.findFirst({
+      where: {
+        id: returnedSharedPlayer.linkedPlayerId,
+        createdBy: userId,
+      },
+    });
+
+    if (!linkedPlayer) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Linked player does not belong to current user.",
+      });
+    }
+
     return {
       matchId,
       playerId: returnedSharedPlayer.linkedPlayerId,

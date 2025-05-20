@@ -4,6 +4,7 @@ import { compareAsc } from "date-fns";
 import { and, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
+import type { Filter } from "@board-games/db/client";
 import type {
   insertRoundPlayerSchema,
   insertRoundSchema,
@@ -876,27 +877,28 @@ export const matchRouter = createTRPCRouter({
           sharedWithId: ctx.userId,
         },
       });
+      const matchOrConditions: Filter<"match">["OR"] = [
+        {
+          userId: ctx.userId,
+          deletedAt: {
+            isNull: true,
+          },
+        },
+      ];
+      if (sharedMatches.length > 0) {
+        matchOrConditions.push({
+          id: {
+            in: sharedMatches.map((m) => m.matchId),
+          },
+        });
+      }
       const matches = await ctx.db.query.match.findMany({
         where: {
           date: {
             gte: dayStartUtc,
             lt: nextDayUtc,
           },
-          OR: [
-            {
-              userId: ctx.userId,
-              deletedAt: {
-                isNull: true,
-              },
-            },
-            sharedMatches.length > 0
-              ? {
-                  id: {
-                    in: sharedMatches.map((m) => m.matchId),
-                  },
-                }
-              : {},
-          ],
+          OR: matchOrConditions,
         },
         with: {
           game: {

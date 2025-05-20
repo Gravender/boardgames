@@ -1,3 +1,4 @@
+import type { ExtractTablesWithRelations, RelationsFilter } from "drizzle-orm";
 import { sql } from "@vercel/postgres";
 import { drizzle as LocalDrizzle } from "drizzle-orm/postgres-js";
 import { drizzle as VercelDrizzle } from "drizzle-orm/vercel-postgres";
@@ -27,3 +28,10 @@ export const db =
 export type DatabaseType = typeof db;
 type TransactionCallback = Parameters<DatabaseType["transaction"]>[0];
 export type TransactionType = Parameters<TransactionCallback>[0];
+
+type TRSchema = ExtractTablesWithRelations<typeof relations>;
+
+export type Filter<TableName extends keyof TRSchema> = RelationsFilter<
+  TRSchema[TableName],
+  TRSchema
+>;
