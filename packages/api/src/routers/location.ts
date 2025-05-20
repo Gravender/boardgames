@@ -269,17 +269,42 @@ export const locationRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.number(),
-        name: z.string().optional(),
+        type: z.literal("shared").or(z.literal("original")),
+        name: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db
-        .update(location)
-        .set({
-          name: input.name,
-        })
-        .where(eq(location.id, input.id))
-        .returning();
+      await ctx.db.transaction(async (transaction) => {
+        if (input.type === "original") {
+          await transaction
+            .update(location)
+            .set({
+              name: input.name,
+            })
+            .where(eq(location.id, input.id));
+        }
+        if (input.type === "shared") {
+          const sharedLocation =
+            await transaction.query.sharedLocation.findFirst({
+              where: {
+                id: input.id,
+                sharedWithId: ctx.userId,
+              },
+            });
+          if (!sharedLocation) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Shared location not found.",
+            });
+          }
+          await transaction
+            .update(location)
+            .set({
+              name: input.name,
+            })
+            .where(eq(location.id, sharedLocation.locationId));
+        }
+      });
     }),
   editDefaultLocation: protectedUserProcedure
     .input(

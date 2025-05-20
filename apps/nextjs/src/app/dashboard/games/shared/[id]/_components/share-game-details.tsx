@@ -9,13 +9,14 @@ import { Badge } from "@board-games/ui/badge";
 import { useTRPC } from "~/trpc/react";
 import { GameDetails } from "../../../_components/game-details";
 import { MatchesList } from "../../../_components/matches-list";
+import { AddMatchDialog } from "./addMatch";
 
 export default function SharedGameDetails({ gameId }: { gameId: number }) {
   const trpc = useTRPC();
   const { data: game } = useSuspenseQuery(
     trpc.sharing.getSharedGame.queryOptions({ id: gameId }),
   );
-  //TODO add match button
+  if (game === null) return null;
   return (
     <div>
       {/* Game details section */}
@@ -71,29 +72,19 @@ export default function SharedGameDetails({ gameId }: { gameId: number }) {
       </div>
 
       {/* Match history section - more compact header on mobile */}
-      <div>
+      <div className="relative">
         <div className="mb-3 flex items-center justify-between md:mb-4">
           <h2 className="text-xl font-semibold md:text-2xl">Match History</h2>
-          {/* 
-          TODO: add match support
-            {game.permission === "edit" && (
-            <div className="hidden md:block">
-              <AddMatchButton gameId={game.id} isShared={true} />
-            </div>
-          )} */}
         </div>
         <MatchesList matches={game.matches} isShared={true} />
+        <div className="absolute bottom-4 right-6 z-10 sm:right-10">
+          <AddMatchDialog
+            gameId={gameId}
+            gameName={game.name}
+            matches={game.matches.length}
+          />
+        </div>
       </div>
-
-      {/*
-      TODO: add match support
-       Mobile Action Button - only if user has edit permission */}
-      {/* {game.permission === "edit" && (
-        <MobileActionButton
-          onAction={() => setAddMatchDialogOpen(true)}
-          label="Add Match"
-        />
-      )} */}
     </div>
   );
 }

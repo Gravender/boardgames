@@ -54,7 +54,7 @@ export function LocationsTable() {
           {locations.map((location) => {
             return (
               <Card
-                key={location.id}
+                key={`${location.id}-${location.type}`}
                 className={cn(
                   location.isDefault && "bg-sidebar hover:bg-sidebar/90",
                 )}

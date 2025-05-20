@@ -74,9 +74,16 @@ const LocationContent = ({
         await queryClient.invalidateQueries(
           trpc.location.getLocations.queryOptions(),
         );
-        await queryClient.invalidateQueries(
-          trpc.dashboard.getLocations.queryOptions(),
-        );
+        if (location.type === "shared") {
+          await queryClient.invalidateQueries(
+            trpc.sharing.getSharedLocation.queryOptions({ id: location.id }),
+          );
+        }
+        if (location.type === "original") {
+          await queryClient.invalidateQueries(
+            trpc.location.getLocation.queryOptions({ id: location.id }),
+          );
+        }
         router.refresh();
         setOpen(false);
         toast({
@@ -90,11 +97,13 @@ const LocationContent = ({
     if (location.type === "original") {
       mutation.mutate({
         id: location.id,
+        type: "original",
         name: values.name,
       });
     } else {
       mutation.mutate({
-        id: location.locationId,
+        id: location.id,
+        type: "shared",
         name: values.name,
       });
     }

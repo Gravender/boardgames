@@ -7,6 +7,7 @@ import { format } from "date-fns/format";
 import { Dices } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
+import { Badge } from "@board-games/ui/badge";
 import { CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
@@ -38,16 +39,12 @@ export function MatchesTable({ data, date }: { data: Matches; date: string }) {
           <TableBody className="flex w-full flex-col gap-2 p-4">
             {matches.map((match) => (
               <TableRow
-                key={match.id}
+                key={`${match.id}-${match.type}`}
                 className="flex w-full rounded-lg border bg-card text-card-foreground shadow-sm"
               >
                 <TableCell className="flex w-full items-center font-medium">
                   <Link
-                    href={
-                      match.finished
-                        ? `/dashboard/games/${match.gameId}/${match.id}/summary`
-                        : `/dashboard/games/${match.gameId}/${match.id}`
-                    }
+                    href={`/dashboard/games${match.type === "shared" ? "/shared" : ""}/${match.gameId}/${match.id}${match.finished ? "/summary" : ""}`}
                     className="flex w-full items-center gap-3 font-medium"
                   >
                     <div className="relative flex h-12 w-12 shrink-0 overflow-hidden">
@@ -65,9 +62,19 @@ export function MatchesTable({ data, date }: { data: Matches; date: string }) {
                     </div>
                     <div className="flex w-full items-center justify-between">
                       <div className="flex flex-col items-start">
-                        <h2 className="text-md text-left font-semibold">
-                          {match.name}
-                        </h2>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-md text-left font-semibold">
+                            {match.name}
+                          </h2>
+                          {match.type === "shared" && (
+                            <Badge
+                              variant="outline"
+                              className={"bg-blue-600 text-white"}
+                            >
+                              Shared
+                            </Badge>
+                          )}
+                        </div>
                         <div className="flex min-w-20 items-center gap-1">
                           <span>Play Date:</span>
                           <span className="text-muted-foreground">

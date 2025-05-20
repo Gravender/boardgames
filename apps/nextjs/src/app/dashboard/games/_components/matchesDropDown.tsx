@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -12,16 +13,22 @@ import {
 } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@board-games/ui/alert-dialog";
 import { Button } from "@board-games/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@board-games/ui/dialog";
 import {
   DropdownMenu,
@@ -32,6 +39,7 @@ import {
 } from "@board-games/ui/dropdown-menu";
 
 import { useTRPC } from "~/trpc/react";
+import { EditSharedMatchForm } from "./edit-shared-match-dialog-content";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 export function MatchDropDown({
@@ -41,26 +49,29 @@ export function MatchDropDown({
   match: Game["matches"][number];
   gameId: Game["id"];
 }) {
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSharingEditDialog, setIsSharingEditDialogOpen] = useState(false);
+
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const deleteMatch = useMutation(
     trpc.match.deleteMatch.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
-        await queryClient.invalidateQueries(
+      onSuccess: () => {
+        void queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
+        void queryClient.invalidateQueries(trpc.player.pathFilter());
+        void queryClient.invalidateQueries(trpc.dashboard.pathFilter());
+        void queryClient.invalidateQueries(
           trpc.game.getGame.queryOptions({ id: gameId }),
         );
-        await queryClient.invalidateQueries(trpc.player.pathFilter());
-        await queryClient.invalidateQueries(trpc.dashboard.pathFilter());
+        setIsDeleteDialogOpen(false);
       },
     }),
   );
   const onDelete = () => {
     deleteMatch.mutate({ id: match.id });
   };
-  //TODO add shared match support
   return (
-    <Dialog>
+    <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -73,12 +84,18 @@ export function MatchDropDown({
             <DropdownMenuItem asChild>
               <Link
                 prefetch={true}
-                href={`/dashboard/games/${gameId}/${match.id}/edit`}
+                href={`/dashboard/games/${match.gameId}/${match.id}/edit`}
                 className="flex items-center gap-2"
               >
                 <PencilIcon className="mr-2 h-4 w-4" />
                 Edit
               </Link>
+            </DropdownMenuItem>
+          )}
+          {match.type === "shared" && match.permissions === "edit" && (
+            <DropdownMenuItem onClick={() => setIsSharingEditDialogOpen(true)}>
+              <PencilIcon className="mr-2 h-4 w-4" />
+              Edit
             </DropdownMenuItem>
           )}
           <DropdownMenuItem asChild>
@@ -124,35 +141,51 @@ export function MatchDropDown({
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DialogTrigger asChild>
-                <DropdownMenuItem className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground">
-                  <div className="flex items-center gap-2">
-                    <Trash2Icon className="mr-2 h-4 w-4" />
-                    <span>Delete</span>
-                  </div>
-                </DropdownMenuItem>
-              </DialogTrigger>
+              <DropdownMenuItem
+                className="flex items-center gap-2 text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <Trash2Icon className="mr-2 h-4 w-4" />
+                <span>Delete</span>
+              </DropdownMenuItem>
             </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Are you absolutely sure?</DialogTitle>
-          <DialogDescription>
-            This action cannot be undone. This will permanently delete your
-            match.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2">
-          <DialogClose asChild>
-            <Button type="button">Cancel</Button>
-          </DialogClose>
-          <Button variant="destructive" onClick={onDelete}>
-            Delete
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your
+              match.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {match.type === "shared" && match.permissions === "edit" && (
+        <Dialog
+          open={isSharingEditDialog}
+          onOpenChange={setIsSharingEditDialogOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit {match.name}</DialogTitle>
+            </DialogHeader>
+            <EditSharedMatchForm
+              match={match}
+              setIsOpen={setIsSharingEditDialogOpen}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }
