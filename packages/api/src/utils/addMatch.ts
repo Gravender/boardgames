@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
 
 import type { TransactionType } from "@board-games/db/client";
 import type {
@@ -7,6 +8,7 @@ import type {
   selectSharedMatchSchema,
 } from "@board-games/db/zodSchema";
 import {
+  player,
   sharedGame,
   sharedMatch,
   sharedMatchPlayer,
@@ -332,4 +334,73 @@ async function createSharedMatchPlayer(
       message: "Failed to generate share.",
     });
   }
+}
+export async function processPlayer(
+  transaction: TransactionType,
+  matchId: number,
+  playerToProcess: { id: number; type: "original" | "shared" },
+  teamId: number | null,
+  userId: number,
+) {
+  if (playerToProcess.type === "original") {
+    return {
+      matchId,
+      playerId: playerToProcess.id,
+      teamId,
+    };
+  }
+
+  const returnedSharedPlayer = await transaction.query.sharedPlayer.findFirst({
+    where: {
+      sharedWithId: userId,
+      id: playerToProcess.id,
+    },
+    with: {
+      player: true,
+    },
+  });
+
+  if (!returnedSharedPlayer) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Shared player not found.",
+    });
+  }
+
+  if (returnedSharedPlayer.linkedPlayerId !== null) {
+    return {
+      matchId,
+      playerId: returnedSharedPlayer.linkedPlayerId,
+      teamId,
+    };
+  }
+
+  // Create and link a new player
+  const [insertedPlayer] = await transaction
+    .insert(player)
+    .values({
+      createdBy: userId,
+      name: returnedSharedPlayer.player.name,
+    })
+    .returning();
+
+  if (!insertedPlayer) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Failed to create player.",
+    });
+  }
+
+  await transaction
+    .update(sharedPlayer)
+    .set({
+      linkedPlayerId: insertedPlayer.id,
+    })
+    .where(eq(sharedPlayer.id, returnedSharedPlayer.id));
+
+  return {
+    matchId,
+    playerId: insertedPlayer.id,
+    teamId,
+  };
 }

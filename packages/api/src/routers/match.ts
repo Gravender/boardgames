@@ -11,14 +11,12 @@ import type {
   selectScoreSheetSchema,
 } from "@board-games/db/zodSchema";
 import {
-  location,
   match,
   matchPlayer,
   player,
   round,
   roundPlayer,
   scoresheet,
-  sharedLocation,
   team,
 } from "@board-games/db/schema";
 import {
@@ -33,6 +31,7 @@ import { calculatePlacement } from "@board-games/shared";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 import { shareMatchWithFriends } from "../utils/addMatch";
+import { cloneSharedLocationForUser } from "../utils/handleSharedLocation";
 
 export const matchRouter = createTRPCRouter({
   createMatch: protectedUserProcedure
@@ -151,42 +150,11 @@ export const matchRouter = createTRPCRouter({
           if (input.location.type === "original") {
             locationId = input.location.id;
           } else {
-            const returnedSharedLocation =
-              await transaction.query.sharedLocation.findFirst({
-                where: {
-                  sharedWithId: ctx.userId,
-                  id: input.location.id,
-                },
-                with: {
-                  location: true,
-                },
-              });
-            if (!returnedSharedLocation) {
-              throw new TRPCError({
-                code: "NOT_FOUND",
-                message: "Shared location not found.",
-              });
-            } else {
-              const [newLocation] = await transaction
-                .insert(location)
-                .values({
-                  name: returnedSharedLocation.location.name,
-                  isDefault: returnedSharedLocation.isDefault,
-                  createdBy: ctx.userId,
-                })
-                .returning();
-              if (!newLocation) {
-                throw new TRPCError({
-                  code: "INTERNAL_SERVER_ERROR",
-                  message: "Failed to create location.",
-                });
-              }
-              await transaction
-                .update(sharedLocation)
-                .set({ linkedLocationId: newLocation.id, isDefault: false })
-                .where(eq(sharedLocation.id, returnedSharedLocation.id));
-              locationId = newLocation.id;
-            }
+            locationId = await cloneSharedLocationForUser(
+              transaction,
+              input.location.id,
+              ctx.userId,
+            );
           }
         }
         const [returningMatch] = await transaction
@@ -1392,42 +1360,11 @@ export const matchRouter = createTRPCRouter({
               if (input.match.location.type === "original") {
                 locationId = input.match.location.id;
               } else {
-                const returnedSharedLocation =
-                  await tx.query.sharedLocation.findFirst({
-                    where: {
-                      sharedWithId: ctx.userId,
-                      id: input.match.location.id,
-                    },
-                    with: {
-                      location: true,
-                    },
-                  });
-                if (!returnedSharedLocation) {
-                  throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "Shared location not found.",
-                  });
-                } else {
-                  const [newLocation] = await tx
-                    .insert(location)
-                    .values({
-                      name: returnedSharedLocation.location.name,
-                      isDefault: returnedSharedLocation.isDefault,
-                      createdBy: ctx.userId,
-                    })
-                    .returning();
-                  if (!newLocation) {
-                    throw new TRPCError({
-                      code: "INTERNAL_SERVER_ERROR",
-                      message: "Failed to create location.",
-                    });
-                  }
-                  await tx
-                    .update(sharedLocation)
-                    .set({ linkedLocationId: newLocation.id, isDefault: false })
-                    .where(eq(sharedLocation.id, returnedSharedLocation.id));
-                  locationId = newLocation.id;
-                }
+                locationId = await cloneSharedLocationForUser(
+                  tx,
+                  input.match.location.id,
+                  ctx.userId,
+                );
               }
             }
             await tx

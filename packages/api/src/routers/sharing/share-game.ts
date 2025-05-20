@@ -12,22 +12,19 @@ import type {
 } from "@board-games/db/zodSchema";
 import {
   game,
-  location,
   match,
   matchPlayer,
-  player,
   round,
   roundPlayer,
   scoresheet,
   sharedGame,
-  sharedLocation,
-  sharedPlayer,
   team,
 } from "@board-games/db/schema";
 import { selectSharedGameSchema } from "@board-games/db/zodSchema";
 
 import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
-import { shareMatchWithFriends } from "../../utils/addMatch";
+import { processPlayer, shareMatchWithFriends } from "../../utils/addMatch";
+import { cloneSharedLocationForUser } from "../../utils/handleSharedLocation";
 
 export const shareGameRouter = createTRPCRouter({
   getSharedGame: protectedUserProcedure
@@ -827,42 +824,11 @@ export const shareGameRouter = createTRPCRouter({
           if (input.location.type === "original") {
             locationId = input.location.id;
           } else {
-            const returnedSharedLocation =
-              await transaction.query.sharedLocation.findFirst({
-                where: {
-                  sharedWithId: ctx.userId,
-                  id: input.location.id,
-                },
-                with: {
-                  location: true,
-                },
-              });
-            if (!returnedSharedLocation) {
-              throw new TRPCError({
-                code: "NOT_FOUND",
-                message: "Shared location not found.",
-              });
-            } else {
-              const [newLocation] = await transaction
-                .insert(location)
-                .values({
-                  name: returnedSharedLocation.location.name,
-                  isDefault: returnedSharedLocation.isDefault,
-                  createdBy: ctx.userId,
-                })
-                .returning();
-              if (!newLocation) {
-                throw new TRPCError({
-                  code: "INTERNAL_SERVER_ERROR",
-                  message: "Failed to create location.",
-                });
-              }
-              await transaction
-                .update(sharedLocation)
-                .set({ linkedLocationId: newLocation.id, isDefault: false })
-                .where(eq(sharedLocation.id, returnedSharedLocation.id));
-              locationId = newLocation.id;
-            }
+            locationId = await cloneSharedLocationForUser(
+              transaction,
+              input.location.id,
+              ctx.userId,
+            );
           }
         }
         const [returningMatch] = await transaction
@@ -892,60 +858,14 @@ export const shareGameRouter = createTRPCRouter({
           const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
             await Promise.all(
               inputPlayers.map(async (p) => {
-                if (p.type === "original") {
-                  return {
-                    matchId: returningMatch.id,
-                    playerId: p.id,
-                    teamId: null,
-                  };
-                }
-                const returnedSharedPlayer =
-                  await transaction.query.sharedPlayer.findFirst({
-                    where: {
-                      sharedWithId: ctx.userId,
-                      id: p.id,
-                    },
-                    with: {
-                      player: true,
-                    },
-                  });
-                if (!returnedSharedPlayer) {
-                  throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "Shared player not found.",
-                  });
-                }
-                if (returnedSharedPlayer.linkedPlayerId !== null) {
-                  return {
-                    matchId: returningMatch.id,
-                    playerId: returnedSharedPlayer.linkedPlayerId,
-                    teamId: null,
-                  };
-                }
-                const [insertedPlayer] = await transaction
-                  .insert(player)
-                  .values({
-                    createdBy: ctx.userId,
-                    name: returnedSharedPlayer.player.name,
-                  })
-                  .returning();
-                if (!insertedPlayer) {
-                  throw new TRPCError({
-                    code: "INTERNAL_SERVER_ERROR",
-                    message: "Failed to create player.",
-                  });
-                }
-                await transaction
-                  .update(sharedPlayer)
-                  .set({
-                    linkedPlayerId: insertedPlayer.id,
-                  })
-                  .where(eq(sharedPlayer.id, returnedSharedPlayer.id));
-                return {
-                  matchId: returningMatch.id,
-                  playerId: insertedPlayer.id,
-                  teamId: null,
-                };
+                const processedPlayer = await processPlayer(
+                  transaction,
+                  returningMatch.id,
+                  p,
+                  null,
+                  ctx.userId,
+                );
+                return processedPlayer;
               }),
             );
           const returnedMatchPlayers = await transaction
@@ -964,60 +884,14 @@ export const shareGameRouter = createTRPCRouter({
               const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
                 await Promise.all(
                   inputTeam.players.map(async (p) => {
-                    if (p.type === "original") {
-                      return {
-                        matchId: returningMatch.id,
-                        playerId: p.id,
-                        teamId: null,
-                      };
-                    }
-                    const returnedSharedPlayer =
-                      await transaction.query.sharedPlayer.findFirst({
-                        where: {
-                          sharedWithId: ctx.userId,
-                          id: p.id,
-                        },
-                        with: {
-                          player: true,
-                        },
-                      });
-                    if (!returnedSharedPlayer) {
-                      throw new TRPCError({
-                        code: "NOT_FOUND",
-                        message: "Shared player not found.",
-                      });
-                    }
-                    if (returnedSharedPlayer.linkedPlayerId !== null) {
-                      return {
-                        matchId: returningMatch.id,
-                        playerId: returnedSharedPlayer.linkedPlayerId,
-                        teamId: null,
-                      };
-                    }
-                    const [insertedPlayer] = await transaction
-                      .insert(player)
-                      .values({
-                        createdBy: ctx.userId,
-                        name: returnedSharedPlayer.player.name,
-                      })
-                      .returning();
-                    if (!insertedPlayer) {
-                      throw new TRPCError({
-                        code: "INTERNAL_SERVER_ERROR",
-                        message: "Failed to create player.",
-                      });
-                    }
-                    await transaction
-                      .update(sharedPlayer)
-                      .set({
-                        linkedPlayerId: insertedPlayer.id,
-                      })
-                      .where(eq(sharedPlayer.id, returnedSharedPlayer.id));
-                    return {
-                      matchId: returningMatch.id,
-                      playerId: insertedPlayer.id,
-                      teamId: null,
-                    };
+                    const processedPlayer = await processPlayer(
+                      transaction,
+                      returningMatch.id,
+                      p,
+                      null,
+                      ctx.userId,
+                    );
+                    return processedPlayer;
                   }),
                 );
               const returnedMatchPlayers = await transaction
@@ -1046,60 +920,14 @@ export const shareGameRouter = createTRPCRouter({
               const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
                 await Promise.all(
                   inputTeam.players.map(async (p) => {
-                    if (p.type === "original") {
-                      return {
-                        matchId: returningMatch.id,
-                        playerId: p.id,
-                        teamId: returningTeam.id,
-                      };
-                    }
-                    const returnedSharedPlayer =
-                      await transaction.query.sharedPlayer.findFirst({
-                        where: {
-                          sharedWithId: ctx.userId,
-                          id: p.id,
-                        },
-                        with: {
-                          player: true,
-                        },
-                      });
-                    if (!returnedSharedPlayer) {
-                      throw new TRPCError({
-                        code: "NOT_FOUND",
-                        message: "Shared player not found.",
-                      });
-                    }
-                    if (returnedSharedPlayer.linkedPlayerId !== null) {
-                      return {
-                        matchId: returningMatch.id,
-                        playerId: returnedSharedPlayer.linkedPlayerId,
-                        teamId: returningTeam.id,
-                      };
-                    }
-                    const [insertedPlayer] = await transaction
-                      .insert(player)
-                      .values({
-                        createdBy: ctx.userId,
-                        name: returnedSharedPlayer.player.name,
-                      })
-                      .returning();
-                    if (!insertedPlayer) {
-                      throw new TRPCError({
-                        code: "INTERNAL_SERVER_ERROR",
-                        message: "Failed to create player.",
-                      });
-                    }
-                    await transaction
-                      .update(sharedPlayer)
-                      .set({
-                        linkedPlayerId: insertedPlayer.id,
-                      })
-                      .where(eq(sharedPlayer.id, returnedSharedPlayer.id));
-                    return {
-                      matchId: returningMatch.id,
-                      playerId: insertedPlayer.id,
-                      teamId: returningTeam.id,
-                    };
+                    const processedPlayer = await processPlayer(
+                      transaction,
+                      returningMatch.id,
+                      p,
+                      returningTeam.id,
+                      ctx.userId,
+                    );
+                    return processedPlayer;
                   }),
                 );
               const returnedMatchPlayers = await transaction
