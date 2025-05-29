@@ -460,7 +460,7 @@ export const matchRouter = createTRPCRouter({
         if (a.order === b.order) {
           return a.name.localeCompare(b.name);
         }
-        if (a.order === null || b.order == null)
+        if (a.order === null || b.order === null)
           return a.name.localeCompare(b.name);
         return a.order - b.order;
       });
