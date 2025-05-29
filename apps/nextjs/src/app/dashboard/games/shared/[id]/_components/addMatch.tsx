@@ -72,8 +72,10 @@ import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
-type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
-
+type Game = NonNullable<RouterOutputs["sharing"]["getSharedGame"]>;
+type Locations = RouterOutputs["location"]["getLocations"];
+type Scoresheets = RouterOutputs["sharing"]["getSharedGameScoresheets"];
+type Players = RouterOutputs["sharing"]["getPlayersBySharedGame"];
 export function AddMatchDialog({
   gameId,
   gameName,
@@ -89,10 +91,10 @@ export function AddMatchDialog({
     trpc.location.getLocations.queryOptions(),
   );
   const { data: scoreSheets } = useSuspenseQuery(
-    trpc.game.getGameScoresheets.queryOptions({ gameId: gameId }),
+    trpc.sharing.getSharedGameScoresheets.queryOptions({ id: gameId }),
   );
   const { data: players } = useSuspenseQuery(
-    trpc.player.getPlayersByGame.queryOptions({ game: { id: gameId } }),
+    trpc.sharing.getPlayersBySharedGame.queryOptions({ id: gameId }),
   );
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -143,6 +145,7 @@ const playersSchema = z
       .pick({ name: true, id: true })
       .required({ name: true, id: true })
       .extend({
+        type: z.literal("original").or(z.literal("shared")),
         imageUrl: z.string().nullable(),
         matches: z.number(),
         team: z.number().nullable(),
@@ -150,7 +153,11 @@ const playersSchema = z
   )
   .refine((players) => players.length > 0, {
     message: "You must add at least one player",
-  });
+  })
+  .refine(
+    (arr) => new Set(arr.map((p) => `${p.type}-${p.id}`)).size === arr.length,
+    { message: "Duplicate players are not allowed" },
+  );
 type matchPlayers = z.infer<typeof playersSchema>;
 function Content({
   matches,
@@ -164,9 +171,9 @@ function Content({
   gameId: Game["id"];
   gameName: Game["name"];
   matches: number;
-  locations: RouterOutputs["location"]["getLocations"];
-  scoresheets: RouterOutputs["game"]["getGameScoresheets"];
-  players: RouterOutputs["player"]["getPlayersByGame"];
+  locations: Locations;
+  scoresheets: Scoresheets;
+  players: Players;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
 }) {
   const [isPlayers, setIsPlayers] = useState(false);
@@ -210,8 +217,8 @@ const AddMatchForm = ({
   gameId: Game["id"];
   gameName: Game["name"];
   matches: number;
-  locations: RouterOutputs["location"]["getLocations"];
-  scoresheets: RouterOutputs["game"]["getGameScoresheets"];
+  locations: Locations;
+  scoresheets: Scoresheets;
   matchPlayers: matchPlayers;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
   setIsPlayers: Dispatch<SetStateAction<boolean>>;
@@ -268,17 +275,19 @@ const AddMatchForm = ({
     },
   });
   const createMatch = useMutation(
-    trpc.match.createMatch.mutationOptions({
+    trpc.sharing.createMatch.mutationOptions({
       onSuccess: (response) => {
         setIsSubmitting(false);
-        router.push(`/dashboard/games/${gameId}/${response.id}`);
+        router.push(`/dashboard/games/${response.gameId}/${response.id}`);
         void Promise.all([
           queryClient.invalidateQueries(
-            trpc.player.getPlayersByGame.queryFilter({ game: { id: gameId } }),
+            trpc.player.getPlayersByGame.queryFilter({
+              game: { id: response.gameId },
+            }),
           ),
           queryClient.invalidateQueries(trpc.player.getPlayers.queryOptions()),
           queryClient.invalidateQueries(
-            trpc.game.getGame.queryOptions({ id: gameId }),
+            trpc.game.getGame.queryOptions({ id: response.gameId }),
           ),
           queryClient.invalidateQueries(trpc.dashboard.pathFilter()),
         ]);
@@ -307,26 +316,29 @@ const AddMatchForm = ({
   const onSubmit = (values: formSchemaType) => {
     setIsSubmitting(true);
     const teams = values.players.reduce<
-      Record<string, { name: string; players: { id: number }[] }>
+      Record<
+        string,
+        { name: string; players: { id: number; type: "original" | "shared" }[] }
+      >
     >((acc, player) => {
       if (player.team === null) {
         const noTeam = acc["No Team"];
         if (noTeam) {
-          noTeam.players.push({ id: player.id });
+          noTeam.players.push({ id: player.id, type: player.type });
         } else {
           acc["No Team"] = {
             name: "No Team" as const,
-            players: [{ id: player.id }],
+            players: [{ id: player.id, type: player.type }],
           };
         }
       } else {
         const team = acc[player.team];
         if (team) {
-          team.players.push({ id: player.id });
+          team.players.push({ id: player.id, type: player.type });
         } else {
           acc[player.team] = {
             name: player.team.toString(),
-            players: [{ id: player.id }],
+            players: [{ id: player.id, type: player.type }],
           };
         }
       }
@@ -659,7 +671,7 @@ const AddPlayersForm = ({
   gameId: number;
   matchPlayers: matchPlayers;
   setMatchPlayers: Dispatch<SetStateAction<matchPlayers>>;
-  players: NonNullable<RouterOutputs["player"]["getPlayersByGame"]>;
+  players: Players;
   setIsPlayers: Dispatch<SetStateAction<boolean>>;
 }) => {
   const trpc = useTRPC();
@@ -688,6 +700,7 @@ const AddPlayersForm = ({
             ? [
                 {
                   id: currentUser.id,
+                  type: "original" as const,
                   imageUrl: currentUser.imageUrl,
                   name: currentUser.name,
                   matches: currentUser.matches,
@@ -714,10 +727,11 @@ const AddPlayersForm = ({
       if (playerExists) {
         const playerSelected = form
           .getValues("players")
-          .find((p) => p.id === player.id);
+          .find((p) => p.id === player.id && p.type === "original");
         if (!playerSelected) {
           append({
             id: player.id,
+            type: "original" as const,
             imageUrl: playerExists.imageUrl,
             name: playerExists.name,
             matches: playerExists.matches,
@@ -880,10 +894,10 @@ const AddPlayersForm = ({
                           .toSorted((a, b) => {
                             const foundA = form
                               .getValues("players")
-                              .find((i) => i.id === a.id);
+                              .find((i) => i.id === a.id && i.type === a.type);
                             const foundB = form
                               .getValues("players")
-                              .find((i) => i.id === b.id);
+                              .find((i) => i.id === b.id && i.type === b.type);
                             if (foundA && foundB) {
                               return 0;
                             }
@@ -900,12 +914,14 @@ const AddPlayersForm = ({
                           })
                           .map((player) => (
                             <FormField
-                              key={player.id}
+                              key={`${player.id}-${player.type}`}
                               control={form.control}
                               name="players"
                               render={({ field }) => {
                                 const foundPlayer = field.value.find(
-                                  (i) => i.id === player.id,
+                                  (i) =>
+                                    i.id === player.id &&
+                                    i.type === player.type,
                                 );
                                 return (
                                   <FormItem
@@ -922,13 +938,16 @@ const AddPlayersForm = ({
                                         className="hidden"
                                         checked={
                                           field.value.findIndex(
-                                            (i) => i.id === player.id,
+                                            (i) =>
+                                              i.id === player.id &&
+                                              i.type === player.type,
                                           ) > -1
                                         }
                                         onCheckedChange={(checked) => {
                                           return checked
                                             ? append({
                                                 id: player.id,
+                                                type: player.type,
                                                 imageUrl: player.imageUrl,
                                                 name: player.name,
                                                 matches: player.matches,
@@ -936,7 +955,9 @@ const AddPlayersForm = ({
                                               })
                                             : remove(
                                                 field.value.findIndex(
-                                                  (i) => i.id === player.id,
+                                                  (i) =>
+                                                    i.id === player.id &&
+                                                    i.type === player.type,
                                                 ),
                                               );
                                         }}
@@ -962,14 +983,22 @@ const AddPlayersForm = ({
                                           )}
                                         </Avatar>
                                         <div>
-                                          <div className="text-sm font-medium">
-                                            {player.name}
+                                          <div className="flex items-center gap-2 text-sm font-medium">
+                                            <span>{player.name}</span>
                                             {player.isUser && (
                                               <Badge
                                                 variant="outline"
-                                                className="ml-2 text-xs"
+                                                className="text-xs"
                                               >
                                                 You
+                                              </Badge>
+                                            )}
+                                            {player.type === "shared" && (
+                                              <Badge
+                                                variant="outline"
+                                                className="bg-blue-600 text-xs text-white"
+                                              >
+                                                Shared
                                               </Badge>
                                             )}
                                           </div>
@@ -988,26 +1017,28 @@ const AddPlayersForm = ({
                                               : "0"
                                           }
                                           onValueChange={(value) => {
-                                            if (value === "0") {
-                                              update(
-                                                field.value.findIndex(
-                                                  (i) => i.id === player.id,
-                                                ),
-                                                { ...foundPlayer, team: null },
-                                              );
+                                            const idx = field.value.findIndex(
+                                              (i) =>
+                                                i.id === player.id &&
+                                                i.type === player.type,
+                                            );
+                                            if (value === "0" && idx !== -1) {
+                                              update(idx, {
+                                                ...foundPlayer,
+                                                team: null,
+                                              });
+
                                               return;
                                             }
 
-                                            if (Number.parseInt(value) > 0) {
-                                              update(
-                                                field.value.findIndex(
-                                                  (i) => i.id === player.id,
-                                                ),
-                                                {
-                                                  ...foundPlayer,
-                                                  team: Number.parseInt(value),
-                                                },
-                                              );
+                                            if (
+                                              Number.parseInt(value) > 0 &&
+                                              idx !== -1
+                                            ) {
+                                              update(idx, {
+                                                ...foundPlayer,
+                                                team: Number.parseInt(value),
+                                              });
                                               return;
                                             }
                                           }}
@@ -1033,7 +1064,9 @@ const AddPlayersForm = ({
                                         </Select>
                                       )}
                                       {field.value.findIndex(
-                                        (i) => i.id === player.id,
+                                        (i) =>
+                                          i.id === player.id &&
+                                          i.type === player.type,
                                       ) > -1 && <Badge>Selected</Badge>}
                                     </div>
                                   </FormItem>
@@ -1106,6 +1139,7 @@ const AddPlayerForm = ({
         setIsUploading(false);
         addMatchPlayer({
           id: player.id,
+          type: "original" as const,
           imageUrl: player.imageUrl,
           name: player.name,
           matches: 0,

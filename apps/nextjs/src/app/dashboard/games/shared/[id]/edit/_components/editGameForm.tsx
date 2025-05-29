@@ -1,8 +1,7 @@
 "use client";
 
 import type { UseFormReturn } from "react-hook-form";
-import { useEffect, useState } from "react";
-import Image from "next/image";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,7 +9,6 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
-  Dices,
   Minus,
   Plus,
   Table,
@@ -21,9 +19,9 @@ import { z } from "zod";
 
 import type { RouterInputs, RouterOutputs } from "@board-games/api";
 import {
-  editGameSchema,
   editScoresheetSchema,
   roundsSchema,
+  sharedEditGameSchema,
 } from "@board-games/shared";
 import {
   AlertDialog,
@@ -53,7 +51,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -74,7 +71,6 @@ import { Separator } from "@board-games/ui/separator";
 import { GradientPicker } from "~/components/color-picker";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
-import { useUploadThing } from "~/utils/uploadthing";
 import { RoundPopOver } from "./roundPopOver";
 
 export const scoresheetSchema = editScoresheetSchema.extend({
@@ -84,7 +80,6 @@ export const scoresheetSchema = editScoresheetSchema.extend({
   rounds: roundsSchema,
   scoreSheetChanged: z.boolean(),
   roundChanged: z.boolean(),
-
   isDefault: z.boolean().optional(),
 });
 const scoresheetsSchema = z
@@ -106,10 +101,12 @@ const scoresheetsSchema = z
 export function EditGameForm({
   data,
 }: {
-  data: NonNullable<RouterOutputs["game"]["getEditGame"]>;
+  data: NonNullable<RouterOutputs["sharing"]["getEditSharedGame"]>;
 }) {
   const [moreOptions, setMoreOptions] = useState(false);
-  const [game, setGame] = useState<z.infer<typeof editGameSchema>>(data.game);
+  const [game, setGame] = useState<
+    NonNullable<RouterOutputs["sharing"]["getEditSharedGame"]>["game"]
+  >(data.game);
   const [scoresheets, setScoresheets] = useState<
     z.infer<typeof scoresheetsSchema>
   >(
@@ -227,47 +224,35 @@ const GameForm = ({
   setIsScoresheet,
   setMoreOptions,
 }: {
-  data: NonNullable<RouterOutputs["game"]["getEditGame"]>;
-  game: z.infer<typeof editGameSchema>;
+  data: NonNullable<RouterOutputs["sharing"]["getEditSharedGame"]>;
+  game: z.infer<typeof sharedEditGameSchema>;
   scoresheets: z.infer<typeof scoresheetsSchema>;
   moreOptions: boolean;
   activeScoreSheet: number;
-  setGame: (game: z.infer<typeof editGameSchema>) => void;
+  setGame: (
+    game: NonNullable<RouterOutputs["sharing"]["getEditSharedGame"]>["game"],
+  ) => void;
   setScoresheets: (scoresheets: z.infer<typeof scoresheetsSchema>) => void;
   setActiveScoreSheet: (activeScoreSheet: number) => void;
   setIsScoresheet: (isScoresheet: boolean) => void;
   setMoreOptions: (moreOptions: boolean) => void;
 }) => {
   const trpc = useTRPC();
-  const tempGameImg = game.imageUrl;
-  const [imagePreview, setImagePreview] = useState<string | null>(
-    tempGameImg instanceof File
-      ? URL.createObjectURL(tempGameImg)
-      : (tempGameImg ?? null),
-  );
   const [openAlert, setOpenAlert] = useState(false);
 
-  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
-  const { startUpload } = useUploadThing("imageUploader");
   const router = useRouter();
 
   const queryClient = useQueryClient();
   const mutation = useMutation(
-    trpc.game.updateGame.mutationOptions({
+    trpc.sharing.updateSharedGame.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
         await queryClient.invalidateQueries(
-          trpc.game.getGame.queryOptions({ id: data.game.id }),
+          trpc.sharing.getSharedGame.queryOptions({ id: data.game.id }),
         );
         await queryClient.invalidateQueries(
-          trpc.game.getGameMetaData.queryOptions({ id: data.game.id }),
-        );
-        await queryClient.invalidateQueries(
-          trpc.game.getGameName.queryOptions({ id: data.game.id }),
-        );
-        await queryClient.invalidateQueries(
-          trpc.game.getGameStats.queryOptions({ id: data.game.id }),
+          trpc.sharing.getShareGameStats.queryOptions({ id: data.game.id }),
         );
         await queryClient.invalidateQueries(
           trpc.dashboard.getGames.queryOptions(),
@@ -276,45 +261,38 @@ const GameForm = ({
           title: "Game updated successfully!",
         });
         form.reset();
-        setImagePreview(null);
         router.push(`/dashboard/games`);
       },
     }),
   );
 
-  const form = useForm<z.infer<typeof editGameSchema>>({
-    resolver: zodResolver(editGameSchema),
+  const form = useForm<z.infer<typeof sharedEditGameSchema>>({
+    resolver: zodResolver(sharedEditGameSchema),
     defaultValues: game,
   });
 
   const updateGame = ({
-    imageId,
     values,
   }: {
-    imageId: number | null | undefined;
-    values: z.infer<typeof editGameSchema>;
+    values: z.infer<typeof sharedEditGameSchema>;
   }) => {
     const nameChanged = values.name !== data.game.name;
-    const ownedByChanged = values.ownedBy !== data.game.ownedBy;
     const playersMinChanged = values.playersMin !== data.game.playersMin;
     const playersMaxChanged = values.playersMax !== data.game.playersMax;
     const playtimeMinChanged = values.playtimeMin !== data.game.playtimeMin;
     const playtimeMaxChanged = values.playtimeMax !== data.game.playtimeMax;
     const yearPublishedChanged =
       values.yearPublished !== data.game.yearPublished;
-    const imageIdChanged = imageId !== undefined;
     const scoresheetChanged = scoresheets.some(
       (scoresheet) => scoresheet.scoreSheetChanged || scoresheet.roundChanged,
     );
     const gameChanged =
       nameChanged ||
-      ownedByChanged ||
       playersMinChanged ||
       playersMaxChanged ||
       playtimeMinChanged ||
       playtimeMaxChanged ||
-      yearPublishedChanged ||
-      imageIdChanged;
+      yearPublishedChanged;
 
     if (gameChanged || scoresheetChanged) {
       const game = gameChanged
@@ -322,7 +300,6 @@ const GameForm = ({
             type: "updateGame" as const,
             id: data.game.id,
             name: nameChanged ? values.name : undefined,
-            ownedBy: ownedByChanged ? values.ownedBy : undefined,
             playersMin: playersMinChanged ? values.playersMin : undefined,
             playersMax: playersMaxChanged ? values.playersMax : undefined,
             playtimeMin: playtimeMinChanged ? values.playtimeMin : undefined,
@@ -330,7 +307,6 @@ const GameForm = ({
             yearPublished: yearPublishedChanged
               ? values.yearPublished
               : undefined,
-            imageId: imageId,
           }
         : { type: "default" as const, id: data.game.id };
       if (scoresheetChanged) {
@@ -340,7 +316,7 @@ const GameForm = ({
               scoresheet.scoreSheetChanged || scoresheet.roundChanged,
           )
           .map<
-            | RouterInputs["game"]["updateGame"]["scoresheets"][number]
+            | RouterInputs["sharing"]["updateSharedGame"]["scoresheets"][number]
             | undefined
           >((scoresheet) => {
             const foundScoresheet = data.scoresheets.find(
@@ -350,7 +326,7 @@ const GameForm = ({
             );
             if (!foundScoresheet) {
               const newScoresheet: Extract<
-                RouterInputs["game"]["updateGame"]["scoresheets"][number],
+                RouterInputs["sharing"]["updateSharedGame"]["scoresheets"][number],
                 { type: "New" }
               > = {
                 type: "New" as const,
@@ -394,7 +370,7 @@ const GameForm = ({
               scoresheetTargetScore !== undefined;
             if (scoresheet.roundChanged) {
               type UpdateScoresheetAndRoundsType = Extract<
-                RouterInputs["game"]["updateGame"]["scoresheets"][number],
+                RouterInputs["sharing"]["updateSharedGame"]["scoresheets"][number],
                 { type: "Update Scoresheet & Rounds" }
               >;
               const changedRounds = scoresheet.rounds
@@ -474,17 +450,16 @@ const GameForm = ({
                 scoresheet: hasScoresheetChanged
                   ? {
                       id: foundScoresheet.id,
-                      scoresheetType: scoresheet.scoresheetType,
                       name: scoresheetName,
                       winCondition: scoresheetWinCondition,
                       isCoop: scoresheetIsCoop ?? foundScoresheet.isCoop,
+
                       isDefault: scoresheet.isDefault,
                       roundsScore: scoresheetRoundsScore,
                       targetScore: scoresheetTargetScore,
                     }
                   : {
                       id: foundScoresheet.id,
-                      scoresheetType: scoresheet.scoresheetType,
                     },
                 roundsToEdit: changedRounds,
                 roundsToAdd: roundsToAdd,
@@ -497,10 +472,10 @@ const GameForm = ({
                 type: "Update Scoresheet" as const,
                 scoresheet: {
                   id: foundScoresheet.id,
-                  scoresheetType: scoresheet.scoresheetType,
                   name: scoresheetName,
                   winCondition: scoresheetWinCondition,
                   isCoop: scoresheetIsCoop ?? foundScoresheet.isCoop,
+
                   isDefault: scoresheet.isDefault,
                   roundsScore: scoresheetRoundsScore,
                   targetScore: scoresheetTargetScore,
@@ -518,12 +493,7 @@ const GameForm = ({
                   scoresheet.scoresheetType === foundScoresheet.scoresheetType,
               ),
           )
-          .map((foundScoresheet) => {
-            return {
-              id: foundScoresheet.id,
-              scoresheetType: foundScoresheet.scoresheetType,
-            };
-          });
+          .map((foundScoresheet) => ({ id: foundScoresheet.id }));
         mutation.mutate({
           game: game,
           scoresheets: changedScoresheets,
@@ -538,59 +508,9 @@ const GameForm = ({
       }
     }
   };
-  useEffect(() => {
-    return () => {
-      if (imagePreview) {
-        URL.revokeObjectURL(imagePreview);
-      }
-    };
-  }, [imagePreview]);
-  async function onSubmit(values: z.infer<typeof editGameSchema>) {
-    setIsUploading(true);
-    if (values.imageUrl === data.game.imageUrl) {
-      setIsUploading(false);
-      updateGame({ imageId: undefined, values });
-      return;
-    }
-    if (!values.imageUrl) {
-      setIsUploading(false);
-      updateGame({ imageId: null, values });
-      return;
-    }
 
-    try {
-      const imageFile = values.imageUrl as File;
-      const uploadResult = await startUpload([imageFile]);
-      if (!uploadResult) {
-        throw new Error("Image upload failed");
-      }
-
-      const imageId = uploadResult[0]
-        ? uploadResult[0].serverData.imageId
-        : null;
-      updateGame({
-        values: {
-          name: values.name,
-          ownedBy: values.ownedBy,
-          playersMin: values.playersMin,
-          playersMax: values.playersMax,
-          playtimeMin: values.playtimeMin,
-          playtimeMax: values.playtimeMax,
-          yearPublished: values.yearPublished,
-          imageUrl: null,
-        },
-        imageId: imageId,
-      });
-    } catch (error) {
-      console.error("Error uploading Image:", error);
-      toast({
-        title: "Error",
-        description: "There was a problem uploading your Image.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-    }
+  function onSubmit(values: z.infer<typeof sharedEditGameSchema>) {
+    updateGame({ values });
   }
 
   return (
@@ -601,6 +521,7 @@ const GameForm = ({
             <FormField
               control={form.control}
               name="name"
+              disabled={data.game.permission === "view"}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Game Name</FormLabel>
@@ -612,60 +533,6 @@ const GameForm = ({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="imageUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Image</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center space-x-4">
-                      <div className="relative flex h-20 w-20 shrink-0 overflow-hidden">
-                        {imagePreview ? (
-                          <Image
-                            src={imagePreview}
-                            alt="Game image"
-                            className="aspect-square h-full w-full rounded-sm object-cover"
-                            fill
-                          />
-                        ) : (
-                          <Dices className="h-full w-full items-center justify-center rounded-full bg-muted p-2" />
-                        )}
-                      </div>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          field.onChange(file);
-                          if (file) {
-                            const url = URL.createObjectURL(file);
-                            setImagePreview(url);
-                          }
-                        }}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormDescription>Upload an image (max 4MB).</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="ownedBy"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormLabel>Owned by</FormLabel>
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
             <Collapsible open={moreOptions} onOpenChange={setMoreOptions}>
               <CollapsibleTrigger asChild>
                 <Button className="pl-0" variant="ghost" size="sm">
@@ -684,6 +551,7 @@ const GameForm = ({
                     <FormField
                       control={form.control}
                       name="playersMin"
+                      disabled={data.game.permission === "view"}
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
@@ -707,6 +575,7 @@ const GameForm = ({
                     <FormField
                       control={form.control}
                       name="playersMax"
+                      disabled={data.game.permission === "view"}
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
@@ -752,6 +621,7 @@ const GameForm = ({
                     <Label>Playtime</Label>
                     <FormField
                       control={form.control}
+                      disabled={data.game.permission === "view"}
                       name="playtimeMin"
                       render={({ field }) => (
                         <FormItem>
@@ -775,6 +645,7 @@ const GameForm = ({
                     />
                     <FormField
                       control={form.control}
+                      disabled={data.game.permission === "view"}
                       name="playtimeMax"
                       render={({ field }) => (
                         <FormItem>
@@ -821,6 +692,7 @@ const GameForm = ({
                     <Label>Year Published</Label>
                     <FormField
                       control={form.control}
+                      disabled={data.game.permission === "view"}
                       name="yearPublished"
                       render={({ field }) => (
                         <FormItem>
@@ -865,8 +737,21 @@ const GameForm = ({
                     <div className="text-xl font-semibold">Scoresheet</div>
                     <Button
                       variant="default"
+                      disabled={data.game.permission === "view"}
                       onClick={() => {
-                        setGame(form.getValues());
+                        if (data.game.permission === "view") return;
+                        const newGame = form.getValues();
+                        setGame({
+                          name: newGame.name,
+                          id: data.game.id,
+                          permission: data.game.permission,
+                          imageUrl: data.game.imageUrl,
+                          yearPublished: newGame.yearPublished,
+                          playersMin: newGame.playersMin,
+                          playersMax: newGame.playersMax,
+                          playtimeMin: newGame.playtimeMin,
+                          playtimeMax: newGame.playtimeMax,
+                        });
                         setIsScoresheet(true);
                         setActiveScoreSheet(scoresheets.length);
                       }}
@@ -886,7 +771,20 @@ const GameForm = ({
                           <button
                             className="flex flex-grow flex-col items-start justify-start"
                             onClick={() => {
-                              setGame(form.getValues());
+                              if (data.game.permission === "edit") {
+                                const newGame = form.getValues();
+                                setGame({
+                                  name: newGame.name,
+                                  id: data.game.id,
+                                  permission: data.game.permission,
+                                  imageUrl: data.game.imageUrl,
+                                  yearPublished: newGame.yearPublished,
+                                  playersMin: newGame.playersMin,
+                                  playersMax: newGame.playersMax,
+                                  playtimeMin: newGame.playtimeMin,
+                                  playtimeMax: newGame.playtimeMax,
+                                });
+                              }
                               setIsScoresheet(true);
                               setActiveScoreSheet(index);
                             }}
@@ -934,13 +832,7 @@ const GameForm = ({
                               setActiveScoreSheet(index);
                               setOpenAlert(true);
                             }}
-                            disabled={
-                              scoreSheet.scoresheetType === "original" &&
-                              scoresheets.filter(
-                                (scoresheet) =>
-                                  scoresheet.scoresheetType === "original",
-                              ).length === 1
-                            }
+                            disabled={scoresheets.length === 1}
                           >
                             <Trash />
                           </Button>
@@ -960,8 +852,8 @@ const GameForm = ({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isUploading}>
-              {isUploading ? (
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending ? (
                 <>
                   <Spinner />
                   <span>Uploading...</span>

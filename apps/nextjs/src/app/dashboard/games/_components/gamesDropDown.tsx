@@ -55,18 +55,18 @@ export function GamesDropDown({
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Game Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {data.type === "original" && (
-          <DropdownMenuItem asChild>
-            <Link
-              prefetch={true}
-              href={`/dashboard/games/${data.id}/edit`}
-              className="flex items-center gap-2"
-            >
-              <PencilIcon className="mr-2 h-4 w-4" />
-              Edit
-            </Link>
-          </DropdownMenuItem>
-        )}
+
+        <DropdownMenuItem asChild>
+          <Link
+            prefetch={true}
+            href={`/dashboard/games/${data.type === "shared" ? "shared/" : ""}${data.id}/edit`}
+            className="flex items-center gap-2"
+          >
+            <PencilIcon className="mr-2 h-4 w-4" />
+            Edit
+          </Link>
+        </DropdownMenuItem>
+
         <DropdownMenuItem asChild>
           <Link
             prefetch={true}

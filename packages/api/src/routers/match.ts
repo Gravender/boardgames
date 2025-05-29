@@ -1,32 +1,23 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
-import { and, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
-import type { TransactionType } from "@board-games/db/client";
+import type { Filter } from "@board-games/db/client";
 import type {
   insertRoundPlayerSchema,
   insertRoundSchema,
   selectRoundSchema,
   selectScoreSheetSchema,
-  selectSharedLocationSchema,
-  selectSharedMatchSchema,
 } from "@board-games/db/zodSchema";
 import {
-  location,
   match,
   matchPlayer,
   player,
   round,
   roundPlayer,
   scoresheet,
-  sharedGame,
-  sharedLocation,
-  sharedMatch,
-  sharedMatchPlayer,
-  sharedPlayer,
-  shareRequest,
   team,
 } from "@board-games/db/schema";
 import {
@@ -40,7 +31,8 @@ import {
 import { calculatePlacement } from "@board-games/shared";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
-import { handleLocationSharing } from "../utils/sharing";
+import { shareMatchWithFriends } from "../utils/addMatch";
+import { cloneSharedLocationForUser } from "../utils/handleSharedLocation";
 
 export const matchRouter = createTRPCRouter({
   createMatch: protectedUserProcedure
@@ -118,7 +110,7 @@ export const matchRouter = createTRPCRouter({
           returnedScoresheet = await transaction.query.scoresheet.findFirst({
             where: {
               id: sharedScoresheet.scoresheetId,
-              userId: ctx.userId,
+              userId: sharedScoresheet.ownerId,
             },
             with: {
               rounds: {
@@ -159,43 +151,11 @@ export const matchRouter = createTRPCRouter({
           if (input.location.type === "original") {
             locationId = input.location.id;
           } else {
-            const returnedSharedLocation =
-              await transaction.query.sharedLocation.findFirst({
-                where: {
-                  ownerId: ctx.userId,
-                  sharedWithId: ctx.userId,
-                  locationId: input.location.id,
-                },
-                with: {
-                  location: true,
-                },
-              });
-            if (!returnedSharedLocation) {
-              throw new TRPCError({
-                code: "NOT_FOUND",
-                message: "Shared location not found.",
-              });
-            } else {
-              const [newLocation] = await transaction
-                .insert(location)
-                .values({
-                  name: returnedSharedLocation.location.name,
-                  isDefault: returnedSharedLocation.isDefault,
-                  createdBy: ctx.userId,
-                })
-                .returning();
-              if (!newLocation) {
-                throw new TRPCError({
-                  code: "INTERNAL_SERVER_ERROR",
-                  message: "Failed to create location.",
-                });
-              }
-              await transaction
-                .update(sharedLocation)
-                .set({ linkedLocationId: newLocation.id, isDefault: false })
-                .where(eq(sharedLocation.id, returnedSharedLocation.id));
-              locationId = newLocation.id;
-            }
+            locationId = await cloneSharedLocationForUser(
+              transaction,
+              input.location.id,
+              ctx.userId,
+            );
           }
         }
         const [returningMatch] = await transaction
@@ -459,6 +419,9 @@ export const matchRouter = createTRPCRouter({
               },
               playerRounds: true,
             },
+            orderBy: {
+              order: "asc",
+            },
           },
           teams: true,
           location: true,
@@ -490,7 +453,16 @@ export const matchRouter = createTRPCRouter({
           details: matchPlayer.details,
           teamId: matchPlayer.teamId,
           isUser: matchPlayer.player.isUser,
+          order: matchPlayer.order,
         };
+      });
+      refinedPlayers.sort((a, b) => {
+        if (a.order === b.order) {
+          return a.name.localeCompare(b.name);
+        }
+        if (a.order === null || b.order === null)
+          return a.name.localeCompare(b.name);
+        return a.order - b.order;
       });
       return {
         id: returnedMatch.id,
@@ -873,13 +845,28 @@ export const matchRouter = createTRPCRouter({
       return returnedMatch;
     }),
   getMatchesByCalender: protectedUserProcedure.query(async ({ ctx }) => {
+    const sharedMatches = await ctx.db.query.sharedMatch.findMany({
+      where: {
+        sharedWithId: ctx.userId,
+      },
+    });
     const matches = await ctx.db
       .select({
         date: sql<Date>`date_trunc('day', ${match.date}) AS day`,
         ids: sql<number[]>`array_agg(${match.id})`,
       })
       .from(match)
-      .where(and(eq(match.userId, ctx.userId), isNull(match.deletedAt)))
+      .where(
+        or(
+          and(eq(match.userId, ctx.userId), isNull(match.deletedAt)),
+          sharedMatches.length > 0
+            ? inArray(
+                match.id,
+                sharedMatches.map((m) => m.matchId),
+              )
+            : sql`false`,
+        ),
+      )
       .groupBy(sql`date_trunc('day', ${match.date})`)
       .orderBy(sql`date_trunc('day', ${match.date})`);
     return matches;
@@ -897,16 +884,33 @@ export const matchRouter = createTRPCRouter({
 
       const dayStartUtc = new Date(Date.UTC(year, month, day, 0, 0, 0));
       const nextDayUtc = new Date(Date.UTC(year, month, day + 1, 0, 0, 0));
+      const sharedMatches = await ctx.db.query.sharedMatch.findMany({
+        where: {
+          sharedWithId: ctx.userId,
+        },
+      });
+      const matchOrConditions: Filter<"match">["OR"] = [
+        {
+          userId: ctx.userId,
+          deletedAt: {
+            isNull: true,
+          },
+        },
+      ];
+      if (sharedMatches.length > 0) {
+        matchOrConditions.push({
+          id: {
+            in: sharedMatches.map((m) => m.matchId),
+          },
+        });
+      }
       const matches = await ctx.db.query.match.findMany({
         where: {
           date: {
             gte: dayStartUtc,
             lt: nextDayUtc,
           },
-          userId: ctx.userId,
-          deletedAt: {
-            isNull: true,
-          },
+          OR: matchOrConditions,
         },
         with: {
           game: {
@@ -922,25 +926,30 @@ export const matchRouter = createTRPCRouter({
           location: true,
         },
       });
-      return matches.map((match) => ({
-        id: match.id,
-        date: match.date,
-        name: match.name,
-        finished: match.finished,
-        won:
-          match.matchPlayers.findIndex(
-            (player) => player.winner && player.player.isUser,
-          ) !== -1,
-        players: match.matchPlayers.map((matchPlayer) => {
-          return {
-            id: matchPlayer.player.id,
-            name: matchPlayer.player.name,
-          };
-        }),
-        gameImageUrl: match.game.image?.url,
-        gameName: match.game.name,
-        gameId: match.game.id,
-      }));
+      return matches.map((match) => {
+        const shared = sharedMatches.find((m) => m.matchId === match.id);
+
+        return {
+          id: shared?.id ?? match.id,
+          type: shared ? ("shared" as const) : ("original" as const),
+          date: match.date,
+          name: match.name,
+          finished: match.finished,
+          won:
+            match.matchPlayers.findIndex(
+              (player) => player.winner && player.player.isUser,
+            ) !== -1,
+          players: match.matchPlayers.map((matchPlayer) => {
+            return {
+              id: matchPlayer.player.id,
+              name: matchPlayer.player.name,
+            };
+          }),
+          gameImageUrl: match.game.image?.url,
+          gameName: match.game.name,
+          gameId: shared?.sharedGameId ?? match.game.id,
+        };
+      });
     }),
   deleteMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
@@ -1263,621 +1272,333 @@ export const matchRouter = createTRPCRouter({
     }),
   editMatch: protectedUserProcedure
     .input(
-      z.object({
-        match: insertMatchSchema
-          .pick({
-            id: true,
-            scoresheetId: true,
-            date: true,
-            name: true,
-            locationId: true,
-          })
-          .required({ id: true, scoresheetId: true }),
-        addPlayers: z.array(
-          insertPlayerSchema
+      z.discriminatedUnion("type", [
+        z.object({
+          type: z.literal("original"),
+          match: insertMatchSchema
             .pick({
               id: true,
-            })
-            .required({ id: true })
-            .extend({ teamId: z.number().nullable() }),
-        ),
-        removePlayers: z.array(
-          insertPlayerSchema
-            .pick({
-              id: true,
-            })
-            .required({ id: true }),
-        ),
-        newPlayers: z.array(
-          insertPlayerSchema
-            .pick({
+              scoresheetId: true,
+              date: true,
               name: true,
-              imageId: true,
             })
-            .required({ name: true })
-            .extend({ teamId: z.number().nullable() }),
-        ),
-        updatedPlayers: z.array(
-          insertMatchPlayerSchema
+            .required({ id: true, scoresheetId: true })
+            .extend({
+              location: z
+                .object({
+                  id: z.number(),
+                  type: z.literal("original").or(z.literal("shared")),
+                })
+                .nullable()
+                .optional(),
+            }),
+          addPlayers: z.array(
+            insertPlayerSchema
+              .pick({
+                id: true,
+              })
+              .required({ id: true })
+              .extend({ teamId: z.number().nullable() }),
+          ),
+          removePlayers: z.array(
+            insertPlayerSchema
+              .pick({
+                id: true,
+              })
+              .required({ id: true }),
+          ),
+          newPlayers: z.array(
+            insertPlayerSchema
+              .pick({
+                name: true,
+                imageId: true,
+              })
+              .required({ name: true })
+              .extend({ teamId: z.number().nullable() }),
+          ),
+          updatedPlayers: z.array(
+            insertMatchPlayerSchema
+              .pick({
+                id: true,
+                teamId: true,
+              })
+              .required({ id: true }),
+          ),
+        }),
+        z.object({
+          type: z.literal("shared"),
+          match: insertMatchSchema
             .pick({
               id: true,
-              teamId: true,
+              date: true,
+              name: true,
             })
             .required({ id: true }),
-        ),
-      }),
+        }),
+      ]),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.transaction(async (tx) => {
-        const returnedMatch = await tx.query.match.findFirst({
-          where: {
-            id: input.match.id,
-            userId: ctx.userId,
-            deletedAt: {
-              isNull: true,
-            },
-          },
-          with: {
-            scoresheet: {
-              with: {
-                rounds: true,
+      const result = await ctx.db.transaction(async (tx) => {
+        if (input.type === "original") {
+          const returnedMatch = await tx.query.match.findFirst({
+            where: {
+              id: input.match.id,
+              userId: ctx.userId,
+              deletedAt: {
+                isNull: true,
               },
             },
-            matchPlayers: {
-              with: {
-                playerRounds: true,
+            with: {
+              scoresheet: {
+                with: {
+                  rounds: true,
+                },
+              },
+              matchPlayers: {
+                with: {
+                  playerRounds: true,
+                },
               },
             },
-          },
-        });
-        if (!returnedMatch) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Match not found.",
           });
+          if (!returnedMatch) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Match not found.",
+            });
+          }
+          //Update Match Details
+          if (input.match.name || input.match.date || input.match.location) {
+            let locationId: null | number | undefined;
+            if (input.match.location) {
+              if (input.match.location.type === "original") {
+                locationId = input.match.location.id;
+              } else {
+                locationId = await cloneSharedLocationForUser(
+                  tx,
+                  input.match.location.id,
+                  ctx.userId,
+                );
+              }
+            }
+            await tx
+              .update(match)
+              .set({
+                name: input.match.name,
+                date: input.match.date,
+                locationId: locationId,
+              })
+              .where(eq(match.id, input.match.id));
+          }
+          //Add players to match
+          if (input.newPlayers.length > 0 || input.addPlayers.length > 0) {
+            const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
+              [];
+            //Create New Players
+            if (input.newPlayers.length > 0) {
+              for (const newPlayer of input.newPlayers) {
+                const [returnedPlayer] = await tx
+                  .insert(player)
+                  .values({
+                    createdBy: ctx.userId,
+                    imageId: newPlayer.imageId,
+                    name: newPlayer.name,
+                  })
+                  .returning();
+                if (!returnedPlayer) {
+                  throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Failed to create player",
+                  });
+                }
+                const currentTeamScore =
+                  returnedMatch.matchPlayers.find(
+                    (mPlayer) =>
+                      mPlayer.teamId === newPlayer.teamId &&
+                      mPlayer.teamId !== null,
+                  )?.score ?? null;
+                playersToInsert.push({
+                  matchId: input.match.id,
+                  playerId: returnedPlayer.id,
+                  teamId: newPlayer.teamId,
+                  score: currentTeamScore,
+                });
+              }
+            }
+            //Players to insert
+            if (input.addPlayers.length > 0) {
+              for (const player of input.addPlayers) {
+                const currentTeamScore =
+                  returnedMatch.matchPlayers.find(
+                    (mPlayer) =>
+                      mPlayer.teamId === player.teamId &&
+                      mPlayer.teamId !== null,
+                  )?.score ?? null;
+                playersToInsert.push({
+                  matchId: input.match.id,
+                  playerId: player.id,
+                  teamId: player.teamId,
+                  score: currentTeamScore,
+                });
+              }
+            }
+            //Insert players into match
+            const returnedMatchPlayers = await tx
+              .insert(matchPlayer)
+              .values(playersToInsert)
+              .returning();
+            const roundPlayersToInsert: z.infer<
+              typeof insertRoundPlayerSchema
+            >[] = returnedMatch.scoresheet.rounds.flatMap((round) => {
+              return returnedMatchPlayers.map((player) => {
+                const teamPlayer = returnedMatch.matchPlayers.find(
+                  (mPlayer) =>
+                    mPlayer.teamId === player.teamId && mPlayer.teamId !== null,
+                );
+                if (teamPlayer) {
+                  return {
+                    roundId: round.id,
+                    matchPlayerId: teamPlayer.id,
+                    score:
+                      teamPlayer.playerRounds.find(
+                        (pRound) => pRound.roundId === round.id,
+                      )?.score ?? null,
+                  };
+                }
+                return {
+                  roundId: round.id,
+                  matchPlayerId: player.id,
+                };
+              });
+            });
+            await tx.insert(roundPlayer).values(roundPlayersToInsert);
+          }
+          //Remove Players from Match
+          if (input.removePlayers.length > 0) {
+            const matchPlayers = await tx
+              .select({ id: matchPlayer.id })
+              .from(matchPlayer)
+              .where(
+                and(
+                  eq(matchPlayer.matchId, input.match.id),
+                  inArray(
+                    matchPlayer.playerId,
+                    input.removePlayers.map((player) => player.id),
+                  ),
+                ),
+              );
+            await tx
+              .update(matchPlayer)
+              .set({ deletedAt: new Date() })
+              .where(
+                and(
+                  eq(matchPlayer.matchId, input.match.id),
+                  inArray(
+                    matchPlayer.id,
+                    matchPlayers.map(
+                      (returnedMatchPlayer) => returnedMatchPlayer.id,
+                    ),
+                  ),
+                ),
+              );
+          }
+          if (input.updatedPlayers.length > 0) {
+            for (const updatedPlayer of input.updatedPlayers) {
+              await tx
+                .update(matchPlayer)
+                .set({
+                  teamId: updatedPlayer.teamId,
+                })
+                .where(eq(matchPlayer.id, updatedPlayer.id));
+            }
+          }
+          if (
+            returnedMatch.finished &&
+            (input.newPlayers.length > 0 ||
+              input.addPlayers.length > 0 ||
+              input.removePlayers.length > 0 ||
+              input.updatedPlayers.length > 0)
+          ) {
+            if (returnedMatch.scoresheet.winCondition !== "Manual") {
+              const newMatchPlayers = await tx.query.matchPlayer.findMany({
+                where: {
+                  matchId: input.match.id,
+                  deletedAt: {
+                    isNull: true,
+                  },
+                },
+                with: {
+                  rounds: true,
+                },
+              });
+              const finalPlacements = calculatePlacement(
+                newMatchPlayers,
+                returnedMatch.scoresheet,
+              );
+              for (const placement of finalPlacements) {
+                await tx
+                  .update(matchPlayer)
+                  .set({
+                    placement: placement.placement,
+                    score: placement.score,
+                    winner: placement.placement === 1,
+                  })
+                  .where(eq(matchPlayer.id, placement.id));
+              }
+            }
+            await tx
+              .update(match)
+              .set({ finished: false })
+              .where(eq(match.id, input.match.id));
+          }
+          return {
+            type: "original",
+            gameId: returnedMatch.gameId,
+            id: returnedMatch.id,
+          };
         }
-        //Update Match Details
-        if (input.match.name || input.match.date || input.match.locationId) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (input.type === "shared") {
+          const returnedSharedMatch = await tx.query.sharedMatch.findFirst({
+            where: {
+              id: input.match.id,
+              sharedWithId: ctx.userId,
+            },
+            with: {
+              sharedGame: true,
+            },
+          });
+          if (!returnedSharedMatch) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Shared match not found.",
+            });
+          }
+          if (returnedSharedMatch.permission !== "edit") {
+            throw new TRPCError({
+              code: "UNAUTHORIZED",
+              message: "Does not have permission to edit this match.",
+            });
+          }
           await tx
             .update(match)
             .set({
               name: input.match.name,
               date: input.match.date,
-              locationId: input.match.locationId,
             })
-            .where(eq(match.id, input.match.id));
-        }
-        //Add players to match
-        if (input.newPlayers.length > 0 || input.addPlayers.length > 0) {
-          const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] = [];
-          //Create New Players
-          if (input.newPlayers.length > 0) {
-            for (const newPlayer of input.newPlayers) {
-              const [returnedPlayer] = await tx
-                .insert(player)
-                .values({
-                  createdBy: ctx.userId,
-                  imageId: newPlayer.imageId,
-                  name: newPlayer.name,
-                })
-                .returning();
-              if (!returnedPlayer) {
-                throw new TRPCError({
-                  code: "INTERNAL_SERVER_ERROR",
-                  message: "Failed to create player",
-                });
-              }
-              const currentTeamScore =
-                returnedMatch.matchPlayers.find(
-                  (mPlayer) =>
-                    mPlayer.teamId === newPlayer.teamId &&
-                    mPlayer.teamId !== null,
-                )?.score ?? null;
-              playersToInsert.push({
-                matchId: input.match.id,
-                playerId: returnedPlayer.id,
-                teamId: newPlayer.teamId,
-                score: currentTeamScore,
-              });
-            }
-          }
-          //Players to insert
-          if (input.addPlayers.length > 0) {
-            for (const player of input.addPlayers) {
-              const currentTeamScore =
-                returnedMatch.matchPlayers.find(
-                  (mPlayer) =>
-                    mPlayer.teamId === player.teamId && mPlayer.teamId !== null,
-                )?.score ?? null;
-              playersToInsert.push({
-                matchId: input.match.id,
-                playerId: player.id,
-                teamId: player.teamId,
-                score: currentTeamScore,
-              });
-            }
-          }
-          //Insert players into match
-          const returnedMatchPlayers = await tx
-            .insert(matchPlayer)
-            .values(playersToInsert)
-            .returning();
-          const roundPlayersToInsert: z.infer<
-            typeof insertRoundPlayerSchema
-          >[] = returnedMatch.scoresheet.rounds.flatMap((round) => {
-            return returnedMatchPlayers.map((player) => {
-              const teamPlayer = returnedMatch.matchPlayers.find(
-                (mPlayer) =>
-                  mPlayer.teamId === player.teamId && mPlayer.teamId !== null,
-              );
-              if (teamPlayer) {
-                return {
-                  roundId: round.id,
-                  matchPlayerId: teamPlayer.id,
-                  score:
-                    teamPlayer.playerRounds.find(
-                      (pRound) => pRound.roundId === round.id,
-                    )?.score ?? null,
-                };
-              }
-              return {
-                roundId: round.id,
-                matchPlayerId: player.id,
-              };
-            });
-          });
-          await tx.insert(roundPlayer).values(roundPlayersToInsert);
-        }
-        //Remove Players from Match
-        if (input.removePlayers.length > 0) {
-          const matchPlayers = await tx
-            .select({ id: matchPlayer.id })
-            .from(matchPlayer)
-            .where(
-              and(
-                eq(matchPlayer.matchId, input.match.id),
-                inArray(
-                  matchPlayer.playerId,
-                  input.removePlayers.map((player) => player.id),
-                ),
-              ),
-            );
-          await tx
-            .update(matchPlayer)
-            .set({ deletedAt: new Date() })
-            .where(
-              and(
-                eq(matchPlayer.matchId, input.match.id),
-                inArray(
-                  matchPlayer.id,
-                  matchPlayers.map(
-                    (returnedMatchPlayer) => returnedMatchPlayer.id,
-                  ),
-                ),
-              ),
-            );
-        }
-        if (input.updatedPlayers.length > 0) {
-          for (const updatedPlayer of input.updatedPlayers) {
-            await tx
-              .update(matchPlayer)
-              .set({
-                teamId: updatedPlayer.teamId,
-              })
-              .where(eq(matchPlayer.id, updatedPlayer.id));
-          }
-        }
-        if (
-          returnedMatch.finished &&
-          (input.newPlayers.length > 0 ||
-            input.addPlayers.length > 0 ||
-            input.removePlayers.length > 0 ||
-            input.updatedPlayers.length > 0)
-        ) {
-          if (returnedMatch.scoresheet.winCondition !== "Manual") {
-            const newMatchPlayers = await tx.query.matchPlayer.findMany({
-              where: {
-                matchId: input.match.id,
-                deletedAt: {
-                  isNull: true,
-                },
-              },
-              with: {
-                rounds: true,
-              },
-            });
-            const finalPlacements = calculatePlacement(
-              newMatchPlayers,
-              returnedMatch.scoresheet,
-            );
-            for (const placement of finalPlacements) {
-              await tx
-                .update(matchPlayer)
-                .set({
-                  placement: placement.placement,
-                  score: placement.score,
-                  winner: placement.placement === 1,
-                })
-                .where(eq(matchPlayer.id, placement.id));
-            }
-          }
-          await tx
-            .update(match)
-            .set({ finished: false })
-            .where(eq(match.id, input.match.id));
+            .where(eq(match.id, returnedSharedMatch.matchId));
+          return {
+            type: returnedSharedMatch.sharedGame.linkedGameId
+              ? "linked"
+              : "shared",
+            gameId:
+              returnedSharedMatch.sharedGame.linkedGameId ??
+              returnedSharedMatch.sharedGame.id,
+            id: returnedSharedMatch.id,
+          };
         }
       });
+      if (!result) return null;
+      return result;
     }),
 });
-
-async function shareMatchWithFriends(
-  transaction: TransactionType,
-  userId: number,
-  createdMatch: {
-    id: number;
-    location: {
-      id: number;
-    } | null;
-    game: {
-      id: number;
-    };
-    matchPlayers: {
-      id: number;
-      player: {
-        id: number;
-      };
-    }[];
-  },
-  shareFriends: {
-    friendUserId: number;
-    shareLocation: boolean;
-    sharePlayers: boolean;
-    defaultPermissionForMatches: "view" | "edit";
-    defaultPermissionForPlayers: "view" | "edit";
-    defaultPermissionForLocation: "view" | "edit";
-    defaultPermissionForGame: "view" | "edit";
-    allowSharedPlayers: boolean;
-    allowSharedLocation: boolean;
-    autoAcceptMatches: boolean;
-    autoAcceptPlayers: boolean;
-    autoAcceptLocation: boolean;
-  }[],
-) {
-  for (const shareFriend of shareFriends) {
-    await transaction.transaction(async (tx) => {
-      let returnedSharedLocation: z.infer<
-        typeof selectSharedLocationSchema
-      > | null = null;
-      const [newShare] = await tx
-        .insert(shareRequest)
-        .values({
-          ownerId: userId,
-          sharedWithId: shareFriend.friendUserId,
-          itemType: "match",
-          itemId: createdMatch.id,
-          status: shareFriend.autoAcceptMatches ? "accepted" : "pending",
-          permission: shareFriend.defaultPermissionForMatches,
-          expiresAt: null,
-        })
-        .returning();
-      if (!newShare) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to generate share.",
-        });
-      }
-      if (
-        createdMatch.location &&
-        shareFriend.shareLocation &&
-        shareFriend.allowSharedLocation
-      ) {
-        returnedSharedLocation = await handleLocationSharing(
-          tx,
-          userId,
-          createdMatch.location.id,
-          shareFriend.friendUserId,
-          shareFriend.defaultPermissionForLocation,
-          shareFriend.autoAcceptLocation,
-          newShare.id,
-        );
-      }
-      const returnedSharedGame = await handleGameSharing(
-        tx,
-        userId,
-        createdMatch.game.id,
-        shareFriend,
-        newShare.id,
-      );
-
-      let returnedSharedMatch: z.infer<typeof selectSharedMatchSchema> | null =
-        null;
-      if (shareFriend.autoAcceptMatches && returnedSharedGame) {
-        returnedSharedMatch = await createSharedMatch(
-          tx,
-          userId,
-          createdMatch.id,
-          shareFriend,
-          returnedSharedGame.id,
-          returnedSharedLocation?.id ?? undefined,
-        );
-      }
-      for (const matchPlayer of createdMatch.matchPlayers) {
-        await handlePlayerSharing(
-          tx,
-          userId,
-          matchPlayer,
-          shareFriend,
-          newShare,
-          returnedSharedMatch,
-        );
-      }
-    });
-  }
-}
-
-async function handleGameSharing(
-  transaction: TransactionType,
-  ownerId: number,
-  gameId: number,
-  shareFriend: {
-    friendUserId: number;
-    shareLocation: boolean;
-    sharePlayers: boolean;
-    defaultPermissionForMatches: "view" | "edit";
-    defaultPermissionForPlayers: "view" | "edit";
-    defaultPermissionForLocation: "view" | "edit";
-    defaultPermissionForGame: "view" | "edit";
-    allowSharedPlayers: boolean;
-    allowSharedLocation: boolean;
-    autoAcceptMatches: boolean;
-    autoAcceptPlayers: boolean;
-    autoAcceptLocation: boolean;
-  },
-  newShareId: number,
-) {
-  const existingSharedGame = await transaction.query.sharedGame.findFirst({
-    where: {
-      gameId: gameId,
-      sharedWithId: shareFriend.friendUserId,
-      ownerId: ownerId,
-    },
-  });
-  if (!existingSharedGame) {
-    await transaction.insert(shareRequest).values({
-      ownerId: ownerId,
-      sharedWithId: shareFriend.friendUserId,
-      itemType: "game",
-      itemId: gameId,
-      permission: shareFriend.defaultPermissionForGame,
-      status: shareFriend.autoAcceptMatches ? "accepted" : "pending",
-      parentShareId: newShareId,
-      expiresAt: null,
-    });
-    if (shareFriend.autoAcceptMatches) {
-      const [createdSharedGame] = await transaction
-        .insert(sharedGame)
-        .values({
-          ownerId: ownerId,
-          sharedWithId: shareFriend.friendUserId,
-          gameId: gameId,
-          permission: shareFriend.defaultPermissionForGame,
-        })
-        .returning();
-      if (!createdSharedGame) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to generate share.",
-        });
-      }
-      return createdSharedGame;
-    }
-  } else {
-    return existingSharedGame;
-  }
-  return null;
-}
-async function createSharedMatch(
-  transaction: TransactionType,
-  ownerId: number,
-  matchId: number,
-  shareFriend: {
-    friendUserId: number;
-    shareLocation: boolean;
-    sharePlayers: boolean;
-    defaultPermissionForMatches: "view" | "edit";
-    defaultPermissionForPlayers: "view" | "edit";
-    defaultPermissionForLocation: "view" | "edit";
-    defaultPermissionForGame: "view" | "edit";
-    allowSharedPlayers: boolean;
-    allowSharedLocation: boolean;
-    autoAcceptMatches: boolean;
-    autoAcceptPlayers: boolean;
-    autoAcceptLocation: boolean;
-  },
-  sharedGameId: number,
-  sharedLocationId: number | undefined,
-) {
-  const [createdSharedMatch] = await transaction
-    .insert(sharedMatch)
-    .values({
-      ownerId: ownerId,
-      sharedWithId: shareFriend.friendUserId,
-      sharedGameId: sharedGameId,
-      matchId: matchId,
-      sharedLocationId: sharedLocationId,
-      permission: shareFriend.defaultPermissionForMatches,
-    })
-    .returning();
-  if (!createdSharedMatch) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Failed to generate share.",
-    });
-  }
-  return createdSharedMatch;
-}
-async function handlePlayerSharing(
-  transaction: TransactionType,
-  userId: number,
-  matchPlayer: {
-    id: number;
-    player: {
-      id: number;
-    };
-  },
-  shareFriend: {
-    friendUserId: number;
-    shareLocation: boolean;
-    sharePlayers: boolean;
-    defaultPermissionForMatches: "view" | "edit";
-    defaultPermissionForPlayers: "view" | "edit";
-    defaultPermissionForLocation: "view" | "edit";
-    defaultPermissionForGame: "view" | "edit";
-    allowSharedPlayers: boolean;
-    allowSharedLocation: boolean;
-    autoAcceptMatches: boolean;
-    autoAcceptPlayers: boolean;
-    autoAcceptLocation: boolean;
-  },
-  parentShare: {
-    id: number;
-    expiresAt: Date | null;
-  },
-  returnedSharedMatch: {
-    id: number;
-  } | null,
-) {
-  const returnedSharedPlayer = await createOrFindSharedPlayer(
-    transaction,
-    userId,
-    matchPlayer.player.id,
-    shareFriend,
-    parentShare,
-  );
-
-  if (returnedSharedMatch && shareFriend.autoAcceptMatches) {
-    await createSharedMatchPlayer(
-      transaction,
-      userId,
-      matchPlayer,
-      shareFriend,
-      returnedSharedMatch,
-      returnedSharedPlayer,
-    );
-  }
-}
-async function createOrFindSharedPlayer(
-  transaction: TransactionType,
-  userId: number,
-  playerId: number,
-  shareFriend: {
-    friendUserId: number;
-    shareLocation: boolean;
-    sharePlayers: boolean;
-    defaultPermissionForMatches: "view" | "edit";
-    defaultPermissionForPlayers: "view" | "edit";
-    defaultPermissionForLocation: "view" | "edit";
-    defaultPermissionForGame: "view" | "edit";
-    allowSharedPlayers: boolean;
-    allowSharedLocation: boolean;
-    autoAcceptMatches: boolean;
-    autoAcceptPlayers: boolean;
-    autoAcceptLocation: boolean;
-  },
-  parentShare: {
-    id: number;
-    expiresAt: Date | null;
-  },
-) {
-  await transaction.insert(shareRequest).values({
-    ownerId: userId,
-    sharedWithId: shareFriend.friendUserId,
-    itemType: "player",
-    itemId: playerId,
-    permission: shareFriend.defaultPermissionForPlayers,
-    status: shareFriend.autoAcceptPlayers ? "accepted" : "pending",
-    parentShareId: parentShare.id,
-    expiresAt: parentShare.expiresAt,
-  });
-  if (shareFriend.autoAcceptPlayers) {
-    const existingSharedPlayer = await transaction.query.sharedPlayer.findFirst(
-      {
-        where: {
-          playerId: playerId,
-          sharedWithId: shareFriend.friendUserId,
-          ownerId: userId,
-        },
-      },
-    );
-    if (!existingSharedPlayer) {
-      const [createdSharedPlayer] = await transaction
-        .insert(sharedPlayer)
-        .values({
-          ownerId: userId,
-          sharedWithId: shareFriend.friendUserId,
-          playerId: playerId,
-          permission: shareFriend.defaultPermissionForPlayers,
-        })
-        .returning();
-      if (!createdSharedPlayer) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to generate share.",
-        });
-      }
-      return createdSharedPlayer;
-    } else {
-      return existingSharedPlayer;
-    }
-  }
-  return null;
-}
-async function createSharedMatchPlayer(
-  transaction: TransactionType,
-  userId: number,
-
-  matchPlayer: {
-    id: number;
-    player: {
-      id: number;
-    };
-  },
-  shareFriend: {
-    friendUserId: number;
-    shareLocation: boolean;
-    sharePlayers: boolean;
-    defaultPermissionForMatches: "view" | "edit";
-    defaultPermissionForPlayers: "view" | "edit";
-    defaultPermissionForLocation: "view" | "edit";
-    defaultPermissionForGame: "view" | "edit";
-    allowSharedPlayers: boolean;
-    allowSharedLocation: boolean;
-    autoAcceptMatches: boolean;
-    autoAcceptPlayers: boolean;
-    autoAcceptLocation: boolean;
-  },
-  returnedSharedMatch: {
-    id: number;
-  },
-  returnedSharedPlayer: {
-    id: number;
-  } | null,
-) {
-  const [createMatchPlayer] = await transaction
-    .insert(sharedMatchPlayer)
-    .values({
-      ownerId: userId,
-      sharedWithId: shareFriend.friendUserId,
-      sharedMatchId: returnedSharedMatch.id,
-      sharedPlayerId: returnedSharedPlayer?.id ?? undefined,
-      matchPlayerId: matchPlayer.id,
-      permission: shareFriend.defaultPermissionForMatches,
-    })
-    .returning();
-  if (!createMatchPlayer) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Failed to generate share.",
-    });
-  }
-}

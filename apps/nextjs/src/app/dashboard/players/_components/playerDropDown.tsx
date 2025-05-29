@@ -41,8 +41,12 @@ export function PlayerDropDown({
   const onDelete = () => {
     deletePlayer.mutate({ id: data.id });
   };
+
+  const canEdit =
+    data.type === "original" ||
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    (data.type === "shared" && data.permissions === "edit");
   const [isOpen, setIsOpen] = useState(false);
-  //TODO add edit player for shared players
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenu>
@@ -53,7 +57,7 @@ export function PlayerDropDown({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {data.type === "original" && (
+          {canEdit && (
             <DialogTrigger asChild>
               <DropdownMenuItem>Edit</DropdownMenuItem>
             </DialogTrigger>
