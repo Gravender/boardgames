@@ -22,6 +22,7 @@ import {
   roundPlayer,
   scoresheet,
   sharedGame,
+  sharedScoresheet,
 } from "@board-games/db/schema";
 import {
   insertGameSchema,
@@ -362,7 +363,9 @@ export const gameRouter = createTRPCRouter({
                 scoresheetType: "shared" as const,
                 id: returnedSharedScoresheet.id,
                 name: returnedSharedScoresheet.scoresheet.name,
-                type: returnedSharedScoresheet.scoresheet.type,
+                type: returnedSharedScoresheet.isDefault
+                  ? ("Default" as const)
+                  : ("Game" as const),
               };
             },
           );
@@ -415,6 +418,7 @@ export const gameRouter = createTRPCRouter({
               name: true,
               winCondition: true,
               isCoop: true,
+              type: true,
               roundsScore: true,
               targetScore: true,
             },
@@ -497,9 +501,9 @@ export const gameRouter = createTRPCRouter({
               }
               return {
                 scoresheetType: "shared" as const,
+                isDefault: returnedSharedScoresheet.isDefault,
                 permission: returnedSharedScoresheet.permission,
-                shareId: returnedSharedScoresheet.id,
-                id: returnedSharedScoresheet.scoresheet.id,
+                id: returnedSharedScoresheet.id,
                 name: returnedSharedScoresheet.scoresheet.name,
                 winCondition: returnedSharedScoresheet.scoresheet.winCondition,
                 isCoop: returnedSharedScoresheet.scoresheet.isCoop,
@@ -532,6 +536,7 @@ export const gameRouter = createTRPCRouter({
           ...result.scoresheets.map((scoresheet) => ({
             scoresheetType: "original" as const,
             id: scoresheet.id,
+            isDefault: scoresheet.type === "Default",
             name: scoresheet.name,
             winCondition: scoresheet.winCondition,
             isCoop: scoresheet.isCoop,
@@ -1280,7 +1285,9 @@ export const gameRouter = createTRPCRouter({
           z.discriminatedUnion("type", [
             z.object({
               type: z.literal("New"),
-              scoresheet: editScoresheetSchema,
+              scoresheet: editScoresheetSchema.extend({
+                isDefault: z.boolean().optional(),
+              }),
               rounds: z.array(
                 baseRoundSchema.extend({
                   order: z.number(),
@@ -1291,7 +1298,9 @@ export const gameRouter = createTRPCRouter({
               type: z.literal("Update Scoresheet"),
               scoresheet: editScoresheetSchema.omit({ name: true }).extend({
                 id: z.number(),
+                scoresheetType: z.literal("original").or(z.literal("shared")),
                 name: z.string().optional(),
+                isDefault: z.boolean().optional(),
               }),
             }),
             z.object({
@@ -1300,9 +1309,18 @@ export const gameRouter = createTRPCRouter({
                 .omit({ name: true })
                 .extend({
                   id: z.number(),
+                  scoresheetType: z.literal("original").or(z.literal("shared")),
                   name: z.string().optional(),
+                  isDefault: z.boolean().optional(),
                 })
-                .nullable(),
+                .or(
+                  z.object({
+                    id: z.number(),
+                    scoresheetType: z
+                      .literal("original")
+                      .or(z.literal("shared")),
+                  }),
+                ),
               roundsToEdit: z.array(
                 baseRoundSchema
                   .omit({ name: true, order: true })
@@ -1318,7 +1336,12 @@ export const gameRouter = createTRPCRouter({
             }),
           ]),
         ),
-        scoresheetsToDelete: z.array(z.number()),
+        scoresheetsToDelete: z.array(
+          z.object({
+            id: z.number(),
+            scoresheetType: z.literal("original").or(z.literal("shared")),
+          }),
+        ),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -1365,31 +1388,123 @@ export const gameRouter = createTRPCRouter({
               await transaction.insert(round).values(roundsToInsert);
             }
             if (inputScoresheet.type === "Update Scoresheet") {
-              await transaction
-                .update(scoresheet)
-                .set({
-                  name: inputScoresheet.scoresheet.name,
-                  winCondition: inputScoresheet.scoresheet.winCondition,
-                  isCoop: inputScoresheet.scoresheet.isCoop,
-                  roundsScore: inputScoresheet.scoresheet.roundsScore,
-                  targetScore: inputScoresheet.scoresheet.targetScore,
-                })
-                .where(eq(scoresheet.id, inputScoresheet.scoresheet.id));
-            }
-            if (inputScoresheet.type === "Update Scoresheet & Rounds") {
-              if (inputScoresheet.scoresheet !== null) {
+              if (inputScoresheet.scoresheet.scoresheetType === "original") {
                 await transaction
                   .update(scoresheet)
                   .set({
                     name: inputScoresheet.scoresheet.name,
                     winCondition: inputScoresheet.scoresheet.winCondition,
                     isCoop: inputScoresheet.scoresheet.isCoop,
+                    type: inputScoresheet.scoresheet.isDefault
+                      ? "Default"
+                      : "Game",
                     roundsScore: inputScoresheet.scoresheet.roundsScore,
                     targetScore: inputScoresheet.scoresheet.targetScore,
                   })
                   .where(eq(scoresheet.id, inputScoresheet.scoresheet.id));
+              } else {
+                const returnedSharedScoresheet =
+                  await transaction.query.sharedScoresheet.findFirst({
+                    where: {
+                      id: inputScoresheet.scoresheet.id,
+                      sharedWithId: ctx.userId,
+                    },
+                  });
+                if (!returnedSharedScoresheet) {
+                  throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Shared scoresheet not found.",
+                  });
+                }
+                if (returnedSharedScoresheet.permission === "edit") {
+                  await transaction
+                    .update(scoresheet)
+                    .set({
+                      name: inputScoresheet.scoresheet.name,
+                      winCondition: inputScoresheet.scoresheet.winCondition,
+                      isCoop: inputScoresheet.scoresheet.isCoop,
+                      roundsScore: inputScoresheet.scoresheet.roundsScore,
+                      targetScore: inputScoresheet.scoresheet.targetScore,
+                    })
+                    .where(
+                      eq(scoresheet.id, returnedSharedScoresheet.scoresheetId),
+                    );
+                }
+                await transaction
+                  .update(sharedScoresheet)
+                  .set({
+                    isDefault: inputScoresheet.scoresheet.isDefault,
+                  })
+                  .where(eq(sharedScoresheet.id, returnedSharedScoresheet.id));
               }
-              if (inputScoresheet.roundsToEdit.length > 0) {
+            }
+            if (inputScoresheet.type === "Update Scoresheet & Rounds") {
+              let scoresheetId: number | undefined = undefined;
+              let sharedScoresheetId: number | undefined = undefined;
+              let scoresheetPermission: "view" | "edit" = "view";
+              if (inputScoresheet.scoresheet.scoresheetType === "original") {
+                scoresheetId = inputScoresheet.scoresheet.id;
+                scoresheetPermission = "edit";
+              } else {
+                const returnedSharedScoresheet =
+                  await transaction.query.sharedScoresheet.findFirst({
+                    where: {
+                      id: inputScoresheet.scoresheet.id,
+                      sharedWithId: ctx.userId,
+                    },
+                  });
+                if (!returnedSharedScoresheet) {
+                  throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Shared scoresheet not found.",
+                  });
+                }
+                scoresheetId = returnedSharedScoresheet.scoresheetId;
+                sharedScoresheetId = returnedSharedScoresheet.id;
+                scoresheetPermission = returnedSharedScoresheet.permission;
+              }
+              if ("name" in inputScoresheet.scoresheet) {
+                if (scoresheetPermission === "edit") {
+                  const scoresheetType = () => {
+                    if (
+                      inputScoresheet.scoresheet.scoresheetType ===
+                        "original" &&
+                      "name" in inputScoresheet.scoresheet
+                    ) {
+                      return inputScoresheet.scoresheet.isDefault
+                        ? "Default"
+                        : "Game";
+                    }
+                    return undefined;
+                  };
+                  await transaction
+                    .update(scoresheet)
+                    .set({
+                      name: inputScoresheet.scoresheet.name,
+                      winCondition: inputScoresheet.scoresheet.winCondition,
+                      isCoop: inputScoresheet.scoresheet.isCoop,
+                      type: scoresheetType(),
+                      roundsScore: inputScoresheet.scoresheet.roundsScore,
+                      targetScore: inputScoresheet.scoresheet.targetScore,
+                    })
+                    .where(eq(scoresheet.id, scoresheetId));
+                }
+                if (
+                  inputScoresheet.scoresheet.scoresheetType === "shared" &&
+                  sharedScoresheetId
+                ) {
+                  await transaction
+                    .update(sharedScoresheet)
+                    .set({
+                      isDefault: inputScoresheet.scoresheet.isDefault,
+                    })
+                    .where(eq(sharedScoresheet.id, sharedScoresheetId));
+                }
+              }
+              if (
+                inputScoresheet.roundsToEdit.length > 0 &&
+                scoresheetPermission === "edit"
+              ) {
                 const ids = inputScoresheet.roundsToEdit.map((p) => p.id);
                 const nameSqlChunks: SQL[] = [sql`(case`];
                 const scoreSqlChunks: SQL[] = [sql`(case`];
@@ -1448,12 +1563,18 @@ export const gameRouter = createTRPCRouter({
                   })
                   .where(inArray(round.id, ids));
               }
-              if (inputScoresheet.roundsToAdd.length > 0) {
+              if (
+                inputScoresheet.roundsToAdd.length > 0 &&
+                scoresheetPermission === "edit"
+              ) {
                 await transaction
                   .insert(round)
                   .values(inputScoresheet.roundsToAdd);
               }
-              if (inputScoresheet.roundsToDelete.length > 0) {
+              if (
+                inputScoresheet.roundsToDelete.length > 0 &&
+                scoresheetPermission === "edit"
+              ) {
                 await transaction
                   .delete(round)
                   .where(inArray(round.id, inputScoresheet.roundsToDelete));
@@ -1463,10 +1584,31 @@ export const gameRouter = createTRPCRouter({
         });
       }
       if (input.scoresheetsToDelete.length > 0) {
-        await ctx.db
-          .update(scoresheet)
-          .set({ deletedAt: new Date() })
-          .where(inArray(scoresheet.id, input.scoresheetsToDelete));
+        const sharedScoresheetsToDelete = input.scoresheetsToDelete.filter(
+          (scoresheetDelete) => scoresheetDelete.scoresheetType === "shared",
+        );
+        const originalScoresheetsToDelete = input.scoresheetsToDelete.filter(
+          (scoresheetDelete) => scoresheetDelete.scoresheetType === "original",
+        );
+        if (sharedScoresheetsToDelete.length > 0) {
+          await ctx.db
+            .update(scoresheet)
+            .set({ deletedAt: new Date() })
+            .where(
+              inArray(
+                scoresheet.id,
+                originalScoresheetsToDelete.map((s) => s.id),
+              ),
+            );
+        }
+        if (originalScoresheetsToDelete.length > 0) {
+          await ctx.db.delete(sharedScoresheet).where(
+            inArray(
+              sharedScoresheet.id,
+              sharedScoresheetsToDelete.map((s) => s.id),
+            ),
+          );
+        }
       }
     }),
   deleteGame: protectedUserProcedure

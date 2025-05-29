@@ -1,6 +1,7 @@
+import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
-import { eq } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type {
@@ -18,9 +19,11 @@ import {
   roundPlayer,
   scoresheet,
   sharedGame,
+  sharedScoresheet,
   team,
 } from "@board-games/db/schema";
 import { selectSharedGameSchema } from "@board-games/db/zodSchema";
+import { baseRoundSchema, editScoresheetSchema } from "@board-games/shared";
 
 import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
 import { processPlayer, shareMatchWithFriends } from "../../utils/addMatch";
@@ -633,7 +636,9 @@ export const shareGameRouter = createTRPCRouter({
           scoresheetType: "shared" as const,
           id: returnedSharedScoresheet.id,
           name: returnedSharedScoresheet.scoresheet.name,
-          type: returnedSharedScoresheet.scoresheet.type,
+          type: returnedSharedScoresheet.isDefault
+            ? ("Default" as const)
+            : ("Game" as const),
         });
       }
       if (returnedGame.linkedGame) {
@@ -655,12 +660,122 @@ export const shareGameRouter = createTRPCRouter({
               scoresheetType: "shared" as const,
               id: returnedLinkedScoresheet.id,
               name: returnedLinkedScoresheet.scoresheet.name,
-              type: returnedLinkedScoresheet.scoresheet.type,
+              type: returnedLinkedScoresheet.isDefault
+                ? ("Default" as const)
+                : ("Game" as const),
             });
           }
         }
       }
       return mappedScoresheets;
+    }),
+  getEditSharedGame: protectedUserProcedure
+    .input(selectSharedGameSchema.pick({ id: true }))
+    .query(async ({ ctx, input }) => {
+      const returnedSharedGame = await ctx.db.query.sharedGame.findFirst({
+        where: {
+          id: input.id,
+          sharedWithId: ctx.userId,
+        },
+        with: {
+          game: {
+            columns: {
+              id: true,
+              name: true,
+              playersMin: true,
+              playersMax: true,
+              playtimeMin: true,
+              playtimeMax: true,
+              yearPublished: true,
+              ownedBy: true,
+            },
+            with: {
+              image: true,
+            },
+          },
+          sharedScoresheets: {
+            with: {
+              scoresheet: {
+                columns: {
+                  id: true,
+                  name: true,
+                  winCondition: true,
+                  isCoop: true,
+                  roundsScore: true,
+                  targetScore: true,
+                },
+                where: {
+                  OR: [
+                    {
+                      type: "Default",
+                    },
+                    {
+                      type: "Game",
+                    },
+                  ],
+                },
+                with: {
+                  rounds: {
+                    columns: {
+                      id: true,
+                      name: true,
+                      type: true,
+                      score: true,
+                      color: true,
+                      lookup: true,
+                      modifier: true,
+                      order: true,
+                    },
+                    orderBy: {
+                      order: "asc",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!returnedSharedGame) {
+        return null;
+      }
+      return {
+        game: {
+          id: returnedSharedGame.id,
+          permission: returnedSharedGame.permission,
+          name: returnedSharedGame.game.name,
+          imageUrl: returnedSharedGame.game.image?.url ?? "",
+          playersMin: returnedSharedGame.game.playersMin,
+          playersMax: returnedSharedGame.game.playersMax,
+          playtimeMin: returnedSharedGame.game.playtimeMin,
+          playtimeMax: returnedSharedGame.game.playtimeMax,
+          yearPublished: returnedSharedGame.game.yearPublished,
+        },
+        scoresheets: returnedSharedGame.sharedScoresheets
+          .map((returnedSharedScoresheet) => {
+            if (!returnedSharedScoresheet.scoresheet) {
+              return null;
+            }
+            return {
+              scoresheetType: "shared" as const,
+              isDefault: returnedSharedScoresheet.isDefault,
+              permission: returnedSharedScoresheet.permission,
+              id: returnedSharedScoresheet.id,
+              name: returnedSharedScoresheet.scoresheet.name,
+              winCondition: returnedSharedScoresheet.scoresheet.winCondition,
+              isCoop: returnedSharedScoresheet.scoresheet.isCoop,
+              roundsScore: returnedSharedScoresheet.scoresheet.roundsScore,
+              targetScore: returnedSharedScoresheet.scoresheet.targetScore,
+              rounds: returnedSharedScoresheet.scoresheet.rounds.map(
+                (round) => ({
+                  ...round,
+                  roundId: round.id,
+                }),
+              ),
+            };
+          })
+          .filter((scoresheet) => scoresheet !== null),
+      };
     }),
   createMatch: protectedUserProcedure
     .input(
@@ -1078,5 +1193,329 @@ export const shareGameRouter = createTRPCRouter({
         return returningMatch;
       });
       return response;
+    }),
+  updateSharedGame: protectedUserProcedure
+    .input(
+      z.object({
+        game: z.discriminatedUnion("type", [
+          z.object({
+            type: z.literal("updateGame"),
+            id: z.number(),
+            name: z.string().optional(),
+            ownedBy: z.boolean().nullish(),
+            playersMin: z.number().nullish(),
+            playersMax: z.number().nullish(),
+            playtimeMin: z.number().nullish(),
+            playtimeMax: z.number().nullish(),
+            yearPublished: z.number().nullish(),
+          }),
+          z.object({ type: z.literal("default"), id: z.number() }),
+        ]),
+        scoresheets: z.array(
+          z.discriminatedUnion("type", [
+            z.object({
+              type: z.literal("New"),
+              scoresheet: editScoresheetSchema.extend({
+                isDefault: z.boolean().optional(),
+              }),
+              rounds: z.array(
+                baseRoundSchema.extend({
+                  order: z.number(),
+                }),
+              ),
+            }),
+            z.object({
+              type: z.literal("Update Scoresheet"),
+              scoresheet: editScoresheetSchema.omit({ name: true }).extend({
+                id: z.number(),
+                name: z.string().optional(),
+                isDefault: z.boolean().optional(),
+              }),
+            }),
+            z.object({
+              type: z.literal("Update Scoresheet & Rounds"),
+              scoresheet: editScoresheetSchema
+                .omit({ name: true })
+                .extend({
+                  id: z.number(),
+                  name: z.string().optional(),
+                  isDefault: z.boolean().optional(),
+                })
+                .or(
+                  z.object({
+                    id: z.number(),
+                  }),
+                ),
+              roundsToEdit: z.array(
+                baseRoundSchema
+                  .omit({ name: true, order: true })
+                  .extend({ id: z.number(), name: z.string().optional() }),
+              ),
+              roundsToAdd: z.array(
+                baseRoundSchema.extend({
+                  scoresheetId: z.number(),
+                  order: z.number(),
+                }),
+              ),
+              roundsToDelete: z.array(z.number()),
+            }),
+          ]),
+        ),
+        scoresheetsToDelete: z.array(
+          z.object({
+            id: z.number(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.transaction(async (tx) => {
+        const returnedSharedGame = await tx.query.sharedGame.findFirst({
+          where: {
+            id: input.game.id,
+            sharedWithId: ctx.userId,
+          },
+        });
+        if (returnedSharedGame && returnedSharedGame.permission === "edit") {
+          if (input.game.type === "updateGame") {
+            await tx
+              .update(game)
+              .set({
+                name: input.game.name,
+                ownedBy: input.game.ownedBy,
+                playersMin: input.game.playersMin,
+                playersMax: input.game.playersMax,
+                playtimeMin: input.game.playtimeMin,
+                playtimeMax: input.game.playtimeMax,
+                yearPublished: input.game.yearPublished,
+              })
+              .where(eq(game.id, returnedSharedGame.gameId));
+          }
+        }
+        if (input.scoresheets.length > 0) {
+          await tx.transaction(async (tx2) => {
+            for (const inputScoresheet of input.scoresheets) {
+              if (
+                inputScoresheet.type === "New" &&
+                returnedSharedGame &&
+                returnedSharedGame.permission === "edit"
+              ) {
+                const [returnedScoresheet] = await tx2
+                  .insert(scoresheet)
+                  .values({
+                    name: inputScoresheet.scoresheet.name,
+                    winCondition: inputScoresheet.scoresheet.winCondition,
+                    isCoop: inputScoresheet.scoresheet.isCoop,
+                    roundsScore: inputScoresheet.scoresheet.roundsScore,
+                    targetScore: inputScoresheet.scoresheet.targetScore,
+
+                    userId: returnedSharedGame.linkedGameId
+                      ? ctx.userId
+                      : returnedSharedGame.ownerId,
+                    gameId:
+                      returnedSharedGame.linkedGameId ??
+                      returnedSharedGame.gameId,
+                    type: returnedSharedGame.linkedGameId
+                      ? inputScoresheet.scoresheet.isDefault
+                        ? "Default"
+                        : "Game"
+                      : "Game",
+                  })
+                  .returning();
+                if (!returnedScoresheet) {
+                  throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+                }
+
+                const roundsToInsert = inputScoresheet.rounds.map(
+                  (round, index) => ({
+                    name: round.name,
+                    type: round.type,
+                    score: round.score,
+                    color: round.color,
+                    lookup: round.lookup,
+                    modifier: round.modifier,
+                    scoresheetId: returnedScoresheet.id,
+                    order: index + 1,
+                  }),
+                );
+                await tx2.insert(round).values(roundsToInsert);
+                if (!returnedSharedGame.linkedGameId) {
+                  await tx2.insert(sharedScoresheet).values({
+                    ownerId: returnedSharedGame.ownerId,
+                    sharedWithId: ctx.userId,
+                    scoresheetId: returnedScoresheet.id,
+                    sharedGameId: returnedSharedGame.id,
+                    isDefault: inputScoresheet.scoresheet.isDefault,
+                    permission: "edit",
+                  });
+                }
+              }
+              if (inputScoresheet.type === "Update Scoresheet") {
+                const returnedSharedScoresheet =
+                  await tx2.query.sharedScoresheet.findFirst({
+                    where: {
+                      id: inputScoresheet.scoresheet.id,
+                      sharedWithId: ctx.userId,
+                    },
+                  });
+                if (!returnedSharedScoresheet) {
+                  throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Shared scoresheet not found.",
+                  });
+                }
+                if (returnedSharedScoresheet.permission === "edit") {
+                  await tx2
+                    .update(scoresheet)
+                    .set({
+                      name: inputScoresheet.scoresheet.name,
+                      winCondition: inputScoresheet.scoresheet.winCondition,
+                      isCoop: inputScoresheet.scoresheet.isCoop,
+                      roundsScore: inputScoresheet.scoresheet.roundsScore,
+                      targetScore: inputScoresheet.scoresheet.targetScore,
+                    })
+                    .where(
+                      eq(scoresheet.id, returnedSharedScoresheet.scoresheetId),
+                    );
+                }
+                await tx2
+                  .update(sharedScoresheet)
+                  .set({
+                    isDefault: inputScoresheet.scoresheet.isDefault,
+                  })
+                  .where(eq(sharedScoresheet.id, returnedSharedScoresheet.id));
+              }
+              if (inputScoresheet.type === "Update Scoresheet & Rounds") {
+                const returnedSharedScoresheet =
+                  await tx2.query.sharedScoresheet.findFirst({
+                    where: {
+                      id: inputScoresheet.scoresheet.id,
+                      sharedWithId: ctx.userId,
+                    },
+                  });
+                if (!returnedSharedScoresheet) {
+                  throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Shared scoresheet not found.",
+                  });
+                }
+                if ("name" in inputScoresheet.scoresheet) {
+                  if (returnedSharedScoresheet.permission === "edit") {
+                    await tx2
+                      .update(scoresheet)
+                      .set({
+                        name: inputScoresheet.scoresheet.name,
+                        winCondition: inputScoresheet.scoresheet.winCondition,
+                        isCoop: inputScoresheet.scoresheet.isCoop,
+                        roundsScore: inputScoresheet.scoresheet.roundsScore,
+                        targetScore: inputScoresheet.scoresheet.targetScore,
+                      })
+                      .where(
+                        eq(
+                          scoresheet.id,
+                          returnedSharedScoresheet.scoresheetId,
+                        ),
+                      );
+                  }
+                  await tx2
+                    .update(sharedScoresheet)
+                    .set({
+                      isDefault: inputScoresheet.scoresheet.isDefault,
+                    })
+                    .where(
+                      eq(sharedScoresheet.id, returnedSharedScoresheet.id),
+                    );
+                }
+                if (returnedSharedScoresheet.permission === "edit") {
+                  if (inputScoresheet.roundsToEdit.length > 0) {
+                    const ids = inputScoresheet.roundsToEdit.map((p) => p.id);
+                    const nameSqlChunks: SQL[] = [sql`(case`];
+                    const scoreSqlChunks: SQL[] = [sql`(case`];
+                    const typeSqlChunks: SQL[] = [sql`(case`];
+                    const colorSqlChunks: SQL[] = [sql`(case`];
+                    const lookupSqlChunks: SQL[] = [sql`(case`];
+                    const modifierSqlChunks: SQL[] = [sql`(case`];
+                    for (const inputRound of inputScoresheet.roundsToEdit) {
+                      nameSqlChunks.push(
+                        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.name}::varchar`}`,
+                      );
+                      scoreSqlChunks.push(
+                        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.score}::integer`}`,
+                      );
+                      typeSqlChunks.push(
+                        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.type}::varchar`}`,
+                      );
+                      colorSqlChunks.push(
+                        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.color}::varchar`}`,
+                      );
+                      lookupSqlChunks.push(
+                        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.lookup}::integer`}`,
+                      );
+                      modifierSqlChunks.push(
+                        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.modifier}::integer`}`,
+                      );
+                    }
+                    nameSqlChunks.push(sql`end)`);
+                    scoreSqlChunks.push(sql`end)`);
+                    typeSqlChunks.push(sql`end)`);
+                    colorSqlChunks.push(sql`end)`);
+                    lookupSqlChunks.push(sql`end)`);
+                    modifierSqlChunks.push(sql`end)`);
+
+                    // Join each array of CASE chunks into a single SQL expression
+                    const finalNameSql = sql.join(nameSqlChunks, sql.raw(" "));
+                    const finalScoreSql = sql.join(
+                      scoreSqlChunks,
+                      sql.raw(" "),
+                    );
+                    const finalTypeSql = sql.join(typeSqlChunks, sql.raw(" "));
+                    const finalColorSql = sql.join(
+                      colorSqlChunks,
+                      sql.raw(" "),
+                    );
+                    const finalLookupSql = sql.join(
+                      lookupSqlChunks,
+                      sql.raw(" "),
+                    );
+                    const finalModifierSql = sql.join(
+                      modifierSqlChunks,
+                      sql.raw(" "),
+                    );
+
+                    // Perform the bulk update
+                    await tx2
+                      .update(round)
+                      .set({
+                        name: finalNameSql,
+                        score: finalScoreSql,
+                        type: finalTypeSql,
+                        color: finalColorSql,
+                        lookup: finalLookupSql,
+                        modifier: finalModifierSql,
+                      })
+                      .where(inArray(round.id, ids));
+                  }
+                  if (inputScoresheet.roundsToAdd.length > 0) {
+                    await tx2.insert(round).values(inputScoresheet.roundsToAdd);
+                  }
+                  if (inputScoresheet.roundsToDelete.length > 0) {
+                    await tx2
+                      .delete(round)
+                      .where(inArray(round.id, inputScoresheet.roundsToDelete));
+                  }
+                }
+              }
+            }
+          });
+        }
+        if (input.scoresheetsToDelete.length > 0) {
+          await ctx.db.delete(sharedScoresheet).where(
+            inArray(
+              sharedScoresheet.id,
+              input.scoresheetsToDelete.map((s) => s.id),
+            ),
+          );
+        }
+      });
     }),
 });

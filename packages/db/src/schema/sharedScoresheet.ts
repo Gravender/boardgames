@@ -1,5 +1,12 @@
 import { sql } from "drizzle-orm";
-import { index, integer, serial, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  serial,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 import { createTable } from "./baseTable";
 import scoresheet from "./scoresheet";
@@ -22,6 +29,7 @@ const sharedScoresheet = createTable(
     sharedGameId: integer("shared_game_id")
       .references(() => sharedGame.id)
       .notNull(),
+    isDefault: boolean("is_default").default(false).notNull(),
     permission: text("permission", { enum: ["view", "edit"] })
       .default("view")
       .notNull(),

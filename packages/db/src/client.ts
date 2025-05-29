@@ -1,4 +1,9 @@
-import type { ExtractTablesWithRelations, RelationsFilter } from "drizzle-orm";
+import type {
+  BuildQueryResult,
+  DBQueryConfig,
+  ExtractTablesWithRelations,
+  RelationsFilter,
+} from "drizzle-orm";
 import { sql } from "@vercel/postgres";
 import { drizzle as LocalDrizzle } from "drizzle-orm/postgres-js";
 import { drizzle as VercelDrizzle } from "drizzle-orm/vercel-postgres";
@@ -35,3 +40,13 @@ export type Filter<TableName extends keyof TRSchema> = RelationsFilter<
   TRSchema[TableName],
   TRSchema
 >;
+export type QueryConfig<TableName extends keyof TRSchema> = DBQueryConfig<
+  "one" | "many",
+  TRSchema,
+  TRSchema[TableName]
+>;
+
+export type InferQueryResult<
+  TableName extends keyof TRSchema,
+  QBConfig extends QueryConfig<TableName> = object,
+> = BuildQueryResult<TRSchema, TRSchema[TableName], QBConfig>;

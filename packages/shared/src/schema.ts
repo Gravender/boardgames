@@ -97,6 +97,35 @@ export const editGameSchema = baseGameSchema
       });
     }
   });
+export const sharedEditGameSchema = baseGameSchema
+  .omit({
+    gameImg: true,
+    ownedBy: true,
+  })
+  .superRefine((values, ctx) => {
+    if (
+      values.playersMin &&
+      values.playersMax &&
+      values.playersMin > values.playersMax
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Players min must be less than or equal to players max.",
+        path: ["playersMin"],
+      });
+    }
+    if (
+      values.playtimeMin &&
+      values.playtimeMax &&
+      values.playtimeMin > values.playtimeMax
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Playtime min must be less than or equal to playtime max.",
+        path: ["playtimeMin"],
+      });
+    }
+  });
 
 export const scoreSheetSchema = insertScoreSheetSchema
   .omit({
