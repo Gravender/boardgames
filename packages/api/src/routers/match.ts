@@ -419,6 +419,9 @@ export const matchRouter = createTRPCRouter({
               },
               playerRounds: true,
             },
+            orderBy: {
+              order: "asc",
+            },
           },
           teams: true,
           location: true,
@@ -450,7 +453,16 @@ export const matchRouter = createTRPCRouter({
           details: matchPlayer.details,
           teamId: matchPlayer.teamId,
           isUser: matchPlayer.player.isUser,
+          order: matchPlayer.order,
         };
+      });
+      refinedPlayers.sort((a, b) => {
+        if (a.order === b.order) {
+          return a.name.localeCompare(b.name);
+        }
+        if (a.order === null || b.order == null)
+          return a.name.localeCompare(b.name);
+        return a.order - b.order;
       });
       return {
         id: returnedMatch.id,
