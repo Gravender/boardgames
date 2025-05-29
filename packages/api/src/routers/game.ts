@@ -1590,7 +1590,7 @@ export const gameRouter = createTRPCRouter({
         const originalScoresheetsToDelete = input.scoresheetsToDelete.filter(
           (scoresheetDelete) => scoresheetDelete.scoresheetType === "original",
         );
-        if (sharedScoresheetsToDelete.length > 0) {
+        if (originalScoresheetsToDelete.length > 0) {
           await ctx.db
             .update(scoresheet)
             .set({ deletedAt: new Date() })
@@ -1601,7 +1601,7 @@ export const gameRouter = createTRPCRouter({
               ),
             );
         }
-        if (originalScoresheetsToDelete.length > 0) {
+        if (sharedScoresheetsToDelete.length > 0) {
           await ctx.db.delete(sharedScoresheet).where(
             inArray(
               sharedScoresheet.id,

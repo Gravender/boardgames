@@ -827,7 +827,7 @@ const GameForm = ({
                           <FormControl>
                             <Input
                               type="number"
-                              placeholder="Min"
+                              placeholder="Year"
                               {...field}
                               onChange={(e) =>
                                 field.onChange(

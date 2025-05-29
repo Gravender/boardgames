@@ -6,37 +6,71 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, User, Users, X } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
-
-
 import type { RouterOutputs } from "@board-games/api";
-import { insertMatchSchema, insertPlayerSchema } from "@board-games/db/zodSchema";
+import {
+  insertMatchSchema,
+  insertPlayerSchema,
+} from "@board-games/db/zodSchema";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Calendar } from "@board-games/ui/calendar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@board-games/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@board-games/ui/card";
 import { Checkbox } from "@board-games/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@board-games/ui/dialog";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@board-games/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@board-games/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@board-games/ui/form";
 import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@board-games/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@board-games/ui/popover";
 import { ScrollArea } from "@board-games/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@board-games/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@board-games/ui/select";
 import { cn } from "@board-games/ui/utils";
-
-
 
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
-
 
 type Game = NonNullable<RouterOutputs["sharing"]["getSharedGame"]>;
 type Locations = RouterOutputs["location"]["getLocations"];
@@ -989,15 +1023,18 @@ const AddPlayersForm = ({
                                                 i.type === player.type,
                                             );
                                             if (value === "0" && idx !== -1) {
-                                                update(idx, {
-                                                  ...foundPlayer,
-                                                  team: null,
-                                                });
-                                              
+                                              update(idx, {
+                                                ...foundPlayer,
+                                                team: null,
+                                              });
+
                                               return;
                                             }
 
-                                            if (Number.parseInt(value) > 0 && idx !== -1) {
+                                            if (
+                                              Number.parseInt(value) > 0 &&
+                                              idx !== -1
+                                            ) {
                                               update(idx, {
                                                 ...foundPlayer,
                                                 team: Number.parseInt(value),
