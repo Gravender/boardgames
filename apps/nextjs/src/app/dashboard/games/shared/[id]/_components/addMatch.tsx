@@ -612,7 +612,10 @@ const AddMatchForm = ({
                           <div className="flex items-center gap-2">
                             <span>{scoresheet.name}</span>
                             {scoresheet.scoresheetType === "shared" && (
-                              <Badge variant="outline" className="bg-blue-500">
+                              <Badge
+                                variant="outline"
+                                className="bg-blue-500 text-white"
+                              >
                                 Shared
                               </Badge>
                             )}

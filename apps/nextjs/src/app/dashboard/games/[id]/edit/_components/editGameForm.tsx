@@ -897,7 +897,7 @@ const GameForm = ({
                               {scoreSheet.scoresheetType === "shared" && (
                                 <Badge
                                   variant="outline"
-                                  className="bg-blue-600 text-xs"
+                                  className="bg-blue-600 text-xs text-white"
                                 >
                                   Shared
                                 </Badge>
