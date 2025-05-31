@@ -104,7 +104,7 @@ export async function seedMatches(d3Seed: number) {
         name: matchName,
         userId: game.userId,
         gameId: game.id,
-        scoresheetId: returnedScoresheet.id,
+        scoresheetId: newScoreSheet.id,
         locationId:
           userLocations.length > 0
             ? faker.helpers.maybe(
@@ -369,7 +369,7 @@ export async function seedMatches(d3Seed: number) {
         return a.score - b.score;
       }
       if (returnedMatch.scoresheet.winCondition === "Target Score") {
-        if (a.score == b.score) {
+        if (a.score === b.score) {
           return 0;
         }
         if (a.score === returnedMatch.scoresheet.targetScore) return -1;

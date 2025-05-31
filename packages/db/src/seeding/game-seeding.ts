@@ -64,7 +64,7 @@ export async function seedGames(d3Seed: number) {
       }
       gameData.push({
         name: gameName,
-        userId: faker.helpers.arrayElement(users).id,
+        userId: user.id,
         imageId: imageId,
         playersMin: fakePlayerMin,
         playersMax: fakePlayerMax,
