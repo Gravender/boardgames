@@ -119,7 +119,7 @@ export function EditGameForm({
   >(
     data.scoresheets.map((scoresheet) => ({
       ...scoresheet,
-      permission: "permission" in scoresheet ? scoresheet.permission : null,
+      permission: "permission" in scoresheet ? scoresheet.permission : "edit",
       scoresheetId: scoresheet.id,
       scoreSheetChanged: false,
       roundChanged: false,
@@ -173,7 +173,7 @@ export function EditGameForm({
           scoresheet={
             scoresheets[activeScoreSheet] ?? {
               scoresheetId: null,
-              permission: null,
+              permission: "edit",
               scoresheetType: "original",
               name:
                 scoresheets.length === 0
@@ -1191,12 +1191,9 @@ const ScoresheetForm = ({
               </FormItem>
             )}
           />
-          {scoresheet.permission === "edit" && (
-            <>
-              <Separator className="w-full" orientation="horizontal" />
-              <AddRounds form={form} />
-            </>
-          )}
+
+          <Separator className="w-full" orientation="horizontal" />
+          <AddRounds form={form} editable={scoresheet.permission === "edit"} />
         </CardContent>
         <CardFooter className="flex flex-row justify-end gap-2">
           <Button type="reset" variant="secondary" onClick={() => onBack()}>
@@ -1210,8 +1207,10 @@ const ScoresheetForm = ({
 };
 const AddRounds = ({
   form,
+  editable,
 }: {
   form: UseFormReturn<z.infer<typeof scoresheetSchema>>;
+  editable: boolean;
 }) => {
   const { fields, remove, append } = useFieldArray({
     name: "rounds",
@@ -1231,6 +1230,7 @@ const AddRounds = ({
                 <FormField
                   control={form.control}
                   name={`rounds.${index}.color`}
+                  disabled={!editable}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="hidden">Round Color</FormLabel>
@@ -1238,6 +1238,7 @@ const AddRounds = ({
                         <GradientPicker
                           color={field.value ?? null}
                           setColor={field.onChange}
+                          disabled={field.disabled}
                         />
                       </FormControl>
                       <FormMessage />
@@ -1247,6 +1248,7 @@ const AddRounds = ({
                 <FormField
                   control={form.control}
                   name={`rounds.${index}.name`}
+                  disabled={!editable}
                   render={({ field }) => (
                     <FormItem className="space-y-0">
                       <FormLabel className="hidden">Round Name</FormLabel>
@@ -1259,11 +1261,12 @@ const AddRounds = ({
                 />
               </div>
               <div className="flex items-center gap-2">
-                <RoundPopOver index={index} form={form} />
+                <RoundPopOver index={index} form={form} disabled={!editable} />
                 <Button
                   variant="secondary"
                   size="icon"
                   type="button"
+                  disabled={!editable}
                   onClick={() => {
                     const round = form.getValues("rounds")[index];
                     append({
@@ -1281,6 +1284,7 @@ const AddRounds = ({
                   variant="destructive"
                   size="icon"
                   type="button"
+                  disabled={!editable}
                   onClick={() => remove(index)}
                 >
                   <Trash />
@@ -1295,6 +1299,7 @@ const AddRounds = ({
           type="button"
           variant="secondary"
           size={"icon"}
+          disabled={!editable}
           onClick={() =>
             append({
               roundId: null,
@@ -1311,6 +1316,7 @@ const AddRounds = ({
           type="button"
           variant="secondary"
           size={"icon"}
+          disabled={!editable}
           onClick={() => remove(form.getValues("rounds").length - 1)}
         >
           <Minus />
