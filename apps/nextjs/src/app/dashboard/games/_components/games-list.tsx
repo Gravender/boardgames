@@ -257,7 +257,7 @@ function GamesList({ games }: GamesListProps) {
                 <SelectGroup>
                   <SelectLabel>Matches</SelectLabel>
                   <SelectItem value="matches-desc">Most first</SelectItem>
-                  <SelectItem value="matches-asc">Lease first</SelectItem>
+                  <SelectItem value="matches-asc">Least first</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
