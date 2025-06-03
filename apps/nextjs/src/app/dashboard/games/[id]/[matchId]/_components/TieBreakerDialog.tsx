@@ -99,13 +99,15 @@ function Content({
   const queryClient = useQueryClient();
   const updateMatchPlacement = useMutation(
     trpc.match.updateMatchPlacement.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: matchId }),
-        );
-        await queryClient.invalidateQueries(
-          trpc.game.getGame.queryOptions({ id: gameId }),
-        );
+      onSuccess: () => {
+        void Promise.all([
+          queryClient.invalidateQueries(
+            trpc.match.getMatch.queryOptions({ id: matchId }),
+          ),
+          queryClient.invalidateQueries(
+            trpc.game.getGame.queryOptions({ id: gameId }),
+          ),
+        ]);
 
         router.push(`/dashboard/games/${gameId}/${matchId}/summary`);
       },

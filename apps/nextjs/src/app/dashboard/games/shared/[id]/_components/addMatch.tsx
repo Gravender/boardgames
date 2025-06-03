@@ -277,8 +277,6 @@ const AddMatchForm = ({
   const createMatch = useMutation(
     trpc.sharing.createMatch.mutationOptions({
       onSuccess: (response) => {
-        setIsSubmitting(false);
-        router.push(`/dashboard/games/${response.gameId}/${response.id}`);
         void Promise.all([
           queryClient.invalidateQueries(
             trpc.player.getPlayersByGame.queryFilter({
@@ -291,6 +289,8 @@ const AddMatchForm = ({
           ),
           queryClient.invalidateQueries(trpc.dashboard.pathFilter()),
         ]);
+        router.push(`/dashboard/games/${response.gameId}/${response.id}`);
+        setIsSubmitting(false);
       },
     }),
   );

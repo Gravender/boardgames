@@ -93,8 +93,8 @@ function Content({
   const queryClient = useQueryClient();
   const updateWinner = useMutation(
     trpc.sharing.updateSharedMatchManualWinner.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
+      onSuccess: () => {
+        void queryClient.invalidateQueries(
           trpc.sharing.getSharedMatch.queryOptions({ id: matchId }),
         );
 
