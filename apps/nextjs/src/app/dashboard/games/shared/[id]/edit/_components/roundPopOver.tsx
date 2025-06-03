@@ -32,9 +32,11 @@ import { NumberInput } from "~/components/number-input";
 export function RoundPopOver({
   index,
   form,
+  disabled = false,
 }: {
   index: number;
   form: UseFormReturn<z.infer<typeof scoresheetSchema>>;
+  disabled?: boolean;
 }) {
   const { fields, update } = useFieldArray({
     name: "rounds",
@@ -44,7 +46,7 @@ export function RoundPopOver({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" size="icon">
+        <Button type="button" variant="outline" size="icon" disabled={disabled}>
           <Settings />
         </Button>
       </PopoverTrigger>

@@ -14,10 +14,12 @@ import { cn } from "@board-games/ui/utils";
 export function GradientPicker({
   color,
   setColor: setColor,
+  disabled = false,
   className,
 }: {
   color: string | null;
   setColor: (color: string) => void;
+  disabled?: boolean;
   className?: string;
 }) {
   const solids = [
@@ -51,6 +53,7 @@ export function GradientPicker({
             !color && "text-muted-foreground",
             className,
           )}
+          disabled={disabled}
         >
           <div
             className="flex h-10 w-10 items-center justify-center rounded"
@@ -78,6 +81,7 @@ export function GradientPicker({
           placeholder="Custom color"
           className="col-span-2 mt-4 h-8"
           onChange={(e) => setColor(e.currentTarget.value)}
+          disabled={disabled}
         />
       </PopoverContent>
     </Popover>
