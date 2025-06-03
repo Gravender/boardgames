@@ -14,16 +14,20 @@ export default async function Page({
 }) {
   const date = (await params).date;
   if (!isValid(new Date(date))) redirect("/dashboard/calendar");
-  const matches = await caller.match.getMatchesByDate({
+  const matchesByDate = await caller.match.getMatchesByDate({
     date: new Date(date),
   });
-  if (matches.length === 0) redirect("/dashboard/calendar");
+  if (matchesByDate.matches.length === 0) redirect("/dashboard/calendar");
 
   return (
     <div className="flex w-full items-center justify-center">
       <HydrateClient>
         <Suspense>
-          <MatchesTable data={matches} date={date} />
+          <MatchesTable
+            data={matchesByDate.matches}
+            players={matchesByDate.players}
+            date={date}
+          />
         </Suspense>
       </HydrateClient>
     </div>
