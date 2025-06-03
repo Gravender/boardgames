@@ -90,7 +90,7 @@ function GamesList({ games }: GamesListProps) {
 
         // Playtime filter
         const minPlaytime = game.playtime.min;
-        if (minPlaytime !== null && minPlaytime > filters.minPlaytime) {
+        if (minPlaytime !== null && minPlaytime < filters.minPlaytime) {
           return false;
         }
 
