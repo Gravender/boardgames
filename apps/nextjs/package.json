@@ -50,7 +50,7 @@
     "@board-games/prettier-config": "workspace:*",
     "@board-games/tailwind-config": "workspace:*",
     "@board-games/tsconfig": "workspace:*",
-    "@clerk/testing": "^1.4.5",
+    "@clerk/testing": "^1.7.5",
     "@playwright/test": "^1.49.1",
     "@types/lodash.debounce": "^4.0.9",
     "@types/node": "^22.15.3",
