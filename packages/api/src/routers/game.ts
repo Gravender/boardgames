@@ -819,7 +819,7 @@ export const gameRouter = createTRPCRouter({
         (acc, match) => {
           if (!match.finished) return acc;
           match.players.forEach((player) => {
-            const accPlayer = acc[player.id];
+            const accPlayer = acc[`${player.type}-${player.id}`];
             if (!accPlayer) {
               const tempPlacements: Record<number, number> = {};
               tempPlacements[player.placement] = 1;
@@ -866,7 +866,7 @@ export const gameRouter = createTRPCRouter({
           return acc;
         },
         {} as Record<
-          number,
+          string,
           {
             id: number;
             type: "original" | "shared";
