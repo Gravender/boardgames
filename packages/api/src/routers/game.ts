@@ -823,7 +823,7 @@ export const gameRouter = createTRPCRouter({
             if (!accPlayer) {
               const tempPlacements: Record<number, number> = {};
               tempPlacements[player.placement] = 1;
-              acc[player.id] = {
+              acc[`${player.type}-${player.id}`] = {
                 id: player.id,
                 type: player.type,
                 name: player.name,
