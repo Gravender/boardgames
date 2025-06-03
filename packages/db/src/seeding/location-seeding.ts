@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import type { z } from "zod/v4";
 import { faker } from "@faker-js/faker";
 
 import type { insertLocationSchema } from "@board-games/db/zodSchema";

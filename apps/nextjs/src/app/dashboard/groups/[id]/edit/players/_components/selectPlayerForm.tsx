@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { User } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
 import { insertPlayerSchema } from "@board-games/db/zodSchema";
@@ -56,7 +56,7 @@ export default function SelectPlayersForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inGroup = players.filter((p) => p.inGroup);
   const form = useForm<formSchemaType>({
-    resolver: zodResolver(formSchema),
+    resolver: standardSchemaResolver(formSchema),
     defaultValues: {
       players: inGroup,
     },

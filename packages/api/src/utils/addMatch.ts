@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import type { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 

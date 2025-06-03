@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PlusIcon, User } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { insertPlayerSchema } from "@board-games/db/zodSchema";
 import { Button } from "@board-games/ui/button";
@@ -86,7 +86,7 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
   const router = useRouter();
 
   const form = useForm<z.infer<typeof playerSchema>>({
-    resolver: zodResolver(playerSchema),
+    resolver: standardSchemaResolver(playerSchema),
     defaultValues: {
       name: "",
       imageUrl: null,

@@ -1,7 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { player, user } from "@board-games/db/schema";
 import { selectUserSchema } from "@board-games/db/zodSchema";

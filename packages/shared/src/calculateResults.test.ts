@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import type { z } from "zod/v4";
 import { describe, expect, it } from "vitest";
 
 import type { insertScoreSheetSchema } from "@board-games/db/zodSchema";

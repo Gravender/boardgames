@@ -2,11 +2,11 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AtSign, Loader2, Mail, UserPlus } from "lucide-react";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
+import * as z from "zod/v4";
 
 import { Button } from "@board-games/ui/button";
 import {
@@ -104,14 +104,14 @@ const Content = ({
   );
 
   const emailForm = useForm<EmailFormValues>({
-    resolver: zodResolver(emailSchema),
+    resolver: standardSchemaResolver(emailSchema),
     defaultValues: {
       email: "",
     },
   });
 
   const usernameForm = useForm<UsernameFormValues>({
-    resolver: zodResolver(usernameSchema),
+    resolver: standardSchemaResolver(usernameSchema),
     defaultValues: {
       username: "",
     },

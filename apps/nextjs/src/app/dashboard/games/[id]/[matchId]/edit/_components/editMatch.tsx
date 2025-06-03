@@ -5,7 +5,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQueryClient,
@@ -14,7 +14,7 @@ import {
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, Trash, User, X } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
 import {
@@ -147,7 +147,7 @@ export function EditMatchForm({
   const [showAddLocation, setShowAddLocation] = useState(false);
   const [newLocation, setNewLocation] = useState("");
   const form = useForm<z.infer<typeof matchSchema>>({
-    resolver: zodResolver(matchSchema),
+    resolver: standardSchemaResolver(matchSchema),
     defaultValues: {
       name: match.name,
       date: match.date,

@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
@@ -62,7 +62,7 @@ const LocationContent = ({
   const router = useRouter();
 
   const form = useForm<z.infer<typeof locationSchema>>({
-    resolver: zodResolver(locationSchema),
+    resolver: standardSchemaResolver(locationSchema),
     defaultValues: {
       name: location.name,
     },

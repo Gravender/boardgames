@@ -3,12 +3,15 @@ import { Modal, Platform, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FullWindowOverlay } from "react-native-screens";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { PortalHost } from "@rn-primitives/portal";
 import { useFieldArray, useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
-import { insertScoreSheetSchema } from "@board-games/db/zodSchema";
+import {
+  scoreSheetRoundsScore,
+  scoreSheetWinConditions,
+} from "@board-games/db/constants";
 
 import type { RoundsType, ScoreSheetType } from "./AddGame";
 import { Copy } from "~/lib/icons/Copy";
@@ -75,7 +78,7 @@ export default function AddScoresheetModal({
   };
 
   const form = useForm<FormSchemaType>({
-    resolver: zodResolver(formSchema),
+    resolver: standardSchemaResolver(formSchema),
     defaultValues: {
       scoresheet: scoresheet
         ? scoresheet
@@ -110,12 +113,8 @@ export default function AddScoresheetModal({
     setScoresheet(data.scoresheet);
     setModalVisible(false);
   };
-  const conditions = insertScoreSheetSchema
-    .required()
-    .pick({ winCondition: true }).shape.winCondition.options;
-  const roundsScoreOptions = insertScoreSheetSchema
-    .required()
-    .pick({ roundsScore: true }).shape.roundsScore.options;
+  const conditions = scoreSheetWinConditions;
+  const roundsScoreOptions = scoreSheetRoundsScore;
 
   return (
     <Modal

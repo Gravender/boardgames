@@ -3,7 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import superjson from "superjson";
-import { ZodError } from "zod";
+import { ZodError } from "zod/v4";
 
 import { db } from "@board-games/db/client";
 import { player, user } from "@board-games/db/schema";

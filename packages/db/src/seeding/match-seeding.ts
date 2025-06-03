@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import type { z } from "zod/v4";
 import { faker } from "@faker-js/faker";
 import { randomLcg, randomLogNormal, randomNormal, randomUniform } from "d3";
 import { endOfMonth, getDaysInMonth, subMonths } from "date-fns";

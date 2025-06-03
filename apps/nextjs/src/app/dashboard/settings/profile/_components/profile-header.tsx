@@ -3,10 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { Camera, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
@@ -156,7 +156,7 @@ function EditProfilePictureContent({
     });
 
   const form = useForm<z.infer<typeof EditProfileSchema>>({
-    resolver: zodResolver(EditProfileSchema),
+    resolver: standardSchemaResolver(EditProfileSchema),
     defaultValues: {
       file: serializableUser.imageUrl,
     },
