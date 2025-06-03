@@ -80,22 +80,22 @@ function GamesList({ games }: GamesListProps) {
 
         // Player count filter
         const maxPlayers = game.players.max;
-        if (maxPlayers && maxPlayers < filters.minPlayers) {
+        if (maxPlayers !== null && maxPlayers < filters.minPlayers) {
           return false;
         }
 
-        if (maxPlayers && maxPlayers < filters.maxPlayers) {
+        if (maxPlayers !== null && maxPlayers > filters.maxPlayers) {
           return false;
         }
 
         // Playtime filter
         const minPlaytime = game.playtime.min;
-        if (minPlaytime && minPlaytime < filters.minPlaytime) {
+        if (minPlaytime !== null && minPlaytime > filters.minPlaytime) {
           return false;
         }
 
         const maxPlaytime = game.playtime.max;
-        if (maxPlaytime && maxPlaytime > filters.maxPlaytime) {
+        if (maxPlaytime !== null && maxPlaytime > filters.maxPlaytime) {
           return false;
         }
 
