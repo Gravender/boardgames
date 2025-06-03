@@ -23,7 +23,7 @@ export async function seedPlayers(d3Seed: number) {
     })),
   );
   for (const user of users) {
-    const playerCount = 30;
+    const playerCount = 10;
     const playerData: z.infer<typeof insertPlayerSchema>[] = [];
     const usedNames = new Set<string>();
     for (let i = 0; i < playerCount; i++) {

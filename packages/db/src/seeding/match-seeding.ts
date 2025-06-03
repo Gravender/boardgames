@@ -50,7 +50,7 @@ export async function seedMatches(d3Seed: number) {
   const today = new Date();
   const matchData: z.infer<typeof insertMatchSchema>[] = [];
   for (const game of games) {
-    const matchCount = Math.max(3, Math.round(normalMatches() + 4));
+    const matchCount = Math.max(3, Math.round(normalMatches() + 5));
     const userLocations = locations.filter((l) => l.createdBy === game.userId);
 
     for (let i = 0; i < matchCount; i++) {
@@ -95,7 +95,7 @@ export async function seedMatches(d3Seed: number) {
       await db.insert(round).values(roundsToInert).returning();
       const finished = faker.datatype.boolean(0.85);
       let monthsAgo = Math.round(Math.abs(dateNormal())); // Ensure positive months
-      monthsAgo = Math.min(monthsAgo, 24); // Cap at 24 months
+      monthsAgo = Math.min(monthsAgo, 2); // Cap at 2 months
 
       // Calculate the final date
       const subbedDate = subMonths(today, monthsAgo);
