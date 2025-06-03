@@ -1,5 +1,6 @@
 // Injected content via Sentry wizard below
 import { fileURLToPath } from "url";
+import { withSentryConfig } from "@sentry/nextjs";
 import createJiti from "jiti";
 
 /**
@@ -33,7 +34,6 @@ let nextConfig = {
     ignoreDuringBuilds: true,
   },
 };
-const { withSentryConfig } = require("@sentry/nextjs");
 
 nextConfig = withSentryConfig(nextConfig, {
   // For all available options, see:
