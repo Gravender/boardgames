@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { compareAsc } from "date-fns";
 import {
@@ -32,35 +32,26 @@ import { GameFilters } from "./game-filters";
 export function GamesData() {
   const trpc = useTRPC();
   const { data: games } = useSuspenseQuery(trpc.game.getGames.queryOptions());
-
-  return <GamesList initialGames={games} />;
+  return <GamesList games={games} />;
 }
 
 interface GamesListProps {
-  initialGames: RouterOutputs["game"]["getGames"];
+  games: RouterOutputs["game"]["getGames"];
 }
 
 type SortField = "name" | "yearPublished" | "lastPlayed" | "matches";
 type SortDirection = "asc" | "desc";
 type SortOption = `${SortField}-${SortDirection}`;
 
-function GamesList({ initialGames }: GamesListProps) {
-  const [games, setGames] =
-    useState<RouterOutputs["game"]["getGames"]>(initialGames);
+function GamesList({ games }: GamesListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("name-asc");
   const [filters, setFilters] = useState({
     type: "all",
     minPlayers: 0,
-    maxPlayers: initialGames.reduce(
-      (a, b) => Math.max(a, b.players.max ?? 0),
-      10,
-    ),
+    maxPlayers: games.reduce((a, b) => Math.max(a, b.players.max ?? 0), 10),
     minPlaytime: 0,
-    maxPlaytime: initialGames.reduce(
-      (a, b) => Math.max(a, b.playtime.max ?? 0),
-      10,
-    ),
+    maxPlaytime: games.reduce((a, b) => Math.max(a, b.playtime.max ?? 0), 10),
   });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -72,7 +63,7 @@ function GamesList({ initialGames }: GamesListProps) {
 
   // Apply search, sort, and filters
   const filteredGames = useMemo(() => {
-    return initialGames
+    return games
       .filter((game) => {
         // Search filter
         if (
@@ -88,24 +79,23 @@ function GamesList({ initialGames }: GamesListProps) {
         }
 
         // Player count filter
-        const minPlayers = game.players.min ?? 0;
-        if (minPlayers < filters.minPlayers) {
+        const maxPlayers = game.players.max;
+        if (maxPlayers && maxPlayers < filters.minPlayers) {
           return false;
         }
 
-        const maxPlayers = game.players.max ?? 10;
-        if (maxPlayers > filters.maxPlayers) {
+        if (maxPlayers && maxPlayers < filters.maxPlayers) {
           return false;
         }
 
         // Playtime filter
-        const minPlaytime = game.playtime.min ?? 0;
-        if (minPlaytime < filters.minPlaytime) {
+        const minPlaytime = game.playtime.min;
+        if (minPlaytime && minPlaytime < filters.minPlaytime) {
           return false;
         }
 
-        const maxPlaytime = game.playtime.max ?? 180;
-        if (maxPlaytime > filters.maxPlaytime) {
+        const maxPlaytime = game.playtime.max;
+        if (maxPlaytime && maxPlaytime > filters.maxPlaytime) {
           return false;
         }
 
@@ -128,15 +118,55 @@ function GamesList({ initialGames }: GamesListProps) {
         if (sortField === "matches") {
           comparison = a.games - b.games;
         }
+        if (comparison === 0) {
+          if (
+            filters.minPlayers > 0 &&
+            (a.players.max === null || b.players.max === null) &&
+            a.players.max !== b.players.max
+          ) {
+            if (a.players.max === null) {
+              return 1;
+            }
+            return -1;
+          }
+          if (
+            filters.maxPlayers <
+              games.reduce((a, b) => Math.max(a, b.players.max ?? 0), 10) &&
+            (a.players.max === null || b.players.max === null) &&
+            a.players.max !== b.players.max
+          ) {
+            if (a.players.max === null) {
+              return 1;
+            }
+            return -1;
+          }
+          if (
+            filters.minPlaytime > 0 &&
+            (a.playtime.min === null || b.playtime.min === null) &&
+            a.playtime.min !== b.playtime.min
+          ) {
+            if (a.playtime.min === null) {
+              return 1;
+            }
+            return -1;
+          }
+          if (
+            filters.maxPlaytime <
+              games.reduce((a, b) => Math.max(a, b.playtime.max ?? 0), 10) &&
+            (a.playtime.max === null || b.playtime.max === null) &&
+            a.playtime.max !== b.playtime.max
+          ) {
+            if (a.playtime.max === null) {
+              return 1;
+            }
+            return -1;
+          }
+        }
 
         // Apply sort direction
         return sortDirection === "asc" ? comparison : -comparison;
       });
-  }, [initialGames, searchQuery, sortField, sortDirection, filters]);
-
-  useEffect(() => {
-    setGames(filteredGames);
-  }, [filteredGames]);
+  }, [games, searchQuery, sortField, sortDirection, filters]);
 
   // Get the appropriate icon for the current sort
   const getSortIcon = () => {
@@ -165,7 +195,7 @@ function GamesList({ initialGames }: GamesListProps) {
           <div>
             <h2 className="text-xl font-semibold">Game Collection</h2>
             <p className="text-sm text-muted-foreground">
-              {games.length} games found
+              {filteredGames.length} games found
             </p>
           </div>
 
@@ -227,7 +257,7 @@ function GamesList({ initialGames }: GamesListProps) {
                 <SelectGroup>
                   <SelectLabel>Matches</SelectLabel>
                   <SelectItem value="matches-desc">Most first</SelectItem>
-                  <SelectItem value="matches-asc">Lease first</SelectItem>
+                  <SelectItem value="matches-asc">Least first</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -239,11 +269,11 @@ function GamesList({ initialGames }: GamesListProps) {
           setFilters={setFilters}
           isOpen={isFilterOpen}
           setIsOpen={setIsFilterOpen}
-          players={initialGames.reduce(
+          players={games.reduce(
             (a, b) => ({ max: Math.max(a.max, b.players.max ?? 0) }),
             { max: 10 },
           )}
-          playtime={initialGames.reduce(
+          playtime={games.reduce(
             (a, b) => ({ max: Math.max(a.max, b.playtime.max ?? 0) }),
             { max: 120 },
           )}
@@ -252,9 +282,9 @@ function GamesList({ initialGames }: GamesListProps) {
 
       <ScrollArea>
         <div className="max-h-[60vh] min-h-[500px] p-4 md:max-h-[80vh] md:min-h-[600px]">
-          {games.length > 0 ? (
+          {filteredGames.length > 0 ? (
             <div className={"grid gap-4 pb-20"}>
-              {games.map((game) => (
+              {filteredGames.map((game) => (
                 <GameCard key={`type-${game.type}-id-${game.id}`} game={game} />
               ))}
             </div>
