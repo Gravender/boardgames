@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQueryClient,
@@ -24,7 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { formatDuration } from "@board-games/shared";
 import {
@@ -171,12 +171,14 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
         console.error(error.message);
         form.reset();
         setIsLoading(false);
+
+        throw new Error(error.message);
       },
     }),
   );
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: standardSchemaResolver(formSchema),
     defaultValues: {
       shareMethod: "friends",
       permission: "view",

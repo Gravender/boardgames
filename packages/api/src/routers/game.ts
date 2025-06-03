@@ -2,8 +2,9 @@ import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareDesc } from "date-fns";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
-import { z } from "zod";
+import { z } from "zod/v4";
 
+import type { scoreSheetWinConditions } from "@board-games/db/constants";
 import type {
   insertMatchPlayerSchema,
   insertMatchSchema,
@@ -1817,11 +1818,8 @@ export const gameRouter = createTRPCRouter({
             message: "Failed to create game",
           });
         }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const winConditionOptions = insertScoreSheetSchema
-          .required()
-          .pick({ winCondition: true }).shape.winCondition.options;
-        let winCondition: (typeof winConditionOptions)[number] =
+
+        let winCondition: (typeof scoreSheetWinConditions)[number] =
           "Highest Score";
         if (mappedGame.noPoints) {
           winCondition = "Manual";

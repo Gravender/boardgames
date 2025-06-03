@@ -1,7 +1,7 @@
-import type { z } from "zod";
+import type { z } from "zod/v4";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
@@ -60,7 +60,7 @@ const GroupContent = ({
   const router = useRouter();
 
   const form = useForm<z.infer<typeof groupSchema>>({
-    resolver: zodResolver(groupSchema),
+    resolver: standardSchemaResolver(groupSchema),
     defaultValues: {
       name: group.name,
     },

@@ -5,7 +5,7 @@ import type { UseFieldArrayAppend } from "react-hook-form";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQuery,
@@ -15,7 +15,7 @@ import {
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, User, Users, X } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
 import {
@@ -252,7 +252,7 @@ const AddMatchForm = ({
   const queryClient = useQueryClient();
   const router = useRouter();
   const form = useForm<formSchemaType>({
-    resolver: zodResolver(formSchema),
+    resolver: standardSchemaResolver(formSchema),
     defaultValues: {
       name: `${gameName} #${matches + 1}`,
       date: new Date(),
@@ -694,7 +694,7 @@ const AddPlayersForm = ({
 
   const currentUser = players.find((player) => player.isUser);
   const form = useForm<addPlayersFormType>({
-    resolver: zodResolver(AddPlayersFormSchema),
+    resolver: standardSchemaResolver(AddPlayersFormSchema),
     defaultValues: {
       players:
         matchPlayers.length > 0
@@ -1130,7 +1130,7 @@ const AddPlayerForm = ({
   const queryClient = useQueryClient();
 
   const form = useForm<z.infer<typeof addPlayerSchema>>({
-    resolver: zodResolver(addPlayerSchema),
+    resolver: standardSchemaResolver(addPlayerSchema),
     defaultValues: {
       name: "",
       imageUrl: null,

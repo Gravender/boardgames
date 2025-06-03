@@ -3,7 +3,7 @@
 import type { UseFormReturn } from "react-hook-form";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
@@ -16,8 +16,12 @@ import {
   Trash,
 } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
+import {
+  scoreSheetRoundsScore,
+  scoreSheetWinConditions,
+} from "@board-games/db/constants";
 import {
   baseRoundSchema,
   createGameSchema,
@@ -238,6 +242,8 @@ const AddGameForm = ({
           description: "There was a problem adding your game.",
           variant: "destructive",
         });
+
+        throw new Error("There was a problem adding your game.");
       },
     }),
   );
@@ -247,7 +253,7 @@ const AddGameForm = ({
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof createGameSchema>>({
-    resolver: zodResolver(createGameSchema),
+    resolver: standardSchemaResolver(createGameSchema),
     defaultValues: game,
   });
   useEffect(() => {
@@ -694,7 +700,7 @@ const AddScoreSheetForm = ({
   setIsScoresheet: (isScoresheet: boolean) => void;
 }) => {
   const form = useForm<z.infer<typeof scoreSheetWithRoundsSchema>>({
-    resolver: zodResolver(
+    resolver: standardSchemaResolver(
       scoreSheetWithRoundsSchema.superRefine((data, ctx) => {
         if (data.scoresheet.isCoop) {
           if (
@@ -727,11 +733,8 @@ const AddScoreSheetForm = ({
     onBack();
   };
 
-  const conditions = scoreSheetSchema.required().pick({ winCondition: true })
-    .shape.winCondition.options;
-  const roundsScoreOptions = scoreSheetSchema
-    .required()
-    .pick({ roundsScore: true }).shape.roundsScore.options;
+  const conditions = scoreSheetWinConditions;
+  const roundsScoreOptions = scoreSheetRoundsScore;
 
   return (
     <Form {...form}>

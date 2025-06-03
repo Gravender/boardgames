@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { Button } from "@board-games/ui/button";
 import {
@@ -60,7 +60,7 @@ export function ProfileDetails({ serializableUser }: ProfileDetailsProps) {
   };
 
   const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileFormSchema),
+    resolver: standardSchemaResolver(profileFormSchema),
     defaultValues,
   });
 

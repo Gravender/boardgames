@@ -2,7 +2,7 @@ import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
 import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { match, matchPlayer, roundPlayer, team } from "@board-games/db/schema";
 import {

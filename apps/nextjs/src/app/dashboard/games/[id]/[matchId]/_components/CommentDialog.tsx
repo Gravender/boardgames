@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { Button } from "@board-games/ui/button";
 import {
@@ -82,7 +82,7 @@ function Content({
     }),
   );
   const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: zodResolver(FormSchema),
+    resolver: standardSchemaResolver(FormSchema),
     defaultValues: { comment },
   });
   function onSubmitForm(values: z.infer<typeof FormSchema>) {

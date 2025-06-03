@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
@@ -87,12 +87,13 @@ export function FriendSettings({
           variant: "destructive",
         });
         setIsSubmitting(false);
+        throw new Error("Failed to update settings. Please try again.");
       },
     }),
   );
 
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+    resolver: standardSchemaResolver(formSchema),
     defaultValues: initialSettings
       ? {
           autoShareMatches: initialSettings.autoShareMatches,

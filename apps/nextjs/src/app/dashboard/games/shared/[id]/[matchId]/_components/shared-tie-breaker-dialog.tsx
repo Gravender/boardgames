@@ -1,9 +1,9 @@
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { User, Users } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import {
   AlertDialog,
@@ -109,7 +109,7 @@ function Content({
     }),
   );
   const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: zodResolver(FormSchema),
+    resolver: standardSchemaResolver(FormSchema),
     defaultValues: { players: players },
   });
   function onSubmitForm(values: z.infer<typeof FormSchema>) {

@@ -2,7 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 import { compareAsc, compareDesc } from "date-fns";
 import { and, eq, sql } from "drizzle-orm";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import {
   groupPlayer,

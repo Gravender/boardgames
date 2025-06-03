@@ -19,6 +19,10 @@
     "./zodSchema": {
       "types": "./dist/zodSchema.d.ts",
       "default": "./src/zodSchema/index.ts"
+    },
+    "./constants": {
+      "types": "./dist/constants.d.ts",
+      "default": "./src/constants/index.ts"
     }
   },
   "license": "MIT",
@@ -37,7 +41,7 @@
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
     "drizzle-orm": "1.0.0-beta.1-5e64efc",
-    "drizzle-zod": "^0.7.1",
+    "drizzle-zod": "^0.8.2",
     "postgres": "^3.4.5",
     "tsx": "^4.19.2",
     "zod": "catalog:"

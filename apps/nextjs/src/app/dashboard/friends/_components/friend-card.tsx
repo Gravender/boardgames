@@ -61,6 +61,7 @@ export function FriendCard({ friend }: FriendCardProps) {
           description: error.message || "Failed to accept friend request",
           variant: "destructive",
         });
+        throw new Error(error.message);
       },
     }),
   );

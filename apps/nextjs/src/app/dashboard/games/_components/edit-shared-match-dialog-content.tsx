@@ -1,9 +1,9 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import type { z } from "zod";
+import type { z } from "zod/v4";
 import { useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon } from "lucide-react";
@@ -51,7 +51,7 @@ export function EditSharedMatchForm({
   const queryClient = useQueryClient();
 
   const form = useForm<z.infer<typeof matchSchema>>({
-    resolver: zodResolver(matchSchema),
+    resolver: standardSchemaResolver(matchSchema),
     defaultValues: {
       name: match.name,
       date: match.date,

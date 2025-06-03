@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { notFound, useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQueryClient,
@@ -10,7 +10,7 @@ import {
 } from "@tanstack/react-query";
 import { Pause, Play, RotateCcw } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
 import {
@@ -1081,7 +1081,7 @@ function DetailContent({
     }),
   );
   const form = useForm<z.infer<typeof DetailDialogFormSchema>>({
-    resolver: zodResolver(DetailDialogFormSchema),
+    resolver: standardSchemaResolver(DetailDialogFormSchema),
     defaultValues: { detail: data.details ?? "" },
   });
   function onSubmitForm(values: z.infer<typeof DetailDialogFormSchema>) {
@@ -1187,7 +1187,7 @@ function CommentContent({
     }),
   );
   const form = useForm<z.infer<typeof CommentFormSchema>>({
-    resolver: zodResolver(CommentFormSchema),
+    resolver: standardSchemaResolver(CommentFormSchema),
     defaultValues: { comment },
   });
   function onSubmitForm(values: z.infer<typeof CommentFormSchema>) {

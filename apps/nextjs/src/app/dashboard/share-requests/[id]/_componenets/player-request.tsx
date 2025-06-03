@@ -4,7 +4,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQueryClient,
@@ -24,7 +24,7 @@ import {
   User,
 } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
 import { formatDuration } from "@board-games/shared";
@@ -179,7 +179,7 @@ export default function PlayerRequestPage({
   }, [player.item.name, usersPlayers]);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(gamesFormSchema),
+    resolver: standardSchemaResolver(gamesFormSchema),
     defaultValues: {
       playerOption: "new",
       existingPlayerId: null,

@@ -4,7 +4,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
@@ -17,9 +17,13 @@ import {
   Trash,
 } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import type { RouterInputs, RouterOutputs } from "@board-games/api";
+import {
+  scoreSheetRoundsScore,
+  scoreSheetWinConditions,
+} from "@board-games/db/constants";
 import {
   editGameSchema,
   editScoresheetSchema,
@@ -283,7 +287,7 @@ const GameForm = ({
   );
 
   const form = useForm<z.infer<typeof editGameSchema>>({
-    resolver: zodResolver(editGameSchema),
+    resolver: standardSchemaResolver(editGameSchema),
     defaultValues: game,
   });
 
@@ -1008,7 +1012,7 @@ const ScoresheetForm = ({
   setIsScoresheet: (isScoresheet: boolean) => void;
 }) => {
   const form = useForm<z.infer<typeof scoresheetSchema>>({
-    resolver: zodResolver(
+    resolver: standardSchemaResolver(
       scoresheetSchema.superRefine((data, ctx) => {
         if (scoresheet.isCoop) {
           if (
@@ -1037,12 +1041,8 @@ const ScoresheetForm = ({
     onBack();
   };
 
-  const winConditionOptions = scoresheetSchema
-    .required()
-    .pick({ winCondition: true }).shape.winCondition.options;
-  const roundsScoreOptions = scoresheetSchema
-    .required()
-    .pick({ roundsScore: true }).shape.roundsScore.options;
+  const winConditionOptions = scoreSheetWinConditions;
+  const roundsScoreOptions = scoreSheetRoundsScore;
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>

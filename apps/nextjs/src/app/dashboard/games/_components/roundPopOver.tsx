@@ -1,8 +1,9 @@
 import type { UseFormReturn } from "react-hook-form";
-import type { z } from "zod";
+import type { z } from "zod/v4";
 import { Settings } from "lucide-react";
 import { useFieldArray } from "react-hook-form";
 
+import { roundTypes } from "@board-games/db/constants";
 import { insertRoundSchema } from "@board-games/db/zodSchema";
 import { Button } from "@board-games/ui/button";
 import {
@@ -39,8 +40,7 @@ export function RoundPopOver({
     name: "rounds",
     control: form.control,
   });
-  const roundsTypeOptions = insertRoundSchema.required().pick({ type: true })
-    .shape.type.options;
+  const roundsTypeOptions = roundTypes;
   return (
     <Popover>
       <PopoverTrigger asChild>

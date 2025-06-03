@@ -41,9 +41,10 @@ export function GamesCard({
     return null;
   };
 
-  const lastPlayed = game.lastPlayed
-    ? format(game.lastPlayed, "d MMM yyyy")
-    : "";
+  const lastPlayed =
+    game.lastPlayed.date !== null
+      ? format(game.lastPlayed.date, "d MMM yyyy")
+      : "";
   const yearPublished = game.yearPublished ?? "";
   return (
     <Card>

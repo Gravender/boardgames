@@ -4,6 +4,7 @@ import { Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFieldArray } from "react-hook-form";
 
+import { roundTypes } from "@board-games/db/constants";
 import { insertRoundSchema } from "@board-games/db/zodSchema";
 
 import type { FormSchemaType } from "./AddScoresheetModal";
@@ -87,8 +88,7 @@ function Content({
     name: "rounds",
     control: form.control,
   });
-  const roundsTypeOptions = insertRoundSchema.required().pick({ type: true })
-    .shape.type.options;
+  const roundsTypeOptions = roundTypes;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onChangeNumberText = (onChange: (...event: any[]) => void) => {
     return (text: string) => {

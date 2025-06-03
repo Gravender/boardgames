@@ -1,9 +1,9 @@
 "use client";
 
-import type { z } from "zod";
+import type { z } from "zod/v4";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -72,7 +72,7 @@ const GroupContent = () => {
   const router = useRouter();
 
   const form = useForm<formSchemaType>({
-    resolver: zodResolver(formSchema),
+    resolver: standardSchemaResolver(formSchema),
     defaultValues: {
       name: group.name,
       players: group.players,

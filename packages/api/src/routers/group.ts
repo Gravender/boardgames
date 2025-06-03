@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq, inArray } from "drizzle-orm";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { group, groupPlayer } from "@board-games/db/schema";
 import {

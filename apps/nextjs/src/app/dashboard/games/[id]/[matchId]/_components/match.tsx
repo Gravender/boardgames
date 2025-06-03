@@ -1,9 +1,9 @@
 "use client";
 
-import type { z } from "zod";
+import type { z } from "zod/v4";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQueryClient,
@@ -13,6 +13,7 @@ import { ListPlus, Pause, Play, RotateCcw } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import type { RouterOutputs } from "@board-games/api";
+import { roundTypes } from "@board-games/db/constants";
 import { insertRoundSchema } from "@board-games/db/zodSchema";
 import {
   calculateFinalScore,
@@ -1031,7 +1032,7 @@ const AddRoundDialogContent = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof RoundSchema>>({
-    resolver: zodResolver(RoundSchema),
+    resolver: standardSchemaResolver(RoundSchema),
     defaultValues: {
       name: `Round ${match.scoresheet.rounds.length + 1}`,
       type: "Numeric",
@@ -1067,8 +1068,7 @@ const AddRoundDialogContent = ({
     });
   }
 
-  const roundsTypeOptions = insertRoundSchema.required().pick({ type: true })
-    .shape.type.options;
+  const roundsTypeOptions = roundTypes;
   return (
     <>
       <DialogHeader>
