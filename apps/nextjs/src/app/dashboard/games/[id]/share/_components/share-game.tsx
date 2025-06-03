@@ -171,6 +171,8 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
         console.error(error.message);
         form.reset();
         setIsLoading(false);
+
+        throw new Error(error.message);
       },
     }),
   );

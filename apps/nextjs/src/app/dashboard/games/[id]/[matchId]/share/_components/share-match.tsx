@@ -131,6 +131,7 @@ export default function ShareMatchPage({ matchId }: { matchId: number }) {
         console.error(error.message);
         form.reset();
         setIsLoading(false);
+        throw new Error(error.message);
       },
     }),
   );

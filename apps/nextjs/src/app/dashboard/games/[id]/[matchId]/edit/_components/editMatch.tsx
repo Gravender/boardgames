@@ -291,6 +291,7 @@ export function EditMatchForm({
         description: "There was a problem uploading your Image.",
         variant: "destructive",
       });
+      throw new Error("There was a problem uploading your Image.");
     }
   };
   return (

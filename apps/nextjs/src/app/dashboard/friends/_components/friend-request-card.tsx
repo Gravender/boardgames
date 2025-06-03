@@ -53,6 +53,7 @@ export function FriendRequestCard({
           description: error.message || "Failed to accept friend request",
           variant: "destructive",
         });
+        throw new Error(error.message);
       },
     }),
   );
@@ -80,6 +81,7 @@ export function FriendRequestCard({
           description: error.message || "Failed to reject friend request",
           variant: "destructive",
         });
+        throw new Error(error.message);
       },
     }),
   );

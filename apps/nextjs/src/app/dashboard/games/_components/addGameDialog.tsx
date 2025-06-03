@@ -242,6 +242,8 @@ const AddGameForm = ({
           description: "There was a problem adding your game.",
           variant: "destructive",
         });
+
+        throw new Error("There was a problem adding your game.");
       },
     }),
   );

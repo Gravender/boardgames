@@ -87,6 +87,7 @@ export function FriendSettings({
           variant: "destructive",
         });
         setIsSubmitting(false);
+        throw new Error("Failed to update settings. Please try again.");
       },
     }),
   );
