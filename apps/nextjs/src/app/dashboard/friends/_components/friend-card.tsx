@@ -26,7 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
-import { useToast } from "@board-games/ui/hooks/use-toast";
+import { toast } from "@board-games/ui/toast";
 
 import { useTRPC } from "~/trpc/react";
 
@@ -39,13 +39,11 @@ export function FriendCard({ friend }: FriendCardProps) {
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const unFriendMutation = useMutation(
     trpc.friend.unFriend.mutationOptions({
       onSuccess: async () => {
-        toast({
-          title: "Friend removed",
+        toast("Friend removed", {
           description: "This person has been removed from your friends list",
         });
         await queryClient.invalidateQueries(
@@ -56,10 +54,8 @@ export function FriendCard({ friend }: FriendCardProps) {
         );
       },
       onError: (error) => {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: error.message || "Failed to accept friend request",
-          variant: "destructive",
         });
         throw new Error(error.message);
       },

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 
-import { Toaster } from "@board-games/ui/toaster";
+import { Toaster } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import { Analytics } from "~/components/analytics";

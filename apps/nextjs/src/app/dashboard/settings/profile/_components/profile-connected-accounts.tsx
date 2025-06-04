@@ -14,8 +14,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@board-games/ui/card";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Icons } from "@board-games/ui/icons";
+import { toast } from "@board-games/ui/toast";
 
 import type { SerializableUser } from "../page";
 
@@ -26,7 +26,6 @@ interface ProfileConnectedAccountsProps {
 export function ProfileConnectedAccounts({
   serializableUser,
 }: ProfileConnectedAccountsProps) {
-  const { toast } = useToast();
   const router = useRouter();
   const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
   const [isConnectingGithub, setIsConnectingGithub] = useState(false);
@@ -52,19 +51,16 @@ export function ProfileConnectedAccounts({
         redirectUrl: "/dashboard/settings/user-profile/profile?tab=connected",
       })
       .then(() => {
-        toast({
-          title: "Google account connected",
+        toast.success("Google account connected", {
           description: "Your Google account has been successfully linked.",
         });
         router.refresh();
       })
       .catch((err) => {
         console.error("Error connecting Google account", err);
-        toast({
-          title: "Connection failed",
+        toast.error("Connection failed", {
           description:
             "Failed to connect your Google account. Please try again.",
-          variant: "destructive",
         });
       })
       .finally(() => setIsConnectingGoogle(false));
@@ -79,19 +75,16 @@ export function ProfileConnectedAccounts({
         redirectUrl: "/dashboard/settings/user-profile/profile?tab=connected",
       })
       .then(() => {
-        toast({
-          title: "GitHub account connected",
+        toast.success("GitHub account connected", {
           description: "Your GitHub account has been successfully linked.",
         });
         router.refresh();
       })
       .catch((err) => {
         console.error("Error connecting GitHub account", err);
-        toast({
-          title: "Connection failed",
+        toast.error("Connection failed", {
           description:
             "Failed to connect your GitHub account. Please try again.",
-          variant: "destructive",
         });
       })
       .finally(() => setIsConnectingGithub(false));
@@ -99,8 +92,7 @@ export function ProfileConnectedAccounts({
 
   const disconnectAccount = async (provider: "google" | "github") => {
     if (!user) {
-      toast({
-        title: "Not logged in",
+      toast.error("Not logged in", {
         description: "Please log in to disconnect your account",
       });
       return;
@@ -110,8 +102,7 @@ export function ProfileConnectedAccounts({
       .find((account) => account.provider === provider)
       ?.destroy()
       .then(() => {
-        toast({
-          title: `${provider} account disconnected`,
+        toast.success(`${provider} account disconnected`, {
           description: `Your ${provider} account has been successfully unlinked.`,
         });
 
@@ -119,10 +110,8 @@ export function ProfileConnectedAccounts({
       })
       .catch((error) => {
         console.error(error);
-        toast({
-          title: "Disconnection failed",
+        toast.error("Disconnection failed", {
           description: `Failed to disconnect your ${provider} account. Please try again.`,
-          variant: "destructive",
         });
       });
   };

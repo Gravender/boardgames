@@ -23,8 +23,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
+import { toast } from "@board-games/ui/toast";
 
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
@@ -56,7 +56,7 @@ const LocationContent = ({
   location: RouterOutputs["location"]["getLocations"][number];
 }) => {
   const trpc = useTRPC();
-  const { toast } = useToast();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -86,9 +86,7 @@ const LocationContent = ({
         }
         router.refresh();
         setOpen(false);
-        toast({
-          title: "Location updated successfully!",
-        });
+        toast.success("Location updated successfully!");
       },
     }),
   );

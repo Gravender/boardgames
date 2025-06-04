@@ -25,8 +25,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
+import { toast } from "@board-games/ui/toast";
 
 import { Spinner } from "~/components/spinner";
 import { useAddGroupStore } from "~/providers/add-group-provider";
@@ -63,7 +63,7 @@ const formSchema = groupSchema.extend({ players: playersSchema });
 type formSchemaType = z.infer<typeof formSchema>;
 const GroupContent = () => {
   const trpc = useTRPC();
-  const { toast } = useToast();
+
   const { isOpen, group, setGroup, reset } = useAddGroupStore((state) => state);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingPlayers, setIsGettingPlayers] = useState(false);
@@ -88,9 +88,7 @@ const GroupContent = () => {
         setIsSubmitting(false);
         form.reset();
         router.refresh();
-        toast({
-          title: "Group created successfully!",
-        });
+        toast.success("Group created successfully!");
       },
     }),
   );

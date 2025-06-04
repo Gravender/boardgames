@@ -23,8 +23,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { ScrollArea } from "@board-games/ui/scroll-area";
+import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import { Spinner } from "~/components/spinner";
@@ -50,7 +50,7 @@ export default function SelectPlayersForm({
   groupId: number;
 }) {
   const trpc = useTRPC();
-  const { toast } = useToast();
+
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,9 +75,7 @@ export default function SelectPlayersForm({
         setIsSubmitting(false);
         form.reset();
         router.refresh();
-        toast({
-          title: "Group players updated successfully!",
-        });
+        toast.success("Group players updated successfully!");
         onBack();
       },
     }),

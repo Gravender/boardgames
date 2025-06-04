@@ -9,7 +9,7 @@ import type { RouterOutputs } from "@board-games/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent } from "@board-games/ui/card";
-import { useToast } from "@board-games/ui/hooks/use-toast";
+import { toast } from "@board-games/ui/toast";
 
 import { useTRPC } from "~/trpc/react";
 
@@ -24,7 +24,6 @@ export function FriendRequestCard({
 }: FriendRequestCardProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const [isLoading, setIsLoading] = useState<
     "accept" | "reject" | "cancel" | null
@@ -33,9 +32,7 @@ export function FriendRequestCard({
   const acceptRequestMutation = useMutation(
     trpc.friend.acceptFriendRequest.mutationOptions({
       onSuccess: async () => {
-        toast({
-          title: "Friend request accepted",
-        });
+        toast("Friend request accepted");
         await queryClient.invalidateQueries(
           trpc.friend.getFriendRequests.queryOptions(),
         );
@@ -48,10 +45,8 @@ export function FriendRequestCard({
         setIsLoading(null);
       },
       onError: (error) => {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: error.message || "Failed to accept friend request",
-          variant: "destructive",
         });
         throw new Error(error.message);
       },
@@ -61,9 +56,7 @@ export function FriendRequestCard({
   const rejectRequestMutation = useMutation(
     trpc.friend.rejectFriendRequest.mutationOptions({
       onSuccess: async () => {
-        toast({
-          title: "Friend request rejected",
-        });
+        toast("Friend request rejected");
         await queryClient.invalidateQueries(
           trpc.friend.getFriendRequests.queryOptions(),
         );
@@ -76,10 +69,8 @@ export function FriendRequestCard({
         setIsLoading(null);
       },
       onError: (error) => {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: error.message || "Failed to reject friend request",
-          variant: "destructive",
         });
         throw new Error(error.message);
       },
@@ -88,9 +79,7 @@ export function FriendRequestCard({
   const cancelFriendRequestMutation = useMutation(
     trpc.friend.cancelFriendRequest.mutationOptions({
       onSuccess: async () => {
-        toast({
-          title: "Friend request canceled",
-        });
+        toast("Friend request canceled");
         await queryClient.invalidateQueries(
           trpc.friend.getFriendRequests.queryOptions(),
         );
@@ -103,10 +92,8 @@ export function FriendRequestCard({
         setIsLoading(null);
       },
       onError: (error) => {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: error.message || "Failed to cancel friend request",
-          variant: "destructive",
         });
       },
     }),

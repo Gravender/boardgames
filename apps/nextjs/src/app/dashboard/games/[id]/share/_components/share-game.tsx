@@ -59,7 +59,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Label } from "@board-games/ui/label";
 import {
   Popover,
@@ -77,6 +76,7 @@ import {
 } from "@board-games/ui/select";
 import { Separator } from "@board-games/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
+import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
@@ -121,7 +121,7 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
   const [selectedFriends, setSelectedFriends] = useState<
     { id: number; name: string; email: string }[]
   >([]);
-  const { toast } = useToast();
+
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { data: gameToShare } = useSuspenseQuery(
@@ -142,31 +142,25 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
         );
         if (response.success) {
           if (response.shareableUrl) {
-            toast({
-              title: "Success",
+            toast.success("Success", {
               description: `Share link generated! ${response.shareableUrl}`,
             });
           } else {
-            toast({
-              title: "Success",
+            toast.success("Success", {
               description: response.message,
             });
           }
           form.reset();
           setIsLoading(false);
         } else {
-          toast({
-            title: "Error",
+          toast.error("Error", {
             description: response.message,
-            variant: "destructive",
           });
         }
       },
       onError: (error) => {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: `${error.message}`,
-          variant: "destructive",
         });
         console.error(error.message);
         form.reset();

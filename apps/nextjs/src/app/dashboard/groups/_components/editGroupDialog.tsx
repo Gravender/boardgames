@@ -22,8 +22,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
+import { toast } from "@board-games/ui/toast";
 
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
@@ -51,7 +51,7 @@ const GroupContent = ({
   group: RouterOutputs["group"]["getGroups"][number];
 }) => {
   const trpc = useTRPC();
-  const { toast } = useToast();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isGettingPlayers, setIsGettingPlayers] = useState(false);
@@ -77,9 +77,7 @@ const GroupContent = ({
           trpc.dashboard.getGroups.queryOptions(),
         );
         router.refresh();
-        toast({
-          title: "Group updated successfully!",
-        });
+        toast.success("Group updated successfully!");
         setOpen(false);
       },
     }),

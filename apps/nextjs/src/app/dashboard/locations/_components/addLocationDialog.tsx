@@ -25,9 +25,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 import { Switch } from "@board-games/ui/switch";
+import { toast } from "@board-games/ui/toast";
 
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
@@ -69,7 +69,7 @@ const LocationContent = ({
   setIsOpen: (isOpen: boolean) => void;
 }) => {
   const trpc = useTRPC();
-  const { toast } = useToast();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -91,9 +91,7 @@ const LocationContent = ({
         form.reset();
         router.refresh();
         setIsOpen(false);
-        toast({
-          title: "Location created successfully!",
-        });
+        toast.success("Location created successfully!");
       },
     }),
   );

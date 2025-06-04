@@ -63,7 +63,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
 import {
@@ -74,6 +73,7 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 import { Separator } from "@board-games/ui/separator";
+import { toast } from "@board-games/ui/toast";
 
 import { GradientPicker } from "~/components/color-picker";
 import { Spinner } from "~/components/spinner";
@@ -252,7 +252,6 @@ const GameForm = ({
   const [openAlert, setOpenAlert] = useState(false);
 
   const [isUploading, setIsUploading] = useState(false);
-  const { toast } = useToast();
   const { startUpload } = useUploadThing("imageUploader");
   const router = useRouter();
 
@@ -276,9 +275,7 @@ const GameForm = ({
         await queryClient.invalidateQueries(
           trpc.dashboard.getGames.queryOptions(),
         );
-        toast({
-          title: "Game updated successfully!",
-        });
+        toast("Game updated successfully!");
         form.reset();
         setImagePreview(null);
         router.push(`/dashboard/games`);
@@ -587,10 +584,8 @@ const GameForm = ({
       });
     } catch (error) {
       console.error("Error uploading Image:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "There was a problem uploading your Image.",
-        variant: "destructive",
       });
     } finally {
       setIsUploading(false);

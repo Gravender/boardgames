@@ -29,12 +29,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@board-games/ui/card";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Switch } from "@board-games/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
+import { toast } from "@board-games/ui/toast";
 import {
   Tooltip,
   TooltipContent,
@@ -51,7 +51,7 @@ export default function ShareRequestsPage() {
   const [filterIncomingActive, setFilterIncomingActive] = useState(false);
   const [filterOutgoingActive, setFilterOutgoingActive] = useState(false);
   const trpc = useTRPC();
-  const { toast } = useToast();
+
   const queryClient = useQueryClient();
   const { data: incomingRequests } = useSuspenseQuery(
     trpc.sharing.getIncomingShareRequests.queryOptions(),
@@ -63,8 +63,7 @@ export default function ShareRequestsPage() {
     trpc.sharing.rejectShareRequest.mutationOptions({
       onSuccess: (response) => {
         setLoading({ ...loading, [`reject-${response.id}`]: false });
-        toast({
-          title: "Share request rejected",
+        toast.success("Share request rejected", {
           description: "The share request has been rejected",
         });
 
@@ -87,8 +86,7 @@ export default function ShareRequestsPage() {
         void queryClient.invalidateQueries(
           trpc.sharing.getOutgoingShareRequests.queryOptions(),
         );
-        toast({
-          title: "Share request cancelled",
+        toast.success("Share request cancelled", {
           description: "Your share request has been cancelled",
         });
       },
@@ -119,8 +117,7 @@ export default function ShareRequestsPage() {
       setCopiedLinks((prev) => ({ ...prev, [id]: false }));
     }, 2000);
 
-    toast({
-      title: "Link copied",
+    toast.info("Link copied", {
       description: "Share link copied to clipboard",
     });
   };

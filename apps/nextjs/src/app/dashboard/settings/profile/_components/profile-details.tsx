@@ -24,8 +24,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
+import { toast } from "@board-games/ui/toast";
 
 import type { SerializableUser } from "../page";
 
@@ -48,7 +48,6 @@ interface ProfileDetailsProps {
 }
 
 export function ProfileDetails({ serializableUser }: ProfileDetailsProps) {
-  const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useUser();
@@ -67,9 +66,7 @@ export function ProfileDetails({ serializableUser }: ProfileDetailsProps) {
   async function onSubmit(data: ProfileFormValues) {
     setIsLoading(true);
     if (!user) {
-      toast({
-        title: "Not logged in",
-      });
+      toast.error("Not logged in");
       return;
     }
     try {
@@ -79,17 +76,14 @@ export function ProfileDetails({ serializableUser }: ProfileDetailsProps) {
         username: data.username,
       });
 
-      toast({
-        title: "Profile updated",
+      toast.success("Profile updated", {
         description: "Your profile has been updated successfully.",
       });
 
       router.refresh();
     } catch (error) {
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to update profile. Please try again.",
-        variant: "destructive",
       });
       console.error(error);
     } finally {

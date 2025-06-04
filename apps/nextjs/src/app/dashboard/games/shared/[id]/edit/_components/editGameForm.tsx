@@ -60,7 +60,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
 import {
@@ -71,6 +70,7 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 import { Separator } from "@board-games/ui/separator";
+import { toast } from "@board-games/ui/toast";
 
 import { GradientPicker } from "~/components/color-picker";
 import { Spinner } from "~/components/spinner";
@@ -244,7 +244,6 @@ const GameForm = ({
   const trpc = useTRPC();
   const [openAlert, setOpenAlert] = useState(false);
 
-  const { toast } = useToast();
   const router = useRouter();
 
   const queryClient = useQueryClient();
@@ -261,9 +260,7 @@ const GameForm = ({
         await queryClient.invalidateQueries(
           trpc.dashboard.getGames.queryOptions(),
         );
-        toast({
-          title: "Game updated successfully!",
-        });
+        toast.success("Game updated successfully!");
         form.reset();
         router.push(`/dashboard/games`);
       },

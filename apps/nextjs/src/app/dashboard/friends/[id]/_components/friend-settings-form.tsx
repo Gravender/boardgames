@@ -18,7 +18,6 @@ import {
   FormItem,
   FormLabel,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import {
   Select,
@@ -29,6 +28,7 @@ import {
 } from "@board-games/ui/select";
 import { Switch } from "@board-games/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
+import { toast } from "@board-games/ui/toast";
 
 import { useTRPC } from "~/trpc/react";
 
@@ -61,15 +61,13 @@ export function FriendSettings({
   onFormSubmit?: () => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
   const updateFriendSettingsMutation = useMutation(
     trpc.friend.updateFriendSettings.mutationOptions({
       onSuccess: async () => {
-        toast({
-          title: "Settings updated",
+        toast.success("Settings updated", {
           description: "Your friend settings have been updated successfully.",
         });
         await queryClient.invalidateQueries(
@@ -81,10 +79,8 @@ export function FriendSettings({
         setIsSubmitting(false);
       },
       onError: () => {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: "Failed to update settings. Please try again.",
-          variant: "destructive",
         });
         setIsSubmitting(false);
         throw new Error("Failed to update settings. Please try again.");

@@ -28,8 +28,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
+import { toast } from "@board-games/ui/toast";
 
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
@@ -79,7 +79,6 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const { toast } = useToast();
   const { startUpload } = useUploadThing("imageUploader");
 
   const queryClient = useQueryClient();
@@ -108,9 +107,7 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
         setOpen(false);
         form.reset();
         router.refresh();
-        toast({
-          title: "Player created successfully!",
-        });
+        toast.success("Player created successfully!");
       },
     }),
   );
@@ -152,10 +149,8 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
       setImagePreview(null); // Clear the image preview
     } catch (error) {
       console.error("Error uploading Image:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "There was a problem uploading your Image.",
-        variant: "destructive",
       });
     }
   }

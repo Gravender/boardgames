@@ -51,7 +51,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
 import {
@@ -62,6 +61,7 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 import { Separator } from "@board-games/ui/separator";
+import { toast } from "@board-games/ui/toast";
 
 import { GradientPicker } from "~/components/color-picker";
 import { Spinner } from "~/components/spinner";
@@ -231,16 +231,13 @@ const AddGameForm = ({
         form.reset();
         setIsUploading(false);
         setIsOpen(false);
-        toast({
-          title: "Game created successfully!",
+        toast("Game created successfully!", {
           description: "Your data has been uploaded.",
         });
       },
       onError: () => {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: "There was a problem adding your game.",
-          variant: "destructive",
         });
 
         throw new Error("There was a problem adding your game.");
@@ -249,8 +246,6 @@ const AddGameForm = ({
   );
 
   const { startUpload } = useUploadThing("imageUploader");
-
-  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof createGameSchema>>({
     resolver: standardSchemaResolver(createGameSchema),
@@ -287,10 +282,8 @@ const AddGameForm = ({
         const uploadResult = await startUpload([imageFile]);
 
         if (!uploadResult) {
-          toast({
-            title: "Error",
+          toast.error("Error", {
             description: "There was a problem uploading your Image.",
-            variant: "destructive",
           });
           throw new Error("Image upload failed");
         }
@@ -314,12 +307,8 @@ const AddGameForm = ({
       } catch (error) {
         console.error("Error uploading Image:", error);
 
-        toast({
-          title: "Error",
-
+        toast.error("Error", {
           description: "There was a problem uploading your Image.",
-
-          variant: "destructive",
         });
       }
     }
