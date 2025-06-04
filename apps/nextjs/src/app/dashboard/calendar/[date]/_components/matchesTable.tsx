@@ -51,7 +51,7 @@ export function MatchesTable({
           <FilterAndSearch
             items={data}
             setItems={setMatches}
-            sortFields={["date", "name", "finished"]}
+            sortFields={["date", "name", "type", "duration"]}
             defaultSortField="date"
             defaultSortOrder="asc"
             searchField="name"

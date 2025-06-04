@@ -1129,7 +1129,7 @@ export const matchRouter = createTRPCRouter({
           }
         }
       }
-
+      dateMatches.sort((a, b) => compareAsc(a.date, b.date));
       return {
         matches: dateMatches,
         players: aggregatePlayerStats(dateMatches),
