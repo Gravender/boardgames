@@ -15,7 +15,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "postcss": "^8.5.3",
+    "postcss": "^8.5.4",
     "tailwindcss": "catalog:",
     "tailwindcss-animate": "^1.0.7"
   },
@@ -23,7 +23,7 @@
     "@board-games/eslint-config": "workspace:*",
     "@board-games/prettier-config": "workspace:*",
     "@board-games/tsconfig": "workspace:*",
-    "@types/node": "^22.15.3",
+    "@types/node": "^22.15.29",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"

@@ -119,7 +119,7 @@ export function EditGameForm({
   >(
     data.scoresheets.map((scoresheet) => ({
       ...scoresheet,
-      permission: "permission" in scoresheet ? scoresheet.permission : "edit",
+      permission: scoresheet.permission === "edit" ? "edit" : ("view" as const),
       scoresheetId: scoresheet.id,
       scoreSheetChanged: false,
       roundChanged: false,

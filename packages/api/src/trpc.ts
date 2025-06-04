@@ -3,7 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import superjson from "superjson";
-import { ZodError } from "zod/v4";
+import { z, ZodError } from "zod/v4";
 
 import { db } from "@board-games/db/client";
 import { player, user } from "@board-games/db/schema";
@@ -57,7 +57,9 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
       data: {
         ...shape.data,
         zodError:
-          error.cause instanceof ZodError ? error.cause.flatten() : null,
+          error.cause instanceof ZodError
+            ? z.flattenError(error.cause as ZodError<Record<string, unknown>>)
+            : null,
       },
     };
   },

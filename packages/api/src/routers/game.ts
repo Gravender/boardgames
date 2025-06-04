@@ -537,7 +537,7 @@ export const gameRouter = createTRPCRouter({
           ...result.scoresheets.map((scoresheet) => ({
             scoresheetType: "original" as const,
             id: scoresheet.id,
-            permission: "edit",
+            permission: "edit" as const,
             isDefault: scoresheet.type === "Default",
             name: scoresheet.name,
             winCondition: scoresheet.winCondition,
