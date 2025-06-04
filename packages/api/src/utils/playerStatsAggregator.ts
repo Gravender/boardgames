@@ -40,14 +40,8 @@ export function aggregatePlayerStats(matches: Matches) {
       if (!match.finished) return acc;
       match.players.forEach((player) => {
         const accPlayer = acc[`${player.type}-${player.id}`];
-        const gameStatRecord = () => {
-          if (match.type === "shared") {
-            if (match.linkedGameId) {
-              return `original-${match.linkedGameId}`;
-            }
-          }
-          return `${match.type}-${match.gameId}`;
-        };
+
+        const gameStatKey = getGameStatKey(match);
         if (!accPlayer) {
           const tempPlacements: Record<number, number> = {};
           tempPlacements[player.placement] = 1;
@@ -59,7 +53,7 @@ export function aggregatePlayerStats(matches: Matches) {
             isUser: player.isUser,
             wins: player.isWinner ? 1 : 0,
             winRate: player.isWinner ? 1 : 0,
-            imageUrl: player.imageUrl ?? "",
+            imageUrl: player.imageUrl,
             placements: player.placement !== -1 ? tempPlacements : {},
             playtime: match.duration,
             streaks: {
@@ -68,18 +62,7 @@ export function aggregatePlayerStats(matches: Matches) {
             },
             recentForm: player.isWinner ? ["win"] : ["loss"],
             gameStats: {
-              [gameStatRecord()]: {
-                id: gameStatRecord(),
-                name: match.gameName ?? "",
-                plays: 1,
-                wins: player.isWinner ? 1 : 0,
-                winRate: player.isWinner ? 1 : 0,
-                bestScore: player.score ?? null,
-                worstScore: player.score ?? null,
-                averageScore: player.score ?? null,
-                playtime: match.duration,
-                scores: player.score != null ? [player.score] : [],
-              },
+              [gameStatKey]: createGameStats(gameStatKey, match, player),
             },
           };
         } else {
@@ -115,7 +98,7 @@ export function aggregatePlayerStats(matches: Matches) {
             longest.count = current.count;
           }
 
-          const gameStats = accPlayer.gameStats[gameStatRecord()];
+          const gameStats = accPlayer.gameStats[gameStatKey];
           if (gameStats) {
             gameStats.plays++;
             gameStats.playtime += match.duration;
@@ -124,41 +107,34 @@ export function aggregatePlayerStats(matches: Matches) {
               gameStats.scores.push(player.score);
 
               if (match.scoresheet.winCondition === "Highest Score") {
-                gameStats.bestScore = Math.max(
-                  gameStats.bestScore ?? 0,
-                  player.score,
-                );
-                gameStats.worstScore = Math.min(
-                  gameStats.worstScore ?? 0,
-                  player.score,
-                );
+                gameStats.bestScore =
+                  gameStats.bestScore !== null
+                    ? Math.max(gameStats.bestScore, player.score)
+                    : player.score;
+                gameStats.worstScore =
+                  gameStats.worstScore !== null
+                    ? Math.min(gameStats.worstScore, player.score)
+                    : player.score;
               } else if (match.scoresheet.winCondition === "Lowest Score") {
-                gameStats.bestScore = Math.min(
-                  gameStats.bestScore ?? 0,
-                  player.score,
-                );
-                gameStats.worstScore = Math.max(
-                  gameStats.worstScore ?? 0,
-                  player.score,
-                );
+                gameStats.bestScore =
+                  gameStats.bestScore !== null
+                    ? Math.min(gameStats.bestScore, player.score)
+                    : player.score;
+                gameStats.worstScore =
+                  gameStats.worstScore !== null
+                    ? Math.max(gameStats.worstScore, player.score)
+                    : player.score;
               } else {
                 gameStats.bestScore = null;
                 gameStats.worstScore = null;
               }
             }
           } else {
-            accPlayer.gameStats[gameStatRecord()] = {
-              id: gameStatRecord(),
-              name: match.gameName ?? "",
-              plays: 1,
-              wins: player.isWinner ? 1 : 0,
-              winRate: player.isWinner ? 1 : 0,
-              bestScore: player.score ?? null,
-              worstScore: player.score ?? null,
-              averageScore: player.score ?? null,
-              playtime: match.duration,
-              scores: player.score != null ? [player.score] : [],
-            };
+            accPlayer.gameStats[gameStatKey] = createGameStats(
+              gameStatKey,
+              match,
+              player,
+            );
           }
         }
       });
@@ -174,7 +150,7 @@ export function aggregatePlayerStats(matches: Matches) {
         plays: number;
         wins: number;
         winRate: number;
-        imageUrl: string;
+        imageUrl: string | undefined;
         placements: Record<number, number>;
         playtime: number;
         streaks: {
@@ -228,3 +204,25 @@ export function aggregatePlayerStats(matches: Matches) {
       return b.winRate - a.winRate;
     });
 }
+const getGameStatKey = (match: Matches[number]) => {
+  if (match.type === "shared" && match.linkedGameId) {
+    return `original-${match.linkedGameId}`;
+  }
+  return `${match.type}-${match.gameId}`;
+};
+const createGameStats = (
+  id: string,
+  match: Matches[number],
+  player: Matches[number]["players"][number],
+) => ({
+  id,
+  name: match.gameName ?? "",
+  plays: 1,
+  wins: player.isWinner ? 1 : 0,
+  winRate: player.isWinner ? 1 : 0,
+  bestScore: player.score ?? null,
+  worstScore: player.score ?? null,
+  averageScore: player.score ?? null,
+  playtime: match.duration,
+  scores: player.score != null ? [player.score] : [],
+});
