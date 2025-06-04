@@ -16,8 +16,9 @@ import {
   useFormContext,
 } from "react-hook-form";
 
+import { cn } from "@board-games/ui/utils";
+
 import { Label } from "./label";
-import { cn } from "./lib/utils";
 
 export { FormProvider as Form, useFieldArray } from "react-hook-form";
 
