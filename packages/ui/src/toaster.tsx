@@ -1,6 +1,7 @@
 "use client";
 
 import { useToast } from "@board-games/ui/hooks/use-toast";
+
 import {
   Toast,
   ToastClose,
@@ -8,7 +9,7 @@ import {
   ToastProvider,
   ToastTitle,
   ToastViewport,
-} from "@board-games/ui/toast";
+} from "./sonner";
 
 export function Toaster() {
   const { toasts } = useToast();
