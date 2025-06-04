@@ -209,7 +209,11 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">{count}</span>
                             <Progress
-                              value={(count / player.plays) * 100}
+                              value={
+                                (count /
+                                  Object.keys(player.placements).length) *
+                                100
+                              }
                               className="h-2 w-16"
                             />
                           </div>

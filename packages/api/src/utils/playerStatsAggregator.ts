@@ -54,7 +54,7 @@ export function aggregatePlayerStats(matches: Matches) {
             wins: player.isWinner ? 1 : 0,
             winRate: player.isWinner ? 1 : 0,
             imageUrl: player.imageUrl,
-            placements: player.placement !== -1 ? tempPlacements : {},
+            placements: player.placement > 0 ? tempPlacements : {},
             playtime: match.duration,
             streaks: {
               current: { type: player.isWinner ? "win" : "loss", count: 1 },
@@ -66,7 +66,7 @@ export function aggregatePlayerStats(matches: Matches) {
             },
           };
         } else {
-          if (player.placement !== -1) {
+          if (player.placement > 0) {
             const currentPlacement = accPlayer.placements[player.placement];
             if (currentPlacement) {
               accPlayer.placements[player.placement] = currentPlacement + 1;
