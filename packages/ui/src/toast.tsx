@@ -3,6 +3,7 @@
 import { useTheme } from "next-themes";
 import { Toaster as Sonner } from "sonner";
 
+export { toast } from "sonner";
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 const Toaster = ({ ...props }: ToasterProps) => {
@@ -10,7 +11,6 @@ const Toaster = ({ ...props }: ToasterProps) => {
 
   return (
     <Sonner
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       toastOptions={{
