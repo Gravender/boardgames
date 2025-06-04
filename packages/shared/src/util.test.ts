@@ -29,23 +29,23 @@ describe("CapitalizeFirstLetterOfEachWord", () => {
 
 // Tests for formatDuration
 describe("formatDuration", () => {
-  it("should format 0 seconds as 00:00:00", () => {
-    expect(formatDuration(0)).toBe("00:00:00");
+  it("should format 0 seconds as 0m", () => {
+    expect(formatDuration(0)).toBe("0m");
   });
 
   it("should format seconds correctly", () => {
-    expect(formatDuration(45)).toBe("00:00:45");
+    expect(formatDuration(45)).toBe("0m");
   });
 
   it("should format minutes correctly", () => {
-    expect(formatDuration(125)).toBe("00:02:05");
+    expect(formatDuration(125)).toBe("2m");
   });
 
   it("should format hours correctly", () => {
-    expect(formatDuration(3725)).toBe("01:02:05");
+    expect(formatDuration(3725)).toBe("1h 2m");
   });
 
   it("should handle large durations", () => {
-    expect(formatDuration(86400)).toBe("24:00:00"); // 24 hours
+    expect(formatDuration(86400)).toBe("24h 0m"); // 24 hours
   });
 });

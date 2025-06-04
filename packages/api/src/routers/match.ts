@@ -4,12 +4,12 @@ import { compareAsc } from "date-fns";
 import { and, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 
-import type { Filter } from "@board-games/db/client";
 import type {
   insertRoundPlayerSchema,
   insertRoundSchema,
   selectRoundSchema,
   selectScoreSheetSchema,
+  selectTeamSchema,
 } from "@board-games/db/zodSchema";
 import {
   match,
@@ -33,6 +33,7 @@ import { calculatePlacement } from "@board-games/shared";
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 import { shareMatchWithFriends } from "../utils/addMatch";
 import { cloneSharedLocationForUser } from "../utils/handleSharedLocation";
+import { aggregatePlayerStats } from "../utils/playerStatsAggregator";
 
 export const matchRouter = createTRPCRouter({
   createMatch: protectedUserProcedure
@@ -884,33 +885,22 @@ export const matchRouter = createTRPCRouter({
 
       const dayStartUtc = new Date(Date.UTC(year, month, day, 0, 0, 0));
       const nextDayUtc = new Date(Date.UTC(year, month, day + 1, 0, 0, 0));
-      const sharedMatches = await ctx.db.query.sharedMatch.findMany({
+      const sharedMatchesIds = await ctx.db.query.sharedMatch.findMany({
         where: {
           sharedWithId: ctx.userId,
         },
       });
-      const matchOrConditions: Filter<"match">["OR"] = [
-        {
+
+      const matches = await ctx.db.query.match.findMany({
+        where: {
           userId: ctx.userId,
           deletedAt: {
             isNull: true,
           },
-        },
-      ];
-      if (sharedMatches.length > 0) {
-        matchOrConditions.push({
-          id: {
-            in: sharedMatches.map((m) => m.matchId),
-          },
-        });
-      }
-      const matches = await ctx.db.query.match.findMany({
-        where: {
           date: {
             gte: dayStartUtc,
             lt: nextDayUtc,
           },
-          OR: matchOrConditions,
         },
         with: {
           game: {
@@ -918,38 +908,232 @@ export const matchRouter = createTRPCRouter({
               image: true,
             },
           },
+          teams: true,
           matchPlayers: {
             with: {
-              player: true,
+              player: {
+                with: {
+                  image: true,
+                },
+              },
             },
           },
           location: true,
+          scoresheet: true,
         },
       });
-      return matches.map((match) => {
-        const shared = sharedMatches.find((m) => m.matchId === match.id);
 
+      const dateMatches: {
+        id: number;
+        type: "original" | "shared";
+        date: Date;
+        name: string;
+        teams: z.infer<typeof selectTeamSchema>[];
+        duration: number;
+        finished: boolean;
+        won: boolean;
+        hasUser: boolean;
+        players: {
+          id: number;
+          type: "original" | "shared";
+          name: string;
+          isUser: boolean;
+          isWinner: boolean;
+          score: number | null;
+          imageUrl: string | undefined;
+          teamId: number | null;
+          placement: number;
+        }[];
+        locationName: string | null;
+        gameImageUrl: string | undefined;
+        gameName: string | undefined;
+        gameId: number | undefined;
+        scoresheet: z.infer<typeof selectScoreSheetSchema>;
+        linkedGameId: number | undefined;
+      }[] = matches.map((match) => {
         return {
-          id: shared?.id ?? match.id,
-          type: shared ? ("shared" as const) : ("original" as const),
+          id: match.id,
+          type: "original" as const,
           date: match.date,
           name: match.name,
+          teams: match.teams,
           finished: match.finished,
+          duration: match.duration,
           won:
             match.matchPlayers.findIndex(
               (player) => player.winner && player.player.isUser,
             ) !== -1,
+          hasUser:
+            match.matchPlayers.findIndex((player) => player.player.isUser) !==
+            -1,
           players: match.matchPlayers.map((matchPlayer) => {
             return {
               id: matchPlayer.player.id,
+              type: "original" as const,
               name: matchPlayer.player.name,
+              isWinner: matchPlayer.winner ?? false,
+              isUser: matchPlayer.player.isUser,
+              score: matchPlayer.score,
+              imageUrl: matchPlayer.player.image?.url,
+              teamId: matchPlayer.teamId,
+              placement: matchPlayer.placement ?? -1,
             };
           }),
+          locationName: match.location?.name ?? null,
           gameImageUrl: match.game.image?.url,
           gameName: match.game.name,
-          gameId: shared?.sharedGameId ?? match.game.id,
+          gameId: match.game.id,
+          scoresheet: match.scoresheet,
+          linkedGameId: undefined,
         };
       });
+      if (sharedMatchesIds.length > 0) {
+        const sharedMatches = await ctx.db.query.match.findMany({
+          where: {
+            date: {
+              gte: dayStartUtc,
+              lt: nextDayUtc,
+            },
+            id: {
+              in: sharedMatchesIds.map((m) => m.matchId),
+            },
+          },
+          with: {
+            sharedMatches: {
+              where: {
+                sharedWithId: ctx.userId,
+              },
+              with: {
+                sharedLocation: {
+                  with: {
+                    location: true,
+                    linkedLocation: true,
+                  },
+                },
+                sharedMatchPlayers: {
+                  where: {
+                    sharedWithId: ctx.userId,
+                  },
+                  with: {
+                    sharedPlayer: {
+                      where: {
+                        sharedWithId: ctx.userId,
+                      },
+                      with: {
+                        linkedPlayer: {
+                          with: {
+                            image: true,
+                          },
+                        },
+                        player: {
+                          with: {
+                            image: true,
+                          },
+                        },
+                      },
+                    },
+                    matchPlayer: {
+                      with: {
+                        team: true,
+                      },
+                    },
+                  },
+                },
+                sharedGame: {
+                  with: {
+                    linkedGame: {
+                      with: {
+                        image: true,
+                      },
+                    },
+                    game: {
+                      with: {
+                        image: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            teams: true,
+            scoresheet: true,
+          },
+        });
+        for (const returnedMatch of sharedMatches) {
+          const [returnedSharedMatch] = returnedMatch.sharedMatches;
+          if (returnedSharedMatch) {
+            const linkedGame = returnedSharedMatch.sharedGame.linkedGame;
+            const sharedGame = returnedSharedMatch.sharedGame.game;
+            const sharedLocation = returnedSharedMatch.sharedLocation;
+            const linkedLocation = sharedLocation?.linkedLocation;
+            dateMatches.push({
+              id: returnedSharedMatch.id,
+              type: "shared" as const,
+              date: returnedMatch.date,
+              name: returnedMatch.name,
+              teams: returnedMatch.teams,
+              finished: returnedMatch.finished,
+              duration: returnedMatch.duration,
+              won:
+                returnedSharedMatch.sharedMatchPlayers.findIndex(
+                  (sharedMatchPlayer) =>
+                    sharedMatchPlayer.matchPlayer.winner &&
+                    sharedMatchPlayer.sharedPlayer?.linkedPlayer?.isUser,
+                ) !== -1,
+              hasUser:
+                returnedSharedMatch.sharedMatchPlayers.findIndex(
+                  (sharedMatchPlayer) =>
+                    sharedMatchPlayer.sharedPlayer?.linkedPlayer?.isUser,
+                ) !== -1,
+              players: returnedSharedMatch.sharedMatchPlayers
+                .map((sharedMatchPlayer) => {
+                  if (sharedMatchPlayer.sharedPlayer === null) return null;
+                  const linkedPlayer =
+                    sharedMatchPlayer.sharedPlayer.linkedPlayer;
+                  if (linkedPlayer)
+                    return {
+                      type: "original" as const,
+                      id: linkedPlayer.id,
+                      name: linkedPlayer.name,
+                      imageUrl: linkedPlayer.image?.url,
+                      score: sharedMatchPlayer.matchPlayer.score,
+                      isWinner: sharedMatchPlayer.matchPlayer.winner ?? false,
+                      isUser: linkedPlayer.isUser,
+                      teamId: sharedMatchPlayer.matchPlayer.teamId,
+                      placement: sharedMatchPlayer.matchPlayer.placement ?? -1,
+                    };
+
+                  return {
+                    type: "shared" as const,
+                    id: sharedMatchPlayer.sharedPlayer.id,
+                    name: sharedMatchPlayer.sharedPlayer.player.name,
+                    imageUrl: sharedMatchPlayer.sharedPlayer.player.image?.url,
+                    score: sharedMatchPlayer.matchPlayer.score,
+                    isWinner: sharedMatchPlayer.matchPlayer.winner ?? false,
+                    isUser: false,
+                    teamId: sharedMatchPlayer.matchPlayer.teamId,
+                    placement: sharedMatchPlayer.matchPlayer.placement ?? -1,
+                  };
+                })
+                .filter((player) => player !== null),
+              locationName:
+                linkedLocation?.name ?? sharedLocation?.location.name ?? null,
+              gameImageUrl: linkedGame
+                ? linkedGame.image?.url
+                : sharedGame.image?.url,
+              gameName: linkedGame ? linkedGame.name : sharedGame.name,
+              gameId: returnedSharedMatch.sharedGame.id,
+              scoresheet: returnedMatch.scoresheet,
+              linkedGameId: linkedGame?.id,
+            });
+          }
+        }
+      }
+      dateMatches.sort((a, b) => compareAsc(a.date, b.date));
+      return {
+        matches: dateMatches,
+        players: aggregatePlayerStats(dateMatches),
+      };
     }),
   deleteMatch: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { compareAsc } from "date-fns";
 import { AlignLeft, ChevronDown, ChevronUp, Search } from "lucide-react";
 
 import { Button } from "@board-games/ui/button";
@@ -60,8 +61,7 @@ export function FilterAndSearch<T>({
       if (a == null) return sortOrder === "asc" ? -1 : 1;
       if (b == null) return sortOrder === "asc" ? 1 : -1;
 
-      if (a instanceof Date && b instanceof Date)
-        return a.getTime() - b.getTime();
+      if (a instanceof Date && b instanceof Date) return compareAsc(a, b);
       if (Number(a) && Number(b)) return Number(a) - Number(b);
 
       return String(a).localeCompare(String(b));
