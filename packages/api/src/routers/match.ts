@@ -944,6 +944,7 @@ export const matchRouter = createTRPCRouter({
           teamId: number | null;
           placement: number;
         }[];
+        locationName: string | null;
         gameImageUrl: string | undefined;
         gameName: string | undefined;
         gameId: number | undefined;
@@ -978,6 +979,7 @@ export const matchRouter = createTRPCRouter({
               placement: matchPlayer.placement ?? -1,
             };
           }),
+          locationName: match.location?.name ?? null,
           gameImageUrl: match.game.image?.url,
           gameName: match.game.name,
           gameId: match.game.id,
@@ -1062,6 +1064,8 @@ export const matchRouter = createTRPCRouter({
           if (returnedSharedMatch) {
             const linkedGame = returnedSharedMatch.sharedGame.linkedGame;
             const sharedGame = returnedSharedMatch.sharedGame.game;
+            const sharedLocation = returnedSharedMatch.sharedLocation;
+            const linkedLocation = sharedLocation?.linkedLocation;
             dateMatches.push({
               id: returnedSharedMatch.id,
               type: "shared" as const,
@@ -1112,6 +1116,8 @@ export const matchRouter = createTRPCRouter({
                   };
                 })
                 .filter((player) => player !== null),
+              locationName:
+                linkedLocation?.name ?? sharedLocation?.location.name ?? null,
               gameImageUrl: linkedGame
                 ? linkedGame.image?.url
                 : sharedGame.image?.url,

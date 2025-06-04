@@ -99,7 +99,9 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
                   )}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>{player.plays} games</span>
+                  <span>{player.plays} plays</span>
+                  <span>•</span>
+                  <span>{player.gameStats.length} games</span>
                   <span>•</span>
                   <span>{player.wins} wins</span>
                 </div>
@@ -191,9 +193,12 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
                             <div className="text-sm font-medium">
                               {game.name}
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {game.plays} games •{" "}
-                              {formatDuration(game.playtime)}
+                            <div className="flex gap-1 text-xs text-muted-foreground">
+                              <span>
+                                {game.plays} play{game.plays !== 1 ? "s" : ""}
+                              </span>
+                              <span>•</span>
+                              <span>{formatDuration(game.playtime)}</span>
                             </div>
                           </div>
                           <div className="text-right">
