@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
-import { formatDuration } from "@board-games/shared";
+import { formatDuration, getOrdinalSuffix } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
@@ -39,35 +39,6 @@ interface PlayerCardProps {
 }
 
 function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
-  const getStreakIcon = (type: "win" | "loss") => {
-    return type === "win" ? (
-      <Flame className="h-3 w-3 text-orange-500" />
-    ) : (
-      <TrendingDown className="h-3 w-3 text-red-500" />
-    );
-  };
-
-  const getFormIndicator = (form: ("win" | "loss")[]) => {
-    return form
-      .slice(-5)
-      .map((result, index) => (
-        <div
-          key={index}
-          className={`h-2 w-2 rounded-full ${result === "win" ? "bg-green-500" : "bg-red-500"}`}
-          title={result === "win" ? "Win" : "Loss"}
-        />
-      ));
-  };
-
-  const getRankBadge = (rank: number) => {
-    if (rank === 1) return <Medal className="h-4 w-4 text-yellow-500" />;
-    if (rank === 2) return <Medal className="h-4 w-4 text-gray-400" />;
-    if (rank === 3) return <Medal className="h-4 w-4 text-amber-600" />;
-    return (
-      <span className="text-sm font-medium text-muted-foreground">#{rank}</span>
-    );
-  };
-
   return (
     <Card
       className={`transition-all duration-200 ${expanded ? "ring-2 ring-primary/20" : ""}`}
@@ -79,10 +50,7 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage
-                    src={player.imageUrl || "/placeholder.svg"}
-                    alt={player.name}
-                  />
+                  <AvatarImage src={player.imageUrl} alt={player.name} />
                   <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border bg-background">
@@ -234,13 +202,8 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
                               #{placement}
                             </Badge>
                             <span className="text-sm">
-                              {placement === "1"
-                                ? "1st Place"
-                                : placement === "2"
-                                  ? "2nd Place"
-                                  : placement === "3"
-                                    ? "3rd Place"
-                                    : `${placement}th Place`}
+                              {placement}
+                              {getOrdinalSuffix(Number(placement))} Place
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -298,3 +261,34 @@ export function PlayerStats({ players }: PlayerStatsProps) {
     </>
   );
 }
+
+const getStreakIcon = (type: "win" | "loss") => {
+  return type === "win" ? (
+    <Flame className="h-3 w-3 text-orange-500" />
+  ) : (
+    <TrendingDown className="h-3 w-3 text-red-500" />
+  );
+};
+const RECENT_FORM_COUNT = 5;
+const getFormIndicator = (form: ("win" | "loss")[]) => {
+  return form
+    .slice(-RECENT_FORM_COUNT)
+    .map((result, index) => (
+      <div
+        key={index}
+        className={`h-2 w-2 rounded-full ${result === "win" ? "bg-green-500" : "bg-red-500"}`}
+        title={result === "win" ? "Win" : "Loss"}
+        role="img"
+        aria-label={result === "win" ? "Win" : "Loss"}
+      />
+    ));
+};
+
+const getRankBadge = (rank: number) => {
+  if (rank === 1) return <Medal className="h-4 w-4 text-yellow-500" />;
+  if (rank === 2) return <Medal className="h-4 w-4 text-gray-400" />;
+  if (rank === 3) return <Medal className="h-4 w-4 text-amber-600" />;
+  return (
+    <span className="text-sm font-medium text-muted-foreground">#{rank}</span>
+  );
+};
