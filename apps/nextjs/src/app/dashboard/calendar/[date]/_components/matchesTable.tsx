@@ -116,7 +116,7 @@ export function MatchesTable({
                       <div className="inline-flex w-12 items-center justify-center rounded-sm bg-green-500 p-2 font-medium text-destructive-foreground dark:bg-green-900">
                         {"Won"}
                       </div>
-                    ) : match.hasUser ? (
+                    ) : !match.hasUser ? (
                       <div className="dark:slate-900 inline-flex w-12 items-center justify-center rounded-sm bg-slate-500 p-2 font-medium text-destructive-foreground">
                         {"View"}
                       </div>
