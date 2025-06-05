@@ -9,7 +9,7 @@ import type {
 import type { ZodType } from "zod/v4";
 import * as React from "react";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { Slot } from "radix-ui";
+import { Slot } from "@radix-ui/react-slot";
 import {
   useForm as __useForm,
   Controller,
@@ -112,14 +112,12 @@ export function FormLabel({
   );
 }
 
-export function FormControl({
-  ...props
-}: React.ComponentProps<typeof Slot.Slot>) {
+export function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
   const { error, formItemId, formDescriptionId, formMessageId } =
     useFormField();
 
   return (
-    <Slot.Slot
+    <Slot
       id={formItemId}
       aria-describedby={
         !error

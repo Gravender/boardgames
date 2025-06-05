@@ -1,7 +1,7 @@
 import type { VariantProps } from "class-variance-authority";
 import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
 import { cva } from "class-variance-authority";
-import { Slot } from "radix-ui";
 
 import { cn } from "@board-games/ui/utils";
 
@@ -47,7 +47,7 @@ export function Button({
   asChild = false,
   ...props
 }: ButtonProps) {
-  const Comp = asChild ? Slot.Slot : "button";
+  const Comp = asChild ? Slot : "button";
   return (
     <Comp
       className={cn(buttonVariants({ variant, size, className }))}
