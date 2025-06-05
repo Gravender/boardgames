@@ -109,7 +109,7 @@ export function MatchesTable({
                   </Link>
                   <div className="flex w-24 items-center justify-center">
                     {!match.finished ? (
-                      <div className="inline-flex w-12 items-center justify-center rounded-sm bg-yellow-500 p-2 font-semibold text-destructive-foreground dark:bg-green-900">
+                      <div className="inline-flex w-12 items-center justify-center rounded-sm bg-yellow-500 p-2 font-semibold text-destructive-foreground dark:bg-yellow-900">
                         {"-"}
                       </div>
                     ) : match.won ? (

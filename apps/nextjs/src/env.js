@@ -1,8 +1,8 @@
 /* eslint-disable no-restricted-properties */
 import { createEnv } from "@t3-oss/env-nextjs";
-import { vercel } from "@t3-oss/env-nextjs/presets";
+import { vercel } from "@t3-oss/env-nextjs/presets-zod";
 import { config } from "dotenv";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 config();
 

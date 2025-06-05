@@ -1,9 +1,11 @@
 import "~/styles/globals.css";
 
 import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 
-import { Toaster } from "@board-games/ui/toaster";
+import { Toaster } from "@board-games/ui/toast";
+import { cn } from "@board-games/ui/utils";
 
 import { Analytics } from "~/components/analytics";
 import { SpeedInsights } from "~/components/speedInsights";
@@ -27,13 +29,32 @@ export const metadata: Metadata = {
     siteName: "Board Games Tracker",
   },
 };
+const geistSans = Geist({
+  subsets: ["latin"],
 
+  variable: "--font-geist-sans",
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+
+  variable: "--font-geist-mono",
+});
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning>
+      <body
+        suppressHydrationWarning
+        className={cn(
+          "min-h-screen bg-background font-sans text-foreground antialiased",
+
+          geistSans.variable,
+
+          geistMono.variable,
+        )}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

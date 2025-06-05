@@ -28,8 +28,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
+import { toast } from "@board-games/ui/toast";
 
 import type { SerializableUser } from "../page";
 import { Spinner } from "~/components/spinner";
@@ -120,7 +120,6 @@ function EditProfilePictureContent({
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const { toast } = useToast();
   const { user } = useUser();
 
   useEffect(() => {
@@ -174,8 +173,7 @@ function EditProfilePictureContent({
     await user
       .setProfileImage({ file: data.file })
       .then(() => {
-        toast({
-          title: "Profile picture updated",
+        toast.success("Profile picture updated", {
           description: "Your profile picture has been updated successfully.",
         });
 
@@ -184,10 +182,8 @@ function EditProfilePictureContent({
       })
       .catch((error) => {
         console.error(error);
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: "Failed to update profile picture. Please try again.",
-          variant: "destructive",
         });
       })
       .finally(() => {

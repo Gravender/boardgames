@@ -1,13 +1,14 @@
 // Injected content via Sentry wizard below
 import { fileURLToPath } from "url";
 import { withSentryConfig } from "@sentry/nextjs";
-import createJiti from "jiti";
+import { createJiti } from "jiti";
 
+const jiti = createJiti(import.meta.url);
 /**
  * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful
  * for Docker builds.
  */
-createJiti(fileURLToPath(import.meta.url))("./src/env");
+await jiti.import("./src/env");
 
 /** @type {import("next").NextConfig} */
 let nextConfig = {

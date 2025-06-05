@@ -51,7 +51,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 import {
   Popover,
@@ -66,6 +65,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@board-games/ui/select";
+import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import { Spinner } from "~/components/spinner";
@@ -1124,7 +1124,6 @@ const AddPlayerForm = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const { toast } = useToast();
   const { startUpload } = useUploadThing("imageUploader");
 
   const queryClient = useQueryClient();
@@ -1160,9 +1159,7 @@ const AddPlayerForm = ({
           ),
         ]);
         setIsAddPlayer(false);
-        toast({
-          title: "Player created successfully!",
-        });
+        toast.success("Player created successfully!");
       },
     }),
   );
@@ -1204,10 +1201,8 @@ const AddPlayerForm = ({
       setImagePreview(null); // Clear the image preview
     } catch (error) {
       console.error("Error uploading Image:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "There was a problem uploading your Image.",
-        variant: "destructive",
       });
     }
   }

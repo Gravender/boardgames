@@ -27,8 +27,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
+import { toast } from "@board-games/ui/toast";
 
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
@@ -78,7 +78,6 @@ const PlayerContent = ({
   );
   const [isUploading, setIsUploading] = useState(false);
 
-  const { toast } = useToast();
   const { startUpload } = useUploadThing("imageUploader");
 
   const queryClient = useQueryClient();
@@ -122,9 +121,7 @@ const PlayerContent = ({
           trpc.dashboard.getPlayers.queryOptions(),
         );
         router.refresh();
-        toast({
-          title: "Player updated successfully!",
-        });
+        toast.success("Player updated successfully!");
         form.reset();
         setImagePreview(null);
         setOpen(false);
@@ -193,10 +190,8 @@ const PlayerContent = ({
       updatePlayer({ values, imageId: imageId });
     } catch (error) {
       console.error("Error uploading Image:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "There was a problem uploading your Image.",
-        variant: "destructive",
       });
     } finally {
       setIsUploading(false);

@@ -27,9 +27,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
+import { toast } from "@board-games/ui/toast";
 
 import { useTRPC } from "~/trpc/react";
 
@@ -75,7 +75,6 @@ const Content = ({
   const [activeTab, setActiveTab] = useState("email");
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const sendFriendRequestMutation = useMutation(
     trpc.friend.sendFriendRequest.mutationOptions({
@@ -88,13 +87,11 @@ const Content = ({
           trpc.friend.getSentFriendRequests.queryOptions(),
         );
         if (response.success) {
-          toast({
-            title: "Friend request sent",
+          toast("Friend request sent", {
             description: response.message,
           });
         } else {
-          toast({
-            title: "Friend request failed",
+          toast.info("Friend request failed", {
             description: response.message,
           });
         }

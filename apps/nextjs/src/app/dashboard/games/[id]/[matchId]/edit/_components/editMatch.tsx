@@ -51,7 +51,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@board-games/ui/form";
-import { useToast } from "@board-games/ui/hooks/use-toast";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
 import {
@@ -66,6 +65,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@board-games/ui/select";
+import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import { Spinner } from "~/components/spinner";
@@ -138,7 +138,7 @@ export function EditMatchForm({
     trpc.location.getLocations.queryOptions(),
   );
   const { startUpload } = useUploadThing("imageUploader");
-  const { toast } = useToast();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -286,10 +286,8 @@ export function EditMatchForm({
       });
     } catch (error) {
       console.error("Error uploading Image:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "There was a problem uploading your Image.",
-        variant: "destructive",
       });
       throw new Error("There was a problem uploading your Image.");
     }
