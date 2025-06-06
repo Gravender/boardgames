@@ -1,6 +1,16 @@
+import type { LucideIcon } from "lucide-react";
 import type z from "zod/v4";
 import Image from "next/image";
-import { Dices } from "lucide-react";
+import {
+  BowArrow,
+  Dice1,
+  Dices,
+  Flame,
+  Gamepad2,
+  Ghost,
+  Puzzle,
+  Swords,
+} from "lucide-react";
 
 import { imageSchema } from "@board-games/shared";
 import { cn } from "@board-games/ui/utils";
@@ -101,18 +111,36 @@ function GameImageIcon({
   imageIcon: z.infer<typeof ImageIconSchema>;
   className?: string;
 }) {
-  if (imageIcon.type === "file") {
-    return (
-      <Dices
-        className={cn(
-          "h-full w-full items-center justify-center rounded-md bg-muted p-2",
-          className,
-        )}
-      />
-    );
+  let Icon: LucideIcon = Dices;
+  if (imageIcon.type === "svg") {
+    if (imageIcon.name === "Gamepad") {
+      Icon = Gamepad2;
+    }
+    if (imageIcon.name === "Dices") {
+      Icon = Dices;
+    }
+    if (imageIcon.name === "Bow & Arrow") {
+      Icon = BowArrow;
+    }
+    if (imageIcon.name === "Dice") {
+      Icon = Dice1;
+    }
+    if (imageIcon.name === "Flame") {
+      Icon = Flame;
+    }
+    if (imageIcon.name === "Ghost") {
+      Icon = Ghost;
+    }
+    if (imageIcon.name === "Puzzle") {
+      Icon = Puzzle;
+    }
+    if (imageIcon.name === "Swords") {
+      Icon = Swords;
+    }
   }
+
   return (
-    <Dices
+    <Icon
       className={cn(
         "h-full w-full items-center justify-center rounded-md bg-muted p-2",
         className,
