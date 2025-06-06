@@ -39,6 +39,10 @@ interface PlayerCardProps {
 }
 
 function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
+  const totalPlacements = Object.values(player.placements).reduce(
+    (acc, cur) => acc + Number(cur),
+    0,
+  );
   return (
     <Card
       className={`transition-all duration-200 ${expanded ? "ring-2 ring-primary/20" : ""}`}
@@ -50,7 +54,10 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={player.imageUrl} alt={player.name} />
+                  <AvatarImage
+                    src={player.image?.url ?? ""}
+                    alt={player.name}
+                  />
                   <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border bg-background">
@@ -189,36 +196,36 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
                       .sort(
                         ([a], [b]) => Number.parseInt(a) - Number.parseInt(b),
                       )
-                      .map(([placement, count]) => (
-                        <div
-                          key={placement}
-                          className="flex items-center justify-between"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant="outline"
-                              className="flex h-6 w-8 items-center justify-center p-0"
-                            >
-                              #{placement}
-                            </Badge>
-                            <span className="text-sm">
-                              {placement}
-                              {getOrdinalSuffix(Number(placement))} Place
-                            </span>
+                      .map(([placement, count]) => {
+                        return (
+                          <div
+                            key={placement}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className="flex h-6 w-8 items-center justify-center p-0"
+                              >
+                                #{placement}
+                              </Badge>
+                              <span className="text-sm">
+                                {placement}
+                                {getOrdinalSuffix(Number(placement))} Place
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">
+                                {count}
+                              </span>
+                              <Progress
+                                value={(count / totalPlacements) * 100}
+                                className="h-2 w-16"
+                              />
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">{count}</span>
-                            <Progress
-                              value={
-                                (count /
-                                  Object.keys(player.placements).length) *
-                                100
-                              }
-                              className="h-2 w-16"
-                            />
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                   </div>
                 </TabsContent>
               </Tabs>

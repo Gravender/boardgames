@@ -1,14 +1,26 @@
 import { z } from "zod/v4";
 
 import {
+  insertImageSchema,
   insertRoundSchema,
   insertScoreSheetSchema,
 } from "@board-games/db/zodSchema";
 
 export const fileSchema = z
   .file()
-  .max(4_000_000)
-  .mime(["image/jpeg", "image/png"])
+  .max(4_000_000, {
+    error: (issue) => {
+      return { ...issue, message: "Image file size must be less than 4MB" };
+    },
+  })
+  .mime(["image/jpeg", "image/png"], {
+    error: (issue) => {
+      return {
+        ...issue,
+        message: "Invalid image file type - must be a .jpg or .png",
+      };
+    },
+  })
   .nullable();
 export const baseGameSchema = z
   .object({
@@ -107,3 +119,12 @@ export const roundSchema = baseRoundSchema.extend({
 });
 
 export const roundsSchema = z.array(roundSchema);
+
+export const imageSchema = insertImageSchema
+  .pick({
+    name: true,
+    url: true,
+    type: true,
+    usageType: true,
+  })
+  .required({ name: true, url: true });
