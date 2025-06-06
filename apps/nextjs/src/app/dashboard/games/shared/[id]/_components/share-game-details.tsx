@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Dices, EyeIcon, PencilIcon } from "lucide-react";
+import { EyeIcon, PencilIcon } from "lucide-react";
 
 import { Badge } from "@board-games/ui/badge";
 
+import { GameImage } from "~/components/game-image";
 import { useTRPC } from "~/trpc/react";
 import { GameDetails } from "../../../_components/game-details";
 import { MatchesList } from "../../../_components/matches-list";
@@ -23,18 +23,11 @@ export default function SharedGameDetails({ gameId }: { gameId: number }) {
       <div className="flex flex-row gap-2 sm:gap-4 md:gap-6">
         {/* Game image - smaller on mobile */}
         <div className="mx-auto hidden xs:block xs:w-1/3 sm:w-1/4 md:mx-0 md:w-1/5 lg:w-1/6">
-          <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-lg border shadow">
-            {game.imageUrl ? (
-              <Image
-                fill
-                src={game.imageUrl}
-                alt={`${game.name} game image`}
-                className="aspect-square h-full w-full rounded-md object-cover"
-              />
-            ) : (
-              <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-            )}
-          </div>
+          <GameImage
+            image={game.image}
+            alt={`${game.name} game image`}
+            containerClassName="aspect-square w-full rounded-lg border shadow"
+          />
         </div>
 
         {/* Game info - more compact on mobile */}

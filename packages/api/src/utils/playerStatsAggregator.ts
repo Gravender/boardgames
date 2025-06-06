@@ -23,11 +23,21 @@ type Matches = {
     isUser: boolean;
     isWinner: boolean;
     score: number | null;
-    imageUrl: string | undefined;
+    image: {
+      name: string;
+      url: string | null;
+      type: "file" | "svg";
+      usageType: "player";
+    } | null;
     teamId: number | null;
     placement: number;
   }[];
-  gameImageUrl: string | undefined;
+  image: {
+    name: string;
+    url: string | null;
+    type: "file" | "svg";
+    usageType: "game";
+  } | null;
   gameName: string | undefined;
   gameId: number | undefined;
   scoresheet: z.infer<typeof selectScoreSheetSchema>;
@@ -53,7 +63,7 @@ export function aggregatePlayerStats(matches: Matches) {
             isUser: player.isUser,
             wins: player.isWinner ? 1 : 0,
             winRate: player.isWinner ? 1 : 0,
-            imageUrl: player.imageUrl,
+            image: player.image,
             placements: player.placement > 0 ? tempPlacements : {},
             playtime: match.duration,
             streaks: {
@@ -150,7 +160,12 @@ export function aggregatePlayerStats(matches: Matches) {
         plays: number;
         wins: number;
         winRate: number;
-        imageUrl: string | undefined;
+        image: {
+          name: string;
+          url: string | null;
+          type: "file" | "svg";
+          usageType: "player";
+        } | null;
         placements: Record<number, number>;
         playtime: number;
         streaks: {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   useMutation,
@@ -14,7 +13,6 @@ import {
   Check,
   ChevronDown,
   Clock,
-  Dices,
   Loader2,
   MapPin,
   ThumbsDown,
@@ -71,6 +69,7 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
 
 import { FormattedDate } from "~/components/formatted-date";
+import { GameImage } from "~/components/game-image";
 import { useTRPC } from "~/trpc/react";
 import ChildLocationsRequest from "./child-locations-request";
 import ChildPlayersRequest from "./child-players-request";
@@ -778,18 +777,11 @@ function RequestShareGame({
       <div className="flex w-full items-center justify-between">
         <AccordionTrigger className="hover:no-underline">
           <div className="flex w-full items-center gap-2">
-            <div className="relative flex h-8 w-8 shrink-0 overflow-hidden rounded">
-              {game.item.image ? (
-                <Image
-                  fill
-                  src={game.item.image.url}
-                  alt={`${game.item.name} game image`}
-                  className="aspect-square h-full w-full rounded-md object-cover"
-                />
-              ) : (
-                <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-              )}
-            </div>
+            <GameImage
+              image={game.item.image}
+              alt={`${game.item.name} game image`}
+              containerClassName="h-8 w-8 rounded"
+            />
             <div className="text-left">
               <span className="font-medium">{game.item.name} </span>
               <span className="font-medium text-green-600">
@@ -924,18 +916,11 @@ function RequestShareGame({
                                     }}
                                   >
                                     <div className="flex items-center gap-2">
-                                      <div className="relative flex h-7 w-7 shrink-0 overflow-hidden rounded">
-                                        {existingGame.image ? (
-                                          <Image
-                                            fill
-                                            src={existingGame.image.url}
-                                            alt={`${existingGame.name} game image`}
-                                            className="aspect-square h-full w-full rounded-md object-cover"
-                                          />
-                                        ) : (
-                                          <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                                        )}
-                                      </div>
+                                      <GameImage
+                                        image={existingGame.image}
+                                        alt={`${existingGame.name} game image`}
+                                        containerClassName="h-7 w-7 rounded"
+                                      />
                                       <div>
                                         <div className="flex items-center gap-1">
                                           <span>{existingGame.name}</span>
@@ -1134,18 +1119,11 @@ function SharedGameWithMatches({
       <div className="flex w-full items-center justify-between">
         <AccordionTrigger className="hover:no-underline">
           <div className="flex w-full gap-2">
-            <div className="relative flex h-8 w-8 shrink-0 overflow-hidden rounded">
-              {game.sharedGame.imageUrl ? (
-                <Image
-                  fill
-                  src={game.sharedGame.imageUrl}
-                  alt={`${game.sharedGame.name} game image`}
-                  className="aspect-square h-full w-full rounded-md object-cover"
-                />
-              ) : (
-                <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-              )}
-            </div>
+            <GameImage
+              image={game.sharedGame.image}
+              alt={`${game.sharedGame.name} game image`}
+              containerClassName="h-8 w-8 rounded"
+            />
             <div className="text-left">
               {game.sharedGame.name}
               {game.sharedGame.yearPublished && (

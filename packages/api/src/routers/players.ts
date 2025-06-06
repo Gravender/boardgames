@@ -474,7 +474,12 @@ export const playerRouter = createTRPCRouter({
         type: "Shared" | "Original";
         id: number;
         name: string;
-        imageUrl: string | null;
+        image: {
+          name: string;
+          url: string | null;
+          type: "file" | "svg";
+          usageType: "game" | "player" | "match";
+        } | null;
         wins: number;
         plays: number;
         winRate: number;
@@ -489,7 +494,12 @@ export const playerRouter = createTRPCRouter({
         finished: boolean;
         gameId: number;
         gameName: string;
-        gameImageUrl: string | undefined;
+        gameImage: {
+          name: string;
+          url: string | null;
+          type: "file" | "svg";
+          usageType: "game" | "player" | "match";
+        } | null;
         locationName: string | undefined;
         players: {
           id: number;
@@ -518,7 +528,7 @@ export const playerRouter = createTRPCRouter({
             type: "Original",
             id: mPlayer.match.gameId,
             name: mPlayer.match.game.name,
-            imageUrl: mPlayer.match.game.image?.url ?? null,
+            image: mPlayer.match.game.image,
             plays: 1,
             wins: (mPlayer.winner ?? false) ? 1 : 0,
             winRate: (mPlayer.winner ?? false) ? 1 : 0,
@@ -541,7 +551,7 @@ export const playerRouter = createTRPCRouter({
           finished: mPlayer.match.finished,
           gameId: mPlayer.match.gameId,
           gameName: mPlayer.match.game.name,
-          gameImageUrl: mPlayer.match.game.image?.url,
+          gameImage: mPlayer.match.game.image,
           locationName: mPlayer.match.location?.name,
           players: filteredPlayers.map((mPlayer) => {
             return {
@@ -580,10 +590,9 @@ export const playerRouter = createTRPCRouter({
               name:
                 mPlayer.sharedMatch.sharedGame.linkedGame?.name ??
                 mPlayer.sharedMatch.sharedGame.game.name,
-              imageUrl:
-                mPlayer.sharedMatch.sharedGame.linkedGame?.image?.url ??
-                mPlayer.sharedMatch.sharedGame.game.image?.url ??
-                null,
+              image: mPlayer.sharedMatch.sharedGame.linkedGame
+                ? mPlayer.sharedMatch.sharedGame.linkedGame.image
+                : mPlayer.sharedMatch.sharedGame.game.image,
               plays: 1,
               wins: (mPlayer.matchPlayer.winner ?? false) ? 1 : 0,
               winRate: (mPlayer.matchPlayer.winner ?? false) ? 1 : 0,
@@ -612,9 +621,9 @@ export const playerRouter = createTRPCRouter({
             gameName:
               mPlayer.sharedMatch.sharedGame.linkedGame?.name ??
               mPlayer.sharedMatch.sharedGame.game.name,
-            gameImageUrl:
-              mPlayer.sharedMatch.sharedGame.linkedGame?.image?.url ??
-              mPlayer.sharedMatch.sharedGame.game.image?.url,
+            gameImage: mPlayer.sharedMatch.sharedGame.linkedGame
+              ? mPlayer.sharedMatch.sharedGame.linkedGame.image
+              : mPlayer.sharedMatch.sharedGame.game.image,
             locationName: mPlayer.sharedMatch.match.location?.name,
             players: filteredPlayers
               .map((fPlayer) => {
@@ -709,7 +718,7 @@ export const playerRouter = createTRPCRouter({
           comment: mPlayer.match.comment,
           gameId: mPlayer.match.gameId,
           gameName: mPlayer.match.game.name,
-          gameImageUrl: mPlayer.match.game.image?.url,
+          gameImage: mPlayer.match.game.image,
           gameYearPublished: mPlayer.match.game.yearPublished,
           players: mPlayer.match.matchPlayers
             .map((matchPlayer) => ({

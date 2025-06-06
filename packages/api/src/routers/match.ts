@@ -513,11 +513,7 @@ export const matchRouter = createTRPCRouter({
                   name: true,
                 },
                 with: {
-                  image: {
-                    columns: {
-                      url: true,
-                    },
-                  },
+                  image: true,
                 },
               },
               playerRounds: true,
@@ -809,7 +805,14 @@ export const matchRouter = createTRPCRouter({
         comment: returnedMatch.comment,
         gameId: returnedMatch.gameId,
         gameName: returnedMatch.game.name,
-        gameImageUrl: returnedMatch.game.image?.url,
+        image: returnedMatch.game.image
+          ? {
+              name: returnedMatch.game.image.name,
+              url: returnedMatch.game.image.url,
+              type: returnedMatch.game.image.type,
+              usageType: "game" as const,
+            }
+          : null,
         players: refinedPlayers,
         teams: returnedMatch.teams,
         duration: returnedMatch.duration,
@@ -940,12 +943,22 @@ export const matchRouter = createTRPCRouter({
           isUser: boolean;
           isWinner: boolean;
           score: number | null;
-          imageUrl: string | undefined;
+          image: {
+            name: string;
+            url: string | null;
+            type: "file" | "svg";
+            usageType: "player";
+          } | null;
           teamId: number | null;
           placement: number;
         }[];
         locationName: string | null;
-        gameImageUrl: string | undefined;
+        image: {
+          name: string;
+          url: string | null;
+          type: "file" | "svg";
+          usageType: "game";
+        } | null;
         gameName: string | undefined;
         gameId: number | undefined;
         scoresheet: z.infer<typeof selectScoreSheetSchema>;
@@ -974,13 +987,27 @@ export const matchRouter = createTRPCRouter({
               isWinner: matchPlayer.winner ?? false,
               isUser: matchPlayer.player.isUser,
               score: matchPlayer.score,
-              imageUrl: matchPlayer.player.image?.url,
+              image: matchPlayer.player.image
+                ? {
+                    name: matchPlayer.player.image.name,
+                    url: matchPlayer.player.image.url,
+                    type: matchPlayer.player.image.type,
+                    usageType: "player" as const,
+                  }
+                : null,
               teamId: matchPlayer.teamId,
               placement: matchPlayer.placement ?? -1,
             };
           }),
           locationName: match.location?.name ?? null,
-          gameImageUrl: match.game.image?.url,
+          image: match.game.image
+            ? {
+                name: match.game.image.name,
+                url: match.game.image.url,
+                type: match.game.image.type,
+                usageType: "game" as const,
+              }
+            : null,
           gameName: match.game.name,
           gameId: match.game.id,
           scoresheet: match.scoresheet,
@@ -1095,7 +1122,14 @@ export const matchRouter = createTRPCRouter({
                       type: "original" as const,
                       id: linkedPlayer.id,
                       name: linkedPlayer.name,
-                      imageUrl: linkedPlayer.image?.url,
+                      image: linkedPlayer.image
+                        ? {
+                            name: linkedPlayer.image.name,
+                            url: linkedPlayer.image.url,
+                            type: linkedPlayer.image.type,
+                            usageType: "player" as const,
+                          }
+                        : null,
                       score: sharedMatchPlayer.matchPlayer.score,
                       isWinner: sharedMatchPlayer.matchPlayer.winner ?? false,
                       isUser: linkedPlayer.isUser,
@@ -1107,7 +1141,16 @@ export const matchRouter = createTRPCRouter({
                     type: "shared" as const,
                     id: sharedMatchPlayer.sharedPlayer.id,
                     name: sharedMatchPlayer.sharedPlayer.player.name,
-                    imageUrl: sharedMatchPlayer.sharedPlayer.player.image?.url,
+                    image: sharedMatchPlayer.sharedPlayer.player.image
+                      ? {
+                          name: sharedMatchPlayer.sharedPlayer.player.image
+                            .name,
+                          url: sharedMatchPlayer.sharedPlayer.player.image.url,
+                          type: sharedMatchPlayer.sharedPlayer.player.image
+                            .type,
+                          usageType: "player" as const,
+                        }
+                      : null,
                     score: sharedMatchPlayer.matchPlayer.score,
                     isWinner: sharedMatchPlayer.matchPlayer.winner ?? false,
                     isUser: false,
@@ -1118,9 +1161,23 @@ export const matchRouter = createTRPCRouter({
                 .filter((player) => player !== null),
               locationName:
                 linkedLocation?.name ?? sharedLocation?.location.name ?? null,
-              gameImageUrl: linkedGame
-                ? linkedGame.image?.url
-                : sharedGame.image?.url,
+              image: linkedGame
+                ? linkedGame.image
+                  ? {
+                      name: linkedGame.image.name,
+                      url: linkedGame.image.url,
+                      type: linkedGame.image.type,
+                      usageType: "game" as const,
+                    }
+                  : null
+                : sharedGame.image
+                  ? {
+                      name: sharedGame.image.name,
+                      url: sharedGame.image.url,
+                      type: sharedGame.image.type,
+                      usageType: "game" as const,
+                    }
+                  : null,
               gameName: linkedGame ? linkedGame.name : sharedGame.name,
               gameId: returnedSharedMatch.sharedGame.id,
               scoresheet: returnedMatch.scoresheet,

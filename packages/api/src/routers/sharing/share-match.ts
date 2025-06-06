@@ -557,9 +557,9 @@ export const shareMatchRouter = createTRPCRouter({
         gameName: returnedSharedMatch.sharedGame.linkedGame
           ? returnedSharedMatch.sharedGame.linkedGame.name
           : returnedSharedMatch.sharedGame.game.name,
-        gameImageUrl: returnedSharedMatch.sharedGame.linkedGame
-          ? returnedSharedMatch.sharedGame.linkedGame.image?.url
-          : returnedSharedMatch.sharedGame.game.image?.url,
+        gameImage: returnedSharedMatch.sharedGame.linkedGame
+          ? returnedSharedMatch.sharedGame.linkedGame.image
+          : returnedSharedMatch.sharedGame.game.image,
         players: refinedPlayers,
         teams: returnedSharedMatch.match.teams,
         duration: returnedSharedMatch.match.duration,

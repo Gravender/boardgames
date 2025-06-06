@@ -15,7 +15,12 @@ type GameAgg = {
   type: "Original" | "Shared";
   id: number;
   name: string;
-  imageUrl: string | null;
+  image: {
+    name: string;
+    url: string | null;
+    type: "file" | "svg";
+    usageType: "game";
+  } | null;
   plays: number;
   wins: number;
   winRate: number;
@@ -530,11 +535,7 @@ export const friendsRouter = createTRPCRouter({
                           yearPublished: true,
                         },
                         with: {
-                          image: {
-                            columns: {
-                              url: true,
-                            },
-                          },
+                          image: true,
                         },
                       },
                       location: {
@@ -628,11 +629,7 @@ export const friendsRouter = createTRPCRouter({
                                   yearPublished: true,
                                 },
                                 with: {
-                                  image: {
-                                    columns: {
-                                      url: true,
-                                    },
-                                  },
+                                  image: true,
                                 },
                               },
                               linkedGame: {
@@ -646,11 +643,7 @@ export const friendsRouter = createTRPCRouter({
                                   yearPublished: true,
                                 },
                                 with: {
-                                  image: {
-                                    columns: {
-                                      url: true,
-                                    },
-                                  },
+                                  image: true,
                                 },
                               },
                             },
@@ -792,25 +785,44 @@ export const friendsRouter = createTRPCRouter({
           g.wins += isWin;
           g.winRate = g.wins / g.plays;
         } else {
-          // find image URL from either original or shared game
-          let imageUrl: string | null = null;
+          // find image  from either original or shared game
+          let image: {
+            name: string;
+            url: string | null;
+            type: "file" | "svg";
+            usageType: "game";
+          } | null = null;
           if (m.type === "Original") {
             const orig = rawFP.matchPlayers.find((x) => x.matchId === m.id);
-            imageUrl = orig?.match.game.image?.url ?? null;
+            image = orig?.match.game.image
+              ? {
+                  name: orig.match.game.image.name,
+                  url: orig.match.game.image.url,
+                  type: orig.match.game.image.type,
+                  usageType: "game" as const,
+                }
+              : null;
           } else {
             const smp = rawFP.sharedLinkedPlayers
               .flatMap((lp) => lp.sharedMatchPlayers)
               .find((x) => x.sharedMatch.match.id === m.id);
             const sg = smp?.sharedMatch.sharedGame;
             const linked = sg?.linkedGame;
-            imageUrl = linked?.image?.url ?? sg?.game.image?.url ?? null;
+            image = linked?.image
+              ? {
+                  name: linked.image.name,
+                  url: linked.image.url,
+                  type: linked.image.type,
+                  usageType: "game" as const,
+                }
+              : null;
           }
 
           gameMap.set(key, {
             type: m.type,
             id: m.gameId,
             name: m.gameName,
-            imageUrl,
+            image,
             plays: 1,
             wins: isWin,
             winRate: isWin,

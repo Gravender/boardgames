@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
@@ -8,7 +7,6 @@ import {
   Award,
   Calendar1Icon,
   Clock,
-  Dices,
   MapPinIcon,
   Medal,
   Trophy,
@@ -47,6 +45,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
+import { GameImage } from "~/components/game-image";
 import { useTRPC } from "~/trpc/react";
 import { MatchDurationTrendChart } from "../../../../_components/match-duration-trend-chart";
 import { PlayerStatsTable } from "../../../../_components/player-stats-table";
@@ -113,18 +112,11 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         <Card className="row-span-2 hidden xs:block">
           <CardContent className="flex items-center justify-center p-0">
-            <div className="relative flex aspect-square w-full overflow-hidden rounded-lg">
-              {gameStats.imageUrl ? (
-                <Image
-                  fill
-                  src={gameStats.imageUrl}
-                  alt={`${gameStats.name} game image`}
-                  className="object-cover"
-                />
-              ) : (
-                <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-              )}
-            </div>
+            <GameImage
+              image={gameStats.image}
+              alt={`${gameStats.name} game image`}
+              containerClassName="aspect-square w-full rounded-lg "
+            />
           </CardContent>
         </Card>
 
@@ -465,18 +457,12 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                               : "No Winners"
                             : "Not Finished"}
                         </span>
-                        <div className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded shadow">
-                          {gameStats.imageUrl ? (
-                            <Image
-                              fill
-                              src={gameStats.imageUrl}
-                              alt={`${gameStats.name} game image`}
-                              className="aspect-square h-full w-full rounded-md object-cover"
-                            />
-                          ) : (
-                            <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                          )}
-                        </div>
+
+                        <GameImage
+                          image={gameStats.image}
+                          alt={`${gameStats.name} game image`}
+                          containerClassName="h-20 w-20 rounded shadow"
+                        />
                         <FormattedDate
                           date={match.date}
                           className="text-muted-foreground"

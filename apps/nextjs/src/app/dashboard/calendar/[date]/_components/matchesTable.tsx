@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns/format";
-import { Calendar, Clock, Dices, MapPin } from "lucide-react";
+import { Calendar, Clock, MapPin } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { formatDuration } from "@board-games/shared";
@@ -13,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
+import { GameImage } from "~/components/game-image";
 import { PlayerStats } from "./player-stats";
 
 type Matches = NonNullable<
@@ -65,18 +65,11 @@ export function MatchesTable({
                     href={`/dashboard/games${match.type === "shared" ? "/shared" : ""}/${match.gameId}/${match.id}${match.finished ? "/summary" : ""}`}
                     className="flex w-full items-center gap-3 font-medium"
                   >
-                    <div className="relative flex h-16 w-16 shrink-0 overflow-hidden">
-                      {match.gameImageUrl ? (
-                        <Image
-                          src={match.gameImageUrl}
-                          alt={`${match.gameName} game image`}
-                          className="aspect-square h-full w-full rounded-md object-cover"
-                          fill
-                        />
-                      ) : (
-                        <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                      )}
-                    </div>
+                    <GameImage
+                      image={match.image}
+                      alt={`${match.gameName} game image`}
+                      containerClassName="h-16 w-16"
+                    />
                     <div className="flex w-full items-center justify-between">
                       <div className="flex flex-col items-start">
                         <div className="flex items-center gap-2">

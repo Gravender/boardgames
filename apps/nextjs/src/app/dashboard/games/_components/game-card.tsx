@@ -1,10 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
 import {
   CalendarIcon,
   Clock,
-  Dices,
   GamepadIcon,
   MapPinIcon,
   Users,
@@ -14,6 +12,7 @@ import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
 import { Card } from "@board-games/ui/card";
 
+import { GameImage } from "~/components/game-image";
 import { GamesDropDown } from "./gamesDropDown";
 
 // Update the GameCardProps interface to include isCompact
@@ -62,18 +61,11 @@ export function GameCard({ game }: GameCardProps) {
               : `/dashboard/games/${game.id}`
           }
         >
-          <div className="relative flex h-20 w-20 shrink-0 overflow-hidden sm:h-24 sm:w-24">
-            {game.image ? (
-              <Image
-                fill
-                src={game.image}
-                alt={`${game.name} game image`}
-                className="aspect-square h-full w-full rounded-md object-cover"
-                quality={65}
-              />
-            ) : (
-              <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-            )}
+          <GameImage
+            image={game.image}
+            alt={`${game.name} game image`}
+            containerClassName="h-20 w-20 sm:h-24 sm:w-24"
+          >
             {game.type === "shared" && (
               <>
                 <Badge
@@ -90,7 +82,7 @@ export function GameCard({ game }: GameCardProps) {
                 </Badge>
               </>
             )}
-          </div>
+          </GameImage>
         </Link>
         <div className="min-w-0 flex-grow p-3">
           <div className="flex items-start justify-between">

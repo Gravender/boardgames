@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   useMutation,
@@ -14,7 +13,6 @@ import {
   Check,
   ChevronDown,
   Clock,
-  Dices,
   Link,
   Loader2,
   Share2,
@@ -64,6 +62,7 @@ import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
+import { GameImage } from "~/components/game-image";
 import { useTRPC } from "~/trpc/react";
 
 const formSchema = z.object({
@@ -196,18 +195,11 @@ export default function ShareMatchPage({ matchId }: { matchId: number }) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded shadow">
-            {matchToShare.game.image?.url ? (
-              <Image
-                fill
-                src={matchToShare.game.image.url}
-                alt={`${matchToShare.game.name} game image`}
-                className="aspect-square h-full w-full rounded-md object-cover"
-              />
-            ) : (
-              <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-            )}
-          </div>
+          <GameImage
+            image={matchToShare.game.image}
+            alt={`${matchToShare.game.name} game image`}
+            containerClassName="h-10 w-10 shadow"
+          />
           {matchToShare.name}
         </CardTitle>
         <CardDescription className="flex flex-wrap gap-x-4 gap-y-1">

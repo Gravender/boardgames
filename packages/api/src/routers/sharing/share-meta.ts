@@ -367,7 +367,12 @@ export const shareMetaRouter = createTRPCRouter({
                 type: "linked" | "shared";
                 ownerName: string | null;
                 name: string;
-                imageUrl: string | undefined;
+                image: {
+                  name: string;
+                  url: string | null;
+                  type: "file" | "svg";
+                  usageType: "game" | "player" | "match";
+                } | null;
                 description: string | null;
                 yearPublished: number | null;
                 playersMax: number | null;
@@ -441,7 +446,7 @@ export const shareMetaRouter = createTRPCRouter({
                   id: returnedSharedGame.linkedGame.id,
                   ownerName: returnedSharedGame.owner.name,
                   name: returnedSharedGame.linkedGame.name,
-                  imageUrl: returnedSharedGame.linkedGame.image?.url,
+                  image: returnedSharedGame.linkedGame.image,
                   description: returnedSharedGame.linkedGame.description,
                   yearPublished: returnedSharedGame.linkedGame.yearPublished,
                   playersMax: returnedSharedGame.linkedGame.playersMax,
@@ -462,7 +467,7 @@ export const shareMetaRouter = createTRPCRouter({
                   type: "shared" as const,
                   ownerName: returnedSharedGame.owner.name,
                   name: returnedSharedGame.game.name,
-                  imageUrl: returnedSharedGame.game.image?.url,
+                  image: returnedSharedGame.game.image,
                   description: returnedSharedGame.game.description,
                   yearPublished: returnedSharedGame.game.yearPublished,
                   playersMax: returnedSharedGame.game.playersMax,
