@@ -46,6 +46,8 @@ export async function seedGames(d3Seed: number) {
             url: faker.image.urlPicsumPhotos(),
             userId: user.id,
             name: faker.commerce.productName(),
+            type: "file",
+            usageType: "game",
           })
           .returning();
         if (!gameImage) {

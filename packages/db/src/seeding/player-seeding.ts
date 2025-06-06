@@ -44,6 +44,8 @@ export async function seedPlayers(d3Seed: number) {
             url: faker.image.avatar(),
             userId: user.id,
             name: playerName,
+            usageType: "player",
+            type: "file",
           })
           .returning();
         if (!playerImage) {
