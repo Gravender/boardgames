@@ -36,7 +36,6 @@ export function BreadCrumbs() {
   return (
     <RenderBreadCrumbs
       pathItems={
-         
         data ??
         paths
           .split("/")
