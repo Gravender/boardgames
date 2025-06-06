@@ -3,11 +3,9 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { z } from "zod/v4";
 import { useState } from "react";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { useForm } from "react-hook-form";
 
 import type { RouterOutputs } from "@board-games/api";
 import { insertMatchSchema } from "@board-games/db/zodSchema";
@@ -21,6 +19,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import {
@@ -50,8 +49,8 @@ export function EditSharedMatchForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
-  const form = useForm<z.infer<typeof matchSchema>>({
-    resolver: standardSchemaResolver(matchSchema),
+  const form = useForm({
+    schema: matchSchema,
     defaultValues: {
       name: match.name,
       date: match.date,

@@ -1,11 +1,9 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import type { UseFormReturn } from "react-hook-form";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQueryClient,
@@ -13,10 +11,10 @@ import {
 } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, Trash, User, X } from "lucide-react";
-import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
+import type { UseFormReturn } from "@board-games/ui/form";
 import {
   insertMatchSchema,
   insertPlayerSchema,
@@ -50,6 +48,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useFieldArray,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
@@ -146,8 +146,8 @@ export function EditMatchForm({
 
   const [showAddLocation, setShowAddLocation] = useState(false);
   const [newLocation, setNewLocation] = useState("");
-  const form = useForm<z.infer<typeof matchSchema>>({
-    resolver: standardSchemaResolver(matchSchema),
+  const form = useForm({
+    schema: matchSchema,
     defaultValues: {
       name: match.name,
       date: match.date,

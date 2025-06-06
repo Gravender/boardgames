@@ -3,9 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { Camera, Mail } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
@@ -27,6 +25,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { toast } from "@board-games/ui/toast";
@@ -154,8 +153,8 @@ function EditProfilePictureContent({
       }
     });
 
-  const form = useForm<z.infer<typeof EditProfileSchema>>({
-    resolver: standardSchemaResolver(EditProfileSchema),
+  const form = useForm({
+    schema: EditProfileSchema,
     defaultValues: {
       file: serializableUser.imageUrl,
     },

@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { User } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -26,6 +24,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { toast } from "@board-games/ui/toast";
@@ -95,8 +94,8 @@ const PlayerContent = ({
             });
         });
 
-  const form = useForm<z.infer<typeof playerSchema>>({
-    resolver: standardSchemaResolver(playerSchema),
+  const form = useForm({
+    schema: playerSchema,
     defaultValues:
       player.type === "original"
         ? {

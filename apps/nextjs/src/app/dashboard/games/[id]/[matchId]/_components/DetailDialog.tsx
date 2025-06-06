@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import { Button } from "@board-games/ui/button";
@@ -20,6 +18,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Textarea } from "@board-games/ui/textarea";
 
@@ -85,8 +84,8 @@ function Content({
       },
     }),
   );
-  const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: standardSchemaResolver(FormSchema),
+  const form = useForm({
+    schema: FormSchema,
     defaultValues: { detail: data.details ?? "" },
   });
   function onSubmitForm(values: z.infer<typeof FormSchema>) {

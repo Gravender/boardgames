@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQueryClient,
@@ -20,7 +19,6 @@ import {
   ThumbsDown,
   ThumbsUp,
 } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -65,6 +63,7 @@ import {
   FormField,
   FormItem,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Label } from "@board-games/ui/label";
 import {
@@ -238,8 +237,8 @@ export default function MatchRequestPage({
         });
       }
     });
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: standardSchemaResolver(formSchema),
+  const form = useForm({
+    schema: formSchema,
     defaultValues: {
       gameOption: "new",
       existingGameId: null,

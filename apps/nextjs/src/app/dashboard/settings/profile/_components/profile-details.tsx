@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import { Button } from "@board-games/ui/button";
@@ -23,6 +21,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { toast } from "@board-games/ui/toast";
@@ -58,8 +57,8 @@ export function ProfileDetails({ serializableUser }: ProfileDetailsProps) {
     username: serializableUser.username ?? "",
   };
 
-  const form = useForm<ProfileFormValues>({
-    resolver: standardSchemaResolver(profileFormSchema),
+  const form = useForm({
+    schema: profileFormSchema,
     defaultValues,
   });
 
@@ -139,7 +138,7 @@ export function ProfileDetails({ serializableUser }: ProfileDetailsProps) {
                 <FormItem>
                   <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input placeholder="johndoe" {...field} />
+                    <Input placeholder="John_Doe" {...field} />
                   </FormControl>
                   <FormDescription>
                     This is your public username. It can only contain letters,

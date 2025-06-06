@@ -1,9 +1,7 @@
 import type { z } from "zod/v4";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
 
 import type { RouterOutputs } from "@board-games/api";
 import { insertGroupSchema } from "@board-games/db/zodSchema";
@@ -21,6 +19,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { toast } from "@board-games/ui/toast";
@@ -59,8 +58,8 @@ const GroupContent = ({
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof groupSchema>>({
-    resolver: standardSchemaResolver(groupSchema),
+  const form = useForm({
+    schema: groupSchema,
     defaultValues: {
       name: group.name,
     },
@@ -139,7 +138,7 @@ const GroupContent = ({
               {isSubmitting ? (
                 <>
                   <Spinner />
-                  <span>Submiting...</span>
+                  <span>Submitting...</span>
                 </>
               ) : (
                 "Submit"

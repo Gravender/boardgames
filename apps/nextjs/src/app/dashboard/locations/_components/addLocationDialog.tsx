@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import { Button } from "@board-games/ui/button";
@@ -24,6 +22,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { Switch } from "@board-games/ui/switch";
@@ -74,8 +73,8 @@ const LocationContent = ({
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const form = useForm<formSchemaType>({
-    resolver: standardSchemaResolver(formSchema),
+  const form = useForm({
+    schema: formSchema,
     defaultValues: {
       name: "",
       isDefault: false,
@@ -154,7 +153,7 @@ const LocationContent = ({
               {isSubmitting ? (
                 <>
                   <Spinner />
-                  <span>Submiting...</span>
+                  <span>Submitting...</span>
                 </>
               ) : (
                 "Submit"

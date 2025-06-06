@@ -1,8 +1,7 @@
-import type { UseFormReturn } from "react-hook-form";
 import type { z } from "zod/v4";
 import { Settings } from "lucide-react";
-import { useFieldArray } from "react-hook-form";
 
+import type { UseFormReturn } from "@board-games/ui/form";
 import { roundTypes } from "@board-games/db/constants";
 import { insertRoundSchema } from "@board-games/db/zodSchema";
 import { Button } from "@board-games/ui/button";
@@ -12,6 +11,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useFieldArray,
 } from "@board-games/ui/form";
 import {
   Popover,

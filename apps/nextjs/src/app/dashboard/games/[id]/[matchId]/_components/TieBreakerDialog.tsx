@@ -1,8 +1,6 @@
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { User, Users } from "lucide-react";
-import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import {
@@ -23,6 +21,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useFieldArray,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import {
@@ -113,8 +113,8 @@ function Content({
       },
     }),
   );
-  const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: standardSchemaResolver(FormSchema),
+  const form = useForm({
+    schema: FormSchema,
     defaultValues: { players: players },
   });
   function onSubmitForm(values: z.infer<typeof FormSchema>) {

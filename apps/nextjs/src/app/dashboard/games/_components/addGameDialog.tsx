@@ -1,9 +1,7 @@
 "use client";
 
-import type { UseFormReturn } from "react-hook-form";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
@@ -15,9 +13,9 @@ import {
   Table,
   Trash,
 } from "lucide-react";
-import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
+import type { UseFormReturn } from "@board-games/ui/form";
 import {
   scoreSheetRoundsScore,
   scoreSheetWinConditions,
@@ -50,6 +48,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useFieldArray,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
@@ -247,8 +247,8 @@ const AddGameForm = ({
 
   const { startUpload } = useUploadThing("imageUploader");
 
-  const form = useForm<z.infer<typeof createGameSchema>>({
-    resolver: standardSchemaResolver(createGameSchema),
+  const form = useForm({
+    schema: createGameSchema,
     defaultValues: game,
   });
   useEffect(() => {
@@ -688,24 +688,22 @@ const AddScoreSheetForm = ({
   ) => void;
   setIsScoresheet: (isScoresheet: boolean) => void;
 }) => {
-  const form = useForm<z.infer<typeof scoreSheetWithRoundsSchema>>({
-    resolver: standardSchemaResolver(
-      scoreSheetWithRoundsSchema.superRefine((data, ctx) => {
-        if (data.scoresheet.isCoop) {
-          if (
-            data.scoresheet.winCondition !== "Manual" &&
-            data.scoresheet.winCondition !== "Target Score"
-          ) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message:
-                "Win condition must be Manual or Target Score for Coop games.",
-              path: ["scoresheet.winCondition"],
-            });
-          }
+  const form = useForm({
+    schema: scoreSheetWithRoundsSchema.superRefine((data, ctx) => {
+      if (data.scoresheet.isCoop) {
+        if (
+          data.scoresheet.winCondition !== "Manual" &&
+          data.scoresheet.winCondition !== "Target Score"
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              "Win condition must be Manual or Target Score for Coop games.",
+            path: ["scoresheet.winCondition"],
+          });
         }
-      }),
-    ),
+      }
+    }),
     defaultValues: {
       scoresheet: scoreSheetWithRounds.scoresheet,
       rounds: scoreSheetWithRounds.rounds,

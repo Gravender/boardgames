@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -17,6 +15,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  useForm,
 } from "@board-games/ui/form";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import {
@@ -88,8 +87,8 @@ export function FriendSettings({
     }),
   );
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: standardSchemaResolver(formSchema),
+  const form = useForm({
+    schema: formSchema,
     defaultValues: initialSettings
       ? {
           autoShareMatches: initialSettings.autoShareMatches,
