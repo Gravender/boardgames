@@ -31,7 +31,7 @@ function MatchesTable({
           renderItem={({ item }) => (
             <MatchCard
               gameId={gameId}
-              imageUrl={image.url ?? ""}
+              image={image}
               key={item.id}
               match={item}
             />
@@ -79,7 +79,7 @@ export default function GameScreen() {
       <View className="h-full w-full p-4">
         <MatchesTable
           gameId={gameId}
-          imageUrl={data?.imageUrl}
+          image={data?.image ?? null}
           matches={data?.matches ?? []}
         />
       </View>
