@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQueryClient,
@@ -20,7 +19,6 @@ import {
   ThumbsDown,
   ThumbsUp,
 } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -65,6 +63,7 @@ import {
   FormField,
   FormItem,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Label } from "@board-games/ui/label";
 import {
@@ -227,19 +226,20 @@ export default function MatchRequestPage({
         }),
       ),
     })
-    .superRefine((values, ctx) => {
+    .check((ctx) => {
       if (
-        !values.scoresheets.some((scoresheet) => scoresheet.accept === true)
+        !ctx.value.scoresheets.some((scoresheet) => scoresheet.accept === true)
       ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        ctx.issues.push({
+          code: "custom",
+          input: ctx.value,
           message: "You must accept at least one scoresheet",
           path: ["scoresheets"],
         });
       }
     });
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: standardSchemaResolver(formSchema),
+  const form = useForm({
+    schema: formSchema,
     defaultValues: {
       gameOption: "new",
       existingGameId: null,

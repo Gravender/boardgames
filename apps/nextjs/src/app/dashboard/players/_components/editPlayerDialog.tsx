@@ -3,14 +3,13 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { User } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
 import { insertPlayerSchema } from "@board-games/db/zodSchema";
+import { fileSchema } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
 import {
   DialogContent,
@@ -26,6 +25,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { toast } from "@board-games/ui/toast";
@@ -34,22 +34,14 @@ import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
-const imageSchema = z
-  .instanceof(File)
-  .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
-  .refine(
-    (file) => file.type === "image/jpeg" || file.type === "image/png",
-    "Only .jpg and .png formats are supported.",
-  )
-  .nullable();
 const originalPlayerSchema = insertPlayerSchema.pick({ name: true }).extend({
-  imageUrl: imageSchema.or(z.string().nullable()),
+  imageUrl: fileSchema.or(z.string().nullable()),
 });
 const sharedPlayerSchema = insertPlayerSchema
   .pick({ name: true })
   .required({ name: true })
   .extend({
-    imageUrl: imageSchema.or(z.string().nullable()),
+    imageUrl: fileSchema.or(z.string().nullable()),
   });
 export const EditPlayerDialog = ({
   player,
@@ -86,17 +78,18 @@ const PlayerContent = ({
   const playerSchema =
     player.type === "original"
       ? originalPlayerSchema
-      : sharedPlayerSchema.superRefine((values, ctx) => {
-          if (values.name === player.name)
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
+      : sharedPlayerSchema.check((ctx) => {
+          if (ctx.value.name === player.name)
+            ctx.issues.push({
+              code: "custom",
+              input: ctx.value,
               message: "Name has not changed.",
               path: ["name"],
             });
         });
 
-  const form = useForm<z.infer<typeof playerSchema>>({
-    resolver: standardSchemaResolver(playerSchema),
+  const form = useForm({
+    schema: playerSchema,
     defaultValues:
       player.type === "original"
         ? {

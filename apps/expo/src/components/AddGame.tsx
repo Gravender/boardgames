@@ -113,25 +113,27 @@ const gamesSchema = z
       .max(new Date().getFullYear())
       .nullable(),
   })
-  .superRefine((values, ctx) => {
+  .check((ctx) => {
     if (
-      values.playersMin &&
-      values.playersMax &&
-      values.playersMin > values.playersMax
+      ctx.value.playersMin &&
+      ctx.value.playersMax &&
+      ctx.value.playersMin > ctx.value.playersMax
     ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
         message: "Players min must be less than or equal to players max.",
         path: ["playersMin"],
       });
     }
     if (
-      values.playtimeMin &&
-      values.playtimeMax &&
-      values.playtimeMin > values.playtimeMax
+      ctx.value.playtimeMin &&
+      ctx.value.playtimeMax &&
+      ctx.value.playtimeMin > ctx.value.playtimeMax
     ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
         message: "Playtime min must be less than or equal to playtime max.",
         path: ["playtimeMin"],
       });

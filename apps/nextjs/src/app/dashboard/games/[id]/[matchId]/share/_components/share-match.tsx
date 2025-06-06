@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQueryClient,
@@ -21,7 +20,6 @@ import {
   Share2,
   X,
 } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import { formatDuration } from "@board-games/shared";
@@ -50,6 +48,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Label } from "@board-games/ui/label";
 import {
@@ -129,8 +128,8 @@ export default function ShareMatchPage({ matchId }: { matchId: number }) {
       },
     }),
   );
-  const form = useForm<FormValues>({
-    resolver: standardSchemaResolver(formSchema),
+  const form = useForm({
+    schema: formSchema,
     defaultValues: {
       shareMethod: "friends",
       permission: "view",

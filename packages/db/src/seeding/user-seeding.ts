@@ -4,7 +4,7 @@ import { faker } from "@faker-js/faker";
 
 import type { insertUserSchema } from "@board-games/db/zodSchema";
 import { db } from "@board-games/db/client";
-import { player, user, userSharingPreference } from "@board-games/db/schema";
+import { user, userSharingPreference } from "@board-games/db/schema";
 
 import { resetTable } from "./seed";
 

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQueryClient,
@@ -23,7 +22,6 @@ import {
   User,
   X,
 } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import { formatDuration } from "@board-games/shared";
@@ -58,6 +56,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Label } from "@board-games/ui/label";
 import {
@@ -96,13 +95,14 @@ const formSchema = z
       }),
     ),
   })
-  .superRefine((values, ctx) => {
+  .check((ctx) => {
     if (
-      values.shareMethod === "friends" &&
-      (values.friendIds === undefined || values.friendIds.length < 1)
+      ctx.value.shareMethod === "friends" &&
+      (ctx.value.friendIds === undefined || ctx.value.friendIds.length < 1)
     ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
         message:
           "Must have at least one friend to share to if sharing with friends",
         path: ["friendIds"],
@@ -167,8 +167,8 @@ export default function SharePlayerPage({ playerId }: { playerId: number }) {
     }),
   );
 
-  const form = useForm<FormValues>({
-    resolver: standardSchemaResolver(formSchema),
+  const form = useForm({
+    schema: formSchema,
     defaultValues: {
       shareMethod: "friends",
       permission: "view",

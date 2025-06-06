@@ -1,9 +1,7 @@
 "use client";
 
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation } from "@tanstack/react-query";
 import { FileJson, Upload } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import { Button } from "@board-games/ui/button";
@@ -23,6 +21,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 
 import { useTRPC } from "~/trpc/react";
@@ -178,9 +177,7 @@ export interface UserInfo {
 }
 
 const formSchema = z.object({
-  jsonFile: z.instanceof(File).refine((file) => file.name.endsWith(".json"), {
-    message: "File must be a JSON file",
-  }),
+  jsonFile: z.file().mime(["application/json"]).max(4_000_000),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -188,8 +185,8 @@ type FormValues = z.infer<typeof formSchema>;
 export default function UploadBGGdata() {
   const trpc = useTRPC();
   const uploadJson = useMutation(trpc.game.insertGames.mutationOptions());
-  const form = useForm<FormValues>({
-    resolver: standardSchemaResolver(formSchema),
+  const form = useForm({
+    schema: formSchema,
     defaultValues: {
       jsonFile: undefined,
     },

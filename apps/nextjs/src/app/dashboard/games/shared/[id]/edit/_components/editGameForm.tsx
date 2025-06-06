@@ -1,9 +1,7 @@
 "use client";
 
-import type { UseFormReturn } from "react-hook-form";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
@@ -14,10 +12,10 @@ import {
   Table,
   Trash,
 } from "lucide-react";
-import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import type { RouterInputs, RouterOutputs } from "@board-games/api";
+import type { UseFormReturn } from "@board-games/ui/form";
 import {
   scoreSheetRoundsScore,
   scoreSheetWinConditions,
@@ -59,6 +57,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useFieldArray,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
@@ -89,13 +89,14 @@ export const scoresheetSchema = editScoresheetSchema.extend({
 const scoresheetsSchema = z
   .array(scoresheetSchema)
   .min(1)
-  .superRefine((values, ctx) => {
-    const numberDefaultScoresheets = values.filter(
+  .check((ctx) => {
+    const numberDefaultScoresheets = ctx.value.filter(
       (scoresheet) => scoresheet.isDefault,
     ).length;
     if (numberDefaultScoresheets > 1) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
         message: "Only one default scoresheet is allowed.",
         path: ["isDefault"],
       });
@@ -267,8 +268,8 @@ const GameForm = ({
     }),
   );
 
-  const form = useForm<z.infer<typeof sharedEditGameSchema>>({
-    resolver: standardSchemaResolver(sharedEditGameSchema),
+  const form = useForm({
+    schema: sharedEditGameSchema,
     defaultValues: game,
   });
 
@@ -900,24 +901,23 @@ const ScoresheetForm = ({
   setScoresheet: (scoresheet: z.infer<typeof scoresheetSchema>) => void;
   setIsScoresheet: (isScoresheet: boolean) => void;
 }) => {
-  const form = useForm<z.infer<typeof scoresheetSchema>>({
-    resolver: standardSchemaResolver(
-      scoresheetSchema.superRefine((data, ctx) => {
-        if (scoresheet.isCoop) {
-          if (
-            data.winCondition !== "Manual" &&
-            data.winCondition !== "Target Score"
-          ) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message:
-                "Win condition must be Manual or Target Score for Coop games.",
-              path: ["scoresheet.winCondition"],
-            });
-          }
+  const form = useForm({
+    schema: scoresheetSchema.check((ctx) => {
+      if (ctx.value.isCoop) {
+        if (
+          ctx.value.winCondition !== "Manual" &&
+          ctx.value.winCondition !== "Target Score"
+        ) {
+          ctx.issues.push({
+            code: "custom",
+            input: ctx.value,
+            message:
+              "Win condition must be Manual or Target Score for Coop games.",
+            path: ["winCondition"],
+          });
         }
-      }),
-    ),
+      }
+    }),
     defaultValues: scoresheet,
   });
   const onBack = () => {

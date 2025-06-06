@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { User } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -21,6 +19,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
@@ -56,8 +55,8 @@ export default function SelectPlayersForm({
   const { group, setPlayers, setIsOpen } = useAddGroupStore((state) => state);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const form = useForm<formSchemaType>({
-    resolver: standardSchemaResolver(formSchema),
+  const form = useForm({
+    schema: formSchema,
     defaultValues: { players: group.players },
   });
   const onBack = () => {

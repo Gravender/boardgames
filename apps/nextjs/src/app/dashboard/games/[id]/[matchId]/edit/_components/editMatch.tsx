@@ -1,11 +1,9 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import type { UseFormReturn } from "react-hook-form";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQueryClient,
@@ -13,14 +11,15 @@ import {
 } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, Trash, User, X } from "lucide-react";
-import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
+import type { UseFormReturn } from "@board-games/ui/form";
 import {
   insertMatchSchema,
   insertPlayerSchema,
 } from "@board-games/db/zodSchema";
+import { fileSchema } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
@@ -50,6 +49,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useFieldArray,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
@@ -76,19 +77,7 @@ const playerSchema = insertPlayerSchema
   .pick({ name: true, id: true })
   .required({ name: true, id: true })
   .extend({
-    imageUrl: z
-      .string()
-      .or(
-        z
-          .instanceof(File)
-          .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
-          .refine(
-            (file) => file.type === "image/jpeg" || file.type === "image/png",
-            "Only .jpg and .png formats are supported.",
-          )
-          .nullable(),
-      )
-      .optional(),
+    imageUrl: z.string().or(fileSchema).optional(),
     matches: z.number(),
     teamId: z.number().nullable(),
   });
@@ -146,8 +135,8 @@ export function EditMatchForm({
 
   const [showAddLocation, setShowAddLocation] = useState(false);
   const [newLocation, setNewLocation] = useState("");
-  const form = useForm<z.infer<typeof matchSchema>>({
-    resolver: standardSchemaResolver(matchSchema),
+  const form = useForm({
+    schema: matchSchema,
     defaultValues: {
       name: match.name,
       date: match.date,

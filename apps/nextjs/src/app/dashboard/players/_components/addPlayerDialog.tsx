@@ -1,15 +1,14 @@
 "use client";
 
+import type { z } from "zod/v4";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PlusIcon, User } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { z } from "zod/v4";
 
 import { insertPlayerSchema } from "@board-games/db/zodSchema";
+import { fileSchema } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
 import {
   Dialog,
@@ -27,6 +26,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { toast } from "@board-games/ui/toast";
@@ -65,14 +65,7 @@ export const AddPlayerDialog = ({
 };
 
 const playerSchema = insertPlayerSchema.pick({ name: true }).extend({
-  imageUrl: z
-    .instanceof(File)
-    .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
-    .refine(
-      (file) => file.type === "image/jpeg" || file.type === "image/png",
-      "Only .jpg and .png formats are supported.",
-    )
-    .nullable(),
+  imageUrl: fileSchema,
 });
 const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
   const trpc = useTRPC();
@@ -84,8 +77,8 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof playerSchema>>({
-    resolver: standardSchemaResolver(playerSchema),
+  const form = useForm({
+    schema: playerSchema,
     defaultValues: {
       name: "",
       imageUrl: null,

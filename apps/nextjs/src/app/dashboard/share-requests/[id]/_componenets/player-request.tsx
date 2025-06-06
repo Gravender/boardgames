@@ -1,10 +1,8 @@
 "use client";
 
-import type { UseFormReturn } from "react-hook-form";
 import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQueryClient,
@@ -23,10 +21,10 @@ import {
   ThumbsUp,
   User,
 } from "lucide-react";
-import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
+import type { UseFormReturn } from "@board-games/ui/form";
 import { formatDuration } from "@board-games/shared";
 import {
   Accordion,
@@ -59,6 +57,8 @@ import {
   FormField,
   FormItem,
   FormMessage,
+  useFieldArray,
+  useForm,
 } from "@board-games/ui/form";
 import { Label } from "@board-games/ui/label";
 import {
@@ -99,10 +99,13 @@ const requesteeGameSchema = z
       }),
     ),
   })
-  .superRefine((values, ctx) => {
-    if (!values.scoresheets.some((scoresheet) => scoresheet.accept === true)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+  .check((ctx) => {
+    if (
+      !ctx.value.scoresheets.some((scoresheet) => scoresheet.accept === true)
+    ) {
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
         message: "You must accept at least one scoresheet",
         path: ["scoresheets"],
       });
@@ -178,17 +181,17 @@ export default function PlayerRequestPage({
     );
   }, [player.item.name, usersPlayers]);
 
-  const form = useForm<FormValues>({
-    resolver: standardSchemaResolver(gamesFormSchema),
+  const form = useForm({
+    schema: gamesFormSchema,
     defaultValues: {
       playerOption: "new",
       existingPlayerId: null,
       games: player.games.map((pGame) => {
         if (pGame.type === "request") {
           return {
-            type: "request",
+            type: "request" as const,
             shareId: pGame.shareId,
-            gameOption: "new",
+            gameOption: "new" as const,
             existingGameId: null,
             accept: true,
             matches: pGame.matches.map((pMatch) => {
@@ -208,7 +211,7 @@ export default function PlayerRequestPage({
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (pGame.type === "shared") {
           return {
-            type: "shared",
+            type: "shared" as const,
             shareId: pGame.shareId,
             matches: pGame.matches.map((pMatch) => {
               return {

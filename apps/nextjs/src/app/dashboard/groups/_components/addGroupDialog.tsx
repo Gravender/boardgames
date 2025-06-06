@@ -3,10 +3,8 @@
 import type { z } from "zod/v4";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
-import { useForm } from "react-hook-form";
 
 import { Button } from "@board-games/ui/button";
 import {
@@ -24,6 +22,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { toast } from "@board-games/ui/toast";
@@ -71,8 +70,8 @@ const GroupContent = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const form = useForm<formSchemaType>({
-    resolver: standardSchemaResolver(formSchema),
+  const form = useForm({
+    schema: formSchema,
     defaultValues: {
       name: group.name,
       players: group.players,
@@ -165,7 +164,7 @@ const GroupContent = () => {
               {isSubmitting ? (
                 <>
                   <Spinner />
-                  <span>Submiting...</span>
+                  <span>Submitting...</span>
                 </>
               ) : (
                 "Submit"

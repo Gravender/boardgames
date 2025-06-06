@@ -1,11 +1,9 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import type { UseFieldArrayAppend } from "react-hook-form";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQuery,
@@ -14,14 +12,15 @@ import {
 } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, User, Users, X } from "lucide-react";
-import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
+import type { UseFieldArrayAppend } from "@board-games/ui/form";
 import {
   insertMatchSchema,
   insertPlayerSchema,
 } from "@board-games/db/zodSchema";
+import { fileSchema } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
@@ -50,6 +49,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useFieldArray,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import {
@@ -251,8 +252,8 @@ const AddMatchForm = ({
 
   const queryClient = useQueryClient();
   const router = useRouter();
-  const form = useForm<formSchemaType>({
-    resolver: standardSchemaResolver(formSchema),
+  const form = useForm({
+    schema: formSchema,
     defaultValues: {
       name: `${gameName} #${matches + 1}`,
       date: new Date(),
@@ -693,8 +694,8 @@ const AddPlayersForm = ({
   const { data: groups } = useQuery(trpc.group.getGroups.queryOptions());
 
   const currentUser = players.find((player) => player.isUser);
-  const form = useForm<addPlayersFormType>({
-    resolver: standardSchemaResolver(AddPlayersFormSchema),
+  const form = useForm({
+    schema: AddPlayersFormSchema,
     defaultValues: {
       players:
         matchPlayers.length > 0
@@ -1102,14 +1103,7 @@ const AddPlayersForm = ({
   );
 };
 const addPlayerSchema = insertPlayerSchema.pick({ name: true }).extend({
-  imageUrl: z
-    .instanceof(File)
-    .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
-    .refine(
-      (file) => file.type === "image/jpeg" || file.type === "image/png",
-      "Only .jpg and .png formats are supported.",
-    )
-    .nullable(),
+  imageUrl: fileSchema,
 });
 const AddPlayerForm = ({
   gameId,
@@ -1128,8 +1122,8 @@ const AddPlayerForm = ({
 
   const queryClient = useQueryClient();
 
-  const form = useForm<z.infer<typeof addPlayerSchema>>({
-    resolver: standardSchemaResolver(addPlayerSchema),
+  const form = useForm({
+    schema: addPlayerSchema,
     defaultValues: {
       name: "",
       imageUrl: null,

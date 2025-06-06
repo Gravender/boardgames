@@ -5,127 +5,77 @@ import {
   insertScoreSheetSchema,
 } from "@board-games/db/zodSchema";
 
-export const baseGameSchema = z.object({
-  name: z.string().min(1, {
-    message: "Game name is required",
-  }),
-  ownedBy: z.boolean(),
-  gameImg: z
-    .instanceof(File)
-    .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
-    .refine(
-      (file) => file.type === "image/jpeg" || file.type === "image/png",
-      "Only .jpg and .png formats are supported.",
-    )
-    .nullable(),
-  playersMin: z.number().min(1).nullable(),
-  playersMax: z.number().positive().nullable(),
-  playtimeMin: z.number().min(1).positive().nullable(),
-  playtimeMax: z.number().positive().nullable(),
-  yearPublished: z.number().min(1900).max(new Date().getFullYear()).nullable(),
-});
-export const createGameSchema = baseGameSchema
-  .omit({ gameImg: true })
-  .extend({
-    gameImg: z
-      .instanceof(File)
-      .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
-      .refine(
-        (file) => file.type === "image/jpeg" || file.type === "image/png",
-        "Only .jpg and .png formats are supported.",
-      )
+export const fileSchema = z
+  .file()
+  .max(4_000_000)
+  .mime(["image/jpeg", "image/png"])
+  .nullable();
+export const baseGameSchema = z
+  .object({
+    name: z.string().min(1, {
+      message: "Game name is required",
+    }),
+    ownedBy: z.boolean(),
+    gameImg: fileSchema,
+    playersMin: z.number().min(1).nullable(),
+    playersMax: z.number().positive().nullable(),
+    playtimeMin: z.number().min(1).positive().nullable(),
+    playtimeMax: z.number().positive().nullable(),
+    yearPublished: z
+      .number()
+      .min(1900)
+      .max(new Date().getFullYear())
       .nullable(),
   })
-  .superRefine((values, ctx) => {
+  .check((ctx) => {
     if (
-      values.playersMin &&
-      values.playersMax &&
-      values.playersMin > values.playersMax
+      ctx.value.playersMin &&
+      ctx.value.playersMax &&
+      ctx.value.playersMin > ctx.value.playersMax
     ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
         message: "Players min must be less than or equal to players max.",
         path: ["playersMin"],
       });
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
+        message: "Playtime max must be greater than or equal to playtime min.",
+        path: ["playtimeMax"],
+      });
     }
     if (
-      values.playtimeMin &&
-      values.playtimeMax &&
-      values.playtimeMin > values.playtimeMax
+      ctx.value.playtimeMin &&
+      ctx.value.playtimeMax &&
+      ctx.value.playtimeMin > ctx.value.playtimeMax
     ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
         message: "Playtime min must be less than or equal to playtime max.",
         path: ["playtimeMin"],
       });
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
+        message: "Playtime max must be greater than or equal to playtime min.",
+        path: ["playtimeMax"],
+      });
     }
   });
+export const createGameSchema = baseGameSchema.omit({ gameImg: true }).extend({
+  gameImg: fileSchema,
+});
 
-export const editGameSchema = baseGameSchema
-  .omit({ gameImg: true })
-  .extend({
-    imageUrl: z
-      .instanceof(File)
-      .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
-      .refine(
-        (file) => file.type === "image/jpeg" || file.type === "image/png",
-        "Only .jpg and .png formats are supported.",
-      )
-      .or(z.string().nullable()),
-  })
-  .superRefine((values, ctx) => {
-    if (
-      values.playersMin &&
-      values.playersMax &&
-      values.playersMin > values.playersMax
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Players min must be less than or equal to players max.",
-        path: ["playersMin"],
-      });
-    }
-    if (
-      values.playtimeMin &&
-      values.playtimeMax &&
-      values.playtimeMin > values.playtimeMax
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Playtime min must be less than or equal to playtime max.",
-        path: ["playtimeMin"],
-      });
-    }
-  });
-export const sharedEditGameSchema = baseGameSchema
-  .omit({
-    gameImg: true,
-    ownedBy: true,
-  })
-  .superRefine((values, ctx) => {
-    if (
-      values.playersMin &&
-      values.playersMax &&
-      values.playersMin > values.playersMax
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Players min must be less than or equal to players max.",
-        path: ["playersMin"],
-      });
-    }
-    if (
-      values.playtimeMin &&
-      values.playtimeMax &&
-      values.playtimeMin > values.playtimeMax
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Playtime min must be less than or equal to playtime max.",
-        path: ["playtimeMin"],
-      });
-    }
-  });
+export const editGameSchema = baseGameSchema.omit({ gameImg: true }).extend({
+  imageUrl: fileSchema.or(z.string().nullable()),
+});
+export const sharedEditGameSchema = baseGameSchema.omit({
+  gameImg: true,
+  ownedBy: true,
+});
 
 export const scoreSheetSchema = insertScoreSheetSchema
   .omit({

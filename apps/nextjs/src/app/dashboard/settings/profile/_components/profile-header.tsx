@@ -3,11 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { Camera, Mail } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
+import { fileSchema } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent } from "@board-games/ui/card";
@@ -27,6 +26,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { toast } from "@board-games/ui/toast";
@@ -132,30 +132,21 @@ function EditProfilePictureContent({
 
   const EditProfileSchema = z
     .object({
-      file: z
-        .instanceof(File)
-        .refine(
-          (file) => file.size <= 4 * 1024 * 1024,
-          `Max image size is 4MB.`,
-        )
-        .refine(
-          (file) => file.type === "image/jpeg" || file.type === "image/png",
-          "Only .jpg and .png formats are supported.",
-        )
-        .or(z.string().nullable()),
+      file: fileSchema.or(z.string().nullable()),
     })
-    .superRefine((values, ctx) => {
-      if (serializableUser.imageUrl === values.file) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+    .check((ctx) => {
+      if (serializableUser.imageUrl === ctx.value.file) {
+        ctx.issues.push({
+          code: "custom",
+          input: ctx.value,
           message: "Image cannot be the same as current image.",
           path: ["file"],
         });
       }
     });
 
-  const form = useForm<z.infer<typeof EditProfileSchema>>({
-    resolver: standardSchemaResolver(EditProfileSchema),
+  const form = useForm({
+    schema: EditProfileSchema,
     defaultValues: {
       file: serializableUser.imageUrl,
     },

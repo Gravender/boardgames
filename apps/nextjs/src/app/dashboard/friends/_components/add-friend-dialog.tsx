@@ -2,10 +2,8 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AtSign, Loader2, Mail, UserPlus } from "lucide-react";
-import { useForm } from "react-hook-form";
 import * as z from "zod/v4";
 
 import { Button } from "@board-games/ui/button";
@@ -26,6 +24,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
@@ -100,15 +99,15 @@ const Content = ({
     }),
   );
 
-  const emailForm = useForm<EmailFormValues>({
-    resolver: standardSchemaResolver(emailSchema),
+  const emailForm = useForm({
+    schema: emailSchema,
     defaultValues: {
       email: "",
     },
   });
 
-  const usernameForm = useForm<UsernameFormValues>({
-    resolver: standardSchemaResolver(usernameSchema),
+  const usernameForm = useForm({
+    schema: usernameSchema,
     defaultValues: {
       username: "",
     },

@@ -3,14 +3,12 @@
 import type { z } from "zod/v4";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { ListPlus, Pause, Play, RotateCcw } from "lucide-react";
-import { useForm } from "react-hook-form";
 
 import type { RouterOutputs } from "@board-games/api";
 import { roundTypes } from "@board-games/db/constants";
@@ -43,6 +41,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
@@ -1031,8 +1030,8 @@ const AddRoundDialogContent = ({
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<z.infer<typeof RoundSchema>>({
-    resolver: standardSchemaResolver(RoundSchema),
+  const form = useForm({
+    schema: RoundSchema,
     defaultValues: {
       name: `Round ${match.scoresheet.rounds.length + 1}`,
       type: "Numeric",

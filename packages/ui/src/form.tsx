@@ -21,6 +21,7 @@ import { cn } from "@board-games/ui/utils";
 import { Label } from "./label";
 
 export { FormProvider as Form, useFieldArray } from "react-hook-form";
+export type { UseFormReturn, UseFieldArrayAppend } from "react-hook-form";
 
 export function useForm<TOut extends FieldValues, TIn extends FieldValues>(
   props: Omit<UseFormProps<TIn, unknown, TOut>, "resolver"> & {
