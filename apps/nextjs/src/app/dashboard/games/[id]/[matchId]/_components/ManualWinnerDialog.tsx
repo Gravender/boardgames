@@ -4,6 +4,7 @@ import { User, Users } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
+import { imageSchema } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -32,7 +33,7 @@ import { useTRPC } from "~/trpc/react";
 const playerSchema = z.object({
   id: z.number(),
   name: z.string(),
-  imageUrl: z.string().nullable(),
+  image: imageSchema.nullable(),
   score: z.number(),
   teamId: z.number().nullable(),
 });
@@ -257,7 +258,7 @@ function Content({
                                     <Avatar>
                                       <AvatarImage
                                         className="object-cover"
-                                        src={player.imageUrl ?? ""}
+                                        src={player.image?.url ?? ""}
                                         alt={player.name}
                                       />
                                       <AvatarFallback className="bg-slate-300">

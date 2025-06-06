@@ -327,7 +327,7 @@ function AddGameContent({
           setImagePreview(media);
         } else {
           Alert.alert(
-            "File size exceeds 5MB.",
+            "File size exceeds 4MB.",
             "Please select a diffrent image.",
           );
         }
@@ -386,7 +386,7 @@ function AddGameContent({
               </Button>
             </View>
             <Text className="text-muted-foreground">
-              Upload an image (max 5MB).
+              Upload an image (max 4MB).
             </Text>
           </View>
           <FormField

@@ -26,7 +26,7 @@ export default function FriendProfilePage({ friendId }: { friendId: number }) {
         <CardHeader className="flex flex-row items-center gap-4">
           <Avatar className="h-16 w-16">
             <AvatarImage
-              src={friend.clerkUser.imageUrl}
+              src={friend.clerkUser.image?.url ?? ""}
               alt={friend.clerkUser.name}
             />
             <AvatarFallback>

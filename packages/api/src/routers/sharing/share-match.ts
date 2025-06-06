@@ -101,7 +101,7 @@ export const shareMatchRouter = createTRPCRouter({
               id: sharedMatchPlayer.id,
               matchPlayerId: sharedMatchPlayer.matchPlayer.id,
               playerId: sharedMatchPlayer.matchPlayer.player.id,
-              imageUrl: sharedMatchPlayer.matchPlayer.player.image?.url,
+              image: sharedMatchPlayer.matchPlayer.player.image,
               details: sharedMatchPlayer.matchPlayer.details,
               teamId: sharedMatchPlayer.matchPlayer.teamId,
             };
@@ -116,7 +116,7 @@ export const shareMatchRouter = createTRPCRouter({
               id: sharedMatchPlayer.id,
               matchPlayerId: sharedMatchPlayer.matchPlayer.id,
               playerId: sharedPlayer.player.id,
-              imageUrl: sharedPlayer.player.image?.url,
+              image: sharedPlayer.player.image,
               details: sharedMatchPlayer.matchPlayer.details,
               teamId: sharedMatchPlayer.matchPlayer.teamId,
             };
@@ -129,7 +129,7 @@ export const shareMatchRouter = createTRPCRouter({
             id: sharedMatchPlayer.id,
             matchPlayerId: sharedMatchPlayer.matchPlayer.id,
             playerId: linkedPlayer.id,
-            imageUrl: linkedPlayer.image?.url,
+            image: linkedPlayer.image,
             details: sharedMatchPlayer.matchPlayer.details,
             teamId: sharedMatchPlayer.matchPlayer.teamId,
           };
@@ -391,7 +391,12 @@ export const shareMatchRouter = createTRPCRouter({
         id: number;
         playerId: number;
         name: string;
-        imageUrl: string | null;
+        image: {
+          name: string;
+          url: string | null;
+          type: "file" | "svg";
+          usageType: "player" | "match" | "game";
+        } | null;
         score: number | null;
         placement: number | null;
         winner: boolean | null;
@@ -407,7 +412,7 @@ export const shareMatchRouter = createTRPCRouter({
               id: sharedMatchPlayer.matchPlayerId,
               playerId: linkedPlayer.id,
               name: linkedPlayer.name,
-              imageUrl: linkedPlayer.image?.url ?? null,
+              image: linkedPlayer.image,
               score: sharedMatchPlayer.matchPlayer.score,
               placement: sharedMatchPlayer.matchPlayer.placement,
               winner: sharedMatchPlayer.matchPlayer.winner,
@@ -419,7 +424,7 @@ export const shareMatchRouter = createTRPCRouter({
             id: sharedMatchPlayer.id,
             playerId: sharedPlayer.playerId,
             name: sharedPlayer.player.name,
-            imageUrl: sharedPlayer.player.image?.url ?? null,
+            image: sharedPlayer.player.image,
             score: sharedMatchPlayer.matchPlayer.score,
             placement: sharedMatchPlayer.matchPlayer.placement,
             winner: sharedMatchPlayer.matchPlayer.winner,

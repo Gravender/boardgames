@@ -498,7 +498,7 @@ export const dashboardRouter = {
       .select({
         id: sq.id,
         name: sq.name,
-        imageUrl: image.url,
+        image: image,
         matches: sq.matches,
         duration: sq.duration,
       })

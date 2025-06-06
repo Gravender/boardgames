@@ -332,7 +332,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                                         >
                                           <Avatar className="mr-3 h-8 w-8">
                                             <AvatarImage
-                                              src={player.imageUrl ?? ""}
+                                              src={player.image?.url ?? ""}
                                               alt={player.name}
                                             />
                                             <AvatarFallback>
@@ -373,7 +373,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                                 >
                                   <Avatar className="h-8 w-8">
                                     <AvatarImage
-                                      src={player.imageUrl}
+                                      src={player.image?.url ?? ""}
                                       alt={player.name}
                                     />
                                     <AvatarFallback>

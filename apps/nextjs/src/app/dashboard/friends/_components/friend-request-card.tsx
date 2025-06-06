@@ -126,7 +126,7 @@ export function FriendRequestCard({
         <div className="flex items-center gap-4">
           <Avatar className="h-10 w-10">
             <AvatarImage
-              src={friendRequest.imageUrl ?? ""}
+              src={friendRequest.image?.url ?? ""}
               alt={friendRequest.name}
             />
             <AvatarFallback>

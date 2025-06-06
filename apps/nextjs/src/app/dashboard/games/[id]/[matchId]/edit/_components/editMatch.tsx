@@ -143,7 +143,7 @@ export function EditMatchForm({
       players: match.players.map((player) => ({
         id: player.playerId,
         name: player.name,
-        imageUrl: player.imageUrl ?? "",
+        imageUrl: player.image?.url ?? "",
         matches: Number(players.find((p) => p.id === player.id)?.matches ?? 0),
         playerId: player.playerId,
         teamId: player.teamId,
@@ -350,7 +350,7 @@ export function EditMatchForm({
                   id: player.id,
                   name: player.name,
                   isUser: player.isUser,
-                  imageUrl: player.imageUrl,
+                  image: player.image,
                   matches: Number(player.matches),
                 }))}
                 addedPlayers={addedPlayers}
@@ -730,7 +730,11 @@ const PlayersContent = ({
                               <Avatar>
                                 <AvatarImage
                                   className="object-cover"
-                                  src={player.imageUrl ?? ""}
+                                  src={
+                                    "image" in player
+                                      ? (player.image?.url ?? "")
+                                      : player.imageUrl
+                                  }
                                   alt={player.name}
                                 />
                                 <AvatarFallback className="bg-slate-300">
@@ -861,7 +865,7 @@ const PlayersContent = ({
               data.map((player) => ({
                 id: player.id,
                 name: player.name,
-                imageUrl: player.imageUrl ?? "",
+                imageUrl: player.image?.url ?? "",
                 matches: Number(
                   players.find((p) => p.id === player.id)?.matches ?? 0,
                 ),

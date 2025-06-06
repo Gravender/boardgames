@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { User, Users } from "lucide-react";
 import { z } from "zod/v4";
 
+import { imageSchema } from "@board-games/shared";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -41,7 +42,7 @@ export const TieBreakerPlayerSchema = z
     z.object({
       matchPlayerId: z.number(),
       name: z.string(),
-      imageUrl: z.string().nullable(),
+      image: imageSchema.nullable(),
       score: z.number(),
       placement: z.number().min(1),
       teamId: z.number().nullable(),
@@ -176,7 +177,7 @@ function Content({
         placement: findFirstPlayer?.placement ?? 0,
         name: findTeam?.name ?? "",
         id: findTeam?.id,
-        imageUrl: findFirstPlayer?.imageUrl ?? null,
+        image: findFirstPlayer?.image ?? null,
         score: findFirstPlayer?.score ?? 0,
         matchPlayerId: findFirstPlayer?.matchPlayerId ?? 0,
       };
@@ -250,7 +251,7 @@ function Content({
                                       <Avatar>
                                         <AvatarImage
                                           className="object-cover"
-                                          src={player.imageUrl ?? ""}
+                                          src={player.image?.url ?? ""}
                                           alt={player.name}
                                         />
                                         <AvatarFallback className="bg-slate-300">

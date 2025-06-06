@@ -151,7 +151,7 @@ export default function ShareMatchResults({
                       <li key={player.id} className="flex items-center">
                         <Avatar className="mr-3 h-8 w-8">
                           <AvatarImage
-                            src={player.imageUrl ?? ""}
+                            src={player.image?.url ?? ""}
                             alt={player.name}
                           />
                           <AvatarFallback>
@@ -191,7 +191,7 @@ export default function ShareMatchResults({
                 )}
               >
                 <Avatar className="mr-4 h-8 w-8">
-                  <AvatarImage src={data.imageUrl ?? ""} alt={data.name} />
+                  <AvatarImage src={data.image?.url ?? ""} alt={data.name} />
 
                   <AvatarFallback>
                     <User />

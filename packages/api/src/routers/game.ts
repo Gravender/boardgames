@@ -649,7 +649,12 @@ export const gameRouter = createTRPCRouter({
           isUser: boolean;
           score: number | null;
           placement: number;
-          imageUrl: string | undefined;
+          image: {
+            name: string;
+            url: string | null;
+            type: "file" | "svg";
+            usageType: "player" | "match" | "game";
+          } | null;
           team: {
             id: number;
             name: string;
@@ -706,7 +711,7 @@ export const gameRouter = createTRPCRouter({
               isWinner: player.winner,
               isUser: player.player.isUser,
               score: player.score,
-              imageUrl: player.player.image?.url ?? undefined,
+              image: player.player.image,
               team: player.team,
               placement: player.placement ?? 0,
             };
@@ -782,11 +787,10 @@ export const gameRouter = createTRPCRouter({
                 score: returnedSharedMatchPlayer.matchPlayer.score,
                 placement: returnedSharedMatchPlayer.matchPlayer.placement ?? 0,
                 team: returnedSharedMatchPlayer.matchPlayer.team,
-                imageUrl:
+                image:
                   linkedPlayer !== null
-                    ? (linkedPlayer.image?.url ?? undefined)
-                    : (returnedSharedMatchPlayer.sharedPlayer.player.image
-                        ?.url ?? undefined),
+                    ? linkedPlayer.image
+                    : returnedSharedMatchPlayer.sharedPlayer.player.image,
               };
             })
             .filter((player) => player !== null),
@@ -828,7 +832,7 @@ export const gameRouter = createTRPCRouter({
                 isUser: player.isUser,
                 wins: player.isWinner ? 1 : 0,
                 winRate: player.isWinner ? 1 : 0,
-                imageUrl: player.imageUrl ?? "",
+                image: player.image,
                 bestScore: player.score,
                 worstScore: player.score,
                 placements: tempPlacements,
@@ -874,7 +878,12 @@ export const gameRouter = createTRPCRouter({
             bestScore: number | null;
             worstScore: number | null;
             winRate: number;
-            imageUrl: string;
+            image: {
+              name: string;
+              url: string | null;
+              type: "file" | "svg";
+              usageType: "player" | "match" | "game";
+            } | null;
             placements: Record<number, number>;
           }
         >,

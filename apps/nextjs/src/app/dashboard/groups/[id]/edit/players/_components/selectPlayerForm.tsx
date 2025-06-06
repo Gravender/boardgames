@@ -159,7 +159,7 @@ export default function SelectPlayersForm({
                                   <div className="flex items-center gap-2">
                                     <Avatar>
                                       <AvatarImage
-                                        src={player.imageUrl ?? ""}
+                                        src={player.image?.url ?? ""}
                                         alt={player.name}
                                       />
                                       <AvatarFallback className="bg-slate-300">

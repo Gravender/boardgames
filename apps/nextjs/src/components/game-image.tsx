@@ -102,12 +102,14 @@ function GameImageIcon({
   className?: string;
 }) {
   if (imageIcon.type === "file") {
-    <Dices
-      className={cn(
-        "h-full w-full items-center justify-center rounded-md bg-muted p-2",
-        className,
-      )}
-    />;
+    return (
+      <Dices
+        className={cn(
+          "h-full w-full items-center justify-center rounded-md bg-muted p-2",
+          className,
+        )}
+      />
+    );
   }
   return (
     <Dices

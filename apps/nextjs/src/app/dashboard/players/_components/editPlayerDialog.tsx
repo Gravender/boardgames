@@ -66,7 +66,7 @@ const PlayerContent = ({
 }) => {
   const trpc = useTRPC();
   const [imagePreview, setImagePreview] = useState<string | null>(
-    player.imageUrl ?? null,
+    player.image?.url ?? null,
   );
   const [isUploading, setIsUploading] = useState(false);
 
@@ -94,7 +94,7 @@ const PlayerContent = ({
       player.type === "original"
         ? {
             name: player.name,
-            imageUrl: player.imageUrl,
+            imageUrl: player.image?.url,
           }
         : {
             name: player.name,
@@ -157,7 +157,7 @@ const PlayerContent = ({
 
   async function onSubmit(values: z.infer<typeof playerSchema>) {
     setIsUploading(true);
-    if (values.imageUrl === player.imageUrl) {
+    if (values.imageUrl === player.image?.url) {
       setIsUploading(false);
       updatePlayer({ imageId: undefined, values });
       return;

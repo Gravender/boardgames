@@ -26,7 +26,7 @@ export function PlayersCard() {
               <Avatar className="h-10 w-10 shadow">
                 <AvatarImage
                   className="object-cover"
-                  src={player.imageUrl ?? ""}
+                  src={player.image?.url ?? ""}
                   alt={player.name}
                 />
                 <AvatarFallback className="bg-slate-300">

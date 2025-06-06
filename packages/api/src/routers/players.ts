@@ -41,11 +41,7 @@ export const playerRouter = createTRPCRouter({
           isUser: true,
         },
         with: {
-          image: {
-            columns: {
-              url: true,
-            },
-          },
+          image: true,
           matches: {
             where: {
               finished: true,
@@ -99,13 +95,18 @@ export const playerRouter = createTRPCRouter({
           isUser: boolean;
           name: string;
           matches: number;
-          imageUrl: string;
+          image: {
+            name: string;
+            url: string | null;
+            type: "file" | "svg";
+            usageType: "player" | "match" | "game";
+          } | null;
         } = {
           id: returnedPlayer.id,
           name: returnedPlayer.name,
           matches: 0,
           isUser: true,
-          imageUrl: returnedPlayer.image?.url ?? "",
+          image: returnedPlayer.image,
         };
         return [returnPlay];
       }
@@ -113,7 +114,12 @@ export const playerRouter = createTRPCRouter({
         id: number;
         name: string;
         isUser: boolean;
-        imageUrl: string | null;
+        image: {
+          name: string;
+          url: string | null;
+          type: "file" | "svg";
+          usageType: "player" | "match" | "game";
+        } | null;
         matches: number;
       }[] = playersQuery.map((player) => {
         const linkedMatches = player.sharedLinkedPlayers
@@ -128,7 +134,7 @@ export const playerRouter = createTRPCRouter({
           id: player.id,
           isUser: player.isUser,
           name: player.name,
-          imageUrl: player.image?.url ?? null,
+          image: player.image,
           matches: player.matches.length + linkedMatches.length,
         };
       });
@@ -199,14 +205,19 @@ export const playerRouter = createTRPCRouter({
         id: number;
         inGroup: boolean;
         name: string;
-        imageUrl: string | null;
+        image: {
+          name: string;
+          url: string | null;
+          type: "file" | "svg";
+          usageType: "player" | "match" | "game";
+        } | null;
         matches: number;
       }[] = players.map((p) => {
         return {
           id: p.id,
           inGroup: p.inGroup,
           name: p.name,
-          imageUrl: p.image?.url ?? null,
+          image: p.image,
           matches:
             p.matches.length +
             p.sharedLinkedPlayers.flatMap(
@@ -306,7 +317,12 @@ export const playerRouter = createTRPCRouter({
       type: "original" | "shared";
       id: number;
       name: string;
-      imageUrl: string | null;
+      image: {
+        name: string;
+        url: string | null;
+        type: "file" | "svg";
+        usageType: "player" | "match" | "game";
+      } | null;
       matches: number;
       lastPlayed: Date | undefined;
       gameName: string | undefined;
@@ -343,7 +359,7 @@ export const playerRouter = createTRPCRouter({
         type: "original" as const,
         id: player.id,
         name: player.name,
-        imageUrl: player.image?.url ?? null,
+        image: player.image,
         matches: player.matches.length + linkedMatches.length,
         lastPlayed: firstMatch?.date,
         gameName: firstMatch?.game.name,
@@ -361,7 +377,7 @@ export const playerRouter = createTRPCRouter({
         type: "shared" as const,
         id: returnedSharedPlayer.id,
         name: returnedSharedPlayer.player.name,
-        imageUrl: returnedSharedPlayer.player.image?.url ?? null,
+        image: returnedSharedPlayer.player.image,
         matches: sharedMatches.length,
         lastPlayed: firstMatch?.match.date,
         gameName: firstMatch?.sharedGame.linkedGame
@@ -652,7 +668,7 @@ export const playerRouter = createTRPCRouter({
       return {
         id: returnedPlayer.id,
         name: returnedPlayer.name,
-        imageUrl: returnedPlayer.image?.url,
+        image: returnedPlayer.image,
         players: playerUniquePlayers.size,
         wins: playerMatches.filter((m) => m.outcome.isWinner).length,
         winRate:
@@ -751,7 +767,7 @@ export const playerRouter = createTRPCRouter({
       return {
         id: returnedPlayer.id,
         name: returnedPlayer.name,
-        imageUrl: returnedPlayer.image?.url,
+        image: returnedPlayer.image,
         matches: filteredMatches,
       };
     }),
@@ -781,7 +797,7 @@ export const playerRouter = createTRPCRouter({
       return {
         id: returnedPlayer.id,
         name: returnedPlayer.name,
-        imageUrl: returnedPlayerImage?.image?.url ?? null,
+        image: returnedPlayerImage?.image,
         matches: 0,
         team: 0,
       };

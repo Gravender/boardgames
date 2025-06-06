@@ -692,7 +692,7 @@ const AddPlayersForm = ({
             ? [
                 {
                   id: currentUser.id,
-                  imageUrl: currentUser.imageUrl,
+                  imageUrl: currentUser.image?.url ?? "",
                   name: currentUser.name,
                   matches: currentUser.matches,
                   team: null,
@@ -722,7 +722,7 @@ const AddPlayersForm = ({
         if (!playerSelected) {
           append({
             id: player.id,
-            imageUrl: playerExists.imageUrl,
+            imageUrl: playerExists.image?.url ?? "",
             name: playerExists.name,
             matches: playerExists.matches,
             team: null,
@@ -933,7 +933,8 @@ const AddPlayersForm = ({
                                           return checked
                                             ? append({
                                                 id: player.id,
-                                                imageUrl: player.imageUrl,
+                                                imageUrl:
+                                                  player.image?.url ?? "",
                                                 name: player.name,
                                                 matches: player.matches,
                                                 team: null,
@@ -949,12 +950,9 @@ const AddPlayersForm = ({
                                     <FormLabel className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2">
                                       <div className="flex items-center gap-1 sm:gap-2">
                                         <Avatar className="h-8 w-8">
-                                          {player.imageUrl ? (
+                                          {player.image?.url ? (
                                             <AvatarImage
-                                              src={
-                                                player.imageUrl ||
-                                                "/placeholder.svg"
-                                              }
+                                              src={player.image.url}
                                               alt={player.name}
                                             />
                                           ) : (
@@ -1102,7 +1100,7 @@ const AddPlayerForm = ({
         setIsUploading(false);
         addMatchPlayer({
           id: player.id,
-          imageUrl: player.imageUrl,
+          imageUrl: player.image?.url ?? "",
           name: player.name,
           matches: 0,
           team: null,

@@ -154,7 +154,7 @@ export function MatchScoresheet({ data }: { data: Match }) {
         players.map((player) => ({
           id: player.id,
           name: player.name,
-          imageUrl: player.imageUrl ?? null,
+          imageUrl: player.image?.url ?? null,
           score: calculateFinalScore(
             player.rounds.map((round) => ({
               score: round.score ?? 0,

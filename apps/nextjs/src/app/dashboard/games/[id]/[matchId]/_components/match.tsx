@@ -204,7 +204,7 @@ export function Match({ matchId }: { matchId: number }) {
           return {
             id: player.id,
             name: player.name,
-            imageUrl: player.imageUrl ?? null,
+            image: player.image,
             score: calculateFinalScore(
               player.rounds.map((round) => ({
                 score: round.score ?? 0,
@@ -299,7 +299,7 @@ export function Match({ matchId }: { matchId: number }) {
           return {
             matchPlayerId: player.id,
             name: foundPlayer?.name ?? "",
-            imageUrl: foundPlayer?.imageUrl ?? "",
+            image: foundPlayer?.image ?? null,
             placement: player.placement,
             score: player.score,
             teamId: foundPlayer?.teamId ?? null,

@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const player = await caller.player.getPlayer({
     id: Number(id),
   });
-  if (!player.imageUrl)
+  if (!player.image?.url)
     return {
       title: `${player.name}'s Stats`,
       description: `${player.name} Board Game Stats`,
@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: `${player.name} Board Game Stats`,
     icons: [{ rel: "icon", url: "/user.ico" }],
     openGraph: {
-      images: [player.imageUrl],
+      images: [player.image?.url],
     },
   };
 }
@@ -66,10 +66,10 @@ export default async function Page({ params }: Props) {
             <CardDescription>
               <div className="flex w-full flex-col items-center justify-center gap-2 text-secondary-foreground">
                 <div className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded shadow">
-                  {player.imageUrl ? (
+                  {player.image?.url ? (
                     <Image
                       fill
-                      src={player.imageUrl}
+                      src={player.image?.url}
                       alt={`${player.name} player image`}
                       className="aspect-square h-full w-full rounded-md object-cover"
                     />

@@ -215,7 +215,12 @@ export const shareGameRouter = createTRPCRouter({
           isUser: boolean;
           score: number | null;
           placement: number;
-          imageUrl: string | undefined;
+          image: {
+            name: string;
+            url: string | null;
+            type: "file" | "svg";
+            usageType: "player" | "match" | "game";
+          } | null;
           team: {
             id: number;
             name: string;
@@ -287,11 +292,10 @@ export const shareGameRouter = createTRPCRouter({
                   placement:
                     returnedSharedMatchPlayer.matchPlayer.placement ?? 0,
                   team: returnedSharedMatchPlayer.matchPlayer.team,
-                  imageUrl:
-                    (linkedPlayer !== null
-                      ? linkedPlayer.image?.url
-                      : returnedSharedMatchPlayer.sharedPlayer.player.image
-                          ?.url) ?? undefined,
+                  image:
+                    linkedPlayer !== null
+                      ? linkedPlayer.image
+                      : returnedSharedMatchPlayer.sharedPlayer.player.image,
                 };
               })
               .filter((player) => player !== null),
@@ -335,7 +339,7 @@ export const shareGameRouter = createTRPCRouter({
                 isUser: player.isUser,
                 wins: player.isWinner ? 1 : 0,
                 winRate: player.isWinner ? 1 : 0,
-                imageUrl: player.imageUrl ?? "",
+                image: player.image,
                 bestScore: player.score,
                 worstScore: player.score,
                 placements: tempPlacements,
@@ -381,7 +385,12 @@ export const shareGameRouter = createTRPCRouter({
             bestScore: number | null;
             worstScore: number | null;
             winRate: number;
-            imageUrl: string;
+            image: {
+              name: string;
+              url: string | null;
+              type: "file" | "svg";
+              usageType: "player" | "match" | "game";
+            } | null;
             placements: Record<number, number>;
           }
         >,

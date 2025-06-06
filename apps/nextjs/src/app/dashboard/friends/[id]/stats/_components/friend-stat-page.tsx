@@ -53,7 +53,7 @@ export function FriendStatsPage({ friendId }: { friendId: number }) {
             <div className="flex w-full flex-col items-center justify-center gap-2 text-secondary-foreground">
               <Avatar className="h-16 w-16">
                 <AvatarImage
-                  src={friend.clerkUser.imageUrl}
+                  src={friend.clerkUser.image?.url ?? ""}
                   alt={friend.clerkUser.name}
                 />
                 <AvatarFallback>
