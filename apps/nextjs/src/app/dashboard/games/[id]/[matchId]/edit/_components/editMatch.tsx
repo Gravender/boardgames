@@ -226,7 +226,9 @@ export function EditMatchForm({
             };
           const imageFile = player.imageUrl;
 
-          const uploadResult = await startUpload([imageFile]);
+          const uploadResult = await startUpload([imageFile], {
+            usageType: "player",
+          });
           if (!uploadResult) {
             throw new Error("Image upload failed");
           }

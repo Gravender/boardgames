@@ -1178,7 +1178,9 @@ const AddPlayerForm = ({
     try {
       const imageFile = values.imageUrl;
 
-      const uploadResult = await startUpload([imageFile]);
+      const uploadResult = await startUpload([imageFile], {
+        usageType: "player",
+      });
       if (!uploadResult) {
         throw new Error("Image upload failed");
       }

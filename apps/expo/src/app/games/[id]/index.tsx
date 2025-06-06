@@ -14,11 +14,11 @@ import { trpc } from "~/utils/api";
 
 function MatchesTable({
   gameId,
-  imageUrl,
+  image,
   matches,
 }: {
   gameId: NonNullable<RouterOutputs["game"]["getGame"]>["id"];
-  imageUrl: NonNullable<RouterOutputs["game"]["getGame"]>["imageUrl"];
+  image: NonNullable<RouterOutputs["game"]["getGame"]>["image"];
   matches: NonNullable<RouterOutputs["game"]["getGame"]>["matches"];
 }) {
   return (
@@ -31,7 +31,7 @@ function MatchesTable({
           renderItem={({ item }) => (
             <MatchCard
               gameId={gameId}
-              imageUrl={imageUrl}
+              imageUrl={image.url ?? ""}
               key={item.id}
               match={item}
             />

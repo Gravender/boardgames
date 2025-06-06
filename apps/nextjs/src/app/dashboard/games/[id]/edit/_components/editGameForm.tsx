@@ -561,7 +561,9 @@ const GameForm = ({
 
     try {
       const imageFile = values.imageUrl as File;
-      const uploadResult = await startUpload([imageFile]);
+      const uploadResult = await startUpload([imageFile], {
+        usageType: "game",
+      });
       if (!uploadResult) {
         throw new Error("Image upload failed");
       }

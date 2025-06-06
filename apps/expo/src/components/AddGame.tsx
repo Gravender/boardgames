@@ -253,7 +253,9 @@ function AddGameContent({
         uri: imagePreview.uri,
         size: fileInfo.size,
       } as unknown as File;
-      const uploadResult = await startUpload([fileToUpload]);
+      const uploadResult = await startUpload([fileToUpload], {
+        usageType: "game",
+      });
       if (!uploadResult) {
         throw new Error("Image upload failed");
       }

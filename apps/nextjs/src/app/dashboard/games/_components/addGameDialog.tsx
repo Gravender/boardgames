@@ -278,7 +278,9 @@ const AddGameForm = ({
       try {
         const imageFile = values.gameImg;
 
-        const uploadResult = await startUpload([imageFile]);
+        const uploadResult = await startUpload([imageFile], {
+          usageType: "game",
+        });
 
         if (!uploadResult) {
           toast.error("Error", {
