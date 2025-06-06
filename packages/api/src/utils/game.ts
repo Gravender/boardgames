@@ -31,7 +31,10 @@ export function mapMatches(
         playtimeMax: number | null;
         yearPublished: number | null;
         image: {
-          url: string;
+          name: string;
+          url: string | null;
+          type: "file" | "svg";
+          usageType: "game" | "player" | "match";
         } | null;
       };
       location: {
@@ -109,7 +112,10 @@ export function mapMatches(
             playtimeMax: number | null;
             yearPublished: number | null;
             image: {
-              url: string;
+              name: string;
+              url: string | null;
+              type: "file" | "svg";
+              usageType: "game" | "player" | "match";
             } | null;
           };
           linkedGame: {
@@ -121,7 +127,10 @@ export function mapMatches(
             playtimeMax: number | null;
             yearPublished: number | null;
             image: {
-              url: string;
+              name: string;
+              url: string | null;
+              type: "file" | "svg";
+              usageType: "game" | "player" | "match";
             } | null;
           } | null;
         };
@@ -187,7 +196,12 @@ export function mapMatches(
     finished: boolean;
     gameId: number;
     gameName: string;
-    gameImg: string | null;
+    image: {
+      name: string;
+      url: string | null;
+      type: "file" | "svg";
+      usageType: "game";
+    } | null;
     locationName?: string;
     players: {
       playerId: number;
@@ -226,7 +240,14 @@ export function mapMatches(
         finished: m.finished,
         gameId: m.gameId,
         gameName: m.game.name,
-        gameImg: m.game.image?.url ?? null,
+        image: m.game.image
+          ? {
+              name: m.game.image.name,
+              url: m.game.image.url,
+              type: m.game.image.type,
+              usageType: "game" as const,
+            }
+          : null,
         locationName: m.location?.name ?? undefined,
         players: others,
         outcome: {
@@ -257,7 +278,14 @@ export function mapMatches(
           finished: sm.match.finished,
           gameId: gameEntity.id,
           gameName: gameEntity.name,
-          gameImg: gameEntity.image?.url ?? null,
+          image: gameEntity.image
+            ? {
+                name: gameEntity.image.name,
+                url: gameEntity.image.url,
+                type: gameEntity.image.type,
+                usageType: "game" as const,
+              }
+            : null,
           locationName: locationName ?? undefined,
           players,
           outcome: {

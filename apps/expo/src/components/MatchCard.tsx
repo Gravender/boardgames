@@ -13,20 +13,20 @@ import { MatchDropDown } from "./MatchDropDown";
 
 export function MatchCard({
   gameId,
-  imageUrl,
+  image,
   match,
 }: {
   gameId: NonNullable<RouterOutputs["game"]["getGame"]>["id"];
-  imageUrl: NonNullable<RouterOutputs["game"]["getGame"]>["imageUrl"];
+  image: NonNullable<RouterOutputs["game"]["getGame"]>["image"];
   match: NonNullable<RouterOutputs["game"]["getGame"]>["matches"][number];
 }) {
   return (
     <Card>
       <CardContent className="flex flex-row items-center gap-2 p-2 pt-2">
         <View className="relative flex h-12 w-12 shrink-0 overflow-hidden">
-          {imageUrl ? (
+          {image ? (
             <Image
-              source={{ uri: imageUrl }}
+              source={{ uri: image.url ?? "" }}
               className="h-12 w-12 rounded-md"
               resizeMode="cover"
             />

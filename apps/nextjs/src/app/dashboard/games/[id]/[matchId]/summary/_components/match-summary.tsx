@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -8,7 +7,6 @@ import { format, formatDistanceToNow } from "date-fns";
 import {
   CalendarIcon,
   ClockIcon,
-  Dices,
   MapPinIcon,
   MessageSquareIcon,
   Users,
@@ -21,6 +19,7 @@ import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 
 import MatchSummaryPlayerStats from "~/app/dashboard/games/_components/match-player-stats";
 import ShareMatchResults from "~/app/dashboard/games/shared/[id]/[matchId]/summary/_components/match-results";
+import { GameImage } from "~/components/game-image";
 import { useTRPC } from "~/trpc/react";
 
 export default function MatchSummary({ matchId }: { matchId: number }) {
@@ -39,18 +38,11 @@ export default function MatchSummary({ matchId }: { matchId: number }) {
         <Card className="w-full">
           <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center gap-6 md:flex-row">
-              <div className="relative hidden h-28 w-28 overflow-hidden rounded-lg md:flex">
-                {match.gameImageUrl ? (
-                  <Image
-                    fill
-                    src={match.gameImageUrl}
-                    alt={`${match.gameName} game image`}
-                    className="aspect-square h-full w-full rounded-md object-cover"
-                  />
-                ) : (
-                  <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                )}
-              </div>
+              <GameImage
+                image={match.image}
+                alt={`${match.gameName} game image`}
+                containerClassName="hidden h-28 w-28 rounded-lg md:flex"
+              />
 
               <div className="flex-1 space-y-4">
                 <div>

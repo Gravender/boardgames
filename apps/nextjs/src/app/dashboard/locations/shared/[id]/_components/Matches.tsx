@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Dices } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { CardHeader, CardTitle } from "@board-games/ui/card";
@@ -13,6 +11,7 @@ import { Table, TableBody, TableCell, TableRow } from "@board-games/ui/table";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
 import { FormattedDate } from "~/components/formatted-date";
+import { GameImage } from "~/components/game-image";
 import { useTRPC } from "~/trpc/react";
 
 type Matches = NonNullable<
@@ -64,19 +63,11 @@ export function Matches({ locationId }: { locationId: number }) {
                     }
                     className="flex w-full items-center gap-3 font-medium"
                   >
-                    <div className="relative flex h-12 w-12 shrink-0 overflow-hidden">
-                      {match.gameImageUrl ? (
-                        <Image
-                          src={match.gameImageUrl}
-                          alt={`${match.gameName} game image`}
-                          className="aspect-square h-full w-full rounded-md object-cover"
-                          width={48}
-                          height={48}
-                        />
-                      ) : (
-                        <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                      )}
-                    </div>
+                    <GameImage
+                      image={match.gameImage}
+                      alt={`${match.gameName} game image`}
+                      containerClassName="h-12 w-12"
+                    />
                     <div className="flex w-full items-center justify-between">
                       <div className="flex flex-col items-start">
                         <div className="flex items-center gap-2">

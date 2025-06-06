@@ -15,7 +15,12 @@ type GameAgg = {
   type: "Original" | "Shared";
   id: number;
   name: string;
-  imageUrl: string | null;
+  image: {
+    name: string;
+    url: string | null;
+    type: "file" | "svg";
+    usageType: "game";
+  } | null;
   plays: number;
   wins: number;
   winRate: number;
@@ -192,7 +197,12 @@ export const friendsRouter = createTRPCRouter({
       name: string;
       userName: string | null;
       email: string | null;
-      imageUrl: string | null;
+      image: {
+        name: string;
+        url: string | null;
+        type: "file";
+        usageType: "player";
+      } | null;
       createdAt: Date;
     }[] = requests.map((returnedRequest) => {
       const clerkUser = clerkUsers.find(
@@ -209,7 +219,15 @@ export const friendsRouter = createTRPCRouter({
         name: getFullName(clerkUser),
         userName: clerkUser.username,
         email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
-        imageUrl: clerkUser.imageUrl,
+        image:
+          clerkUser.imageUrl !== ""
+            ? {
+                name: getFullName(clerkUser),
+                url: clerkUser.imageUrl,
+                type: "file",
+                usageType: "player",
+              }
+            : null,
         createdAt: returnedRequest.createdAt,
       };
     });
@@ -237,7 +255,12 @@ export const friendsRouter = createTRPCRouter({
       name: string;
       userName: string | null;
       email: string | null;
-      imageUrl: string | null;
+      image: {
+        name: string;
+        url: string | null;
+        type: "file";
+        usageType: "player";
+      } | null;
       createdAt: Date;
     }[] = requests.map((returnedRequest) => {
       const clerkUser = clerkUsers.find(
@@ -254,7 +277,15 @@ export const friendsRouter = createTRPCRouter({
         name: getFullName(clerkUser),
         userName: clerkUser.username,
         email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
-        imageUrl: clerkUser.imageUrl,
+        image:
+          clerkUser.imageUrl !== ""
+            ? {
+                name: getFullName(clerkUser),
+                url: clerkUser.imageUrl,
+                type: "file",
+                usageType: "player",
+              }
+            : null,
         createdAt: returnedRequest.createdAt,
       };
     });
@@ -280,7 +311,12 @@ export const friendsRouter = createTRPCRouter({
       name: string;
       userName: string | null;
       email: string | null;
-      imageUrl: string | null;
+      image: {
+        name: string;
+        url: string | null;
+        type: "file";
+        usageType: "player";
+      } | null;
       createdAt: Date;
       linkedPlayerFound: boolean;
     }[] = returnedFriends.map((returnedFriend) => {
@@ -297,7 +333,15 @@ export const friendsRouter = createTRPCRouter({
         name: getFullName(clerkUser),
         userName: clerkUser.username,
         email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
-        imageUrl: clerkUser.imageUrl,
+        image:
+          clerkUser.imageUrl !== ""
+            ? {
+                name: getFullName(clerkUser),
+                url: clerkUser.imageUrl,
+                type: "file",
+                usageType: "player",
+              }
+            : null,
         createdAt: returnedFriend.createdAt,
         linkedPlayerFound: returnedFriend.friendPlayer !== null,
       };
@@ -530,11 +574,7 @@ export const friendsRouter = createTRPCRouter({
                           yearPublished: true,
                         },
                         with: {
-                          image: {
-                            columns: {
-                              url: true,
-                            },
-                          },
+                          image: true,
                         },
                       },
                       location: {
@@ -628,11 +668,7 @@ export const friendsRouter = createTRPCRouter({
                                   yearPublished: true,
                                 },
                                 with: {
-                                  image: {
-                                    columns: {
-                                      url: true,
-                                    },
-                                  },
+                                  image: true,
                                 },
                               },
                               linkedGame: {
@@ -646,11 +682,7 @@ export const friendsRouter = createTRPCRouter({
                                   yearPublished: true,
                                 },
                                 with: {
-                                  image: {
-                                    columns: {
-                                      url: true,
-                                    },
-                                  },
+                                  image: true,
                                 },
                               },
                             },
@@ -767,7 +799,15 @@ export const friendsRouter = createTRPCRouter({
             name: getFullName(clerkUser),
             username: clerkUser.username,
             email: clerkUser.emailAddresses[0]?.emailAddress,
-            imageUrl: clerkUser.imageUrl,
+            image:
+              clerkUser.imageUrl !== ""
+                ? {
+                    name: getFullName(clerkUser),
+                    type: "file",
+                    usageType: "player",
+                    url: clerkUser.imageUrl,
+                  }
+                : null,
           },
           settings: returnedFriend.friendSetting,
           sharedWith,
@@ -792,25 +832,44 @@ export const friendsRouter = createTRPCRouter({
           g.wins += isWin;
           g.winRate = g.wins / g.plays;
         } else {
-          // find image URL from either original or shared game
-          let imageUrl: string | null = null;
+          // find image  from either original or shared game
+          let image: {
+            name: string;
+            url: string | null;
+            type: "file" | "svg";
+            usageType: "game";
+          } | null = null;
           if (m.type === "Original") {
             const orig = rawFP.matchPlayers.find((x) => x.matchId === m.id);
-            imageUrl = orig?.match.game.image?.url ?? null;
+            image = orig?.match.game.image
+              ? {
+                  name: orig.match.game.image.name,
+                  url: orig.match.game.image.url,
+                  type: orig.match.game.image.type,
+                  usageType: "game" as const,
+                }
+              : null;
           } else {
             const smp = rawFP.sharedLinkedPlayers
               .flatMap((lp) => lp.sharedMatchPlayers)
               .find((x) => x.sharedMatch.match.id === m.id);
             const sg = smp?.sharedMatch.sharedGame;
             const linked = sg?.linkedGame;
-            imageUrl = linked?.image?.url ?? sg?.game.image?.url ?? null;
+            image = linked?.image
+              ? {
+                  name: linked.image.name,
+                  url: linked.image.url,
+                  type: linked.image.type,
+                  usageType: "game" as const,
+                }
+              : null;
           }
 
           gameMap.set(key, {
             type: m.type,
             id: m.gameId,
             name: m.gameName,
-            imageUrl,
+            image,
             plays: 1,
             wins: isWin,
             winRate: isWin,
@@ -832,7 +891,7 @@ export const friendsRouter = createTRPCRouter({
       const linkedPlayer = {
         id: rawFP.id,
         name: rawFP.name,
-        imageUrl: rawFP.image?.url ?? null,
+        image: rawFP.image,
         players: uniqueOpponents.size,
         wins: allMatches.filter((m) => m.outcome.isWinner).length,
         winRate:
@@ -851,7 +910,15 @@ export const friendsRouter = createTRPCRouter({
           name: getFullName(clerkUser),
           username: clerkUser.username,
           email: clerkUser.emailAddresses[0]?.emailAddress,
-          imageUrl: clerkUser.imageUrl,
+          image:
+            clerkUser.imageUrl !== ""
+              ? {
+                  name: getFullName(clerkUser),
+                  type: "file",
+                  usageType: "player",
+                  url: clerkUser.imageUrl,
+                }
+              : null,
         },
         sharedWith,
         sharedTo,
@@ -890,7 +957,15 @@ export const friendsRouter = createTRPCRouter({
         name: getFullName(clerkUser),
         userName: clerkUser.username,
         email: clerkUser.emailAddresses[0]?.emailAddress,
-        imageUrl: clerkUser.imageUrl,
+        image:
+          clerkUser.imageUrl !== ""
+            ? {
+                name: getFullName(clerkUser),
+                url: clerkUser.imageUrl,
+                type: "file",
+                usageType: "player",
+              }
+            : null,
       };
     }),
   updateFriendSettings: protectedUserProcedure

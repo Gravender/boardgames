@@ -145,11 +145,7 @@ export const gameRouter = createTRPCRouter({
           },
         },
         with: {
-          image: {
-            columns: {
-              url: true,
-            },
-          },
+          image: true,
           matches: {
             with: {
               matchPlayers: {
@@ -221,7 +217,7 @@ export const gameRouter = createTRPCRouter({
       return {
         id: result.id,
         name: result.name,
-        imageUrl: result.image?.url,
+        image: result.image,
         players: {
           min: result.playersMin,
           max: result.playersMax,
@@ -292,7 +288,7 @@ export const gameRouter = createTRPCRouter({
     .input(selectGameSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       const [result] = await ctx.db
-        .select({ id: game.id, name: game.name, image: image.url })
+        .select({ id: game.id, name: game.name, image: image })
         .from(game)
         .where(and(eq(game.id, input.id), isNull(game.deletedAt)))
         .leftJoin(image, eq(game.imageId, image.id))
@@ -301,7 +297,7 @@ export const gameRouter = createTRPCRouter({
       return {
         id: result.id,
         name: result.name,
-        imageUrl: result.image,
+        image: result.image,
       };
     }),
   getGameScoresheets: protectedUserProcedure
@@ -653,7 +649,12 @@ export const gameRouter = createTRPCRouter({
           isUser: boolean;
           score: number | null;
           placement: number;
-          imageUrl: string | undefined;
+          image: {
+            name: string;
+            url: string | null;
+            type: "file" | "svg";
+            usageType: "player" | "match" | "game";
+          } | null;
           team: {
             id: number;
             name: string;
@@ -710,7 +711,7 @@ export const gameRouter = createTRPCRouter({
               isWinner: player.winner,
               isUser: player.player.isUser,
               score: player.score,
-              imageUrl: player.player.image?.url,
+              image: player.player.image,
               team: player.team,
               placement: player.placement ?? 0,
             };
@@ -786,10 +787,10 @@ export const gameRouter = createTRPCRouter({
                 score: returnedSharedMatchPlayer.matchPlayer.score,
                 placement: returnedSharedMatchPlayer.matchPlayer.placement ?? 0,
                 team: returnedSharedMatchPlayer.matchPlayer.team,
-                imageUrl:
+                image:
                   linkedPlayer !== null
-                    ? linkedPlayer.image?.url
-                    : returnedSharedMatchPlayer.sharedPlayer.player.image?.url,
+                    ? linkedPlayer.image
+                    : returnedSharedMatchPlayer.sharedPlayer.player.image,
               };
             })
             .filter((player) => player !== null),
@@ -831,7 +832,7 @@ export const gameRouter = createTRPCRouter({
                 isUser: player.isUser,
                 wins: player.isWinner ? 1 : 0,
                 winRate: player.isWinner ? 1 : 0,
-                imageUrl: player.imageUrl ?? "",
+                image: player.image,
                 bestScore: player.score,
                 worstScore: player.score,
                 placements: tempPlacements,
@@ -877,7 +878,12 @@ export const gameRouter = createTRPCRouter({
             bestScore: number | null;
             worstScore: number | null;
             winRate: number;
-            imageUrl: string;
+            image: {
+              name: string;
+              url: string | null;
+              type: "file" | "svg";
+              usageType: "player" | "match" | "game";
+            } | null;
             placements: Record<number, number>;
           }
         >,
@@ -902,7 +908,7 @@ export const gameRouter = createTRPCRouter({
         id: result.id,
         name: result.name,
         yearPublished: result.yearPublished,
-        imageUrl: result.image?.url ?? "",
+        image: result.image,
         ownedBy: result.ownedBy,
         matches: matches,
         duration: duration,
@@ -1008,7 +1014,7 @@ export const gameRouter = createTRPCRouter({
       return {
         id: result.id,
         name: result.name,
-        imageUrl: result.image?.url,
+        image: result.image,
         players: {
           min: result.playersMin,
           max: result.playersMax,
@@ -1108,7 +1114,12 @@ export const gameRouter = createTRPCRouter({
       players: { min: number | null; max: number | null };
       playtime: { min: number | null; max: number | null };
       yearPublished: number | null;
-      image: string | null;
+      image: {
+        name: string;
+        url: string | null;
+        type: "file" | "svg";
+        usageType: "game" | "player" | "match";
+      } | null;
       ownedBy: boolean;
       games: number;
       lastPlayed: {
@@ -1190,7 +1201,7 @@ export const gameRouter = createTRPCRouter({
           max: returnedGame.playtimeMax,
         },
         yearPublished: returnedGame.yearPublished,
-        image: returnedGame.image?.url ?? null,
+        image: returnedGame.image,
         ownedBy: returnedGame.ownedBy ?? false,
         games: linkedMatches.length + returnedGame.matches.length,
         lastPlayed: {
@@ -1228,6 +1239,7 @@ export const gameRouter = createTRPCRouter({
         .filter((match) => match !== false);
       returnedSharedMatches.sort((a, b) => compareDesc(a.date, b.date));
       const firstMatch = returnedSharedMatches[0];
+
       mappedGames.push({
         type: "shared" as const,
         id: returnedSharedGame.id,
@@ -1243,7 +1255,7 @@ export const gameRouter = createTRPCRouter({
         },
         yearPublished: returnedSharedGame.game.yearPublished,
         ownedBy: returnedSharedGame.game.ownedBy ?? false,
-        image: returnedSharedGame.game.image?.url ?? null,
+        image: returnedSharedGame.game.image,
         games: returnedSharedMatches.length,
         lastPlayed: {
           date: firstMatch?.date ?? null,

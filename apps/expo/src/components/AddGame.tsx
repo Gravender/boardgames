@@ -253,7 +253,9 @@ function AddGameContent({
         uri: imagePreview.uri,
         size: fileInfo.size,
       } as unknown as File;
-      const uploadResult = await startUpload([fileToUpload]);
+      const uploadResult = await startUpload([fileToUpload], {
+        usageType: "game",
+      });
       if (!uploadResult) {
         throw new Error("Image upload failed");
       }
@@ -325,7 +327,7 @@ function AddGameContent({
           setImagePreview(media);
         } else {
           Alert.alert(
-            "File size exceeds 5MB.",
+            "File size exceeds 4MB.",
             "Please select a diffrent image.",
           );
         }
@@ -384,7 +386,7 @@ function AddGameContent({
               </Button>
             </View>
             <Text className="text-muted-foreground">
-              Upload an image (max 5MB).
+              Upload an image (max 4MB).
             </Text>
           </View>
           <FormField

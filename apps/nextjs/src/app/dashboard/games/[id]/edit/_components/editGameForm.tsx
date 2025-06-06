@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
   ChevronUp,
   Copy,
-  Dices,
   Minus,
   Plus,
   Table,
@@ -76,6 +74,7 @@ import { Separator } from "@board-games/ui/separator";
 import { toast } from "@board-games/ui/toast";
 
 import { GradientPicker } from "~/components/color-picker";
+import { GameImage } from "~/components/game-image";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
@@ -562,7 +561,9 @@ const GameForm = ({
 
     try {
       const imageFile = values.imageUrl as File;
-      const uploadResult = await startUpload([imageFile]);
+      const uploadResult = await startUpload([imageFile], {
+        usageType: "game",
+      });
       if (!uploadResult) {
         throw new Error("Image upload failed");
       }
@@ -620,18 +621,17 @@ const GameForm = ({
                   <FormLabel>Image</FormLabel>
                   <FormControl>
                     <div className="flex items-center space-x-4">
-                      <div className="relative flex h-20 w-20 shrink-0 overflow-hidden">
-                        {imagePreview ? (
-                          <Image
-                            src={imagePreview}
-                            alt="Game image"
-                            className="aspect-square h-full w-full rounded-sm object-cover"
-                            fill
-                          />
-                        ) : (
-                          <Dices className="h-full w-full items-center justify-center rounded-full bg-muted p-2" />
-                        )}
-                      </div>
+                      <GameImage
+                        image={{
+                          name: "Game image",
+                          url: imagePreview,
+                          type: "file",
+                          usageType: "game",
+                        }}
+                        alt="Game image"
+                        containerClassName="h-20 w-20"
+                        userImageClassName="rounded-sm object-cover"
+                      />
                       <Input
                         type="file"
                         accept="image/*"

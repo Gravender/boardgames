@@ -64,7 +64,12 @@ export const shareLocationRouter = createTRPCRouter({
           id: number;
           name: string;
         }[];
-        gameImageUrl: string | undefined;
+        gameImage: {
+          name: string;
+          url: string | null;
+          type: "file" | "svg";
+          usageType: "game" | "player" | "match";
+        } | null;
         gameName: string | undefined;
       }[] = returnedLocation.sharedMatches.map((m) => {
         const linkedGame = m.sharedGame.linkedGame;
@@ -106,7 +111,7 @@ export const shareLocationRouter = createTRPCRouter({
               mPlayers.findIndex((player) => player.winner && player.isUser) !==
               -1,
             players: mPlayers,
-            gameImageUrl: linkedGame.image?.url,
+            gameImage: linkedGame.image,
             gameName: linkedGame.name,
           };
         }
@@ -121,7 +126,7 @@ export const shareLocationRouter = createTRPCRouter({
             mPlayers.findIndex((player) => player.winner && player.isUser) !==
             -1,
           players: mPlayers,
-          gameImageUrl: m.sharedGame.game.image?.url,
+          gameImage: m.sharedGame.game.image,
           gameName: m.sharedGame.game.name,
         };
       });

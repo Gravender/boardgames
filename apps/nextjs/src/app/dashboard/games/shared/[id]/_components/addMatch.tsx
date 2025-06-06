@@ -972,10 +972,7 @@ const AddPlayersForm = ({
                                         <Avatar className="h-8 w-8">
                                           {player.imageUrl ? (
                                             <AvatarImage
-                                              src={
-                                                player.imageUrl ||
-                                                "/placeholder.svg"
-                                              }
+                                              src={player.imageUrl}
                                               alt={player.name}
                                             />
                                           ) : (
@@ -1136,7 +1133,7 @@ const AddPlayerForm = ({
         addMatchPlayer({
           id: player.id,
           type: "original" as const,
-          imageUrl: player.imageUrl,
+          imageUrl: player.image?.url ?? null,
           name: player.name,
           matches: 0,
           team: null,
@@ -1178,7 +1175,9 @@ const AddPlayerForm = ({
     try {
       const imageFile = values.imageUrl;
 
-      const uploadResult = await startUpload([imageFile]);
+      const uploadResult = await startUpload([imageFile], {
+        usageType: "player",
+      });
       if (!uploadResult) {
         throw new Error("Image upload failed");
       }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   useMutation,
@@ -14,7 +13,6 @@ import {
   Check,
   ChevronDown,
   Clock,
-  Dices,
   Loader2,
   ThumbsDown,
   ThumbsUp,
@@ -81,6 +79,7 @@ import {
 } from "@board-games/ui/tooltip";
 
 import { FormattedDate } from "~/components/formatted-date";
+import { GameImage } from "~/components/game-image";
 import { useTRPC } from "~/trpc/react";
 import ChildLocationsRequest from "./child-locations-request";
 import ChildPlayersRequest from "./child-players-request";
@@ -286,18 +285,11 @@ export default function MatchRequestPage({
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded shadow">
-                    {match.item.game.image?.url ? (
-                      <Image
-                        fill
-                        src={match.item.game.image.url}
-                        alt={`${match.item.game.name} game image`}
-                        className="aspect-square h-full w-full rounded-md object-cover"
-                      />
-                    ) : (
-                      <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                    )}
-                  </div>
+                  <GameImage
+                    image={match.item.game.image}
+                    alt={`${match.item.game.name} game image`}
+                    containerClassName="h-10 w-10 rounded shadow"
+                  />
                   {match.item.name}
                   {potentialMatches.length > 0 && (
                     <span className="font-medium text-green-600">
@@ -581,18 +573,11 @@ export default function MatchRequestPage({
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded shadow">
-                        {match.item.game.image?.url ? (
-                          <Image
-                            fill
-                            src={match.item.game.image.url}
-                            alt={`${match.item.game.name} game image`}
-                            className="aspect-square h-full w-full rounded-md object-cover"
-                          />
-                        ) : (
-                          <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                        )}
-                      </div>
+                      <GameImage
+                        image={match.item.game.image}
+                        alt={`${match.item.game.name} game image`}
+                        containerClassName="h-10 w-10 rounded shadow"
+                      />
                       {match.item.name}
                     </CardTitle>
                     <CardDescription className="mt-1 flex flex-wrap gap-x-4 gap-y-1">

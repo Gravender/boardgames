@@ -52,7 +52,7 @@ export function GamesCard({
         <View className="relative flex h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden">
           {game.image ? (
             <Image
-              source={{ uri: game.image }}
+              source={{ uri: game.image.url ?? "" }}
               className="h-[4.5rem] w-[4.5rem] rounded-md"
               resizeMode="cover"
             />

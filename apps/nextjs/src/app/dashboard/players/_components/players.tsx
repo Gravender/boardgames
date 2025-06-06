@@ -59,7 +59,7 @@ export function PlayersTable({
                       <Avatar className="h-14 w-14 shadow">
                         <AvatarImage
                           className="object-cover"
-                          src={player.imageUrl ?? ""}
+                          src={player.image?.url ?? ""}
                           alt={player.name}
                         />
                         <AvatarFallback className="bg-slate-300">

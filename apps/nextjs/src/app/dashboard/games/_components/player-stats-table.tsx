@@ -119,7 +119,7 @@ export function PlayerStatsTable({ data }: { data: Player[] }) {
                         <Avatar className="h-7 w-7 sm:h-10 sm:w-10">
                           <AvatarImage
                             className="object-cover"
-                            src={player.imageUrl}
+                            src={player.image?.url ?? ""}
                             alt={player.name}
                           />
                           <AvatarFallback className="bg-slate-300">

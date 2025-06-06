@@ -78,7 +78,7 @@ export function FriendCard({ friend }: FriendCardProps) {
             className="flex items-center gap-4"
           >
             <Avatar className="h-10 w-10">
-              <AvatarImage src={friend.imageUrl ?? ""} alt={friend.name} />
+              <AvatarImage src={friend.image?.url ?? ""} alt={friend.name} />
               <AvatarFallback>
                 {friend.name.substring(0, 2).toUpperCase()}
               </AvatarFallback>

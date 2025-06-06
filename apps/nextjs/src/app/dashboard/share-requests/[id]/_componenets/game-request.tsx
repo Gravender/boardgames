@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   useMutation,
@@ -11,7 +10,6 @@ import {
 import {
   Check,
   ChevronDown,
-  Dices,
   Loader2,
   ThumbsDown,
   ThumbsUp,
@@ -54,6 +52,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@board-games/ui/radio-group";
 import { Separator } from "@board-games/ui/separator";
 
+import { GameImage } from "~/components/game-image";
 import { useTRPC } from "~/trpc/react";
 import ChildLocationsRequest from "./child-locations-request";
 import ChildMatchesRequest from "./child-match-request";
@@ -238,18 +237,11 @@ export default function GameRequestPage({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded">
-                  {game.item.image ? (
-                    <Image
-                      fill
-                      src={game.item.image.url}
-                      alt={`${game.item.name} game image`}
-                      className="aspect-square h-full w-full rounded-md object-cover"
-                    />
-                  ) : (
-                    <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                  )}
-                </div>
+                <GameImage
+                  image={game.item.image}
+                  alt={`${game.item.name} game image`}
+                  containerClassName="h-20 w-20 rounded"
+                />
                 <div>
                   <CardTitle>
                     {game.item.name}{" "}
@@ -397,20 +389,11 @@ export default function GameRequestPage({
                                                     }
                                                   >
                                                     <div className="flex items-center gap-2">
-                                                      <div className="relative flex h-6 w-6 shrink-0 overflow-hidden rounded">
-                                                        {fGame.image ? (
-                                                          <Image
-                                                            fill
-                                                            src={
-                                                              fGame.image.url
-                                                            }
-                                                            alt={`${fGame.name} game image`}
-                                                            className="aspect-square h-full w-full rounded-md object-cover"
-                                                          />
-                                                        ) : (
-                                                          <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                                                        )}
-                                                      </div>
+                                                      <GameImage
+                                                        image={fGame.image}
+                                                        alt={`${fGame.name} game image`}
+                                                        containerClassName="h-6 w-6 rounded"
+                                                      />
                                                       <div>
                                                         <p>
                                                           {fGame.name}

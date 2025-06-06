@@ -1,13 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   Calendar,
   Clock,
-  Dices,
   GamepadIcon,
   MapPin,
   MapPinIcon,
@@ -28,6 +26,7 @@ import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
 
 import { FormattedDate } from "~/components/formatted-date";
+import { GameImage } from "~/components/game-image";
 import { useTRPC } from "~/trpc/react";
 import { GameDetails } from "./game-details";
 
@@ -54,7 +53,7 @@ export function FriendStatsPage({ friendId }: { friendId: number }) {
             <div className="flex w-full flex-col items-center justify-center gap-2 text-secondary-foreground">
               <Avatar className="h-16 w-16">
                 <AvatarImage
-                  src={friend.clerkUser.imageUrl}
+                  src={friend.clerkUser.image?.url ?? ""}
                   alt={friend.clerkUser.name}
                 />
                 <AvatarFallback>
@@ -151,18 +150,11 @@ export function FriendStatsPage({ friendId }: { friendId: number }) {
             </CardTitle>
             <CardDescription>
               <div className="flex w-full items-center gap-2 text-secondary-foreground">
-                <div className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded shadow">
-                  {lastPlayed.gameImg ? (
-                    <Image
-                      fill
-                      src={lastPlayed.gameImg}
-                      alt={`${lastPlayed.gameName} game image`}
-                      className="aspect-square h-full w-full rounded-md object-cover"
-                    />
-                  ) : (
-                    <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                  )}
-                </div>
+                <GameImage
+                  image={lastPlayed.image}
+                  alt={`${lastPlayed.gameName} game image`}
+                  containerClassName="h-20 w-20 shadow"
+                />
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
                     <span className="text-xl font-semibold">

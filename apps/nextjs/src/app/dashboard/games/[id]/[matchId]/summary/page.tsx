@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     id: Number(matchId),
   });
   if (!summary) return { title: "Games" };
-  if (!summary.gameImageUrl)
+  if (!summary.image)
     return {
       title: `${summary.name} Summary`,
       description: `Summarizing the results of ${summary.name}`,
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${summary.name} Summary`,
     description: `Summarizing the results of ${summary.name}`,
     openGraph: {
-      images: [summary.gameImageUrl],
+      images: [summary.image.url ?? ""],
     },
   };
 }

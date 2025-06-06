@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
-import { ChevronDown, ChevronUp, Dices } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { ScrollArea } from "@board-games/ui/scroll-area";
@@ -14,6 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@board-games/ui/table";
+
+import { GameImage } from "~/components/game-image";
 
 type Games = NonNullable<RouterOutputs["player"]["getPlayer"]>["games"];
 type SortField = "name" | "plays" | "wins" | "winRate";
@@ -100,18 +101,11 @@ export function GameDetails({ data }: { data: Games }) {
               <TableRow key={`${game.id}-${game.type}`}>
                 <TableCell className="p-2 sm:p-4">
                   <div className="flex w-full items-center gap-2 text-xs sm:gap-4">
-                    <div className="relative flex h-7 w-7 shrink-0 overflow-hidden sm:h-10 sm:w-10">
-                      {game.imageUrl ? (
-                        <Image
-                          fill
-                          src={game.imageUrl}
-                          alt={`${game.name} game image`}
-                          className="aspect-square h-full w-full rounded-md object-cover"
-                        />
-                      ) : (
-                        <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                      )}
-                    </div>
+                    <GameImage
+                      image={game.image}
+                      alt={`${game.name} game image`}
+                      containerClassName="h-7 w-7 sm:h-10 sm:w-10"
+                    />
                     <div className="flex items-center gap-2">
                       <span className="font-medium sm:font-semibold">
                         {game.name}

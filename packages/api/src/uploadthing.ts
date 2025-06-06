@@ -6,6 +6,7 @@ import { UploadThingError, UTApi } from "uploadthing/server";
 
 import { db } from "@board-games/db/client";
 import { image, user } from "@board-games/db/schema";
+import { insertImageSchema } from "@board-games/db/zodSchema";
 
 const f = createUploadthing();
 
@@ -20,7 +21,8 @@ export const uploadRouter = {
       maxFileCount: 1,
     },
   })
-    .middleware(async ({ req }) => {
+    .input(insertImageSchema.pick({ usageType: true }))
+    .middleware(async ({ req, input }) => {
       const authUser = getAuth(req);
       // eslint-disable-next-line @typescript-eslint/only-throw-error
       if (!authUser.userId) throw new UploadThingError("Unauthorized");
@@ -32,7 +34,7 @@ export const uploadRouter = {
         // eslint-disable-next-line @typescript-eslint/only-throw-error
         throw new UploadThingError("Could not find user");
       }
-      return { userId: returnedUser.id };
+      return { userId: returnedUser.id, usageType: input.usageType };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       const [returnedImage] = await db
@@ -41,6 +43,10 @@ export const uploadRouter = {
           name: file.name,
           url: file.url,
           userId: metadata.userId,
+          type: "file",
+          fileId: file.key,
+          fileSize: file.size,
+          usageType: metadata.usageType,
         })
         .returning();
       if (!returnedImage) {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   useMutation,
@@ -14,7 +13,6 @@ import {
   Check,
   ChevronDown,
   Clock,
-  Dices,
   Loader2,
   MapPin,
   Share2,
@@ -79,6 +77,7 @@ import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
+import { GameImage } from "~/components/game-image";
 import { useTRPC } from "~/trpc/react";
 
 const formSchema = z
@@ -268,18 +267,11 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <div className="relative flex h-14 w-14 shrink-0 overflow-hidden rounded">
-            {gameToShare.imageUrl ? (
-              <Image
-                fill
-                src={gameToShare.imageUrl}
-                alt={`${gameToShare.name} game image`}
-                className="aspect-square h-full w-full rounded-md object-cover"
-              />
-            ) : (
-              <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-            )}
-          </div>
+          <GameImage
+            image={gameToShare.image}
+            alt={`${gameToShare.name} game image`}
+            containerClassName="h-14 w-14"
+          />
           <span>{gameToShare.name}</span>
           {gameToShare.yearPublished && (
             <span className="mr-2">({gameToShare.yearPublished})</span>

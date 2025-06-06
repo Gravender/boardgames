@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   useMutation,
@@ -14,7 +13,6 @@ import {
   Check,
   ChevronDown,
   Clock,
-  Dices,
   Loader2,
   MapPin,
   Share2,
@@ -79,6 +77,7 @@ import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
+import { GameImage } from "~/components/game-image";
 import { useTRPC } from "~/trpc/react";
 
 const formSchema = z
@@ -668,18 +667,11 @@ export default function SharePlayerPage({ playerId }: { playerId: number }) {
                                       </div>
 
                                       <div className="mt-1 flex items-center gap-2">
-                                        <div className="relative flex h-5 w-5 shrink-0 overflow-hidden rounded shadow">
-                                          {match.gameImageUrl ? (
-                                            <Image
-                                              fill
-                                              src={match.gameImageUrl}
-                                              alt={`${match.gameName} game image`}
-                                              className="aspect-square h-full w-full rounded-md object-cover"
-                                            />
-                                          ) : (
-                                            <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                                          )}
-                                        </div>
+                                        <GameImage
+                                          image={match.gameImage}
+                                          alt={`${match.gameName} game image`}
+                                          containerClassName="h-5 w-5 rounded shadow"
+                                        />
                                         <span className="text-xs">
                                           {match.gameName}
                                         </span>

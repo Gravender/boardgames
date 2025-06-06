@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Calendar, Dices, MapPin, User } from "lucide-react";
+import { Calendar, MapPin, User } from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
 import {
@@ -16,6 +16,7 @@ import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
 
 import { FormattedDate } from "~/components/formatted-date";
+import { GameImage } from "~/components/game-image";
 import { caller } from "~/trpc/server";
 import { GameDetails } from "./_components/GameDetailsTable";
 
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const player = await caller.player.getPlayer({
     id: Number(id),
   });
-  if (!player.imageUrl)
+  if (!player.image?.url)
     return {
       title: `${player.name}'s Stats`,
       description: `${player.name} Board Game Stats`,
@@ -43,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: `${player.name} Board Game Stats`,
     icons: [{ rel: "icon", url: "/user.ico" }],
     openGraph: {
-      images: [player.imageUrl],
+      images: [player.image?.url],
     },
   };
 }
@@ -65,10 +66,10 @@ export default async function Page({ params }: Props) {
             <CardDescription>
               <div className="flex w-full flex-col items-center justify-center gap-2 text-secondary-foreground">
                 <div className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded shadow">
-                  {player.imageUrl ? (
+                  {player.image?.url ? (
                     <Image
                       fill
-                      src={player.imageUrl}
+                      src={player.image?.url}
                       alt={`${player.name} player image`}
                       className="aspect-square h-full w-full rounded-md object-cover"
                     />
@@ -131,18 +132,11 @@ export default async function Page({ params }: Props) {
               <CardTitle>Last Play</CardTitle>
               <CardDescription>
                 <div className="flex w-full items-center gap-2 text-secondary-foreground">
-                  <div className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded shadow">
-                    {lastPlayed.gameImageUrl ? (
-                      <Image
-                        fill
-                        src={lastPlayed.gameImageUrl}
-                        alt={`${lastPlayed.gameName} game image`}
-                        className="aspect-square h-full w-full rounded-md object-cover"
-                      />
-                    ) : (
-                      <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                    )}
-                  </div>
+                  <GameImage
+                    image={lastPlayed.gameImage}
+                    alt={`${lastPlayed.gameName} game image`}
+                    containerClassName="h-20 w-20 rounded shadow"
+                  />
                   <div className="flex flex-col gap-2">
                     <span className="text-xl font-semibold">
                       {lastPlayed.gameName}
@@ -247,18 +241,12 @@ export default async function Page({ params }: Props) {
                         <span className="w-28 truncate font-semibold">
                           {match.gameName}
                         </span>
-                        <div className="relative flex h-20 w-20 shrink-0 overflow-hidden rounded shadow">
-                          {match.gameImageUrl ? (
-                            <Image
-                              fill
-                              src={match.gameImageUrl}
-                              alt={`${match.gameName} game image`}
-                              className="aspect-square h-full w-full rounded-md object-cover"
-                            />
-                          ) : (
-                            <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
-                          )}
-                        </div>
+
+                        <GameImage
+                          image={match.gameImage}
+                          alt={`${match.gameName} game image`}
+                          containerClassName="h-20 w-20 rounded shadow"
+                        />
 
                         <FormattedDate
                           date={match.date}

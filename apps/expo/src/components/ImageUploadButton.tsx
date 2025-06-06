@@ -41,7 +41,9 @@ export default function ImageUploadButton() {
         uri: media.uri,
         size: fileInfo.size,
       } as unknown as File;
-      await startUpload([fileToUpload]);
+      await startUpload([fileToUpload], {
+        usageType: "game",
+      });
     } catch (error) {
       console.error("Upload error:", error);
     }
