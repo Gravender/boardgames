@@ -36,7 +36,7 @@ export function BreadCrumbs() {
   return (
     <RenderBreadCrumbs
       pathItems={
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+         
         data ??
         paths
           .split("/")

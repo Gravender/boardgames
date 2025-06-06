@@ -4,10 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
 import {
   Calendar,
-  CalendarIcon,
   Clock,
   Dices,
   GamepadIcon,
