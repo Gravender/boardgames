@@ -288,7 +288,7 @@ export const gameRouter = createTRPCRouter({
     .input(selectGameSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       const [result] = await ctx.db
-        .select({ id: game.id, name: game.name, image: image.url })
+        .select({ id: game.id, name: game.name, image: image })
         .from(game)
         .where(and(eq(game.id, input.id), isNull(game.deletedAt)))
         .leftJoin(image, eq(game.imageId, image.id))
@@ -297,7 +297,7 @@ export const gameRouter = createTRPCRouter({
       return {
         id: result.id,
         name: result.name,
-        imageUrl: result.image,
+        image: result.image,
       };
     }),
   getGameScoresheets: protectedUserProcedure

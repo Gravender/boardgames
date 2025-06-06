@@ -749,7 +749,7 @@ export const shareGameRouter = createTRPCRouter({
           id: returnedSharedGame.id,
           permission: returnedSharedGame.permission,
           name: returnedSharedGame.game.name,
-          imageUrl: returnedSharedGame.game.image?.url ?? "",
+          image: returnedSharedGame.game.image,
           playersMin: returnedSharedGame.game.playersMin,
           playersMax: returnedSharedGame.game.playersMax,
           playtimeMin: returnedSharedGame.game.playtimeMin,

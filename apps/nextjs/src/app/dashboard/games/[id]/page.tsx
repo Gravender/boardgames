@@ -17,13 +17,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (isNaN(Number(id))) redirect("/dashboard/games");
   const game = await caller.game.getGameMetaData({ id: Number(id) });
   if (!game) redirect("/dashboard/games");
-  if (!game.imageUrl)
+  if (!game.image?.url)
     return { title: game.name, description: `${game.name} Match Tracker` };
   return {
     title: game.name,
     description: `${game.name} Match Tracker`,
     openGraph: {
-      images: [game.imageUrl],
+      images: [game.image.url],
     },
   };
 }
