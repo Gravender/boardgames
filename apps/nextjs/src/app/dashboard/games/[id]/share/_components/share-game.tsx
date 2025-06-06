@@ -98,13 +98,14 @@ const formSchema = z
       .array(z.object({ id: z.number(), permission: z.enum(["view", "edit"]) }))
       .min(1),
   })
-  .superRefine((values, ctx) => {
+  .check((ctx) => {
     if (
-      values.shareMethod === "friends" &&
-      (values.friendIds === undefined || values.friendIds.length < 1)
+      ctx.value.shareMethod === "friends" &&
+      (ctx.value.friendIds === undefined || ctx.value.friendIds.length < 1)
     ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
         message:
           "Must have at least one friend to share to if sharing with friends",
         path: ["friendIds"],

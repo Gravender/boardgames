@@ -1,13 +1,14 @@
 "use client";
 
+import type { z } from "zod/v4";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PlusIcon, User } from "lucide-react";
-import { z } from "zod/v4";
 
 import { insertPlayerSchema } from "@board-games/db/zodSchema";
+import { fileSchema } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
 import {
   Dialog,
@@ -64,14 +65,7 @@ export const AddPlayerDialog = ({
 };
 
 const playerSchema = insertPlayerSchema.pick({ name: true }).extend({
-  imageUrl: z
-    .instanceof(File)
-    .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
-    .refine(
-      (file) => file.type === "image/jpeg" || file.type === "image/png",
-      "Only .jpg and .png formats are supported.",
-    )
-    .nullable(),
+  imageUrl: fileSchema,
 });
 const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
   const trpc = useTRPC();

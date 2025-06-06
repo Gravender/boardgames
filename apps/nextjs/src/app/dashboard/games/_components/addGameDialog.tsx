@@ -689,14 +689,15 @@ const AddScoreSheetForm = ({
   setIsScoresheet: (isScoresheet: boolean) => void;
 }) => {
   const form = useForm({
-    schema: scoreSheetWithRoundsSchema.superRefine((data, ctx) => {
-      if (data.scoresheet.isCoop) {
+    schema: scoreSheetWithRoundsSchema.check((ctx) => {
+      if (ctx.value.scoresheet.isCoop) {
         if (
-          data.scoresheet.winCondition !== "Manual" &&
-          data.scoresheet.winCondition !== "Target Score"
+          ctx.value.scoresheet.winCondition !== "Manual" &&
+          ctx.value.scoresheet.winCondition !== "Target Score"
         ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+          ctx.issues.push({
+            code: "custom",
+            input: ctx.value,
             message:
               "Win condition must be Manual or Target Score for Coop games.",
             path: ["scoresheet.winCondition"],

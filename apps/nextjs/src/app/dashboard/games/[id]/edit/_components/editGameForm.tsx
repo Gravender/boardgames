@@ -94,13 +94,14 @@ export const scoresheetSchema = editScoresheetSchema.extend({
 const scoresheetsSchema = z
   .array(scoresheetSchema)
   .min(1)
-  .superRefine((values, ctx) => {
-    const numberDefaultScoresheets = values.filter(
+  .check((ctx) => {
+    const numberDefaultScoresheets = ctx.value.filter(
       (scoresheet) => scoresheet.isDefault,
     ).length;
     if (numberDefaultScoresheets > 1) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
         message: "Only one default scoresheet is allowed.",
         path: ["isDefault"],
       });
@@ -1007,17 +1008,18 @@ const ScoresheetForm = ({
   setIsScoresheet: (isScoresheet: boolean) => void;
 }) => {
   const form = useForm({
-    schema: scoresheetSchema.superRefine((data, ctx) => {
-      if (scoresheet.isCoop) {
+    schema: scoresheetSchema.check((ctx) => {
+      if (ctx.value.isCoop) {
         if (
-          data.winCondition !== "Manual" &&
-          data.winCondition !== "Target Score"
+          ctx.value.winCondition !== "Manual" &&
+          ctx.value.winCondition !== "Target Score"
         ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+          ctx.issues.push({
+            code: "custom",
+            input: ctx.value,
             message:
               "Win condition must be Manual or Target Score for Coop games.",
-            path: ["scoresheet.winCondition"],
+            path: ["winCondition"],
           });
         }
       }

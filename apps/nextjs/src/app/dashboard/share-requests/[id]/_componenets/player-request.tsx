@@ -99,10 +99,13 @@ const requesteeGameSchema = z
       }),
     ),
   })
-  .superRefine((values, ctx) => {
-    if (!values.scoresheets.some((scoresheet) => scoresheet.accept === true)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+  .check((ctx) => {
+    if (
+      !ctx.value.scoresheets.some((scoresheet) => scoresheet.accept === true)
+    ) {
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
         message: "You must accept at least one scoresheet",
         path: ["scoresheets"],
       });

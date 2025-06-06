@@ -20,6 +20,7 @@ import {
   insertMatchSchema,
   insertPlayerSchema,
 } from "@board-games/db/zodSchema";
+import { fileSchema } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
@@ -1069,14 +1070,7 @@ const AddPlayersForm = ({
   );
 };
 const addPlayerSchema = insertPlayerSchema.pick({ name: true }).extend({
-  imageUrl: z
-    .instanceof(File)
-    .refine((file) => file.size <= 4000000, `Max image size is 4MB.`)
-    .refine(
-      (file) => file.type === "image/jpeg" || file.type === "image/png",
-      "Only .jpg and .png formats are supported.",
-    )
-    .nullable(),
+  imageUrl: fileSchema,
 });
 const AddPlayerForm = ({
   gameId,

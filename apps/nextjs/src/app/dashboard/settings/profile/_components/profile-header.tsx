@@ -6,6 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import { Camera, Mail } from "lucide-react";
 import { z } from "zod/v4";
 
+import { fileSchema } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent } from "@board-games/ui/card";
@@ -131,22 +132,13 @@ function EditProfilePictureContent({
 
   const EditProfileSchema = z
     .object({
-      file: z
-        .instanceof(File)
-        .refine(
-          (file) => file.size <= 4 * 1024 * 1024,
-          `Max image size is 4MB.`,
-        )
-        .refine(
-          (file) => file.type === "image/jpeg" || file.type === "image/png",
-          "Only .jpg and .png formats are supported.",
-        )
-        .or(z.string().nullable()),
+      file: fileSchema.or(z.string().nullable()),
     })
-    .superRefine((values, ctx) => {
-      if (serializableUser.imageUrl === values.file) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+    .check((ctx) => {
+      if (serializableUser.imageUrl === ctx.value.file) {
+        ctx.issues.push({
+          code: "custom",
+          input: ctx.value,
           message: "Image cannot be the same as current image.",
           path: ["file"],
         });

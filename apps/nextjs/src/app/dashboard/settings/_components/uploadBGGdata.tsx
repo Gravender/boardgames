@@ -177,9 +177,7 @@ export interface UserInfo {
 }
 
 const formSchema = z.object({
-  jsonFile: z.instanceof(File).refine((file) => file.name.endsWith(".json"), {
-    message: "File must be a JSON file",
-  }),
+  jsonFile: z.file().mime(["application/json"]).max(4_000_000),
 });
 
 type FormValues = z.infer<typeof formSchema>;
