@@ -46,6 +46,24 @@ export const baseGameSchema = z
         path: ["playtimeMax"],
       });
     }
+    if (
+      ctx.value.playtimeMin &&
+      ctx.value.playtimeMax &&
+      ctx.value.playtimeMin > ctx.value.playtimeMax
+    ) {
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
+        message: "Playtime min must be less than or equal to playtime max.",
+        path: ["playtimeMin"],
+      });
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
+        message: "Playtime max must be greater than or equal to playtime min.",
+        path: ["playtimeMax"],
+      });
+    }
   });
 export const createGameSchema = baseGameSchema.omit({ gameImg: true }).extend({
   gameImg: fileSchema,
