@@ -923,6 +923,7 @@ export const shareGameRouter = createTRPCRouter({
         const [insertedScoresheet] = await transaction
           .insert(scoresheet)
           .values({
+            parentId: returnedScoresheet.id,
             name: returnedScoresheet.name,
             gameId: gameId,
             userId: ctx.userId,
@@ -1070,6 +1071,7 @@ export const shareGameRouter = createTRPCRouter({
           const returnedRounds = returnedScoresheet.rounds.map<
             z.infer<typeof insertRoundSchema>
           >((round) => ({
+            parentId: round.id,
             color: round.color,
             name: round.name,
             type: round.type,

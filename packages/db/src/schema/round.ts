@@ -15,6 +15,7 @@ const rounds = createTable(
   "round",
   {
     id: serial("id").primaryKey(),
+    parentId: integer("parent_id"),
     name: varchar("name", { length: 256 }).notNull(),
     scoresheetId: integer("scoresheet_id")
       .notNull()
