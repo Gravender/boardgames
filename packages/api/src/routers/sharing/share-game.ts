@@ -924,7 +924,7 @@ export const shareGameRouter = createTRPCRouter({
           .insert(scoresheet)
           .values({
             parentId: returnedScoresheet.id,
-            name: returnedScoresheet.name,
+            name: `${input.name} Scoresheet`,
             gameId: gameId,
             userId: ctx.userId,
             isCoop: returnedScoresheet.isCoop,

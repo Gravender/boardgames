@@ -132,7 +132,7 @@ export const matchRouter = createTRPCRouter({
           .insert(scoresheet)
           .values({
             parentId: returnedScoresheet.id,
-            name: returnedScoresheet.name,
+            name: `${input.name} Scoresheet`,
             gameId: returnedScoresheet.gameId,
             userId: ctx.userId,
             isCoop: returnedScoresheet.isCoop,
