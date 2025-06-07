@@ -131,7 +131,8 @@ export const matchRouter = createTRPCRouter({
         const [insertedScoresheet] = await transaction
           .insert(scoresheet)
           .values({
-            name: returnedScoresheet.name,
+            parentId: returnedScoresheet.id,
+            name: `${input.name} Scoresheet`,
             gameId: returnedScoresheet.gameId,
             userId: ctx.userId,
             isCoop: returnedScoresheet.isCoop,
@@ -261,6 +262,7 @@ export const matchRouter = createTRPCRouter({
           const returnedRounds = returnedScoresheet.rounds.map<
             z.infer<typeof insertRoundSchema>
           >((round) => ({
+            parentId: round.id,
             color: round.color,
             name: round.name,
             type: round.type,

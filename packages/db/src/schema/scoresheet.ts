@@ -18,6 +18,7 @@ const scoresheets = createTable(
   "scoresheet",
   {
     id: serial("id").primaryKey(),
+    parentId: integer("parent_id"),
     name: varchar("name", { length: 256 }).notNull(),
     gameId: integer("game_id")
       .references(() => game.id)

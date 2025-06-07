@@ -68,6 +68,7 @@ export async function seedMatches(d3Seed: number) {
       const [newScoreSheet] = await db
         .insert(scoresheet)
         .values({
+          parentId: returnedScoresheet.id,
           name: `${matchName} Scoresheet`,
           gameId: returnedScoresheet.gameId,
           userId: returnedScoresheet.userId,
@@ -82,6 +83,7 @@ export async function seedMatches(d3Seed: number) {
         throw new Error("Scoresheet not created");
       }
       const roundsToInert = returnedScoresheet.rounds.map((round) => ({
+        parentId: round.id,
         color: round.color,
         name: round.name,
         type: round.type,

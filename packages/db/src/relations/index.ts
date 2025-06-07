@@ -75,6 +75,14 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.scoresheet.id,
       optional: false,
     }),
+    parent: r.one.round({
+      from: r.round.parentId,
+      to: r.round.id,
+    }),
+    childRounds: r.many.round({
+      from: r.round.id,
+      to: r.round.parentId,
+    }),
   },
   userSharingPreference: {
     user: r.one.user({
@@ -606,6 +614,14 @@ export const relations = defineRelations(schema, (r) => ({
     rounds: r.many.round({
       from: r.scoresheet.id,
       to: r.round.scoresheetId,
+    }),
+    parent: r.one.scoresheet({
+      from: r.scoresheet.parentId,
+      to: r.scoresheet.id,
+    }),
+    childScoresheets: r.many.scoresheet({
+      from: r.scoresheet.id,
+      to: r.scoresheet.parentId,
     }),
   },
   team: {
