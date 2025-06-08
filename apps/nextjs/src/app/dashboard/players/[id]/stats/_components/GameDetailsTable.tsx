@@ -17,7 +17,13 @@ import {
 import { GameImage } from "~/components/game-image";
 
 type Games = NonNullable<RouterOutputs["player"]["getPlayer"]>["games"];
-type SortField = "name" | "plays" | "wins" | "winRate";
+type SortField =
+  | "name"
+  | "plays"
+  | "wins"
+  | "winRate"
+  | "worstScore"
+  | "bestScore";
 type SortOrder = "asc" | "desc";
 export function GameDetails({ data }: { data: Games }) {
   const [sortField, setSortField] = useState<SortField>("name");
@@ -27,8 +33,13 @@ export function GameDetails({ data }: { data: Games }) {
     const temp = [...data];
 
     temp.sort((a, b) => {
-      if (a[sortField] < b[sortField]) return sortOrder === "asc" ? -1 : 1;
-      if (a[sortField] > b[sortField]) return sortOrder === "asc" ? 1 : -1;
+      const aVal = a[sortField];
+      const bVal = b[sortField];
+      if (aVal === bVal) return 0;
+      if (aVal === null) return 1;
+      if (bVal === null) return -1;
+      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
       return 0;
     });
     return temp;
@@ -57,7 +68,7 @@ export function GameDetails({ data }: { data: Games }) {
       <Table>
         <TableHeader className="sticky text-card-foreground">
           <TableRow>
-            <TableHead className="w-16 px-1 sm:w-full sm:px-4">
+            <TableHead className="w-10 px-1 sm:w-full sm:px-4">
               <button
                 onClick={() => toggleSort("name")}
                 className="flex items-center font-bold"
@@ -77,6 +88,24 @@ export function GameDetails({ data }: { data: Games }) {
             </TableHead>
             <TableHead className="w-8 px-0 sm:px-4">
               <button
+                onClick={() => toggleSort("bestScore")}
+                className="flex items-center font-bold"
+              >
+                <span>Best</span>
+                <SortIcon field="bestScore" />
+              </button>
+            </TableHead>
+            <TableHead className="w-8 px-0 sm:px-4">
+              <button
+                onClick={() => toggleSort("worstScore")}
+                className="flex items-center font-bold"
+              >
+                <span>Worst</span>
+                <SortIcon field="worstScore" />
+              </button>
+            </TableHead>
+            <TableHead className="w-8 px-0 sm:px-4">
+              <button
                 onClick={() => toggleSort("wins")}
                 className="flex items-center font-bold"
               >
@@ -84,7 +113,7 @@ export function GameDetails({ data }: { data: Games }) {
                 <SortIcon field="wins" />
               </button>
             </TableHead>
-            <TableHead className="w-16 px-1 sm:px-4">
+            <TableHead className="hidden w-16 px-1 xs:table-cell sm:px-4">
               <button
                 onClick={() => toggleSort("winRate")}
                 className="flex items-center font-bold"
@@ -104,21 +133,25 @@ export function GameDetails({ data }: { data: Games }) {
                     <GameImage
                       image={game.image}
                       alt={`${game.name} game image`}
-                      containerClassName="h-7 w-7 sm:h-10 sm:w-10"
+                      containerClassName="h-7 w-7 sm:h-10 sm:w-10 hidden sm:block"
                     />
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium sm:font-semibold">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-wrap text-xs font-medium sm:text-sm sm:font-semibold">
                         {game.name}
                       </span>
-                      {game.type === "Shared" && (
+                      {game.type === "shared" && (
                         <span className="text-muted-foreground">(Shared)</span>
                       )}
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>{game.plays}</TableCell>
+                <TableCell>{game.bestScore ?? "-"}</TableCell>
+                <TableCell>{game.worstScore ?? "-"}</TableCell>
                 <TableCell>{game.wins}</TableCell>
-                <TableCell>{(game.winRate * 100).toFixed(2)}%</TableCell>
+                <TableCell className="hidden xs:table-cell">
+                  {(game.winRate * 100).toFixed(2)}%
+                </TableCell>
               </TableRow>
             );
           })}

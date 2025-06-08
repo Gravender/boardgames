@@ -3,8 +3,12 @@ export function CapitalizeFirstLetterOfEachWord(str: string) {
 }
 
 export const formatDuration = (seconds: number) => {
-  const hours = Math.floor(seconds / 3600);
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
+  if (days > 0) {
+    return `${days}d ${hours}h ${minutes}m`;
+  }
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 };
 

@@ -18,7 +18,14 @@ import {
 } from "@board-games/db/zodSchema";
 import { calculatePlacement } from "@board-games/shared";
 
+import type { Player, PlayerMatch } from "../utils/player";
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import {
+  aggregatePlayerStats,
+  getTeamStats,
+  headToHeadStats,
+  teammateFrequency,
+} from "../utils/player";
 
 export const playerRouter = createTRPCRouter({
   getPlayersByGame: protectedUserProcedure
@@ -418,10 +425,16 @@ export const playerRouter = createTRPCRouter({
                   },
                   matchPlayers: {
                     with: {
-                      player: true,
+                      player: {
+                        with: {
+                          image: true,
+                        },
+                      },
                     },
                   },
                   location: true,
+                  teams: true,
+                  scoresheet: true,
                 },
               },
             },
@@ -460,8 +473,16 @@ export const playerRouter = createTRPCRouter({
                               sharedWithId: ctx.userId,
                             },
                             with: {
-                              player: true,
-                              linkedPlayer: true,
+                              player: {
+                                with: {
+                                  image: true,
+                                },
+                              },
+                              linkedPlayer: {
+                                with: {
+                                  image: true,
+                                },
+                              },
                             },
                           },
                           matchPlayer: true,
@@ -470,6 +491,8 @@ export const playerRouter = createTRPCRouter({
                       match: {
                         with: {
                           location: true,
+                          teams: true,
+                          scoresheet: true,
                         },
                       },
                     },
@@ -487,7 +510,7 @@ export const playerRouter = createTRPCRouter({
         });
       }
       const playerGames: {
-        type: "Shared" | "Original";
+        type: "shared" | "original";
         id: number;
         name: string;
         image: {
@@ -496,122 +519,101 @@ export const playerRouter = createTRPCRouter({
           type: "file" | "svg";
           usageType: "game" | "player" | "match";
         } | null;
-        wins: number;
-        plays: number;
-        winRate: number;
       }[] = [];
       const playerUniquePlayers = new Set<number>();
-      const playerMatches = returnedPlayer.matchPlayers.map<{
-        type: "Shared" | "Original";
-        id: number;
-        name: string;
-        date: Date;
-        duration: number;
-        finished: boolean;
-        gameId: number;
-        gameName: string;
-        gameImage: {
-          name: string;
-          url: string | null;
-          type: "file" | "svg";
-          usageType: "game" | "player" | "match";
-        } | null;
-        locationName: string | undefined;
-        players: {
-          id: number;
-          name: string;
-          score: number | null;
-          isWinner: boolean;
-          playerId: number;
-          placement: number | null;
-        }[];
-        outcome: {
-          score: number | null;
-          isWinner: boolean;
-          placement: number | null;
-        };
-      }>((mPlayer) => {
-        const filteredPlayers = mPlayer.match.matchPlayers;
-        const foundGame = playerGames.find(
-          (pGame) => pGame.id === mPlayer.match.gameId,
-        );
-        if (foundGame) {
-          foundGame.plays += 1;
-          foundGame.wins += (mPlayer.winner ?? false) ? 1 : 0;
-          foundGame.winRate = foundGame.wins / foundGame.plays;
-        } else {
-          playerGames.push({
-            type: "Original",
-            id: mPlayer.match.gameId,
-            name: mPlayer.match.game.name,
-            image: mPlayer.match.game.image,
-            plays: 1,
-            wins: (mPlayer.winner ?? false) ? 1 : 0,
-            winRate: (mPlayer.winner ?? false) ? 1 : 0,
-          });
-        }
-        filteredPlayers.forEach((fPlayer) => {
-          if (
-            fPlayer.playerId !== returnedPlayer.id &&
-            !playerUniquePlayers.has(fPlayer.playerId)
-          ) {
-            playerUniquePlayers.add(fPlayer.playerId);
+      const playerMatches = returnedPlayer.matchPlayers.map<PlayerMatch>(
+        (mPlayer) => {
+          const filteredPlayers = mPlayer.match.matchPlayers;
+          const foundGame = playerGames.find(
+            (pGame) =>
+              pGame.id === mPlayer.match.gameId && pGame.type === "original",
+          );
+          if (!foundGame) {
+            playerGames.push({
+              type: "original",
+              id: mPlayer.match.gameId,
+              name: mPlayer.match.game.name,
+              image: mPlayer.match.game.image,
+            });
           }
-        });
-        return {
-          type: "Original",
-          id: mPlayer.matchId,
-          name: mPlayer.match.name,
-          date: mPlayer.match.date,
-          duration: mPlayer.match.duration,
-          finished: mPlayer.match.finished,
-          gameId: mPlayer.match.gameId,
-          gameName: mPlayer.match.game.name,
-          gameImage: mPlayer.match.game.image,
-          locationName: mPlayer.match.location?.name,
-          players: filteredPlayers.map((mPlayer) => {
-            return {
-              id: mPlayer.player.id,
-              name: mPlayer.player.name,
+          filteredPlayers.forEach((fPlayer) => {
+            if (
+              fPlayer.playerId !== returnedPlayer.id &&
+              !playerUniquePlayers.has(fPlayer.playerId)
+            ) {
+              playerUniquePlayers.add(fPlayer.playerId);
+            }
+          });
+          return {
+            id: mPlayer.matchId,
+            type: "original" as const,
+            date: mPlayer.match.date,
+            name: mPlayer.match.name,
+            teams: mPlayer.match.teams,
+            duration: mPlayer.match.duration,
+            finished: mPlayer.match.finished,
+            gameId: mPlayer.match.gameId,
+            gameName: mPlayer.match.game.name,
+            gameImage: mPlayer.match.game.image,
+            locationName: mPlayer.match.location?.name,
+            players: filteredPlayers.map<Player>((mPlayer) => {
+              return {
+                id: mPlayer.player.id,
+                type: "original" as const,
+                name: mPlayer.player.name,
+                isWinner: mPlayer.winner ?? false,
+                isUser: mPlayer.player.isUser,
+                score: mPlayer.score,
+                image: mPlayer.player.image
+                  ? {
+                      name: mPlayer.player.image.name,
+                      url: mPlayer.player.image.url,
+                      type: mPlayer.player.image.type,
+                      usageType: "player" as const,
+                    }
+                  : null,
+                teamId: mPlayer.teamId,
+                placement: mPlayer.placement,
+              };
+            }),
+            scoresheet: mPlayer.match.scoresheet,
+            outcome: {
               score: mPlayer.score,
               isWinner: mPlayer.winner ?? false,
-              playerId: mPlayer.player.id,
               placement: mPlayer.placement,
-            };
-          }),
-          outcome: {
-            score: mPlayer.score,
-            isWinner: mPlayer.winner ?? false,
-            placement: mPlayer.placement,
-          },
-        };
-      }, []);
+            },
+            linkedGameId: undefined,
+          };
+        },
+        [],
+      );
       returnedPlayer.sharedLinkedPlayers.forEach((linkedPlayer) => {
         linkedPlayer.sharedMatchPlayers.forEach((mPlayer) => {
           const filteredPlayers = mPlayer.sharedMatch.sharedMatchPlayers;
           const foundGame = playerGames.find(
             (pGame) =>
               pGame.id ===
-              (mPlayer.sharedMatch.sharedGame.linkedGameId ??
-                mPlayer.sharedMatch.sharedGame.gameId),
+                (mPlayer.sharedMatch.sharedGame.linkedGameId ??
+                  mPlayer.sharedMatch.sharedGame.gameId) &&
+              pGame.type ===
+                (mPlayer.sharedMatch.sharedGame.linkedGameId
+                  ? "original"
+                  : "shared"),
           );
-          if (foundGame) {
-            foundGame.plays += 1;
-            foundGame.wins += (mPlayer.matchPlayer.winner ?? false) ? 1 : 0;
-            foundGame.winRate = foundGame.wins / foundGame.plays;
-          } else {
+          if (!foundGame) {
             playerGames.push({
-              type: "Shared",
-              id: mPlayer.sharedMatch.sharedGame.id,
+              type: mPlayer.sharedMatch.sharedGame.linkedGameId
+                ? ("original" as const)
+                : ("shared" as const),
+              id:
+                mPlayer.sharedMatch.sharedGame.linkedGameId ??
+                mPlayer.sharedMatch.sharedGame.id,
               name:
                 mPlayer.sharedMatch.sharedGame.linkedGame?.name ??
                 mPlayer.sharedMatch.sharedGame.game.name,
               image: mPlayer.sharedMatch.sharedGame.linkedGame
                 ? mPlayer.sharedMatch.sharedGame.linkedGame.image
                 : mPlayer.sharedMatch.sharedGame.game.image,
-              plays: 1,
-              wins: (mPlayer.matchPlayer.winner ?? false) ? 1 : 0,
-              winRate: (mPlayer.matchPlayer.winner ?? false) ? 1 : 0,
             });
           }
           filteredPlayers.forEach((fPlayer) => {
@@ -626,59 +628,129 @@ export const playerRouter = createTRPCRouter({
               playerUniquePlayers.add(fPlayer.sharedPlayer.playerId);
             }
           });
+          const sharedMatch = mPlayer.sharedMatch;
+          const sharedMatchMatch = sharedMatch.match;
+          const sharedGame = sharedMatch.sharedGame;
+          const linkedGame = sharedGame.linkedGame;
           playerMatches.push({
-            type: "Shared",
-            id: mPlayer.sharedMatch.id,
-            name: mPlayer.sharedMatch.match.name,
-            date: mPlayer.sharedMatch.match.date,
-            duration: mPlayer.sharedMatch.match.duration,
-            finished: mPlayer.sharedMatch.match.finished,
-            gameId: mPlayer.sharedMatch.sharedGame.id,
-            gameName:
-              mPlayer.sharedMatch.sharedGame.linkedGame?.name ??
-              mPlayer.sharedMatch.sharedGame.game.name,
-            gameImage: mPlayer.sharedMatch.sharedGame.linkedGame
-              ? mPlayer.sharedMatch.sharedGame.linkedGame.image
-              : mPlayer.sharedMatch.sharedGame.game.image,
-            locationName: mPlayer.sharedMatch.match.location?.name,
+            id: sharedMatch.id,
+            type: "shared" as const,
+            date: sharedMatchMatch.date,
+            name: sharedMatchMatch.name,
+            teams: sharedMatchMatch.teams,
+            duration: sharedMatchMatch.duration,
+            finished: sharedMatchMatch.finished,
+            gameId: sharedMatch.sharedGame.id,
+            gameName: linkedGame ? linkedGame.name : sharedGame.game.name,
+            gameImage: linkedGame ? linkedGame.image : sharedGame.game.image,
+            locationName: sharedMatchMatch.location?.name,
             players: filteredPlayers
               .map((fPlayer) => {
-                if (fPlayer.sharedPlayer) {
+                const sharedPlayer = fPlayer.sharedPlayer;
+                const linkedPlayer = sharedPlayer?.linkedPlayer;
+                if (sharedPlayer) {
+                  if (linkedPlayer) {
+                    return {
+                      id: linkedPlayer.id,
+                      type: "original" as const,
+                      name: linkedPlayer.name,
+                      isUser: linkedPlayer.isUser,
+                      isWinner: fPlayer.matchPlayer.winner ?? false,
+                      score: fPlayer.matchPlayer.score,
+                      image: linkedPlayer.image
+                        ? {
+                            name: linkedPlayer.image.name,
+                            url: linkedPlayer.image.url,
+                            type: linkedPlayer.image.type,
+                            usageType: "player" as const,
+                          }
+                        : null,
+                      teamId: fPlayer.matchPlayer.teamId,
+                      placement: fPlayer.matchPlayer.placement,
+                    };
+                  }
                   return {
-                    id: fPlayer.sharedPlayer.playerId,
-                    name: fPlayer.sharedPlayer.player.name,
-                    score: fPlayer.matchPlayer.score,
+                    id: sharedPlayer.playerId,
+                    type: "shared" as const,
+                    name: sharedPlayer.player.name,
+                    isUser: sharedPlayer.player.isUser,
                     isWinner: fPlayer.matchPlayer.winner ?? false,
-                    playerId: fPlayer.sharedPlayer.playerId,
+                    score: fPlayer.matchPlayer.score,
+                    image: sharedPlayer.player.image
+                      ? {
+                          name: sharedPlayer.player.image.name,
+                          url: sharedPlayer.player.image.url,
+                          type: sharedPlayer.player.image.type,
+                          usageType: "player" as const,
+                        }
+                      : null,
+                    teamId: fPlayer.matchPlayer.teamId,
                     placement: fPlayer.matchPlayer.placement,
                   };
                 }
                 return null;
               })
               .filter((player) => player !== null),
+            scoresheet: sharedMatchMatch.scoresheet,
+
             outcome: {
               score: mPlayer.matchPlayer.score,
               isWinner: mPlayer.matchPlayer.winner ?? false,
               placement: mPlayer.matchPlayer.placement,
             },
+            linkedGameId:
+              mPlayer.sharedMatch.sharedGame.linkedGameId ?? undefined,
           });
         });
       });
       playerMatches.sort((a, b) => compareAsc(b.date, a.date));
+      const playersStats = aggregatePlayerStats(playerMatches);
+      const teamStats = getTeamStats(playerMatches, {
+        id: returnedPlayer.id,
+        type: "original" as const,
+      });
+      const teammateFrequencyStats = teammateFrequency(playerMatches, {
+        id: returnedPlayer.id,
+        type: "original" as const,
+      });
+      const headToHead = headToHeadStats(playerMatches, {
+        id: returnedPlayer.id,
+        type: "original" as const,
+      });
+      const playerStats = playersStats.find(
+        (p) => p.id === returnedPlayer.id && p.type === "original",
+      );
+      if (!playerStats) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Player stats not found.",
+        });
+      }
       return {
         id: returnedPlayer.id,
+        isUser: returnedPlayer.isUser,
+        createdAt: returnedPlayer.createdAt,
         name: returnedPlayer.name,
         image: returnedPlayer.image,
-        players: playerUniquePlayers.size,
-        wins: playerMatches.filter((m) => m.outcome.isWinner).length,
-        winRate:
-          playerMatches.reduce(
-            (acc, cur) => acc + (cur.outcome.isWinner ? 1 : 0),
-            0,
-          ) / playerMatches.length,
-        duration: playerMatches.reduce((acc, cur) => acc + cur.duration, 0),
+        stats: playerStats,
+        teamStats,
+        teammateFrequency: teammateFrequencyStats,
+        headToHead,
         matches: playerMatches,
-        games: playerGames,
+        games: playerGames
+          .map((game) => {
+            const foundGameStats = playerStats.gameStats.find(
+              (g) => g.id === game.id && g.type === game.type,
+            );
+            if (!foundGameStats) {
+              return null;
+            }
+            return {
+              ...foundGameStats,
+              ...game,
+            };
+          })
+          .filter((game) => game !== null),
       };
     }),
   getPlayerToShare: protectedUserProcedure
