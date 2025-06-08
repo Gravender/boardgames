@@ -369,10 +369,20 @@ export function headToHeadStats(
             ) {
               acc[key].ties++;
               acc[key].games[gameStatKey].ties++;
-            } else if (cpWin) {
+            } else if (
+              cpWin ||
+              (currentPlayerData.placement !== null &&
+                opponent.placement !== null &&
+                currentPlayerData.placement > opponent.placement)
+            ) {
               acc[key].wins++;
               acc[key].games[gameStatKey].wins++;
-            } else if (opWin) {
+            } else if (
+              opWin ||
+              (currentPlayerData.placement !== null &&
+                opponent.placement !== null &&
+                currentPlayerData.placement < opponent.placement)
+            ) {
               acc[key].losses++;
               acc[key].games[gameStatKey].losses++;
             }

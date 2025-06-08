@@ -257,19 +257,22 @@ export function PlayerOverview({ player }: { player: Player }) {
                           </div>
                         </div>
                       </div>
-
-                      <div className="flex flex-col items-center gap-2">
-                        {playerInMatch?.placement && (
-                          <Badge variant="outline">
-                            #{playerInMatch.placement}
-                          </Badge>
-                        )}
-                        {playerInMatch?.score && (
-                          <span className="text-xs">
-                            {`${playerInMatch.score} pts`}
-                          </span>
-                        )}
-                      </div>
+                      {match.scoresheet.winCondition === "Manual" ? (
+                        <div>{playerInMatch?.isWinner ? "✔️" : "❌"}</div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          {playerInMatch?.placement && (
+                            <Badge variant="outline">
+                              #{playerInMatch.placement}
+                            </Badge>
+                          )}
+                          {playerInMatch?.score && (
+                            <span className="text-xs">
+                              {`${playerInMatch.score} pts`}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </Link>
                   );
                 })}
