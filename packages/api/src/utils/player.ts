@@ -276,6 +276,7 @@ export function teammateFrequency(
       match.players
         .filter(
           (matchPlayer) =>
+            matchPlayer.teamId !== null &&
             matchPlayer.teamId === currentPlayerMatchPlayer.teamId &&
             !(
               matchPlayer.id === currentPlayer.id &&
@@ -466,6 +467,7 @@ export function getTeamStats(
     // Only consider matches where player had teammates
     const teammates = match.players.filter(
       (p) =>
+        p.teamId !== null &&
         p.teamId === current.teamId &&
         !(p.id === currentPlayer.id && p.type === currentPlayer.type),
     );
