@@ -373,7 +373,7 @@ export function headToHeadStats(
               cpWin ||
               (currentPlayerData.placement !== null &&
                 opponent.placement !== null &&
-                currentPlayerData.placement > opponent.placement)
+                currentPlayerData.placement < opponent.placement)
             ) {
               acc[key].wins++;
               acc[key].games[gameStatKey].wins++;
@@ -381,7 +381,7 @@ export function headToHeadStats(
               opWin ||
               (currentPlayerData.placement !== null &&
                 opponent.placement !== null &&
-                currentPlayerData.placement < opponent.placement)
+                currentPlayerData.placement > opponent.placement)
             ) {
               acc[key].losses++;
               acc[key].games[gameStatKey].losses++;
