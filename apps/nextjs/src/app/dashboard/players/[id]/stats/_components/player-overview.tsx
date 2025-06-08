@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { compareAsc } from "date-fns";
+import { compareDesc } from "date-fns";
 import {
   BarChart3,
   Calendar,
@@ -217,7 +217,7 @@ export function PlayerOverview({ player }: { player: Player }) {
             <ScrollArea className="h-[30vh]">
               <div className="flex w-full flex-col gap-2 p-1 sm:px-4">
                 {player.matches
-                  .sort((a, b) => compareAsc(a.date, b.date))
+                  .sort((a, b) => compareDesc(a.date, b.date))
                   .map((match) => {
                     const playerInMatch = match.players.find(
                       (p) => p.id === player.id && p.type === "original",

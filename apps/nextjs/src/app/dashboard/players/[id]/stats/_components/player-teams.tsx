@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { compareAsc } from "date-fns";
+import { compareDesc } from "date-fns";
 import { Calendar, Clock, MapPin, Users } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -21,7 +21,7 @@ export function PlayerTeams({ player }: { player: Player }) {
     })
     .slice(0, 5);
   const teamMatches = player.teamStats.teamMatches.toSorted((a, b) => {
-    return compareAsc(a.match.date, b.match.date);
+    return compareDesc(a.match.date, b.match.date);
   });
   return (
     <div className="space-y-6">
