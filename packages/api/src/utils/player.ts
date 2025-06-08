@@ -360,7 +360,12 @@ export function headToHeadStats(
           const opWin = opponent.isWinner;
           if (match.finished) {
             acc[key].matches++;
-            if (currentPlayerData.placement === opponent.placement) {
+            if (
+              (currentPlayerData.placement !== null &&
+                opponent.placement !== null &&
+                currentPlayerData.placement === opponent.placement) ||
+              (cpWin && opWin)
+            ) {
               acc[key].ties++;
               acc[key].games[gameStatKey].ties++;
             } else if (cpWin) {

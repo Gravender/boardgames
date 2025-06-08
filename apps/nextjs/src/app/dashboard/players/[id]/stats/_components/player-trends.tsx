@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { formatDate, isSameMonth } from "date-fns";
 import { Clock, Flame, TrendingUp } from "lucide-react";
 import {
@@ -38,33 +39,38 @@ export function PlayerTrends({ player }: { player: Player }) {
     let matchesPlayed = 0;
     let totalMatches = 0;
     let wins = 0;
-    let currentDay: Date | null = null;
+    let currentMonth: Date | null = null;
     const perFormanceList: {
       date: string;
       winRate: number;
       gamesPlayed: number;
     }[] = [];
-    player.matches.forEach((match, index) => {
+    const sortedMatches = [...player.matches].sort(
+      (a, b) => b.date.getTime() - a.date.getTime(),
+    );
+    sortedMatches.forEach((match, index) => {
       if (match.finished) {
         totalMatches++;
         if (match.outcome.isWinner) {
           wins++;
         }
-        if (currentDay === null) {
-          currentDay = match.date;
+        if (currentMonth === null) {
+          currentMonth = match.date;
           matchesPlayed = 0;
         }
-        matchesPlayed++;
+        if (isSameMonth(match.date, currentMonth)) {
+          matchesPlayed++;
+        }
         if (
-          !isSameMonth(match.date, currentDay) ||
+          !isSameMonth(match.date, currentMonth) ||
           index === player.matches.length - 1
         ) {
           perFormanceList.push({
-            date: formatDate(currentDay, "MMM, yyyy"),
+            date: formatDate(currentMonth, "MMM, yyyy"),
             winRate: Number(((wins / totalMatches) * 100).toFixed(1)),
             gamesPlayed: matchesPlayed,
           });
-          currentDay = match.date;
+          currentMonth = match.date;
           matchesPlayed = 1;
         }
       }
@@ -82,7 +88,7 @@ export function PlayerTrends({ player }: { player: Player }) {
       color: "hsl(var(--chart-2))",
     },
   } satisfies ChartConfig;
-  const calculatePieChartData = () => {
+  const pieChartData = useMemo(() => {
     const pieData: {
       name: string;
       value: number;
@@ -116,8 +122,7 @@ export function PlayerTrends({ player }: { player: Player }) {
       });
     }
     return pieData;
-  };
-  const pieChartData = calculatePieChartData();
+  }, [player.stats.gameStats]);
   const pieChartConfig = pieChartData.reduce<ChartConfig>((acc, game) => {
     acc[game.name] = {
       label: game.name,

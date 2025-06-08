@@ -99,10 +99,10 @@ export function PlayerTeams({ player }: { player: Player }) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {favoriteTeammates.map((teammate, index) => {
+              {favoriteTeammates.map((teammate) => {
                 return (
                   <div
-                    key={index}
+                    key={`${teammate.player.id}-${teammate.player.type}`}
                     className="flex items-center justify-between gap-3 rounded-lg border p-3"
                   >
                     <div className="flex items-center gap-2">
@@ -148,7 +148,7 @@ export function PlayerTeams({ player }: { player: Player }) {
           <CardContent className="px-1 sm:px-4">
             <ScrollArea className="h-[30vh]">
               <div className="flex w-full flex-col gap-2 p-1 sm:px-4">
-                {player.teamStats.teamMatches.map((teamMatch) => {
+                {teamMatches.map((teamMatch) => {
                   const match = teamMatch.match;
                   return (
                     <Link

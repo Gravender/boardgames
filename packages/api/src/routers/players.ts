@@ -603,8 +603,8 @@ export const playerRouter = createTRPCRouter({
           if (!foundGame) {
             playerGames.push({
               type: mPlayer.sharedMatch.sharedGame.linkedGameId
-                ? ("shared" as const)
-                : ("original" as const),
+                ? ("original" as const)
+                : ("shared" as const),
               id:
                 mPlayer.sharedMatch.sharedGame.linkedGameId ??
                 mPlayer.sharedMatch.sharedGame.id,

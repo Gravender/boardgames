@@ -111,9 +111,6 @@ export function PlayerOverview({ player }: { player: Player }) {
       if (a.wins === b.wins) {
         return a.name.localeCompare(b.name);
       }
-      if (a.wins === b.wins) {
-        return a.name.localeCompare(b.name);
-      }
       return b.wins - a.wins;
     })
     .slice(0, 5);
