@@ -56,6 +56,16 @@ export function PlayerOpponents({
     }
     setExpandedOpponents(newExpanded);
   };
+  const sortedOpponents = opponents.sort((a, b) => {
+    const aTotalGames = a.wins + a.losses;
+    const bTotalGames = b.wins + b.losses;
+    const aWinRate = aTotalGames > 0 ? a.wins / aTotalGames : 0;
+    const bWinRate = bTotalGames > 0 ? b.wins / bTotalGames : 0;
+    if (aTotalGames > 10 && bTotalGames > 10) {
+      return bWinRate - aWinRate;
+    }
+    return bTotalGames - aTotalGames;
+  });
 
   return (
     <div className="space-y-6">
@@ -71,7 +81,7 @@ export function PlayerOpponents({
           <CardContent>
             <ScrollArea className="h-[65vh]">
               <div className="flex w-full flex-col gap-2">
-                {opponents.map((opponent) => {
+                {sortedOpponents.map((opponent) => {
                   const totalGames = opponent.wins + opponent.losses;
                   const winRate =
                     totalGames > 0 ? opponent.wins / totalGames : 0;
