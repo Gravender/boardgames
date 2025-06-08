@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { compareAsc } from "date-fns";
 import {
   BarChart3,
   Calendar,
@@ -215,67 +216,72 @@ export function PlayerOverview({ player }: { player: Player }) {
           <CardContent className="px-1 sm:px-4">
             <ScrollArea className="h-[30vh]">
               <div className="flex w-full flex-col gap-2 p-1 sm:px-4">
-                {player.matches.map((match) => {
-                  const playerInMatch = match.players.find(
-                    (p) => p.id === player.id && p.type === "original",
-                  );
-                  const isWinner = playerInMatch?.isWinner;
+                {player.matches
+                  .sort((a, b) => compareAsc(a.date, b.date))
+                  .map((match) => {
+                    const playerInMatch = match.players.find(
+                      (p) => p.id === player.id && p.type === "original",
+                    );
+                    const isWinner = playerInMatch?.isWinner;
 
-                  return (
-                    <Link
-                      href={`/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}/summary`}
-                      className="flex items-center justify-between gap-4 rounded-lg border p-1 sm:p-3"
-                      key={`${match.id}-${match.type}`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <GameImage
-                          image={match.gameImage}
-                          alt={`${match.gameName} game image`}
-                          containerClassName="h-12 w-12"
-                        />
-                        <div className="grid gap-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="max-w-40 truncate font-medium sm:max-w-64">
-                              {match.name}
-                            </span>
-                            {isWinner && (
-                              <Trophy className="h-4 w-4 text-yellow-500" />
-                            )}
-                          </div>
-                          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                            <FormattedDate date={match.date} Icon={Calendar} />
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {formatDuration(match.duration)}
-                            </span>
-                            {match.locationName && (
+                    return (
+                      <Link
+                        href={`/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}/summary`}
+                        className="flex items-center justify-between gap-4 rounded-lg border p-1 sm:p-3"
+                        key={`${match.id}-${match.type}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <GameImage
+                            image={match.gameImage}
+                            alt={`${match.gameName} game image`}
+                            containerClassName="h-12 w-12"
+                          />
+                          <div className="grid gap-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="max-w-40 truncate font-medium sm:max-w-64">
+                                {match.name}
+                              </span>
+                              {isWinner && (
+                                <Trophy className="h-4 w-4 text-yellow-500" />
+                              )}
+                            </div>
+                            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                              <FormattedDate
+                                date={match.date}
+                                Icon={Calendar}
+                              />
                               <span className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {match.locationName}
+                                <Clock className="h-3 w-3" />
+                                {formatDuration(match.duration)}
+                              </span>
+                              {match.locationName && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {match.locationName}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {match.scoresheet.winCondition === "Manual" ? (
+                          <div>{playerInMatch?.isWinner ? "✔️" : "❌"}</div>
+                        ) : (
+                          <div className="flex flex-col items-center gap-2">
+                            {playerInMatch?.placement && (
+                              <Badge variant="outline">
+                                #{playerInMatch.placement}
+                              </Badge>
+                            )}
+                            {playerInMatch?.score && (
+                              <span className="text-xs">
+                                {`${playerInMatch.score} pts`}
                               </span>
                             )}
                           </div>
-                        </div>
-                      </div>
-                      {match.scoresheet.winCondition === "Manual" ? (
-                        <div>{playerInMatch?.isWinner ? "✔️" : "❌"}</div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2">
-                          {playerInMatch?.placement && (
-                            <Badge variant="outline">
-                              #{playerInMatch.placement}
-                            </Badge>
-                          )}
-                          {playerInMatch?.score && (
-                            <span className="text-xs">
-                              {`${playerInMatch.score} pts`}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </Link>
-                  );
-                })}
+                        )}
+                      </Link>
+                    );
+                  })}
               </div>
             </ScrollArea>
           </CardContent>

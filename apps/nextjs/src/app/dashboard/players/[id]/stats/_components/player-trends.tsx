@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { formatDate, isSameMonth } from "date-fns";
+import { compareAsc, formatDate, isSameMonth } from "date-fns";
 import { Clock, Flame, TrendingUp } from "lucide-react";
 import {
   CartesianGrid,
@@ -45,8 +45,8 @@ export function PlayerTrends({ player }: { player: Player }) {
       winRate: number;
       gamesPlayed: number;
     }[] = [];
-    const sortedMatches = [...player.matches].sort(
-      (a, b) => b.date.getTime() - a.date.getTime(),
+    const sortedMatches = [...player.matches].sort((a, b) =>
+      compareAsc(a.date, b.date),
     );
     sortedMatches.forEach((match, index) => {
       if (match.finished) {

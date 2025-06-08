@@ -52,7 +52,7 @@ export interface PlayerMatch {
 
 export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
   const sortedMatches = playerMatches.sort((a, b) =>
-    compareAsc(a.date, b.date),
+    compareAsc(b.date, a.date),
   );
   const players = sortedMatches.reduce(
     (acc, match) => {
