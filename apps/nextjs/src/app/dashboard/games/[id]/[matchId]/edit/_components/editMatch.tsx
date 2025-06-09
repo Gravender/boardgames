@@ -624,9 +624,9 @@ const PlayersContent = ({
         </Button>
       </div>
       <div className="flex items-center justify-between gap-2 px-2">
-        <FormLabel>
+        <Label>
           {`${form.getValues("players").length} player${form.getValues("players").length !== 1 ? "s" : ""} Selected`}
-        </FormLabel>
+        </Label>
       </div>
       <div className="flex max-h-96 flex-col gap-2 overflow-auto">
         <FormField
