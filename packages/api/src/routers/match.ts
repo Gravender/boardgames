@@ -1565,6 +1565,18 @@ export const matchRouter = createTRPCRouter({
               teamId: z.number().nullable(),
             }),
           ),
+          editedTeams: z.array(
+            z.object({
+              id: z.number(),
+              name: z.string(),
+            }),
+          ),
+          addedTeams: z.array(
+            z.object({
+              id: z.number(),
+              name: z.string(),
+            }),
+          ),
         }),
         z.object({
           type: z.literal("shared"),
@@ -1600,6 +1612,7 @@ export const matchRouter = createTRPCRouter({
                   playerRounds: true,
                 },
               },
+              teams: true,
             },
           });
           if (!returnedMatch) {
@@ -1630,6 +1643,41 @@ export const matchRouter = createTRPCRouter({
                 locationId: locationId,
               })
               .where(eq(match.id, input.match.id));
+          }
+          //Edit Teams
+          if (input.editedTeams.length > 0) {
+            for (const editedTeam of input.editedTeams) {
+              await tx
+                .update(team)
+                .set({ name: editedTeam.name })
+                .where(eq(team.id, editedTeam.id));
+            }
+          }
+          //Add Teams
+          const mappedAddedTeams: {
+            id: number;
+            teamId: number | null;
+          }[] = [];
+          if (input.addedTeams.length > 0) {
+            for (const addedTeam of input.addedTeams) {
+              const [insertedTeam] = await tx
+                .insert(team)
+                .values({
+                  name: addedTeam.name,
+                  matchId: input.match.id,
+                })
+                .returning();
+              if (!insertedTeam) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: "Team not created",
+                });
+              }
+              mappedAddedTeams.push({
+                id: addedTeam.id,
+                teamId: insertedTeam.id,
+              });
+            }
           }
           //Add players to match
           if (input.newPlayers.length > 0 || input.addPlayers.length > 0) {
@@ -1748,10 +1796,31 @@ export const matchRouter = createTRPCRouter({
           }
           if (input.updatedPlayers.length > 0) {
             for (const updatedPlayer of input.updatedPlayers) {
+              let teamId: number | null = null;
+              if (updatedPlayer.teamId !== null) {
+                const foundTeam = returnedMatch.teams.find(
+                  (t) => t.id === updatedPlayer.teamId,
+                );
+                if (foundTeam) {
+                  teamId = foundTeam.id;
+                } else {
+                  const foundInsertedTeam = mappedAddedTeams.find(
+                    (t) => t.id === updatedPlayer.teamId,
+                  );
+                  if (foundInsertedTeam) {
+                    teamId = foundInsertedTeam.teamId;
+                  } else {
+                    throw new TRPCError({
+                      code: "NOT_FOUND",
+                      message: "Team not found.",
+                    });
+                  }
+                }
+              }
               await tx
                 .update(matchPlayer)
                 .set({
-                  teamId: updatedPlayer.teamId,
+                  teamId: teamId,
                 })
                 .where(eq(matchPlayer.playerId, updatedPlayer.playerId));
             }
@@ -1805,7 +1874,10 @@ export const matchRouter = createTRPCRouter({
             type: "original" as const,
             gameId: returnedMatch.gameId,
             id: returnedMatch.id,
-            updatedScore: false,
+            updatedScore:
+              input.addPlayers.length > 0 ||
+              input.removePlayers.length > 0 ||
+              input.updatedPlayers.length > 0,
           };
         }
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
