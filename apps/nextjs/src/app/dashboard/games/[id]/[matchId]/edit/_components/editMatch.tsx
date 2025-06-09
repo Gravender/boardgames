@@ -787,7 +787,7 @@ const PlayersContent = ({
                             className="hidden"
                             checked={foundPlayer !== undefined}
                             onCheckedChange={(checked) => {
-                              updatePlayer(player, checked ? true : false);
+                              updatePlayer(player, !!checked);
                             }}
                           />
                         </FormControl>
@@ -1225,7 +1225,7 @@ const PlayerContent = ({
           type="button"
           onClick={() => {
             const lowestId = addedPlayers.reduce(
-              (acc, curr) => (curr.id > acc ? curr.id : acc),
+              (acc, curr) => (curr.id < acc ? curr.id : acc),
               -1,
             );
             append({
