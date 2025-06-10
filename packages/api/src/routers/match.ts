@@ -5,6 +5,7 @@ import { and, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 
 import type {
+  insertMatchPlayerSchema,
   insertRoundPlayerSchema,
   insertRoundSchema,
   selectRoundSchema,
@@ -21,7 +22,6 @@ import {
   team,
 } from "@board-games/db/schema";
 import {
-  insertMatchPlayerSchema,
   insertMatchSchema,
   insertPlayerSchema,
   selectMatchPlayerSchema,
@@ -1560,12 +1560,22 @@ export const matchRouter = createTRPCRouter({
               .extend({ teamId: z.number().nullable() }),
           ),
           updatedPlayers: z.array(
-            insertMatchPlayerSchema
-              .pick({
-                id: true,
-                teamId: true,
-              })
-              .required({ id: true }),
+            z.object({
+              playerId: z.number(),
+              teamId: z.number().nullable(),
+            }),
+          ),
+          editedTeams: z.array(
+            z.object({
+              id: z.number(),
+              name: z.string(),
+            }),
+          ),
+          addedTeams: z.array(
+            z.object({
+              id: z.number(),
+              name: z.string(),
+            }),
           ),
         }),
         z.object({
@@ -1602,6 +1612,7 @@ export const matchRouter = createTRPCRouter({
                   playerRounds: true,
                 },
               },
+              teams: true,
             },
           });
           if (!returnedMatch) {
@@ -1632,6 +1643,41 @@ export const matchRouter = createTRPCRouter({
                 locationId: locationId,
               })
               .where(eq(match.id, input.match.id));
+          }
+          //Edit Teams
+          if (input.editedTeams.length > 0) {
+            for (const editedTeam of input.editedTeams) {
+              await tx
+                .update(team)
+                .set({ name: editedTeam.name })
+                .where(eq(team.id, editedTeam.id));
+            }
+          }
+          //Add Teams
+          const mappedAddedTeams: {
+            id: number;
+            teamId: number | null;
+          }[] = [];
+          if (input.addedTeams.length > 0) {
+            for (const addedTeam of input.addedTeams) {
+              const [insertedTeam] = await tx
+                .insert(team)
+                .values({
+                  name: addedTeam.name,
+                  matchId: input.match.id,
+                })
+                .returning();
+              if (!insertedTeam) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: "Team not created",
+                });
+              }
+              mappedAddedTeams.push({
+                id: addedTeam.id,
+                teamId: insertedTeam.id,
+              });
+            }
           }
           //Add players to match
           if (input.newPlayers.length > 0 || input.addPlayers.length > 0) {
@@ -1671,50 +1717,53 @@ export const matchRouter = createTRPCRouter({
             //Players to insert
             if (input.addPlayers.length > 0) {
               for (const player of input.addPlayers) {
-                const currentTeamScore =
-                  returnedMatch.matchPlayers.find(
-                    (mPlayer) =>
-                      mPlayer.teamId === player.teamId &&
-                      mPlayer.teamId !== null,
-                  )?.score ?? null;
+                const currentTeam = returnedMatch.matchPlayers.find(
+                  (mPlayer) =>
+                    mPlayer.teamId === player.teamId && mPlayer.teamId !== null,
+                );
                 playersToInsert.push({
                   matchId: input.match.id,
                   playerId: player.id,
                   teamId: player.teamId,
-                  score: currentTeamScore,
+                  score: currentTeam?.score ?? null,
+                  placement: currentTeam?.placement ?? null,
+                  winner: currentTeam?.winner ?? null,
                 });
               }
             }
             //Insert players into match
-            const returnedMatchPlayers = await tx
-              .insert(matchPlayer)
-              .values(playersToInsert)
-              .returning();
-            const roundPlayersToInsert: z.infer<
-              typeof insertRoundPlayerSchema
-            >[] = returnedMatch.scoresheet.rounds.flatMap((round) => {
-              return returnedMatchPlayers.map((player) => {
-                const teamPlayer = returnedMatch.matchPlayers.find(
-                  (mPlayer) =>
-                    mPlayer.teamId === player.teamId && mPlayer.teamId !== null,
-                );
-                if (teamPlayer) {
+            if (playersToInsert.length > 0) {
+              const returnedMatchPlayers = await tx
+                .insert(matchPlayer)
+                .values(playersToInsert)
+                .returning();
+              const roundPlayersToInsert: z.infer<
+                typeof insertRoundPlayerSchema
+              >[] = returnedMatch.scoresheet.rounds.flatMap((round) => {
+                return returnedMatchPlayers.map((player) => {
+                  const teamPlayer = returnedMatch.matchPlayers.find(
+                    (mPlayer) =>
+                      mPlayer.teamId === player.teamId &&
+                      mPlayer.teamId !== null,
+                  );
+                  if (teamPlayer) {
+                    return {
+                      roundId: round.id,
+                      matchPlayerId: player.id,
+                      score:
+                        teamPlayer.playerRounds.find(
+                          (pRound) => pRound.roundId === round.id,
+                        )?.score ?? null,
+                    };
+                  }
                   return {
                     roundId: round.id,
-                    matchPlayerId: teamPlayer.id,
-                    score:
-                      teamPlayer.playerRounds.find(
-                        (pRound) => pRound.roundId === round.id,
-                      )?.score ?? null,
+                    matchPlayerId: player.id,
                   };
-                }
-                return {
-                  roundId: round.id,
-                  matchPlayerId: player.id,
-                };
+                });
               });
-            });
-            await tx.insert(roundPlayer).values(roundPlayersToInsert);
+              await tx.insert(roundPlayer).values(roundPlayersToInsert);
+            }
           }
           //Remove Players from Match
           if (input.removePlayers.length > 0) {
@@ -1747,12 +1796,33 @@ export const matchRouter = createTRPCRouter({
           }
           if (input.updatedPlayers.length > 0) {
             for (const updatedPlayer of input.updatedPlayers) {
+              let teamId: number | null = null;
+              if (updatedPlayer.teamId !== null) {
+                const foundTeam = returnedMatch.teams.find(
+                  (t) => t.id === updatedPlayer.teamId,
+                );
+                if (foundTeam) {
+                  teamId = foundTeam.id;
+                } else {
+                  const foundInsertedTeam = mappedAddedTeams.find(
+                    (t) => t.id === updatedPlayer.teamId,
+                  );
+                  if (foundInsertedTeam) {
+                    teamId = foundInsertedTeam.teamId;
+                  } else {
+                    throw new TRPCError({
+                      code: "NOT_FOUND",
+                      message: "Team not found.",
+                    });
+                  }
+                }
+              }
               await tx
                 .update(matchPlayer)
                 .set({
-                  teamId: updatedPlayer.teamId,
+                  teamId: teamId,
                 })
-                .where(eq(matchPlayer.id, updatedPlayer.id));
+                .where(eq(matchPlayer.playerId, updatedPlayer.playerId));
             }
           }
           if (
@@ -1793,11 +1863,21 @@ export const matchRouter = createTRPCRouter({
               .update(match)
               .set({ finished: false })
               .where(eq(match.id, input.match.id));
+            return {
+              type: "original" as const,
+              gameId: returnedMatch.gameId,
+              id: returnedMatch.id,
+              updatedScore: true,
+            };
           }
           return {
-            type: "original",
+            type: "original" as const,
             gameId: returnedMatch.gameId,
             id: returnedMatch.id,
+            updatedScore:
+              input.addPlayers.length > 0 ||
+              input.removePlayers.length > 0 ||
+              input.updatedPlayers.length > 0,
           };
         }
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -1832,8 +1912,8 @@ export const matchRouter = createTRPCRouter({
             .where(eq(match.id, returnedSharedMatch.matchId));
           return {
             type: returnedSharedMatch.sharedGame.linkedGameId
-              ? "linked"
-              : "shared",
+              ? ("linked" as const)
+              : ("shared" as const),
             gameId:
               returnedSharedMatch.sharedGame.linkedGameId ??
               returnedSharedMatch.sharedGame.id,
