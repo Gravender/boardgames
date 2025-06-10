@@ -614,7 +614,9 @@ const mapPlayers = (
     id: player.playerId,
     name: player.name,
     imageUrl: player.image?.url ?? "",
-    matches: Number(gamePlayers.find((p) => p.id === player.id)?.matches ?? 0),
+    matches: Number(
+      gamePlayers.find((p) => p.id === player.playerId)?.matches ?? 0,
+    ),
     playerId: player.playerId,
     teamId: player.teamId,
   }));
@@ -838,12 +840,14 @@ const PlayersContent = ({
                                   updateTeam(foundPlayer, null);
                                   return;
                                 }
-
-                                if (Number.parseInt(value) > 0) {
-                                  updateTeam(
-                                    foundPlayer,
-                                    Number.parseInt(value),
-                                  );
+                                const parsedValue = Number.parseInt(value);
+                                const foundTeam = formTeams.find((t) =>
+                                  t.teamId !== undefined
+                                    ? t.teamId === parsedValue
+                                    : t.id === parsedValue,
+                                );
+                                if (!isNaN(parsedValue) && foundTeam) {
+                                  updateTeam(foundPlayer, parsedValue);
                                   return;
                                 }
                               }}
@@ -1044,13 +1048,14 @@ const ManageTeamContent = ({
                 if (e.key === "Enter") {
                   e.preventDefault();
                   e.stopPropagation();
-                  const highestId = addedTeams.reduce(
-                    (acc, curr) => (curr.id > acc ? curr.id : acc),
-                    0,
-                  );
+                  const lowestId =
+                    addedTeams.reduce(
+                      (acc, curr) => (curr.id < acc ? curr.id : acc),
+                      -1,
+                    ) - 2;
                   append(
                     {
-                      id: highestId + 1,
+                      id: lowestId,
                       teamId: undefined,
                       name: newTeam,
                     },
@@ -1061,7 +1066,7 @@ const ManageTeamContent = ({
                   setAddedTeams([
                     ...addedTeams,
                     {
-                      id: highestId + 1,
+                      id: lowestId,
                       name: newTeam,
                     },
                   ]);
