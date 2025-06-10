@@ -829,7 +829,7 @@ const PlayersContent = ({
                           {formTeams.length > 0 && foundPlayer && (
                             <Select
                               value={
-                                foundPlayer.teamId
+                                foundPlayer.teamId !== null
                                   ? foundPlayer.teamId.toString()
                                   : "no-team"
                               }
@@ -991,12 +991,20 @@ const ManageTeamContent = ({
       </DialogHeader>
       <ScrollArea>
         <div className="flex max-h-96 flex-col gap-2 p-2">
-          {formTeams.map((team, index) => {
+          {formTeams.map((team) => {
+            const foundIndex = formTeams.findIndex((t) =>
+              team.teamId === undefined
+                ? t.id === team.id
+                : t.teamId === team.teamId,
+            );
+            if (foundIndex === -1) {
+              return null;
+            }
             return (
               <FormField
-                key={index}
+                key={team.id}
                 control={form.control}
-                name={`teams.${index}.name`}
+                name={`teams.${foundIndex}.name`}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="sr-only">Team Name</FormLabel>
@@ -1008,10 +1016,10 @@ const ManageTeamContent = ({
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            remove(index);
+                            remove(foundIndex);
                             if (team.teamId === undefined) {
                               setAddedTeams(
-                                addedTeams.filter((t) => t.id === team.id),
+                                addedTeams.filter((t) => t.id !== team.id),
                               );
                             }
                           }}
@@ -1040,11 +1048,16 @@ const ManageTeamContent = ({
                     (acc, curr) => (curr.id > acc ? curr.id : acc),
                     0,
                   );
-                  append({
-                    id: highestId + 1,
-                    teamId: undefined,
-                    name: newTeam,
-                  });
+                  append(
+                    {
+                      id: highestId + 1,
+                      teamId: undefined,
+                      name: newTeam,
+                    },
+                    {
+                      shouldFocus: false,
+                    },
+                  );
                   setAddedTeams([
                     ...addedTeams,
                     {
@@ -1062,19 +1075,20 @@ const ManageTeamContent = ({
               variant="secondary"
               size="icon"
               onClick={() => {
-                const lowestId = addedTeams.reduce(
-                  (acc, curr) => (curr.id < acc ? curr.id : acc),
-                  -1,
-                );
+                const lowestId =
+                  addedTeams.reduce(
+                    (acc, curr) => (curr.id < acc ? curr.id : acc),
+                    -1,
+                  ) - 2;
                 append({
-                  id: lowestId - 1,
+                  id: lowestId,
                   teamId: undefined,
                   name: newTeam,
                 });
                 setAddedTeams([
                   ...addedTeams,
                   {
-                    id: lowestId - 1,
+                    id: lowestId,
                     name: newTeam,
                   },
                 ]);
@@ -1224,12 +1238,13 @@ const PlayerContent = ({
         <Button
           type="button"
           onClick={() => {
-            const lowestId = addedPlayers.reduce(
-              (acc, curr) => (curr.id < acc ? curr.id : acc),
-              -1,
-            );
+            const lowestId =
+              addedPlayers.reduce(
+                (acc, curr) => (curr.id < acc ? curr.id : acc),
+                -1,
+              ) - 2;
             append({
-              id: lowestId - 1,
+              id: lowestId,
               name: name,
               imageUrl: image?.file ?? null,
               matches: 0,
@@ -1238,7 +1253,7 @@ const PlayerContent = ({
             setAddedPlayers([
               ...addedPlayers,
               {
-                id: lowestId - 1,
+                id: lowestId,
                 name: name,
                 imageUrl: image?.preview ?? "",
                 matches: 0,
