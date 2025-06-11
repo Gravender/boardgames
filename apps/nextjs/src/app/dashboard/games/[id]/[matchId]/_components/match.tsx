@@ -363,7 +363,7 @@ export function Match({ matchId }: { matchId: number }) {
     if (isRunning) {
       interval = setInterval(() => {
         if (!match?.startTime) {
-          setDuration((prevDuration) => prevDuration + 1000);
+          setDuration((prevDuration) => prevDuration + 1);
         } else {
           const now = Date.now();
           const startTime = match.startTime;
@@ -406,9 +406,9 @@ export function Match({ matchId }: { matchId: number }) {
     return () => {
       const now = Date.now();
       const startTime = match?.startTime ? match.startTime.getTime() : 0;
-      const elapsedTime = now - startTime;
+      const elapsedTime = differenceInSeconds(now, startTime);
       const difference = elapsedTime - (match?.duration ?? 0);
-      if (match?.running && difference > difference + 10 * 1000) {
+      if (match?.running && difference > difference + 10) {
         pauseMatchDuration.mutate({
           id: match.id,
         });
