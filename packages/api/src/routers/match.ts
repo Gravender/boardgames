@@ -1422,7 +1422,7 @@ export const matchRouter = createTRPCRouter({
           finished: false,
           startTime: new Date(),
         })
-        .where(eq(match.id, input.id));
+        .where(and(eq(match.id, input.id), eq(match.userId, ctx.userId)));
     }),
   matchPause: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
@@ -1474,7 +1474,7 @@ export const matchRouter = createTRPCRouter({
           running: false,
           startTime: null,
         })
-        .where(eq(match.id, input.id));
+        .where(and(eq(match.id, input.id), eq(match.userId, ctx.userId)));
     }),
   updateMatchPlacement: protectedUserProcedure
     .input(
