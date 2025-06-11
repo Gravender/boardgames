@@ -1624,7 +1624,7 @@ export const matchRouter = createTRPCRouter({
           ),
           updatedPlayers: z.array(
             z.object({
-              playerId: z.number(),
+              id: z.number(),
               teamId: z.number().nullable(),
             }),
           ),
@@ -1885,7 +1885,12 @@ export const matchRouter = createTRPCRouter({
                 .set({
                   teamId: teamId,
                 })
-                .where(eq(matchPlayer.playerId, updatedPlayer.playerId));
+                .where(
+                  and(
+                    eq(matchPlayer.id, updatedPlayer.id),
+                    eq(matchPlayer.matchId, input.match.id),
+                  ),
+                );
             }
           }
           if (
