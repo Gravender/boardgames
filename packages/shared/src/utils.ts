@@ -11,7 +11,7 @@ export const formatDuration = (seconds: number, withSeconds = false) => {
     return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
   }
   if (days > 0) {
-    return `${days}d ${hours}h ${minutes}m${withSeconds}`;
+    return `${days}d ${hours}h ${minutes}m`;
   }
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 };
