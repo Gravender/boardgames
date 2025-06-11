@@ -396,13 +396,6 @@ export function Match({ matchId }: { matchId: number }) {
     });
   };
   useEffect(() => {
-    if (match?.running && match.startTime === null) {
-      startMatchDuration.mutate({
-        id: match.id,
-      });
-    }
-  }, [match, startMatchDuration]);
-  useEffect(() => {
     return () => {
       const now = Date.now();
       const startTime = match?.startTime ? match.startTime.getTime() : 0;

@@ -433,6 +433,16 @@ export const matchRouter = createTRPCRouter({
       if (!returnedMatch) {
         return null;
       }
+      const startTime =
+        returnedMatch.startTime ??
+        (returnedMatch.running === true ? new Date() : null);
+      if (returnedMatch.startTime === null && returnedMatch.running === true) {
+        await ctx.db
+          .update(match)
+          .set({ startTime: startTime })
+          .where(eq(match.id, returnedMatch.id))
+          .returning();
+      }
       const refinedPlayers = returnedMatch.matchPlayers.map((matchPlayer) => {
         return {
           name: matchPlayer.player.name,
@@ -476,7 +486,7 @@ export const matchRouter = createTRPCRouter({
             }
           : null,
         date: returnedMatch.date,
-        startTime: returnedMatch.startTime,
+        startTime: startTime,
         name: returnedMatch.name,
         scoresheet: returnedMatch.scoresheet,
         gameId: returnedMatch.gameId,
