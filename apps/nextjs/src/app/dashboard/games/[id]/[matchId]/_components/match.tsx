@@ -8,6 +8,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import { differenceInSeconds } from "date-fns";
 import { ListPlus, Pause, Play, RotateCcw } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -127,13 +128,37 @@ export function Match({ matchId }: { matchId: number }) {
   const updateMatchScores = useMutation(
     trpc.match.updateMatchScores.mutationOptions(),
   );
-  const updateMatchDuration = useMutation(
-    trpc.match.updateMatchDuration.mutationOptions(),
+  const startMatchDuration = useMutation(
+    trpc.match.matchStart.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.match.getMatch.queryOptions({ id: match?.id ?? 0 }),
+        );
+      },
+    }),
+  );
+  const pauseMatchDuration = useMutation(
+    trpc.match.matchPause.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.match.getMatch.queryOptions({ id: match?.id ?? 0 }),
+        );
+      },
+    }),
+  );
+  const resetMatchDuration = useMutation(
+    trpc.match.matchResetDuration.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.match.getMatch.queryOptions({ id: match?.id ?? 0 }),
+        );
+      },
+    }),
   );
 
   const { debouncedRequest, setValue, prepareMatchData } =
     useDebouncedUpdateMatchData({
-      match: { id: match?.id ?? 0, duration, running: isRunning },
+      match: { id: match?.id ?? 0 },
       roundPlayers: players.flatMap((player) =>
         player.rounds.map((round) => ({
           id: round.id,
@@ -160,20 +185,12 @@ export function Match({ matchId }: { matchId: number }) {
   const saveMatch = useCallback(() => {
     const { submittedPlayers, matchPlayers } = prepareMatchData(players);
     setValue({
-      match: { id: match?.id ?? 0, duration, running: isRunning },
+      match: { id: match?.id ?? 0 },
       roundPlayers: submittedPlayers,
       matchPlayers,
     });
     debouncedRequest();
-  }, [
-    players,
-    match,
-    duration,
-    isRunning,
-    debouncedRequest,
-    setValue,
-    prepareMatchData,
-  ]);
+  }, [players, match, debouncedRequest, setValue, prepareMatchData]);
   useEffect(() => {
     if (hasPlayersChanged) {
       saveMatch();
@@ -190,6 +207,11 @@ export function Match({ matchId }: { matchId: number }) {
     }
   }, [isSubmitting, match, openManualWinnerDialog]);
   const onFinish = () => {
+    if (isRunning) {
+      pauseMatchDuration.mutate({
+        id: match?.id ?? 0,
+      });
+    }
     setIsSubmitting(true);
     setIsRunning(false);
     const submittedPlayers = players.flatMap((player) =>
@@ -219,8 +241,6 @@ export function Match({ matchId }: { matchId: number }) {
       updateMatchScores.mutate({
         match: {
           id: match.id,
-          duration: duration,
-          running: false,
         },
         roundPlayers: submittedPlayers,
         matchPlayers: players.map((player) => {
@@ -309,8 +329,6 @@ export function Match({ matchId }: { matchId: number }) {
       updateMatchScores.mutate({
         match: {
           id: match?.id ?? 0,
-          duration: duration,
-          running: false,
         },
         roundPlayers: submittedPlayers,
         matchPlayers: players.map((player) => {
@@ -344,33 +362,59 @@ export function Match({ matchId }: { matchId: number }) {
     let interval: NodeJS.Timeout;
     if (isRunning) {
       interval = setInterval(() => {
-        setDuration((prevDuration) => prevDuration + 1);
+        if (!match?.startTime) {
+          setDuration((prevDuration) => prevDuration + 1000);
+        } else {
+          const now = Date.now();
+          const startTime = match.startTime;
+          const elapsedTime = differenceInSeconds(now, startTime);
+          const totalDuration = match.duration + elapsedTime;
+          setDuration(totalDuration);
+        }
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isRunning]);
-
-  useEffect(() => {
-    if (isRunning && duration % 30 === 0 && match?.duration !== duration) {
-      const debounce = setTimeout(() => {
-        updateMatchDuration.mutate({
-          match: { id: match?.id ?? 0 },
-          duration: duration,
-        });
-      }, 1000); // Debounce duration
-      return () => clearTimeout(debounce);
-    }
-  }, [isRunning, duration, match, updateMatchDuration]);
+  }, [isRunning, match]);
 
   const toggleClock = () => {
-    setIsRunning(!isRunning);
-    setHasPlayersChanged(true);
-    saveMatch();
+    if (isRunning) {
+      pauseMatchDuration.mutate({
+        id: match?.id ?? 0,
+      });
+      setIsRunning(false);
+    } else {
+      startMatchDuration.mutate({
+        id: match?.id ?? 0,
+      });
+      setIsRunning(true);
+    }
   };
 
   const resetClock = () => {
-    setDuration(0);
+    resetMatchDuration.mutate({
+      id: match?.id ?? 0,
+    });
   };
+  useEffect(() => {
+    if (match?.running && match.startTime === null) {
+      startMatchDuration.mutate({
+        id: match.id,
+      });
+    }
+  }, [match, startMatchDuration]);
+  useEffect(() => {
+    return () => {
+      const now = Date.now();
+      const startTime = match?.startTime ? match.startTime.getTime() : 0;
+      const elapsedTime = now - startTime;
+      const difference = elapsedTime - (match?.duration ?? 0);
+      if (match?.running && difference > difference + 10 * 1000) {
+        pauseMatchDuration.mutate({
+          id: match.id,
+        });
+      }
+    };
+  }, [match, pauseMatchDuration]);
 
   const handleScoreChange = (
     player: Player,
@@ -451,7 +495,7 @@ export function Match({ matchId }: { matchId: number }) {
           <div className="flex w-full justify-between px-2 pt-6">
             <div className="flex items-center justify-center gap-2">
               <div className="text-center text-2xl font-bold">
-                {formatDuration(duration)}
+                {formatDuration(duration, true)}
               </div>
               <Button onClick={toggleClock} size={"icon"} variant={"outline"}>
                 {isRunning ? <Pause /> : <Play />}

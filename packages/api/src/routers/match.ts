@@ -1,6 +1,6 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { compareAsc } from "date-fns";
+import { compareAsc, differenceInSeconds } from "date-fns";
 import { and, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 
@@ -476,6 +476,7 @@ export const matchRouter = createTRPCRouter({
             }
           : null,
         date: returnedMatch.date,
+        startTime: returnedMatch.startTime,
         name: returnedMatch.name,
         scoresheet: returnedMatch.scoresheet,
         gameId: returnedMatch.gameId,
@@ -1327,19 +1328,22 @@ export const matchRouter = createTRPCRouter({
         ),
         match: selectMatchSchema.pick({
           id: true,
-          duration: true,
-          running: true,
         }),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db
-        .update(match)
-        .set({
-          duration: input.match.duration,
-          running: input.match.running,
-        })
-        .where(and(eq(match.id, input.match.id), eq(match.userId, ctx.userId)));
+      const foundMatch = await ctx.db.query.match.findFirst({
+        where: {
+          id: input.match.id,
+          userId: ctx.userId,
+        },
+      });
+      if (!foundMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Match not found.",
+        });
+      }
       await Promise.all(
         input.roundPlayers.map(async (player) => {
           await ctx.db
@@ -1408,20 +1412,69 @@ export const matchRouter = createTRPCRouter({
           .where(eq(matchPlayer.matchId, input.matchId));
       }
     }),
-  updateMatchDuration: protectedUserProcedure
-    .input(
-      z.object({
-        match: selectMatchSchema.pick({ id: true }),
-        duration: z.number().min(0).max(10000),
-      }),
-    )
+  matchStart: protectedUserProcedure
+    .input(selectMatchSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
       await ctx.db
         .update(match)
         .set({
-          duration: input.duration,
+          running: true,
+          finished: false,
+          startTime: new Date(),
         })
-        .where(eq(match.id, input.match.id));
+        .where(eq(match.id, input.id));
+    }),
+  matchPause: protectedUserProcedure
+    .input(selectMatchSchema.pick({ id: true }))
+    .mutation(async ({ ctx, input }) => {
+      const currentTime = new Date();
+      const foundMatch = await ctx.db.query.match.findFirst({
+        where: {
+          id: input.id,
+          userId: ctx.userId,
+        },
+      });
+      if (!foundMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Match not found.",
+        });
+      }
+      if (foundMatch.running === false) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Match is not running.",
+        });
+      }
+      if (!foundMatch.startTime) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Match start time is not set.",
+        });
+      }
+      const timeDelta = differenceInSeconds(currentTime, foundMatch.startTime);
+      const accumulatedDuration = foundMatch.duration + timeDelta;
+      await ctx.db
+        .update(match)
+        .set({
+          duration: accumulatedDuration,
+          running: false,
+          startTime: null,
+          endTime: new Date(),
+        })
+        .where(eq(match.id, input.id));
+    }),
+  matchResetDuration: protectedUserProcedure
+    .input(selectMatchSchema.pick({ id: true }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(match)
+        .set({
+          duration: 0,
+          running: false,
+          startTime: null,
+        })
+        .where(eq(match.id, input.id));
     }),
   updateMatchPlacement: protectedUserProcedure
     .input(

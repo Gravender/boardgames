@@ -37,6 +37,8 @@ const matches = createTable(
     date: timestamp("date", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
+    startTime: timestamp("start_time", { withTimezone: true }),
+    endTime: timestamp("end_time", { withTimezone: true }),
     duration: integer("duration").notNull().default(0),
     finished: boolean("finished").notNull().default(false),
     running: boolean("running").notNull().default(true),
