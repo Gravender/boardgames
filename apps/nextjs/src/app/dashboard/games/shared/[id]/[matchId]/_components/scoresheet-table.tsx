@@ -119,11 +119,9 @@ export function ScoreSheetTable({ matchId }: { matchId: number }) {
     }),
   );
   const invalidateMatch = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries(
-        trpc.sharing.getSharedMatch.queryOptions({ id: matchId }),
-      ),
-    ]);
+    await queryClient.invalidateQueries(
+      trpc.sharing.getSharedMatch.queryOptions({ id: matchId }),
+    );
   };
   const startMatch = useMutation(
     trpc.sharing.updateSharedMatchStartTime.mutationOptions({
