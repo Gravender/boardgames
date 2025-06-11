@@ -128,31 +128,23 @@ export function Match({ matchId }: { matchId: number }) {
   const updateMatchScores = useMutation(
     trpc.match.updateMatchScores.mutationOptions(),
   );
+  const invalidateMatch = async () =>
+    queryClient.invalidateQueries(
+      trpc.match.getMatch.queryOptions({ id: match?.id ?? 0 }),
+    );
   const startMatchDuration = useMutation(
     trpc.match.matchStart.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: match?.id ?? 0 }),
-        );
-      },
+      onSuccess: invalidateMatch,
     }),
   );
   const pauseMatchDuration = useMutation(
     trpc.match.matchPause.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: match?.id ?? 0 }),
-        );
-      },
+      onSuccess: invalidateMatch,
     }),
   );
   const resetMatchDuration = useMutation(
     trpc.match.matchResetDuration.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: match?.id ?? 0 }),
-        );
-      },
+      onSuccess: invalidateMatch,
     }),
   );
 
@@ -365,7 +357,7 @@ export function Match({ matchId }: { matchId: number }) {
         if (!match?.startTime) {
           setDuration((prevDuration) => prevDuration + 1);
         } else {
-          const now = Date.now();
+          const now = new Date();
           const startTime = match.startTime;
           const elapsedTime = differenceInSeconds(now, startTime);
           const totalDuration = match.duration + elapsedTime;
@@ -394,6 +386,8 @@ export function Match({ matchId }: { matchId: number }) {
     resetMatchDuration.mutate({
       id: match?.id ?? 0,
     });
+    setDuration(0);
+    setIsRunning(false);
   };
   useEffect(() => {
     return () => {
@@ -401,7 +395,7 @@ export function Match({ matchId }: { matchId: number }) {
       const startTime = match?.startTime ? match.startTime.getTime() : 0;
       const elapsedTime = differenceInSeconds(now, startTime);
       const difference = elapsedTime - (match?.duration ?? 0);
-      if (match?.running && difference > difference + 10) {
+      if (match?.running && difference > 10) {
         pauseMatchDuration.mutate({
           id: match.id,
         });
