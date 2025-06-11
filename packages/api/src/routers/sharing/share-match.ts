@@ -1,6 +1,6 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { compareAsc } from "date-fns";
+import { compareAsc, differenceInSeconds } from "date-fns";
 import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 
@@ -73,6 +73,19 @@ export const shareMatchRouter = createTRPCRouter({
       if (!returnedSharedMatch) {
         return null;
       }
+      const startTime =
+        returnedSharedMatch.match.startTime ??
+        (returnedSharedMatch.match.running === true ? new Date() : null);
+      if (
+        returnedSharedMatch.match.startTime === null &&
+        returnedSharedMatch.match.running === true
+      ) {
+        await ctx.db
+          .update(match)
+          .set({ startTime: startTime })
+          .where(eq(match.id, returnedSharedMatch.match.id))
+          .returning();
+      }
       const refinedPlayers = returnedSharedMatch.sharedMatchPlayers.map(
         (sharedMatchPlayer) => {
           const playerRounds = returnedSharedMatch.match.scoresheet.rounds.map(
@@ -139,6 +152,7 @@ export const shareMatchRouter = createTRPCRouter({
         permission: returnedSharedMatch.permission,
         id: returnedSharedMatch.id,
         date: returnedSharedMatch.match.date,
+        startTime: startTime,
         name: returnedSharedMatch.match.name,
         scoresheet: returnedSharedMatch.match.scoresheet,
         gameId: returnedSharedMatch.sharedGameId,
@@ -792,12 +806,136 @@ export const shareMatchRouter = createTRPCRouter({
       });
       return response;
     }),
+  updateSharedMatchStartTime: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectSharedMatchSchema.pick({ id: true }),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const returnedSharedMatch = await ctx.db.query.sharedMatch.findFirst({
+        where: {
+          id: input.match.id,
+          sharedWithId: ctx.userId,
+        },
+      });
+      if (!returnedSharedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared match not found.",
+        });
+      }
+      if (returnedSharedMatch.permission === "view") {
+        return {
+          success: false,
+          message: "You do not have permission to update this shared match.",
+        };
+      }
+      await ctx.db
+        .update(match)
+        .set({
+          running: true,
+          finished: false,
+          startTime: new Date(),
+        })
+        .where(eq(match.id, returnedSharedMatch.matchId));
+    }),
+  updateSharedMatchPause: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectSharedMatchSchema.pick({ id: true }),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const currentTime = new Date();
+      const returnedSharedMatch = await ctx.db.query.sharedMatch.findFirst({
+        where: {
+          id: input.match.id,
+          sharedWithId: ctx.userId,
+        },
+        with: {
+          match: true,
+        },
+      });
+      if (!returnedSharedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared match not found.",
+        });
+      }
+      if (returnedSharedMatch.permission === "view") {
+        return {
+          success: false,
+          message: "You do not have permission to update this shared match.",
+        };
+      }
+      if (returnedSharedMatch.match.running === false) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Match is not running.",
+        });
+      }
+      if (!returnedSharedMatch.match.startTime) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Match start time is not set.",
+        });
+      }
+      const timeDelta = differenceInSeconds(
+        currentTime,
+        returnedSharedMatch.match.startTime,
+      );
+      const accumulatedDuration =
+        returnedSharedMatch.match.duration + timeDelta;
+      await ctx.db
+        .update(match)
+        .set({
+          duration: accumulatedDuration,
+          running: false,
+          startTime: null,
+          endTime: new Date(),
+        })
+        .where(eq(match.id, returnedSharedMatch.matchId));
+    }),
+  updateSharedMatchResetDuration: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectSharedMatchSchema.pick({ id: true }),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const returnedSharedMatch = await ctx.db.query.sharedMatch.findFirst({
+        where: {
+          id: input.match.id,
+          sharedWithId: ctx.userId,
+        },
+      });
+      if (!returnedSharedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared match not found.",
+        });
+      }
+      if (returnedSharedMatch.permission === "view") {
+        return {
+          success: false,
+          message: "You do not have permission to update this shared match.",
+        };
+      }
+      await ctx.db
+        .update(match)
+        .set({
+          duration: 0,
+          running: false,
+          startTime: null,
+        })
+        .where(eq(match.id, returnedSharedMatch.matchId));
+    }),
   updateSharedMatchFinish: protectedUserProcedure
     .input(
       z.object({
         match: selectSharedMatchSchema.pick({ id: true }),
         finished: z.boolean(),
-        duration: z.number(),
         playersPlacement: z.array(
           z.object({
             matchPlayerId: z.number(),
@@ -832,7 +970,6 @@ export const shareMatchRouter = createTRPCRouter({
           .update(match)
           .set({
             finished: input.finished,
-            duration: input.duration,
             running: false,
           })
           .where(eq(match.id, returnedSharedMatch.matchId))
@@ -891,7 +1028,6 @@ export const shareMatchRouter = createTRPCRouter({
     .input(
       z.object({
         match: selectSharedMatchSchema.pick({ id: true }),
-        duration: z.number(),
         players: z.array(
           z.object({
             matchPlayerId: z.number(),
@@ -922,19 +1058,7 @@ export const shareMatchRouter = createTRPCRouter({
             message: "You do not have permission to update this shared match.",
           };
         }
-        const [updatedMatch] = await transaction
-          .update(match)
-          .set({
-            duration: input.duration,
-          })
-          .where(eq(match.id, returnedSharedMatch.matchId))
-          .returning();
-        if (!updatedMatch) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to update shared match.",
-          });
-        }
+
         if (input.players.length > 0) {
           const ids = input.players.map((p) => p.matchPlayerId);
           const scoreSqlChunks: SQL[] = [sql`(case`];

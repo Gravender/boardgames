@@ -163,17 +163,19 @@ export function EditMatchForm({
       onSuccess: async (result) => {
         if (result !== null) {
           toast.success("Match updated successfully.");
-          await queryClient.invalidateQueries(
-            trpc.player.getPlayersByGame.queryFilter({
-              game: { id: result.gameId },
-            }),
-          );
-          await queryClient.invalidateQueries(
-            trpc.game.getGame.queryOptions({ id: result.gameId }),
-          );
-          await queryClient.invalidateQueries(
-            trpc.match.getMatch.queryOptions({ id: result.id }),
-          );
+          await Promise.all([
+            queryClient.invalidateQueries(
+              trpc.player.getPlayersByGame.queryFilter({
+                game: { id: result.gameId },
+              }),
+            ),
+            queryClient.invalidateQueries(
+              trpc.game.getGame.queryOptions({ id: result.gameId }),
+            ),
+            queryClient.invalidateQueries(
+              trpc.match.getMatch.queryOptions({ id: result.id }),
+            ),
+          ]);
           // If the match is original and was updated, redirect to the updated match
           if (result.updatedScore) {
             router.push(`/dashboard/games/${result.gameId}/${result.id}`);

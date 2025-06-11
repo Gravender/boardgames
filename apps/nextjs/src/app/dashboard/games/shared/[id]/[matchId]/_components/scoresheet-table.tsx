@@ -7,6 +7,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import { differenceInSeconds } from "date-fns";
 import { Pause, Play, RotateCcw } from "lucide-react";
 import { z } from "zod/v4";
 
@@ -117,12 +118,27 @@ export function ScoreSheetTable({ matchId }: { matchId: number }) {
       },
     }),
   );
-  const updateSharedMatchDuration = useMutation(
-    trpc.sharing.updateSharedMatchDuration.mutationOptions(),
+  const invalidateMatch = async () => {
+    await queryClient.invalidateQueries(
+      trpc.sharing.getSharedMatch.queryOptions({ id: matchId }),
+    );
+  };
+  const startMatch = useMutation(
+    trpc.sharing.updateSharedMatchStartTime.mutationOptions({
+      onSuccess: invalidateMatch,
+    }),
   );
-  const updateSharedMatchToggleRunning = useMutation(
-    trpc.sharing.updateSharedMatchToggleRunning.mutationOptions(),
+  const pauseMatch = useMutation(
+    trpc.sharing.updateSharedMatchPause.mutationOptions({
+      onSuccess: invalidateMatch,
+    }),
   );
+  const resetMatch = useMutation(
+    trpc.sharing.updateSharedMatchResetDuration.mutationOptions({
+      onSuccess: invalidateMatch,
+    }),
+  );
+
   const updateSharedMatchFinish = useMutation(
     trpc.sharing.updateSharedMatchFinish.mutationOptions({
       onSuccess: () => {
@@ -218,32 +234,43 @@ export function ScoreSheetTable({ matchId }: { matchId: number }) {
     let interval: NodeJS.Timeout;
     if (isRunning && match?.permission === "edit") {
       interval = setInterval(() => {
-        setDuration((prevDuration) => prevDuration + 1);
+        if (!match.startTime) {
+          setDuration((prevDuration) => prevDuration + 1);
+        } else {
+          const now = new Date();
+          const startTime = match.startTime;
+          const elapsedTime = differenceInSeconds(now, startTime);
+          const totalDuration = match.duration + elapsedTime;
+          setDuration(totalDuration);
+        }
       }, 1000);
     }
     return () => clearInterval(interval);
   }, [isRunning, match]);
 
   useEffect(() => {
-    if (
-      match !== null &&
-      isRunning &&
-      duration % 15 === 0 &&
-      match.duration !== duration &&
-      match.permission === "edit"
-    ) {
-      const debounce = setTimeout(() => {
-        updateSharedMatchDuration.mutate({
-          match: { id: match.id },
-          duration: duration,
-        });
-      }, 1000); // Debounce duration
-      return () => clearTimeout(debounce);
-    }
-  }, [isRunning, duration, match, updateSharedMatchDuration]);
+    return () => {
+      if (match !== null && isRunning && match.permission === "edit") {
+        const now = Date.now();
+        const startTime = match.startTime ? match.startTime.getTime() : 0;
+        const elapsedTime = differenceInSeconds(now, startTime);
+        const difference = elapsedTime - match.duration;
+        if (match.running && difference > 10) {
+          pauseMatch.mutate({
+            match: { id: match.id },
+          });
+        }
+      }
+    };
+  }, [isRunning, duration, match, pauseMatch]);
 
   const onFinish = () => {
-    setIsRunning(false);
+    if (isRunning) {
+      pauseMatch.mutate({
+        match: { id: matchId },
+      });
+      setIsRunning(false);
+    }
     if (match?.scoresheet.winCondition === "Manual") {
       setManualWinners(
         players.map((player) => {
@@ -266,7 +293,6 @@ export function ScoreSheetTable({ matchId }: { matchId: number }) {
         match: {
           id: match.id,
         },
-        duration: duration,
         players: players.map((player) => {
           return {
             matchPlayerId: player.matchPlayerId,
@@ -354,7 +380,6 @@ export function ScoreSheetTable({ matchId }: { matchId: number }) {
         match: {
           id: match?.id ?? 0,
         },
-        duration: duration,
         players: players.map((player) => {
           return {
             matchPlayerId: player.matchPlayerId,
@@ -375,7 +400,6 @@ export function ScoreSheetTable({ matchId }: { matchId: number }) {
           id: match?.id ?? 0,
         },
         finished: true,
-        duration: duration,
         playersPlacement: playersPlacement.map((player) => ({
           matchPlayerId: player.id,
           score: player.score,
@@ -387,21 +411,27 @@ export function ScoreSheetTable({ matchId }: { matchId: number }) {
 
   const toggleClock = () => {
     if (match !== null && match.permission === "edit") {
-      updateSharedMatchToggleRunning.mutate({
-        match: { id: match.id },
-        running: !match.running,
-      });
-      setIsRunning(!isRunning);
+      if (isRunning) {
+        pauseMatch.mutate({
+          match: { id: match.id },
+        });
+        setIsRunning(false);
+      } else {
+        startMatch.mutate({
+          match: { id: match.id },
+        });
+        setIsRunning(true);
+      }
     }
   };
 
   const resetClock = () => {
     if (match !== null && match.permission === "edit") {
-      updateSharedMatchDuration.mutate({
+      resetMatch.mutate({
         match: { id: match.id },
-        duration: 0,
       });
       setDuration(0);
+      setIsRunning(false);
     }
   };
 
@@ -459,7 +489,7 @@ export function ScoreSheetTable({ matchId }: { matchId: number }) {
           <div className="flex w-full justify-between px-2 pt-6">
             <div className="flex items-center justify-center gap-2">
               <div className="text-center text-2xl font-bold">
-                {formatDuration(duration)}
+                {formatDuration(duration, true)}
               </div>
               <Button
                 onClick={toggleClock}

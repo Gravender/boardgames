@@ -231,7 +231,7 @@ function Content({
                       }
                       return (
                         <div
-                          key={player.id}
+                          key={`${player.id}-${player.matchPlayerId}`}
                           className={cn(
                             "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-2",
                             numberPlacements > 1
