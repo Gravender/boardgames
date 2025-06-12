@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Card, CardContent } from "@board-games/ui/card";
 
 import { caller } from "~/trpc/server";
+import { PlayerTabs } from "./_components/player-tabs";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -124,6 +125,7 @@ export default async function Page({ params }: Props) {
               </div>
             </CardContent>
           </Card>
+          <PlayerTabs player={player} />
         </div>
       </div>
     </div>
