@@ -6,6 +6,7 @@ import { shareLinkingRouter } from "./share-linking";
 import { shareLocationRouter } from "./share-location";
 import { shareMatchRouter } from "./share-match";
 import { shareMetaRouter } from "./share-meta";
+import { sharePlayerRouter } from "./share-player";
 import { shareRequestRouter } from "./share-request";
 
 export const sharingRouter = mergeRouters(
@@ -17,4 +18,5 @@ export const sharingRouter = mergeRouters(
   shareGameRouter,
   shareLocationRouter,
   shareMatchRouter,
+  sharePlayerRouter,
 );
