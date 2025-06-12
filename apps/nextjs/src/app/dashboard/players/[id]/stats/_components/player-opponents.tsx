@@ -112,7 +112,7 @@ export function PlayerOpponents({
                   return (
                     <div
                       key={`${opponent.player.id}-${opponent.player.type}`}
-                      className="rounded-lg border p-4"
+                      className="flex flex-col gap-1 rounded-lg border p-4"
                     >
                       <div className="mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -204,46 +204,58 @@ export function PlayerOpponents({
 
                       {/* Performance Comparison */}
                       {totalCompetitiveGames > 0 &&
-                        totalCooperativeGames > 0 && (
-                          <div className="rounded-lg bg-muted/30 p-3">
-                            <div className="text-sm font-medium">
-                              Performance Comparison
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <div className="flex justify-between text-sm">
-                                  <span>vs {opponent.player.name}</span>
-                                  <span>
-                                    {Math.round(competitiveWinRate * 100)}%
-                                  </span>
-                                </div>
-                                <Progress
-                                  value={competitiveWinRate * 100}
-                                  className="h-2"
-                                />
+                      totalCooperativeGames > 0 ? (
+                        <div className="rounded-lg bg-muted/30 p-3">
+                          <div className="text-sm font-medium">
+                            Performance Comparison
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="flex justify-between text-sm">
+                                <span>vs {opponent.player.name}</span>
+                                <span>
+                                  {Math.round(competitiveWinRate * 100)}%
+                                </span>
                               </div>
-                              <div>
-                                <div className="flex justify-between text-sm">
-                                  <span>with {opponent.player.name}</span>
-                                  <span>
-                                    {Math.round(cooperativeSuccessRate * 100)}%
-                                  </span>
-                                </div>
-                                <Progress
-                                  value={cooperativeSuccessRate * 100}
-                                  className="h-2"
-                                />
-                              </div>
+                              <Progress
+                                value={competitiveWinRate * 100}
+                                className="h-2"
+                              />
                             </div>
-                            <div className="mt-2 text-xs text-muted-foreground">
-                              {cooperativeSuccessRate > competitiveWinRate
-                                ? `Better teammates than opponents (+${Math.round((cooperativeSuccessRate - competitiveWinRate) * 100)}%)`
-                                : competitiveWinRate > cooperativeSuccessRate
-                                  ? `Better as opponents than teammates (+${Math.round((competitiveWinRate - cooperativeSuccessRate) * 100)}%)`
-                                  : "Equal performance as teammates and opponents"}
+                            <div>
+                              <div className="flex justify-between text-sm">
+                                <span>with {opponent.player.name}</span>
+                                <span>
+                                  {Math.round(cooperativeSuccessRate * 100)}%
+                                </span>
+                              </div>
+                              <Progress
+                                value={cooperativeSuccessRate * 100}
+                                className="h-2"
+                              />
                             </div>
                           </div>
-                        )}
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            {cooperativeSuccessRate > competitiveWinRate
+                              ? `Better teammates than opponents (+${Math.round((cooperativeSuccessRate - competitiveWinRate) * 100)}%)`
+                              : competitiveWinRate > cooperativeSuccessRate
+                                ? `Better as opponents than teammates (+${Math.round((competitiveWinRate - cooperativeSuccessRate) * 100)}%)`
+                                : "Equal performance as teammates and opponents"}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Win Rate vs {opponent.player.name}</span>
+
+                            <span>{Math.round(overallWinRate * 100)}%</span>
+                          </div>
+                          <Progress
+                            value={overallWinRate * 100}
+                            className="h-2"
+                          />
+                        </div>
+                      )}
 
                       <Collapsible
                         open={isExpanded}
