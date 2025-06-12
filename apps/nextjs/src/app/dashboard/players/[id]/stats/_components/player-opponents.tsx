@@ -243,15 +243,29 @@ export function PlayerOpponents({
                                 : "Equal performance as teammates and opponents"}
                           </div>
                         </div>
-                      ) : (
+                      ) : totalCompetitiveGames > 0 ? (
                         <div className="flex flex-col items-center gap-2">
                           <div className="flex justify-between text-sm">
                             <span>Win Rate vs {opponent.player.name}</span>
 
-                            <span>{Math.round(overallWinRate * 100)}%</span>
+                            <span>{Math.round(competitiveWinRate * 100)}%</span>
                           </div>
                           <Progress
-                            value={overallWinRate * 100}
+                            value={competitiveWinRate * 100}
+                            className="h-2"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Win Rate with {opponent.player.name}</span>
+
+                            <span>
+                              {Math.round(cooperativeSuccessRate * 100)}%
+                            </span>
+                          </div>
+                          <Progress
+                            value={cooperativeSuccessRate * 100}
                             className="h-2"
                           />
                         </div>
