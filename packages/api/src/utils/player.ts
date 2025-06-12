@@ -381,6 +381,8 @@ export function headToHeadStats(
             competitiveLosses: 0,
             competitiveTies: 0,
             competitivePlays: 0,
+            teamLosses: 0,
+            teamWins: 0,
           };
           acc[key].games[gameStatKey] ??= createGame(match, {
             wins: 0,
@@ -430,15 +432,36 @@ export function headToHeadStats(
             }
             if (!match.scoresheet.isCoop) {
               acc[key].competitivePlays++;
-              if (cpWin && !opWin) {
+              if (
+                (cpWin && !opWin) ||
+                (currentPlayerData.placement !== null &&
+                  opponent.placement !== null &&
+                  currentPlayerData.placement < opponent.placement)
+              ) {
                 acc[key].competitiveWins++;
                 acc[key].games[gameStatKey].competitiveWins++;
-              } else if (!cpWin && opWin) {
+              } else if (
+                (!cpWin && opWin) ||
+                (currentPlayerData.placement !== null &&
+                  opponent.placement !== null &&
+                  currentPlayerData.placement > opponent.placement)
+              ) {
                 acc[key].competitiveLosses++;
                 acc[key].games[gameStatKey].competitiveLosses++;
               } else {
                 acc[key].competitiveTies++;
                 acc[key].games[gameStatKey].competitiveTies++;
+              }
+            }
+            if (
+              currentPlayerData.teamId === opponent.teamId &&
+              !match.scoresheet.isCoop &&
+              currentPlayerData.teamId !== null
+            ) {
+              if (currentPlayerData.isWinner) {
+                acc[key].teamWins++;
+              } else {
+                acc[key].teamLosses++;
               }
             }
           }
@@ -453,6 +476,8 @@ export function headToHeadStats(
         wins: number;
         losses: number;
         ties: number;
+        teamWins: number;
+        teamLosses: number;
         playtime: number;
         coopWins: number;
         coopLosses: number;

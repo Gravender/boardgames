@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Swords } from "lucide-react";
+import { ChevronDown, ChevronUp, Shield, Swords } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { formatDuration } from "@board-games/shared";
@@ -13,6 +13,7 @@ import {
 } from "@board-games/ui/collapsible";
 import { Progress } from "@board-games/ui/progress";
 import { ScrollArea } from "@board-games/ui/scroll-area";
+import { Separator } from "@board-games/ui/separator";
 
 import { GameImage } from "~/components/game-image";
 
@@ -82,8 +83,24 @@ export function PlayerOpponents({
             <ScrollArea className="h-[65vh]">
               <div className="flex w-full flex-col gap-2">
                 {sortedOpponents.map((opponent) => {
-                  const totalGames = opponent.wins + opponent.losses;
-                  const winRate =
+                  const totalCompetitiveGames =
+                    opponent.competitiveWins +
+                    opponent.competitiveLosses +
+                    opponent.competitiveTies;
+                  const totalCooperativeGames =
+                    opponent.coopWins + opponent.coopLosses;
+                  const totalGames =
+                    totalCompetitiveGames + totalCooperativeGames;
+                  const competitiveWinRate =
+                    opponent.competitiveWins + opponent.competitiveLosses > 0
+                      ? opponent.competitiveWins /
+                        (opponent.competitiveWins + opponent.competitiveLosses)
+                      : 0;
+                  const cooperativeSuccessRate =
+                    totalCooperativeGames > 0
+                      ? opponent.coopWins / totalCooperativeGames
+                      : 0;
+                  const overallWinRate =
                     totalGames > 0 ? opponent.wins / totalGames : 0;
                   const opponentGames = filteredOpponentGames(opponent.games);
                   const isExpanded = expandedOpponents.has(
@@ -110,30 +127,120 @@ export function PlayerOpponents({
                             <div className="font-medium">
                               {opponent.player.name}
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              {Math.round(winRate * 100)}% overall win rate
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <span>{totalGames} games together</span>
+                              <Separator orientation="vertical" />
+                              <span>
+                                {Math.round(overallWinRate * 100)}% overall win
+                                rate
+                              </span>
                             </div>
                           </div>
                         </div>
 
                         <div className="text-right">
                           <div className="text-lg font-bold">
-                            {opponent.wins} - {opponent.losses} -{" "}
-                            {opponent.ties}
+                            {opponent.competitiveWins} -{" "}
+                            {opponent.competitiveLosses} -{" "}
+                            {opponent.competitiveTies}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            W - L - T ({opponent.matches} matches)
+                            Competitive Record
                           </div>
                         </div>
                       </div>
 
-                      <div className="mb-3">
-                        <div className="mb-1 flex justify-between text-sm">
-                          <span>Win Rate vs {opponent.player.name}</span>
-                          <span>{Math.round(winRate * 100)}%</span>
+                      {/* Enhanced Statistics Grid */}
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                        <div className="rounded-lg border p-3 text-center">
+                          <div className="mb-1 flex items-center justify-center gap-1">
+                            <Swords className="h-3 w-3 text-blue-500" />
+                            <span className="text-lg font-bold text-blue-600">
+                              {Math.round(competitiveWinRate * 100)}%
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Competitive Win Rate
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {totalCompetitiveGames} games
+                          </div>
                         </div>
-                        <Progress value={winRate * 100} className="h-2" />
+
+                        <div className="rounded-lg border p-3 text-center">
+                          <div className="mb-1 flex items-center justify-center gap-1">
+                            <Shield className="h-3 w-3 text-green-500" />
+                            <span className="text-lg font-bold text-green-600">
+                              {Math.round(cooperativeSuccessRate * 100)}%
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Co-op Success Rate
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {totalCooperativeGames} games
+                          </div>
+                        </div>
+
+                        <div className="rounded-lg border p-3 text-center">
+                          <div className="text-lg font-bold">
+                            {opponent.teamWins}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Team Victories
+                          </div>
+                        </div>
+
+                        <div className="rounded-lg border p-3 text-center">
+                          <div className="text-lg font-bold">{totalGames}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Total Games
+                          </div>
+                        </div>
                       </div>
+
+                      {/* Performance Comparison */}
+                      {totalCompetitiveGames > 0 &&
+                        totalCooperativeGames > 0 && (
+                          <div className="rounded-lg bg-muted/30 p-3">
+                            <div className="text-sm font-medium">
+                              Performance Comparison
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <div className="flex justify-between text-sm">
+                                  <span>vs {opponent.player.name}</span>
+                                  <span>
+                                    {Math.round(competitiveWinRate * 100)}%
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={competitiveWinRate * 100}
+                                  className="h-2"
+                                />
+                              </div>
+                              <div>
+                                <div className="flex justify-between text-sm">
+                                  <span>with {opponent.player.name}</span>
+                                  <span>
+                                    {Math.round(cooperativeSuccessRate * 100)}%
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={cooperativeSuccessRate * 100}
+                                  className="h-2"
+                                />
+                              </div>
+                            </div>
+                            <div className="mt-2 text-xs text-muted-foreground">
+                              {cooperativeSuccessRate > competitiveWinRate
+                                ? `Better teammates than opponents (+${Math.round((cooperativeSuccessRate - competitiveWinRate) * 100)}%)`
+                                : competitiveWinRate > cooperativeSuccessRate
+                                  ? `Better as opponents than teammates (+${Math.round((competitiveWinRate - cooperativeSuccessRate) * 100)}%)`
+                                  : "Equal performance as teammates and opponents"}
+                            </div>
+                          </div>
+                        )}
 
                       <Collapsible
                         open={isExpanded}
