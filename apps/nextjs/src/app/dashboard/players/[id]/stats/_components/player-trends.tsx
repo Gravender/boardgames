@@ -222,7 +222,7 @@ export function PlayerTrends({ player }: { player: Player }) {
 
               <div className="rounded-lg border p-4">
                 <div className="mb-2 text-sm font-medium">Recent Matches</div>
-                <div className="fle-wrap z-50 flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   {player.stats.recentForm.slice(-10).map((result, index) => (
                     <div
                       key={index}

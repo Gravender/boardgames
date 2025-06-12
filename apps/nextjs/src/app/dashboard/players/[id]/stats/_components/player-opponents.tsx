@@ -101,7 +101,10 @@ export function PlayerOpponents({
                       ? opponent.coopWins / totalCooperativeGames
                       : 0;
                   const overallWinRate =
-                    totalGames > 0 ? opponent.wins / totalGames : 0;
+                    totalGames > 0
+                      ? (opponent.competitiveWins + opponent.coopWins) /
+                        totalGames
+                      : 0;
                   const opponentGames = filteredOpponentGames(opponent.games);
                   const isExpanded = expandedOpponents.has(
                     `${opponent.player.id}-${opponent.player.type}`,

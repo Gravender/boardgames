@@ -30,7 +30,7 @@ export function PlayerGames({ player }: { player: Player }) {
   const gameStatsData = player.stats.gameStats
     .map((game) => ({
       game: game.name,
-      overall: (game.winRate * 100).toFixed(2),
+      overall: game.winRate * 100,
       competitive: game.competitiveWinRate * 100,
       cooperative: game.coopWinRate * 100,
       wins: game.wins,
@@ -48,7 +48,7 @@ export function PlayerGames({ player }: { player: Player }) {
         (gameChartMode === "competitive" && game.competitive > 0) ||
         (gameChartMode === "cooperative" && game.cooperative > 0),
     )
-    .splice(0, 5);
+    .slice(0, 5);
   const chartConfig = {
     overall: {
       label: "Overall Win Rate",
