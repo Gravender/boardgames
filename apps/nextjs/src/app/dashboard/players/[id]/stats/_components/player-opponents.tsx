@@ -112,7 +112,7 @@ export function PlayerOpponents({
                   return (
                     <div
                       key={`${opponent.player.id}-${opponent.player.type}`}
-                      className="flex flex-col gap-1 rounded-lg border p-4"
+                      className="flex flex-col gap-2 rounded-lg border p-4"
                     >
                       <div className="mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -244,7 +244,7 @@ export function PlayerOpponents({
                           </div>
                         </div>
                       ) : totalCompetitiveGames > 0 ? (
-                        <div className="flex flex-col items-center gap-2">
+                        <div className="flex flex-col gap-2">
                           <div className="flex justify-between text-sm">
                             <span>Win Rate vs {opponent.player.name}</span>
 
@@ -256,7 +256,7 @@ export function PlayerOpponents({
                           />
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center gap-2">
+                        <div className="flex flex-col gap-2">
                           <div className="flex justify-between text-sm">
                             <span>Win Rate with {opponent.player.name}</span>
 
