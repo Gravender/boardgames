@@ -586,38 +586,27 @@ export const playerRouter = createTRPCRouter({
       );
       returnedPlayer.sharedLinkedPlayers.forEach((linkedPlayer) => {
         linkedPlayer.sharedMatchPlayers.forEach((mPlayer) => {
-          const filteredPlayers = mPlayer.sharedMatch.sharedMatchPlayers;
-          const foundGame = playerGames.find(
-            (pGame) =>
-              pGame.id ===
-                (mPlayer.sharedMatch.sharedGame.linkedGameId ??
-                  mPlayer.sharedMatch.sharedGame.gameId) &&
-              pGame.type ===
-                (mPlayer.sharedMatch.sharedGame.linkedGameId
-                  ? "original"
-                  : "shared"),
-          );
-          if (!foundGame) {
-            playerGames.push({
-              type: mPlayer.sharedMatch.sharedGame.linkedGameId
-                ? ("original" as const)
-                : ("shared" as const),
-              id:
-                mPlayer.sharedMatch.sharedGame.linkedGameId ??
-                mPlayer.sharedMatch.sharedGame.id,
-              name:
-                mPlayer.sharedMatch.sharedGame.linkedGame?.name ??
-                mPlayer.sharedMatch.sharedGame.game.name,
-              image: mPlayer.sharedMatch.sharedGame.linkedGame
-                ? mPlayer.sharedMatch.sharedGame.linkedGame.image
-                : mPlayer.sharedMatch.sharedGame.game.image,
-            });
-          }
-
-          const sharedMatch = mPlayer.sharedMatch;
+          const filteredPlayers =
+            returnedSharedMatchPlayer.sharedMatch.sharedMatchPlayers;
+          const sharedMatch = returnedSharedMatchPlayer.sharedMatch;
           const sharedMatchMatch = sharedMatch.match;
           const sharedGame = sharedMatch.sharedGame;
           const linkedGame = sharedGame.linkedGame;
+          const foundGame = playerGames.find(
+            (pGame) =>
+              pGame.id === (sharedGame.linkedGameId ?? sharedGame.id) &&
+              pGame.type === (sharedGame.linkedGameId ? "original" : "shared"),
+          );
+          if (!foundGame) {
+            playerGames.push({
+              type: sharedGame.linkedGameId
+                ? ("original" as const)
+                : ("shared" as const),
+              id: sharedGame.linkedGameId ?? sharedGame.id,
+              name: linkedGame?.name ?? sharedGame.game.name,
+              image: linkedGame ? linkedGame.image : sharedGame.game.image,
+            });
+          }
           playerMatches.push({
             id: sharedMatch.id,
             type: "shared" as const,
