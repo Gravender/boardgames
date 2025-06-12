@@ -28,7 +28,7 @@ globalForDb.conn = conn;
 
 export const db =
   process.env.NODE_ENV === "development"
-    ? LocalDrizzle(conn, { relations, logger: true })
+    ? LocalDrizzle(conn, { relations, logger: false })
     : VercelDrizzle(sql, { relations });
 export type DatabaseType = typeof db;
 type TransactionCallback = Parameters<DatabaseType["transaction"]>[0];

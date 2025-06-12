@@ -457,6 +457,9 @@ export const playerRouter = createTRPCRouter({
                             },
                           },
                           linkedGame: {
+                            where: {
+                              userId: ctx.userId,
+                            },
                             with: {
                               image: true,
                             },
@@ -479,6 +482,9 @@ export const playerRouter = createTRPCRouter({
                                 },
                               },
                               linkedPlayer: {
+                                where: {
+                                  createdBy: ctx.userId,
+                                },
                                 with: {
                                   image: true,
                                 },
@@ -520,7 +526,6 @@ export const playerRouter = createTRPCRouter({
           usageType: "game" | "player" | "match";
         } | null;
       }[] = [];
-      const playerUniquePlayers = new Set<number>();
       const playerMatches = returnedPlayer.matchPlayers.map<PlayerMatch>(
         (mPlayer) => {
           const filteredPlayers = mPlayer.match.matchPlayers;
@@ -536,14 +541,6 @@ export const playerRouter = createTRPCRouter({
               image: mPlayer.match.game.image,
             });
           }
-          filteredPlayers.forEach((fPlayer) => {
-            if (
-              fPlayer.playerId !== returnedPlayer.id &&
-              !playerUniquePlayers.has(fPlayer.playerId)
-            ) {
-              playerUniquePlayers.add(fPlayer.playerId);
-            }
-          });
           return {
             id: mPlayer.matchId,
             type: "original" as const,
@@ -589,49 +586,26 @@ export const playerRouter = createTRPCRouter({
       );
       returnedPlayer.sharedLinkedPlayers.forEach((linkedPlayer) => {
         linkedPlayer.sharedMatchPlayers.forEach((mPlayer) => {
-          const filteredPlayers = mPlayer.sharedMatch.sharedMatchPlayers;
-          const foundGame = playerGames.find(
-            (pGame) =>
-              pGame.id ===
-                (mPlayer.sharedMatch.sharedGame.linkedGameId ??
-                  mPlayer.sharedMatch.sharedGame.gameId) &&
-              pGame.type ===
-                (mPlayer.sharedMatch.sharedGame.linkedGameId
-                  ? "original"
-                  : "shared"),
-          );
-          if (!foundGame) {
-            playerGames.push({
-              type: mPlayer.sharedMatch.sharedGame.linkedGameId
-                ? ("original" as const)
-                : ("shared" as const),
-              id:
-                mPlayer.sharedMatch.sharedGame.linkedGameId ??
-                mPlayer.sharedMatch.sharedGame.id,
-              name:
-                mPlayer.sharedMatch.sharedGame.linkedGame?.name ??
-                mPlayer.sharedMatch.sharedGame.game.name,
-              image: mPlayer.sharedMatch.sharedGame.linkedGame
-                ? mPlayer.sharedMatch.sharedGame.linkedGame.image
-                : mPlayer.sharedMatch.sharedGame.game.image,
-            });
-          }
-          filteredPlayers.forEach((fPlayer) => {
-            if (
-              fPlayer.sharedPlayer &&
-              fPlayer.sharedPlayer.linkedPlayerId === linkedPlayer.playerId &&
-              !playerUniquePlayers.has(
-                fPlayer.sharedPlayer.linkedPlayer?.id ??
-                  fPlayer.sharedPlayer.playerId,
-              )
-            ) {
-              playerUniquePlayers.add(fPlayer.sharedPlayer.playerId);
-            }
-          });
           const sharedMatch = mPlayer.sharedMatch;
+          const filteredPlayers = sharedMatch.sharedMatchPlayers;
           const sharedMatchMatch = sharedMatch.match;
           const sharedGame = sharedMatch.sharedGame;
           const linkedGame = sharedGame.linkedGame;
+          const foundGame = playerGames.find(
+            (pGame) =>
+              pGame.id === (sharedGame.linkedGameId ?? sharedGame.id) &&
+              pGame.type === (sharedGame.linkedGameId ? "original" : "shared"),
+          );
+          if (!foundGame) {
+            playerGames.push({
+              type: sharedGame.linkedGameId
+                ? ("original" as const)
+                : ("shared" as const),
+              id: sharedGame.linkedGameId ?? sharedGame.id,
+              name: linkedGame?.name ?? sharedGame.game.name,
+              image: linkedGame ? linkedGame.image : sharedGame.game.image,
+            });
+          }
           playerMatches.push({
             id: sharedMatch.id,
             type: "shared" as const,
@@ -670,7 +644,7 @@ export const playerRouter = createTRPCRouter({
                     };
                   }
                   return {
-                    id: sharedPlayer.playerId,
+                    id: sharedPlayer.id,
                     type: "shared" as const,
                     name: sharedPlayer.player.name,
                     isUser: sharedPlayer.player.isUser,
