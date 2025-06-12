@@ -53,7 +53,7 @@ export function PlayersTable({
                 <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">
                   <Link
                     prefetch={true}
-                    href={`/dashboard/players/${player.id}/stats`}
+                    href={`/dashboard/players/${player.type === "shared" ? "shared/" : ""}${player.id}/stats`}
                   >
                     <div className="flex items-center gap-2">
                       <Avatar className="h-14 w-14 shadow">
