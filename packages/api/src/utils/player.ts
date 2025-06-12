@@ -73,6 +73,24 @@ export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
             isUser: player.isUser,
             wins: player.isWinner ? 1 : 0,
             winRate: player.isWinner ? 1 : 0,
+            coopPlays: match.scoresheet.isCoop ? 1 : 0,
+            coopWins: match.scoresheet.isCoop ? (player.isWinner ? 1 : 0) : 0,
+            coopWinRate: match.scoresheet.isCoop
+              ? player.isWinner
+                ? 1
+                : 0
+              : 0,
+            competitivePlays: match.scoresheet.isCoop ? 0 : 1,
+            competitiveWins: match.scoresheet.isCoop
+              ? 0
+              : player.isWinner
+                ? 1
+                : 0,
+            competitiveWinRate: match.scoresheet.isCoop
+              ? 0
+              : player.isWinner
+                ? 1
+                : 0,
             image: player.image,
             placements:
               player.placement != null && player.placement > 0
@@ -118,6 +136,16 @@ export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
           const longest = accPlayer.streaks.longest;
           if (current.count > longest.count && current.type === longest.type) {
             longest.count = current.count;
+          }
+          if (match.scoresheet.isCoop) {
+            accPlayer.coopPlays++;
+            if (player.isWinner) accPlayer.coopWins++;
+            accPlayer.coopWinRate = accPlayer.coopWins / accPlayer.coopPlays;
+          } else {
+            accPlayer.competitivePlays++;
+            if (player.isWinner) accPlayer.competitiveWins++;
+            accPlayer.competitiveWinRate =
+              accPlayer.competitiveWins / accPlayer.competitivePlays;
           }
 
           const gameStats = accPlayer.gameStats[gameStatKey];
@@ -179,6 +207,12 @@ export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
         plays: number;
         wins: number;
         winRate: number;
+        coopPlays: number;
+        coopWins: number;
+        coopWinRate: number;
+        competitivePlays: number;
+        competitiveWins: number;
+        competitiveWinRate: number;
         image: {
           name: string;
           url: string | null;
