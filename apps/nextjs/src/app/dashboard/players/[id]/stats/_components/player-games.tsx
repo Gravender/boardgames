@@ -1,10 +1,12 @@
 "use client";
 
-import { BarChart3 } from "lucide-react";
+import { useState } from "react";
+import { BarChart3, Shield, Swords } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import type { RouterOutputs } from "@board-games/api";
 import type { ChartConfig } from "@board-games/ui/chart";
+import { Button } from "@board-games/ui/button";
 import {
   Card,
   CardContent,
@@ -22,38 +24,45 @@ import { GameDetails } from "./GameDetailsTable";
 
 type Player = RouterOutputs["player"]["getPlayer"];
 export function PlayerGames({ player }: { player: Player }) {
+  const [gameChartMode, setGameChartMode] = useState<
+    "overall" | "competitive" | "cooperative"
+  >("overall");
   const gameStatsData = player.stats.gameStats
     .map((game) => ({
       game: game.name,
-      winRate: (game.winRate * 100).toFixed(2),
+      overall: (game.winRate * 100).toFixed(2),
+      competitive: game.competitiveWinRate * 100,
+      cooperative: game.coopWinRate * 100,
       wins: game.wins,
       plays: game.plays,
     }))
     .sort((a, b) => {
       if (a.plays > 10 && b.plays > 10)
-        return Number(b.winRate) - Number(a.winRate);
+        return Number(b.overall) - Number(a.overall);
       if (a.plays > 5 && b.plays > 5) return b.wins - a.wins;
       return b.plays - a.plays;
     })
-    .slice(0, 5)
-    .map((game, index) => ({
-      ...game,
-      fill: index > 5 ? "#3b82f6" : `hsl(var(--chart-${index + 1}))`,
-    }));
-  const chartConfig = gameStatsData.reduce<ChartConfig>(
-    (acc, game) => {
-      acc[game.game] = {
-        label: game.game,
-        color: game.fill,
-      };
-      return acc;
+    .filter(
+      (game) =>
+        gameChartMode === "overall" ||
+        (gameChartMode === "competitive" && game.competitive > 0) ||
+        (gameChartMode === "cooperative" && game.cooperative > 0),
+    )
+    .splice(0, 5);
+  const chartConfig = {
+    overall: {
+      label: "Overall Win Rate",
+      color: "hsl(var(--chart-1))",
     },
-    {
-      winRate: {
-        label: "Win Rate",
-      },
+    competitive: {
+      label: "Competitive Win Rate",
+      color: "hsl(var(--chart-2))",
     },
-  ) satisfies ChartConfig;
+    cooperative: {
+      label: "Co-op Win Rate",
+      color: "hsl(var(--chart-3))",
+    },
+  } satisfies ChartConfig;
 
   return (
     <div className="space-y-6">
@@ -65,7 +74,41 @@ export function PlayerGames({ player }: { player: Player }) {
               <BarChart3 className="h-5 w-5" />
               Game Performance
             </CardTitle>
-            <CardDescription>Win rates across different games</CardDescription>
+            <CardDescription className="flex items-center justify-between">
+              <span>Win rates across different games</span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant={gameChartMode === "overall" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setGameChartMode("overall")}
+                  className="text-xs"
+                >
+                  Overall
+                </Button>
+                <Button
+                  variant={
+                    gameChartMode === "competitive" ? "default" : "outline"
+                  }
+                  size="sm"
+                  onClick={() => setGameChartMode("competitive")}
+                  className="text-xs"
+                >
+                  <Swords className="mr-1 h-3 w-3" />
+                  Competitive
+                </Button>
+                <Button
+                  variant={
+                    gameChartMode === "cooperative" ? "default" : "outline"
+                  }
+                  size="sm"
+                  onClick={() => setGameChartMode("cooperative")}
+                  className="text-xs"
+                >
+                  <Shield className="mr-1 h-3 w-3" />
+                  Co-op
+                </Button>
+              </div>
+            </CardDescription>
           </CardHeader>
           <CardContent className="h-80">
             <ChartContainer config={chartConfig} className="h-full w-full">
@@ -89,7 +132,11 @@ export function PlayerGames({ player }: { player: Player }) {
                     />
                   }
                 />
-                <Bar dataKey="winRate" name="Win Rate" />
+                <Bar
+                  dataKey={gameChartMode}
+                  name="Win Rate"
+                  fill={`var(--color-${gameChartMode})`}
+                />
               </BarChart>
             </ChartContainer>
           </CardContent>

@@ -227,6 +227,9 @@ export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
         .map((gameStats) => ({
           ...gameStats,
           winRate: gameStats.wins / gameStats.plays,
+          coopWinRate: gameStats.coopWins / gameStats.coopPlays,
+          competitiveWinRate:
+            gameStats.competitiveWins / gameStats.competitivePlays,
           averageScore:
             gameStats.scores.length > 0
               ? gameStats.scores.reduce((acc, cur) => acc + cur, 0) /
