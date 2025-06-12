@@ -112,15 +112,14 @@ export const sharePlayerRouter = createTRPCRouter({
       }[] = [];
       const playerMatches: PlayerMatch[] = [];
       for (const returnedSharedMatchPlayer of returnedSharedPlayer.sharedMatchPlayers) {
-        const filteredPlayers =
-          returnedSharedMatchPlayer.sharedMatch.sharedMatchPlayers;
         const sharedMatch = returnedSharedMatchPlayer.sharedMatch;
+        const filteredPlayers = sharedMatch.sharedMatchPlayers;
         const sharedMatchMatch = sharedMatch.match;
         const sharedGame = sharedMatch.sharedGame;
         const linkedGame = sharedGame.linkedGame;
         const foundGame = playerGames.find(
           (pGame) =>
-            pGame.id === (sharedGame.linkedGameId ?? sharedGame.gameId) &&
+            pGame.id === (sharedGame.linkedGameId ?? sharedGame.id) &&
             pGame.type === (sharedGame.linkedGameId ? "original" : "shared"),
         );
         if (!foundGame) {
@@ -237,6 +236,7 @@ export const sharePlayerRouter = createTRPCRouter({
       }
       return {
         id: returnedSharedPlayer.id,
+        isUser: false,
         createdAt: returnedSharedPlayer.createdAt,
         name: returnedSharedPlayer.player.name,
         image: returnedSharedPlayer.player.image,
