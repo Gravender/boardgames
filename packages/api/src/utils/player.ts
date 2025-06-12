@@ -1,4 +1,5 @@
 import type z from "zod/v4";
+import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
 
 import type {
@@ -329,8 +330,17 @@ export function teammateFrequency(
         (p) => p.id === currentPlayer.id && p.type === currentPlayer.type,
       );
       if (!currentPlayerMatchPlayer) {
-        console.error("Current player data not found");
-        return acc;
+        console.error(
+          "Current player data not found",
+          "Match Players:",
+          match.players,
+          "Current Player:",
+          currentPlayer,
+        );
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Current player data not found",
+        });
       }
       match.players
         .filter(
@@ -379,8 +389,17 @@ export function headToHeadStats(
         (p) => p.id === currentPlayer.id && p.type === currentPlayer.type,
       );
       if (!currentPlayerData) {
-        console.error("Current player data not found");
-        return acc;
+        console.error(
+          "Current player data not found",
+          "Match Players:",
+          match.players.length,
+          "Current Player:",
+          currentPlayer,
+        );
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Current player data not found",
+        });
       }
       const gameStatKey = getGameStatKey(match);
 
