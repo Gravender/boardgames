@@ -330,13 +330,6 @@ export function teammateFrequency(
         (p) => p.id === currentPlayer.id && p.type === currentPlayer.type,
       );
       if (!currentPlayerMatchPlayer) {
-        console.error(
-          "Current player data not found",
-          "Match Players:",
-          match.players,
-          "Current Player:",
-          currentPlayer,
-        );
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Current player data not found",
@@ -389,13 +382,6 @@ export function headToHeadStats(
         (p) => p.id === currentPlayer.id && p.type === currentPlayer.type,
       );
       if (!currentPlayerData) {
-        console.error(
-          "Current player data not found",
-          "Match Players:",
-          match.players.length,
-          "Current Player:",
-          currentPlayer,
-        );
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Current player data not found",
