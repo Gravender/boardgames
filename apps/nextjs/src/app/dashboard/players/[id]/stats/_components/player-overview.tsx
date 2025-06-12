@@ -223,6 +223,12 @@ export function PlayerOverview({ player }: { player: Player }) {
                       (p) => p.id === player.id && p.type === "original",
                     );
                     const isWinner = playerInMatch?.isWinner;
+                    const isCoop = match.scoresheet.isCoop;
+                    const isManualWinCondition =
+                      match.scoresheet.winCondition === "Manual";
+                    const playerInMatchTeam = match.teams.find(
+                      (t) => t.id === playerInMatch?.teamId,
+                    );
 
                     return (
                       <Link
@@ -236,16 +242,21 @@ export function PlayerOverview({ player }: { player: Player }) {
                             alt={`${match.gameName} game image`}
                             containerClassName="h-12 w-12"
                           />
-                          <div className="grid gap-1.5">
+                          <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2">
                               <span className="max-w-40 truncate font-medium sm:max-w-64">
                                 {match.name}
                               </span>
+                              {isCoop && (
+                                <Badge variant="outline" className="text-xs">
+                                  Co-op
+                                </Badge>
+                              )}
                               {isWinner && (
                                 <Trophy className="h-4 w-4 text-yellow-500" />
                               )}
                             </div>
-                            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                               <FormattedDate
                                 date={match.date}
                                 Icon={Calendar}
@@ -261,9 +272,51 @@ export function PlayerOverview({ player }: { player: Player }) {
                                 </span>
                               )}
                             </div>
+                            <div className="text-sm text-muted-foreground">
+                              {isCoop ? (
+                                isWinner ? (
+                                  <span className="font-medium text-green-600">
+                                    ✓ Team Victory
+                                  </span>
+                                ) : match.finished ? (
+                                  <span className="font-medium text-red-600">
+                                    ✗ Team Defeat
+                                  </span>
+                                ) : (
+                                  <span className="font-medium text-yellow-600">
+                                    ⏸ In Progress
+                                  </span>
+                                )
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <span>{match.players.length} players</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        {match.scoresheet.winCondition === "Manual" ? (
+                        {!match.finished ? (
+                          <Badge
+                            variant="secondary"
+                            className="text-xs text-yellow-600"
+                          >
+                            In Progress
+                          </Badge>
+                        ) : isCoop ? (
+                          <div className="flex flex-col items-end">
+                            <Badge
+                              variant={isWinner ? "default" : "destructive"}
+                              className="text-xs"
+                            >
+                              {isWinner ? "Victory" : "Defeat"}
+                            </Badge>
+                            {playerInMatchTeam && (
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                {playerInMatchTeam.name}
+                              </div>
+                            )}
+                          </div>
+                        ) : isManualWinCondition ? (
                           <div>{playerInMatch?.isWinner ? "✔️" : "❌"}</div>
                         ) : (
                           <div className="flex flex-col items-center gap-2">
