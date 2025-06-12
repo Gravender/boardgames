@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { compareDesc } from "date-fns";
-import { Calendar, Clock, MapPin, Users } from "lucide-react";
+import { Calendar, Clock, MapPin, Trophy, Users } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { formatDuration } from "@board-games/shared";
@@ -150,6 +150,8 @@ export function PlayerTeams({ player }: { player: Player }) {
               <div className="flex w-full flex-col gap-2 p-1 sm:px-4">
                 {teamMatches.map((teamMatch) => {
                   const match = teamMatch.match;
+                  const isWinner = match.outcome.isWinner;
+                  const isCoop = match.scoresheet.isCoop;
                   return (
                     <Link
                       href={`/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}/summary`}
@@ -161,6 +163,14 @@ export function PlayerTeams({ player }: { player: Player }) {
                           <span className="max-w-52 truncate text-base font-medium sm:max-w-full">
                             {match.name}
                           </span>
+                          {isCoop && (
+                            <Badge variant="outline" className="text-xs">
+                              Co-op
+                            </Badge>
+                          )}
+                          {isWinner && (
+                            <Trophy className="h-4 w-4 text-yellow-500" />
+                          )}
                         </div>
                         <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                           <FormattedDate date={match.date} Icon={Calendar} />
@@ -173,6 +183,27 @@ export function PlayerTeams({ player }: { player: Player }) {
                               <MapPin className="h-3 w-3" />
                               {match.locationName}
                             </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {isCoop ? (
+                            isWinner ? (
+                              <span className="font-medium text-green-600">
+                                ✓ Team Victory
+                              </span>
+                            ) : match.finished ? (
+                              <span className="font-medium text-red-600">
+                                ✗ Team Defeat
+                              </span>
+                            ) : (
+                              <span className="font-medium text-yellow-600">
+                                ⏸ In Progress
+                              </span>
+                            )
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span>{match.players.length} players</span>
+                            </div>
                           )}
                         </div>
                         <div>

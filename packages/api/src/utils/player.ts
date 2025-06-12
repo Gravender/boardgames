@@ -73,6 +73,24 @@ export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
             isUser: player.isUser,
             wins: player.isWinner ? 1 : 0,
             winRate: player.isWinner ? 1 : 0,
+            coopPlays: match.scoresheet.isCoop ? 1 : 0,
+            coopWins: match.scoresheet.isCoop ? (player.isWinner ? 1 : 0) : 0,
+            coopWinRate: match.scoresheet.isCoop
+              ? player.isWinner
+                ? 1
+                : 0
+              : 0,
+            competitivePlays: match.scoresheet.isCoop ? 0 : 1,
+            competitiveWins: match.scoresheet.isCoop
+              ? 0
+              : player.isWinner
+                ? 1
+                : 0,
+            competitiveWinRate: match.scoresheet.isCoop
+              ? 0
+              : player.isWinner
+                ? 1
+                : 0,
             image: player.image,
             placements:
               player.placement != null && player.placement > 0
@@ -116,11 +134,18 @@ export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
           }
 
           const longest = accPlayer.streaks.longest;
-          if (
-            current.count > longest.count ||
-            (current.type === longest.type && current.count === longest.count)
-          ) {
+          if (current.count > longest.count && current.type === longest.type) {
             longest.count = current.count;
+          }
+          if (match.scoresheet.isCoop) {
+            accPlayer.coopPlays++;
+            if (player.isWinner) accPlayer.coopWins++;
+            accPlayer.coopWinRate = accPlayer.coopWins / accPlayer.coopPlays;
+          } else {
+            accPlayer.competitivePlays++;
+            if (player.isWinner) accPlayer.competitiveWins++;
+            accPlayer.competitiveWinRate =
+              accPlayer.competitiveWins / accPlayer.competitivePlays;
           }
 
           const gameStats = accPlayer.gameStats[gameStatKey];
@@ -154,6 +179,17 @@ export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
                 gameStats.worstScore = null;
               }
             }
+            if (match.scoresheet.isCoop) {
+              gameStats.coopPlays++;
+              if (player.isWinner) gameStats.coopWins++;
+              gameStats.coopWinRate = gameStats.coopWins / gameStats.coopPlays;
+            }
+            if (!match.scoresheet.isCoop) {
+              gameStats.competitivePlays++;
+              if (player.isWinner) gameStats.competitiveWins++;
+              gameStats.competitiveWinRate =
+                gameStats.competitiveWins / gameStats.competitivePlays;
+            }
           } else {
             accPlayer.gameStats[gameStatKey] = createGameStats(match, player);
           }
@@ -171,6 +207,12 @@ export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
         plays: number;
         wins: number;
         winRate: number;
+        coopPlays: number;
+        coopWins: number;
+        coopWinRate: number;
+        competitivePlays: number;
+        competitiveWins: number;
+        competitiveWinRate: number;
         image: {
           name: string;
           url: string | null;
@@ -198,6 +240,14 @@ export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
             averageScore: number | null;
             playtime: number;
             scores: number[];
+            // Cooperative game stats
+            coopPlays: number;
+            coopWins: number;
+            coopWinRate: number;
+            // Competitive game stats (derived)
+            competitivePlays: number;
+            competitiveWins: number;
+            competitiveWinRate: number;
           }
         >;
       }
@@ -211,6 +261,9 @@ export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
         .map((gameStats) => ({
           ...gameStats,
           winRate: gameStats.wins / gameStats.plays,
+          coopWinRate: gameStats.coopWins / gameStats.coopPlays,
+          competitiveWinRate:
+            gameStats.competitiveWins / gameStats.competitivePlays,
           averageScore:
             gameStats.scores.length > 0
               ? gameStats.scores.reduce((acc, cur) => acc + cur, 0) /
@@ -254,6 +307,12 @@ const createGameStats = (match: PlayerMatch, player: Player) => {
     averageScore: player.score ?? null,
     playtime: match.duration,
     scores: player.score != null ? [player.score] : [],
+    coopPlays: match.scoresheet.isCoop ? 1 : 0,
+    coopWins: match.scoresheet.isCoop ? (player.isWinner ? 1 : 0) : 0,
+    coopWinRate: match.scoresheet.isCoop ? (player.isWinner ? 1 : 0) : 0,
+    competitivePlays: match.scoresheet.isCoop ? 0 : 1,
+    competitiveWins: match.scoresheet.isCoop ? 0 : player.isWinner ? 1 : 0,
+    competitiveWinRate: match.scoresheet.isCoop ? 0 : player.isWinner ? 1 : 0,
   };
 };
 
@@ -349,6 +408,15 @@ export function headToHeadStats(
               }),
             },
             matches: 0,
+            coopWins: 0,
+            coopLosses: 0,
+            coopPlays: 0,
+            competitiveWins: 0,
+            competitiveLosses: 0,
+            competitiveTies: 0,
+            competitivePlays: 0,
+            teamLosses: 0,
+            teamWins: 0,
           };
           acc[key].games[gameStatKey] ??= createGame(match, {
             wins: 0,
@@ -386,6 +454,50 @@ export function headToHeadStats(
               acc[key].losses++;
               acc[key].games[gameStatKey].losses++;
             }
+            if (match.scoresheet.isCoop) {
+              acc[key].coopPlays++;
+              if (cpWin && opWin) {
+                acc[key].coopWins++;
+                acc[key].games[gameStatKey].coopWins++;
+              } else {
+                acc[key].coopLosses++;
+                acc[key].games[gameStatKey].coopLosses++;
+              }
+            }
+            if (!match.scoresheet.isCoop) {
+              acc[key].competitivePlays++;
+              if (
+                (cpWin && !opWin) ||
+                (currentPlayerData.placement !== null &&
+                  opponent.placement !== null &&
+                  currentPlayerData.placement < opponent.placement)
+              ) {
+                acc[key].competitiveWins++;
+                acc[key].games[gameStatKey].competitiveWins++;
+              } else if (
+                (!cpWin && opWin) ||
+                (currentPlayerData.placement !== null &&
+                  opponent.placement !== null &&
+                  currentPlayerData.placement > opponent.placement)
+              ) {
+                acc[key].competitiveLosses++;
+                acc[key].games[gameStatKey].competitiveLosses++;
+              } else {
+                acc[key].competitiveTies++;
+                acc[key].games[gameStatKey].competitiveTies++;
+              }
+            }
+            if (
+              currentPlayerData.teamId === opponent.teamId &&
+              !match.scoresheet.isCoop &&
+              currentPlayerData.teamId !== null
+            ) {
+              if (currentPlayerData.isWinner) {
+                acc[key].teamWins++;
+              } else {
+                acc[key].teamLosses++;
+              }
+            }
           }
         });
 
@@ -398,7 +510,16 @@ export function headToHeadStats(
         wins: number;
         losses: number;
         ties: number;
+        teamWins: number;
+        teamLosses: number;
         playtime: number;
+        coopWins: number;
+        coopLosses: number;
+        coopPlays: number;
+        competitiveWins: number;
+        competitiveLosses: number;
+        competitiveTies: number;
+        competitivePlays: number;
         games: Record<
           string,
           {
@@ -410,6 +531,13 @@ export function headToHeadStats(
             losses: number;
             ties: number;
             playtime: number;
+            coopPlays: number;
+            coopWins: number;
+            coopLosses: number;
+            competitivePlays: number;
+            competitiveWins: number;
+            competitiveLosses: number;
+            competitiveTies: number;
           }
         >;
         matches: number;
@@ -418,11 +546,7 @@ export function headToHeadStats(
   );
 
   return Object.values(headToHead).map((entry) => ({
-    player: entry.player,
-    wins: entry.wins,
-    losses: entry.losses,
-    ties: entry.ties,
-    matches: entry.matches,
+    ...entry,
     games: Object.values(entry.games),
   }));
 }
@@ -445,8 +569,14 @@ const createGame = (
     wins: result.wins,
     losses: result.losses,
     ties: result.ties,
-
     playtime: match.duration,
+    coopPlays: match.scoresheet.isCoop ? 1 : 0,
+    coopWins: match.scoresheet.isCoop ? result.wins : 0,
+    coopLosses: match.scoresheet.isCoop ? result.losses : 0,
+    competitivePlays: match.scoresheet.isCoop ? 0 : 1,
+    competitiveWins: match.scoresheet.isCoop ? 0 : result.wins,
+    competitiveLosses: match.scoresheet.isCoop ? 0 : result.losses,
+    competitiveTies: match.scoresheet.isCoop ? 0 : result.ties,
   };
 };
 export function getTeamStats(

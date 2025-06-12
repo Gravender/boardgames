@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Link from "next/link";
 import { compareDesc } from "date-fns";
 import {
@@ -7,6 +8,8 @@ import {
   Gamepad2,
   MapPin,
   Medal,
+  Shield,
+  Swords,
   Trophy,
   Users,
 } from "lucide-react";
@@ -26,17 +29,17 @@ import type { ChartConfig } from "@board-games/ui/chart";
 import { formatDuration } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
+import { Button } from "@board-games/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@board-games/ui/card";
 import {
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from "@board-games/ui/chart";
@@ -47,16 +50,47 @@ import { GameImage } from "~/components/game-image";
 
 type Player = RouterOutputs["player"]["getPlayer"];
 export function PlayerOverview({ player }: { player: Player }) {
-  const winLossData = [
-    { name: "Wins", value: player.stats.wins, color: "#22c55e" },
-    {
-      name: "Losses",
-      value: player.stats.plays - player.stats.wins,
-      color: "#ef4444",
-    },
-  ];
+  const [gameChartMode, setGameChartMode] = useState<
+    "overall" | "competitive" | "cooperative"
+  >("overall");
+  const winLossData =
+    gameChartMode === "overall"
+      ? [
+          { name: "Wins", value: player.stats.wins, color: "#22c55e" },
+          {
+            name: "Losses",
+            value: player.stats.plays - player.stats.wins,
+            color: "#ef4444",
+          },
+        ]
+      : gameChartMode === "competitive"
+        ? [
+            {
+              name: "Comp Wins",
+              value: player.stats.competitiveWins,
+              color: "#22c55e",
+            },
+            {
+              name: "Comp Losses",
+              value:
+                player.stats.competitivePlays - player.stats.competitiveWins,
+              color: "#ef4444",
+            },
+          ]
+        : [
+            {
+              name: "Co-op Wins",
+              value: player.stats.coopWins,
+              color: "#22c55e",
+            },
+            {
+              name: "Co-op Losses",
+              value: player.stats.coopPlays - player.stats.coopWins,
+              color: "#ef4444",
+            },
+          ];
   const windLossChartConfig = {
-    wins: {
+    coopWins: {
       label: "Wins",
       color: "#22c55e",
     },
@@ -131,6 +165,44 @@ export function PlayerOverview({ player }: { player: Player }) {
               <BarChart3 className="h-5 w-5" />
               Win/Loss Distribution
             </CardTitle>
+            <CardDescription className="flex items-center justify-between">
+              <div className="flex w-full items-center justify-end gap-1">
+                <Button
+                  variant={gameChartMode === "overall" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setGameChartMode("overall")}
+                  className="text-xs"
+                >
+                  Overall
+                </Button>
+                {player.stats.competitivePlays > 0 && (
+                  <Button
+                    variant={
+                      gameChartMode === "competitive" ? "default" : "outline"
+                    }
+                    size="sm"
+                    onClick={() => setGameChartMode("competitive")}
+                    className="text-xs"
+                  >
+                    <Swords className="h-3 w-3" />
+                    Competitive
+                  </Button>
+                )}
+                {player.stats.coopPlays > 0 && (
+                  <Button
+                    variant={
+                      gameChartMode === "cooperative" ? "default" : "outline"
+                    }
+                    size="sm"
+                    onClick={() => setGameChartMode("cooperative")}
+                    className="text-xs"
+                  >
+                    <Shield className="h-3 w-3" />
+                    Cooperative
+                  </Button>
+                )}
+              </div>
+            </CardDescription>
           </CardHeader>
           <CardContent className="h-48 md:h-64">
             <ChartContainer
@@ -155,14 +227,16 @@ export function PlayerOverview({ player }: { player: Player }) {
                   ))}
                 </Pie>
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <ChartLegend content={<ChartLegendContent />} />
               </PieChart>
             </ChartContainer>
           </CardContent>
           <CardFooter>
             <div className="text-sm text-muted-foreground">
-              {player.name} has won {player.stats.wins} out of{" "}
-              {player.stats.plays} games.
+              {gameChartMode === "competitive"
+                ? `${player.name} has won ${player.stats.competitiveWins} out of ${player.stats.competitivePlays} competitive games.`
+                : gameChartMode === "cooperative"
+                  ? `${player.name} has achieved ${player.stats.coopWins} coop victories out of ${player.stats.coopPlays} cooperative games.`
+                  : `${player.name} has won ${player.stats.wins} out of ${player.stats.plays} games overall.`}
             </div>
           </CardFooter>
         </Card>
@@ -223,6 +297,12 @@ export function PlayerOverview({ player }: { player: Player }) {
                       (p) => p.id === player.id && p.type === "original",
                     );
                     const isWinner = playerInMatch?.isWinner;
+                    const isCoop = match.scoresheet.isCoop;
+                    const isManualWinCondition =
+                      match.scoresheet.winCondition === "Manual";
+                    const playerInMatchTeam = match.teams.find(
+                      (t) => t.id === playerInMatch?.teamId,
+                    );
 
                     return (
                       <Link
@@ -236,16 +316,21 @@ export function PlayerOverview({ player }: { player: Player }) {
                             alt={`${match.gameName} game image`}
                             containerClassName="h-12 w-12"
                           />
-                          <div className="grid gap-1.5">
+                          <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2">
                               <span className="max-w-40 truncate font-medium sm:max-w-64">
                                 {match.name}
                               </span>
+                              {isCoop && (
+                                <Badge variant="outline" className="text-xs">
+                                  Co-op
+                                </Badge>
+                              )}
                               {isWinner && (
                                 <Trophy className="h-4 w-4 text-yellow-500" />
                               )}
                             </div>
-                            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                               <FormattedDate
                                 date={match.date}
                                 Icon={Calendar}
@@ -261,9 +346,51 @@ export function PlayerOverview({ player }: { player: Player }) {
                                 </span>
                               )}
                             </div>
+                            <div className="text-sm text-muted-foreground">
+                              {isCoop ? (
+                                isWinner ? (
+                                  <span className="font-medium text-green-600">
+                                    ✓ Team Victory
+                                  </span>
+                                ) : match.finished ? (
+                                  <span className="font-medium text-red-600">
+                                    ✗ Team Defeat
+                                  </span>
+                                ) : (
+                                  <span className="font-medium text-yellow-600">
+                                    ⏸ In Progress
+                                  </span>
+                                )
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <span>{match.players.length} players</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        {match.scoresheet.winCondition === "Manual" ? (
+                        {!match.finished ? (
+                          <Badge
+                            variant="secondary"
+                            className="text-xs text-yellow-600"
+                          >
+                            In Progress
+                          </Badge>
+                        ) : isCoop ? (
+                          <div className="flex flex-col items-end">
+                            <Badge
+                              variant={isWinner ? "default" : "destructive"}
+                              className="text-xs"
+                            >
+                              {isWinner ? "Victory" : "Defeat"}
+                            </Badge>
+                            {playerInMatchTeam && (
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                {playerInMatchTeam.name}
+                              </div>
+                            )}
+                          </div>
+                        ) : isManualWinCondition ? (
                           <div>{playerInMatch?.isWinner ? "✔️" : "❌"}</div>
                         ) : (
                           <div className="flex flex-col items-center gap-2">
