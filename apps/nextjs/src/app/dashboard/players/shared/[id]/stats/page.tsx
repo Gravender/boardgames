@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { formatDate } from "date-fns";
+import { format } from "date-fns";
 import { Clock, Gamepad2, Medal, Trophy } from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
@@ -73,7 +73,7 @@ export default async function Page({ params }: Props) {
                   </div>
 
                   <p className="mb-4 text-sm text-muted-foreground md:text-base">
-                    Joined {formatDate(player.createdAt, "MMMM d, yyyy")}
+                    Joined {format(player.createdAt, "MMMM d, yyyy")}
                   </p>
 
                   <div className="mb-4 grid grid-cols-2 gap-4 md:grid-cols-4">

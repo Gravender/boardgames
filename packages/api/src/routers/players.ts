@@ -586,9 +586,8 @@ export const playerRouter = createTRPCRouter({
       );
       returnedPlayer.sharedLinkedPlayers.forEach((linkedPlayer) => {
         linkedPlayer.sharedMatchPlayers.forEach((mPlayer) => {
-          const filteredPlayers =
-            returnedSharedMatchPlayer.sharedMatch.sharedMatchPlayers;
-          const sharedMatch = returnedSharedMatchPlayer.sharedMatch;
+          const sharedMatch = mPlayer.sharedMatch;
+          const filteredPlayers = sharedMatch.sharedMatchPlayers;
           const sharedMatchMatch = sharedMatch.match;
           const sharedGame = sharedMatch.sharedGame;
           const linkedGame = sharedGame.linkedGame;
