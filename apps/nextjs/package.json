@@ -33,7 +33,6 @@
     "lodash.debounce": "^4.0.8",
     "next": "^15.3.3",
     "posthog-js": "^1.252.0",
-    "posthog-node": "^5.1.0",
     "react": "catalog:react19",
     "react-day-picker": "8.10.1",
     "react-dom": "catalog:react19",
