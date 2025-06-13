@@ -1781,7 +1781,7 @@ export const gameRouter = createTRPCRouter({
           });
         }
         analyticsServerClient.capture({
-          distinctId: ctx.userId.toString(),
+          distinctId: ctx.auth.userId ?? "",
           event: "game delete",
           properties: {
             gameName: deletedGame.name,
