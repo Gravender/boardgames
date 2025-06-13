@@ -1,18 +1,9 @@
 import type { LucideIcon } from "lucide-react";
 import type z from "zod/v4";
 import Image from "next/image";
-import {
-  BowArrow,
-  Dice1,
-  Dices,
-  Flame,
-  Gamepad2,
-  Ghost,
-  Puzzle,
-  Swords,
-} from "lucide-react";
+import { Dices } from "lucide-react";
 
-import { imageSchema } from "@board-games/shared";
+import { gameIcons, imageSchema } from "@board-games/shared";
 import { cn } from "@board-games/ui/utils";
 
 export function GameImage({
@@ -113,29 +104,9 @@ function GameImageIcon({
 }) {
   let Icon: LucideIcon = Dices;
   if (imageIcon.type === "svg") {
-    if (imageIcon.name === "Gamepad") {
-      Icon = Gamepad2;
-    }
-    if (imageIcon.name === "Dices") {
-      Icon = Dices;
-    }
-    if (imageIcon.name === "Bow & Arrow") {
-      Icon = BowArrow;
-    }
-    if (imageIcon.name === "Dice") {
-      Icon = Dice1;
-    }
-    if (imageIcon.name === "Flame") {
-      Icon = Flame;
-    }
-    if (imageIcon.name === "Ghost") {
-      Icon = Ghost;
-    }
-    if (imageIcon.name === "Puzzle") {
-      Icon = Puzzle;
-    }
-    if (imageIcon.name === "Swords") {
-      Icon = Swords;
+    const foundIcon = gameIcons.find((icon) => icon.name === imageIcon.name);
+    if (foundIcon) {
+      Icon = foundIcon.icon;
     }
   }
 
