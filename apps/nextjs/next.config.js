@@ -38,11 +38,11 @@ let nextConfig = {
   async rewrites() {
     return [
       {
-        source: "/ingest/static/:path*",
+        source: "/relay-wYwH/static/:path*",
         destination: "https://us-assets.i.posthog.com/static/:path*",
       },
       {
-        source: "/ingest/:path*",
+        source: "/relay-wYwH/:path*",
         destination: "https://us.i.posthog.com/:path*",
       },
     ];

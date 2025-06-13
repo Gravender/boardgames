@@ -9,7 +9,7 @@ import { env } from "~/env";
 
 if (typeof window !== "undefined") {
   posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
-    api_host: "/ingest",
+    api_host: "/relay-wYwH",
     ui_host: "https://app.posthog.com",
   });
 }
