@@ -95,7 +95,20 @@ export const createGameSchema = baseGameSchema.omit({ gameImg: true }).extend({
 });
 
 export const editGameSchema = baseGameSchema.omit({ gameImg: true }).extend({
-  imageUrl: fileSchema.or(z.string().nullable()),
+  gameImg: z
+    .discriminatedUnion("type", [
+      z.object({
+        type: z.literal("file"),
+        file: nonNullFileSchema.or(z.string()),
+      }),
+      z.object({
+        type: z.literal("svg"),
+        name: z.string().min(1, {
+          message: "SVG name is required",
+        }),
+      }),
+    ])
+    .nullable(),
 });
 export const sharedEditGameSchema = baseGameSchema.omit({
   gameImg: true,

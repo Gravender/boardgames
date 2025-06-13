@@ -90,21 +90,32 @@ export const gameRouter = createTRPCRouter({
         if (input.image?.type === "file") {
           imageId = input.image.imageId;
         } else if (input.image?.type === "svg") {
-          const [returnedImage] = await transaction
-            .insert(image)
-            .values({
-              type: "svg",
+          const existingSvg = await ctx.db.query.image.findFirst({
+            where: {
               name: input.image.name,
+              type: "svg",
               usageType: "game",
-            })
-            .returning();
-          if (!returnedImage) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create image",
-            });
+            },
+          });
+          if (existingSvg) {
+            imageId = existingSvg.id;
+          } else {
+            const [returnedImage] = await ctx.db
+              .insert(image)
+              .values({
+                type: "svg",
+                name: input.image.name,
+                usageType: "game",
+              })
+              .returning();
+            if (!returnedImage) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Failed to create image",
+              });
+            }
+            imageId = returnedImage.id;
           }
-          imageId = returnedImage.id;
         }
         const [returningGame] = await transaction
           .insert(game)
@@ -554,7 +565,7 @@ export const gameRouter = createTRPCRouter({
         game: {
           id: result.id,
           name: result.name,
-          imageUrl: result.image?.url ?? "",
+          gameImg: result.image,
           playersMin: result.playersMin,
           playersMax: result.playersMax,
           playtimeMin: result.playtimeMin,
@@ -1319,7 +1330,18 @@ export const gameRouter = createTRPCRouter({
             id: z.number(),
             name: z.string().optional(),
             ownedBy: z.boolean().nullish(),
-            imageId: z.number().nullish(),
+            image: z
+              .discriminatedUnion("type", [
+                z.object({
+                  type: z.literal("file"),
+                  imageId: z.number(),
+                }),
+                z.object({
+                  type: z.literal("svg"),
+                  name: z.string(),
+                }),
+              ])
+              .nullish(),
             playersMin: z.number().nullish(),
             playersMax: z.number().nullish(),
             playtimeMin: z.number().nullish(),
@@ -1393,9 +1415,45 @@ export const gameRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       if (input.game.type === "updateGame") {
+        let imageId: number | null | undefined = undefined;
+        if (input.game.image !== undefined) {
+          if (input.game.image === null) {
+            imageId = null;
+          } else if (input.game.image.type === "file") {
+            imageId = input.game.image.imageId;
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          } else if (input.game.image.type === "svg") {
+            const existingSvg = await ctx.db.query.image.findFirst({
+              where: {
+                name: input.game.image.name,
+                type: "svg",
+                usageType: "game",
+              },
+            });
+            if (existingSvg) {
+              imageId = existingSvg.id;
+            } else {
+              const [returnedImage] = await ctx.db
+                .insert(image)
+                .values({
+                  type: "svg",
+                  name: input.game.image.name,
+                  usageType: "game",
+                })
+                .returning();
+              if (!returnedImage) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: "Failed to create image",
+                });
+              }
+              imageId = returnedImage.id;
+            }
+          }
+        }
         await ctx.db
           .update(game)
-          .set({ ...input.game })
+          .set({ ...input.game, imageId: imageId })
           .where(eq(game.id, input.game.id));
       }
       if (input.scoresheets.length > 0) {
