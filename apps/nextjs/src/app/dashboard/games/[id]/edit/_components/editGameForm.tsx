@@ -771,7 +771,14 @@ const GameForm = ({
                         accept="image/*"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          field.onChange(file);
+                          field.onChange(
+                            file
+                              ? {
+                                  type: "file",
+                                  file: file,
+                                }
+                              : null,
+                          );
                           if (file) {
                             if (
                               imagePreview !== null &&
@@ -784,6 +791,7 @@ const GameForm = ({
                             ) {
                               URL.revokeObjectURL(imagePreview.url);
                             }
+
                             const url = URL.createObjectURL(file);
                             setImagePreview({
                               type: "file",
