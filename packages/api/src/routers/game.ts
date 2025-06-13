@@ -44,7 +44,20 @@ export const gameRouter = createTRPCRouter({
           id: true,
           createdAt: true,
           updatedAt: true,
+          imageId: true,
         }),
+        image: z
+          .discriminatedUnion("type", [
+            z.object({
+              type: z.literal("file"),
+              imageId: z.number(),
+            }),
+            z.object({
+              type: z.literal("svg"),
+              name: z.string(),
+            }),
+          ])
+          .nullable(),
         scoresheets: z.array(
           z.object({
             scoresheet: insertScoreSheetSchema
@@ -73,9 +86,29 @@ export const gameRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       await ctx.db.transaction(async (transaction) => {
+        let imageId: number | null = null;
+        if (input.image?.type === "file") {
+          imageId = input.image.imageId;
+        } else if (input.image?.type === "svg") {
+          const [returnedImage] = await transaction
+            .insert(image)
+            .values({
+              type: "svg",
+              name: input.image.name,
+              usageType: "game",
+            })
+            .returning();
+          if (!returnedImage) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to create image",
+            });
+          }
+          imageId = returnedImage.id;
+        }
         const [returningGame] = await transaction
           .insert(game)
-          .values({ ...input.game, userId: ctx.userId })
+          .values({ ...input.game, imageId: imageId, userId: ctx.userId })
           .returning();
         if (!returningGame) {
           throw new TRPCError({

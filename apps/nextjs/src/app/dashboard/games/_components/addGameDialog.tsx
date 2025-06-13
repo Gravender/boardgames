@@ -21,6 +21,7 @@ import {
 import {
   baseRoundSchema,
   createGameSchema,
+  gameIcons,
   scoreSheetSchema,
 } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
@@ -41,7 +42,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -52,6 +52,11 @@ import {
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@board-games/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -60,6 +65,7 @@ import {
 } from "@board-games/ui/select";
 import { Separator } from "@board-games/ui/separator";
 import { toast } from "@board-games/ui/toast";
+import { cn } from "@board-games/ui/utils";
 
 import { GradientPicker } from "~/components/color-picker";
 import { GameImage } from "~/components/game-image";
@@ -208,8 +214,22 @@ const AddGameForm = ({
   setIsScoresheet: (isScoresheet: boolean) => void;
   setIsOpen: (isOpen: boolean) => void;
 }) => {
-  const [imagePreview, setImagePreview] = useState<string | null>(
-    game.gameImg ? URL.createObjectURL(game.gameImg) : null,
+  const [imagePreview, setImagePreview] = useState<
+    | {
+        type: "file";
+        url: string;
+      }
+    | {
+        type: "svg";
+        name: string;
+      }
+    | null
+  >(
+    game.gameImg?.type === "file"
+      ? { type: "file", url: URL.createObjectURL(game.gameImg.file) }
+      : game.gameImg?.type === "svg"
+        ? { type: "svg", name: game.gameImg.name }
+        : null,
   );
   const [isUploading, setIsUploading] = useState(false);
 
@@ -252,15 +272,15 @@ const AddGameForm = ({
   });
   useEffect(() => {
     return () => {
-      if (imagePreview) {
-        URL.revokeObjectURL(imagePreview);
+      if (imagePreview?.type === "file") {
+        URL.revokeObjectURL(imagePreview.url);
       }
     };
   }, [imagePreview]);
 
   const onSubmit = async (values: z.infer<typeof createGameSchema>) => {
     setIsUploading(true);
-    if (!values.gameImg) {
+    if (values.gameImg === null || values.gameImg.type === "svg") {
       addGame.mutate({
         game: {
           name: values.name,
@@ -270,13 +290,19 @@ const AddGameForm = ({
           playtimeMin: values.playtimeMin,
           playtimeMax: values.playtimeMax,
           yearPublished: values.yearPublished,
-          imageId: null,
         },
+        image:
+          values.gameImg?.type === "svg"
+            ? {
+                type: "svg",
+                name: values.gameImg.name,
+              }
+            : null,
         scoresheets: scoreSheets,
       });
     } else {
       try {
-        const imageFile = values.gameImg;
+        const imageFile = values.gameImg.file;
 
         const uploadResult = await startUpload([imageFile], {
           usageType: "game",
@@ -301,8 +327,13 @@ const AddGameForm = ({
             playtimeMin: values.playtimeMin,
             playtimeMax: values.playtimeMax,
             yearPublished: values.yearPublished,
-            imageId: imageId,
           },
+          image: imageId
+            ? {
+                type: "file",
+                imageId: imageId,
+              }
+            : null,
           scoresheets: scoreSheets,
         });
       } catch (error) {
@@ -340,31 +371,93 @@ const AddGameForm = ({
               <FormControl>
                 <div className="flex items-center space-x-4">
                   <GameImage
-                    image={{
-                      name: "Game image",
-                      url: imagePreview,
-                      type: "file",
-                      usageType: "game",
-                    }}
+                    image={
+                      imagePreview
+                        ? imagePreview.type === "svg"
+                          ? {
+                              name: imagePreview.name,
+                              url: "",
+                              type: "svg",
+                              usageType: "game",
+                            }
+                          : {
+                              name: "Game Preview Image",
+                              url: imagePreview.url,
+                              type: "file",
+                              usageType: "game",
+                            }
+                        : null
+                    }
                     alt="Game image"
                     containerClassName="h-14 w-14 sm:h-20 sm:w-20"
                     userImageClassName="object-cover"
                   />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline">Icons</Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                      <h4 className="mb-2 font-medium">Select an Icon</h4>
+                      <div className="grid grid-cols-4 gap-2">
+                        {gameIcons.map((option) => (
+                          <Button
+                            key={option.name}
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className={cn(
+                              "h-12 w-12 p-2",
+                              imagePreview?.type === "svg" &&
+                                imagePreview.name === option.name &&
+                                "ring-2 ring-primary",
+                            )}
+                            onClick={() => {
+                              field.onChange({
+                                type: "svg",
+                                name: option.name,
+                              });
+                              if (imagePreview?.type === "file") {
+                                URL.revokeObjectURL(imagePreview.url);
+                              }
+                              setImagePreview({
+                                type: "svg",
+                                name: option.name,
+                              });
+                            }}
+                          >
+                            <option.icon className="h-full w-full" />
+                          </Button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                   <Input
                     type="file"
                     accept="image/*"
+                    placeholder="Custom Image"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      field.onChange(file);
+                      field.onChange(
+                        file
+                          ? {
+                              type: "file",
+                              file: file,
+                            }
+                          : null,
+                      );
                       if (file) {
-                        const url = URL.createObjectURL(file);
-                        setImagePreview(url);
+                        if (imagePreview?.type === "file") {
+                          URL.revokeObjectURL(imagePreview.url);
+                        }
+                        setImagePreview({
+                          type: "file",
+                          url: URL.createObjectURL(file),
+                        });
                       }
                     }}
                   />
                 </div>
               </FormControl>
-              <FormDescription>Upload an image (max 4MB).</FormDescription>
               <FormMessage />
             </FormItem>
           )}
