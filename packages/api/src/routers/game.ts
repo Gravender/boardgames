@@ -2,7 +2,7 @@ import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareDesc } from "date-fns";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
-import { z } from "zod/v4";
+import z from "zod/v4";
 
 import type { scoreSheetWinConditions } from "@board-games/db/constants";
 import type {
@@ -34,6 +34,7 @@ import {
 } from "@board-games/db/zodSchema";
 import { baseRoundSchema, editScoresheetSchema } from "@board-games/shared";
 
+import analyticsServerClient from "../analytics";
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 
 export const gameRouter = createTRPCRouter({
@@ -86,7 +87,7 @@ export const gameRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.transaction(async (transaction) => {
+      const result = await ctx.db.transaction(async (transaction) => {
         let imageId: number | null = null;
         if (input.image?.type === "file") {
           imageId = input.image.imageId;
@@ -186,7 +187,9 @@ export const gameRouter = createTRPCRouter({
             await transaction.insert(round).values(rounds);
           }
         }
+        return returningGame;
       });
+      return result;
     }),
   getGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))
@@ -1432,7 +1435,6 @@ export const gameRouter = createTRPCRouter({
             imageId = null;
           } else if (input.game.image.type === "file") {
             imageId = input.game.image.imageId;
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           } else if (input.game.image.type === "svg") {
             const existingSvg = await ctx.db.query.image.findFirst({
               where: {
@@ -1767,10 +1769,25 @@ export const gameRouter = createTRPCRouter({
           .update(scoresheet)
           .set({ deletedAt: new Date() })
           .where(eq(scoresheet.gameId, input.id));
-        await tx
+        const [deletedGame] = await tx
           .update(game)
           .set({ deletedAt: new Date() })
-          .where(and(eq(game.id, input.id), eq(game.userId, ctx.userId)));
+          .where(and(eq(game.id, input.id), eq(game.userId, ctx.userId)))
+          .returning();
+        if (!deletedGame) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to delete game",
+          });
+        }
+        analyticsServerClient.capture({
+          distinctId: ctx.userId.toString(),
+          event: "game delete",
+          properties: {
+            gameName: deletedGame.name,
+            gameId: deletedGame.id,
+          },
+        });
       });
     }),
   insertGames: protectedUserProcedure
