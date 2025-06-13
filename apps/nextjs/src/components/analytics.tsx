@@ -5,8 +5,6 @@ import { useAuth, useUser } from "@clerk/nextjs";
 import posthog from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 
-import { user } from "@board-games/db/schema";
-
 import { env } from "~/env";
 
 if (typeof window !== "undefined") {
