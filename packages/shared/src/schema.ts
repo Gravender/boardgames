@@ -6,7 +6,7 @@ import {
   insertScoreSheetSchema,
 } from "@board-games/db/zodSchema";
 
-export const fileSchema = z
+const nonNullFileSchema = z
   .file()
   .max(4_000_000, {
     error: (issue) => {
@@ -20,8 +20,8 @@ export const fileSchema = z
         message: "Invalid image file type - must be a .jpg or .png",
       };
     },
-  })
-  .nullable();
+  });
+export const fileSchema = nonNullFileSchema.nullable();
 export const baseGameSchema = z
   .object({
     name: z.string().min(1, {
@@ -78,7 +78,20 @@ export const baseGameSchema = z
     }
   });
 export const createGameSchema = baseGameSchema.omit({ gameImg: true }).extend({
-  gameImg: fileSchema,
+  gameImg: z
+    .discriminatedUnion("type", [
+      z.object({
+        type: z.literal("file"),
+        file: nonNullFileSchema,
+      }),
+      z.object({
+        type: z.literal("svg"),
+        name: z.string().min(1, {
+          message: "SVG name is required",
+        }),
+      }),
+    ])
+    .nullable(),
 });
 
 export const editGameSchema = baseGameSchema.omit({ gameImg: true }).extend({
