@@ -51,7 +51,7 @@ export function GameCard({ game }: GameCardProps) {
 
   // Replace the return statement with this conditional rendering based on isCompact
   return (
-    <Card className="relative flex h-full flex-col overflow-hidden transition-shadow hover:shadow-md">
+    <Card className="relative flex h-full flex-col overflow-hidden p-1 transition-shadow hover:shadow-md">
       <div className="flex flex-row items-center">
         <Link
           prefetch={true}
@@ -60,6 +60,7 @@ export function GameCard({ game }: GameCardProps) {
               ? `/dashboard/games/shared/${game.id}`
               : `/dashboard/games/${game.id}`
           }
+          className="p-1"
         >
           <GameImage
             image={game.image}
