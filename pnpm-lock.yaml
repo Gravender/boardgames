@@ -532,6 +532,9 @@ importers:
       '@board-games/db':
         specifier: workspace:*
         version: link:../db
+      lucide-react:
+        specifier: ^0.513.0
+        version: 0.513.0(react@19.0.0)
       zod:
         specifier: 'catalog:'
         version: 3.25.49

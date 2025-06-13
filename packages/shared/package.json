@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@board-games/db": "workspace:*",
+    "lucide-react": "^0.513.0",
     "zod": "catalog:"
   },
   "devDependencies": {
