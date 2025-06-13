@@ -15,6 +15,7 @@ import {
 import { z } from "zod/v4";
 
 import type { RouterInputs, RouterOutputs } from "@board-games/api";
+import type { ImagePreviewType } from "@board-games/shared";
 import type { UseFormReturn } from "@board-games/ui/form";
 import {
   scoreSheetRoundsScore,
@@ -23,6 +24,7 @@ import {
 import {
   editGameSchema,
   editScoresheetSchema,
+  gameIcons,
   roundsSchema,
 } from "@board-games/shared";
 import {
@@ -64,6 +66,11 @@ import {
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@board-games/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -72,6 +79,7 @@ import {
 } from "@board-games/ui/select";
 import { Separator } from "@board-games/ui/separator";
 import { toast } from "@board-games/ui/toast";
+import { cn } from "@board-games/ui/utils";
 
 import { GradientPicker } from "~/components/color-picker";
 import { GameImage } from "~/components/game-image";
@@ -113,7 +121,20 @@ export function EditGameForm({
   data: NonNullable<RouterOutputs["game"]["getEditGame"]>;
 }) {
   const [moreOptions, setMoreOptions] = useState(false);
-  const [game, setGame] = useState<z.infer<typeof editGameSchema>>(data.game);
+  const [game, setGame] = useState<z.infer<typeof editGameSchema>>({
+    ...data.game,
+    gameImg: data.game.gameImg
+      ? data.game.gameImg.type === "file"
+        ? {
+            type: "file" as const,
+            file: data.game.gameImg.url ?? "",
+          }
+        : {
+            type: "svg" as const,
+            name: data.game.gameImg.name,
+          }
+      : null,
+  });
   const [scoresheets, setScoresheets] = useState<
     z.infer<typeof scoresheetsSchema>
   >(
@@ -243,11 +264,18 @@ const GameForm = ({
   setMoreOptions: (moreOptions: boolean) => void;
 }) => {
   const trpc = useTRPC();
-  const tempGameImg = game.imageUrl;
-  const [imagePreview, setImagePreview] = useState<string | null>(
-    tempGameImg instanceof File
-      ? URL.createObjectURL(tempGameImg)
-      : (tempGameImg ?? null),
+  const [imagePreview, setImagePreview] = useState<ImagePreviewType>(
+    game.gameImg?.type === "file"
+      ? {
+          type: "file",
+          url:
+            game.gameImg.file instanceof File
+              ? URL.createObjectURL(game.gameImg.file)
+              : game.gameImg.file,
+        }
+      : game.gameImg?.type === "svg"
+        ? { type: "svg", name: game.gameImg.name }
+        : null,
   );
   const [openAlert, setOpenAlert] = useState(false);
 
@@ -289,10 +317,20 @@ const GameForm = ({
   });
 
   const updateGame = ({
-    imageId,
+    image,
     values,
   }: {
-    imageId: number | null | undefined;
+    image:
+      | {
+          type: "svg";
+          name: string;
+        }
+      | {
+          type: "file";
+          imageId: number;
+        }
+      | null
+      | undefined;
     values: z.infer<typeof editGameSchema>;
   }) => {
     const nameChanged = values.name !== data.game.name;
@@ -303,7 +341,7 @@ const GameForm = ({
     const playtimeMaxChanged = values.playtimeMax !== data.game.playtimeMax;
     const yearPublishedChanged =
       values.yearPublished !== data.game.yearPublished;
-    const imageIdChanged = imageId !== undefined;
+    const imageChanged = image !== undefined;
     const scoresheetChanged = scoresheets.some(
       (scoresheet) => scoresheet.scoreSheetChanged || scoresheet.roundChanged,
     );
@@ -315,7 +353,7 @@ const GameForm = ({
       playtimeMinChanged ||
       playtimeMaxChanged ||
       yearPublishedChanged ||
-      imageIdChanged;
+      imageChanged;
 
     if (gameChanged || scoresheetChanged) {
       const game = gameChanged
@@ -331,7 +369,7 @@ const GameForm = ({
             yearPublished: yearPublishedChanged
               ? values.yearPublished
               : undefined,
-            imageId: imageId,
+            image: image,
           }
         : { type: "default" as const, id: data.game.id };
       if (scoresheetChanged) {
@@ -541,26 +579,56 @@ const GameForm = ({
   };
   useEffect(() => {
     return () => {
-      if (imagePreview) {
-        URL.revokeObjectURL(imagePreview);
+      if (
+        imagePreview !== null &&
+        imagePreview.type === "file" &&
+        (game.gameImg === null ||
+          !(
+            game.gameImg.type === "file" &&
+            imagePreview.url == game.gameImg.file
+          ))
+      ) {
+        URL.revokeObjectURL(imagePreview.url);
       }
     };
-  }, [imagePreview]);
+  }, [game.gameImg, imagePreview]);
   async function onSubmit(values: z.infer<typeof editGameSchema>) {
     setIsUploading(true);
-    if (values.imageUrl === data.game.imageUrl) {
+    const isSameImage = () => {
+      if (values.gameImg === null && data.game.gameImg === null) return true;
+      if (values.gameImg?.type === data.game.gameImg?.type) {
+        if (values.gameImg?.type === "file") {
+          return values.gameImg.file === data.game.gameImg?.url;
+        }
+        if (values.gameImg?.type === "svg") {
+          return values.gameImg.name === data.game.gameImg?.name;
+        }
+      }
+      return false;
+    };
+    if (isSameImage()) {
       setIsUploading(false);
-      updateGame({ imageId: undefined, values });
+      updateGame({ image: undefined, values });
       return;
     }
-    if (!values.imageUrl) {
+    if (values.gameImg === null) {
       setIsUploading(false);
-      updateGame({ imageId: null, values });
+      updateGame({ image: null, values });
       return;
     }
-
+    if (values.gameImg.type === "svg") {
+      setIsUploading(false);
+      updateGame({
+        image: {
+          type: "svg",
+          name: values.gameImg.name,
+        },
+        values,
+      });
+      return;
+    }
     try {
-      const imageFile = values.imageUrl as File;
+      const imageFile = values.gameImg.file as File;
       const uploadResult = await startUpload([imageFile], {
         usageType: "game",
       });
@@ -580,9 +648,17 @@ const GameForm = ({
           playtimeMin: values.playtimeMin,
           playtimeMax: values.playtimeMax,
           yearPublished: values.yearPublished,
-          imageUrl: null,
+          gameImg: {
+            type: "file",
+            file: "",
+          },
         },
-        imageId: imageId,
+        image: imageId
+          ? {
+              type: "file",
+              imageId: imageId,
+            }
+          : null,
       });
     } catch (error) {
       console.error("Error uploading Image:", error);
@@ -615,23 +691,81 @@ const GameForm = ({
 
             <FormField
               control={form.control}
-              name="imageUrl"
+              name="gameImg"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Image</FormLabel>
                   <FormControl>
                     <div className="flex items-center space-x-4">
                       <GameImage
-                        image={{
-                          name: "Game image",
-                          url: imagePreview,
-                          type: "file",
-                          usageType: "game",
-                        }}
+                        image={
+                          imagePreview
+                            ? imagePreview.type === "svg"
+                              ? {
+                                  name: imagePreview.name,
+                                  url: "",
+                                  type: "svg",
+                                  usageType: "game",
+                                }
+                              : {
+                                  name: "Game Preview Image",
+                                  url: imagePreview.url,
+                                  type: "file",
+                                  usageType: "game",
+                                }
+                            : null
+                        }
                         alt="Game image"
                         containerClassName="h-20 w-20"
                         userImageClassName="rounded-sm object-cover"
                       />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline">Icons</Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80">
+                          <h4 className="mb-2 font-medium">Select an Icon</h4>
+                          <div className="grid grid-cols-4 gap-2">
+                            {gameIcons.map((option) => (
+                              <Button
+                                key={option.name}
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className={cn(
+                                  "h-12 w-12 p-2",
+                                  imagePreview?.type === "svg" &&
+                                    imagePreview.name === option.name &&
+                                    "ring-2 ring-primary",
+                                )}
+                                onClick={() => {
+                                  field.onChange({
+                                    type: "svg",
+                                    name: option.name,
+                                  });
+                                  if (
+                                    imagePreview !== null &&
+                                    imagePreview.type === "file" &&
+                                    (game.gameImg === null ||
+                                      !(
+                                        game.gameImg.type === "file" &&
+                                        imagePreview.url == game.gameImg.file
+                                      ))
+                                  ) {
+                                    URL.revokeObjectURL(imagePreview.url);
+                                  }
+                                  setImagePreview({
+                                    type: "svg",
+                                    name: option.name,
+                                  });
+                                }}
+                              >
+                                <option.icon className="h-full w-full" />
+                              </Button>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                       <Input
                         type="file"
                         accept="image/*"
@@ -639,8 +773,22 @@ const GameForm = ({
                           const file = e.target.files?.[0];
                           field.onChange(file);
                           if (file) {
+                            if (
+                              imagePreview !== null &&
+                              imagePreview.type === "file" &&
+                              (game.gameImg === null ||
+                                !(
+                                  game.gameImg.type === "file" &&
+                                  imagePreview.url == game.gameImg.file
+                                ))
+                            ) {
+                              URL.revokeObjectURL(imagePreview.url);
+                            }
                             const url = URL.createObjectURL(file);
-                            setImagePreview(url);
+                            setImagePreview({
+                              type: "file",
+                              url: url,
+                            });
                           }
                         }}
                       />
