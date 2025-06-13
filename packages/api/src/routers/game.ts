@@ -90,7 +90,7 @@ export const gameRouter = createTRPCRouter({
         if (input.image?.type === "file") {
           imageId = input.image.imageId;
         } else if (input.image?.type === "svg") {
-          const existingSvg = await ctx.db.query.image.findFirst({
+          const existingSvg = await transaction.query.image.findFirst({
             where: {
               name: input.image.name,
               type: "svg",
@@ -100,7 +100,7 @@ export const gameRouter = createTRPCRouter({
           if (existingSvg) {
             imageId = existingSvg.id;
           } else {
-            const [returnedImage] = await ctx.db
+            const [returnedImage] = await transaction
               .insert(image)
               .values({
                 type: "svg",
@@ -119,7 +119,17 @@ export const gameRouter = createTRPCRouter({
         }
         const [returningGame] = await transaction
           .insert(game)
-          .values({ ...input.game, imageId: imageId, userId: ctx.userId })
+          .values({
+            name: input.game.name,
+            ownedBy: input.game.ownedBy,
+            playersMin: input.game.playersMin,
+            playersMax: input.game.playersMax,
+            playtimeMin: input.game.playtimeMin,
+            playtimeMax: input.game.playtimeMax,
+            yearPublished: input.game.yearPublished,
+            imageId: imageId,
+            userId: ctx.userId,
+          })
           .returning();
         if (!returningGame) {
           throw new TRPCError({
@@ -1453,7 +1463,16 @@ export const gameRouter = createTRPCRouter({
         }
         await ctx.db
           .update(game)
-          .set({ ...input.game, imageId: imageId })
+          .set({
+            name: input.game.name,
+            ownedBy: input.game.ownedBy,
+            playersMin: input.game.playersMin,
+            playersMax: input.game.playersMax,
+            playtimeMin: input.game.playtimeMin,
+            playtimeMax: input.game.playtimeMax,
+            yearPublished: input.game.yearPublished,
+            imageId: imageId,
+          })
           .where(eq(game.id, input.game.id));
       }
       if (input.scoresheets.length > 0) {
