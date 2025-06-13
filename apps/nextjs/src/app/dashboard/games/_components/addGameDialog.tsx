@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { z } from "zod/v4";
 
+import type { ImagePreviewType } from "@board-games/shared";
 import type { UseFormReturn } from "@board-games/ui/form";
 import {
   scoreSheetRoundsScore,
@@ -214,17 +215,7 @@ const AddGameForm = ({
   setIsScoresheet: (isScoresheet: boolean) => void;
   setIsOpen: (isOpen: boolean) => void;
 }) => {
-  const [imagePreview, setImagePreview] = useState<
-    | {
-        type: "file";
-        url: string;
-      }
-    | {
-        type: "svg";
-        name: string;
-      }
-    | null
-  >(
+  const [imagePreview, setImagePreview] = useState<ImagePreviewType>(
     game.gameImg?.type === "file"
       ? { type: "file", url: URL.createObjectURL(game.gameImg.file) }
       : game.gameImg?.type === "svg"
