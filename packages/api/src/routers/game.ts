@@ -24,6 +24,7 @@ import {
   scoresheet,
   sharedGame,
   sharedScoresheet,
+  team,
 } from "@board-games/db/schema";
 import {
   insertGameSchema,
@@ -2055,6 +2056,32 @@ export const gameRouter = createTRPCRouter({
               .returning();
             currentPlayers = currentPlayers.concat(insertedPlayers); // Update currentPlayers with newly inserted ones
           }
+          const createdTeams: { id: number; name: string }[] = [];
+          if (play.usesTeams) {
+            const teams = new Set(
+              play.participants
+                .map((p) => p.team)
+                .filter((t) => t !== undefined),
+            );
+            for (const playTeam of teams.values()) {
+              if (playTeam) {
+                const [insertedTeam] = await ctx.db
+                  .insert(team)
+                  .values({
+                    name: playTeam,
+                    matchId: returningMatch.id,
+                  })
+                  .returning();
+                if (!insertedTeam) {
+                  throw new Error("Failed to create team");
+                }
+                createdTeams.push({
+                  id: insertedTeam.id,
+                  name: insertedTeam.name,
+                });
+              }
+            }
+          }
 
           const calculatePlacement = (playerName: string) => {
             const sortedParticipants = [...play.participants];
@@ -2105,7 +2132,12 @@ export const gameRouter = createTRPCRouter({
                 score: player.score,
                 winner: player.isWinner,
                 order: player.order,
-                placement: calculatePlacement(player.name ?? ""),
+                placement: playScoresheet.isCoop
+                  ? null
+                  : calculatePlacement(player.name ?? ""),
+                teamId:
+                  createdTeams.find((team) => team.name === player.team)?.id ??
+                  null,
               };
             }
             return {
@@ -2115,6 +2147,9 @@ export const gameRouter = createTRPCRouter({
               winner: player.isWinner,
               order: player.order,
               placement: player.finishPlace,
+              teamId:
+                createdTeams.find((team) => team.name === player.team)?.id ??
+                null,
             };
           });
           const matchPlayers = await ctx.db
