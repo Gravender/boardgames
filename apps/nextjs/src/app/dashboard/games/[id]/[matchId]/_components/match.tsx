@@ -390,19 +390,6 @@ export function Match({ matchId }: { matchId: number }) {
     setDuration(0);
     setIsRunning(false);
   };
-  useEffect(() => {
-    return () => {
-      const now = Date.now();
-      const startTime = match?.startTime ? match.startTime.getTime() : 0;
-      const elapsedTime = differenceInSeconds(now, startTime);
-      const difference = elapsedTime - (match?.duration ?? 0);
-      if (match?.running && difference > 20) {
-        pauseMatchDuration.mutate({
-          id: match.id,
-        });
-      }
-    };
-  }, [match, pauseMatchDuration]);
 
   const handleScoreChange = (
     player: Player,
