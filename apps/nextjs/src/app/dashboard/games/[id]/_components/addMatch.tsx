@@ -11,11 +11,11 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
-import { CalendarIcon, Plus, User, Users, X } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, User, Users, X } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
-import type { UseFieldArrayAppend } from "@board-games/ui/form";
+import type { UseFieldArrayAppend, UseFormReturn } from "@board-games/ui/form";
 import {
   insertMatchSchema,
   insertPlayerSchema,
@@ -152,7 +152,20 @@ const playersSchema = z
   .refine((players) => players.length > 0, {
     message: "You must add at least one player",
   });
-type matchPlayers = z.infer<typeof playersSchema>;
+const formSchema = matchSchema.extend({
+  players: playersSchema,
+  location: locationSchema,
+  scoresheet: z.object({
+    id: z.number(),
+    scoresheetType: z.literal("original").or(z.literal("shared")),
+  }),
+  teams: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+    }),
+  ),
+});
 function Content({
   matches,
   gameId,
@@ -171,86 +184,23 @@ function Content({
   setIsOpen: Dispatch<SetStateAction<boolean>>;
 }) {
   const [isPlayers, setIsPlayers] = useState(false);
-  const [matchPlayers, setMatchPlayers] = useState<matchPlayers>([]);
-  return (
-    <>
-      {isPlayers ? (
-        <AddPlayersForm
-          gameId={gameId}
-          matchPlayers={matchPlayers}
-          setMatchPlayers={setMatchPlayers}
-          players={players}
-          setIsPlayers={setIsPlayers}
-        />
-      ) : (
-        <AddMatchForm
-          gameId={gameId}
-          gameName={gameName}
-          matches={matches}
-          locations={locations}
-          scoresheets={scoresheets}
-          matchPlayers={matchPlayers}
-          setIsOpen={setIsOpen}
-          setIsPlayers={setIsPlayers}
-        />
-      )}
-    </>
-  );
-}
-
-const AddMatchForm = ({
-  gameId,
-  gameName,
-  matches,
-  locations,
-  scoresheets,
-  matchPlayers,
-  setIsOpen,
-  setIsPlayers,
-}: {
-  gameId: Game["id"];
-  gameName: Game["name"];
-  matches: number;
-  locations: RouterOutputs["location"]["getLocations"];
-  scoresheets: RouterOutputs["game"]["getGameScoresheets"];
-  matchPlayers: matchPlayers;
-  setIsOpen: Dispatch<SetStateAction<boolean>>;
-  setIsPlayers: Dispatch<SetStateAction<boolean>>;
-}) => {
-  const formSchema = matchSchema.extend({
-    players: playersSchema,
-    location: locationSchema,
-    scoresheet: z
-      .object({
-        id: z.number(),
-        scoresheetType: z.literal("original").or(z.literal("shared")),
-      })
-      .refine(
-        (s) =>
-          scoresheets.find(
-            (scoresheet) =>
-              scoresheet.id === s.id &&
-              scoresheet.scoresheetType === s.scoresheetType,
-          ) !== undefined,
-        { message: "Must select a scoresheet" },
-      ),
-  });
-  type formSchemaType = z.infer<typeof formSchema>;
-
-  const trpc = useTRPC();
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showAddLocation, setShowAddLocation] = useState(false);
-  const [newLocation, setNewLocation] = useState("");
-
-  const queryClient = useQueryClient();
-  const router = useRouter();
+  const currentUser = players.find((player) => player.isUser);
   const form = useForm({
     schema: formSchema,
     defaultValues: {
       name: `${gameName} #${matches + 1}`,
       date: new Date(),
-      players: matchPlayers,
+      players: currentUser
+        ? [
+            {
+              id: currentUser.id,
+              imageUrl: currentUser.image?.url ?? "",
+              name: currentUser.name,
+              matches: currentUser.matches,
+              team: null,
+            },
+          ]
+        : [],
       location: locations.find((location) => location.isDefault),
       scoresheet:
         scoresheets.find(
@@ -266,8 +216,57 @@ const AddMatchForm = ({
         scoresheets.find((scoresheet) => scoresheet.type === "Default") ??
         scoresheets[0] ??
         undefined,
+      teams: [],
     },
   });
+
+  return (
+    <>
+      {isPlayers ? (
+        <AddPlayersForm
+          gameId={gameId}
+          parentForm={form}
+          players={players}
+          setIsPlayers={setIsPlayers}
+        />
+      ) : (
+        <AddMatchForm
+          gameId={gameId}
+          form={form}
+          locations={locations}
+          scoresheets={scoresheets}
+          setIsOpen={setIsOpen}
+          setIsPlayers={setIsPlayers}
+        />
+      )}
+    </>
+  );
+}
+
+const AddMatchForm = ({
+  gameId,
+  locations,
+  scoresheets,
+  form,
+  setIsOpen,
+  setIsPlayers,
+}: {
+  gameId: Game["id"];
+  locations: RouterOutputs["location"]["getLocations"];
+  scoresheets: RouterOutputs["game"]["getGameScoresheets"];
+  form: UseFormReturn<z.infer<typeof formSchema>>;
+  setIsOpen: Dispatch<SetStateAction<boolean>>;
+  setIsPlayers: Dispatch<SetStateAction<boolean>>;
+}) => {
+  const trpc = useTRPC();
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAddLocation, setShowAddLocation] = useState(false);
+  const [newLocation, setNewLocation] = useState("");
+
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
   const createMatch = useMutation(
     trpc.match.createMatch.mutationOptions({
       onSuccess: (response) => {
@@ -305,9 +304,9 @@ const AddMatchForm = ({
     }),
   );
 
-  const onSubmit = (values: formSchemaType) => {
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
-    const teams = values.players.reduce<
+    const mappedTeams = values.players.reduce<
       Record<string, { name: string; players: { id: number }[] }>
     >((acc, player) => {
       if (player.team === null) {
@@ -321,12 +320,16 @@ const AddMatchForm = ({
           };
         }
       } else {
-        const team = acc[player.team];
+        const foundTeam = values.teams.find((t) => t.id === player.team);
+        if (!foundTeam) {
+          return acc;
+        }
+        const team = acc[foundTeam.name];
         if (team) {
           team.players.push({ id: player.id });
         } else {
-          acc[player.team] = {
-            name: player.team.toString(),
+          acc[foundTeam.name] = {
+            name: foundTeam.name,
             players: [{ id: player.id }],
           };
         }
@@ -337,7 +340,7 @@ const AddMatchForm = ({
       gameId: gameId,
       name: values.name,
       date: values.date,
-      teams: Object.values(teams),
+      teams: Object.values(mappedTeams),
       scoresheet: values.scoresheet,
       location: values.location
         ? {
@@ -655,14 +658,12 @@ const AddPlayersFormSchema = z.object({
 type addPlayersFormType = z.infer<typeof AddPlayersFormSchema>;
 const AddPlayersForm = ({
   gameId,
-  matchPlayers,
-  setMatchPlayers,
+  parentForm,
   players,
   setIsPlayers,
 }: {
   gameId: number;
-  matchPlayers: matchPlayers;
-  setMatchPlayers: Dispatch<SetStateAction<matchPlayers>>;
+  parentForm: UseFormReturn<z.infer<typeof formSchema>>;
   players: NonNullable<RouterOutputs["player"]["getPlayersByGame"]>;
   setIsPlayers: Dispatch<SetStateAction<boolean>>;
 }) => {
@@ -670,14 +671,8 @@ const AddPlayersForm = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [showGroups, setShowGroups] = useState(false);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
-  const [teamCount, setTeamCount] = useState(
-    matchPlayers.reduce((acc, player) => {
-      if (player.team !== null) {
-        return Math.max(acc, player.team);
-      }
-      return acc;
-    }, 0),
-  );
+
+  const [showTeamModal, setShowTeamModal] = useState(false);
 
   const { data: groups } = useQuery(trpc.group.getGroups.queryOptions());
 
@@ -686,8 +681,8 @@ const AddPlayersForm = ({
     schema: AddPlayersFormSchema,
     defaultValues: {
       players:
-        matchPlayers.length > 0
-          ? matchPlayers
+        parentForm.getValues("players").length > 0
+          ? parentForm.getValues("players")
           : currentUser
             ? [
                 {
@@ -706,7 +701,7 @@ const AddPlayersForm = ({
     name: "players",
   });
   const onSubmit = (data: addPlayersFormType) => {
-    setMatchPlayers(data.players);
+    parentForm.setValue("players", data.players);
     setIsPlayers(false);
   };
 
@@ -732,6 +727,8 @@ const AddPlayersForm = ({
     });
     setShowGroups(false);
   };
+  const formTeams = parentForm.watch("teams");
+  const formPlayers = form.watch("players");
 
   if (showAddPlayer) {
     return (
@@ -742,6 +739,15 @@ const AddPlayersForm = ({
       />
     );
   }
+  if (showTeamModal) {
+    return (
+      <ManageTeamContent
+        form={parentForm}
+        setShowTeamModal={setShowTeamModal}
+      />
+    );
+  }
+
   return (
     <>
       <DialogHeader>
@@ -823,55 +829,12 @@ const AddPlayersForm = ({
                       <FormLabel>
                         {`${form.getValues("players").length} player${form.getValues("players").length !== 1 ? "s" : ""} Selected`}
                       </FormLabel>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">Teams:</span>
-                        <Select
-                          value={teamCount.toString()}
-                          onValueChange={(value) => {
-                            setTeamCount(Number.parseInt(value));
-                            if (value === "0") {
-                              const currentPlayers = form.getValues("players");
-                              const newPlayers = currentPlayers.map(
-                                (player) => {
-                                  return {
-                                    ...player,
-                                    team: null,
-                                  };
-                                },
-                              );
-                              form.setValue("players", newPlayers);
-                            } else {
-                              const currentPlayers = form.getValues("players");
-                              const newPlayers = currentPlayers.map(
-                                (player) => {
-                                  if (
-                                    player.team !== null &&
-                                    player.team > Number.parseInt(value)
-                                  ) {
-                                    return {
-                                      ...player,
-                                      team: null,
-                                    };
-                                  }
-                                  return player;
-                                },
-                              );
-                              form.setValue("players", newPlayers);
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="h-8 w-[80px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">None</SelectItem>
-                            <SelectItem value="1">1</SelectItem>
-                            <SelectItem value="2">2</SelectItem>
-                            <SelectItem value="3">3</SelectItem>
-                            <SelectItem value="4">4</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowTeamModal(true)}
+                      >
+                        Edit Teams
+                      </Button>
                     </div>
                     <ScrollArea className="sm:p-1">
                       <div className="grid max-h-[25rem] gap-2 rounded-lg sm:max-h-[40rem]">
@@ -902,147 +865,165 @@ const AddPlayersForm = ({
                             }
                             return b.matches - a.matches;
                           })
-                          .map((player) => (
-                            <FormField
-                              key={player.id}
-                              control={form.control}
-                              name="players"
-                              render={({ field }) => {
-                                const foundPlayer = field.value.find(
-                                  (i) => i.id === player.id,
-                                );
-                                return (
-                                  <FormItem
-                                    key={player.id}
-                                    className={cn(
-                                      "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-1 sm:p-2",
-                                      foundPlayer
-                                        ? "bg-violet-400/50"
-                                        : "bg-border",
-                                    )}
-                                  >
-                                    <FormControl>
-                                      <Checkbox
-                                        className="hidden"
-                                        checked={
-                                          field.value.findIndex(
-                                            (i) => i.id === player.id,
-                                          ) > -1
-                                        }
-                                        onCheckedChange={(checked) => {
-                                          return checked
-                                            ? append({
-                                                id: player.id,
-                                                imageUrl:
-                                                  player.image?.url ?? "",
-                                                name: player.name,
-                                                matches: player.matches,
-                                                team: null,
-                                              })
-                                            : remove(
-                                                field.value.findIndex(
-                                                  (i) => i.id === player.id,
-                                                ),
-                                              );
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2">
-                                      <div className="flex items-center gap-1 sm:gap-2">
-                                        <Avatar className="h-8 w-8">
-                                          {player.image?.url ? (
-                                            <AvatarImage
-                                              src={player.image.url}
-                                              alt={player.name}
-                                            />
-                                          ) : (
-                                            <AvatarFallback>
-                                              {player.name
-                                                .substring(0, 2)
-                                                .toUpperCase()}
-                                            </AvatarFallback>
-                                          )}
-                                        </Avatar>
-                                        <div>
-                                          <div className="text-sm font-medium">
-                                            {player.name}
-                                            {player.isUser && (
-                                              <Badge
-                                                variant="outline"
-                                                className="ml-2 text-xs"
-                                              >
-                                                You
-                                              </Badge>
+                          .map((player) => {
+                            return (
+                              <FormField
+                                key={player.id}
+                                control={form.control}
+                                name="players"
+                                render={({ field }) => {
+                                  const foundPlayer = field.value.find(
+                                    (i) => i.id === player.id,
+                                  );
+                                  return (
+                                    <FormItem
+                                      key={player.id}
+                                      className={cn(
+                                        "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-1 sm:p-2",
+                                        foundPlayer
+                                          ? "bg-violet-400/50"
+                                          : "bg-border",
+                                      )}
+                                    >
+                                      <FormControl>
+                                        <Checkbox
+                                          className="hidden"
+                                          checked={
+                                            field.value.findIndex(
+                                              (i) => i.id === player.id,
+                                            ) > -1
+                                          }
+                                          onCheckedChange={(checked) => {
+                                            return checked
+                                              ? append({
+                                                  id: player.id,
+                                                  imageUrl:
+                                                    player.image?.url ?? "",
+                                                  name: player.name,
+                                                  matches: player.matches,
+                                                  team: null,
+                                                })
+                                              : remove(
+                                                  field.value.findIndex(
+                                                    (i) => i.id === player.id,
+                                                  ),
+                                                );
+                                          }}
+                                        />
+                                      </FormControl>
+                                      <FormLabel className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2">
+                                        <div className="flex items-center gap-1 sm:gap-2">
+                                          <Avatar className="h-8 w-8">
+                                            {player.image?.url ? (
+                                              <AvatarImage
+                                                src={player.image.url}
+                                                alt={player.name}
+                                              />
+                                            ) : (
+                                              <AvatarFallback>
+                                                {player.name
+                                                  .substring(0, 2)
+                                                  .toUpperCase()}
+                                              </AvatarFallback>
                                             )}
-                                          </div>
-                                          <div className="text-xs text-muted-foreground">
-                                            {player.matches} matches
+                                          </Avatar>
+                                          <div>
+                                            <div className="text-sm font-medium">
+                                              {player.name}
+                                              {player.isUser && (
+                                                <Badge
+                                                  variant="outline"
+                                                  className="ml-2 text-xs"
+                                                >
+                                                  You
+                                                </Badge>
+                                              )}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                              {player.matches} matches
+                                            </div>
                                           </div>
                                         </div>
+                                      </FormLabel>
+                                      <div className="flex items-center gap-2">
+                                        {formTeams.length > 0 &&
+                                          foundPlayer && (
+                                            <Select
+                                              value={
+                                                foundPlayer.team !== null
+                                                  ? foundPlayer.team.toString()
+                                                  : "no-team"
+                                              }
+                                              onValueChange={(value) => {
+                                                if (value === "no-team") {
+                                                  update(
+                                                    field.value.findIndex(
+                                                      (i) => i.id === player.id,
+                                                    ),
+                                                    {
+                                                      ...foundPlayer,
+                                                      team: null,
+                                                    },
+                                                  );
+                                                  return;
+                                                }
+                                                const parsedValue =
+                                                  Number.parseInt(value);
+                                                const foundTeam =
+                                                  formTeams.find(
+                                                    (t) => t.id === parsedValue,
+                                                  );
+                                                if (
+                                                  !isNaN(parsedValue) &&
+                                                  foundTeam
+                                                ) {
+                                                  update(
+                                                    field.value.findIndex(
+                                                      (i) => i.id === player.id,
+                                                    ),
+                                                    {
+                                                      ...foundPlayer,
+                                                      team: Number.parseInt(
+                                                        value,
+                                                      ),
+                                                    },
+                                                  );
+                                                  return;
+                                                }
+                                              }}
+                                            >
+                                              <SelectTrigger className="h-8 w-32">
+                                                <SelectValue placeholder="No team" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="no-team">
+                                                  No team
+                                                </SelectItem>
+                                                {formTeams.map((team) => (
+                                                  <SelectItem
+                                                    key={team.id}
+                                                    value={team.id.toString()}
+                                                  >
+                                                    {`${team.name}`}
+                                                  </SelectItem>
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                          )}
+                                        {formPlayers.findIndex(
+                                          (i) => i.id === player.id,
+                                        ) > -1 && (
+                                          <Badge className="hidden sm:block">
+                                            Selected
+                                          </Badge>
+                                        )}
                                       </div>
-                                    </FormLabel>
-                                    <div className="flex items-center gap-2">
-                                      {teamCount > 0 && foundPlayer && (
-                                        <Select
-                                          value={
-                                            foundPlayer.team
-                                              ? foundPlayer.team.toString()
-                                              : "0"
-                                          }
-                                          onValueChange={(value) => {
-                                            if (value === "0") {
-                                              update(
-                                                field.value.findIndex(
-                                                  (i) => i.id === player.id,
-                                                ),
-                                                { ...foundPlayer, team: null },
-                                              );
-                                              return;
-                                            }
-
-                                            if (Number.parseInt(value) > 0) {
-                                              update(
-                                                field.value.findIndex(
-                                                  (i) => i.id === player.id,
-                                                ),
-                                                {
-                                                  ...foundPlayer,
-                                                  team: Number.parseInt(value),
-                                                },
-                                              );
-                                              return;
-                                            }
-                                          }}
-                                        >
-                                          <SelectTrigger className="h-8 w-[90px]">
-                                            <SelectValue placeholder="No team" />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="0">
-                                              No team
-                                            </SelectItem>
-                                            {Array.from({
-                                              length: teamCount,
-                                            }).map((_, i) => (
-                                              <SelectItem
-                                                key={i + 1}
-                                                value={(i + 1).toString()}
-                                              >
-                                                Team {i + 1}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                      )}
-                                      {field.value.findIndex(
-                                        (i) => i.id === player.id,
-                                      ) > -1 && <Badge>Selected</Badge>}
-                                    </div>
-                                  </FormItem>
-                                );
-                              }}
-                            />
-                          ))}
+                                    </FormItem>
+                                  );
+                                }}
+                              />
+                            );
+                          })}
                       </div>
                     </ScrollArea>
                   </>
@@ -1065,6 +1046,166 @@ const AddPlayersForm = ({
         </form>
       </Form>
     </>
+  );
+};
+const ManageTeamContent = ({
+  form,
+  setShowTeamModal,
+}: {
+  form: UseFormReturn<z.infer<typeof formSchema>>;
+  setShowTeamModal: Dispatch<SetStateAction<boolean>>;
+}) => {
+  const [newTeam, setNewTeam] = useState("");
+  const formTeams = form.watch("teams");
+  const { append, remove } = useFieldArray({
+    control: form.control,
+    name: "teams",
+  });
+  const updatePlayers = () => {
+    let teamRemoved = false;
+    const mappedPlayers = form.getValues("players").map((player) => {
+      const foundTeam = formTeams.find((t) => t.id === player.team);
+      if (foundTeam !== undefined) {
+        return player;
+      }
+      teamRemoved = true;
+      return {
+        ...player,
+        teamId: null,
+      };
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (teamRemoved) {
+      form.setValue("players", mappedPlayers);
+    }
+  };
+  const cancelTeams = () => {
+    form.setValue("teams", []);
+    const mappedPlayers = form.getValues("players").map((player) => {
+      return {
+        ...player,
+        teamId: null,
+      };
+    });
+    form.setValue("players", mappedPlayers);
+    setShowTeamModal(false);
+  };
+  return (
+    <Form {...form}>
+      <DialogHeader>
+        <DialogTitle>Edit Teams</DialogTitle>
+      </DialogHeader>
+      <ScrollArea>
+        <div className="flex max-h-96 flex-col gap-2 p-2">
+          {formTeams.map((team) => {
+            const foundIndex = formTeams.findIndex((t) => t.id === team.id);
+            if (foundIndex === -1) {
+              return null;
+            }
+            return (
+              <FormField
+                key={team.id}
+                control={form.control}
+                name={`teams.${foundIndex}.name`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="sr-only">Team Name</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center gap-2">
+                        <Input placeholder="Team name" {...field} />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            remove(foundIndex);
+                          }}
+                          className="h-10 w-10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Remove team</span>
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            );
+          })}
+          <div className="flex items-center gap-2">
+            <Input
+              value={newTeam}
+              onChange={(e) => setNewTeam(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const lowestId =
+                    formTeams.reduce(
+                      (acc, curr) => (curr.id < acc ? curr.id : acc),
+                      -1,
+                    ) - 2;
+                  append(
+                    {
+                      id: lowestId,
+                      name: newTeam,
+                    },
+                    {
+                      shouldFocus: false,
+                    },
+                  );
+                  setNewTeam("");
+                }
+              }}
+              placeholder={"Add new team"}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              onClick={() => {
+                const lowestId =
+                  formTeams.reduce(
+                    (acc, curr) => (curr.id < acc ? curr.id : acc),
+                    -1,
+                  ) - 2;
+                append({
+                  id: lowestId,
+                  name: newTeam,
+                });
+
+                setNewTeam("");
+              }}
+              disabled={newTeam === ""}
+            >
+              <Plus className="h-4 w-4" />
+              <span className="sr-only">Add team</span>
+            </Button>
+          </div>
+        </div>
+      </ScrollArea>
+      <DialogFooter className="gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => {
+            cancelTeams();
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          onClick={() => {
+            updatePlayers();
+            setShowTeamModal(false);
+          }}
+        >
+          Save
+        </Button>
+      </DialogFooter>
+    </Form>
   );
 };
 const addPlayerSchema = insertPlayerSchema.pick({ name: true }).extend({
