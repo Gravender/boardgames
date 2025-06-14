@@ -1056,6 +1056,7 @@ const ManageTeamContent = ({
   setShowTeamModal: Dispatch<SetStateAction<boolean>>;
 }) => {
   const [newTeam, setNewTeam] = useState("");
+  const [originalTeams] = useState(() => form.getValues("teams"));
   const formTeams = form.watch("teams");
   const { append, remove } = useFieldArray({
     control: form.control,
@@ -1071,7 +1072,7 @@ const ManageTeamContent = ({
       teamRemoved = true;
       return {
         ...player,
-        teamId: null,
+        team: null,
       };
     });
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -1081,10 +1082,12 @@ const ManageTeamContent = ({
   };
   const cancelTeams = () => {
     form.setValue("teams", []);
+    form.setValue("teams", originalTeams);
     const mappedPlayers = form.getValues("players").map((player) => {
+      const teamStillExists = originalTeams.some((t) => t.id === player.team);
       return {
         ...player,
-        teamId: null,
+        team: teamStillExists ? player.team : null,
       };
     });
     form.setValue("players", mappedPlayers);
