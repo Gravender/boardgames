@@ -36,6 +36,7 @@ import { baseRoundSchema, editScoresheetSchema } from "@board-games/shared";
 
 import analyticsServerClient from "../analytics";
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import { utapi } from "../uploadthing";
 
 export const gameRouter = createTRPCRouter({
   create: protectedUserProcedure
@@ -1428,55 +1429,105 @@ export const gameRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const existingGame = await ctx.db.query.game.findFirst({
+        where: {
+          id: input.game.id,
+          userId: ctx.userId,
+        },
+      });
+      if (!existingGame) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Game not found.",
+        });
+      }
       if (input.game.type === "updateGame") {
-        let imageId: number | null | undefined = undefined;
-        if (input.game.image !== undefined) {
-          if (input.game.image === null) {
-            imageId = null;
-          } else if (input.game.image.type === "file") {
-            imageId = input.game.image.imageId;
-          } else if (input.game.image.type === "svg") {
-            const existingSvg = await ctx.db.query.image.findFirst({
-              where: {
-                name: input.game.image.name,
-                type: "svg",
-                usageType: "game",
-              },
-            });
-            if (existingSvg) {
-              imageId = existingSvg.id;
-            } else {
-              const [returnedImage] = await ctx.db
-                .insert(image)
-                .values({
-                  type: "svg",
-                  name: input.game.image.name,
-                  usageType: "game",
+        const inputGame = input.game;
+        await ctx.db.transaction(async (transaction) => {
+          let imageId: number | null | undefined = undefined;
+          if (inputGame.image !== undefined) {
+            const existingImage = existingGame.imageId
+              ? await transaction.query.image.findFirst({
+                  where: {
+                    id: existingGame.imageId,
+                    userId: ctx.userId,
+                  },
                 })
-                .returning();
-              if (!returnedImage) {
-                throw new TRPCError({
-                  code: "INTERNAL_SERVER_ERROR",
-                  message: "Failed to create image",
-                });
+              : null;
+            if (inputGame.image === null) {
+              imageId = null;
+            } else if (inputGame.image.type === "file") {
+              imageId = inputGame.image.imageId;
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            } else if (inputGame.image.type === "svg") {
+              const existingSvg = await ctx.db.query.image.findFirst({
+                where: {
+                  name: inputGame.image.name,
+                  type: "svg",
+                  usageType: "game",
+                },
+              });
+              if (existingSvg) {
+                imageId = existingSvg.id;
+              } else {
+                const [returnedImage] = await ctx.db
+                  .insert(image)
+                  .values({
+                    type: "svg",
+                    name: inputGame.image.name,
+                    usageType: "game",
+                  })
+                  .returning();
+                if (!returnedImage) {
+                  throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Failed to create image",
+                  });
+                }
+                imageId = returnedImage.id;
               }
-              imageId = returnedImage.id;
+            }
+            if (existingImage) {
+              if (existingImage.type === "file" && existingImage.fileId) {
+                analyticsServerClient.capture({
+                  distinctId: ctx.auth.userId ?? "",
+                  event: "uploadthing begin image delete",
+                  properties: {
+                    imageName: existingImage.name,
+                    imageId: existingImage.id,
+                    fileId: existingImage.fileId,
+                  },
+                });
+                const result = await utapi.deleteFiles(existingImage.fileId);
+                if (!result.success) {
+                  analyticsServerClient.capture({
+                    distinctId: ctx.auth.userId ?? "",
+                    event: "uploadthing image delete error",
+                    properties: {
+                      imageName: existingImage.name,
+                      imageId: existingImage.id,
+                      fileId: existingImage.fileId,
+                    },
+                  });
+                  throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+                }
+              }
             }
           }
-        }
-        await ctx.db
-          .update(game)
-          .set({
-            name: input.game.name,
-            ownedBy: input.game.ownedBy,
-            playersMin: input.game.playersMin,
-            playersMax: input.game.playersMax,
-            playtimeMin: input.game.playtimeMin,
-            playtimeMax: input.game.playtimeMax,
-            yearPublished: input.game.yearPublished,
-            imageId: imageId,
-          })
-          .where(eq(game.id, input.game.id));
+          await transaction
+            .update(game)
+            .set({
+              name: inputGame.name,
+              ownedBy: inputGame.ownedBy,
+              playersMin: inputGame.playersMin,
+              playersMax: inputGame.playersMax,
+              playtimeMin: inputGame.playtimeMin,
+              playtimeMax: inputGame.playtimeMax,
+              yearPublished: inputGame.yearPublished,
+              imageId: imageId,
+            })
+            .where(eq(game.id, existingGame.id));
+        });
       }
       if (input.scoresheets.length > 0) {
         await ctx.db.transaction(async (transaction) => {
@@ -1492,7 +1543,7 @@ export const gameRouter = createTRPCRouter({
                   targetScore: inputScoresheet.scoresheet.targetScore,
 
                   userId: ctx.userId,
-                  gameId: input.game.id,
+                  gameId: existingGame.id,
                   type: "Game",
                 })
                 .returning();
@@ -1741,7 +1792,7 @@ export const gameRouter = createTRPCRouter({
   deleteGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.transaction(async (tx) => {
+      const result = await ctx.db.transaction(async (tx) => {
         await tx
           .update(sharedGame)
           .set({ linkedGameId: null })
@@ -1780,14 +1831,15 @@ export const gameRouter = createTRPCRouter({
             message: "Failed to delete game",
           });
         }
-        analyticsServerClient.capture({
-          distinctId: ctx.auth.userId ?? "",
-          event: "game delete",
-          properties: {
-            gameName: deletedGame.name,
-            gameId: deletedGame.id,
-          },
-        });
+        return deletedGame;
+      });
+      analyticsServerClient.capture({
+        distinctId: ctx.auth.userId ?? "",
+        event: "game delete",
+        properties: {
+          gameName: result.name,
+          gameId: result.id,
+        },
       });
     }),
   insertGames: protectedUserProcedure
