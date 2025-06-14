@@ -1450,7 +1450,6 @@ export const gameRouter = createTRPCRouter({
               ? await transaction.query.image.findFirst({
                   where: {
                     id: existingGame.imageId,
-                    userId: ctx.userId,
                   },
                 })
               : null;

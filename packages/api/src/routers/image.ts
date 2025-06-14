@@ -28,7 +28,6 @@ export const imageRouter = createTRPCRouter({
       const imageToDelete = await ctx.db.query.image.findFirst({
         where: {
           id: input.id,
-          userId: ctx.userId,
         },
       });
       if (!imageToDelete) {

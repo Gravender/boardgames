@@ -19,7 +19,9 @@ import {
 import { calculatePlacement } from "@board-games/shared";
 
 import type { Player, PlayerMatch } from "../utils/player";
+import analyticsServerClient from "../analytics";
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import { utapi } from "../uploadthing";
 import {
   aggregatePlayerStats,
   getTeamStats,
@@ -901,6 +903,55 @@ export const playerRouter = createTRPCRouter({
             );
         }
         if (input.type === "original") {
+          const existingPlayer = await tx.query.player.findFirst({
+            where: {
+              id: input.id,
+              createdBy: ctx.userId,
+            },
+          });
+          if (!existingPlayer) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Player not found.",
+            });
+          }
+          if (existingPlayer.imageId) {
+            const imageToDelete = await ctx.db.query.image.findFirst({
+              where: {
+                id: input.id,
+              },
+            });
+            if (!imageToDelete) {
+              throw new TRPCError({
+                code: "NOT_FOUND",
+                message: "Image not found.",
+              });
+            }
+            if (imageToDelete.type === "file" && imageToDelete.fileId) {
+              analyticsServerClient.capture({
+                distinctId: ctx.auth.userId ?? "",
+                event: "uploadthing begin image delete",
+                properties: {
+                  imageName: imageToDelete.name,
+                  imageId: imageToDelete.id,
+                  fileId: imageToDelete.fileId,
+                },
+              });
+              const result = await utapi.deleteFiles(imageToDelete.fileId);
+              if (!result.success) {
+                analyticsServerClient.capture({
+                  distinctId: ctx.auth.userId ?? "",
+                  event: "uploadthing image delete error",
+                  properties: {
+                    imageName: imageToDelete.name,
+                    imageId: imageToDelete.id,
+                    fileId: imageToDelete.fileId,
+                  },
+                });
+                throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+              }
+            }
+          }
           await tx
             .update(player)
             .set({
