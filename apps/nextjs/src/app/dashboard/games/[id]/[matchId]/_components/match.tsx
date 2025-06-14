@@ -513,7 +513,7 @@ export function Match({ matchId }: { matchId: number }) {
             <div className="flex w-full items-start">
               <CommentDialog matchId={match.id} comment={match.comment} />
             </div>
-            <MatchImages />
+            <MatchImages matchId={match.id} duration={duration} />
           </div>
         </CardFooter>
         <ManualWinnerDialog
