@@ -28,6 +28,7 @@ export const imageRouter = createTRPCRouter({
       const matchImages = await ctx.db.query.matchImage.findMany({
         where: {
           matchId: input.matchId,
+          createdBy: ctx.userId,
         },
         with: {
           image: true,
@@ -80,55 +81,62 @@ export const imageRouter = createTRPCRouter({
   deleteMatchImage: protectedUserProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const returnedMatchImage = await ctx.db.query.matchImage.findFirst({
-        where: {
-          id: input.id,
-        },
-        with: {
-          image: true,
-        },
-      });
-      if (!returnedMatchImage) {
-        analyticsServerClient.capture({
-          distinctId: ctx.auth.userId ?? "",
-          event: "delete match image error",
-          properties: {
+      await ctx.db.transaction(async (tx) => {
+        const returnedMatchImage = await tx.query.matchImage.findFirst({
+          where: {
             id: input.id,
-            error: "Not found",
+          },
+          with: {
+            image: true,
           },
         });
-        throw new TRPCError({ code: "NOT_FOUND" });
-      }
-
-      await ctx.db
-        .delete(matchImage)
-        .where(eq(matchImage.id, returnedMatchImage.id));
-      if (
-        returnedMatchImage.image.type === "file" &&
-        returnedMatchImage.image.fileId
-      ) {
-        analyticsServerClient.capture({
-          distinctId: ctx.auth.userId ?? "",
-          event: "uploadthing begin image delete",
-          properties: {
-            imageName: returnedMatchImage.image.name,
-            imageId: returnedMatchImage.image.id,
-            fileId: returnedMatchImage.image.fileId,
-          },
-        });
-        const result = await utapi.deleteFiles(returnedMatchImage.image.fileId);
-        if (!result.success) {
+        if (!returnedMatchImage) {
           analyticsServerClient.capture({
             distinctId: ctx.auth.userId ?? "",
-            event: "uploadthing image delete error",
+            event: "delete match image error",
+            properties: {
+              id: input.id,
+              error: "Not found",
+            },
+          });
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+
+        await tx
+          .delete(matchImage)
+          .where(eq(matchImage.id, returnedMatchImage.id));
+        if (
+          returnedMatchImage.image.type === "file" &&
+          returnedMatchImage.image.fileId
+        ) {
+          analyticsServerClient.capture({
+            distinctId: ctx.auth.userId ?? "",
+            event: "uploadthing begin image delete",
             properties: {
               imageName: returnedMatchImage.image.name,
               imageId: returnedMatchImage.image.id,
               fileId: returnedMatchImage.image.fileId,
             },
           });
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+          const result = await utapi.deleteFiles(
+            returnedMatchImage.image.fileId,
+          );
+          if (!result.success) {
+            analyticsServerClient.capture({
+              distinctId: ctx.auth.userId ?? "",
+              event: "uploadthing image delete error",
+              properties: {
+                imageName: returnedMatchImage.image.name,
+                imageId: returnedMatchImage.image.id,
+                fileId: returnedMatchImage.image.fileId,
+              },
+            });
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+          }
+          await tx
+            .delete(image)
+            .where(eq(image.id, returnedMatchImage.image.id));
         }
-      }
+      });
     }),
 });

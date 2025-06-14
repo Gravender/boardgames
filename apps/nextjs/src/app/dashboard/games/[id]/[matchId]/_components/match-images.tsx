@@ -309,8 +309,13 @@ function AddImageDialogContent({
         toast.error("Error", {
           description: "There was a problem uploading your Image.",
         });
+        posthog.capture("upload error", { error: "Image upload failed" });
         throw new Error("Image upload failed");
       }
+      await queryClient.invalidateQueries(
+        trpc.image.getMatchImages.queryOptions({ matchId: matchId }),
+      );
+      toast.success("Image added successfully!");
     } catch (error) {
       console.error("Error uploading Image:", error);
       posthog.capture("upload error", { error });
@@ -318,11 +323,8 @@ function AddImageDialogContent({
         description: "There was a problem uploading your Image.",
       });
     } finally {
-      await queryClient.invalidateQueries(
-        trpc.image.getMatchImages.queryOptions({ matchId: matchId }),
-      );
-      toast.success("Image added successfully!");
       setIsAddImageDialogOpen(false);
+      setIsSubmitting(false);
     }
   }
   useEffect(() => {

@@ -69,6 +69,16 @@ export const uploadRouter = {
         throw new UploadThingError("Image not added to database");
       }
       if (metadata.input.usageType === "match") {
+        const returnedMatch = await db.query.match.findFirst({
+          where: {
+            id: metadata.input.matchId,
+            userId: metadata.userId,
+          },
+        });
+        if (!returnedMatch) {
+          // eslint-disable-next-line @typescript-eslint/only-throw-error
+          throw new UploadThingError("Match not found");
+        }
         const [returnedMatchImage] = await db
           .insert(matchImage)
           .values({
