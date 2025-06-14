@@ -7,7 +7,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
-import { Analytics } from "~/components/analytics";
+import { CSPostHogProvider } from "~/components/analytics";
 import { SpeedInsights } from "~/components/speedInsights";
 import { ThemeProvider } from "~/components/theme-provider";
 import { TRPCReactProvider } from "~/trpc/react";
@@ -63,10 +63,11 @@ export default function RootLayout({
           enableColorScheme
         >
           <ClerkProvider>
-            <TRPCReactProvider>{children}</TRPCReactProvider>
-            <Toaster />
-            <Analytics />
-            <SpeedInsights />
+            <CSPostHogProvider>
+              <TRPCReactProvider>{children}</TRPCReactProvider>
+              <Toaster />
+              <SpeedInsights />
+            </CSPostHogProvider>
           </ClerkProvider>
         </ThemeProvider>
       </body>

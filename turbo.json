@@ -49,7 +49,7 @@
       "interactive": true
     }
   },
-  "globalEnv": ["POSTGRES_URL", "PORT"],
+  "globalEnv": ["POSTGRES_URL", "PORT", "NEXT_PUBLIC_POSTHOG_KEY"],
   "globalPassThroughEnv": [
     "NODE_ENV",
     "CI",

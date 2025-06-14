@@ -11,6 +11,7 @@ import {
   Table,
   Trash,
 } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import { z } from "zod/v4";
 
 import type { ImagePreviewType } from "@board-games/shared";
@@ -226,10 +227,11 @@ const AddGameForm = ({
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const posthog = usePostHog();
 
   const addGame = useMutation(
     trpc.game.create.mutationOptions({
-      onSuccess: async () => {
+      onSuccess: async (result) => {
         await queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
         await queryClient.invalidateQueries(
           trpc.dashboard.getGames.queryOptions(),
@@ -241,11 +243,12 @@ const AddGameForm = ({
         form.reset();
         setIsUploading(false);
         setIsOpen(false);
-        toast("Game created successfully!", {
+        toast(`Game ${result.name} created successfully!`, {
           description: "Your data has been uploaded.",
         });
       },
-      onError: () => {
+      onError: (error) => {
+        posthog.capture("game create error", { error });
         toast.error("Error", {
           description: "There was a problem adding your game.",
         });
@@ -271,6 +274,7 @@ const AddGameForm = ({
 
   const onSubmit = async (values: z.infer<typeof createGameSchema>) => {
     setIsUploading(true);
+    posthog.capture("game create begin");
     if (values.gameImg === null || values.gameImg.type === "svg") {
       addGame.mutate({
         game: {
@@ -294,6 +298,12 @@ const AddGameForm = ({
     } else {
       try {
         const imageFile = values.gameImg.file;
+
+        posthog.capture("upload begin", {
+          type: "game",
+          gameName: game.name,
+          fileName: imageFile.name,
+        });
 
         const uploadResult = await startUpload([imageFile], {
           usageType: "game",
@@ -329,7 +339,7 @@ const AddGameForm = ({
         });
       } catch (error) {
         console.error("Error uploading Image:", error);
-
+        posthog.capture("upload error", { error });
         toast.error("Error", {
           description: "There was a problem uploading your Image.",
         });

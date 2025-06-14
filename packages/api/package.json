@@ -26,6 +26,7 @@
     "@board-games/db": "workspace:*",
     "@board-games/shared": "workspace:*",
     "@trpc/server": "catalog:",
+    "posthog-node": "^5.1.0",
     "superjson": "2.2.2",
     "uploadthing": "^7.4.1",
     "zod": "catalog:"
