@@ -22,3 +22,4 @@ export { default as sharedScoresheet } from "./sharedScoresheet";
 export { default as sharedMatchPlayer } from "./sharedMatchPlayer";
 export { default as sharedLocation } from "./sharedLocation";
 export { default as friendSetting } from "./friendSetting";
+export { default as matchImage } from "./matchImage";
