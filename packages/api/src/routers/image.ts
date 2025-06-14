@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod/v4";
 
-import { image } from "@board-games/db/schema";
+import { image, matchImage } from "@board-games/db/schema";
 import { insertImageSchema } from "@board-games/db/zodSchema";
 
 import analyticsServerClient from "../analytics";
@@ -21,6 +21,25 @@ export const imageRouter = createTRPCRouter({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       }
       return dbImage;
+    }),
+  getMatchImages: protectedUserProcedure
+    .input(z.object({ matchId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const matchImages = await ctx.db.query.matchImage.findMany({
+        where: {
+          matchId: input.matchId,
+          createdBy: ctx.userId,
+        },
+        with: {
+          image: true,
+        },
+      });
+      return matchImages.map((matchImage) => ({
+        id: matchImage.id,
+        url: matchImage.image.url,
+        caption: matchImage.caption ?? "",
+        duration: matchImage.duration,
+      }));
     }),
   delete: protectedUserProcedure
     .input(z.object({ id: z.number() }))
@@ -58,5 +77,66 @@ export const imageRouter = createTRPCRouter({
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
         }
       }
+    }),
+  deleteMatchImage: protectedUserProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.transaction(async (tx) => {
+        const returnedMatchImage = await tx.query.matchImage.findFirst({
+          where: {
+            id: input.id,
+          },
+          with: {
+            image: true,
+          },
+        });
+        if (!returnedMatchImage) {
+          analyticsServerClient.capture({
+            distinctId: ctx.auth.userId ?? "",
+            event: "delete match image error",
+            properties: {
+              id: input.id,
+              error: "Not found",
+            },
+          });
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+
+        await tx
+          .delete(matchImage)
+          .where(eq(matchImage.id, returnedMatchImage.id));
+        if (
+          returnedMatchImage.image.type === "file" &&
+          returnedMatchImage.image.fileId
+        ) {
+          analyticsServerClient.capture({
+            distinctId: ctx.auth.userId ?? "",
+            event: "uploadthing begin image delete",
+            properties: {
+              imageName: returnedMatchImage.image.name,
+              imageId: returnedMatchImage.image.id,
+              fileId: returnedMatchImage.image.fileId,
+            },
+          });
+          const result = await utapi.deleteFiles(
+            returnedMatchImage.image.fileId,
+          );
+          if (!result.success) {
+            analyticsServerClient.capture({
+              distinctId: ctx.auth.userId ?? "",
+              event: "uploadthing image delete error",
+              properties: {
+                imageName: returnedMatchImage.image.name,
+                imageId: returnedMatchImage.image.id,
+                fileId: returnedMatchImage.image.fileId,
+              },
+            });
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+          }
+          await tx
+            .delete(image)
+            .where(eq(image.id, returnedMatchImage.image.id));
+        }
+      });
     }),
 });

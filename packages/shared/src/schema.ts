@@ -6,7 +6,7 @@ import {
   insertScoreSheetSchema,
 } from "@board-games/db/zodSchema";
 
-const nonNullFileSchema = z
+export const nonNullFileSchema = z
   .file()
   .max(4_000_000, {
     error: (issue) => {

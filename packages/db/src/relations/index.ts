@@ -565,6 +565,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.match.id,
       to: r.sharedMatch.matchId,
     }),
+    matchImages: r.many.matchImage({
+      from: r.match.id,
+      to: r.matchImage.matchId,
+    }),
   },
   sharedScoresheet: {
     owner: r.one.user({
@@ -700,6 +704,18 @@ export const relations = defineRelations(schema, (r) => ({
     friend: r.one.friend({
       from: r.friendSetting.friendId,
       to: r.friend.id,
+      optional: false,
+    }),
+  },
+  matchImage: {
+    match: r.one.match({
+      from: r.matchImage.matchId,
+      to: r.match.id,
+      optional: false,
+    }),
+    image: r.one.image({
+      from: r.matchImage.imageId,
+      to: r.image.id,
       optional: false,
     }),
   },

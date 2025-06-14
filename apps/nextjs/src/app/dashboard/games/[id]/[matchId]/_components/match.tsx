@@ -75,6 +75,7 @@ import { useTRPC } from "~/trpc/react";
 import { CommentDialog } from "./CommentDialog";
 import { DetailDialog } from "./DetailDialog";
 import { ManualWinnerDialog } from "./ManualWinnerDialog";
+import { MatchImages } from "./match-images";
 import { TieBreakerDialog } from "./TieBreakerDialog";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
@@ -395,7 +396,7 @@ export function Match({ matchId }: { matchId: number }) {
       const startTime = match?.startTime ? match.startTime.getTime() : 0;
       const elapsedTime = differenceInSeconds(now, startTime);
       const difference = elapsedTime - (match?.duration ?? 0);
-      if (match?.running && difference > 10) {
+      if (match?.running && difference > 20) {
         pauseMatchDuration.mutate({
           id: match.id,
         });
@@ -508,8 +509,11 @@ export function Match({ matchId }: { matchId: number }) {
             </Button>
           </div>
           <Separator />
-          <div className="flex w-full items-start">
-            <CommentDialog matchId={match.id} comment={match.comment} />
+          <div className="flex w-full flex-col gap-2">
+            <div className="flex w-full items-start">
+              <CommentDialog matchId={match.id} comment={match.comment} />
+            </div>
+            <MatchImages matchId={match.id} duration={duration} />
           </div>
         </CardFooter>
         <ManualWinnerDialog
