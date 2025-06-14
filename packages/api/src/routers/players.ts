@@ -916,9 +916,9 @@ export const playerRouter = createTRPCRouter({
             });
           }
           if (existingPlayer.imageId) {
-            const imageToDelete = await ctx.db.query.image.findFirst({
+            const imageToDelete = await tx.query.image.findFirst({
               where: {
-                id: input.id,
+                id: existingPlayer.imageId,
               },
             });
             if (!imageToDelete) {

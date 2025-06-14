@@ -1459,7 +1459,7 @@ export const gameRouter = createTRPCRouter({
               imageId = inputGame.image.imageId;
               // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             } else if (inputGame.image.type === "svg") {
-              const existingSvg = await ctx.db.query.image.findFirst({
+              const existingSvg = await transaction.query.image.findFirst({
                 where: {
                   name: inputGame.image.name,
                   type: "svg",
@@ -1469,7 +1469,7 @@ export const gameRouter = createTRPCRouter({
               if (existingSvg) {
                 imageId = existingSvg.id;
               } else {
-                const [returnedImage] = await ctx.db
+                const [returnedImage] = await transaction
                   .insert(image)
                   .values({
                     type: "svg",
