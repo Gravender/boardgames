@@ -752,7 +752,15 @@ const PlayersContent = ({
             checked: boolean,
           ) => {
             if (checked) {
-              field.onChange([...field.value, player]);
+              field.onChange([
+                ...formPlayers,
+                {
+                  id: player.id,
+                  name: player.name,
+                  teamId: null,
+                  matches: 0,
+                },
+              ]);
             } else {
               const filteredPlayers = formPlayers.filter((p) =>
                 p.playerId ? p.playerId !== player.id : p.id !== player.id,
