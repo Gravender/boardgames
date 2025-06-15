@@ -1887,7 +1887,7 @@ export const matchRouter = createTRPCRouter({
                 })
                 .where(
                   and(
-                    eq(matchPlayer.id, updatedPlayer.id),
+                    eq(matchPlayer.playerId, updatedPlayer.id),
                     eq(matchPlayer.matchId, input.match.id),
                   ),
                 );

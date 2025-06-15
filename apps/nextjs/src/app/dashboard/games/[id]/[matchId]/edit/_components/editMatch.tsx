@@ -297,7 +297,7 @@ export function EditMatchForm({
           teamId: player.teamId,
         })),
         updatedPlayers: updatedPlayers.map((player) => ({
-          id: player.id,
+          id: player.playerId ?? player.id,
           teamId: player.teamId,
         })),
         addedTeams: addedTeams.map((team) => ({
