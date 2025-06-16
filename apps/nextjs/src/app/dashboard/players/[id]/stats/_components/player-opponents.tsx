@@ -212,7 +212,9 @@ export function PlayerOpponents({
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <div className="flex justify-between text-sm">
-                                <span>vs {opponent.player.name}</span>
+                                <span>
+                                  Competitive vs {opponent.player.name}
+                                </span>
                                 <span>
                                   {Math.round(competitiveWinRate * 100)}%
                                 </span>
@@ -224,7 +226,7 @@ export function PlayerOpponents({
                             </div>
                             <div>
                               <div className="flex justify-between text-sm">
-                                <span>with {opponent.player.name}</span>
+                                <span>Coop with {opponent.player.name}</span>
                                 <span>
                                   {Math.round(cooperativeSuccessRate * 100)}%
                                 </span>
@@ -237,16 +239,18 @@ export function PlayerOpponents({
                           </div>
                           <div className="mt-2 text-xs text-muted-foreground">
                             {cooperativeSuccessRate > competitiveWinRate
-                              ? `Better teammates than opponents (+${Math.round((cooperativeSuccessRate - competitiveWinRate) * 100)}%)`
+                              ? `Better coop teammates than opponents (+${Math.round((cooperativeSuccessRate - competitiveWinRate) * 100)}%)`
                               : competitiveWinRate > cooperativeSuccessRate
-                                ? `Better as opponents than teammates (+${Math.round((competitiveWinRate - cooperativeSuccessRate) * 100)}%)`
+                                ? `Better as opponents than in cooperative games (+${Math.round((competitiveWinRate - cooperativeSuccessRate) * 100)}%)`
                                 : "Equal performance as teammates and opponents"}
                           </div>
                         </div>
                       ) : totalCompetitiveGames > 0 ? (
                         <div className="flex flex-col gap-2">
                           <div className="flex justify-between text-sm">
-                            <span>Win Rate vs {opponent.player.name}</span>
+                            <span>
+                              Competitive Win Rate vs {opponent.player.name}
+                            </span>
 
                             <span>{Math.round(competitiveWinRate * 100)}%</span>
                           </div>
@@ -258,7 +262,9 @@ export function PlayerOpponents({
                       ) : (
                         <div className="flex flex-col gap-2">
                           <div className="flex justify-between text-sm">
-                            <span>Win Rate with {opponent.player.name}</span>
+                            <span>
+                              Cooperative Win Rate with {opponent.player.name}
+                            </span>
 
                             <span>
                               {Math.round(cooperativeSuccessRate * 100)}%

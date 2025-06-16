@@ -37,7 +37,7 @@ const playerSchema = z.object({
   score: z.number(),
   teamId: z.number().nullable(),
 });
-export const ManualWinnerPlayerSchema = z.array(playerSchema).min(1);
+export const ManualWinnerPlayerSchema = z.array(playerSchema);
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
 type Scoresheet = Match["scoresheet"];
 export function ManualWinnerDialog({
