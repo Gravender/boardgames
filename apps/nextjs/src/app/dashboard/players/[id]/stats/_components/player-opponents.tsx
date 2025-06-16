@@ -242,7 +242,7 @@ export function PlayerOpponents({
                               ? `Better coop teammates than opponents (+${Math.round((cooperativeSuccessRate - competitiveWinRate) * 100)}%)`
                               : competitiveWinRate > cooperativeSuccessRate
                                 ? `Better as opponents than in cooperative games (+${Math.round((competitiveWinRate - cooperativeSuccessRate) * 100)}%)`
-                                : "Equal performance as teammates and opponents"}
+                                : "Equal performance in cooperative games and competitive games"}
                           </div>
                         </div>
                       ) : totalCompetitiveGames > 0 ? (
