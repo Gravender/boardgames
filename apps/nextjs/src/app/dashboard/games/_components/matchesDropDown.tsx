@@ -55,13 +55,9 @@ export function MatchDropDown({ match }: { match: Game["matches"][number] }) {
           queryClient.invalidateQueries(trpc.game.getGames.queryOptions()),
           queryClient.invalidateQueries(trpc.player.pathFilter()),
           queryClient.invalidateQueries(trpc.dashboard.pathFilter()),
-          match.type === "original"
-            ? queryClient.invalidateQueries(
-                trpc.game.getGame.queryOptions({ id: match.gameId }),
-              )
-            : queryClient.invalidateQueries(
-                trpc.sharing.getSharedGame.queryOptions({ id: match.gameId }),
-              ),
+          queryClient.invalidateQueries(
+            trpc.game.getGame.queryOptions({ id: match.gameId }),
+          ),
         ]);
         setIsDeleteDialogOpen(false);
       },

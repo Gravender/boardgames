@@ -475,7 +475,7 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
 
                         {/* Dropdown menu */}
                         <div className="absolute right-4 top-4">
-                          <MatchDropDown gameId={match.id} match={match} />
+                          <MatchDropDown match={match} />
                         </div>
                       </div>
 
