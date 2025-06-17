@@ -56,13 +56,15 @@ export function MatchDropDown({
   const queryClient = useQueryClient();
   const deleteMatch = useMutation(
     trpc.match.deleteMatch.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
-        void queryClient.invalidateQueries(trpc.player.pathFilter());
-        void queryClient.invalidateQueries(trpc.dashboard.pathFilter());
-        void queryClient.invalidateQueries(
-          trpc.game.getGame.queryOptions({ id: gameId }),
-        );
+      onSuccess: async () => {
+        await Promise.all([
+          queryClient.invalidateQueries(trpc.game.getGames.queryOptions()),
+          queryClient.invalidateQueries(trpc.player.pathFilter()),
+          queryClient.invalidateQueries(trpc.dashboard.pathFilter()),
+          queryClient.invalidateQueries(
+            trpc.game.getGame.queryOptions({ id: gameId }),
+          ),
+        ]);
         setIsDeleteDialogOpen(false);
       },
     }),
