@@ -5,8 +5,18 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MoreVertical } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
-import { Button } from "@board-games/ui/button";
-import { Dialog, DialogTrigger } from "@board-games/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@board-games/ui/alert-dialog";
+import { Button, buttonVariants } from "@board-games/ui/button";
+import { Dialog } from "@board-games/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +32,8 @@ export function LocationDropDown({
 }: {
   data: RouterOutputs["location"]["getLocations"][number];
 }) {
+  const [isEditLocationOpen, setIsEditLocationOpen] = useState(false);
+  const [isDeleteLocationOpen, setIsDeleteLocationOpen] = useState(false);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const editDefaultLocation = useMutation(
@@ -60,9 +72,9 @@ export function LocationDropDown({
       });
     }
   };
-  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -75,19 +87,46 @@ export function LocationDropDown({
             {data.isDefault ? "Unset Default" : "Set Default"}
           </DropdownMenuItem>
           {(data.type === "original" || data.permission === "edit") && (
-            <DialogTrigger asChild>
-              <DropdownMenuItem>Edit</DropdownMenuItem>
-            </DialogTrigger>
+            <DropdownMenuItem onClick={() => setIsEditLocationOpen(true)}>
+              Edit
+            </DropdownMenuItem>
           )}
           <DropdownMenuItem
             className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
-            onClick={onDelete}
+            onClick={() => setIsDeleteLocationOpen(true)}
           >
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <EditLocationDialog location={data} setOpen={setIsOpen} />
-    </Dialog>
+      <Dialog open={isEditLocationOpen} onOpenChange={setIsEditLocationOpen}>
+        <EditLocationDialog location={data} setOpen={setIsEditLocationOpen} />
+      </Dialog>
+      <AlertDialog
+        open={isDeleteLocationOpen}
+        onOpenChange={setIsDeleteLocationOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {`Are you absolutely sure you want to delete ${data.name}?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your
+              location.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: "destructive" })}
+              onClick={() => onDelete()}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

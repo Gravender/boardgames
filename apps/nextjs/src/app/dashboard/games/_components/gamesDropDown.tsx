@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -11,7 +12,17 @@ import {
 } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
-import { Button } from "@board-games/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@board-games/ui/alert-dialog";
+import { Button, buttonVariants } from "@board-games/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,16 +39,18 @@ export function GamesDropDown({
 }: {
   data: RouterOutputs["game"]["getGames"][number];
 }) {
+  const [isDeleteGameDialogOpen, setIsDeleteGameDialogOpen] = useState(false);
+
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const deleteGame = useMutation(
     trpc.game.deleteGame.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
-        await queryClient.invalidateQueries(
-          trpc.player.getPlayers.queryOptions(),
-        );
-        await queryClient.invalidateQueries(trpc.dashboard.pathFilter());
+        await Promise.all([
+          queryClient.invalidateQueries(trpc.game.getGames.queryOptions()),
+          queryClient.invalidateQueries(trpc.player.getPlayers.queryOptions()),
+          queryClient.invalidateQueries(trpc.dashboard.pathFilter()),
+        ]);
       },
     }),
   );
@@ -45,73 +58,100 @@ export function GamesDropDown({
     deleteGame.mutate({ id: data.id });
   };
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <span className="sr-only">Open menu</span>
-          <MoreVertical className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Game Actions</DropdownMenuLabel>
-        <DropdownMenuSeparator />
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <span className="sr-only">Open menu</span>
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Game Actions</DropdownMenuLabel>
+          <DropdownMenuSeparator />
 
-        <DropdownMenuItem asChild>
-          <Link
-            prefetch={true}
-            href={`/dashboard/games/${data.type === "shared" ? "shared/" : ""}${data.id}/edit`}
-            className="flex items-center gap-2"
-          >
-            <PencilIcon className="mr-2 h-4 w-4" />
-            Edit
-          </Link>
-        </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              prefetch={true}
+              href={`/dashboard/games/${data.type === "shared" ? "shared/" : ""}${data.id}/edit`}
+              className="flex items-center gap-2"
+            >
+              <PencilIcon className="mr-2 h-4 w-4" />
+              Edit
+            </Link>
+          </DropdownMenuItem>
 
-        <DropdownMenuItem asChild>
-          <Link
-            prefetch={true}
-            href={
-              data.type === "shared"
-                ? `/dashboard/games/shared/${data.id}/stats`
-                : `/dashboard/games/${data.id}/stats`
-            }
-            className="flex items-center gap-2"
-          >
-            <BarChart2Icon className="mr-2 h-4 w-4" />
-            View Stats
-          </Link>
-        </DropdownMenuItem>
-        {/* <DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              prefetch={true}
+              href={
+                data.type === "shared"
+                  ? `/dashboard/games/shared/${data.id}/stats`
+                  : `/dashboard/games/${data.id}/stats`
+              }
+              className="flex items-center gap-2"
+            >
+              <BarChart2Icon className="mr-2 h-4 w-4" />
+              View Stats
+            </Link>
+          </DropdownMenuItem>
+          {/* <DropdownMenuItem>
           <div className="flex items-center justify-between gap-2">
             <BookOpenIcon className="mr-2 h-4 w-4" />
             <span>View Rules</span>
           </div>
         </DropdownMenuItem> */}
-        {data.type === "original" && (
-          <>
-            <DropdownMenuItem asChild>
-              <Link
-                prefetch={true}
-                href={`/dashboard/games/${data.id}/share`}
-                className="flex items-center gap-2"
+          {data.type === "original" && (
+            <>
+              <DropdownMenuItem asChild>
+                <Link
+                  prefetch={true}
+                  href={`/dashboard/games/${data.id}/share`}
+                  className="flex items-center gap-2"
+                >
+                  <Link2Icon className="mr-2 h-4 w-4" />
+                  Share
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
+                onClick={() => setIsDeleteGameDialogOpen(true)}
               >
-                <Link2Icon className="mr-2 h-4 w-4" />
-                Share
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
-              onClick={onDelete}
+                <div className="flex items-center gap-2">
+                  <Trash2Icon className="mr-2 h-4 w-4" />
+                  <span>Delete Game</span>
+                </div>
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <AlertDialog
+        open={isDeleteGameDialogOpen}
+        onOpenChange={setIsDeleteGameDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {`Are you absolutely sure you want to delete ${data.name}?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your
+              match.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: "destructive" })}
+              onClick={() => onDelete()}
             >
-              <div className="flex items-center gap-2">
-                <Trash2Icon className="mr-2 h-4 w-4" />
-                <span>Delete Game</span>
-              </div>
-            </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
