@@ -1979,16 +1979,35 @@ export const gameRouter = createTRPCRouter({
             duration: play.durationMin,
             isFinished: true, // No direct mapping
             comment: play.comments,
-            location: input.locations.find(
-              (loc) => loc.id === play.locationRefId,
-            ) && {
-              name: input.locations.find((loc) => loc.id === play.locationRefId)
-                ?.name,
-            },
+            locationRefId: play.locationRefId,
             usesTeams: play.usesTeams,
           })),
       }));
-
+      const createdLocations: {
+        bggLocationId: number;
+        name: string;
+        trackerId: number;
+      }[] = [];
+      for (const locationToInsert of input.locations) {
+        const [insertedLocation] = await ctx.db
+          .insert(location)
+          .values({
+            name: locationToInsert.name,
+            createdBy: ctx.userId,
+          })
+          .returning();
+        if (!insertedLocation) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create location",
+          });
+        }
+        createdLocations.push({
+          bggLocationId: locationToInsert.id,
+          name: insertedLocation.name,
+          trackerId: insertedLocation.id,
+        });
+      }
       for (const mappedGame of mappedGames) {
         const [returningGame] = await ctx.db
           .insert(game)
@@ -2037,21 +2056,9 @@ export const gameRouter = createTRPCRouter({
           scoresheetId: returnedScoresheet.id,
         });
         for (const [index, play] of mappedGame.plays.entries()) {
-          const currentLocations = await ctx.db.query.location.findMany();
-          const currentLocation =
-            play.location && "name" in play.location && play.location.name
-              ? play.location
-              : undefined;
-          let locationId = currentLocations.find(
-            (location) => location.name === currentLocation?.name,
-          )?.id;
-          if (!locationId && currentLocation?.name) {
-            const [newLocation] = await ctx.db
-              .insert(location)
-              .values({ createdBy: ctx.userId, name: currentLocation.name })
-              .returning();
-            locationId = newLocation?.id;
-          }
+          const currentLocation = createdLocations.find(
+            (location) => location.bggLocationId === play.locationRefId,
+          );
           const [playScoresheet] = await ctx.db
             .insert(scoresheet)
             .values({
@@ -2087,7 +2094,7 @@ export const gameRouter = createTRPCRouter({
             name: `${mappedGame.name} #${index + 1}`,
             date: new Date(play.dateString),
             finished: play.isFinished,
-            locationId: locationId,
+            locationId: currentLocation?.trackerId,
           };
           const [returningMatch] = await ctx.db
             .insert(match)

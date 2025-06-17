@@ -33,7 +33,7 @@ function extractUserData(user: User): SerializableUser {
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: { tab?: string };
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const user = await currentUser();
 
@@ -42,7 +42,7 @@ export default async function ProfilePage({
   }
 
   const serializableUser = extractUserData(user);
-  const defaultTab = searchParams.tab ?? "details";
+  const defaultTab = (await searchParams).tab ?? "details";
 
   return (
     <div className="container max-w-5xl py-8">
