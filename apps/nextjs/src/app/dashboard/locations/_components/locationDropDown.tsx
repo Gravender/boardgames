@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
 import { Button, buttonVariants } from "@board-games/ui/button";
-import { Dialog, DialogTrigger } from "@board-games/ui/dialog";
+import { Dialog } from "@board-games/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,9 +87,9 @@ export function LocationDropDown({
             {data.isDefault ? "Unset Default" : "Set Default"}
           </DropdownMenuItem>
           {(data.type === "original" || data.permission === "edit") && (
-            <DialogTrigger asChild>
-              <DropdownMenuItem>Edit</DropdownMenuItem>
-            </DialogTrigger>
+            <DropdownMenuItem onClick={() => setIsEditLocationOpen(true)}>
+              Edit
+            </DropdownMenuItem>
           )}
           <DropdownMenuItem
             className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"

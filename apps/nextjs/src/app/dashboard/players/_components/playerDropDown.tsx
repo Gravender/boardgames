@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
 import { Button, buttonVariants } from "@board-games/ui/button";
-import { Dialog, DialogTrigger } from "@board-games/ui/dialog";
+import { Dialog } from "@board-games/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,9 +72,9 @@ export function PlayerDropDown({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {canEdit && (
-            <DialogTrigger asChild>
-              <DropdownMenuItem>Edit</DropdownMenuItem>
-            </DialogTrigger>
+            <DropdownMenuItem onClick={() => setIsEditPlayerOpen(true)}>
+              Edit
+            </DropdownMenuItem>
           )}
           <DropdownMenuItem asChild>
             <Link
