@@ -467,10 +467,8 @@ export default function PlayerRequestPage({
                                                       <div className="flex items-center gap-2">
                                                         <PlayerImage
                                                           className="size-6"
-                                                          image={
-                                                            player.item.image
-                                                          }
-                                                          alt={player.item.name}
+                                                          image={fPlayer.image}
+                                                          alt={fPlayer.name}
                                                         />
                                                         <div>
                                                           <p>{fPlayer.name}</p>
