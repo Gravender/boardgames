@@ -5,10 +5,10 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { BarChart2, Share2, UserX } from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 
+import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 import { FriendSettingsDialog } from "./friend-settings-dialog";
 
@@ -24,16 +24,11 @@ export default function FriendProfilePage({ friendId }: { friendId: number }) {
     <div className="space-y-8">
       <Card>
         <CardHeader className="flex flex-row items-center gap-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage
-              src={friend.clerkUser.image?.url ?? ""}
-              alt={friend.clerkUser.name}
-            />
-            <AvatarFallback>
-              {(friend.clerkUser.name.split(" ")[0]?.substring(0, 1) ?? "") +
-                friend.clerkUser.name.split(" ")[1]?.substring(0, 1)}
-            </AvatarFallback>
-          </Avatar>
+          <PlayerImage
+            className="size-16"
+            image={friend.clerkUser.image}
+            alt={friend.clerkUser.name}
+          />
           <div className="flex-grow">
             <CardTitle>{friend.clerkUser.name}</CardTitle>
             <p className="text-sm text-muted-foreground">

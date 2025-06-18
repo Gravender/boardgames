@@ -3,12 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { User } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
 import { insertPlayerSchema } from "@board-games/db/zodSchema";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { CardFooter } from "@board-games/ui/card";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -26,6 +24,7 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
+import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 
@@ -157,15 +156,10 @@ export default function SelectPlayersForm({
                                 </FormControl>
                                 <FormLabel className="flex w-full items-center justify-between gap-2 text-sm font-normal">
                                   <div className="flex items-center gap-2">
-                                    <Avatar>
-                                      <AvatarImage
-                                        src={player.image?.url ?? ""}
-                                        alt={player.name}
-                                      />
-                                      <AvatarFallback className="bg-slate-300">
-                                        <User />
-                                      </AvatarFallback>
-                                    </Avatar>
+                                    <PlayerImage
+                                      image={player.image}
+                                      alt={player.name}
+                                    />
                                     <span className="text-lg font-semibold">
                                       {player.name}
                                     </span>

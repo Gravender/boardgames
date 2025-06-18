@@ -16,7 +16,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent } from "@board-games/ui/card";
 import {
@@ -28,6 +27,7 @@ import {
 } from "@board-games/ui/dropdown-menu";
 import { toast } from "@board-games/ui/toast";
 
+import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 
 interface FriendCardProps {
@@ -77,12 +77,11 @@ export function FriendCard({ friend }: FriendCardProps) {
             href={`/dashboard/friends/${friend.id}`}
             className="flex items-center gap-4"
           >
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={friend.image?.url ?? ""} alt={friend.name} />
-              <AvatarFallback>
-                {friend.name.substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <PlayerImage
+              image={friend.image}
+              alt={friend.name}
+              className="size-10"
+            />
 
             <div className="flex-grow">
               <p className="font-medium">{friend.name}</p>

@@ -1,11 +1,10 @@
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
 import { imageSchema } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Checkbox } from "@board-games/ui/checkbox";
 import {
@@ -28,6 +27,7 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
+import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 
 const playerSchema = z.object({
@@ -255,16 +255,10 @@ function Content({
                                 </FormControl>
                                 <FormLabel className="flex w-full items-center justify-between gap-2 text-sm font-normal">
                                   <div className="flex items-center gap-2">
-                                    <Avatar>
-                                      <AvatarImage
-                                        className="object-cover"
-                                        src={player.image?.url ?? ""}
-                                        alt={player.name}
-                                      />
-                                      <AvatarFallback className="bg-slate-300">
-                                        <User />
-                                      </AvatarFallback>
-                                    </Avatar>
+                                    <PlayerImage
+                                      image={player.image}
+                                      alt={player.name}
+                                    />
                                     <span className="text-lg font-semibold">
                                       {player.name}
                                     </span>

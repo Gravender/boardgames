@@ -1,11 +1,12 @@
-import { Award, Medal, Trophy, User, Users } from "lucide-react";
+import { Award, Medal, Trophy, Users } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { getOrdinalSuffix } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { cn } from "@board-games/ui/utils";
+
+import { PlayerImage } from "~/components/player-image";
 
 type SharedMatchStats =
   | NonNullable<RouterOutputs["match"]["getSummary"]>
@@ -149,15 +150,11 @@ export default function ShareMatchResults({
                   {data.players.map((player) => {
                     return (
                       <li key={player.id} className="flex items-center">
-                        <Avatar className="mr-3 h-8 w-8">
-                          <AvatarImage
-                            src={player.image?.url ?? ""}
-                            alt={player.name}
-                          />
-                          <AvatarFallback>
-                            <User />
-                          </AvatarFallback>
-                        </Avatar>
+                        <PlayerImage
+                          className="mr-3 h-8 w-8"
+                          image={player.image}
+                          alt={player.name}
+                        />
 
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
@@ -190,13 +187,11 @@ export default function ShareMatchResults({
                   data.winner ? "bg-yellow-50 dark:bg-yellow-950/20" : "",
                 )}
               >
-                <Avatar className="mr-4 h-8 w-8">
-                  <AvatarImage src={data.image?.url ?? ""} alt={data.name} />
-
-                  <AvatarFallback>
-                    <User />
-                  </AvatarFallback>
-                </Avatar>
+                <PlayerImage
+                  className="mr-4 h-8 w-8"
+                  image={data.image}
+                  alt={data.name}
+                />
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">

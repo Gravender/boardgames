@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, User } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import {
   Table,
@@ -14,6 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@board-games/ui/table";
+
+import { PlayerImage } from "~/components/player-image";
 
 type Players = NonNullable<RouterOutputs["game"]["getGameStats"]>["players"];
 type SortField = "name" | "plays" | "wins" | "winRate";
@@ -99,16 +100,11 @@ export function PlayerDetails({ data }: { data: Players }) {
               <TableRow key={player.id}>
                 <TableCell className="p-2 sm:p-4">
                   <div className="flex w-full items-center gap-2 text-xs sm:gap-4">
-                    <Avatar className="h-7 w-7 sm:h-10 sm:w-10">
-                      <AvatarImage
-                        className="object-cover"
-                        src={player.image?.url ?? ""}
-                        alt={player.name}
-                      />
-                      <AvatarFallback className="bg-slate-300">
-                        <User />
-                      </AvatarFallback>
-                    </Avatar>
+                    <PlayerImage
+                      className="h-7 w-7 sm:h-10 sm:w-10"
+                      image={player.image}
+                      alt={player.name}
+                    />
                     <span className="font-medium sm:font-semibold">
                       {player.name}
                     </span>

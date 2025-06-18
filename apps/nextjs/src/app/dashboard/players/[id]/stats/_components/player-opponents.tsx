@@ -3,7 +3,6 @@ import { ChevronDown, ChevronUp, Shield, Swords } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { formatDuration } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import {
@@ -16,6 +15,7 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
 
 import { GameImage } from "~/components/game-image";
+import { PlayerImage } from "~/components/player-image";
 
 type Player = RouterOutputs["player"]["getPlayer"];
 type Games = Player["games"];
@@ -116,15 +116,10 @@ export function PlayerOpponents({
                     >
                       <div className="mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage
-                              src={opponent.player.image?.url ?? ""}
-                              alt={opponent.player.name}
-                            />
-                            <AvatarFallback>
-                              {opponent.player.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
+                          <PlayerImage
+                            image={opponent.player.image}
+                            alt={opponent.player.name}
+                          />
 
                           <div>
                             <div className="font-medium">

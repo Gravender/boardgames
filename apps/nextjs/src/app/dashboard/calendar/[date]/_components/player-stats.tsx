@@ -15,13 +15,14 @@ import {
 
 import type { RouterOutputs } from "@board-games/api";
 import { formatDuration, getOrdinalSuffix } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { Progress } from "@board-games/ui/progress";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
+
+import { PlayerImage } from "~/components/player-image";
 
 type Players = NonNullable<
   RouterOutputs["match"]["getMatchesByDate"]
@@ -53,13 +54,7 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage
-                    src={player.image?.url ?? ""}
-                    alt={player.name}
-                  />
-                  <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
-                </Avatar>
+                <PlayerImage image={player.image} alt={player.name} />
                 <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border bg-background">
                   {getRankBadge(rank)}
                 </div>

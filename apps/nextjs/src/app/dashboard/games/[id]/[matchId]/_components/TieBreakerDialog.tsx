@@ -1,6 +1,6 @@
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { z } from "zod/v4";
 
 import { imageSchema } from "@board-games/shared";
@@ -12,7 +12,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import {
   Form,
@@ -34,6 +33,7 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
+import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 
@@ -248,16 +248,10 @@ function Content({
                                   </div>
                                   {player.teamId === null ? (
                                     <>
-                                      <Avatar>
-                                        <AvatarImage
-                                          className="object-cover"
-                                          src={player.image?.url ?? ""}
-                                          alt={player.name}
-                                        />
-                                        <AvatarFallback className="bg-slate-300">
-                                          <User />
-                                        </AvatarFallback>
-                                      </Avatar>
+                                      <PlayerImage
+                                        image={player.image}
+                                        alt={player.name}
+                                      />
                                       <span className="text-lg font-semibold">
                                         {player.name}
                                       </span>
