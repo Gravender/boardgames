@@ -803,8 +803,8 @@ export const friendsRouter = createTRPCRouter({
               clerkUser.imageUrl !== ""
                 ? {
                     name: getFullName(clerkUser),
-                    type: "file",
-                    usageType: "player",
+                    type: "file" as const,
+                    usageType: "player" as const,
                     url: clerkUser.imageUrl,
                   }
                 : null,
@@ -914,8 +914,8 @@ export const friendsRouter = createTRPCRouter({
             clerkUser.imageUrl !== ""
               ? {
                   name: getFullName(clerkUser),
-                  type: "file",
-                  usageType: "player",
+                  type: "file" as const,
+                  usageType: "player" as const,
                   url: clerkUser.imageUrl,
                 }
               : null,
