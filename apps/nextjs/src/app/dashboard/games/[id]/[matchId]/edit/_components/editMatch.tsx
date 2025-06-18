@@ -20,7 +20,6 @@ import {
   insertPlayerSchema,
 } from "@board-games/db/zodSchema";
 import { fileSchema } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Calendar } from "@board-games/ui/calendar";
@@ -70,6 +69,7 @@ import {
 import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
+import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
@@ -805,20 +805,19 @@ const PlayersContent = ({
                         </FormControl>
                         <FormLabel className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2">
                           <div className="flex items-center gap-1 sm:gap-2">
-                            <Avatar>
-                              <AvatarImage
-                                className="object-cover"
-                                src={
-                                  "image" in player
-                                    ? (player.image?.url ?? "")
-                                    : player.imageUrl
-                                }
-                                alt={player.name}
-                              />
-                              <AvatarFallback className="bg-slate-300">
-                                <User />
-                              </AvatarFallback>
-                            </Avatar>
+                            <PlayerImage
+                              image={
+                                "image" in player
+                                  ? player.image
+                                  : {
+                                      url: player.imageUrl,
+                                      type: "file",
+                                      usageType: "player",
+                                      name: player.name,
+                                    }
+                              }
+                              alt={player.name}
+                            />
                             <div>
                               <div className="text-sm font-medium">
                                 {player.name}

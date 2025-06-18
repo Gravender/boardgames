@@ -21,7 +21,6 @@ import {
   insertPlayerSchema,
 } from "@board-games/db/zodSchema";
 import { fileSchema } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Calendar } from "@board-games/ui/calendar";
@@ -69,6 +68,7 @@ import {
 import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
+import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
@@ -969,20 +969,21 @@ const AddPlayersForm = ({
                                     </FormControl>
                                     <FormLabel className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2">
                                       <div className="flex items-center gap-1 sm:gap-2">
-                                        <Avatar className="h-8 w-8">
-                                          {player.imageUrl ? (
-                                            <AvatarImage
-                                              src={player.imageUrl}
-                                              alt={player.name}
-                                            />
-                                          ) : (
-                                            <AvatarFallback>
-                                              {player.name
-                                                .substring(0, 2)
-                                                .toUpperCase()}
-                                            </AvatarFallback>
-                                          )}
-                                        </Avatar>
+                                        <PlayerImage
+                                          className="h-8 w-8"
+                                          image={
+                                            player.imageUrl
+                                              ? {
+                                                  url: player.imageUrl,
+                                                  type: "file",
+                                                  usageType: "player",
+                                                  name: player.name,
+                                                }
+                                              : null
+                                          }
+                                          alt={player.name}
+                                        />
+
                                         <div>
                                           <div className="flex items-center gap-2 text-sm font-medium">
                                             <span>{player.name}</span>

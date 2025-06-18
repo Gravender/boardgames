@@ -1,12 +1,11 @@
 "use client";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { User } from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 
+import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 
 export function PlayersCard() {
@@ -23,17 +22,7 @@ export function PlayersCard() {
         <div className="flex w-full flex-col gap-2">
           {data.map((player) => (
             <div key={player.id} className="flex w-full gap-2">
-              <Avatar className="h-10 w-10 shadow">
-                <AvatarImage
-                  className="object-cover"
-                  src={player.image?.url ?? ""}
-                  alt={player.name}
-                />
-                <AvatarFallback className="bg-slate-300">
-                  <User />
-                </AvatarFallback>
-              </Avatar>
-
+              <PlayerImage image={player.image} alt={player.name} />
               <div className="flex w-full items-center justify-between">
                 <div className="flex flex-col items-start">
                   <h2 className="text-md text-left font-semibold">

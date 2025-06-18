@@ -27,7 +27,6 @@ import {
 import type { RouterOutputs } from "@board-games/api";
 import type { ChartConfig } from "@board-games/ui/chart";
 import { formatDuration } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import {
@@ -47,6 +46,7 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 
 import { FormattedDate } from "~/components/formatted-date";
 import { GameImage } from "~/components/game-image";
+import { PlayerImage } from "~/components/player-image";
 
 type Player = RouterOutputs["player"]["getPlayer"];
 export function PlayerOverview({ player }: { player: Player }) {
@@ -475,13 +475,7 @@ export function PlayerOverview({ player }: { player: Player }) {
                   key={`${teammate.id}-${teammate.type}`}
                   prefetch={true}
                 >
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage
-                      src={teammate.image?.url ?? ""}
-                      alt={teammate.name}
-                    />
-                    <AvatarFallback>{teammate.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
+                  <PlayerImage image={teammate.image} alt={teammate.name} />
 
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{teammate.name}</div>

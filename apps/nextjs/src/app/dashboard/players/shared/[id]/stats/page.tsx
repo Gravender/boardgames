@@ -4,9 +4,9 @@ import { format } from "date-fns";
 import { Clock, Gamepad2, Medal, Trophy } from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Card, CardContent } from "@board-games/ui/card";
 
+import { PlayerImage } from "~/components/player-image";
 import { caller } from "~/trpc/server";
 import { PlayerTabs } from "./_components/player-tabs";
 
@@ -55,15 +55,11 @@ export default async function Page({ params }: Props) {
           <Card>
             <CardContent className="p-4 md:p-6">
               <div className="flex flex-col items-center gap-4 md:flex-row md:items-start md:gap-6 md:text-left">
-                <Avatar className="h-24 w-24 md:h-32 md:w-32">
-                  <AvatarImage
-                    src={player.image?.url ?? ""}
-                    alt={player.name}
-                  />
-                  <AvatarFallback className="text-2xl">
-                    {player.name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+                <PlayerImage
+                  className="size-24 md:size-32"
+                  image={player.image}
+                  alt={player.name}
+                />
 
                 <div className="min-w-0 flex-1">
                   <div className="mb-2 flex flex-col gap-2 md:flex-row md:items-center">

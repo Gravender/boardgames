@@ -4,15 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { User } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
+import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 import { AddPlayerDialog } from "./addPlayerDialog";
 import { PlayerDropDown } from "./playerDropDown";
@@ -56,16 +55,11 @@ export function PlayersTable({
                     href={`/dashboard/players/${player.type === "shared" ? "shared/" : ""}${player.id}/stats`}
                   >
                     <div className="flex items-center gap-2">
-                      <Avatar className="h-14 w-14 shadow">
-                        <AvatarImage
-                          className="object-cover"
-                          src={player.image?.url ?? ""}
-                          alt={player.name}
-                        />
-                        <AvatarFallback className="bg-slate-300">
-                          <User />
-                        </AvatarFallback>
-                      </Avatar>
+                      <PlayerImage
+                        className="size-14"
+                        image={player.image}
+                        alt={player.name}
+                      />
                       <div className="flex flex-col gap-2">
                         <div className="flex w-full items-center justify-between">
                           <div className="flex flex-col">

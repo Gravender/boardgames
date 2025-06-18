@@ -10,7 +10,6 @@ import {
   MapPinIcon,
   Medal,
   Trophy,
-  User,
   Users,
 } from "lucide-react";
 import {
@@ -26,7 +25,6 @@ import {
 } from "recharts";
 
 import { formatDuration, getOrdinalSuffix } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import {
   Card,
@@ -46,6 +44,7 @@ import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
 import { GameImage } from "~/components/game-image";
+import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 import { MatchDurationTrendChart } from "../../../../_components/match-duration-trend-chart";
 import { PlayerStatsTable } from "../../../../_components/player-stats-table";
@@ -309,15 +308,11 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                                           key={player.id}
                                           className="flex items-center"
                                         >
-                                          <Avatar className="mr-3 h-8 w-8">
-                                            <AvatarImage
-                                              src={player.image?.url ?? ""}
-                                              alt={player.name}
-                                            />
-                                            <AvatarFallback>
-                                              <User />
-                                            </AvatarFallback>
-                                          </Avatar>
+                                          <PlayerImage
+                                            className="mr-3 h-8 w-8"
+                                            image={player.image}
+                                            alt={player.name}
+                                          />
 
                                           <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2">
@@ -350,15 +345,12 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                                       : "",
                                   )}
                                 >
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarImage
-                                      src={player.image?.url ?? ""}
-                                      alt={player.name}
-                                    />
-                                    <AvatarFallback>
-                                      {player.name.charAt(0)}
-                                    </AvatarFallback>
-                                  </Avatar>
+                                  <PlayerImage
+                                    className="h-8 w-8"
+                                    image={player.image}
+                                    alt={player.name}
+                                  />
+
                                   <div className="flex items-center gap-2">
                                     <p className="font-medium">{player.name}</p>
                                     <div className="flex items-center gap-2">

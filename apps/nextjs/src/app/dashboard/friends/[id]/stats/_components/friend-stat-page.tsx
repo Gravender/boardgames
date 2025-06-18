@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import {
   Card,
@@ -27,6 +26,7 @@ import { Separator } from "@board-games/ui/separator";
 
 import { FormattedDate } from "~/components/formatted-date";
 import { GameImage } from "~/components/game-image";
+import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 import { GameDetails } from "./game-details";
 
@@ -51,22 +51,11 @@ export function FriendStatsPage({ friendId }: { friendId: number }) {
           <CardTitle>Summary</CardTitle>
           <CardDescription>
             <div className="flex w-full flex-col items-center justify-center gap-2 text-secondary-foreground">
-              <Avatar className="h-16 w-16">
-                <AvatarImage
-                  src={friend.clerkUser.image?.url ?? ""}
-                  alt={friend.clerkUser.name}
-                />
-                <AvatarFallback>
-                  {friend.clerkUser.name
-                    .split(" ")
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map((part) => part[0])
-                    .join("") ||
-                    friend.clerkUser.name.substring(0, 2) ||
-                    "??"}
-                </AvatarFallback>
-              </Avatar>
+              <PlayerImage
+                image={friend.clerkUser.image}
+                alt={friend.clerkUser.name}
+                className="size-16"
+              />
               <span className="text-xl font-semibold">
                 {friend.clerkUser.name}
               </span>

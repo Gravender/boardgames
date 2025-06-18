@@ -4,12 +4,12 @@ import { Calendar, Clock, MapPin, Trophy, Users } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { formatDuration } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 
 import { FormattedDate } from "~/components/formatted-date";
+import { PlayerImage } from "~/components/player-image";
 
 type Player = RouterOutputs["player"]["getPlayer"];
 export function PlayerTeams({ player }: { player: Player }) {
@@ -106,15 +106,10 @@ export function PlayerTeams({ player }: { player: Player }) {
                     className="flex items-center justify-between gap-3 rounded-lg border p-3"
                   >
                     <div className="flex items-center gap-2">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage
-                          src={teammate.player.image?.url ?? ""}
-                          alt={teammate.player.name}
-                        />
-                        <AvatarFallback>
-                          {teammate.player.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <PlayerImage
+                        image={teammate.player.image}
+                        alt={teammate.player.name}
+                      />
                       <div className="flex flex-col">
                         <div className="font-medium">
                           {teammate.player.name}
@@ -220,15 +215,11 @@ export function PlayerTeams({ player }: { player: Player }) {
                                 key={`${teammate.id}-${teammate.type}`}
                                 className="flex items-center gap-2 rounded-lg border p-2"
                               >
-                                <Avatar className="h-6 w-6">
-                                  <AvatarImage
-                                    src={teammate.image?.url ?? ""}
-                                    alt={teammate.name}
-                                  />
-                                  <AvatarFallback className="text-xs">
-                                    {teammate.name.charAt(0)}
-                                  </AvatarFallback>
-                                </Avatar>
+                                <PlayerImage
+                                  className="h-6 w-6"
+                                  image={teammate.image}
+                                  alt={teammate.name}
+                                />
                                 <span className="text-sm">{teammate.name}</span>
                               </div>
                             ))}

@@ -17,7 +17,6 @@ import {
 
 import type { RouterOutputs } from "@board-games/api";
 import { formatDuration } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent } from "@board-games/ui/card";
@@ -30,6 +29,7 @@ import {
 } from "@board-games/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 
+import { PlayerImage } from "~/components/player-image";
 import { PlayerGames } from "./player-games";
 import { PlayerOpponents } from "./player-opponents";
 import { PlayerOverview } from "./player-overview";
@@ -53,13 +53,11 @@ export function PlayerTabs({ player }: { player: Player }) {
       <Card>
         <CardContent className="p-4 md:p-6">
           <div className="flex flex-col items-center gap-4 md:flex-row md:items-start md:gap-6 md:text-left">
-            <Avatar className="h-24 w-24 md:h-32 md:w-32">
-              <AvatarImage src={player.image?.url ?? ""} alt={player.name} />
-              <AvatarFallback className="text-2xl">
-                {player.name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-
+            <PlayerImage
+              className="h-24 w-24 md:h-32 md:w-32"
+              image={player.image}
+              alt={player.name}
+            />
             <div className="min-w-0 flex-1">
               <div className="mb-2 flex flex-col gap-2 md:flex-row md:items-center">
                 <h1 className="truncate text-2xl font-bold md:text-3xl">
@@ -118,7 +116,6 @@ export function PlayerTabs({ player }: { player: Player }) {
                 </div>
               </div>
             </div>
-
             <div className="flex flex-col gap-2">
               <Button className="gap-2" asChild>
                 <Link href={`/dashboard/players/${player.id}/share`}>

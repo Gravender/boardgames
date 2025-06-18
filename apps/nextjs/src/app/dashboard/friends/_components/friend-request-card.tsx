@@ -6,7 +6,6 @@ import { formatDate } from "date-fns";
 import { Check, Clock, Loader2, X } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent } from "@board-games/ui/card";
 import { toast } from "@board-games/ui/toast";
@@ -124,17 +123,11 @@ export function FriendRequestCard({
     <Card className="flex flex-row">
       <CardContent className="w-full p-4">
         <div className="flex items-center gap-4">
-          <Avatar className="h-10 w-10">
-            <AvatarImage
-              src={friendRequest.image?.url ?? ""}
-              alt={friendRequest.name}
-            />
-            <AvatarFallback>
-              {friendRequest.name
-                ? friendRequest.name.substring(0, 2).toUpperCase()
-                : "U"}
-            </AvatarFallback>
-          </Avatar>
+          <PlayerImage
+            image={friendRequest.image}
+            alt={friendRequest.name}
+            className="size-10"
+          />
 
           <div className="flex-grow">
             <p className="font-medium">{friendRequest.name}</p>

@@ -17,7 +17,6 @@ import {
   MapPin,
   ThumbsDown,
   ThumbsUp,
-  User,
 } from "lucide-react";
 import { z } from "zod/v4";
 
@@ -30,7 +29,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@board-games/ui/accordion";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import {
@@ -70,6 +68,7 @@ import { Separator } from "@board-games/ui/separator";
 
 import { FormattedDate } from "~/components/formatted-date";
 import { GameImage } from "~/components/game-image";
+import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 import ChildLocationsRequest from "./child-locations-request";
 import ChildPlayersRequest from "./child-players-request";
@@ -327,16 +326,11 @@ export default function PlayerRequestPage({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex flex-row items-center gap-2">
-                <Avatar className="h-20 w-20 shadow">
-                  <AvatarImage
-                    className="object-cover"
-                    src={player.item.image?.url ?? ""}
-                    alt={player.item.name}
-                  />
-                  <AvatarFallback className="bg-slate-300">
-                    <User />
-                  </AvatarFallback>
-                </Avatar>
+                <PlayerImage
+                  className="size-20"
+                  image={player.item.image}
+                  alt={player.item.name}
+                />
                 <div>
                   <CardTitle>
                     {player.item.name}{" "}
@@ -471,19 +465,11 @@ export default function PlayerRequestPage({
                                                       }
                                                     >
                                                       <div className="flex items-center gap-2">
-                                                        <Avatar className="h-6 w-6 shadow">
-                                                          <AvatarImage
-                                                            className="object-cover"
-                                                            src={
-                                                              fPlayer.image
-                                                                ?.url ?? ""
-                                                            }
-                                                            alt={fPlayer.name}
-                                                          />
-                                                          <AvatarFallback className="bg-slate-300">
-                                                            <User />
-                                                          </AvatarFallback>
-                                                        </Avatar>
+                                                        <PlayerImage
+                                                          className="size-6"
+                                                          image={fPlayer.image}
+                                                          alt={fPlayer.name}
+                                                        />
                                                         <div>
                                                           <p>{fPlayer.name}</p>
                                                           {fPlayer.name.toLowerCase() ===

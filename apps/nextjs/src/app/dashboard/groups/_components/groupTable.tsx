@@ -2,15 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Search, Users } from "lucide-react";
+import { Search } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
-import { Avatar, AvatarFallback } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { Input } from "@board-games/ui/input";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 
+import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 import { AddGroupDialog } from "./addGroupDialog";
 import { GroupDropDown } from "./groupDropDown";
@@ -58,11 +58,7 @@ export function GroupTable() {
               <Card key={group.id}>
                 <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">
                   <div className="flex items-center gap-2">
-                    <Avatar className="h-14 w-14 shadow">
-                      <AvatarFallback className="bg-slate-300">
-                        <Users />
-                      </AvatarFallback>
-                    </Avatar>
+                    <PlayerImage className="h-14 w-14 shadow" image={null} />
                     <div className="flex flex-col gap-2">
                       <div className="flex w-full items-center justify-between">
                         <h2 className="text-md text-left font-semibold">
@@ -95,9 +91,11 @@ export function GroupSkeleton() {
     <Card className="flex w-full items-center justify-center">
       <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">
         <div className="flex items-center gap-2">
-          <Avatar className="h-14 w-14 shadow">
-            <AvatarFallback className="animate-pulse bg-card-foreground" />
-          </Avatar>
+          <PlayerImage
+            className="h-14 w-14 shadow"
+            image={null}
+            fallBackClassName="animate-pulse bg-card-foreground"
+          />
           <div className="flex w-56 flex-col gap-2">
             <div className="flex h-4 w-full animate-pulse items-center justify-between rounded-lg bg-card-foreground/50" />
           </div>
