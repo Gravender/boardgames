@@ -8,6 +8,7 @@ import {
   Ghost,
   Puzzle,
   Swords,
+  User,
 } from "lucide-react";
 
 export const gameIcons: { icon: LucideIcon; name: string }[] = [
@@ -19,4 +20,8 @@ export const gameIcons: { icon: LucideIcon; name: string }[] = [
   { icon: Ghost, name: "Ghost" },
   { icon: Puzzle, name: "Puzzle" },
   { icon: Swords, name: "Swords" },
+];
+
+export const playerIcons: { icon: LucideIcon; name: string }[] = [
+  { icon: User, name: "User" },
 ];
