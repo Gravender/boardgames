@@ -20,7 +20,7 @@
     "@board-games/ui": "workspace:*",
     "@clerk/elements": "^0.23.32",
     "@clerk/nextjs": "^6.21.0",
-    "@sentry/nextjs": "^9.24.0",
+    "@sentry/nextjs": "^9.30.0",
     "@t3-oss/env-nextjs": "^0.13.6",
     "@tanstack/react-query": "catalog:",
     "@trpc/client": "catalog:",
