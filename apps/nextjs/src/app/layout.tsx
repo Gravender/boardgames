@@ -8,6 +8,7 @@ import { Toaster } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import { CSPostHogProvider } from "~/components/analytics";
+import PostHogPageView from "~/components/PostHogPageView";
 import { SpeedInsights } from "~/components/speedInsights";
 import { ThemeProvider } from "~/components/theme-provider";
 import { TRPCReactProvider } from "~/trpc/react";
@@ -67,6 +68,8 @@ export default function RootLayout({
               <TRPCReactProvider>{children}</TRPCReactProvider>
               <Toaster />
               <SpeedInsights />
+
+              <PostHogPageView />
             </CSPostHogProvider>
           </ClerkProvider>
         </ThemeProvider>
