@@ -14,6 +14,15 @@
       "cache": false,
       "persistent": false
     },
+    "dev:next": {
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": ["NEXT_*", "POSTGRES_URL", "NODE_ENV"]
+    },
+    "e2e": {
+      "inputs": [".env*"],
+      "passThroughEnv": ["E2E_CLERK_*", "POSTGRES_URL"]
+    },
     "format": {
       "outputs": [".cache/.prettiercache"],
       "outputLogs": "new-only"
@@ -38,7 +47,8 @@
     },
     "studio": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": ["POSTGRES_URL"]
     },
     "seed": {
       "cache": false,
@@ -57,9 +67,7 @@
     "VERCEL_ENV",
     "VERCEL_URL",
     "npm_lifecycle_event",
-    "E2E_CLERK_USER_USERNAME",
-    "E2E_CLERK_USER_PASSWORD",
-    "E2E_CLERK_USER_ID",
+
     "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
     "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
     "SENTRY_AUTH_TOKEN",
