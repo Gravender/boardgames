@@ -69,7 +69,6 @@ test.describe("Game Page", () => {
   });
   test("Add Game when no games exist", async ({ page }) => {
     await page.goto("/dashboard/games");
-    await page.pause();
     await page
       .getByRole("main")
       .getByRole("button")
