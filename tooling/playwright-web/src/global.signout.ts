@@ -1,7 +1,7 @@
 import { clerk } from "@clerk/testing/playwright";
 import { test as teardown } from "@playwright/test";
 
-teardown("delete database", async ({ page }) => {
+teardown("signout", async ({ page }) => {
   await page.goto("/");
   await clerk.signOut({
     page,
