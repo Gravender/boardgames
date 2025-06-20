@@ -10,7 +10,7 @@ import { roundRouter } from "./routers/round";
 import { scoresheetRouter } from "./routers/scoresheet";
 import { sharingRouter } from "./routers/sharing";
 import { userRouter } from "./routers/user";
-import { createCallerFactory, createTRPCRouter } from "./trpc";
+import { createTRPCRouter } from "./trpc";
 
 /**
  * This is the primary router for your server.
@@ -34,5 +34,3 @@ export const appRouter = createTRPCRouter({
 
 // export type definition of API
 export type AppRouter = typeof appRouter;
-
-export const createCaller = createCallerFactory(appRouter);

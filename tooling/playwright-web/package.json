@@ -1,0 +1,32 @@
+{
+  "name": "@board-games/playwright-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "dev": "tsc",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "e2e": "pnpm exec playwright test"
+  },
+  "devDependencies": {
+    "@board-games/db": "workspace:*",
+    "@board-games/eslint-config": "workspace:*",
+    "@board-games/prettier-config": "workspace:*",
+    "@board-games/tsconfig": "workspace:*",
+    "@clerk/testing": "^1.8.0",
+    "@playwright/test": "^1.53.1",
+    "dotenv-cli": "^8.0.0",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  },
+  "prettier": "@board-games/prettier-config"
+}
