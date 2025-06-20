@@ -63,3 +63,4 @@ tooling/playwright-web/playwright/.clerk
 
 # turbo
 .turbo
+playwright/.clerk/user.json

@@ -20,6 +20,7 @@
       "passThroughEnv": ["NEXT_*", "POSTGRES_URL", "NODE_ENV"]
     },
     "e2e": {
+      "cache": false,
       "inputs": [".env*"],
       "passThroughEnv": ["E2E_CLERK_*", "POSTGRES_URL"]
     },
