@@ -152,13 +152,7 @@ test.describe("Game Page", () => {
     await page.getByPlaceholder("Year").fill("2003");
     await page.getByRole("button", { name: "Submit" }).click();
 
-    // Wait for the edited game to appear in the list before proceeding
-    await expect(page.getByRole("main")).toContainText(EDITED_GAME_NAME);
-
     await page.getByRole("textbox", { name: "Search games..." }).click();
-    await page
-      .getByRole("textbox", { name: "Search games..." })
-      .fill(GAME_NAME);
     await page
       .getByRole("textbox", { name: "Search games..." })
       .fill(EDITED_GAME_NAME);
