@@ -54,6 +54,7 @@ export const AddPlayerDialog = ({
               className="rounded-full"
               size="icon"
               type="button"
+              aria-label="add player"
             >
               <PlusIcon />
             </Button>

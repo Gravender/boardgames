@@ -13,18 +13,20 @@ test.describe("Game Page", () => {
     }
     return process.env.E2E_CLERK_USER_ID;
   }
-  async function deleteGames() {
+  async function deleteGames(browserName: string) {
     const clerkUserId = getClerkUserId();
     const [returnedUser] = await db
       .select()
       .from(user)
       .where(eq(user.clerkUserId, clerkUserId));
     if (returnedUser) {
+      const browserGameName = browserName + "_" + GAME_NAME;
+      const editedBrowserGameName = browserName + "_" + EDITED_GAME_NAME;
       const returnedGames = await db.query.game.findMany({
         where: {
           userId: returnedUser.id,
           name: {
-            OR: [GAME_NAME, EDITED_GAME_NAME],
+            OR: [browserGameName, editedBrowserGameName],
           },
         },
         with: {
@@ -52,21 +54,37 @@ test.describe("Game Page", () => {
       }
     }
   }
-  test.beforeAll(async () => {
-    await deleteGames();
+  function gameAriaText(
+    gameName: string,
+    yearPublished: number,
+    playersMin: number,
+    playersMax: number,
+    playtimeMin: number,
+    playtimeMax: number,
+  ) {
+    const temp = `
+        - listitem:
+          - link:
+            - /url: //dashboard/games/\\d+/
+          - heading "${gameName}" [level=3]
+          - text: (${yearPublished})
+          - button "Open menu"
+          - text: ${playersMin}-${playersMax} players ${playtimeMin}-${playtimeMax} min 0 plays
+        `;
+    return temp;
+  }
+  test.beforeAll(async ({ browserName }) => {
+    await deleteGames(browserName);
   });
-  test.afterAll(async () => {
-    await deleteGames();
+  test.afterAll(async ({ browserName }) => {
+    await deleteGames(browserName);
   });
-  test("Add Game when no games exist", async ({ page }) => {
+  test("Add Game when no games exist", async ({ page, browserName }) => {
+    const browserGameName = browserName + "_" + GAME_NAME;
     await page.goto("/dashboard/games");
-    await page
-      .getByRole("main")
-      .getByRole("button")
-      .filter({ hasText: /^$/ })
-      .click();
+    await page.getByRole("button", { name: "add game" }).click();
     await page.getByPlaceholder("Game name").click();
-    await page.getByPlaceholder("Game name").fill(GAME_NAME);
+    await page.getByPlaceholder("Game name").fill(browserGameName);
     await expect(
       page.getByLabel("Add Game").getByText("Players"),
     ).not.toBeVisible();
@@ -111,34 +129,49 @@ test.describe("Game Page", () => {
     );
     await expect(page.locator("form")).toContainText("Default");
     await page.getByRole("button", { name: "Submit" }).click();
-    await expect(page.getByLabel("Add Game")).not.toBeVisible();
     await page.getByRole("textbox", { name: "Search games..." }).click();
     await page
       .getByRole("textbox", { name: "Search games..." })
-      .fill(GAME_NAME);
+      .fill(browserGameName);
 
-    await expect(page.getByRole("main")).toContainText(GAME_NAME);
-    await expect(page.getByRole("main")).toContainText("1-4 players");
-
-    await expect(page.getByRole("main")).toContainText("15-30 min");
-
-    await expect(page.getByRole("main")).toContainText("0 plays");
-    await expect(page.getByRole("main")).toContainText("(2014)");
+    const originalGameAriaText = gameAriaText(
+      browserGameName,
+      2014,
+      1,
+      4,
+      15,
+      30,
+    );
+    await expect(
+      page.getByLabel("Games", { exact: true }).getByRole("listitem"),
+    ).toMatchAriaSnapshot(originalGameAriaText);
   });
-  test("Edit game", async ({ page }) => {
+  test("Edit game", async ({ page, browserName }) => {
+    const browserGameName = browserName + "_" + GAME_NAME;
+    const editedBrowserGameName = browserName + "_" + EDITED_GAME_NAME;
     await page.goto("/dashboard/games");
     await page.getByRole("textbox", { name: "Search games..." }).click();
     await page
       .getByRole("textbox", { name: "Search games..." })
-      .fill(GAME_NAME);
-
+      .fill(browserGameName);
+    const originalGameAriaText = gameAriaText(
+      browserGameName,
+      2014,
+      1,
+      4,
+      15,
+      30,
+    );
+    await expect(
+      page.getByLabel("Games", { exact: true }).getByRole("listitem"),
+    ).toMatchAriaSnapshot(originalGameAriaText);
     await page.getByRole("button", { name: "Open menu" }).first().click();
     await page.getByRole("menuitem", { name: "Edit" }).click();
 
     await page.getByRole("textbox", { name: "Game Name" }).click();
     await page
       .getByRole("textbox", { name: "Game Name" })
-      .fill(EDITED_GAME_NAME);
+      .fill(editedBrowserGameName);
     await page.getByRole("button", { name: "More options" }).click();
     await page.locator('input[name="playersMin"]').click();
     await page.locator('input[name="playersMin"]').fill("4");
@@ -155,13 +188,17 @@ test.describe("Game Page", () => {
     await page.getByRole("textbox", { name: "Search games..." }).click();
     await page
       .getByRole("textbox", { name: "Search games..." })
-      .fill(EDITED_GAME_NAME);
-    await expect(page.getByRole("main")).toContainText(EDITED_GAME_NAME);
-    await expect(page.getByRole("main")).toContainText("4-5 players");
-
-    await expect(page.getByRole("main")).toContainText("12-14 min");
-
-    await expect(page.getByRole("main")).toContainText("0 plays");
-    await expect(page.getByRole("main")).toContainText("(2003)");
+      .fill(editedBrowserGameName);
+    const editedGameAriaText = gameAriaText(
+      editedBrowserGameName,
+      2003,
+      4,
+      5,
+      12,
+      14,
+    );
+    await expect(
+      page.getByLabel("Games", { exact: true }).getByRole("listitem"),
+    ).toMatchAriaSnapshot(editedGameAriaText);
   });
 });

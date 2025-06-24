@@ -75,18 +75,17 @@ const PlayerContent = ({
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const playerSchema =
-    player.type === "original"
-      ? originalPlayerSchema
-      : sharedPlayerSchema.check((ctx) => {
-          if (ctx.value.name === player.name)
-            ctx.issues.push({
-              code: "custom",
-              input: ctx.value,
-              message: "Name has not changed.",
-              path: ["name"],
-            });
-        });
+  const playerSchema = (
+    player.type === "original" ? originalPlayerSchema : sharedPlayerSchema
+  ).check((ctx) => {
+    if (ctx.value.name === player.name)
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
+        message: "Name has not changed.",
+        path: ["name"],
+      });
+  });
 
   const form = useForm({
     schema: playerSchema,
@@ -94,7 +93,7 @@ const PlayerContent = ({
       player.type === "original"
         ? {
             name: player.name,
-            imageUrl: player.image?.url,
+            imageUrl: player.image?.url ?? null,
           }
         : {
             name: player.name,

@@ -10,7 +10,6 @@ import {
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
-import { Card } from "@board-games/ui/card";
 
 import { GameImage } from "~/components/game-image";
 import { GamesDropDown } from "./gamesDropDown";
@@ -51,7 +50,10 @@ export function GameCard({ game }: GameCardProps) {
 
   // Replace the return statement with this conditional rendering based on isCompact
   return (
-    <Card className="relative flex h-full flex-col overflow-hidden p-1 transition-shadow hover:shadow-md">
+    <li
+      data-slot="card"
+      className="relative flex h-full flex-col overflow-hidden rounded-lg border bg-card p-1 pb-2 text-card-foreground shadow-sm transition-shadow hover:shadow-md"
+    >
       <div className="flex flex-row items-center">
         <Link
           prefetch={true}
@@ -135,6 +137,6 @@ export function GameCard({ game }: GameCardProps) {
           </div>
         </div>
       </div>
-    </Card>
+    </li>
   );
 }

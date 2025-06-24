@@ -95,6 +95,7 @@ export function AddGameDialog({
             className="rounded-full"
             size="icon"
             onClick={() => setIsOpen(true)}
+            aria-label="add game"
           >
             <Plus />
           </Button>
