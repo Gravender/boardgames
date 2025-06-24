@@ -283,11 +283,11 @@ function GamesList({ games }: GamesListProps) {
       <ScrollArea>
         <div className="max-h-[60vh] min-h-[500px] p-4 md:max-h-[80vh] md:min-h-[600px]">
           {filteredGames.length > 0 ? (
-            <div className={"grid gap-4 pb-20"}>
+            <ul className={"grid gap-4 pb-20"} aria-label="Games">
               {filteredGames.map((game) => (
                 <GameCard key={`type-${game.type}-id-${game.id}`} game={game} />
               ))}
-            </div>
+            </ul>
           ) : (
             <div className="flex flex-col items-center justify-center py-12">
               <p className="text-muted-foreground">

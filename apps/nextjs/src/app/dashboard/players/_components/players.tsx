@@ -7,7 +7,7 @@ import { format } from "date-fns";
 
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
@@ -42,13 +42,17 @@ export function PlayersTable({
         searchPlaceholder="Search players..."
       />
       <ScrollArea className="h-[65vh] sm:h-[75vh]">
-        <div className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2" aria-label="Players">
           {players.map((player) => {
             const lastPlayed = player.lastPlayed
               ? format(player.lastPlayed, "d MMM yyyy")
               : null;
             return (
-              <Card key={`${player.id}-${player.type}`}>
+              <li
+                data-slot="card"
+                className="rounded-lg border bg-card pb-2 text-card-foreground shadow-sm"
+                key={`${player.id}-${player.type}`}
+              >
                 <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">
                   <Link
                     prefetch={true}
@@ -103,10 +107,10 @@ export function PlayersTable({
                     <PlayerDropDown data={player} />
                   </div>
                 </CardContent>
-              </Card>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </ScrollArea>
       <div className="absolute bottom-4 right-4 z-10 sm:right-10">
         <AddPlayerDialog defaultIsOpen={defaultIsOpen} />
