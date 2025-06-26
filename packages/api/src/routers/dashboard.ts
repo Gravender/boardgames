@@ -510,6 +510,7 @@ export const dashboardRouter = {
         duration: linkedDuration,
       });
     });
+    gamesWithImages.sort((a, b) => b.matches - a.matches);
     return gamesWithImages;
   }),
   getPlayersWIthMatches: protectedUserProcedure.query(async ({ ctx }) => {
