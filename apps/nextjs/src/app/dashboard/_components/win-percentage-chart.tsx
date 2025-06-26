@@ -45,7 +45,7 @@ export default function WinPercentageChart() {
   // Determine which data to use based on the selected view
   const chartData = view === "overtime" ? data.overtime : data.monthToMonth;
   return (
-    <Card className="col-span-1 lg:col-span-3">
+    <Card className="col-span-1 sm:col-span-2">
       <CardHeader className="flex items-center justify-between gap-2 sm:flex-row">
         <div>
           <CardTitle>{"Win Percentage Over Time"}</CardTitle>

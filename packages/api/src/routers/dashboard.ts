@@ -1,21 +1,22 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
-import { subMonths, subYears } from "date-fns";
-import { and, asc, count, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import { compareAsc, subMonths } from "date-fns";
+import { and, asc, count, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 
 import {
   game,
   group,
   groupPlayer,
-  image,
   location,
   match,
   matchPlayer,
   player,
 } from "@board-games/db/schema";
 
+import type { Player, PlayerMatch } from "../utils/player";
 import { protectedUserProcedure } from "../trpc";
+import { aggregatePlayerStats } from "../utils/player";
 
 export const dashboardRouter = {
   getBreadCrumbs: protectedUserProcedure
@@ -278,32 +279,6 @@ export const dashboardRouter = {
       .limit(5);
     return games;
   }),
-  getPlayers: protectedUserProcedure.query(async ({ ctx }) => {
-    const players = await ctx.db
-      .select({
-        id: player.id,
-        name: player.name,
-      })
-      .from(player)
-      .where(and(eq(player.createdBy, ctx.userId), isNull(player.deletedAt)))
-      .innerJoin(
-        matchPlayer,
-        and(eq(matchPlayer.playerId, player.id), isNull(matchPlayer.deletedAt)),
-      )
-      .innerJoin(
-        match,
-        and(
-          eq(match.id, matchPlayer.matchId),
-          eq(match.finished, true),
-          isNull(match.deletedAt),
-        ),
-      )
-      .innerJoin(game, and(eq(game.id, match.gameId), isNull(game.deletedAt)))
-      .groupBy(player.id)
-      .orderBy(desc(count(matchPlayer)), asc(player.name))
-      .limit(5);
-    return players;
-  }),
   getGroups: protectedUserProcedure.query(async ({ ctx }) => {
     const groups = await ctx.db
       .select({
@@ -422,90 +397,386 @@ export const dashboardRouter = {
     };
   }),
   getUniqueGames: protectedUserProcedure.query(async ({ ctx }) => {
-    const games = await ctx.db
-      .select({
+    const originalGames = await ctx.db.query.game.findMany({
+      where: {
+        userId: ctx.userId,
+        deletedAt: {
+          isNull: true,
+        },
+      },
+
+      with: {
+        image: true,
+        matches: {
+          where: {
+            finished: true,
+            deletedAt: {
+              isNull: true,
+            },
+          },
+        },
+        linkedGames: {
+          where: {
+            sharedWithId: ctx.userId,
+          },
+          with: {
+            sharedMatches: {
+              where: {
+                sharedWithId: ctx.userId,
+              },
+              with: {
+                match: {
+                  where: {
+                    finished: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const sharedGames = await ctx.db.query.sharedGame.findMany({
+      where: {
+        sharedWithId: ctx.userId,
+        linkedGameId: {
+          isNull: true,
+        },
+      },
+      with: {
+        game: {
+          with: {
+            image: true,
+          },
+        },
+        sharedMatches: {
+          where: {
+            sharedWithId: ctx.userId,
+          },
+          with: {
+            match: {
+              where: {
+                finished: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    const gamesWithImages = originalGames.map<{
+      id: number;
+      type: "original" | "shared";
+      name: string;
+      image: {
+        name: string;
+        url: string | null;
+        type: "file" | "svg";
+        usageType: "game" | "player" | "match";
+      } | null;
+      matches: number;
+      duration: number;
+    }>((game) => {
+      const linkedMatches = game.linkedGames.flatMap((linkedGame) =>
+        linkedGame.sharedMatches.filter((sMatch) => sMatch.match !== null),
+      );
+      const linkedDuration = linkedMatches.reduce((acc, match) => {
+        return acc + (match.match?.duration ?? 0);
+      }, 0);
+      return {
         id: game.id,
+        type: "original" as const,
         name: game.name,
-        matches: count(match.id),
-      })
-      .from(game)
-      .where(and(eq(game.userId, ctx.userId), isNull(game.deletedAt)))
-      .innerJoin(
-        match,
-        and(
-          eq(match.gameId, game.id),
-          gte(match.date, subYears(new Date(), 1)),
-          isNull(match.deletedAt),
-        ),
-      )
-      .groupBy(game.id)
-      .orderBy(desc(count(match.id)), game.name);
-    const lastMonthGames = await ctx.db
-      .select({
-        id: game.id,
-        name: game.name,
-        matches: count(match.id),
-      })
-      .from(game)
-      .where(and(eq(game.userId, ctx.userId), isNull(game.deletedAt)))
-      .innerJoin(
-        match,
-        and(
-          eq(match.gameId, game.id),
-          isNull(match.deletedAt),
-          gte(match.date, subYears(new Date(), 2)),
-          lte(match.date, subYears(new Date(), 1)),
-        ),
-      )
-      .groupBy(game.id)
-      .orderBy(count(match.id), game.name);
-    return {
-      lastMonthGames: lastMonthGames.length,
-      currentMonthGames: games.length,
-      games: games,
-    };
+        image: game.image,
+        matches: game.matches.length + linkedMatches.length,
+        duration:
+          game.matches.reduce((acc, match) => {
+            return acc + match.duration;
+          }, 0) + linkedDuration,
+      };
+    });
+    sharedGames.forEach((sharedGame) => {
+      const linkedMatches = sharedGame.sharedMatches.filter(
+        (sMatch) => sMatch.match !== null,
+      );
+      const linkedDuration = linkedMatches.reduce((acc, match) => {
+        return acc + (match.match?.duration ?? 0);
+      }, 0);
+      gamesWithImages.push({
+        id: sharedGame.id,
+        type: "shared" as const,
+        name: sharedGame.game.name,
+        image: sharedGame.game.image,
+        matches: linkedMatches.length,
+        duration: linkedDuration,
+      });
+    });
+    return gamesWithImages;
   }),
   getPlayersWIthMatches: protectedUserProcedure.query(async ({ ctx }) => {
-    const sq = ctx.db
-      .select({
-        id: player.id,
-        name: player.name,
-        imageId: player.imageId,
-        matches: sql<number>`count(${match.id})`.as("matches"),
-        duration: sql<number>`sum(${match.duration})`.as("duration"),
-      })
-      .from(player)
-      .innerJoin(
-        matchPlayer,
-        and(eq(matchPlayer.playerId, player.id), isNull(matchPlayer.deletedAt)),
-      )
-      .innerJoin(
-        match,
-        and(eq(match.id, matchPlayer.matchId), isNull(match.deletedAt)),
-      )
-      .innerJoin(game, and(eq(match.gameId, game.id), isNull(game.deletedAt)))
-      .where(
-        and(
-          eq(player.createdBy, ctx.userId),
-          eq(match.userId, ctx.userId),
-          sql`${match.date} >= now() - interval '1 year'`,
-        ),
-      )
-      .groupBy(player.id)
-      .orderBy(desc(count(match.id)), player.name)
-      .as("sq");
-    const playersWithImages = await ctx.db
-      .select({
-        id: sq.id,
-        name: sq.name,
-        image: image,
-        matches: sq.matches,
-        duration: sq.duration,
-      })
-      .from(image)
-      .rightJoin(sq, eq(image.id, sq.imageId))
-      .orderBy(desc(sq.matches));
-    return playersWithImages.slice(0, 10);
+    const originalMatches = await ctx.db.query.match.findMany({
+      where: {
+        userId: ctx.userId,
+        finished: true,
+        deletedAt: {
+          isNull: true,
+        },
+      },
+      with: {
+        game: {
+          with: {
+            image: true,
+          },
+        },
+        matchPlayers: {
+          with: {
+            player: {
+              with: {
+                image: true,
+              },
+            },
+          },
+        },
+        location: true,
+        teams: true,
+        scoresheet: true,
+      },
+    });
+    const sharedMatches = await ctx.db.query.sharedMatch.findMany({
+      where: {
+        sharedWithId: ctx.userId,
+      },
+      with: {
+        sharedGame: {
+          with: {
+            game: {
+              with: {
+                image: true,
+              },
+            },
+            linkedGame: {
+              where: {
+                userId: ctx.userId,
+              },
+              with: {
+                image: true,
+              },
+            },
+          },
+        },
+        sharedMatchPlayers: {
+          where: {
+            sharedWithId: ctx.userId,
+          },
+          with: {
+            sharedPlayer: {
+              where: {
+                sharedWithId: ctx.userId,
+              },
+              with: {
+                player: {
+                  with: {
+                    image: true,
+                  },
+                },
+                linkedPlayer: {
+                  where: {
+                    createdBy: ctx.userId,
+                  },
+                  with: {
+                    image: true,
+                  },
+                },
+              },
+            },
+            matchPlayer: true,
+          },
+        },
+        match: {
+          with: {
+            location: true,
+            teams: true,
+            scoresheet: true,
+          },
+        },
+      },
+    });
+    const playerGames: {
+      type: "shared" | "original";
+      id: number;
+      name: string;
+      image: {
+        name: string;
+        url: string | null;
+        type: "file" | "svg";
+        usageType: "game" | "player" | "match";
+      } | null;
+    }[] = [];
+    const playerMatches = originalMatches.map<PlayerMatch>((originalMatch) => {
+      const matchPlayers = originalMatch.matchPlayers;
+      const foundGame = playerGames.find(
+        (pGame) =>
+          pGame.id === originalMatch.game.id && pGame.type === "original",
+      );
+      const foundUser = matchPlayers.find((mp) => mp.player.isUser);
+      if (!foundGame) {
+        playerGames.push({
+          type: "original",
+          id: originalMatch.game.id,
+          name: originalMatch.game.name,
+          image: originalMatch.game.image,
+        });
+      }
+      return {
+        id: originalMatch.id,
+        type: "original" as const,
+        date: originalMatch.date,
+        name: originalMatch.name,
+        teams: originalMatch.teams,
+        duration: originalMatch.duration,
+        finished: originalMatch.finished,
+        gameId: originalMatch.game.id,
+        gameName: originalMatch.game.name,
+        gameImage: originalMatch.game.image,
+        locationName: originalMatch.location?.name,
+        players: matchPlayers.map<Player>((matchPlayer) => {
+          const foundGame = playerGames.find(
+            (pGame) =>
+              pGame.id === originalMatch.game.id && pGame.type === "original",
+          );
+          if (!foundGame) {
+            playerGames.push({
+              type: "original",
+              id: originalMatch.game.id,
+              name: originalMatch.game.name,
+              image: originalMatch.game.image,
+            });
+          }
+          return {
+            id: matchPlayer.player.id,
+            type: "original" as const,
+            name: matchPlayer.player.name,
+            isWinner: matchPlayer.winner ?? false,
+            isUser: matchPlayer.player.isUser,
+            score: matchPlayer.score,
+            image: matchPlayer.player.image
+              ? {
+                  name: matchPlayer.player.image.name,
+                  url: matchPlayer.player.image.url,
+                  type: matchPlayer.player.image.type,
+                  usageType: "player" as const,
+                }
+              : null,
+            teamId: matchPlayer.teamId,
+            placement: matchPlayer.placement,
+          };
+        }),
+        scoresheet: originalMatch.scoresheet,
+        outcome: {
+          score: foundUser?.score ?? null,
+          isWinner: foundUser?.winner ?? false,
+          placement: foundUser?.placement ?? null,
+        },
+        linkedGameId: undefined,
+      };
+    });
+    sharedMatches.forEach((sharedMatch) => {
+      const sharedGame = sharedMatch.sharedGame;
+      const linkedGame = sharedGame.linkedGame;
+      const foundGame = playerGames.find(
+        (pGame) =>
+          pGame.id === (sharedGame.linkedGameId ?? sharedGame.id) &&
+          pGame.type === (sharedGame.linkedGameId ? "original" : "shared"),
+      );
+      if (!foundGame) {
+        playerGames.push({
+          type: sharedGame.linkedGameId
+            ? ("original" as const)
+            : ("shared" as const),
+          id: sharedGame.linkedGameId ?? sharedGame.id,
+          name: linkedGame?.name ?? sharedGame.game.name,
+          image: linkedGame ? linkedGame.image : sharedGame.game.image,
+        });
+      }
+      playerMatches.push({
+        id: sharedMatch.id,
+        type: "shared" as const,
+        date: sharedMatch.match.date,
+        name: sharedMatch.match.name,
+        teams: sharedMatch.match.teams,
+        duration: sharedMatch.match.duration,
+        finished: sharedMatch.match.finished,
+        gameId: sharedMatch.sharedGame.id,
+        gameName: linkedGame ? linkedGame.name : sharedGame.game.name,
+        gameImage: linkedGame ? linkedGame.image : sharedGame.game.image,
+        locationName: sharedMatch.match.location?.name,
+        players: sharedMatch.sharedMatchPlayers
+          .map((sharedMatchPlayer) => {
+            const sharedPlayer = sharedMatchPlayer.sharedPlayer;
+            const linkedPlayer = sharedPlayer?.linkedPlayer;
+            if (sharedPlayer) {
+              if (linkedPlayer) {
+                return {
+                  id: linkedPlayer.id,
+                  type: "original" as const,
+                  name: linkedPlayer.name,
+                  isUser: linkedPlayer.isUser,
+                  isWinner: sharedMatchPlayer.matchPlayer.winner ?? false,
+                  score: sharedMatchPlayer.matchPlayer.score,
+                  image: linkedPlayer.image
+                    ? {
+                        name: linkedPlayer.image.name,
+                        url: linkedPlayer.image.url,
+                        type: linkedPlayer.image.type,
+                        usageType: "player" as const,
+                      }
+                    : null,
+                  teamId: sharedMatchPlayer.matchPlayer.teamId,
+                  placement: sharedMatchPlayer.matchPlayer.placement,
+                };
+              }
+              return {
+                id: sharedPlayer.id,
+                type: "shared" as const,
+                name: sharedPlayer.player.name,
+                isUser: sharedPlayer.player.isUser,
+                isWinner: sharedMatchPlayer.matchPlayer.winner ?? false,
+                score: sharedMatchPlayer.matchPlayer.score,
+                image: sharedPlayer.player.image
+                  ? {
+                      name: sharedPlayer.player.image.name,
+                      url: sharedPlayer.player.image.url,
+                      type: sharedPlayer.player.image.type,
+                      usageType: "player" as const,
+                    }
+                  : null,
+                teamId: sharedMatchPlayer.matchPlayer.teamId,
+                placement: sharedMatchPlayer.matchPlayer.placement,
+              };
+            }
+            return null;
+          })
+          .filter((player) => player !== null),
+        scoresheet: sharedMatch.match.scoresheet,
+
+        outcome: {
+          score: null,
+          isWinner: false,
+          placement: null,
+        },
+        linkedGameId:
+          sharedMatch.sharedGame.linkedGameId ?? sharedMatch.sharedGame.id,
+      });
+    });
+    playerMatches.sort((a, b) => compareAsc(b.date, a.date));
+    const playersStats = aggregatePlayerStats(playerMatches);
+    playersStats.sort((a, b) => {
+      if (a.plays > 20 && b.plays > 20)
+        return b.competitiveWinRate - a.competitiveWinRate;
+      if (a.plays > 10 && b.plays > 10)
+        return b.competitiveWins - a.competitiveWins;
+      return b.plays - a.plays;
+    });
+    return playersStats;
   }),
   getUserPlacements: protectedUserProcedure.query(async ({ ctx }) => {
     const placementCounts = await ctx.db
@@ -540,19 +811,24 @@ export const dashboardRouter = {
       2: { placement: "2nd", count: 0 },
       3: { placement: "3rd", count: 0 },
       4: { placement: "4th", count: 0 },
-      5: { placement: "5th", count: 0 },
-      6: { placement: "6th+", count: 0 },
+      5: { placement: "5th+", count: 0 },
     };
 
     // Ensure placementCounts is processed safely
     placementCounts.forEach((p) => {
-      const placement = p.placement ?? 6;
+      if (p.placement !== null) {
+        const placement = p.placement;
 
-      if (placement >= 1 && placement <= 5 && formattedPlacements[placement]) {
-        formattedPlacements[placement].count = Number(p.count);
-      } else if (formattedPlacements[6]) {
-        formattedPlacements[6].count =
-          Number(p.count) + Number(formattedPlacements[6].count);
+        if (
+          placement >= 1 &&
+          placement <= 5 &&
+          formattedPlacements[placement]
+        ) {
+          formattedPlacements[placement].count = Number(p.count);
+        } else if (formattedPlacements[5]) {
+          formattedPlacements[5].count =
+            Number(p.count) + Number(formattedPlacements[5].count);
+        }
       }
     });
 
@@ -665,5 +941,297 @@ export const dashboardRouter = {
       day: day.day.trim(),
       matches: Number(day.matches),
     }));
+  }),
+  getUserStats: protectedUserProcedure.query(async ({ ctx }) => {
+    const returnedPlayer = await ctx.db.query.player.findFirst({
+      where: {
+        isUser: true,
+        createdBy: ctx.userId,
+        deletedAt: {
+          isNull: true,
+        },
+      },
+      with: {
+        image: true,
+        matchPlayers: {
+          with: {
+            match: {
+              with: {
+                game: {
+                  with: {
+                    image: true,
+                  },
+                },
+                matchPlayers: {
+                  with: {
+                    player: {
+                      with: {
+                        image: true,
+                      },
+                    },
+                  },
+                },
+                location: true,
+                teams: true,
+                scoresheet: true,
+              },
+            },
+          },
+        },
+        sharedLinkedPlayers: {
+          with: {
+            sharedMatchPlayers: {
+              where: {
+                sharedWithId: ctx.userId,
+              },
+              with: {
+                matchPlayer: true,
+                sharedMatch: {
+                  with: {
+                    sharedGame: {
+                      with: {
+                        game: {
+                          with: {
+                            image: true,
+                          },
+                        },
+                        linkedGame: {
+                          where: {
+                            userId: ctx.userId,
+                          },
+                          with: {
+                            image: true,
+                          },
+                        },
+                      },
+                    },
+                    sharedMatchPlayers: {
+                      where: {
+                        sharedWithId: ctx.userId,
+                      },
+                      with: {
+                        sharedPlayer: {
+                          where: {
+                            sharedWithId: ctx.userId,
+                          },
+                          with: {
+                            player: {
+                              with: {
+                                image: true,
+                              },
+                            },
+                            linkedPlayer: {
+                              where: {
+                                createdBy: ctx.userId,
+                              },
+                              with: {
+                                image: true,
+                              },
+                            },
+                          },
+                        },
+                        matchPlayer: true,
+                      },
+                    },
+                    match: {
+                      with: {
+                        location: true,
+                        teams: true,
+                        scoresheet: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!returnedPlayer) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Player not found.",
+      });
+    }
+    const playerGames: {
+      type: "shared" | "original";
+      id: number;
+      name: string;
+      image: {
+        name: string;
+        url: string | null;
+        type: "file" | "svg";
+        usageType: "game" | "player" | "match";
+      } | null;
+    }[] = [];
+    const playerMatches = returnedPlayer.matchPlayers.map<PlayerMatch>(
+      (mPlayer) => {
+        const filteredPlayers = mPlayer.match.matchPlayers;
+        const foundGame = playerGames.find(
+          (pGame) =>
+            pGame.id === mPlayer.match.gameId && pGame.type === "original",
+        );
+        if (!foundGame) {
+          playerGames.push({
+            type: "original",
+            id: mPlayer.match.gameId,
+            name: mPlayer.match.game.name,
+            image: mPlayer.match.game.image,
+          });
+        }
+        return {
+          id: mPlayer.matchId,
+          type: "original" as const,
+          date: mPlayer.match.date,
+          name: mPlayer.match.name,
+          teams: mPlayer.match.teams,
+          duration: mPlayer.match.duration,
+          finished: mPlayer.match.finished,
+          gameId: mPlayer.match.gameId,
+          gameName: mPlayer.match.game.name,
+          gameImage: mPlayer.match.game.image,
+          locationName: mPlayer.match.location?.name,
+          players: filteredPlayers.map<Player>((mPlayer) => {
+            return {
+              id: mPlayer.player.id,
+              type: "original" as const,
+              name: mPlayer.player.name,
+              isWinner: mPlayer.winner ?? false,
+              isUser: mPlayer.player.isUser,
+              score: mPlayer.score,
+              image: mPlayer.player.image
+                ? {
+                    name: mPlayer.player.image.name,
+                    url: mPlayer.player.image.url,
+                    type: mPlayer.player.image.type,
+                    usageType: "player" as const,
+                  }
+                : null,
+              teamId: mPlayer.teamId,
+              placement: mPlayer.placement,
+            };
+          }),
+          scoresheet: mPlayer.match.scoresheet,
+          outcome: {
+            score: mPlayer.score,
+            isWinner: mPlayer.winner ?? false,
+            placement: mPlayer.placement,
+          },
+          linkedGameId: undefined,
+        };
+      },
+      [],
+    );
+    returnedPlayer.sharedLinkedPlayers.forEach((linkedPlayer) => {
+      linkedPlayer.sharedMatchPlayers.forEach((mPlayer) => {
+        const sharedMatch = mPlayer.sharedMatch;
+        const filteredPlayers = sharedMatch.sharedMatchPlayers;
+        const sharedMatchMatch = sharedMatch.match;
+        const sharedGame = sharedMatch.sharedGame;
+        const linkedGame = sharedGame.linkedGame;
+        const foundGame = playerGames.find(
+          (pGame) =>
+            pGame.id === (sharedGame.linkedGameId ?? sharedGame.id) &&
+            pGame.type === (sharedGame.linkedGameId ? "original" : "shared"),
+        );
+        if (!foundGame) {
+          playerGames.push({
+            type: sharedGame.linkedGameId
+              ? ("original" as const)
+              : ("shared" as const),
+            id: sharedGame.linkedGameId ?? sharedGame.id,
+            name: linkedGame?.name ?? sharedGame.game.name,
+            image: linkedGame ? linkedGame.image : sharedGame.game.image,
+          });
+        }
+        playerMatches.push({
+          id: sharedMatch.id,
+          type: "shared" as const,
+          date: sharedMatchMatch.date,
+          name: sharedMatchMatch.name,
+          teams: sharedMatchMatch.teams,
+          duration: sharedMatchMatch.duration,
+          finished: sharedMatchMatch.finished,
+          gameId: sharedMatch.sharedGame.id,
+          gameName: linkedGame ? linkedGame.name : sharedGame.game.name,
+          gameImage: linkedGame ? linkedGame.image : sharedGame.game.image,
+          locationName: sharedMatchMatch.location?.name,
+          players: filteredPlayers
+            .map((fPlayer) => {
+              const sharedPlayer = fPlayer.sharedPlayer;
+              const linkedPlayer = sharedPlayer?.linkedPlayer;
+              if (sharedPlayer) {
+                if (linkedPlayer) {
+                  return {
+                    id: linkedPlayer.id,
+                    type: "original" as const,
+                    name: linkedPlayer.name,
+                    isUser: linkedPlayer.isUser,
+                    isWinner: fPlayer.matchPlayer.winner ?? false,
+                    score: fPlayer.matchPlayer.score,
+                    image: linkedPlayer.image
+                      ? {
+                          name: linkedPlayer.image.name,
+                          url: linkedPlayer.image.url,
+                          type: linkedPlayer.image.type,
+                          usageType: "player" as const,
+                        }
+                      : null,
+                    teamId: fPlayer.matchPlayer.teamId,
+                    placement: fPlayer.matchPlayer.placement,
+                  };
+                }
+                return {
+                  id: sharedPlayer.id,
+                  type: "shared" as const,
+                  name: sharedPlayer.player.name,
+                  isUser: sharedPlayer.player.isUser,
+                  isWinner: fPlayer.matchPlayer.winner ?? false,
+                  score: fPlayer.matchPlayer.score,
+                  image: sharedPlayer.player.image
+                    ? {
+                        name: sharedPlayer.player.image.name,
+                        url: sharedPlayer.player.image.url,
+                        type: sharedPlayer.player.image.type,
+                        usageType: "player" as const,
+                      }
+                    : null,
+                  teamId: fPlayer.matchPlayer.teamId,
+                  placement: fPlayer.matchPlayer.placement,
+                };
+              }
+              return null;
+            })
+            .filter((player) => player !== null),
+          scoresheet: sharedMatchMatch.scoresheet,
+
+          outcome: {
+            score: mPlayer.matchPlayer.score,
+            isWinner: mPlayer.matchPlayer.winner ?? false,
+            placement: mPlayer.matchPlayer.placement,
+          },
+          linkedGameId:
+            mPlayer.sharedMatch.sharedGame.linkedGameId ?? undefined,
+        });
+      });
+    });
+    playerMatches.sort((a, b) => compareAsc(b.date, a.date));
+    const playersStats = aggregatePlayerStats(playerMatches);
+    const userStats = playersStats.find(
+      (p) => p.id === returnedPlayer.id && p.type === "original",
+    );
+    if (!userStats) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Player stats not found.",
+      });
+    }
+    return {
+      id: returnedPlayer.id,
+      matches: playerMatches,
+      games: userStats.gameStats,
+      stats: userStats,
+    };
   }),
 };
