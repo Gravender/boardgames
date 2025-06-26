@@ -1,24 +1,14 @@
 "use client";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { LabelList, Pie, PieChart, ResponsiveContainer } from "recharts";
+import { Clock } from "lucide-react";
 
-import type { ChartConfig } from "@board-games/ui/chart";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@board-games/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@board-games/ui/chart";
+import { formatDuration } from "@board-games/shared";
+import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
+import { ScrollArea } from "@board-games/ui/scroll-area";
+import { Skeleton } from "@board-games/ui/skeleton";
 
+import { GameImage } from "~/components/game-image";
 import { useTRPC } from "~/trpc/react";
 
 export function UniqueGamesChart() {
@@ -26,67 +16,75 @@ export function UniqueGamesChart() {
   const { data: data } = useSuspenseQuery(
     trpc.dashboard.getUniqueGames.queryOptions(),
   );
-  const games = data.games.slice(0, 5);
-  const chartConfig = games.reduce<ChartConfig>(
-    (acc, game) => {
-      acc[game.name] = {
-        label: game.name,
-        color: `hsl(var(--chart-${games.indexOf(game) + 1}))`,
-      };
-      return acc;
-    },
-    {
-      matches: {
-        label: "matches",
-      },
-    },
-  ) satisfies ChartConfig;
-  const chartData = games.map((game) => ({
-    game: game.name,
-    matches: game.matches,
-    fill: chartConfig[game.name]?.color,
-  }));
+
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="items-center pb-0">
-        <CardTitle>Games Played</CardTitle>
-        <CardDescription suppressHydrationWarning>
-          {format(new Date(), "yyyy")}
-        </CardDescription>
+    <Card className="col-span-2">
+      <CardHeader>
+        <CardTitle>Popular Games</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 pb-0">
-        <ChartContainer
-          config={chartConfig}
-          className="mx-auto aspect-square max-h-[500px] min-h-[150px] [&_.recharts-text]:fill-background"
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <ChartTooltip
-                content={<ChartTooltipContent nameKey="matches" hideLabel />}
-              />
-              <Pie data={chartData} dataKey="matches">
-                <LabelList
-                  dataKey="game"
-                  className="fill-background"
-                  stroke="none"
-                  fontSize={12}
-                  formatter={(value: keyof typeof chartConfig) =>
-                    chartConfig[value]?.label
-                  }
-                />
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartContainer>
+      <CardContent className="px-0 pb-2">
+        <ScrollArea>
+          <div className="flex max-h-[25vh] w-full flex-col gap-2 px-6">
+            {data.map((game) => (
+              <div
+                key={game.id}
+                className="flex items-center justify-between rounded-lg border p-3"
+              >
+                <div className="flex items-center gap-3">
+                  <GameImage
+                    image={game.image}
+                    alt={game.name}
+                    containerClassName="h-10 w-10"
+                  />
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-medium">{game.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {game.matches} matches played
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <Clock className="h-3 w-3 text-muted-foreground" />
+                  <span className="w-20 text-xs text-muted-foreground">
+                    {formatDuration(Number(game.duration))}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
       </CardContent>
-      <CardFooter className="flex-col gap-2 text-sm">
-        <div className="flex items-center gap-2 font-medium leading-none">
-          {`Played ${data.currentMonthGames} different games this Year`}
+    </Card>
+  );
+}
+export function GamePerformanceSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Skeleton className="h-5 w-5" />
+          <Skeleton className="h-5 w-32" />
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between rounded-lg border p-3"
+            >
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-md" />
+                <div className="flex flex-col gap-1">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+              <Skeleton className="h-3 w-24" />
+            </div>
+          ))}
         </div>
-        <div className="leading-none text-muted-foreground">
-          Showing top 5 games played this Year
-        </div>
-      </CardFooter>
+      </CardContent>
     </Card>
   );
 }

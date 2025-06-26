@@ -33,13 +33,9 @@ export default function PlacementsChart() {
       label: "4th Place",
       color: "hsl(var(--chart-4))",
     },
-    fifth: {
-      label: "5th Place",
-      color: "hsl(var(--chart-5))",
-    },
     other: {
-      label: "6th+ Place",
-      color: "hsl(var(--muted-foreground))",
+      label: "5th+ Place",
+      color: "hsl(var(--chart-5))",
     },
   };
   const COLORS = [
@@ -47,7 +43,6 @@ export default function PlacementsChart() {
     chartConfig.second.color,
     chartConfig.third.color,
     chartConfig.fourth.color,
-    chartConfig.fifth.color,
     chartConfig.other.color,
   ];
   const chartData = data.map((entry, index) => ({

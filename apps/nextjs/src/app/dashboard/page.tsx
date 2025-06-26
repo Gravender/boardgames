@@ -7,7 +7,10 @@ import { EmptyDashboard } from "./_components/empty-dashboard";
 import { PlayedChart } from "./_components/gamesPlayedChart";
 import PlacementsChart from "./_components/placements-chart";
 import { PlayersCard } from "./_components/playersCard";
-import { UniqueGamesChart } from "./_components/uniqueGamesChart";
+import {
+  GamePerformanceSkeleton,
+  UniqueGamesChart,
+} from "./_components/uniqueGamesChart";
 import WinPercentageChart from "./_components/win-percentage-chart";
 
 export default async function Page() {
@@ -27,11 +30,20 @@ export default async function Page() {
   return (
     <HydrateClient>
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4 pt-0">
-        <div className="grid max-w-4xl gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <UniqueGamesChart />
+        <div className="grid max-w-6xl gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <Suspense
+            fallback={
+              <div className="h-96 w-full animate-pulse rounded-lg bg-card-foreground/50" />
+            }
+          >
+            <WinPercentageChart />
+          </Suspense>
+          <Suspense fallback={<GamePerformanceSkeleton />}>
+            <UniqueGamesChart />
+          </Suspense>
 
           <ChartCard
-            className="col-span-1 lg:col-span-1"
+            className="col-span-1"
             title="Match Placements"
             description="Distribution of your placements in matches"
             children={
@@ -71,13 +83,6 @@ export default async function Page() {
             }
           >
             <PlayedChart />
-          </Suspense>
-          <Suspense
-            fallback={
-              <div className="h-96 w-full animate-pulse rounded-lg bg-card-foreground/50" />
-            }
-          >
-            <WinPercentageChart />
           </Suspense>
         </div>
         <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
