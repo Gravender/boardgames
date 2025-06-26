@@ -30,7 +30,7 @@ export default async function Page() {
   return (
     <HydrateClient>
       <div className="flex flex-1 flex-col items-center justify-center gap-4 pt-0">
-        <div className="grid max-w-6xl gap-4 px-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid max-w-7xl gap-4 px-4 sm:grid-cols-2 xl:grid-cols-4">
           <Suspense
             fallback={
               <div className="h-96 w-full animate-pulse rounded-lg bg-card-foreground/50" />
@@ -85,7 +85,6 @@ export default async function Page() {
             <PlayedChart />
           </Suspense>
         </div>
-        <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
       </div>
     </HydrateClient>
   );
