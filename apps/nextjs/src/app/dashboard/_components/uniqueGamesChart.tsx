@@ -18,13 +18,13 @@ export function UniqueGamesChart() {
   );
 
   return (
-    <Card className="col-span-2">
+    <Card className="col-span-1 sm:col-span-2">
       <CardHeader>
         <CardTitle>Popular Games</CardTitle>
       </CardHeader>
       <CardContent className="px-0 pb-2">
         <ScrollArea>
-          <div className="flex max-h-[25vh] w-full flex-col gap-2 px-6">
+          <div className="flex max-h-[25vh] w-full flex-col gap-2 px-2 sm:px-6">
             {data.map((game) => (
               <div
                 key={game.id}
