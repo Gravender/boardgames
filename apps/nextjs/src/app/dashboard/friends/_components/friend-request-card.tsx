@@ -10,6 +10,7 @@ import { Button } from "@board-games/ui/button";
 import { Card, CardContent } from "@board-games/ui/card";
 import { toast } from "@board-games/ui/toast";
 
+import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 
 interface FriendRequestCardProps {
