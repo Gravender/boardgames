@@ -13,9 +13,7 @@ import { useTRPC } from "~/trpc/react";
 
 export function GamePerformance() {
   const trpc = useTRPC();
-  const { data: data } = useSuspenseQuery(
-    trpc.dashboard.getUserStats.queryOptions(),
-  );
+  const { data } = useSuspenseQuery(trpc.dashboard.getUserStats.queryOptions());
 
   return (
     <Card className="col-span-1 sm:col-span-2">

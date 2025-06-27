@@ -35,7 +35,7 @@ const chartConfig = {
 
 export function PlayedChart() {
   const trpc = useTRPC();
-  const { data: data } = useSuspenseQuery(
+  const { data } = useSuspenseQuery(
     trpc.dashboard.getMatchesByMonth.queryOptions(),
   );
   const trendCalculate = (numbers: number[]) => {

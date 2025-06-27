@@ -27,6 +27,7 @@ export default async function Page() {
 
   prefetch(trpc.dashboard.getUserWinPercentage.queryOptions());
   prefetch(trpc.dashboard.getDaysPlayed.queryOptions());
+  prefetch(trpc.dashboard.getUserStats.queryOptions());
 
   return (
     <HydrateClient>

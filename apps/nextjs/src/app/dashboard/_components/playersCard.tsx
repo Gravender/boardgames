@@ -13,7 +13,7 @@ import { useTRPC } from "~/trpc/react";
 
 export function PlayersCard() {
   const trpc = useTRPC();
-  const { data: data } = useSuspenseQuery(
+  const { data } = useSuspenseQuery(
     trpc.dashboard.getPlayersWIthMatches.queryOptions(),
   );
   return (
