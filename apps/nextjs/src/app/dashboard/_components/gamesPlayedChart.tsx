@@ -48,7 +48,7 @@ export function PlayedChart() {
   const trend = trendCalculate(data.months.map((month) => month.thisYear));
 
   return (
-    <Card className="col-span-1 sm:col-span-2 xl:col-span-4">
+    <Card className="col-span-1 sm:col-span-2">
       <CardHeader>
         <CardTitle>Matches Played</CardTitle>
         <CardDescription>{`${data.months[0]?.month} ${subMonths(new Date(), 11).getFullYear()} - ${data.months[data.months.length - 1]?.month} ${new Date().getFullYear()}`}</CardDescription>

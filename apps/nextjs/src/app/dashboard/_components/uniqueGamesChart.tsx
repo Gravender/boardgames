@@ -11,7 +11,7 @@ import { Skeleton } from "@board-games/ui/skeleton";
 import { GameImage } from "~/components/game-image";
 import { useTRPC } from "~/trpc/react";
 
-export function UniqueGamesChart() {
+export function GamesChart() {
   const trpc = useTRPC();
   const { data: data } = useSuspenseQuery(
     trpc.dashboard.getUniqueGames.queryOptions(),
@@ -24,10 +24,10 @@ export function UniqueGamesChart() {
       </CardHeader>
       <CardContent className="px-0 pb-2">
         <ScrollArea>
-          <div className="flex max-h-[25vh] w-full flex-col gap-2 px-2 sm:px-6">
+          <div className="flex max-h-[23vh] w-full flex-col gap-2 px-2 sm:px-6">
             {data.map((game) => (
               <div
-                key={game.id}
+                key={`${game.id}-${game.type}`}
                 className="flex items-center justify-between rounded-lg border p-3"
               >
                 <div className="flex items-center gap-3">
@@ -39,7 +39,7 @@ export function UniqueGamesChart() {
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium">{game.name}</span>
                     <span className="text-xs text-muted-foreground">
-                      {game.matches} matches played
+                      {game.matches} plays
                     </span>
                   </div>
                 </div>
@@ -57,9 +57,9 @@ export function UniqueGamesChart() {
     </Card>
   );
 }
-export function GamePerformanceSkeleton() {
+export function GamesSkeleton() {
   return (
-    <Card>
+    <Card className="col-span-1 sm:col-span-2">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Skeleton className="h-5 w-5" />

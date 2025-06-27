@@ -4,13 +4,14 @@ import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { ChartCard } from "./_components/chart-card";
 import DaysPlayedChart from "./_components/day-played-chart";
 import { EmptyDashboard } from "./_components/empty-dashboard";
+import {
+  GamePerformance,
+  GamePerformanceSkeleton,
+} from "./_components/game-performance";
 import { PlayedChart } from "./_components/gamesPlayedChart";
 import PlacementsChart from "./_components/placements-chart";
 import { PlayersCard } from "./_components/playersCard";
-import {
-  GamePerformanceSkeleton,
-  UniqueGamesChart,
-} from "./_components/uniqueGamesChart";
+import { GamesChart, GamesSkeleton } from "./_components/uniqueGamesChart";
 import WinPercentageChart from "./_components/win-percentage-chart";
 
 export default async function Page() {
@@ -38,8 +39,8 @@ export default async function Page() {
           >
             <WinPercentageChart />
           </Suspense>
-          <Suspense fallback={<GamePerformanceSkeleton />}>
-            <UniqueGamesChart />
+          <Suspense fallback={<GamesSkeleton />}>
+            <GamesChart />
           </Suspense>
 
           <ChartCard
@@ -76,6 +77,9 @@ export default async function Page() {
             }
           >
             <PlayersCard />
+          </Suspense>
+          <Suspense fallback={<GamePerformanceSkeleton />}>
+            <GamePerformance />
           </Suspense>
           <Suspense
             fallback={
