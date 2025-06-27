@@ -963,18 +963,7 @@ export const dashboardRouter = {
                     image: true,
                   },
                 },
-                matchPlayers: {
-                  with: {
-                    player: {
-                      with: {
-                        image: true,
-                      },
-                    },
-                  },
-                },
                 location: true,
-                teams: true,
-                scoresheet: true,
               },
             },
           },
@@ -1004,34 +993,6 @@ export const dashboardRouter = {
                             image: true,
                           },
                         },
-                      },
-                    },
-                    sharedMatchPlayers: {
-                      where: {
-                        sharedWithId: ctx.userId,
-                      },
-                      with: {
-                        sharedPlayer: {
-                          where: {
-                            sharedWithId: ctx.userId,
-                          },
-                          with: {
-                            player: {
-                              with: {
-                                image: true,
-                              },
-                            },
-                            linkedPlayer: {
-                              where: {
-                                createdBy: ctx.userId,
-                              },
-                              with: {
-                                image: true,
-                              },
-                            },
-                          },
-                        },
-                        matchPlayer: true,
                       },
                     },
                     match: {
@@ -1065,69 +1026,41 @@ export const dashboardRouter = {
         type: "file" | "svg";
         usageType: "game" | "player" | "match";
       } | null;
+      plays: number;
+      duration: number;
+      wins: number;
+      lastPlayed: Date;
     }[] = [];
-    const playerMatches = returnedPlayer.matchPlayers.map<PlayerMatch>(
-      (mPlayer) => {
-        const filteredPlayers = mPlayer.match.matchPlayers;
-        const foundGame = playerGames.find(
-          (pGame) =>
-            pGame.id === mPlayer.match.gameId && pGame.type === "original",
-        );
-        if (!foundGame) {
-          playerGames.push({
-            type: "original",
-            id: mPlayer.match.gameId,
-            name: mPlayer.match.game.name,
-            image: mPlayer.match.game.image,
-          });
-        }
-        return {
-          id: mPlayer.matchId,
-          type: "original" as const,
-          date: mPlayer.match.date,
-          name: mPlayer.match.name,
-          teams: mPlayer.match.teams,
+    returnedPlayer.matchPlayers.forEach((mPlayer) => {
+      const foundGame = playerGames.find(
+        (pGame) =>
+          pGame.id === mPlayer.match.gameId && pGame.type === "original",
+      );
+      if (!foundGame) {
+        playerGames.push({
+          type: "original",
+          id: mPlayer.match.gameId,
+          name: mPlayer.match.game.name,
+          image: mPlayer.match.game.image,
+          plays: 1,
           duration: mPlayer.match.duration,
-          finished: mPlayer.match.finished,
-          gameId: mPlayer.match.gameId,
-          gameName: mPlayer.match.game.name,
-          gameImage: mPlayer.match.game.image,
-          locationName: mPlayer.match.location?.name,
-          players: filteredPlayers.map<Player>((mPlayer) => {
-            return {
-              id: mPlayer.player.id,
-              type: "original" as const,
-              name: mPlayer.player.name,
-              isWinner: mPlayer.winner ?? false,
-              isUser: mPlayer.player.isUser,
-              score: mPlayer.score,
-              image: mPlayer.player.image
-                ? {
-                    name: mPlayer.player.image.name,
-                    url: mPlayer.player.image.url,
-                    type: mPlayer.player.image.type,
-                    usageType: "player" as const,
-                  }
-                : null,
-              teamId: mPlayer.teamId,
-              placement: mPlayer.placement,
-            };
-          }),
-          scoresheet: mPlayer.match.scoresheet,
-          outcome: {
-            score: mPlayer.score,
-            isWinner: mPlayer.winner ?? false,
-            placement: mPlayer.placement,
-          },
-          linkedGameId: undefined,
-        };
-      },
-      [],
-    );
+          wins: mPlayer.winner ? 1 : 0,
+          lastPlayed: mPlayer.match.date,
+        });
+      } else {
+        foundGame.plays += 1;
+        foundGame.duration += mPlayer.match.duration;
+        if (mPlayer.winner) {
+          foundGame.wins += 1;
+        }
+        if (mPlayer.match.date > foundGame.lastPlayed) {
+          foundGame.lastPlayed = mPlayer.match.date;
+        }
+      }
+    }, []);
     returnedPlayer.sharedLinkedPlayers.forEach((linkedPlayer) => {
       linkedPlayer.sharedMatchPlayers.forEach((mPlayer) => {
         const sharedMatch = mPlayer.sharedMatch;
-        const filteredPlayers = sharedMatch.sharedMatchPlayers;
         const sharedMatchMatch = sharedMatch.match;
         const sharedGame = sharedMatch.sharedGame;
         const linkedGame = sharedGame.linkedGame;
@@ -1144,95 +1077,39 @@ export const dashboardRouter = {
             id: sharedGame.linkedGameId ?? sharedGame.id,
             name: linkedGame?.name ?? sharedGame.game.name,
             image: linkedGame ? linkedGame.image : sharedGame.game.image,
+            plays: 1,
+            duration: sharedMatchMatch.duration,
+            wins: mPlayer.matchPlayer.winner ? 1 : 0,
+            lastPlayed: sharedMatchMatch.date,
           });
+        } else {
+          foundGame.plays += 1;
+          foundGame.duration += sharedMatchMatch.duration;
+          if (mPlayer.matchPlayer.winner) {
+            foundGame.wins += 1;
+          }
+          if (sharedMatchMatch.date > foundGame.lastPlayed) {
+            foundGame.lastPlayed = sharedMatchMatch.date;
+          }
         }
-        playerMatches.push({
-          id: sharedMatch.id,
-          type: "shared" as const,
-          date: sharedMatchMatch.date,
-          name: sharedMatchMatch.name,
-          teams: sharedMatchMatch.teams,
-          duration: sharedMatchMatch.duration,
-          finished: sharedMatchMatch.finished,
-          gameId: sharedMatch.sharedGame.id,
-          gameName: linkedGame ? linkedGame.name : sharedGame.game.name,
-          gameImage: linkedGame ? linkedGame.image : sharedGame.game.image,
-          locationName: sharedMatchMatch.location?.name,
-          players: filteredPlayers
-            .map((fPlayer) => {
-              const sharedPlayer = fPlayer.sharedPlayer;
-              const linkedPlayer = sharedPlayer?.linkedPlayer;
-              if (sharedPlayer) {
-                if (linkedPlayer) {
-                  return {
-                    id: linkedPlayer.id,
-                    type: "original" as const,
-                    name: linkedPlayer.name,
-                    isUser: linkedPlayer.isUser,
-                    isWinner: fPlayer.matchPlayer.winner ?? false,
-                    score: fPlayer.matchPlayer.score,
-                    image: linkedPlayer.image
-                      ? {
-                          name: linkedPlayer.image.name,
-                          url: linkedPlayer.image.url,
-                          type: linkedPlayer.image.type,
-                          usageType: "player" as const,
-                        }
-                      : null,
-                    teamId: fPlayer.matchPlayer.teamId,
-                    placement: fPlayer.matchPlayer.placement,
-                  };
-                }
-                return {
-                  id: sharedPlayer.id,
-                  type: "shared" as const,
-                  name: sharedPlayer.player.name,
-                  isUser: sharedPlayer.player.isUser,
-                  isWinner: fPlayer.matchPlayer.winner ?? false,
-                  score: fPlayer.matchPlayer.score,
-                  image: sharedPlayer.player.image
-                    ? {
-                        name: sharedPlayer.player.image.name,
-                        url: sharedPlayer.player.image.url,
-                        type: sharedPlayer.player.image.type,
-                        usageType: "player" as const,
-                      }
-                    : null,
-                  teamId: fPlayer.matchPlayer.teamId,
-                  placement: fPlayer.matchPlayer.placement,
-                };
-              }
-              return null;
-            })
-            .filter((player) => player !== null),
-          scoresheet: sharedMatchMatch.scoresheet,
-
-          outcome: {
-            score: mPlayer.matchPlayer.score,
-            isWinner: mPlayer.matchPlayer.winner ?? false,
-            placement: mPlayer.matchPlayer.placement,
-          },
-          linkedGameId:
-            mPlayer.sharedMatch.sharedGame.linkedGameId ?? undefined,
-        });
       });
     });
-    playerMatches.sort((a, b) => compareAsc(b.date, a.date));
-    const playersStats = aggregatePlayerStats(playerMatches);
-    const userStats = playersStats.find(
-      (p) => p.id === returnedPlayer.id && p.type === "original",
-    );
-    if (!userStats) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Player stats not found.",
-      });
-    }
-    return {
-      id: returnedPlayer.id,
-      matches: playerMatches,
-      games: userStats.gameStats,
-      stats: userStats,
-    };
+    const gamesWithWinRate = playerGames.map((game) => ({
+      id: game.id,
+      type: game.type,
+      name: game.name,
+      image: game.image,
+      plays: game.plays,
+      duration: game.duration,
+      wins: game.wins,
+      winRate: game.plays > 0 ? (game.wins / game.plays) * 100 : 0,
+      lastPlayed: game.lastPlayed,
+    }));
+    gamesWithWinRate.sort((a, b) => {
+      if (a.plays > 20 && b.plays > 20) return b.winRate - a.winRate;
+      if (a.plays > 10 && b.plays > 10) return b.wins - a.wins;
+      return b.plays - a.plays;
+    });
+    return gamesWithWinRate;
   }),
 };

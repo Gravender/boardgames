@@ -13,7 +13,7 @@ import { useTRPC } from "~/trpc/react";
 
 export function PlayersCard() {
   const trpc = useTRPC();
-  const { data: data } = useSuspenseQuery(
+  const { data } = useSuspenseQuery(
     trpc.dashboard.getPlayersWIthMatches.queryOptions(),
   );
   return (
@@ -23,7 +23,7 @@ export function PlayersCard() {
       </CardHeader>
       <CardContent className="px-0">
         <ScrollArea>
-          <div className="flex max-h-[25vh] w-full flex-col gap-2 px-6">
+          <div className="flex max-h-[23vh] w-full flex-col gap-2 px-6">
             {data.map((player) => (
               <div
                 key={`${player.id}-${player.type}`}

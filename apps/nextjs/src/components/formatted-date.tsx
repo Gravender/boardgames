@@ -24,7 +24,6 @@ export function FormattedDate({
       >
         <Icon className={cn("h-4 w-4", iconClassName)} />
         {format(date, pattern)}
-        {}
       </span>
     );
   }
