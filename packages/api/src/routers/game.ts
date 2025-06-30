@@ -42,6 +42,7 @@ import { baseRoundSchema, editScoresheetSchema } from "@board-games/shared";
 import analyticsServerClient from "../analytics";
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 import { utapi } from "../uploadthing";
+import { updateRoundStatistics } from "../utils/gameStats";
 
 export const gameRouter = createTRPCRouter({
   create: protectedUserProcedure
@@ -1006,79 +1007,13 @@ export const gameRouter = createTRPCRouter({
               > = {};
               if (!isCoop) tempPlacements[player.placement] = 1;
               if (currentScoresheet.parentId) {
-                const tempPlayerRounds: Record<
-                  number,
-                  {
-                    id: number;
-                    bestScore: number | null;
-                    worstScore: number | null;
-                    scores: {
-                      date: Date;
-                      score: number | null;
-                      isWin: boolean;
-                    }[];
-                  }
-                > = {};
-                player.playerRounds.forEach((pRound) => {
-                  const foundRound = currentScoresheet.rounds.find(
-                    (round) => round.id === pRound.roundId,
-                  );
-                  if (foundRound?.parentId) {
-                    const tempPlayerRound =
-                      tempPlayerRounds[foundRound.parentId];
-                    if (!tempPlayerRound) {
-                      tempPlayerRounds[foundRound.parentId] = {
-                        id: foundRound.id,
-                        bestScore:
-                          currentScoresheet.winCondition === "Lowest Score" ||
-                          currentScoresheet.winCondition === "Highest Score"
-                            ? pRound.score
-                            : null,
-                        worstScore:
-                          currentScoresheet.winCondition === "Lowest Score" ||
-                          currentScoresheet.winCondition === "Highest Score"
-                            ? pRound.score
-                            : null,
-                        scores: [
-                          {
-                            date: match.date,
-                            score: pRound.score,
-                            isWin: player.isWinner ?? false,
-                          },
-                        ],
-                      };
-                    } else {
-                      if (pRound.score !== null) {
-                        if (currentScoresheet.winCondition === "Lowest Score") {
-                          tempPlayerRound.bestScore = Math.min(
-                            tempPlayerRound.bestScore ?? 0,
-                            pRound.score,
-                          );
-                          tempPlayerRound.worstScore = Math.max(
-                            tempPlayerRound.worstScore ?? 0,
-                            pRound.score,
-                          );
-                        } else if (
-                          currentScoresheet.winCondition === "Highest Score"
-                        ) {
-                          tempPlayerRound.bestScore = Math.max(
-                            tempPlayerRound.bestScore ?? 0,
-                            pRound.score,
-                          );
-                          tempPlayerRound.worstScore = Math.min(
-                            tempPlayerRound.worstScore ?? 0,
-                            pRound.score,
-                          );
-                        }
-                      }
-                      tempPlayerRound.scores.push({
-                        date: match.date,
-                        score: pRound.score,
-                        isWin: pRound.score === player.score,
-                      });
-                    }
-                  }
-                });
+                const tempPlayerRounds = updateRoundStatistics(
+                  player.playerRounds,
+                  currentScoresheet.rounds,
+                  currentScoresheet.winCondition,
+                  match.date,
+                  player.isWinner ?? false,
+                );
                 tempScoresheets[currentScoresheet.parentId] = {
                   id: currentScoresheet.id,
                   bestScore: player.score,
@@ -1154,81 +1089,13 @@ export const gameRouter = createTRPCRouter({
                 const accScoresheet =
                   accPlayer.scoresheets[currentScoresheet.parentId];
                 if (!accScoresheet) {
-                  const tempPlayerRounds: Record<
-                    number,
-                    {
-                      id: number;
-                      bestScore: number | null;
-                      worstScore: number | null;
-                      scores: {
-                        date: Date;
-                        score: number | null;
-                        isWin: boolean;
-                      }[];
-                    }
-                  > = {};
-                  player.playerRounds.forEach((pRound) => {
-                    const foundRound = currentScoresheet.rounds.find(
-                      (round) => round.id === pRound.roundId,
-                    );
-                    if (foundRound?.parentId) {
-                      const tempPlayerRound =
-                        tempPlayerRounds[foundRound.parentId];
-                      if (!tempPlayerRound) {
-                        tempPlayerRounds[foundRound.parentId] = {
-                          id: foundRound.id,
-                          bestScore:
-                            currentScoresheet.winCondition === "Lowest Score" ||
-                            currentScoresheet.winCondition === "Highest Score"
-                              ? pRound.score
-                              : null,
-                          worstScore:
-                            currentScoresheet.winCondition === "Lowest Score" ||
-                            currentScoresheet.winCondition === "Highest Score"
-                              ? pRound.score
-                              : null,
-                          scores: [
-                            {
-                              date: match.date,
-                              score: pRound.score,
-                              isWin: player.isWinner ?? false,
-                            },
-                          ],
-                        };
-                      } else {
-                        if (pRound.score !== null) {
-                          if (
-                            currentScoresheet.winCondition === "Lowest Score"
-                          ) {
-                            tempPlayerRound.bestScore = Math.min(
-                              tempPlayerRound.bestScore ?? 0,
-                              pRound.score,
-                            );
-                            tempPlayerRound.worstScore = Math.max(
-                              tempPlayerRound.worstScore ?? 0,
-                              pRound.score,
-                            );
-                          } else if (
-                            currentScoresheet.winCondition === "Highest Score"
-                          ) {
-                            tempPlayerRound.bestScore = Math.max(
-                              tempPlayerRound.bestScore ?? 0,
-                              pRound.score,
-                            );
-                            tempPlayerRound.worstScore = Math.min(
-                              tempPlayerRound.worstScore ?? 0,
-                              pRound.score,
-                            );
-                          }
-                        }
-                        tempPlayerRound.scores.push({
-                          date: match.date,
-                          score: pRound.score,
-                          isWin: pRound.score === player.score,
-                        });
-                      }
-                    }
-                  });
+                  const tempPlayerRounds = updateRoundStatistics(
+                    player.playerRounds,
+                    currentScoresheet.rounds,
+                    currentScoresheet.winCondition,
+                    match.date,
+                    player.isWinner ?? false,
+                  );
                   accPlayer.scoresheets[currentScoresheet.parentId] = {
                     id: currentScoresheet.id,
                     bestScore: player.score,
@@ -1332,12 +1199,14 @@ export const gameRouter = createTRPCRouter({
                         accPlayerRound.scores.push({
                           date: match.date,
                           score: pRound.score,
-                          isWin: pRound.score === player.score,
+                          isWin: player.isWinner ?? false,
                         });
                       }
                     }
                   });
-                  if (!isCoop) accScoresheet.placements[player.placement] = 1;
+                  if (!isCoop)
+                    accScoresheet.placements[player.placement] =
+                      accScoresheet.placements[player.placement] ?? 0 + 1;
                 }
               }
             }
@@ -1478,9 +1347,12 @@ export const gameRouter = createTRPCRouter({
         duration: duration,
         players: Object.values(players).map((player) => ({
           ...player,
-          coopWinRate: player.coopWins / player.coopMatches,
+          coopWinRate:
+            player.coopMatches > 0 ? player.coopWins / player.coopMatches : 0,
           competitiveWinRate:
-            player.competitiveWins / player.competitiveMatches,
+            player.competitiveMatches > 0
+              ? player.competitiveWins / player.competitiveMatches
+              : 0,
           scoresheets: Object.values(player.scoresheets).map((scoresheet) => ({
             ...scoresheet,
             rounds: Object.values(scoresheet.rounds).map((round) => ({
