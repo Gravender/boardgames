@@ -619,14 +619,19 @@ const BodyRow = ({
           scope="row"
           className={cn(
             "sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg",
-            round.color &&
-              "over:opacity-50 text-slate-600 hover:dark:opacity-80",
+            round.color && "over:opacity-50 hover:dark:opacity-80",
           )}
           style={{
             backgroundColor: round.color ?? "",
           }}
         >
-          <span>{round.name}</span>
+          <span
+            style={{
+              mixBlendMode: round.color ? "multiply" : "normal",
+            }}
+          >
+            {round.name}
+          </span>
         </TableHead>
         {match.teams
           .filter((team) => players.find((player) => player.teamId === team.id))
@@ -722,14 +727,19 @@ const BodyRow = ({
         scope="row"
         className={cn(
           "sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg",
-          round.color &&
-            "text-slate-600 hover:opacity-50 hover:dark:opacity-80",
+          round.color && "hover:opacity-50 hover:dark:opacity-80",
         )}
         style={{
           backgroundColor: round.color ?? "",
         }}
       >
-        {round.name}
+        <span
+          style={{
+            mixBlendMode: round.color ? "multiply" : "normal",
+          }}
+        >
+          {round.name}
+        </span>
       </TableHead>
       {players.map((player) => {
         const roundPlayer = player.rounds.find(
