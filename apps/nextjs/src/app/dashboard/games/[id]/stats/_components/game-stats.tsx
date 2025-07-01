@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
 import {
   Activity,
   Award,
@@ -13,17 +12,6 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-} from "recharts";
 
 import { formatDuration, getOrdinalSuffix } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
@@ -34,11 +22,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@board-games/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@board-games/ui/chart";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { cn } from "@board-games/ui/utils";
@@ -47,9 +30,8 @@ import { FormattedDate } from "~/components/formatted-date";
 import { GameImage } from "~/components/game-image";
 import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
-import { MatchDurationTrendChart } from "../../../_components/match-duration-trend-chart";
 import { PlayerStatsTable } from "../../../_components/player-stats-table";
-import { WinLoseRatioChart } from "../../../_components/win-lose-chart";
+import { ScoreSheetsStats } from "./scoresheets-stats";
 
 export default function GameStats({ gameId }: { gameId: number }) {
   const trpc = useTRPC();
@@ -65,37 +47,9 @@ export default function GameStats({ gameId }: { gameId: number }) {
   // Calculate overall stats
   const finishedMatches = gameStats.matches.filter((match) => match.finished);
   const totalMatches = gameStats.totalMatches;
-  const averageDuration = Math.round(gameStats.duration / 60); // Convert seconds to minutes
-  const totalPlayers = gameStats.players.length;
   const lastMatch = finishedMatches[0]; // Assuming matches are sorted with most recent first
 
-  // Prepare data for charts
-  const winLossData = [
-    { name: "Won", value: gameStats.wonMatches },
-    { name: "Lost", value: gameStats.totalMatches - gameStats.wonMatches },
-  ];
-
-  const matchDurationData = finishedMatches
-    .toReversed() // Reverse to show chronological order
-    .map((match) => ({
-      name: format(new Date(match.date), "MMM d"),
-      duration: Math.round(match.duration / 60), // Convert seconds to minutes
-    }));
-
-  // Current player (you) data
-  const currentPlayer = gameStats.players.find((p) => p.isUser);
-  // Score over time data
-
-  const scoreOverTimeData = [...gameStats.matches]
-    .reverse() // Show chronological order
-    .map((match) => {
-      const playerInMatch = match.players.find((p) => p.isUser);
-      return {
-        date: format(match.date, "MMM d"),
-        score: playerInMatch?.score ?? null,
-      };
-    })
-    .filter((data) => data.score !== null);
+  const userStats = gameStats.players.find((player) => player.isUser);
 
   return (
     <div className="flex w-full max-w-4xl flex-col gap-4">
@@ -114,8 +68,8 @@ export default function GameStats({ gameId }: { gameId: number }) {
       </div>
 
       {/* Game image and overview cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-        <Card className="row-span-2 hidden xs:block">
+      <div className="grid grid-cols-1 gap-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
+        <Card className="col-span-1 hidden border-none xs:block">
           <CardContent className="flex items-center justify-center p-0">
             <GameImage
               image={gameStats.image}
@@ -125,64 +79,102 @@ export default function GameStats({ gameId }: { gameId: number }) {
             />
           </CardContent>
         </Card>
+        <div className="col-span-1 sm:col-span-2 md:col-span-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:gap-4">
+            <Card className="col-span-1">
+              <CardContent className="p-2 pt-2">
+                <div className="flex items-center justify-between px-2">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Total Matches
+                    </p>
+                    <p className="text-xl font-bold">{totalMatches}</p>
+                  </div>
+                  <Activity className="size-6 text-muted-foreground opacity-50 sm:size-8" />
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card className="row-span-1">
-          <CardContent className="p-2 pt-2">
-            <div className="flex items-center justify-between px-2">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Total Matches
-                </p>
-                <p className="text-2xl font-bold">{totalMatches}</p>
-              </div>
-              <Activity className="h-8 w-8 text-muted-foreground opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
+            <Card className="col-span-1">
+              <CardContent className="p-2 pt-2">
+                <div className="flex items-center justify-between px-2">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Win Rate
+                    </p>
+                    <p className="text-xl font-bold">
+                      {gameStats.winRate.toFixed(2)}%
+                    </p>
+                  </div>
+                  <Trophy className="size-6 text-muted-foreground opacity-50 sm:size-8" />
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card className="row-span-1">
-          <CardContent className="p-2 pt-2">
-            <div className="flex items-center justify-between px-2">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Win Rate
-                </p>
-                <p className="text-2xl font-bold">
-                  {gameStats.winRate.toFixed(2)}%
-                </p>
-              </div>
-              <Trophy className="h-8 w-8 text-muted-foreground opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
+            <Card className="col-span-1">
+              <CardContent className="p-2 pt-2">
+                <div className="flex items-center justify-between px-2">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Duration
+                    </p>
+                    <p className="text-xl font-bold">
+                      {formatDuration(gameStats.duration)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Average Duration{" "}
+                      {formatDuration(
+                        gameStats.duration /
+                          gameStats.matches.filter((match) => match.finished)
+                            .length,
+                      )}
+                    </p>
+                  </div>
+                  <Clock className="size-6 text-muted-foreground opacity-50 sm:size-8" />
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card className="row-span-1">
-          <CardContent className="p-2 pt-2">
-            <div className="flex items-center justify-between px-2">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Avg. Duration
-                </p>
-                <p className="text-2xl font-bold">{averageDuration} min</p>
-              </div>
-              <Clock className="h-8 w-8 text-muted-foreground opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="row-span-1">
-          <CardContent className="p-2 pt-2">
-            <div className="flex items-center justify-between px-2">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Players
-                </p>
-                <p className="text-2xl font-bold">{totalPlayers}</p>
-              </div>
-              <Users className="h-8 w-8 text-muted-foreground opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
+            {userStats &&
+              userStats.competitiveMatches > 0 &&
+              userStats.coopMatches > 0 && (
+                <Card className="col-span-1">
+                  <CardContent className="p-2 pt-2">
+                    <div className="flex items-center justify-between px-2">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Cooperative Win Rate
+                        </p>
+                        <p className="text-xl font-bold">
+                          {(userStats.coopWinRate * 100).toFixed(2)}%
+                        </p>
+                      </div>
+                      <Trophy className="size-6 text-muted-foreground opacity-50 sm:size-8" />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            {userStats &&
+              userStats.competitiveMatches > 0 &&
+              userStats.coopMatches > 0 && (
+                <Card className="col-span-1">
+                  <CardContent className="p-2 pt-2">
+                    <div className="flex items-center justify-between px-2">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Competitive Win Rate
+                        </p>
+                        <p className="text-xl font-bold">
+                          {(userStats.competitiveWinRate * 100).toFixed(2)}%
+                        </p>
+                      </div>
+                      <Trophy className="size-6 text-muted-foreground opacity-50 sm:size-8" />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+          </div>
+        </div>
       </div>
 
       {/* Last match card */}
@@ -501,168 +493,20 @@ export default function GameStats({ gameId }: { gameId: number }) {
       )}
 
       {/* Charts */}
-      <Tabs defaultValue="overview">
+      <Tabs defaultValue="players">
         <TabsList className="mb-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="players">Players</TabsTrigger>
-          <TabsTrigger value="personal">Personal Stats</TabsTrigger>
+          <TabsTrigger value="scoresheet">Scoresheets</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* Win/Loss Ratio */}
-            <WinLoseRatioChart winLossData={winLossData} />
-
-            {/* Match Duration Trend */}
-            <MatchDurationTrendChart matchDurationData={matchDurationData} />
-          </div>
-        </TabsContent>
-
         <TabsContent value="players" className="space-y-6">
-          <PlayerStatsTable data={gameStats.players} />
+          <PlayerStatsTable players={gameStats.players} />
         </TabsContent>
-
-        <TabsContent value="personal" className="space-y-6">
-          {currentPlayer ? (
-            <>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {/* Personal Stats Summary */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Your Performance Summary</CardTitle>
-                    <CardDescription>
-                      Key statistics about your gameplay
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
-                      <div className="rounded-lg bg-muted/30 p-4">
-                        <h3 className="text-sm font-medium text-muted-foreground">
-                          Matches Played
-                        </h3>
-                        <p className="mt-1 text-2xl font-bold">
-                          {currentPlayer.plays}
-                        </p>
-                      </div>
-                      <div className="rounded-lg bg-muted/30 p-4">
-                        <h3 className="text-sm font-medium text-muted-foreground">
-                          Win Rate
-                        </h3>
-                        <p className="mt-1 text-2xl font-bold">
-                          {(currentPlayer.winRate * 100).toFixed(2)}%
-                        </p>
-                      </div>
-                      <div className="rounded-lg bg-muted/30 p-4">
-                        <h3 className="text-sm font-medium text-muted-foreground">
-                          Best Score
-                        </h3>
-                        <p className="mt-1 text-2xl font-bold">
-                          {currentPlayer.bestScore ?? "N/A"}
-                        </p>
-                      </div>
-                      <div className="rounded-lg bg-muted/30 p-4">
-                        <h3 className="text-sm font-medium text-muted-foreground">
-                          Worst Score
-                        </h3>
-                        <p className="mt-1 text-2xl font-bold">
-                          {currentPlayer.worstScore ?? "N/A"}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <WinLoseRatioChart winLossData={winLossData} />
-              </div>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {/* Placement Distribution */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Your Placements</CardTitle>
-                    <CardDescription>
-                      Distribution of your positions in matches
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[300px]">
-                      <ChartContainer
-                        config={{
-                          count: {
-                            label: "Times Achieved",
-                            color: "#a855f7", // purple-500
-                          },
-                        }}
-                      >
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                            data={Object.entries(currentPlayer.placements).map(
-                              ([position, count]) => ({
-                                position: `${position}${getOrdinalSuffix(Number(position))} Place`,
-                                count,
-                              }),
-                            )}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="position" />
-                            <YAxis />
-                            <ChartTooltip content={<ChartTooltipContent />} />
-                            <Legend />
-                            <Bar dataKey="count" fill="var(--color-count)" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Score Over Time */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Your Score Progression</CardTitle>
-                    <CardDescription>
-                      How your score has evolved over time
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[300px]">
-                      <ChartContainer
-                        config={{
-                          score: {
-                            label: "Score",
-                            color: "#ec4899", // pink-500
-                          },
-                        }}
-                      >
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={scoreOverTimeData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis />
-                            <ChartTooltip content={<ChartTooltipContent />} />
-                            <Legend />
-                            <Line
-                              type="monotone"
-                              dataKey="score"
-                              stroke="var(--color-score)"
-                              activeDot={{ r: 8 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </>
-          ) : (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <p className="text-muted-foreground">
-                  No personal stats available
-                </p>
-              </CardContent>
-            </Card>
-          )}
+        <TabsContent value="scoresheet" className="space-y-6">
+          <ScoreSheetsStats
+            players={gameStats.players}
+            scoresheets={gameStats.scoresheets}
+          />
         </TabsContent>
       </Tabs>
     </div>

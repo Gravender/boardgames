@@ -7,6 +7,7 @@ import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -20,29 +21,109 @@ import {
   TableHeader,
   TableRow,
 } from "@board-games/ui/table";
+import { ToggleGroup, ToggleGroupItem } from "@board-games/ui/toggle-group";
 
 import { PlayerImage } from "~/components/player-image";
 
-type Player =
-  | NonNullable<
-      RouterOutputs["sharing"]["getShareGameStats"]
-    >["players"][number]
-  | NonNullable<RouterOutputs["game"]["getGameStats"]>["players"][number];
+type Player = NonNullable<
+  RouterOutputs["game"]["getGameStats"]
+>["players"][number];
 type SortField = "name" | "plays" | "wins" | "winRate";
 type SortOrder = "asc" | "desc";
-export function PlayerStatsTable({ data }: { data: Player[] }) {
+export function PlayerStatsTable({ players }: { players: Player[] }) {
+  const [coopOrCompetitive, setCoopOrCompetitive] = useState<
+    "overall" | "coop" | "competitive"
+  >("overall");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
   const sortedPlayers = useMemo(() => {
-    const temp = [...data];
+    const temp = [...players];
     temp.sort((a, b) => {
-      if (a[sortField] < b[sortField]) return sortOrder === "asc" ? -1 : 1;
-      if (a[sortField] > b[sortField]) return sortOrder === "asc" ? 1 : -1;
-      return 0;
+      let aValue: number | string;
+      let bValue: number | string;
+
+      switch (sortField) {
+        case "name":
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case "plays":
+          if (coopOrCompetitive === "coop") {
+            aValue = a.coopMatches;
+            bValue = b.coopMatches;
+          } else if (coopOrCompetitive === "competitive") {
+            aValue = a.competitiveMatches;
+            bValue = b.competitiveMatches;
+          } else {
+            aValue = a.coopMatches + a.competitiveMatches;
+            bValue = b.coopMatches + b.competitiveMatches;
+          }
+          break;
+        case "wins":
+          if (coopOrCompetitive === "coop") {
+            aValue = a.coopWins;
+            bValue = b.coopWins;
+          } else if (coopOrCompetitive === "competitive") {
+            aValue = a.competitiveWins;
+            bValue = b.competitiveWins;
+          } else {
+            aValue = a.coopWins + a.competitiveWins;
+            bValue = b.coopWins + b.competitiveWins;
+          }
+          break;
+        case "winRate":
+          if (coopOrCompetitive === "coop") {
+            aValue = a.coopWinRate;
+            bValue = b.coopWinRate;
+          } else if (coopOrCompetitive === "competitive") {
+            aValue = a.competitiveWinRate;
+            bValue = b.competitiveWinRate;
+          } else {
+            aValue =
+              a.coopWins +
+              a.competitiveWins / (a.coopMatches + a.competitiveMatches);
+            bValue =
+              b.coopWins +
+              b.competitiveWins / (b.coopMatches + b.competitiveMatches);
+          }
+          break;
+        default:
+          if (coopOrCompetitive === "coop") {
+            aValue = a.coopWinRate;
+            bValue = b.coopWinRate;
+          } else if (coopOrCompetitive === "competitive") {
+            aValue = a.competitiveWinRate;
+            bValue = b.competitiveWinRate;
+          } else {
+            const aCombinedMatches = a.coopMatches + a.competitiveMatches;
+            const bCombinedMatches = b.coopMatches + b.competitiveMatches;
+            aValue =
+              aCombinedMatches > 0
+                ? (a.coopWins + a.competitiveWins) / aCombinedMatches
+                : 0;
+            bValue =
+              bCombinedMatches > 0
+                ? (b.coopWins + b.competitiveWins) / bCombinedMatches
+                : 0;
+          }
+      }
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return sortOrder === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sortOrder === "asc"
+        ? (aValue as number) - (bValue as number)
+        : (bValue as number) - (aValue as number);
     });
     return temp;
-  }, [data, sortField, sortOrder]);
+  }, [coopOrCompetitive, players, sortField, sortOrder]);
+
+  const hasCoop = players.some((p) => p.coopMatches > 0);
+  const hasCompetitive = players.some((p) => p.competitiveMatches > 0);
 
   const toggleSort = (field: SortField) => {
     if (field === sortField) {
@@ -67,6 +148,34 @@ export function PlayerStatsTable({ data }: { data: Player[] }) {
       <CardHeader>
         <CardTitle>Player Statistics</CardTitle>
         <CardDescription>Detailed stats for all players</CardDescription>
+        {hasCompetitive && hasCoop && (
+          <CardAction>
+            <span className="text-sm text-muted-foreground">Show:</span>
+            <ToggleGroup
+              type="single"
+              value={coopOrCompetitive}
+              onValueChange={(value) => {
+                if (value) {
+                  setCoopOrCompetitive(
+                    value as "coop" | "competitive" | "overall",
+                  );
+                }
+              }}
+            >
+              <ToggleGroupItem value="overall" size="sm">
+                Overall
+              </ToggleGroupItem>
+
+              <ToggleGroupItem value="competitive" size="sm">
+                Competitive
+              </ToggleGroupItem>
+
+              <ToggleGroupItem value="coop" size="sm">
+                Co-op
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </CardAction>
+        )}
       </CardHeader>
       <CardContent className="p-2">
         <div className="flex">
@@ -113,8 +222,13 @@ export function PlayerStatsTable({ data }: { data: Player[] }) {
             </TableHeader>
             <TableBody>
               {sortedPlayers.map((player) => {
+                const totalMatches =
+                  player.coopMatches + player.competitiveMatches;
+                const totalWins = player.coopWins + player.competitiveWins;
+                const totalWinRate =
+                  totalMatches > 0 ? totalWins / totalMatches : 0;
                 return (
-                  <TableRow key={player.id}>
+                  <TableRow key={`${player.id}-${player.type}`}>
                     <TableCell className="p-2 sm:p-4">
                       <div className="flex w-full items-center gap-2 text-xs sm:gap-4">
                         <PlayerImage
@@ -143,9 +257,30 @@ export function PlayerStatsTable({ data }: { data: Player[] }) {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{player.plays}</TableCell>
-                    <TableCell>{player.wins}</TableCell>
-                    <TableCell>{(player.winRate * 100).toFixed(2)}%</TableCell>
+                    <TableCell>
+                      {coopOrCompetitive === "coop"
+                        ? player.coopMatches
+                        : coopOrCompetitive === "competitive"
+                          ? player.competitiveMatches
+                          : totalMatches}
+                    </TableCell>
+                    <TableCell>
+                      {coopOrCompetitive === "coop"
+                        ? player.coopWins
+                        : coopOrCompetitive === "competitive"
+                          ? player.competitiveWins
+                          : totalWins}
+                    </TableCell>
+                    <TableCell>
+                      {(
+                        (coopOrCompetitive === "coop"
+                          ? player.coopWinRate
+                          : coopOrCompetitive === "competitive"
+                            ? player.competitiveWinRate
+                            : totalWinRate) * 100
+                      ).toFixed(1)}
+                      %
+                    </TableCell>
                   </TableRow>
                 );
               })}
