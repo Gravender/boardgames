@@ -159,16 +159,14 @@ export function ScoreSheetsStats({
       if (bValue === null) return -1;
       if (sortField.includes("Score")) {
         if (currentScoresheet?.winCondition === "Lowest Score") {
-          return (
-            (aValue as number) -
-            (bValue as number) * (sortOrder === "asc" ? 1 : -1)
-          );
+          return sortOrder === "asc"
+            ? (aValue as number) - (bValue as number)
+            : (bValue as number) - (aValue as number);
         }
         if (currentScoresheet?.winCondition === "Highest Score") {
-          return (
-            (bValue as number) -
-            (aValue as number) * (sortOrder === "asc" ? 1 : -1)
-          );
+          return sortOrder === "asc"
+            ? (bValue as number) - (aValue as number)
+            : (aValue as number) - (bValue as number);
         }
       }
       return sortOrder === "asc"

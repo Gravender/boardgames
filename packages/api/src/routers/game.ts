@@ -1282,7 +1282,7 @@ export const gameRouter = createTRPCRouter({
                   });
                   if (!isCoop)
                     accScoresheet.placements[player.placement] =
-                      accScoresheet.placements[player.placement] ?? 0 + 1;
+                      (accScoresheet.placements[player.placement] ?? 0) + 1;
                 }
               }
             }

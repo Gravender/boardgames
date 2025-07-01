@@ -80,12 +80,16 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
             aValue = a.competitiveWinRate;
             bValue = b.competitiveWinRate;
           } else {
+            const aCombinedMatches = a.coopMatches + a.competitiveMatches;
+            const bCombinedMatches = b.coopMatches + b.competitiveMatches;
             aValue =
-              a.coopWins +
-              a.competitiveWins / (a.coopMatches + a.competitiveMatches);
+              aCombinedMatches > 0
+                ? (a.coopWins + a.competitiveWins) / aCombinedMatches
+                : 0;
             bValue =
-              b.coopWins +
-              b.competitiveWins / (b.coopMatches + b.competitiveMatches);
+              bCombinedMatches > 0
+                ? (b.coopWins + b.competitiveWins) / bCombinedMatches
+                : 0;
           }
           break;
         default:
