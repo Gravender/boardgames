@@ -1116,25 +1116,21 @@ export const gameRouter = createTRPCRouter({
                 } else {
                   if (player.score !== null) {
                     if (currentScoresheet.winCondition === "Lowest Score") {
-                      accScoresheet.bestScore = Math.min(
-                        accScoresheet.bestScore ?? 0,
-                        player.score,
-                      );
-                      accScoresheet.worstScore = Math.max(
-                        accScoresheet.worstScore ?? 0,
-                        player.score,
-                      );
+                      accScoresheet.bestScore = accScoresheet.bestScore
+                        ? Math.min(accScoresheet.bestScore, player.score)
+                        : player.score;
+                      accScoresheet.worstScore = accScoresheet.worstScore
+                        ? Math.max(accScoresheet.worstScore, player.score)
+                        : player.score;
                     } else if (
                       currentScoresheet.winCondition === "Highest Score"
                     ) {
-                      accScoresheet.bestScore = Math.max(
-                        accScoresheet.bestScore ?? 0,
-                        player.score,
-                      );
-                      accScoresheet.worstScore = Math.min(
-                        accScoresheet.worstScore ?? 0,
-                        player.score,
-                      );
+                      accScoresheet.bestScore = accScoresheet.bestScore
+                        ? Math.max(accScoresheet.bestScore, player.score)
+                        : player.score;
+                      accScoresheet.worstScore = accScoresheet.worstScore
+                        ? Math.min(accScoresheet.worstScore, player.score)
+                        : player.score;
                     }
                   }
                   accScoresheet.scores.push({

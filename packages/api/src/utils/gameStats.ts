@@ -59,23 +59,19 @@ export function updateRoundStatistics(
       } else {
         if (pRound.score !== null) {
           if (winCondition === "Lowest Score") {
-            tempPlayerRound.bestScore = Math.min(
-              tempPlayerRound.bestScore ?? 0,
-              pRound.score,
-            );
-            tempPlayerRound.worstScore = Math.max(
-              tempPlayerRound.worstScore ?? 0,
-              pRound.score,
-            );
+            tempPlayerRound.bestScore = tempPlayerRound.bestScore
+              ? Math.min(tempPlayerRound.bestScore, pRound.score)
+              : pRound.score;
+            tempPlayerRound.worstScore = tempPlayerRound.worstScore
+              ? Math.max(tempPlayerRound.worstScore, pRound.score)
+              : pRound.score;
           } else if (winCondition === "Highest Score") {
-            tempPlayerRound.bestScore = Math.max(
-              tempPlayerRound.bestScore ?? 0,
-              pRound.score,
-            );
-            tempPlayerRound.worstScore = Math.min(
-              tempPlayerRound.worstScore ?? 0,
-              pRound.score,
-            );
+            tempPlayerRound.bestScore = tempPlayerRound.bestScore
+              ? Math.max(tempPlayerRound.bestScore, pRound.score)
+              : pRound.score;
+            tempPlayerRound.worstScore = tempPlayerRound.worstScore
+              ? Math.min(tempPlayerRound.worstScore, pRound.score)
+              : pRound.score;
           }
         }
         tempPlayerRound.scores.push({
