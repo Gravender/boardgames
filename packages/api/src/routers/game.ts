@@ -695,6 +695,16 @@ export const gameRouter = createTRPCRouter({
             },
           },
           scoresheets: {
+            where: {
+              OR: [
+                {
+                  type: "Default",
+                },
+                {
+                  type: "Game",
+                },
+              ],
+            },
             with: {
               rounds: true,
             },
@@ -710,6 +720,16 @@ export const gameRouter = createTRPCRouter({
                 },
                 with: {
                   scoresheet: {
+                    where: {
+                      OR: [
+                        {
+                          type: "Default",
+                        },
+                        {
+                          type: "Game",
+                        },
+                      ],
+                    },
                     with: {
                       rounds: true,
                     },
@@ -1001,22 +1021,24 @@ export const gameRouter = createTRPCRouter({
       });
       result.linkedGames.forEach((linkedGame) => {
         linkedGame.sharedScoresheets.forEach((sharedScoresheet) => {
-          gameScoresheets.push({
-            id: sharedScoresheet.id,
-            type: "shared" as const,
-            name: sharedScoresheet.scoresheet.name,
-            winCondition: sharedScoresheet.scoresheet.winCondition,
-            isCoop: sharedScoresheet.scoresheet.isCoop,
-            roundScore: sharedScoresheet.scoresheet.roundsScore,
-            targetScore: sharedScoresheet.scoresheet.targetScore,
-            rounds: sharedScoresheet.scoresheet.rounds.map((round) => ({
-              id: round.id,
-              name: round.name,
-              type: round.type,
-              score: round.score,
-              order: round.order,
-            })),
-          });
+          if (sharedScoresheet.scoresheet) {
+            gameScoresheets.push({
+              id: sharedScoresheet.scoresheet.id,
+              type: "shared" as const,
+              name: sharedScoresheet.scoresheet.name,
+              winCondition: sharedScoresheet.scoresheet.winCondition,
+              isCoop: sharedScoresheet.scoresheet.isCoop,
+              roundScore: sharedScoresheet.scoresheet.roundsScore,
+              targetScore: sharedScoresheet.scoresheet.targetScore,
+              rounds: sharedScoresheet.scoresheet.rounds.map((round) => ({
+                id: round.id,
+                name: round.name,
+                type: round.type,
+                score: round.score,
+                order: round.order,
+              })),
+            });
+          }
         });
       });
       const players = matches.reduce(
@@ -1068,7 +1090,7 @@ export const gameRouter = createTRPCRouter({
                   player.isWinner ?? false,
                 );
                 tempScoresheets[currentScoresheet.parentId] = {
-                  id: currentScoresheet.id,
+                  id: currentScoresheet.parentId,
                   bestScore: player.score,
                   worstScore: player.score,
                   scores: [
@@ -1150,7 +1172,7 @@ export const gameRouter = createTRPCRouter({
                     player.isWinner ?? false,
                   );
                   accPlayer.scoresheets[currentScoresheet.parentId] = {
-                    id: currentScoresheet.id,
+                    id: currentScoresheet.parentId,
                     bestScore: player.score,
                     worstScore: player.score,
                     scores: [
@@ -1167,6 +1189,8 @@ export const gameRouter = createTRPCRouter({
                     rounds: tempPlayerRounds,
                   };
                 } else {
+                  accScoresheet.plays++;
+                  accScoresheet.wins += player.isWinner ? 1 : 0;
                   if (player.score !== null) {
                     if (currentScoresheet.winCondition === "Lowest Score") {
                       accScoresheet.bestScore = accScoresheet.bestScore
@@ -1332,7 +1356,7 @@ export const gameRouter = createTRPCRouter({
       const totalMatches = finishedUserMatches.length;
 
       const userWinRate =
-        totalMatches > 0 ? Math.round((wonMatches / totalMatches) * 100) : 0;
+        totalMatches > 0 ? (wonMatches / totalMatches) * 100 : 0;
 
       return {
         id: result.id,
@@ -1355,6 +1379,7 @@ export const gameRouter = createTRPCRouter({
             rounds: Object.values(scoresheet.rounds).map((round) => ({
               ...round,
             })),
+            winRate: scoresheet.wins / scoresheet.plays,
           })),
         })),
         winRate: userWinRate,

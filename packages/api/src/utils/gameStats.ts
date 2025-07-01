@@ -39,7 +39,7 @@ export function updateRoundStatistics(
       const tempPlayerRound = tempPlayerRounds[foundRound.parentId];
       if (!tempPlayerRound) {
         tempPlayerRounds[foundRound.parentId] = {
-          id: foundRound.id,
+          id: foundRound.parentId,
           bestScore:
             winCondition === "Lowest Score" || winCondition === "Highest Score"
               ? pRound.score
