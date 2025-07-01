@@ -1106,7 +1106,7 @@ export const gameRouter = createTRPCRouter({
                   winRate: player.isWinner ? 1 : 0,
                   plays: 1,
                   wins: player.isWinner ? 1 : 0,
-                  placements: isCoop ? tempPlacements : {},
+                  placements: !isCoop ? tempPlacements : {},
                   rounds: tempPlayerRounds,
                 };
               }
@@ -1140,7 +1140,7 @@ export const gameRouter = createTRPCRouter({
                     ]
                   : [],
                 image: player.image,
-                placements: isCoop ? tempPlacements : {},
+                placements: !isCoop ? tempPlacements : {},
                 scoresheets: tempScoresheets,
               };
             } else {
@@ -1403,7 +1403,8 @@ export const gameRouter = createTRPCRouter({
                   ...round,
                 };
               }),
-              winRate: scoresheet.wins / scoresheet.plays,
+              winRate:
+                scoresheet.plays > 0 ? scoresheet.wins / scoresheet.plays : 0,
             };
           }),
         })),
