@@ -1000,6 +1000,7 @@ export const gameRouter = createTRPCRouter({
           type: z.infer<typeof selectRoundSchema>["type"];
           score: number;
           order: number;
+          color: string | null;
         }[];
       }[] = result.scoresheets.map((scoresheet) => {
         return {
@@ -1016,6 +1017,7 @@ export const gameRouter = createTRPCRouter({
             type: round.type,
             score: round.score,
             order: round.order,
+            color: round.color,
           })),
         };
       });
@@ -1036,6 +1038,7 @@ export const gameRouter = createTRPCRouter({
                 type: round.type,
                 score: round.score,
                 order: round.order,
+                color: round.color,
               })),
             });
           }
@@ -1374,13 +1377,35 @@ export const gameRouter = createTRPCRouter({
             player.competitiveMatches > 0
               ? player.competitiveWins / player.competitiveMatches
               : 0,
-          scoresheets: Object.values(player.scoresheets).map((scoresheet) => ({
-            ...scoresheet,
-            rounds: Object.values(scoresheet.rounds).map((round) => ({
-              ...round,
-            })),
-            winRate: scoresheet.wins / scoresheet.plays,
-          })),
+          scoresheets: Object.values(player.scoresheets).map((scoresheet) => {
+            const sumScores = scoresheet.scores.reduce<number | null>(
+              (acc, score) => {
+                if (acc === null) return score.score;
+                if (score.score === null) return acc;
+                return acc + score.score;
+              },
+              null,
+            );
+            return {
+              ...scoresheet,
+              avgScore: sumScores ? sumScores / scoresheet.scores.length : null,
+              rounds: Object.values(scoresheet.rounds).map((round) => {
+                const sumScores = round.scores.reduce<number | null>(
+                  (acc, score) => {
+                    if (acc === null) return score.score;
+                    if (score.score === null) return acc;
+                    return acc + score.score;
+                  },
+                  null,
+                );
+                return {
+                  avgScore: sumScores ? sumScores / round.scores.length : null,
+                  ...round,
+                };
+              }),
+              winRate: scoresheet.wins / scoresheet.plays,
+            };
+          }),
         })),
         winRate: userWinRate,
         totalMatches: totalMatches,

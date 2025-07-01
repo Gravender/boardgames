@@ -1,9 +1,34 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, FileText, Users } from "lucide-react";
+import { compareAsc, format } from "date-fns";
+import {
+  BarChart3,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Target,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
+import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@board-games/ui/chart";
 import {
   Select,
   SelectContent,
@@ -47,7 +72,7 @@ export function ScoreSheetsStats({
   const [currentScoresheet, setCurrentScoresheet] = useState<Scoresheet | null>(
     scoresheets[0] ?? null,
   );
-
+  const [showRoundBreakdown, setShowRoundBreakdown] = useState(false);
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const currentPlayers = useMemo(() => {
@@ -58,14 +83,7 @@ export function ScoreSheetsStats({
           (pScoresheet) => pScoresheet.id === currentScoresheet.id,
         );
         if (!playerScoresheet) return null;
-        const sumScores = playerScoresheet.scores.reduce<number | null>(
-          (acc, score) => {
-            if (acc === null) return score.score;
-            if (score.score === null) return acc;
-            return acc + score.score;
-          },
-          null,
-        );
+
         return {
           id: player.id,
           type: player.type,
@@ -74,18 +92,18 @@ export function ScoreSheetsStats({
           isUser: player.isUser,
           bestScore: playerScoresheet.bestScore,
           worstScore: playerScoresheet.worstScore,
-          avgScore: sumScores
-            ? sumScores / playerScoresheet.scores.length
-            : null,
+          avgScore: playerScoresheet.avgScore,
           winRate: playerScoresheet.winRate,
           plays: playerScoresheet.plays,
           wins: playerScoresheet.wins,
           rounds: playerScoresheet.rounds,
+          scores: playerScoresheet.scores,
         };
       })
       .filter((player) => player !== null);
     return mappedPlayers;
   }, [currentScoresheet, players]);
+
   const userScore = useMemo(() => {
     const temp = currentPlayers.find((p) => p.isUser);
     return temp ?? null;
@@ -198,6 +216,30 @@ export function ScoreSheetsStats({
       <ChevronDown className="ml-1 h-3 w-3 sm:ml-2 sm:h-4 sm:w-4" />
     );
   };
+  const userScoresSorted = useMemo(() => {
+    if (!userScore) return [];
+    return userScore.scores
+      .toSorted((a, b) => compareAsc(a.date, b.date))
+      .map((score) => ({
+        ...score,
+        date: format(score.date, "MMMM d, yyyy"),
+      }));
+  }, [userScore]);
+  const winRateOverTime = () => {
+    let wins = 0;
+    let totalGames = 0;
+    const winRateOverTime = userScoresSorted.map((score) => {
+      if (score.isWin) {
+        wins++;
+      }
+      totalGames++;
+      return {
+        date: score.date,
+        winRate: (wins / totalGames) * 100,
+      };
+    });
+    return winRateOverTime;
+  };
   if (!currentScoresheet) {
     return (
       <Card>
@@ -236,7 +278,7 @@ export function ScoreSheetsStats({
                   }
                 }}
               >
-                <SelectTrigger className="w-full sm:w-80">
+                <SelectTrigger className="w-full sm:w-96">
                   <SelectValue>
                     <div className="flex items-center gap-2">
                       <span>{currentScoresheet.name}</span>
@@ -278,6 +320,14 @@ export function ScoreSheetsStats({
                 </SelectContent>
               </Select>
             </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowRoundBreakdown(!showRoundBreakdown)}
+              className="flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              {showRoundBreakdown ? "Hide" : "Show"} Round Breakdown
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -393,7 +443,7 @@ export function ScoreSheetsStats({
         </CardHeader>
         <CardContent className="p-2">
           <div className="flex">
-            <Table containerClassname=" overflow-y-scroll max-h-[65vh] rounded-lg">
+            <Table containerClassname=" overflow-scroll max-h-[65vh] rounded-lg">
               <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground">
                 <TableRow>
                   <TableHead className="w-16 px-2 sm:w-full sm:px-4">
@@ -523,6 +573,236 @@ export function ScoreSheetsStats({
           </div>
         </CardContent>
       </Card>
+
+      {/* Scoresheet Performance Charts */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Score Trends Chart */}
+        {userScoresSorted.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Score Trends - {currentScoresheet.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer
+                config={{
+                  score: {
+                    label: "Score",
+                    color: "hsl(var(--chart-1))",
+                  },
+                }}
+                className="max-h-64 w-full"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={userScoresSorted}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line
+                      type="monotone"
+                      dataKey="score"
+                      stroke="var(--color-score)"
+                      strokeWidth={2}
+                      dot={{ fill: "var(--color-score)", strokeWidth: 2, r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Win Rate Over Time Chart */}
+        {userScore && userScore.scores.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Win Rate Over Time - {currentScoresheet.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer
+                config={{
+                  winRate: {
+                    label: "Win Rate (%)",
+                    color: "hsl(var(--chart-2))",
+                  },
+                }}
+                className="max-h-64 w-full"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={winRateOverTime()}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis
+                      domain={[0, 100]}
+                      tickFormatter={(value) => `${value}%`}
+                    />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Area
+                      type="monotone"
+                      dataKey="winRate"
+                      stroke="var(--color-winRate)"
+                      fill="var(--color-winRate)"
+                      fillOpacity={0.6}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Round by Round Performance */}
+      {showRoundBreakdown && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Round-by-Round Performance
+            </CardTitle>
+
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <FileText className="h-4 w-4" />
+              Scoresheet: {currentScoresheet.name} (
+              {currentScoresheet.isCoop ? "Co-op" : "Competitive"})
+            </div>
+          </CardHeader>
+          <CardContent className="p-2">
+            <div className="flex">
+              <Table containerClassname=" overflow-scroll max-h-[65vh] rounded-lg">
+                <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground">
+                  <TableRow>
+                    <TableHead className="w-16 px-2 sm:w-full sm:px-4">
+                      Player
+                    </TableHead>
+                    {currentScoresheet.rounds
+                      .sort((a, b) => a.order - b.order)
+                      .map((round) => (
+                        <TableHead
+                          key={round.id}
+                          className="min-w-[100px] text-center"
+                        >
+                          <div className="flex flex-col items-center gap-1">
+                            <span>{round.name}</span>
+                            <Badge
+                              variant="outline"
+                              className="text-xs"
+                              style={{
+                                borderColor: round.color ?? "",
+                                color: round.color ?? "",
+                              }}
+                            >
+                              {round.type}
+                              {round.type === "Checkbox" && ` (${round.score})`}
+                            </Badge>
+                          </div>
+                        </TableHead>
+                      ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentPlayers.map((player) => (
+                    <TableRow key={`${player.id}-${player.type}`}>
+                      <TableCell className="p-2 sm:p-4">
+                        <div className="flex w-full items-center gap-2 text-xs sm:gap-4">
+                          <PlayerImage
+                            className="h-7 w-7 sm:h-10 sm:w-10"
+                            image={player.image}
+                            alt={player.name}
+                          />
+                          <div className="flex flex-col gap-2">
+                            <span className="font-medium sm:font-semibold">
+                              {player.name}
+                            </span>
+                            <div className="text-xs text-muted-foreground">
+                              {`(${player.plays} games)`}
+                            </div>
+                          </div>
+                          {player.type === "shared" && (
+                            <>
+                              <Badge
+                                variant="outline"
+                                className="bg-blue-600 px-1 text-xs text-white"
+                              >
+                                S
+                              </Badge>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                      {currentScoresheet.rounds
+                        .sort((a, b) => a.order - b.order)
+                        .map((round) => {
+                          const playerRound = player.rounds.find(
+                            (r) => r.id === round.id,
+                          );
+                          const checkedRounds =
+                            playerRound?.scores.filter(
+                              (s) => s.score === round.score,
+                            ).length ?? 0;
+                          return (
+                            <TableCell key={round.id} className="text-center">
+                              {playerRound ? (
+                                round.type === "Numeric" ? (
+                                  <div className="space-y-1">
+                                    <div className="font-semibold">
+                                      {playerRound.avgScore
+                                        ? playerRound.avgScore.toFixed(1)
+                                        : "N/A"}
+                                    </div>
+                                    <div className="flex items-center justify-center gap-1 text-xs">
+                                      <span className="text-green-600">
+                                        {playerRound.bestScore ?? "N/A"}
+                                      </span>
+                                      <span className="text-muted-foreground">
+                                        /
+                                      </span>
+                                      <span className="text-red-600">
+                                        {playerRound.worstScore ?? "N/A"}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {`${
+                                        playerRound.scores.filter(
+                                          (s) => s.score !== null,
+                                        ).length
+                                      } games`}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    <div className="text-xs font-semibold">
+                                      {`${checkedRounds} time${checkedRounds !== 1 ? "s" : ""}`}
+                                    </div>
+                                  </div>
+                                )
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                          );
+                        })}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="mt-4 text-sm text-muted-foreground">
+              <p>
+                Shows average scores per round based on the selected scoresheet.
+                Round data is linked to specific scoresheets.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
