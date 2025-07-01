@@ -966,6 +966,59 @@ export const gameRouter = createTRPCRouter({
         matches.push(mappedShareMatch);
       }
       matches.sort((a, b) => b.date.getTime() - a.date.getTime());
+      const gameScoresheets: {
+        id: number;
+        type: "original" | "shared";
+        name: string;
+        winCondition: z.infer<typeof selectScoreSheetSchema>["winCondition"];
+        isCoop: z.infer<typeof selectScoreSheetSchema>["isCoop"];
+        roundScore: z.infer<typeof selectScoreSheetSchema>["roundsScore"];
+        targetScore: z.infer<typeof selectScoreSheetSchema>["targetScore"];
+        rounds: {
+          id: number;
+          name: string;
+          type: z.infer<typeof selectRoundSchema>["type"];
+          score: number;
+          order: number;
+        }[];
+      }[] = result.scoresheets.map((scoresheet) => {
+        return {
+          id: scoresheet.id,
+          type: "original" as const,
+          name: scoresheet.name,
+          winCondition: scoresheet.winCondition,
+          isCoop: scoresheet.isCoop,
+          roundScore: scoresheet.roundsScore,
+          targetScore: scoresheet.targetScore,
+          rounds: scoresheet.rounds.map((round) => ({
+            id: round.id,
+            name: round.name,
+            type: round.type,
+            score: round.score,
+            order: round.order,
+          })),
+        };
+      });
+      result.linkedGames.forEach((linkedGame) => {
+        linkedGame.sharedScoresheets.forEach((sharedScoresheet) => {
+          gameScoresheets.push({
+            id: sharedScoresheet.id,
+            type: "shared" as const,
+            name: sharedScoresheet.scoresheet.name,
+            winCondition: sharedScoresheet.scoresheet.winCondition,
+            isCoop: sharedScoresheet.scoresheet.isCoop,
+            roundScore: sharedScoresheet.scoresheet.roundsScore,
+            targetScore: sharedScoresheet.scoresheet.targetScore,
+            rounds: sharedScoresheet.scoresheet.rounds.map((round) => ({
+              id: round.id,
+              name: round.name,
+              type: round.type,
+              score: round.score,
+              order: round.order,
+            })),
+          });
+        });
+      });
       const players = matches.reduce(
         (acc, match) => {
           if (!match.finished) return acc;
@@ -1280,59 +1333,7 @@ export const gameRouter = createTRPCRouter({
 
       const userWinRate =
         totalMatches > 0 ? Math.round((wonMatches / totalMatches) * 100) : 0;
-      const gameScoresheets: {
-        id: number;
-        type: "original" | "shared";
-        name: string;
-        winCondition: z.infer<typeof selectScoreSheetSchema>["winCondition"];
-        isCoop: z.infer<typeof selectScoreSheetSchema>["isCoop"];
-        roundScore: z.infer<typeof selectScoreSheetSchema>["roundsScore"];
-        targetScore: z.infer<typeof selectScoreSheetSchema>["targetScore"];
-        rounds: {
-          id: number;
-          name: string;
-          type: z.infer<typeof selectRoundSchema>["type"];
-          score: number;
-          order: number;
-        }[];
-      }[] = result.scoresheets.map((scoresheet) => {
-        return {
-          id: scoresheet.id,
-          type: "original" as const,
-          name: scoresheet.name,
-          winCondition: scoresheet.winCondition,
-          isCoop: scoresheet.isCoop,
-          roundScore: scoresheet.roundsScore,
-          targetScore: scoresheet.targetScore,
-          rounds: scoresheet.rounds.map((round) => ({
-            id: round.id,
-            name: round.name,
-            type: round.type,
-            score: round.score,
-            order: round.order,
-          })),
-        };
-      });
-      result.linkedGames.forEach((linkedGame) => {
-        linkedGame.sharedScoresheets.forEach((sharedScoresheet) => {
-          gameScoresheets.push({
-            id: sharedScoresheet.id,
-            type: "shared" as const,
-            name: sharedScoresheet.scoresheet.name,
-            winCondition: sharedScoresheet.scoresheet.winCondition,
-            isCoop: sharedScoresheet.scoresheet.isCoop,
-            roundScore: sharedScoresheet.scoresheet.roundsScore,
-            targetScore: sharedScoresheet.scoresheet.targetScore,
-            rounds: sharedScoresheet.scoresheet.rounds.map((round) => ({
-              id: round.id,
-              name: round.name,
-              type: round.type,
-              score: round.score,
-              order: round.order,
-            })),
-          });
-        });
-      });
+
       return {
         id: result.id,
         name: result.name,
