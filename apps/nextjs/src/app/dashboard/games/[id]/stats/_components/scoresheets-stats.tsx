@@ -22,7 +22,6 @@ import {
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
-import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import {
   ChartContainer,
@@ -70,9 +69,25 @@ export function ScoreSheetsStats({
   scoresheets: Scoresheet[];
 }) {
   const [currentScoresheet, setCurrentScoresheet] = useState<Scoresheet | null>(
-    scoresheets[0] ?? null,
+    scoresheets
+      .map((s) => {
+        const plays = players.reduce((acc, p) => {
+          const foundScoresheet = p.scoresheets.find((ps) => ps.id === s.id);
+          if (foundScoresheet !== undefined) {
+            return Math.max(acc, foundScoresheet.plays);
+          }
+          return acc;
+        }, 0);
+        if (plays === 0) {
+          return null;
+        }
+        return {
+          ...s,
+          plays,
+        };
+      })
+      .find((s) => s !== null) ?? null,
   );
-  const [showRoundBreakdown, setShowRoundBreakdown] = useState(false);
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const currentPlayers = useMemo(() => {
@@ -256,87 +271,81 @@ export function ScoreSheetsStats({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Scoresheet Analysis
+            Scoresheet Analysis - {currentScoresheet.name}
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-            <div className="flex-1">
-              <label className="mb-2 block text-sm font-medium">
-                Select Scoresheet:
-              </label>
-              <Select
-                value={currentScoresheet.id.toString()}
-                onValueChange={(value) => {
-                  const selectedScoresheet = scoresheets.find(
-                    (s) => s.id === Number.parseInt(value),
-                  );
-                  if (selectedScoresheet) {
-                    setCurrentScoresheet(selectedScoresheet);
-                  }
-                }}
-              >
-                <SelectTrigger className="w-full sm:w-96">
-                  <SelectValue>
-                    <div className="flex items-center gap-2">
-                      <span>{currentScoresheet.name}</span>
-                      <Badge
-                        variant={
-                          currentScoresheet.isCoop ? "secondary" : "default"
-                        }
-                      >
-                        {currentScoresheet.isCoop
-                          ? "Cooperative"
-                          : "Competitive"}
-                      </Badge>
-                    </div>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {scoreSheetsWithGames.map((scoresheet) => (
-                    <SelectItem
-                      key={scoresheet.id}
-                      value={scoresheet.id.toString()}
-                    >
+        {scoreSheetsWithGames.length > 1 && (
+          <CardContent>
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+              <div className="flex-1">
+                <label className="mb-2 block text-sm font-medium">
+                  Select Scoresheet:
+                </label>
+                <Select
+                  value={currentScoresheet.id.toString()}
+                  onValueChange={(value) => {
+                    const selectedScoresheet = scoresheets.find(
+                      (s) => s.id === Number.parseInt(value),
+                    );
+                    if (selectedScoresheet) {
+                      setCurrentScoresheet(selectedScoresheet);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full sm:w-96">
+                    <SelectValue>
                       <div className="flex items-center gap-2">
-                        <span>{scoresheet.name}</span>
+                        <span>{currentScoresheet.name}</span>
                         <Badge
-                          variant={scoresheet.isCoop ? "secondary" : "default"}
-                          className="text-xs"
+                          variant={
+                            currentScoresheet.isCoop ? "secondary" : "default"
+                          }
                         >
-                          {scoresheet.isCoop ? "Co-op" : "Competitive"}
+                          {currentScoresheet.isCoop
+                            ? "Cooperative"
+                            : "Competitive"}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          ({scoresheet.rounds.length} rounds)
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {scoresheet.plays} plays
-                        </span>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {scoreSheetsWithGames.map((scoresheet) => (
+                      <SelectItem
+                        key={scoresheet.id}
+                        value={scoresheet.id.toString()}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>{scoresheet.name}</span>
+                          <Badge
+                            variant={
+                              scoresheet.isCoop ? "secondary" : "default"
+                            }
+                            className="text-xs"
+                          >
+                            {scoresheet.isCoop ? "Co-op" : "Competitive"}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            ({scoresheet.rounds.length} rounds)
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {scoresheet.plays} plays
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowRoundBreakdown(!showRoundBreakdown)}
-              className="flex items-center gap-2"
-            >
-              <BarChart3 className="h-4 w-4" />
-              {showRoundBreakdown ? "Hide" : "Show"} Round Breakdown
-            </Button>
-          </div>
-        </CardContent>
+          </CardContent>
+        )}
       </Card>
 
       {/* Scoresheet Overview */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">
-              {currentScoresheet.name} Overview
-            </CardTitle>
+            <CardTitle className="text-base">Overview</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-4 text-sm">
@@ -380,7 +389,7 @@ export function ScoreSheetsStats({
           </CardContent>
         </Card>
 
-        {userScore && (
+        {userScore ? (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Your Performance</CardTitle>
@@ -428,6 +437,17 @@ export function ScoreSheetsStats({
               </div>
             </CardContent>
           </Card>
+        ) : (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Your Performance</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <span className="text-base">
+                Haven't played any games with this scoresheet yet.
+              </span>
+            </CardContent>
+          </Card>
         )}
       </div>
 
@@ -436,12 +456,12 @@ export function ScoreSheetsStats({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Player Performance - {currentScoresheet.name}
+            Player Performance
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2">
           <div className="flex">
-            <Table containerClassname=" overflow-scroll max-h-[65vh] rounded-lg">
+            <Table containerClassname=" overflow-scroll max-h-[35vh] rounded-lg">
               <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground">
                 <TableRow>
                   <TableHead className="w-16 px-2 sm:w-full sm:px-4">
@@ -580,7 +600,7 @@ export function ScoreSheetsStats({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
-                Score Trends - {currentScoresheet.name}
+                Score Trends
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -619,7 +639,7 @@ export function ScoreSheetsStats({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
-                Win Rate Over Time - {currentScoresheet.name}
+                Win Rate Over Time
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -657,7 +677,7 @@ export function ScoreSheetsStats({
       </div>
 
       {/* Round by Round Performance */}
-      {showRoundBreakdown && (
+      {currentScoresheet.rounds.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -673,7 +693,7 @@ export function ScoreSheetsStats({
           </CardHeader>
           <CardContent className="p-2">
             <div className="flex">
-              <Table containerClassname=" overflow-scroll max-h-[65vh] rounded-lg">
+              <Table containerClassname=" overflow-scroll max-h-[35vh] rounded-lg">
                 <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground">
                   <TableRow>
                     <TableHead className="w-16 px-2 sm:w-full sm:px-4">
@@ -705,89 +725,93 @@ export function ScoreSheetsStats({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentPlayers.map((player) => (
-                    <TableRow key={`${player.id}-${player.type}`}>
-                      <TableCell className="p-2 sm:p-4">
-                        <div className="flex w-full items-center gap-2 text-xs sm:gap-4">
-                          <PlayerImage
-                            className="h-7 w-7 sm:h-10 sm:w-10"
-                            image={player.image}
-                            alt={player.name}
-                          />
-                          <div className="flex flex-col gap-2">
-                            <span className="font-medium sm:font-semibold">
-                              {player.name}
-                            </span>
-                            <div className="text-xs text-muted-foreground">
-                              {`(${player.plays} games)`}
+                  {currentPlayers
+                    .toSorted((a, b) => b.plays - a.plays)
+                    .map((player) => (
+                      <TableRow key={`${player.id}-${player.type}`}>
+                        <TableCell className="p-2 sm:p-4">
+                          <div className="flex w-full items-center gap-2 text-xs sm:gap-4">
+                            <PlayerImage
+                              className="h-7 w-7 sm:h-10 sm:w-10"
+                              image={player.image}
+                              alt={player.name}
+                            />
+                            <div className="flex flex-col gap-2">
+                              <span className="font-medium sm:font-semibold">
+                                {player.name}
+                              </span>
+                              <div className="text-xs text-muted-foreground">
+                                {`(${player.plays} games)`}
+                              </div>
                             </div>
+                            {player.type === "shared" && (
+                              <>
+                                <Badge
+                                  variant="outline"
+                                  className="bg-blue-600 px-1 text-xs text-white"
+                                >
+                                  S
+                                </Badge>
+                              </>
+                            )}
                           </div>
-                          {player.type === "shared" && (
-                            <>
-                              <Badge
-                                variant="outline"
-                                className="bg-blue-600 px-1 text-xs text-white"
-                              >
-                                S
-                              </Badge>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                      {currentScoresheet.rounds
-                        .sort((a, b) => a.order - b.order)
-                        .map((round) => {
-                          const playerRound = player.rounds.find(
-                            (r) => r.id === round.id,
-                          );
-                          const checkedRounds =
-                            playerRound?.scores.filter(
-                              (s) => s.score === round.score,
-                            ).length ?? 0;
-                          return (
-                            <TableCell key={round.id} className="text-center">
-                              {playerRound ? (
-                                round.type === "Numeric" ? (
-                                  <div className="space-y-1">
-                                    <div className="font-semibold">
-                                      {playerRound.avgScore
-                                        ? playerRound.avgScore.toFixed(1)
-                                        : "N/A"}
+                        </TableCell>
+                        {currentScoresheet.rounds
+                          .sort((a, b) => a.order - b.order)
+                          .map((round) => {
+                            const playerRound = player.rounds.find(
+                              (r) => r.id === round.id,
+                            );
+                            const checkedRounds =
+                              playerRound?.scores.filter(
+                                (s) => s.score === round.score,
+                              ).length ?? 0;
+                            return (
+                              <TableCell key={round.id} className="text-center">
+                                {playerRound ? (
+                                  round.type === "Numeric" ? (
+                                    <div className="space-y-1">
+                                      <div className="font-semibold">
+                                        {playerRound.avgScore
+                                          ? playerRound.avgScore.toFixed(1)
+                                          : "N/A"}
+                                      </div>
+                                      <div className="flex items-center justify-center gap-1 text-xs">
+                                        <span className="text-green-600">
+                                          {playerRound.bestScore ?? "N/A"}
+                                        </span>
+                                        <span className="text-muted-foreground">
+                                          /
+                                        </span>
+                                        <span className="text-red-600">
+                                          {playerRound.worstScore ?? "N/A"}
+                                        </span>
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {`${
+                                          playerRound.scores.filter(
+                                            (s) => s.score !== null,
+                                          ).length
+                                        } games`}
+                                      </div>
                                     </div>
-                                    <div className="flex items-center justify-center gap-1 text-xs">
-                                      <span className="text-green-600">
-                                        {playerRound.bestScore ?? "N/A"}
-                                      </span>
-                                      <span className="text-muted-foreground">
-                                        /
-                                      </span>
-                                      <span className="text-red-600">
-                                        {playerRound.worstScore ?? "N/A"}
-                                      </span>
+                                  ) : (
+                                    <div className="space-y-1">
+                                      <div className="text-xs font-semibold">
+                                        {`${checkedRounds} time${checkedRounds !== 1 ? "s" : ""}`}
+                                      </div>
                                     </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {`${
-                                        playerRound.scores.filter(
-                                          (s) => s.score !== null,
-                                        ).length
-                                      } games`}
-                                    </div>
-                                  </div>
+                                  )
                                 ) : (
-                                  <div className="space-y-1">
-                                    <div className="text-xs font-semibold">
-                                      {`${checkedRounds} time${checkedRounds !== 1 ? "s" : ""}`}
-                                    </div>
-                                  </div>
-                                )
-                              ) : (
-                                <span className="text-muted-foreground">-</span>
-                              )}
-                            </TableCell>
-                          );
-                        })}
-                    </TableRow>
-                  ))}
+                                  <span className="text-muted-foreground">
+                                    -
+                                  </span>
+                                )}
+                              </TableCell>
+                            );
+                          })}
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             </div>
