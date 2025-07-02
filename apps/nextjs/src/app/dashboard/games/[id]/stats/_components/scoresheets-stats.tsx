@@ -238,7 +238,7 @@ export function ScoreSheetsStats({
         date: format(score.date, "MMMM d, yyyy"),
       }));
   }, [userScore]);
-  const winRateOverTime = () => {
+  const winRateOverTime = useMemo(() => {
     let wins = 0;
     let totalGames = 0;
     const winRateOverTime = userScoresSorted.map((score) => {
@@ -252,7 +252,7 @@ export function ScoreSheetsStats({
       };
     });
     return winRateOverTime;
-  };
+  }, [userScoresSorted]);
   if (!currentScoresheet) {
     return (
       <Card>
@@ -653,7 +653,7 @@ export function ScoreSheetsStats({
                 className="max-h-64 w-full"
               >
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={winRateOverTime()}>
+                  <AreaChart data={winRateOverTime}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis
