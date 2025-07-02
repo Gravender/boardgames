@@ -744,6 +744,7 @@ export const gameRouter = createTRPCRouter({
       const matches: {
         type: "original" | "shared";
         id: number;
+        gameId: number;
         date: Date;
         location: {
           type: "shared" | "linked" | "original";
@@ -820,6 +821,7 @@ export const gameRouter = createTRPCRouter({
         return {
           type: "original" as const,
           id: match.id,
+          gameId: match.gameId,
           date: match.date,
           location: match.location
             ? {
@@ -890,8 +892,8 @@ export const gameRouter = createTRPCRouter({
         const mLinkedLocation = mSharedLocation?.linkedLocation;
         const mappedShareMatch = {
           type: "shared" as const,
-          shareId: returnedShareMatch.id,
-          id: returnedShareMatch.match.id,
+          id: returnedShareMatch.id,
+          gameId: returnedShareMatch.sharedGameId,
           name: returnedShareMatch.match.name,
           date: returnedShareMatch.match.date,
           location: mSharedLocation
@@ -935,7 +937,10 @@ export const gameRouter = createTRPCRouter({
               const linkedPlayer =
                 returnedSharedMatchPlayer.sharedPlayer.linkedPlayer;
               return {
-                type: "shared" as const,
+                type:
+                  linkedPlayer !== null
+                    ? ("original" as const)
+                    : ("shared" as const),
                 id:
                   linkedPlayer !== null
                     ? linkedPlayer.id
@@ -985,7 +990,7 @@ export const gameRouter = createTRPCRouter({
         };
         matches.push(mappedShareMatch);
       }
-      matches.sort((a, b) => b.date.getTime() - a.date.getTime());
+      matches.sort((a, b) => compareDesc(a.date, b.date));
       const gameScoresheets: {
         id: number;
         type: "original" | "shared";
@@ -1053,6 +1058,15 @@ export const gameRouter = createTRPCRouter({
             const accPlayer = acc[`${player.type}-${player.id}`];
             if (!accPlayer) {
               const tempPlacements: Record<number, number> = {};
+              const tempPlayerCount: Record<
+                number,
+                {
+                  playerCount: number;
+                  placements: Record<number, number>;
+                  wins: number;
+                  plays: number;
+                }
+              > = {};
               const tempScoresheets: Record<
                 number,
                 {
@@ -1083,7 +1097,17 @@ export const gameRouter = createTRPCRouter({
                   >;
                 }
               > = {};
-              if (!isCoop) tempPlacements[player.placement] = 1;
+              if (!isCoop) {
+                tempPlacements[player.placement] = 1;
+                tempPlayerCount[match.players.length] = {
+                  playerCount: match.players.length,
+                  placements: {
+                    [player.placement]: 1,
+                  },
+                  wins: player.isWinner ? 1 : 0,
+                  plays: 1,
+                };
+              }
               if (currentScoresheet.parentId) {
                 const tempPlayerRounds = updateRoundStatistics(
                   player.playerRounds,
@@ -1141,9 +1165,40 @@ export const gameRouter = createTRPCRouter({
                   : [],
                 image: player.image,
                 placements: !isCoop ? tempPlacements : {},
+                streaks: {
+                  current: {
+                    type: player.isWinner ? "win" : "loss",
+                    count: 1,
+                  },
+                  longest: {
+                    wins: player.isWinner ? 1 : 0,
+                    losses: player.isWinner ? 0 : 1,
+                  },
+                },
+                recentForm: player.isWinner ? ["win"] : ["loss"],
+                playerCount: !isCoop ? tempPlayerCount : {},
                 scoresheets: tempScoresheets,
               };
             } else {
+              accPlayer.recentForm.push(player.isWinner ? "win" : "loss");
+              const current = accPlayer.streaks.current;
+              if (
+                (player.isWinner && current.type === "win") ||
+                (!player.isWinner && current.type === "loss")
+              ) {
+                current.count = current.count + 1;
+              } else {
+                current.type = player.isWinner ? "win" : "loss";
+                current.count = 1;
+              }
+
+              const longest = accPlayer.streaks.longest;
+              if (current.count > longest.wins && current.type === "win") {
+                longest.wins = current.count;
+              }
+              if (current.count > longest.losses && current.type === "loss") {
+                longest.losses = current.count;
+              }
               if (isCoop) {
                 if (player.isWinner) accPlayer.coopWins++;
                 accPlayer.coopMatches++;
@@ -1162,6 +1217,23 @@ export const gameRouter = createTRPCRouter({
                   score: player.score,
                   isWin: player.isWinner ?? false,
                 });
+                const playerCount = accPlayer.playerCount[match.players.length];
+                if (playerCount) {
+                  playerCount.plays = playerCount.plays + 1;
+                  playerCount.wins =
+                    playerCount.wins + (player.isWinner ? 1 : 0);
+                  playerCount.placements[player.placement] =
+                    (playerCount.placements[player.placement] ?? 0) + 1;
+                } else {
+                  accPlayer.playerCount[match.players.length] = {
+                    playerCount: match.players.length,
+                    placements: {
+                      [player.placement]: 1,
+                    },
+                    wins: player.isWinner ? 1 : 0,
+                    plays: 1,
+                  };
+                }
               }
               if (currentScoresheet.parentId) {
                 const accScoresheet =
@@ -1302,7 +1374,11 @@ export const gameRouter = createTRPCRouter({
             competitiveWinRate: number;
             coopMatches: number;
             competitiveMatches: number;
-            coopScores: { date: Date; score: number | null; isWin: boolean }[];
+            coopScores: {
+              date: Date;
+              score: number | null;
+              isWin: boolean;
+            }[];
             competitiveScores: {
               date: Date;
               score: number | null;
@@ -1315,13 +1391,31 @@ export const gameRouter = createTRPCRouter({
               usageType: "player" | "match" | "game";
             } | null;
             placements: Record<number, number>;
+            streaks: {
+              current: { type: "win" | "loss"; count: number };
+              longest: { wins: number; losses: number };
+            };
+            recentForm: ("win" | "loss")[];
+            playerCount: Record<
+              number,
+              {
+                playerCount: number;
+                placements: Record<number, number>;
+                wins: number;
+                plays: number;
+              }
+            >;
             scoresheets: Record<
               number,
               {
                 id: number;
                 bestScore: number | null;
                 worstScore: number | null;
-                scores: { date: Date; score: number | null; isWin: boolean }[];
+                scores: {
+                  date: Date;
+                  score: number | null;
+                  isWin: boolean;
+                }[];
                 winRate: number;
                 plays: number;
                 wins: number;
