@@ -677,7 +677,7 @@ export function ScoreSheetsStats({
       </div>
 
       {/* Round by Round Performance */}
-      {currentScoresheet.rounds.length > 0 && (
+      {currentScoresheet.rounds.length > 1 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
