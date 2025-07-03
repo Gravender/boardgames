@@ -17,7 +17,7 @@ interface scoreSheet {
   >;
 }
 interface Round {
-  score: NonNullable<z.infer<typeof insertRoundSchema>["score"]>;
+  score: NonNullable<z.infer<typeof insertRoundSchema>["score"]> | null;
 }
 /**
  * The function `calculateFinalScore` calculates the final score based on the rounds and scoring
@@ -36,32 +36,56 @@ interface Round {
  */
 export function calculateFinalScore(rounds: Round[], scoresheet: scoreSheet) {
   if (scoresheet.roundsScore === "Aggregate") {
-    return rounds.reduce((acc, round) => {
-      return acc + round.score;
-    }, 0);
+    return rounds.reduce<number | null>((acc, round) => {
+      if (round.score) {
+        if (acc) {
+          return acc + round.score;
+        }
+        return round.score;
+      }
+      return acc;
+    }, null);
   }
   if (scoresheet.roundsScore === "Best Of") {
     if (scoresheet.winCondition === "Highest Score") {
-      return rounds.reduce((acc, round) => {
-        return acc > round.score ? acc : round.score;
-      }, -Infinity);
+      return rounds.reduce<number | null>((acc, round) => {
+        if (round.score) {
+          if (acc) {
+            return acc > round.score ? acc : round.score;
+          }
+          return round.score;
+        }
+        return acc;
+      }, null);
     }
     if (scoresheet.winCondition === "Lowest Score") {
-      return rounds.reduce((acc, round) => {
-        return acc < round.score ? acc : round.score;
-      }, Infinity);
+      return rounds.reduce<number | null>((acc, round) => {
+        if (round.score) {
+          if (acc) {
+            return acc < round.score ? acc : round.score;
+          }
+          return round.score;
+        }
+        return acc;
+      }, null);
     }
     if (scoresheet.winCondition === "Target Score") {
-      return rounds.reduce((acc, round) => {
-        if (acc === scoresheet.targetScore) return acc;
-        if (round.score === scoresheet.targetScore) return round.score;
-        const accClose = Math.abs(acc - scoresheet.targetScore);
-        const roundClose = Math.abs(round.score - scoresheet.targetScore);
-        return accClose < roundClose ? acc : round.score;
-      }, rounds[0]?.score ?? 0);
+      return rounds.reduce<number | null>((acc, round) => {
+        if (round.score) {
+          if (acc) {
+            if (acc === scoresheet.targetScore) return acc;
+            if (round.score === scoresheet.targetScore) return round.score;
+            const accClose = Math.abs(acc - scoresheet.targetScore);
+            const roundClose = Math.abs(round.score - scoresheet.targetScore);
+            return accClose < roundClose ? acc : round.score;
+          }
+          return round.score;
+        }
+        return acc;
+      }, null);
     }
   }
-  return 0;
+  return null;
 }
 interface Player {
   id: number;
@@ -83,6 +107,9 @@ export function calculateFinalScores(
 export function calculatePlacement(players: Player[], scoresheet: scoreSheet) {
   const finalScores = calculateFinalScores(players, scoresheet);
   finalScores.sort((a, b) => {
+    if (a.score === null && b.score === null) return 0;
+    if (a.score === null) return 1;
+    if (b.score === null) return -1;
     if (scoresheet.winCondition === "Highest Score") {
       return b.score - a.score;
     }
@@ -99,7 +126,8 @@ export function calculatePlacement(players: Player[], scoresheet: scoreSheet) {
     return 0;
   });
   let placement = 1;
-  const placements: { id: number; score: number; placement: number }[] = [];
+  const placements: { id: number; score: number | null; placement: number }[] =
+    [];
   for (let i = 0; i < finalScores.length; i++) {
     if (
       i > 0 &&

@@ -222,7 +222,7 @@ export function Match({ matchId }: { matchId: number }) {
             image: player.image,
             score: calculateFinalScore(
               player.rounds.map((round) => ({
-                score: round.score ?? 0,
+                score: round.score,
               })),
               match.scoresheet,
             ),
@@ -241,7 +241,7 @@ export function Match({ matchId }: { matchId: number }) {
             id: player.id,
             score: calculateFinalScore(
               player.rounds.map((round) => ({
-                score: round.score ?? 0,
+                score: round.score,
               })),
               match.scoresheet,
             ),
@@ -255,7 +255,7 @@ export function Match({ matchId }: { matchId: number }) {
       players.map((player) => ({
         id: player.id,
         rounds: player.rounds.map((round) => ({
-          score: round.score ?? 0,
+          score: round.score,
         })),
         teamId: player.teamId,
       })),
@@ -329,7 +329,7 @@ export function Match({ matchId }: { matchId: number }) {
             id: player.id,
             score: calculateFinalScore(
               player.rounds.map((round) => ({
-                score: round.score ?? 0,
+                score: round.score,
               })),
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               match!.scoresheet,
@@ -654,7 +654,7 @@ const BodyRow = ({
                 <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
                   {round.type === "Numeric" ? (
                     <NumberInput
-                      value={roundPlayers[0]?.score ?? 0}
+                      value={roundPlayers[0]?.score ?? ""}
                       onValueChange={(value) => {
                         handleTeamScoreChange(team, round, value);
                       }}
@@ -668,10 +668,10 @@ const BodyRow = ({
                           handleTeamScoreChange(
                             team,
                             round,
-                            isChecked ? round.score : 0,
+                            isChecked ? round.score : null,
                           );
                         }}
-                        checked={(roundPlayers[0]?.score ?? 0) === round.score}
+                        checked={roundPlayers[0]?.score === round.score}
                       />
                     </>
                   )}
@@ -693,7 +693,7 @@ const BodyRow = ({
                 <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
                   {round.type === "Numeric" ? (
                     <NumberInput
-                      value={roundPlayer?.score ?? 0}
+                      value={roundPlayer?.score ?? ""}
                       onValueChange={(value) => {
                         handleScoreChange(player, round, value);
                       }}
@@ -707,10 +707,10 @@ const BodyRow = ({
                           handleScoreChange(
                             player,
                             round,
-                            isChecked ? round.score : 0,
+                            isChecked ? round.score : null,
                           );
                         }}
-                        checked={(roundPlayer?.score ?? 0) === round.score}
+                        checked={roundPlayer?.score === round.score}
                       />
                     </>
                   )}
@@ -753,7 +753,7 @@ const BodyRow = ({
             <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
               {round.type === "Numeric" ? (
                 <NumberInput
-                  value={roundPlayer?.score ?? 0}
+                  value={roundPlayer?.score ?? ""}
                   onValueChange={(value) => {
                     handleScoreChange(player, round, value);
                   }}
@@ -767,10 +767,10 @@ const BodyRow = ({
                       handleScoreChange(
                         player,
                         round,
-                        isChecked ? round.score : 0,
+                        isChecked ? round.score : null,
                       );
                     }}
-                    checked={(roundPlayer?.score ?? 0) === round.score}
+                    checked={roundPlayer?.score === round.score}
                   />
                 </>
               )}
@@ -900,15 +900,15 @@ const TotalRow = ({
                   <Input
                     type="number"
                     className="text-center"
-                    value={firstTeamPlayer.score ?? 0}
+                    value={firstTeamPlayer.score ?? ""}
                     onChange={(e) => {
-                      const score = Number(e.target.value);
+                      const score = parseInt(e.target.value);
                       const temp = [...players];
                       const tempTeamPlayer = temp.filter(
                         (player) => player.teamId === team.id,
                       );
                       for (const player of tempTeamPlayer) {
-                        player.score = score;
+                        player.score = isNaN(score) ? null : score;
                       }
                       setPlayers(temp);
                       setHasPlayersChanged(true);
@@ -920,7 +920,7 @@ const TotalRow = ({
 
             const total = calculateFinalScore(
               firstTeamPlayer.rounds.map((round) => ({
-                score: round.score ?? 0,
+                score: round.score,
               })),
               match.scoresheet,
             );
@@ -943,12 +943,12 @@ const TotalRow = ({
                   <Input
                     type="number"
                     className="text-center"
-                    value={player.score ?? 0}
+                    value={player.score ?? ""}
                     onChange={(e) => {
-                      const score = Number(e.target.value);
+                      const score = parseInt(e.target.value);
                       const temp = [...players];
                       if (temp[index]?.score !== undefined) {
-                        temp[index].score = score;
+                        temp[index].score = isNaN(score) ? null : score;
                       }
                       setPlayers(temp);
                       setHasPlayersChanged(true);
@@ -959,7 +959,7 @@ const TotalRow = ({
             }
             const total = calculateFinalScore(
               player.rounds.map((round) => ({
-                score: round.score ?? 0,
+                score: round.score,
               })),
               match.scoresheet,
             );
@@ -991,12 +991,12 @@ const TotalRow = ({
               <Input
                 type="number"
                 className="text-center"
-                value={player.score ?? 0}
+                value={player.score ?? ""}
                 onChange={(e) => {
-                  const score = Number(e.target.value);
+                  const score = parseInt(e.target.value);
                   const temp = [...players];
                   if (temp[index]?.score !== undefined) {
-                    temp[index].score = score;
+                    temp[index].score = isNaN(score) ? null : score;
                   }
                   setPlayers(temp);
                   setHasPlayersChanged(true);
@@ -1007,7 +1007,7 @@ const TotalRow = ({
         }
         const total = calculateFinalScore(
           player.rounds.map((round) => ({
-            score: round.score ?? 0,
+            score: round.score,
           })),
           match.scoresheet,
         );
