@@ -20,7 +20,6 @@ import {
   Users,
 } from "lucide-react";
 
-import { team } from "@board-games/db/schema";
 import { formatDuration, getOrdinalSuffix } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
