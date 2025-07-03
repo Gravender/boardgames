@@ -42,7 +42,7 @@ import { baseRoundSchema, editScoresheetSchema } from "@board-games/shared";
 import analyticsServerClient from "../analytics";
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 import { utapi } from "../uploadthing";
-import { updateRoundStatistics } from "../utils/gameStats";
+import { headToHeadStats, updateRoundStatistics } from "../utils/gameStats";
 
 export const gameRouter = createTRPCRouter({
   create: protectedUserProcedure
@@ -756,6 +756,7 @@ export const gameRouter = createTRPCRouter({
         name: string;
         duration: number;
         finished: boolean;
+        comment: string | null;
         scoresheet: {
           id: number;
           parentId: number | null;
@@ -833,6 +834,7 @@ export const gameRouter = createTRPCRouter({
           placement: match.finished ? (foundPlayer?.placement ?? null) : null,
           score: match.finished ? (foundPlayer?.score ?? null) : null,
           name: match.name,
+          comment: match.comment,
           duration: match.duration,
           finished: match.finished,
           scoresheet: {
@@ -895,6 +897,7 @@ export const gameRouter = createTRPCRouter({
           id: returnedShareMatch.id,
           gameId: returnedShareMatch.sharedGameId,
           name: returnedShareMatch.match.name,
+          comment: returnedShareMatch.match.comment,
           date: returnedShareMatch.match.date,
           location: mSharedLocation
             ? {
@@ -1506,6 +1509,7 @@ export const gameRouter = createTRPCRouter({
         totalMatches: totalMatches,
         wonMatches: wonMatches,
         scoresheets: gameScoresheets,
+        headToHead: headToHeadStats(matches),
       };
     }),
   getGameName: protectedUserProcedure

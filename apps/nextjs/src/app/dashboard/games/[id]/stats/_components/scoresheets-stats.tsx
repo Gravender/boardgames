@@ -43,6 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from "@board-games/ui/table";
+import { cn } from "@board-games/ui/utils";
 
 import { PlayerImage } from "~/components/player-image";
 
@@ -419,22 +420,25 @@ export function ScoreSheetsStats({
                   </div>
                 </div>
               </div>
-              <div className="border-t pt-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Score Range:
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-green-600">
-                      {userScore.bestScore ?? "N/A"}
+              {(currentScoresheet.winCondition === "Highest Score" ||
+                currentScoresheet.winCondition === "Lowest Score") && (
+                <div className="border-t pt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      Score Range:
                     </span>
-                    <span className="text-muted-foreground">-</span>
-                    <span className="font-semibold text-red-600">
-                      {userScore.worstScore ?? "N/A"}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-green-600">
+                        {userScore.bestScore ?? "N/A"}
+                      </span>
+                      <span className="text-muted-foreground">-</span>
+                      <span className="font-semibold text-red-600">
+                        {userScore.worstScore ?? "N/A"}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         ) : (
@@ -593,48 +597,61 @@ export function ScoreSheetsStats({
       </Card>
 
       {/* Scoresheet Performance Charts */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Score Trends Chart */}
-        {userScoresSorted.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Score Trends
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer
-                config={{
-                  score: {
-                    label: "Score",
-                    color: "hsl(var(--chart-1))",
-                  },
-                }}
-                className="max-h-64 w-full"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={userScoresSorted}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Line
-                      type="monotone"
-                      dataKey="score"
-                      stroke="var(--color-score)"
-                      strokeWidth={2}
-                      dot={{ fill: "var(--color-score)", strokeWidth: 2, r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        )}
+      {userScore && userScore.scores.length > 0 && (
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-6 lg:grid-cols-1",
+            (currentScoresheet.winCondition === "Highest Score" ||
+              currentScoresheet.winCondition === "Lowest Score") &&
+              "lg:grid-cols-2",
+          )}
+        >
+          {/* Score Trends Chart */}
+          {(currentScoresheet.winCondition === "Highest Score" ||
+            currentScoresheet.winCondition === "Lowest Score") && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Score Trends
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer
+                  config={{
+                    score: {
+                      label: "Score",
+                      color: "hsl(var(--chart-1))",
+                    },
+                  }}
+                  className="max-h-64 w-full"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={userScoresSorted}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line
+                        type="monotone"
+                        dataKey="score"
+                        stroke="var(--color-score)"
+                        strokeWidth={2}
+                        dot={{
+                          fill: "var(--color-score)",
+                          strokeWidth: 2,
+                          r: 4,
+                        }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Win Rate Over Time Chart */}
-        {userScore && userScore.scores.length > 0 && (
+          {/* Win Rate Over Time Chart */}
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -673,8 +690,8 @@ export function ScoreSheetsStats({
               </ChartContainer>
             </CardContent>
           </Card>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Round by Round Performance */}
       {currentScoresheet.rounds.length > 1 && (

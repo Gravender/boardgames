@@ -125,7 +125,7 @@ export function PlayerOpponents({
                             <div className="font-medium">
                               {opponent.player.name}
                             </div>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <div className="flex h-4 items-center gap-1 text-sm text-muted-foreground">
                               <span>{totalGames} games together</span>
                               <Separator orientation="vertical" />
                               <span>
