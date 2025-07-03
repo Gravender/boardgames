@@ -1033,7 +1033,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                                   Co-op Success Rate
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                  {} games
+                                  {totalCooperativeGames} games
                                 </div>
                               </div>
                             )}

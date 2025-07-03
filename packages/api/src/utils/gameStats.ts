@@ -198,68 +198,67 @@ export function headToHeadStats(playerMatches: PlayerMatch[]) {
           };
           const cpWin = currentPlayerData.isWinner;
           const opWin = opponent.isWinner;
-          if (match.finished) {
-            acc[key].matches++;
+
+          acc[key].matches++;
+          if (
+            (currentPlayerData.placement > 0 &&
+              opponent.placement > 0 &&
+              currentPlayerData.placement === opponent.placement) ||
+            (cpWin && opWin)
+          ) {
+            acc[key].ties++;
+          } else if (
+            cpWin ||
+            (currentPlayerData.placement > 0 &&
+              opponent.placement > 0 &&
+              currentPlayerData.placement < opponent.placement)
+          ) {
+            acc[key].wins++;
+          } else if (
+            opWin ||
+            (currentPlayerData.placement > 0 &&
+              opponent.placement > 0 &&
+              currentPlayerData.placement > opponent.placement)
+          ) {
+            acc[key].losses++;
+          }
+          if (match.scoresheet.isCoop) {
+            acc[key].coopPlays++;
+            if (cpWin && opWin) {
+              acc[key].coopWins++;
+            } else {
+              acc[key].coopLosses++;
+            }
+          }
+          if (!match.scoresheet.isCoop) {
+            acc[key].competitivePlays++;
             if (
-              (currentPlayerData.placement > 0 &&
-                opponent.placement > 0 &&
-                currentPlayerData.placement === opponent.placement) ||
-              (cpWin && opWin)
-            ) {
-              acc[key].ties++;
-            } else if (
-              cpWin ||
+              (cpWin && !opWin) ||
               (currentPlayerData.placement > 0 &&
                 opponent.placement > 0 &&
                 currentPlayerData.placement < opponent.placement)
             ) {
-              acc[key].wins++;
+              acc[key].competitiveWins++;
             } else if (
-              opWin ||
+              (!cpWin && opWin) ||
               (currentPlayerData.placement > 0 &&
                 opponent.placement > 0 &&
                 currentPlayerData.placement > opponent.placement)
             ) {
-              acc[key].losses++;
+              acc[key].competitiveLosses++;
+            } else {
+              acc[key].competitiveTies++;
             }
-            if (match.scoresheet.isCoop) {
-              acc[key].coopPlays++;
-              if (cpWin && opWin) {
-                acc[key].coopWins++;
-              } else {
-                acc[key].coopLosses++;
-              }
-            }
-            if (!match.scoresheet.isCoop) {
-              acc[key].competitivePlays++;
-              if (
-                (cpWin && !opWin) ||
-                (currentPlayerData.placement > 0 &&
-                  opponent.placement > 0 &&
-                  currentPlayerData.placement < opponent.placement)
-              ) {
-                acc[key].competitiveWins++;
-              } else if (
-                (!cpWin && opWin) ||
-                (currentPlayerData.placement > 0 &&
-                  opponent.placement > 0 &&
-                  currentPlayerData.placement > opponent.placement)
-              ) {
-                acc[key].competitiveLosses++;
-              } else {
-                acc[key].competitiveTies++;
-              }
-            }
-            if (
-              currentPlayerData.team?.id === opponent.team?.id &&
-              !match.scoresheet.isCoop &&
-              currentPlayerData.team?.id
-            ) {
-              if (currentPlayerData.isWinner) {
-                acc[key].teamWins++;
-              } else {
-                acc[key].teamLosses++;
-              }
+          }
+          if (
+            currentPlayerData.team?.id === opponent.team?.id &&
+            !match.scoresheet.isCoop &&
+            currentPlayerData.team?.id
+          ) {
+            if (currentPlayerData.isWinner) {
+              acc[key].teamWins++;
+            } else {
+              acc[key].teamLosses++;
             }
           }
         });
