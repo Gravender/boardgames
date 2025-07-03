@@ -995,7 +995,7 @@ export const playerRouter = createTRPCRouter({
                 returnedMatch.matchPlayers.map((mPlayer) => ({
                   id: mPlayer.id,
                   rounds: mPlayer.playerRounds.map((pRound) => ({
-                    score: pRound.score ?? 0,
+                    score: pRound.score,
                   })),
                   teamId: mPlayer.teamId,
                 })),
@@ -1003,7 +1003,7 @@ export const playerRouter = createTRPCRouter({
               );
               function recomputePlacements(
                 matchPlayers: { id: number; placement: number | null }[],
-                finalPlacements: { id: number; score: number }[],
+                finalPlacements: { id: number; score: number | null }[],
               ) {
                 // map id → original placement
                 const orig = new Map(
@@ -1012,9 +1012,12 @@ export const playerRouter = createTRPCRouter({
 
                 return finalPlacements.map((p) => {
                   // how many outrank p on score?
-                  const higher = finalPlacements.filter(
-                    (q) => q.score > p.score,
-                  ).length;
+                  const higher = finalPlacements.filter((q) => {
+                    if (q.score == null && p.score == null) return false;
+                    if (q.score == null) return false;
+                    if (p.score == null) return true;
+                    return q.score > p.score;
+                  }).length;
                   // how many tie on score but outrank p originally?
                   const tiedHigher = finalPlacements.filter((q) => {
                     const qPlacement = orig.get(q.id);

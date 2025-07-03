@@ -902,7 +902,7 @@ const TotalRow = ({
                     className="text-center"
                     value={firstTeamPlayer.score ?? ""}
                     onChange={(e) => {
-                      const score = parseInt(e.target.value);
+                      const score = parseFloat(e.target.value);
                       const temp = [...players];
                       const tempTeamPlayer = temp.filter(
                         (player) => player.teamId === team.id,
@@ -945,7 +945,7 @@ const TotalRow = ({
                     className="text-center"
                     value={player.score ?? ""}
                     onChange={(e) => {
-                      const score = parseInt(e.target.value);
+                      const score = parseFloat(e.target.value);
                       const temp = [...players];
                       if (temp[index]?.score !== undefined) {
                         temp[index].score = isNaN(score) ? null : score;
@@ -993,7 +993,7 @@ const TotalRow = ({
                 className="text-center"
                 value={player.score ?? ""}
                 onChange={(e) => {
-                  const score = parseInt(e.target.value);
+                  const score = parseFloat(e.target.value);
                   const temp = [...players];
                   if (temp[index]?.score !== undefined) {
                     temp[index].score = isNaN(score) ? null : score;
