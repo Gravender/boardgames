@@ -935,9 +935,9 @@ export default function GameStats({ gameId }: { gameId: number }) {
                         ? opponent.coopWins / totalCooperativeGames
                         : 0;
                     const overallWinRate =
-                      totalGames > 0
+                      opponent.wins + opponent.losses > 0
                         ? (opponent.competitiveWins + opponent.coopWins) /
-                          totalGames
+                          (opponent.wins + opponent.losses)
                         : 0;
                     const totalCards =
                       (totalCooperativeGames > 0 ? 1 : 0) +
