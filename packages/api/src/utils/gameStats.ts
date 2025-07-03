@@ -309,16 +309,19 @@ export function headToHeadStats(playerMatches: PlayerMatch[]) {
     >,
   );
 
-  const headToHeadArray = Object.values(headToHead);
+  const headToHeadArray = Object.values(headToHead).map((opponent) => {
+    const totalGames = opponent.wins + opponent.losses;
+    return {
+      ...opponent,
+      totalGames: totalGames + opponent.ties,
+      winRate: totalGames > 0 ? opponent.wins / totalGames : 0,
+    };
+  });
   headToHeadArray.sort((a, b) => {
-    const aTotalGames = a.wins + a.losses;
-    const bTotalGames = b.wins + b.losses;
-    const aWinRate = aTotalGames > 0 ? a.wins / aTotalGames : 0;
-    const bWinRate = bTotalGames > 0 ? b.wins / bTotalGames : 0;
-    if (aTotalGames > 10 && bTotalGames > 10) {
-      return bWinRate - aWinRate;
+    if (a.totalGames > 10 && b.totalGames > 10) {
+      return b.winRate - a.winRate;
     }
-    return bTotalGames - aTotalGames;
+    return b.totalGames - a.totalGames;
   });
   return headToHeadArray;
 }

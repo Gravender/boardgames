@@ -714,7 +714,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
             </Card>
 
             {/* Best Performance */}
-            {/*         <Card>
+            <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm font-medium">
                   <Users className="h-4 w-4" />
@@ -724,25 +724,22 @@ export default function GameStats({ gameId }: { gameId: number }) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {gameStats.advancedStats.headToHead
-                    .sort((a, b) => b.winRate - a.winRate)
-                    .slice(0, 2)
-                    .map((opponent, i) => (
-                      <div
-                        key={opponent.opponentId}
-                        className="flex justify-between"
-                      >
-                        <span className="mr-2 truncate text-sm">
-                          {opponent.opponentName}:
-                        </span>
-                        <span className="font-semibold text-green-600">
-                          {Math.round(opponent.winRate * 100)}%
-                        </span>
-                      </div>
-                    ))}
+                  {gameStats.headToHead.slice(0, 2).map((opponent) => (
+                    <div
+                      key={`${opponent.player.id}-${opponent.player.type}`}
+                      className="flex justify-between"
+                    >
+                      <span className="mr-2 truncate text-sm">
+                        {opponent.player.name}:
+                      </span>
+                      <span className="font-semibold text-green-600">
+                        {Math.round(opponent.winRate * 100)}%
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
-            </Card> */}
+            </Card>
 
             {/* Player Count Performance */}
             <Card>
