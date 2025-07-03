@@ -43,7 +43,7 @@ export const TieBreakerPlayerSchema = z
       matchPlayerId: z.number(),
       name: z.string(),
       image: imageSchema.nullable(),
-      score: z.number(),
+      score: z.number().nullable(),
       placement: z.number().min(1),
       teamId: z.number().nullable(),
     }),
@@ -275,7 +275,7 @@ function Content({
                                 </div>
 
                                 <div className="flex w-20 items-center justify-start font-semibold">
-                                  {player.score}
+                                  {player.score ?? ""}
                                 </div>
                               </button>
                             </PopoverTrigger>

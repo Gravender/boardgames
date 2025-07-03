@@ -940,7 +940,7 @@ export const shareMatchRouter = createTRPCRouter({
           z.object({
             matchPlayerId: z.number(),
             placement: z.number(),
-            score: z.number(),
+            score: z.number().nullable(),
           }),
         ),
       }),
@@ -1032,7 +1032,7 @@ export const shareMatchRouter = createTRPCRouter({
           z.object({
             matchPlayerId: z.number(),
             placement: z.number().optional(),
-            score: z.number(),
+            score: z.number().nullable(),
           }),
         ),
       }),

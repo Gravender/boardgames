@@ -34,7 +34,7 @@ const playerSchema = z.object({
   matchPlayerId: z.number(),
   name: z.string(),
   image: imageSchema.nullable(),
-  score: z.number(),
+  score: z.number().nullable(),
   teamId: z.number().nullable(),
 });
 export const ManualWinnerPlayerSchema = z.array(playerSchema).min(1);
@@ -199,7 +199,9 @@ function Content({
                                   </div>
 
                                   <div className="flex w-20 items-center justify-start font-semibold">
-                                    {`Score: ${firstTeamPlayer.score}`}
+                                    {firstTeamPlayer.score
+                                      ? `Score: ${firstTeamPlayer.score}`
+                                      : ""}
                                   </div>
                                 </FormLabel>
                               </FormItem>
@@ -267,7 +269,9 @@ function Content({
                                   </div>
 
                                   <div className="flex w-20 items-center justify-start font-semibold">
-                                    {`Score: ${player.score}`}
+                                    {player.score
+                                      ? `Score: ${player.score}`
+                                      : ""}
                                   </div>
                                 </FormLabel>
                               </FormItem>
