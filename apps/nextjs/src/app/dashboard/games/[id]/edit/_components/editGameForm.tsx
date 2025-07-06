@@ -296,6 +296,14 @@ const GameForm = ({
           trpc.game.getGame.queryOptions({ id: data.game.id }),
         );
         await queryClient.invalidateQueries(
+          trpc.game.getGameRoles.queryOptions({
+            gameId: data.game.id,
+          }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.game.getEditGame.queryOptions({ id: data.game.id }),
+        );
+        await queryClient.invalidateQueries(
           trpc.game.getGameMetaData.queryOptions({ id: data.game.id }),
         );
         await queryClient.invalidateQueries(
@@ -365,10 +373,9 @@ const GameForm = ({
       playtimeMinChanged ||
       playtimeMaxChanged ||
       yearPublishedChanged ||
-      imageChanged ||
-      rolesChanged;
+      imageChanged;
 
-    if (gameChanged || scoresheetChanged) {
+    if (gameChanged || scoresheetChanged || rolesChanged) {
       const updatedRoles = values.roles
         .map((role) => {
           const originalRole = data.roles.find((r) => r.id === role.id);
@@ -385,6 +392,9 @@ const GameForm = ({
         })
         .filter((role) => role !== null);
       const newRoles = values.roles.filter((role) => role.id < 0);
+      const deletedRoles = data.roles
+        .filter((role) => !values.roles.find((vRole) => vRole.id === role.id))
+        .map((role) => role.id);
       const game = gameChanged
         ? {
             type: "updateGame" as const,
@@ -399,8 +409,6 @@ const GameForm = ({
               ? values.yearPublished
               : undefined,
             image: image,
-            updatedRoles: updatedRoles,
-            newRoles: newRoles,
           }
         : { type: "default" as const, id: data.game.id };
       if (scoresheetChanged) {
@@ -598,12 +606,18 @@ const GameForm = ({
           game: game,
           scoresheets: changedScoresheets,
           scoresheetsToDelete: scoresheetsToDelete,
+          updatedRoles: updatedRoles,
+          newRoles: newRoles,
+          deletedRoles: deletedRoles,
         });
       } else {
         mutation.mutate({
           game: game,
           scoresheets: [],
           scoresheetsToDelete: [],
+          updatedRoles: updatedRoles,
+          newRoles: newRoles,
+          deletedRoles: deletedRoles,
         });
       }
     }

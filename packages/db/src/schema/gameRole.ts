@@ -21,6 +21,7 @@ const gameRoles = createTable("game_role", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
     () => new Date(),
   ),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });
 
 export default gameRoles;

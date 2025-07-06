@@ -459,6 +459,9 @@ export const gameRouter = createTRPCRouter({
         where: {
           gameId: input.gameId,
           createdBy: ctx.userId,
+          deletedAt: {
+            isNull: true,
+          },
         },
         columns: {
           id: true,
@@ -2245,19 +2248,6 @@ export const gameRouter = createTRPCRouter({
             playtimeMin: z.number().nullish(),
             playtimeMax: z.number().nullish(),
             yearPublished: z.number().nullish(),
-            updatedRoles: z.array(
-              z.object({
-                id: z.number(),
-                name: z.string(),
-                description: z.string().nullable(),
-              }),
-            ),
-            newRoles: z.array(
-              z.object({
-                name: z.string(),
-                description: z.string().nullable(),
-              }),
-            ),
           }),
           z.object({ type: z.literal("default"), id: z.number() }),
         ]),
@@ -2322,6 +2312,20 @@ export const gameRouter = createTRPCRouter({
             scoresheetType: z.literal("original").or(z.literal("shared")),
           }),
         ),
+        updatedRoles: z.array(
+          z.object({
+            id: z.number(),
+            name: z.string(),
+            description: z.string().nullable(),
+          }),
+        ),
+        newRoles: z.array(
+          z.object({
+            name: z.string(),
+            description: z.string().nullable(),
+          }),
+        ),
+        deletedRoles: z.array(z.number()),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -2337,6 +2341,41 @@ export const gameRouter = createTRPCRouter({
           message: "Game not found.",
         });
       }
+      await ctx.db.transaction(async (transaction) => {
+        if (input.updatedRoles.length > 0) {
+          for (const updatedRole of input.updatedRoles) {
+            await transaction
+              .update(gameRole)
+              .set({
+                name: updatedRole.name,
+                description: updatedRole.description,
+              })
+              .where(eq(gameRole.id, updatedRole.id));
+          }
+        }
+        if (input.newRoles.length > 0) {
+          const newRolesToInsert = input.newRoles.map((newRole) => ({
+            name: newRole.name,
+            description: newRole.description,
+            gameId: existingGame.id,
+            createdBy: ctx.userId,
+          }));
+          await transaction.insert(gameRole).values(newRolesToInsert);
+        }
+        if (input.deletedRoles.length > 0) {
+          await transaction
+            .update(gameRole)
+            .set({
+              deletedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(gameRole.gameId, existingGame.id),
+                inArray(gameRole.id, input.deletedRoles),
+              ),
+            );
+        }
+      });
       if (input.game.type === "updateGame") {
         const inputGame = input.game;
         await ctx.db.transaction(async (transaction) => {
@@ -2422,28 +2461,6 @@ export const gameRouter = createTRPCRouter({
               imageId: imageId,
             })
             .where(eq(game.id, existingGame.id));
-        });
-        await ctx.db.transaction(async (transaction) => {
-          if (inputGame.updatedRoles.length > 0) {
-            for (const updatedRole of inputGame.updatedRoles) {
-              await transaction
-                .update(gameRole)
-                .set({
-                  name: updatedRole.name,
-                  description: updatedRole.description,
-                })
-                .where(eq(gameRole.id, updatedRole.id));
-            }
-          }
-          if (inputGame.newRoles.length > 0) {
-            const newRolesToInsert = inputGame.newRoles.map((newRole) => ({
-              name: newRole.name,
-              description: newRole.description,
-              gameId: existingGame.id,
-              createdBy: ctx.userId,
-            }));
-            await transaction.insert(gameRole).values(newRolesToInsert);
-          }
         });
       }
       if (input.scoresheets.length > 0) {

@@ -20,7 +20,7 @@ import {
   FormMessage,
   useForm,
 } from "@board-games/ui/form";
-import { Input } from "@board-games/ui/input";
+import { Textarea } from "@board-games/ui/textarea";
 
 import { useTRPC } from "~/trpc/react";
 
@@ -104,7 +104,7 @@ function Content({
               <FormItem>
                 <FormLabel className="hidden">Comment:</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Textarea {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
