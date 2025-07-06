@@ -127,6 +127,7 @@ export async function seedGames(d3Seed: number) {
       );
       return selectedRoles.map((roleName) => ({
         gameId: game.id,
+        createdBy: user.id,
         name: roleName,
         description: faker.lorem.paragraph(),
       }));

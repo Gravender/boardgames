@@ -458,6 +458,7 @@ export const gameRouter = createTRPCRouter({
       const result = await ctx.db.query.gameRole.findMany({
         where: {
           gameId: input.gameId,
+          createdBy: ctx.userId,
         },
         columns: {
           id: true,
@@ -2248,14 +2249,13 @@ export const gameRouter = createTRPCRouter({
               z.object({
                 id: z.number(),
                 name: z.string(),
-                description: z.string().nullish(),
+                description: z.string().nullable(),
               }),
             ),
             newRoles: z.array(
               z.object({
-                id: z.number(),
                 name: z.string(),
-                description: z.string().nullish(),
+                description: z.string().nullable(),
               }),
             ),
           }),
@@ -2423,25 +2423,28 @@ export const gameRouter = createTRPCRouter({
             })
             .where(eq(game.id, existingGame.id));
         });
-        if (input.game.updatedRoles.length > 0) {
-          for (const updatedRole of input.game.updatedRoles) {
-            await ctx.db
-              .update(gameRole)
-              .set({
-                name: updatedRole.name,
-                description: updatedRole.description,
-              })
-              .where(eq(gameRole.id, updatedRole.id));
+        await ctx.db.transaction(async (transaction) => {
+          if (inputGame.updatedRoles.length > 0) {
+            for (const updatedRole of inputGame.updatedRoles) {
+              await transaction
+                .update(gameRole)
+                .set({
+                  name: updatedRole.name,
+                  description: updatedRole.description,
+                })
+                .where(eq(gameRole.id, updatedRole.id));
+            }
           }
-        }
-        if (input.game.newRoles.length > 0) {
-          const newRolesToInsert = input.game.newRoles.map((newRole) => ({
-            name: newRole.name,
-            description: newRole.description,
-            gameId: existingGame.id,
-          }));
-          await ctx.db.insert(gameRole).values(newRolesToInsert);
-        }
+          if (inputGame.newRoles.length > 0) {
+            const newRolesToInsert = inputGame.newRoles.map((newRole) => ({
+              name: newRole.name,
+              description: newRole.description,
+              gameId: existingGame.id,
+              createdBy: ctx.userId,
+            }));
+            await transaction.insert(gameRole).values(newRolesToInsert);
+          }
+        });
       }
       if (input.scoresheets.length > 0) {
         await ctx.db.transaction(async (transaction) => {
