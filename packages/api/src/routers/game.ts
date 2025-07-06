@@ -19,6 +19,7 @@ import type {
 } from "@board-games/db/zodSchema";
 import {
   game,
+  gameRole,
   image,
   location,
   match,
@@ -517,6 +518,7 @@ export const gameRouter = createTRPCRouter({
               },
             },
           },
+          roles: true,
         },
       });
       if (!result) return null;
@@ -627,6 +629,7 @@ export const gameRouter = createTRPCRouter({
           })),
           ...mappedLinkedScoresheet,
         ],
+        roles: result.roles,
       };
     }),
   getGameStats: protectedUserProcedure
@@ -2241,6 +2244,20 @@ export const gameRouter = createTRPCRouter({
             playtimeMin: z.number().nullish(),
             playtimeMax: z.number().nullish(),
             yearPublished: z.number().nullish(),
+            updatedRoles: z.array(
+              z.object({
+                id: z.number(),
+                name: z.string(),
+                description: z.string().nullish(),
+              }),
+            ),
+            newRoles: z.array(
+              z.object({
+                id: z.number(),
+                name: z.string(),
+                description: z.string().nullish(),
+              }),
+            ),
           }),
           z.object({ type: z.literal("default"), id: z.number() }),
         ]),
@@ -2406,6 +2423,25 @@ export const gameRouter = createTRPCRouter({
             })
             .where(eq(game.id, existingGame.id));
         });
+        if (input.game.updatedRoles.length > 0) {
+          for (const updatedRole of input.game.updatedRoles) {
+            await ctx.db
+              .update(gameRole)
+              .set({
+                name: updatedRole.name,
+                description: updatedRole.description,
+              })
+              .where(eq(gameRole.id, updatedRole.id));
+          }
+        }
+        if (input.game.newRoles.length > 0) {
+          const newRolesToInsert = input.game.newRoles.map((newRole) => ({
+            name: newRole.name,
+            description: newRole.description,
+            gameId: existingGame.id,
+          }));
+          await ctx.db.insert(gameRole).values(newRolesToInsert);
+        }
       }
       if (input.scoresheets.length > 0) {
         await ctx.db.transaction(async (transaction) => {

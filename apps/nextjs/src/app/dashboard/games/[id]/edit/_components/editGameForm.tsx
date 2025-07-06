@@ -70,6 +70,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@board-games/ui/popover";
+import { ScrollArea } from "@board-games/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -78,6 +79,7 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 import { Separator } from "@board-games/ui/separator";
+import { Textarea } from "@board-games/ui/textarea";
 import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
@@ -134,6 +136,7 @@ export function EditGameForm({
             name: data.game.gameImg.name,
           }
       : null,
+    roles: data.roles,
   });
   const [scoresheets, setScoresheets] = useState<
     z.infer<typeof scoresheetsSchema>
@@ -278,6 +281,7 @@ const GameForm = ({
         : null,
   );
   const [openAlert, setOpenAlert] = useState(false);
+  const [gameRolesOpen, setGameRolesOpen] = useState(false);
 
   const [isUploading, setIsUploading] = useState(false);
   const { startUpload } = useUploadThing("imageUploader");
@@ -345,6 +349,14 @@ const GameForm = ({
     const scoresheetChanged = scoresheets.some(
       (scoresheet) => scoresheet.scoreSheetChanged || scoresheet.roundChanged,
     );
+    const rolesChanged =
+      values.roles.some((role) => {
+        const originalRole = data.roles.find((r) => r.id === role.id);
+        return (
+          originalRole?.name !== role.name ||
+          originalRole.description !== role.description
+        );
+      }) || values.roles.some((role) => role.id < 0);
     const gameChanged =
       nameChanged ||
       ownedByChanged ||
@@ -353,9 +365,26 @@ const GameForm = ({
       playtimeMinChanged ||
       playtimeMaxChanged ||
       yearPublishedChanged ||
-      imageChanged;
+      imageChanged ||
+      rolesChanged;
 
     if (gameChanged || scoresheetChanged) {
+      const updatedRoles = values.roles
+        .map((role) => {
+          const originalRole = data.roles.find((r) => r.id === role.id);
+          if (originalRole === undefined) return null;
+          const nameChanged = role.name !== originalRole.name;
+          const descriptionChanged =
+            role.description !== originalRole.description;
+          if (!nameChanged && !descriptionChanged) return null;
+          return {
+            id: role.id,
+            name: role.name,
+            description: role.description,
+          };
+        })
+        .filter((role) => role !== null);
+      const newRoles = values.roles.filter((role) => role.id < 0);
       const game = gameChanged
         ? {
             type: "updateGame" as const,
@@ -370,6 +399,8 @@ const GameForm = ({
               ? values.yearPublished
               : undefined,
             image: image,
+            updatedRoles: updatedRoles,
+            newRoles: newRoles,
           }
         : { type: "default" as const, id: data.game.id };
       if (scoresheetChanged) {
@@ -652,6 +683,7 @@ const GameForm = ({
             type: "file",
             file: "",
           },
+          roles: values.roles,
         },
         image: imageId
           ? {
@@ -669,6 +701,8 @@ const GameForm = ({
       setIsUploading(false);
     }
   }
+
+  const roles = form.watch("roles");
 
   return (
     <AlertDialog open={openAlert} onOpenChange={setOpenAlert}>
@@ -1015,6 +1049,107 @@ const GameForm = ({
                     </div>
                   )}
                 </div>
+                <Collapsible
+                  open={gameRolesOpen}
+                  onOpenChange={setGameRolesOpen}
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      className="flex w-full items-center justify-between"
+                      variant="ghost"
+                      size="sm"
+                    >
+                      <span>Game Roles</span>
+                      {gameRolesOpen ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-4">
+                    <ScrollArea>
+                      <div className="flex max-h-80 flex-col gap-4">
+                        {roles.map((role) => {
+                          const roleIndex = roles.findIndex(
+                            (r) => r.id === role.id,
+                          );
+                          return (
+                            <div
+                              className="flex flex-col gap-2 px-2"
+                              key={role.id}
+                            >
+                              <FormField
+                                control={form.control}
+                                name={`roles.${roleIndex}.name`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Name</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="Role name"
+                                        {...field}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`roles.${roleIndex}.description`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Description</FormLabel>
+                                    <FormControl>
+                                      <Textarea
+                                        placeholder="Tell us a little bit about yourself"
+                                        className="resize-none"
+                                        {...field}
+                                        value={field.value ?? ""}
+                                        onChange={(e) => {
+                                          if (e.target.value === "") {
+                                            field.onChange(null);
+                                            return;
+                                          }
+                                          field.onChange(e.target.value);
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          );
+                        })}
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="w-full"
+                          onClick={() => {
+                            const minId = Math.min(
+                              ...roles.map((role) => role.id),
+                              0,
+                            );
+                            form.setValue("roles", [
+                              ...roles,
+                              {
+                                id: minId - 1,
+                                name: "",
+                                description: "",
+                              },
+                            ]);
+                          }}
+                        >
+                          <Plus />
+                          <span>Role</span>
+                        </Button>
+                      </div>
+                    </ScrollArea>
+                  </CollapsibleContent>
+                </Collapsible>
                 <Separator className="w-full" orientation="horizontal" />
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
