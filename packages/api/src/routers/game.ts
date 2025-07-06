@@ -451,6 +451,21 @@ export const gameRouter = createTRPCRouter({
       ];
       return mappedScoresheets;
     }),
+  getGameRoles: protectedUserProcedure
+    .input(z.object({ gameId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.db.query.gameRole.findMany({
+        where: {
+          gameId: input.gameId,
+        },
+        columns: {
+          id: true,
+          name: true,
+          description: true,
+        },
+      });
+      return result;
+    }),
   getEditGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
@@ -638,6 +653,7 @@ export const gameRouter = createTRPCRouter({
                   },
                   team: true,
                   playerRounds: true,
+                  roles: true,
                 },
               },
               location: true,
@@ -674,6 +690,7 @@ export const gameRouter = createTRPCRouter({
                     with: {
                       team: true,
                       playerRounds: true,
+                      roles: true,
                     },
                   },
                   sharedPlayer: {
@@ -738,9 +755,71 @@ export const gameRouter = createTRPCRouter({
               },
             },
           },
+          roles: true,
         },
       });
       if (!result) return null;
+      const roleStats = result.roles.reduce(
+        (acc, role) => {
+          acc[role.id] = {
+            roleId: role.id,
+            name: role.name,
+            description: role.description,
+            playerCount: 0,
+            matchCount: 0,
+            winRate: 0,
+            wins: 0,
+            placements: {},
+            players: {},
+          };
+          return acc;
+        },
+        {} as Record<
+          number,
+          {
+            roleId: number;
+            name: string;
+            description: string | null;
+            playerCount: number;
+            matchCount: number;
+            winRate: number;
+            wins: number;
+            placements: Record<number, number>;
+            players: Record<
+              number,
+              {
+                id: number;
+                name: string;
+                isUser: boolean;
+                image: {
+                  name: string;
+                  url: string | null;
+                  type: "file" | "svg";
+                  usageType: "player" | "match" | "game";
+                } | null;
+                totalMatches: number;
+                totalWins: number;
+                winRate: number;
+                placements: Record<number, number>;
+              }
+            >;
+          }
+        >,
+      );
+      const comboRoles: Record<
+        string,
+        {
+          roles: {
+            id: number;
+            name: string;
+            description: string | null;
+          }[];
+          matchCount: number;
+          wins: number;
+          winRate: number;
+          placements: Record<number, number>;
+        }
+      > = {};
       const matches: {
         type: "original" | "shared";
         id: number;
@@ -799,6 +878,11 @@ export const gameRouter = createTRPCRouter({
             id: number;
             roundId: number;
             score: number | null;
+          }[];
+          roles: {
+            id: number;
+            name: string;
+            description: string | null;
           }[];
         }[];
         winners: {
@@ -868,6 +952,11 @@ export const gameRouter = createTRPCRouter({
                 id: round.id,
                 roundId: round.roundId,
                 score: round.score,
+              })),
+              roles: player.roles.map((role) => ({
+                id: role.id,
+                name: role.name,
+                description: role.description,
               })),
             };
           }),
@@ -969,6 +1058,13 @@ export const gameRouter = createTRPCRouter({
                       score: round.score,
                     }),
                   ),
+                roles: returnedSharedMatchPlayer.matchPlayer.roles.map(
+                  (role) => ({
+                    id: role.id,
+                    name: role.name,
+                    description: role.description,
+                  }),
+                ),
               };
             })
             .filter((player) => player !== null),
@@ -1059,6 +1155,67 @@ export const gameRouter = createTRPCRouter({
           const isCoop = currentScoresheet.isCoop;
           match.players.forEach((player) => {
             const accPlayer = acc[`${player.type}-${player.id}`];
+            player.roles.forEach((role) => {
+              const accRole = roleStats[role.id];
+              if (!accRole) {
+                roleStats[role.id] = {
+                  roleId: role.id,
+                  name: role.name,
+                  description: role.description,
+                  playerCount: 1,
+                  placements:
+                    player.placement > 0 ? { [player.placement]: 1 } : {},
+                  wins: player.isWinner ? 1 : 0,
+                  matchCount: 1,
+                  winRate: player.isWinner ? 1 : 0,
+                  players: {
+                    [player.id]: {
+                      id: player.id,
+                      name: player.name,
+                      isUser: player.isUser,
+                      image: player.image,
+                      totalMatches: 1,
+                      totalWins: player.isWinner ? 1 : 0,
+                      winRate: player.isWinner ? 1 : 0,
+                      placements:
+                        player.placement > 0 ? { [player.placement]: 1 } : {},
+                    },
+                  },
+                };
+              } else {
+                accRole.playerCount++;
+                if (player.placement > 0) {
+                  accRole.placements[player.placement] =
+                    (accRole.placements[player.placement] ?? 0) + 1;
+                }
+                accRole.wins += player.isWinner ? 1 : 0;
+                accRole.matchCount++;
+                accRole.winRate = accRole.wins / accRole.matchCount;
+                const accPlayer = accRole.players[player.id];
+                if (!accPlayer) {
+                  accRole.players[player.id] = {
+                    id: player.id,
+                    name: player.name,
+                    isUser: player.isUser,
+                    image: player.image,
+                    totalMatches: 1,
+                    totalWins: player.isWinner ? 1 : 0,
+                    winRate: player.isWinner ? 1 : 0,
+                    placements:
+                      player.placement > 0 ? { [player.placement]: 1 } : {},
+                  };
+                } else {
+                  accPlayer.totalMatches++;
+                  accPlayer.totalWins += player.isWinner ? 1 : 0;
+                  accPlayer.winRate =
+                    accPlayer.totalWins / accPlayer.totalMatches;
+                  if (player.placement > 0) {
+                    accPlayer.placements[player.placement] =
+                      (accPlayer.placements[player.placement] ?? 0) + 1;
+                  }
+                }
+              }
+            });
             if (!accPlayer) {
               const tempPlacements: Record<number, number> = {};
               const tempPlayerCount: Record<
@@ -1100,6 +1257,48 @@ export const gameRouter = createTRPCRouter({
                   >;
                 }
               > = {};
+              const tempRoleCombos: Record<
+                string,
+                {
+                  roles: {
+                    id: number;
+                    name: string;
+                    description: string | null;
+                  }[];
+                  matchCount: number;
+                  wins: number;
+                  winRate: number;
+                  placements: Record<number, number>;
+                }
+              > = {};
+              if (player.roles.length >= 2) {
+                const sortedRoles = player.roles.map((r) => r.name).sort();
+                const roleComboKey = sortedRoles.join(" + ");
+                const accRoleCombo = tempRoleCombos[roleComboKey];
+                if (!accRoleCombo) {
+                  tempRoleCombos[roleComboKey] = {
+                    roles: player.roles.map((r) => ({
+                      id: r.id,
+                      name: r.name,
+                      description: r.description,
+                    })),
+                    matchCount: 1,
+                    wins: player.isWinner ? 1 : 0,
+                    winRate: player.isWinner ? 1 : 0,
+                    placements:
+                      player.placement > 0 ? { [player.placement]: 1 } : {},
+                  };
+                } else {
+                  accRoleCombo.matchCount++;
+                  accRoleCombo.wins += player.isWinner ? 1 : 0;
+                  accRoleCombo.winRate =
+                    accRoleCombo.wins / accRoleCombo.matchCount;
+                  if (player.placement > 0) {
+                    accRoleCombo.placements[player.placement] =
+                      (accRoleCombo.placements[player.placement] ?? 0) + 1;
+                  }
+                }
+              }
               if (!isCoop) {
                 tempPlacements[player.placement] = 1;
                 tempPlayerCount[match.players.length] = {
@@ -1181,10 +1380,115 @@ export const gameRouter = createTRPCRouter({
                 recentForm: player.isWinner ? ["win"] : ["loss"],
                 playerCount: !isCoop ? tempPlayerCount : {},
                 scoresheets: tempScoresheets,
+                roles: player.roles.reduce(
+                  (acc, role) => {
+                    acc[role.id] = {
+                      roleId: role.id,
+                      name: role.name,
+                      description: role.description,
+                      matchCount: 1,
+                      winRate: player.isWinner ? 1 : 0,
+                      wins: player.isWinner ? 1 : 0,
+                      placements:
+                        player.placement > 0 ? { [player.placement]: 1 } : {},
+                    };
+                    return acc;
+                  },
+                  {} as Record<
+                    number,
+                    {
+                      roleId: number;
+                      name: string;
+                      description: string | null;
+                      matchCount: number;
+                      winRate: number;
+                      wins: number;
+                      placements: Record<number, number>;
+                    }
+                  >,
+                ),
+                roleCombos: tempRoleCombos,
               };
             } else {
               accPlayer.recentForm.push(player.isWinner ? "win" : "loss");
               const current = accPlayer.streaks.current;
+              player.roles.forEach((role) => {
+                const accRole = accPlayer.roles[role.id];
+                if (!accRole) {
+                  accPlayer.roles[role.id] = {
+                    roleId: role.id,
+                    name: role.name,
+                    description: role.description,
+                    matchCount: 1,
+                    winRate: player.isWinner ? 1 : 0,
+                    wins: player.isWinner ? 1 : 0,
+                    placements:
+                      player.placement > 0 ? { [player.placement]: 1 } : {},
+                  };
+                } else {
+                  accRole.matchCount++;
+                  accRole.winRate =
+                    (accRole.wins + (player.isWinner ? 1 : 0)) /
+                    accRole.matchCount;
+                  accRole.wins += player.isWinner ? 1 : 0;
+                  if (player.placement > 0) {
+                    accRole.placements[player.placement] =
+                      (accRole.placements[player.placement] ?? 0) + 1;
+                  }
+                }
+              });
+              if (player.roles.length >= 2) {
+                const sortedRoles = player.roles.map((r) => r.name).sort();
+                const roleComboKey = sortedRoles.join(" + ");
+                const accRoleCombo = comboRoles[roleComboKey];
+                if (!accRoleCombo) {
+                  comboRoles[roleComboKey] = {
+                    roles: player.roles.map((r) => ({
+                      id: r.id,
+                      name: r.name,
+                      description: r.description,
+                    })),
+                    matchCount: 1,
+                    wins: player.isWinner ? 1 : 0,
+                    winRate: player.isWinner ? 1 : 0,
+                    placements:
+                      player.placement > 0 ? { [player.placement]: 1 } : {},
+                  };
+                } else {
+                  accRoleCombo.matchCount++;
+                  accRoleCombo.wins += player.isWinner ? 1 : 0;
+                  accRoleCombo.winRate =
+                    accRoleCombo.wins / accRoleCombo.matchCount;
+                  if (player.placement > 0) {
+                    accRoleCombo.placements[player.placement] =
+                      (accRoleCombo.placements[player.placement] ?? 0) + 1;
+                  }
+                }
+                const playerCombo = accPlayer.roleCombos[roleComboKey];
+                if (!playerCombo) {
+                  accPlayer.roleCombos[roleComboKey] = {
+                    roles: player.roles.map((r) => ({
+                      id: r.id,
+                      name: r.name,
+                      description: r.description,
+                    })),
+                    matchCount: 1,
+                    wins: player.isWinner ? 1 : 0,
+                    winRate: player.isWinner ? 1 : 0,
+                    placements:
+                      player.placement > 0 ? { [player.placement]: 1 } : {},
+                  };
+                } else {
+                  playerCombo.matchCount++;
+                  playerCombo.wins += player.isWinner ? 1 : 0;
+                  playerCombo.winRate =
+                    playerCombo.wins / playerCombo.matchCount;
+                  if (player.placement > 0) {
+                    playerCombo.placements[player.placement] =
+                      (playerCombo.placements[player.placement] ?? 0) + 1;
+                  }
+                }
+              }
               if (
                 (player.isWinner && current.type === "win") ||
                 (!player.isWinner && current.type === "loss")
@@ -1438,6 +1742,32 @@ export const gameRouter = createTRPCRouter({
                 >;
               }
             >;
+            roles: Record<
+              number,
+              {
+                roleId: number;
+                name: string;
+                description: string | null;
+                matchCount: number;
+                winRate: number;
+                wins: number;
+                placements: Record<number, number>;
+              }
+            >;
+            roleCombos: Record<
+              string,
+              {
+                roles: {
+                  id: number;
+                  name: string;
+                  description: string | null;
+                }[];
+                matchCount: number;
+                wins: number;
+                winRate: number;
+                placements: Record<number, number>;
+              }
+            >;
           }
         >,
       );
@@ -1504,12 +1834,29 @@ export const gameRouter = createTRPCRouter({
                 scoresheet.plays > 0 ? scoresheet.wins / scoresheet.plays : 0,
             };
           }),
+          roles: Object.values(player.roles).map((role) => ({
+            ...role,
+            winRate: role.wins / role.matchCount,
+          })),
+          roleCombos: Object.values(player.roleCombos).map((combo) => ({
+            ...combo,
+            winRate: combo.wins / combo.matchCount,
+          })),
         })),
         winRate: userWinRate,
         totalMatches: totalMatches,
         wonMatches: wonMatches,
         scoresheets: gameScoresheets,
         headToHead: headToHeadStats(matches),
+        roleStats: Object.values(roleStats).map((role) => ({
+          ...role,
+          winRate: role.wins / role.matchCount,
+          players: Object.values(role.players),
+        })),
+        roleCombos: Object.values(comboRoles).map((combo) => ({
+          ...combo,
+          winRate: combo.wins / combo.matchCount,
+        })),
       };
     }),
   getGameName: protectedUserProcedure
