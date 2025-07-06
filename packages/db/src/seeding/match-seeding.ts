@@ -14,6 +14,7 @@ import { db } from "@board-games/db/client";
 import {
   match,
   matchPlayer,
+  matchPlayerRole,
   round,
   roundPlayer,
   scoresheet,
@@ -49,9 +50,11 @@ export async function seedMatches(d3Seed: number) {
   const dateNormal = randomUniform.source(randomLcg(d3Seed))(0, 24);
   const today = new Date();
   const matchData: z.infer<typeof insertMatchSchema>[] = [];
-  for (const game of games) {
+  for (const returnedGame of games) {
     const matchCount = Math.max(3, Math.round(normalMatches() + 5));
-    const userLocations = locations.filter((l) => l.createdBy === game.userId);
+    const userLocations = locations.filter(
+      (l) => l.createdBy === returnedGame.userId,
+    );
 
     for (let i = 0; i < matchCount; i++) {
       const matchName = faker.helpers.weightedArrayElement([
@@ -61,10 +64,12 @@ export async function seedMatches(d3Seed: number) {
         },
         {
           weight: 0.8,
-          value: `${game.name} Match ${i + 1}`,
+          value: `${returnedGame.name} Match ${i + 1}`,
         },
       ]);
-      const returnedScoresheet = faker.helpers.arrayElement(game.scoresheets);
+      const returnedScoresheet = faker.helpers.arrayElement(
+        returnedGame.scoresheets,
+      );
       const [newScoreSheet] = await db
         .insert(scoresheet)
         .values({
@@ -104,8 +109,8 @@ export async function seedMatches(d3Seed: number) {
       const matchDate = endOfMonth(subbedDate);
       matchData.push({
         name: matchName,
-        userId: game.userId,
-        gameId: game.id,
+        userId: returnedGame.userId,
+        gameId: returnedGame.id,
         scoresheetId: newScoreSheet.id,
         locationId:
           userLocations.length > 0
@@ -130,7 +135,11 @@ export async function seedMatches(d3Seed: number) {
   await db.insert(match).values(matchData);
   const returnedMatches = await db.query.match.findMany({
     with: {
-      game: true,
+      game: {
+        with: {
+          roles: true,
+        },
+      },
       scoresheet: {
         with: {
           rounds: true,
@@ -227,6 +236,25 @@ export async function seedMatches(d3Seed: number) {
       .insert(matchPlayer)
       .values(matchPlayerData)
       .returning();
+    if (matchPlayersResult.length > 0 && returnedMatch.game.roles.length > 0) {
+      const matchPlayerRolesToInsert = matchPlayersResult.flatMap((mp) => {
+        // Maybe assign 0–1 roles randomly
+        const shouldAssignRole = faker.datatype.boolean(0.3);
+        if (!shouldAssignRole) return [];
+
+        const chosenRole = faker.helpers.arrayElement(returnedMatch.game.roles);
+        return [
+          {
+            matchPlayerId: mp.id,
+            roleId: chosenRole.id,
+          },
+        ];
+      });
+
+      if (matchPlayerRolesToInsert.length > 0) {
+        await db.insert(matchPlayerRole).values(matchPlayerRolesToInsert);
+      }
+    }
     const teamPlayers = matchPlayersResult.reduce<
       Record<number, typeof matchPlayersResult>
     >((acc, curr) => {

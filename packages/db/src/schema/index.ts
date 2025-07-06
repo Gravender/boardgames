@@ -23,3 +23,7 @@ export { default as sharedMatchPlayer } from "./sharedMatchPlayer";
 export { default as sharedLocation } from "./sharedLocation";
 export { default as friendSetting } from "./friendSetting";
 export { default as matchImage } from "./matchImage";
+export { default as gameTag } from "./gameTag";
+export { default as tag } from "./tag";
+export { default as gameRole } from "./gameRole";
+export { default as matchPlayerRole } from "./matchPlayerRole";
