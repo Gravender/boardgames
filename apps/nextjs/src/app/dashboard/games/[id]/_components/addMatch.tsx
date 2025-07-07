@@ -15,6 +15,7 @@ import {
   CalendarIcon,
   Plus,
   Search,
+  SquarePen,
   Trash2,
   User,
   Users,
@@ -177,6 +178,7 @@ const formSchema = matchSchema.extend({
     z.object({
       id: z.number(),
       name: z.string(),
+      roles: z.array(z.number()),
     }),
   ),
 });
@@ -675,6 +677,13 @@ const AddMatchForm = ({
 
 const AddPlayersFormSchema = z.object({
   players: playersSchema,
+  teams: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      roles: z.array(z.number()),
+    }),
+  ),
 });
 type addPlayersFormType = z.infer<typeof AddPlayersFormSchema>;
 const AddPlayersForm = ({
@@ -719,6 +728,7 @@ const AddPlayersForm = ({
                 },
               ]
             : [],
+      teams: parentForm.getValues("teams"),
     },
   });
   const { append, remove, update } = useFieldArray({
@@ -727,7 +737,11 @@ const AddPlayersForm = ({
   });
   const onSubmit = (data: addPlayersFormType) => {
     parentForm.setValue("players", data.players);
+    parentForm.setValue("teams", data.teams);
     setIsPlayers(false);
+  };
+  const onShowTeamModal = () => {
+    setShowTeamModal(true);
   };
 
   const handleAddGroup = (
@@ -753,7 +767,7 @@ const AddPlayersForm = ({
     });
     setShowGroups(false);
   };
-  const formTeams = parentForm.watch("teams");
+  const formTeams = form.watch("teams");
   const formPlayers = form.watch("players");
 
   const filteredRoles = roles.filter(
@@ -774,7 +788,8 @@ const AddPlayersForm = ({
   if (showTeamModal) {
     return (
       <ManageTeamContent
-        form={parentForm}
+        form={form}
+        roles={roles}
         setShowTeamModal={setShowTeamModal}
       />
     );
@@ -863,7 +878,9 @@ const AddPlayersForm = ({
                       </FormLabel>
                       <Button
                         variant="outline"
-                        onClick={() => setShowTeamModal(true)}
+                        onClick={() => {
+                          onShowTeamModal();
+                        }}
                       >
                         Edit Teams
                       </Button>
@@ -1119,7 +1136,7 @@ const AddPlayersForm = ({
                                                   return;
                                                 }
                                                 const parsedValue =
-                                                  Number.parseInt(value);
+                                                  Number(value);
                                                 const foundTeam =
                                                   formTeams.find(
                                                     (t) => t.id === parsedValue,
@@ -1128,15 +1145,21 @@ const AddPlayersForm = ({
                                                   !isNaN(parsedValue) &&
                                                   foundTeam
                                                 ) {
+                                                  const playerRoles =
+                                                    Array.from(
+                                                      new Set([
+                                                        ...foundPlayer.roles,
+                                                        ...foundTeam.roles,
+                                                      ]),
+                                                    );
                                                   update(
                                                     field.value.findIndex(
                                                       (i) => i.id === player.id,
                                                     ),
                                                     {
                                                       ...foundPlayer,
-                                                      team: Number.parseInt(
-                                                        value,
-                                                      ),
+                                                      team: parsedValue,
+                                                      roles: playerRoles,
                                                     },
                                                   );
                                                   return;
@@ -1201,14 +1224,20 @@ const AddPlayersForm = ({
 };
 const ManageTeamContent = ({
   form,
+  roles,
   setShowTeamModal,
 }: {
-  form: UseFormReturn<z.infer<typeof formSchema>>;
+  form: UseFormReturn<z.infer<typeof AddPlayersFormSchema>>;
+  roles: RouterOutputs["game"]["getGameRoles"];
   setShowTeamModal: Dispatch<SetStateAction<boolean>>;
 }) => {
   const [newTeam, setNewTeam] = useState("");
+  const [roleSearchTerm, setRoleSearchTerm] = useState("");
   const [originalTeams] = useState(() => form.getValues("teams"));
+  const [activeTeamEdit, setActiveTeamEdit] = useState<number | null>(null);
+  const [showAddTeam, setShowAddTeam] = useState(false);
   const formTeams = form.watch("teams");
+  const formPlayers = form.watch("players");
   const { append, remove } = useFieldArray({
     control: form.control,
     name: "teams",
@@ -1234,7 +1263,7 @@ const ManageTeamContent = ({
   const cancelTeams = () => {
     form.setValue("teams", []);
     form.setValue("teams", originalTeams);
-    const mappedPlayers = form.getValues("players").map((player) => {
+    const mappedPlayers = formPlayers.map((player) => {
       const teamStillExists = originalTeams.some((t) => t.id === player.team);
       return {
         ...player,
@@ -1244,11 +1273,93 @@ const ManageTeamContent = ({
     form.setValue("players", mappedPlayers);
     setShowTeamModal(false);
   };
+  const filteredRoles = roles.filter(
+    (role) =>
+      role.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
+      role.description?.toLowerCase().includes(roleSearchTerm.toLowerCase()),
+  );
   return (
     <Form {...form}>
       <DialogHeader>
         <DialogTitle>Edit Teams</DialogTitle>
       </DialogHeader>
+
+      <div className="border-b border-gray-700 p-6">
+        {showAddTeam ? (
+          <Card className="py-2">
+            <CardContent className="flex items-center gap-2 py-2">
+              <Input
+                value={newTeam}
+                onChange={(e) => setNewTeam(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const lowestId =
+                      formTeams.reduce(
+                        (acc, curr) => (curr.id < acc ? curr.id : acc),
+                        -1,
+                      ) - 2;
+                    append(
+                      {
+                        id: lowestId,
+                        name: newTeam,
+                        roles: [],
+                      },
+                      {
+                        shouldFocus: false,
+                      },
+                    );
+                    setNewTeam("");
+                  }
+                }}
+                placeholder={"Add new team"}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  const lowestId =
+                    formTeams.reduce(
+                      (acc, curr) => (curr.id < acc ? curr.id : acc),
+                      -1,
+                    ) - 2;
+                  append({
+                    id: lowestId,
+                    name: newTeam,
+                    roles: [],
+                  });
+                  setNewTeam("");
+                  setShowAddTeam(false);
+                }}
+                disabled={newTeam === ""}
+              >
+                Add
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowAddTeam(false);
+                  setNewTeam("");
+                }}
+                className="border-gray-600 bg-transparent text-xs text-gray-300"
+              >
+                Cancel
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Button
+            onClick={() => setShowAddTeam(true)}
+            className="w-full border-dashed"
+            variant="outline"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add New Team
+          </Button>
+        )}
+      </div>
       <ScrollArea>
         <div className="flex max-h-96 flex-col gap-2 p-2">
           {formTeams.map((team) => {
@@ -1256,87 +1367,230 @@ const ManageTeamContent = ({
             if (foundIndex === -1) {
               return null;
             }
+            const teamPlayers = formPlayers.filter(
+              (player) => player.team === team.id,
+            );
+
             return (
-              <FormField
-                key={team.id}
-                control={form.control}
-                name={`teams.${foundIndex}.name`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="sr-only">Team Name</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Input placeholder="Team name" {...field} />
+              <Card key={team.id}>
+                <CardContent className="flex justify-between gap-2 py-2">
+                  <div className="flex flex-col gap-1">
+                    {activeTeamEdit === team.id ? (
+                      <FormField
+                        control={form.control}
+                        name={`teams.${foundIndex}.name`}
+                        render={({ field }) => (
+                          <FormItem className="space-y-0">
+                            <FormLabel className="sr-only">Team Name</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  className="text-base font-medium"
+                                  placeholder="Team name"
+                                  {...field}
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => setActiveTeamEdit(null)}
+                                >
+                                  Save
+                                </Button>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ) : (
+                      <div className="flex h-10 items-center gap-2 py-2">
+                        <span
+                          className="cursor-pointer font-medium transition-colors hover:text-purple-300"
+                          onClick={() => setActiveTeamEdit(team.id)}
+                          title="Click to edit team name"
+                        >
+                          {team.name}
+                        </span>
                         <Button
-                          type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => {
-                            remove(foundIndex);
-                          }}
-                          className="h-10 w-10"
+                          onClick={() => setActiveTeamEdit(team.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Remove team</span>
+                          <SquarePen className="size-6" />
                         </Button>
                       </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    )}
+
+                    <div className="flex items-center gap-4 text-sm">
+                      <span>{teamPlayers.length} players</span>
+                      <span>{team.roles.length} team roles</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          Roles ({team.roles.length})
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-96">
+                        <FormField
+                          control={form.control}
+                          name={`teams.${foundIndex}.roles`}
+                          render={({ field }) => (
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-medium">
+                                  Select Game Roles
+                                </h4>
+                              </div>
+
+                              {/* Search Roles */}
+                              <div className="relative">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+                                <Input
+                                  placeholder="Search roles..."
+                                  value={roleSearchTerm}
+                                  onChange={(e) =>
+                                    setRoleSearchTerm(e.target.value)
+                                  }
+                                  className="pl-10 text-sm"
+                                />
+                              </div>
+
+                              {/* Roles List */}
+                              <div className="max-h-64 space-y-2 overflow-y-auto">
+                                {filteredRoles.length === 0 ? (
+                                  <p className="py-4 text-center text-sm text-muted-foreground">
+                                    {roleSearchTerm
+                                      ? "No roles found matching your search"
+                                      : "No roles available"}
+                                  </p>
+                                ) : (
+                                  filteredRoles.map((role) => (
+                                    <div
+                                      key={role.id}
+                                      className="flex items-center space-x-3 rounded p-2"
+                                    >
+                                      <Checkbox
+                                        id={`${team.id}-${role.id}`}
+                                        checked={field.value.includes(role.id)}
+                                        onCheckedChange={() => {
+                                          const foundRoleIndex =
+                                            field.value.findIndex(
+                                              (r) => r === role.id,
+                                            );
+                                          if (foundRoleIndex > -1) {
+                                            const newRoles = [
+                                              ...field.value.filter(
+                                                (r) => r !== role.id,
+                                              ),
+                                            ];
+                                            field.onChange(newRoles);
+                                            const mappedPlayers =
+                                              formPlayers.map((player) => {
+                                                if (player.team === team.id) {
+                                                  return {
+                                                    ...player,
+                                                    roles: player.roles.filter(
+                                                      (r) => r !== role.id,
+                                                    ),
+                                                  };
+                                                }
+                                                return player;
+                                              });
+
+                                            form.setValue(
+                                              "players",
+                                              mappedPlayers,
+                                            );
+                                          } else {
+                                            field.onChange([
+                                              ...field.value,
+                                              role.id,
+                                            ]);
+                                            const mappedPlayers =
+                                              formPlayers.map((player) => {
+                                                if (player.team === team.id) {
+                                                  return {
+                                                    ...player,
+                                                    roles: [
+                                                      ...player.roles,
+                                                      role.id,
+                                                    ],
+                                                  };
+                                                }
+                                                return player;
+                                              });
+
+                                            form.setValue(
+                                              "players",
+                                              mappedPlayers,
+                                            );
+                                          }
+                                        }}
+                                      />
+                                      <div className="flex-1 gap-2">
+                                        <Label
+                                          htmlFor={`${team.id}-${role.id}`}
+                                        >
+                                          {role.name}
+                                        </Label>
+
+                                        <p className="text-xs text-muted-foreground">
+                                          {role.description}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+
+                              {/* Selected Roles Summary */}
+                              {team.roles.length > 0 && (
+                                <div className="border-foreground-secondary flex flex-col gap-2 border-t pt-2">
+                                  <p className="text-xs text-foreground">
+                                    Selected roles:
+                                  </p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {team.roles.map((roleId) => {
+                                      const role = roles.find(
+                                        (r) => r.id === roleId,
+                                      );
+                                      return role ? (
+                                        <Badge
+                                          key={roleId}
+                                          variant="secondary"
+                                          className="w-28 truncate text-xs"
+                                        >
+                                          {role.name}
+                                        </Badge>
+                                      ) : null;
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        remove(foundIndex);
+                      }}
+                      className="h-10 w-10 border-destructive text-destructive hover:bg-destructive hover:text-destructive hover:text-white"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Remove team</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
-          <div className="flex items-center gap-2">
-            <Input
-              value={newTeam}
-              onChange={(e) => setNewTeam(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const lowestId =
-                    formTeams.reduce(
-                      (acc, curr) => (curr.id < acc ? curr.id : acc),
-                      -1,
-                    ) - 2;
-                  append(
-                    {
-                      id: lowestId,
-                      name: newTeam,
-                    },
-                    {
-                      shouldFocus: false,
-                    },
-                  );
-                  setNewTeam("");
-                }
-              }}
-              placeholder={"Add new team"}
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon"
-              onClick={() => {
-                const lowestId =
-                  formTeams.reduce(
-                    (acc, curr) => (curr.id < acc ? curr.id : acc),
-                    -1,
-                  ) - 2;
-                append({
-                  id: lowestId,
-                  name: newTeam,
-                });
-
-                setNewTeam("");
-              }}
-              disabled={newTeam === ""}
-            >
-              <Plus className="h-4 w-4" />
-              <span className="sr-only">Add team</span>
-            </Button>
-          </div>
         </div>
       </ScrollArea>
       <DialogFooter className="gap-2">

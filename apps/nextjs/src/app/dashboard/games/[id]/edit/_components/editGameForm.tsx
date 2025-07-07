@@ -1180,11 +1180,11 @@ const GameForm = ({
                               <CardContent className="flex flex-row justify-between gap-2 px-4">
                                 <div className="flex flex-1 items-center gap-3">
                                   <div className="flex-1">
-                                    <h4 className="text-sm font-medium text-white">
+                                    <h4 className="text-sm font-medium">
                                       {role.name}
                                     </h4>
                                     {role.description && (
-                                      <p className="max-w-xs truncate text-xs text-gray-400">
+                                      <p className="max-w-xs truncate text-xs text-muted-foreground">
                                         {role.description}
                                       </p>
                                     )}
