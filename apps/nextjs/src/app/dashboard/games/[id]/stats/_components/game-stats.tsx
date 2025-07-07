@@ -495,29 +495,11 @@ export default function GameStats({ gameId }: { gameId: number }) {
                           className="flex flex-col gap-1 rounded-lg border p-1 sm:p-3"
                           key={`${match.id}-${match.type}`}
                         >
-                          <div className="flex items-start justify-between">
-                            <div>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-start justify-between gap-2">
                               <span className="max-w-40 truncate font-medium sm:max-w-64">
                                 {match.name}
                               </span>
-                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                                <FormattedDate
-                                  date={match.date}
-                                  Icon={Calendar}
-                                />
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {formatDuration(match.duration)}
-                                </span>
-                                {match.location && (
-                                  <span className="flex items-center gap-1">
-                                    <MapPin className="h-3 w-3" />
-                                    {match.location.name}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div>
                               <div className="flex items-center gap-2">
                                 {isCoop && (
                                   <Badge variant={"secondary"}>Co-op</Badge>
@@ -540,64 +522,78 @@ export default function GameStats({ gameId }: { gameId: number }) {
                                 )}
                               </div>
                             </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex h-4 flex-col items-center gap-2 sm:flex-row">
-                              <div className="text-sm text-muted-foreground">
-                                {isCoop ? (
-                                  isWinner ? (
-                                    <span className="font-medium text-green-600">
-                                      ✓ Team Victory
-                                    </span>
-                                  ) : match.finished ? (
-                                    <span className="font-medium text-red-600">
-                                      ✗ Team Defeat
-                                    </span>
-                                  ) : (
-                                    <span className="font-medium text-yellow-600">
-                                      ⏸ In Progress
-                                    </span>
-                                  )
-                                ) : (
-                                  <div className="flex items-center gap-2">
-                                    <Users className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm">
-                                      {match.players.length} players
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                              {match.comment && (
-                                <span className="text-sm text-muted-foreground">
-                                  <b className="font-semibold">{"Comment: "}</b>
-                                  {match.comment}
+                            <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                                <FormattedDate
+                                  date={match.date}
+                                  Icon={Calendar}
+                                />
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {formatDuration(match.duration)}
                                 </span>
-                              )}
+                                {match.location && (
+                                  <span className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    {match.location.name}
+                                  </span>
+                                )}
+                                <div className="text-sm text-muted-foreground">
+                                  {isCoop ? (
+                                    isWinner ? (
+                                      <span className="font-medium text-green-600">
+                                        ✓ Team Victory
+                                      </span>
+                                    ) : match.finished ? (
+                                      <span className="font-medium text-red-600">
+                                        ✗ Team Defeat
+                                      </span>
+                                    ) : (
+                                      <span className="font-medium text-yellow-600">
+                                        ⏸ In Progress
+                                      </span>
+                                    )
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <Users className="h-4 w-4 text-muted-foreground" />
+                                      <span className="text-sm">
+                                        {match.players.length} players
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {match.finished &&
+                                userInMatch &&
+                                (isManualWinCondition ? (
+                                  <div>{match.won ? "✔️" : "❌"}</div>
+                                ) : (
+                                  match.score && (
+                                    <div className="flex items-center gap-2">
+                                      <Trophy className="h-4 w-4 text-muted-foreground" />
+                                      <span className="font-semibold">
+                                        Score: {match.score}
+                                      </span>
+                                      {match.placement && (
+                                        <Badge variant="outline">
+                                          #{match.placement}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  )
+                                ))}
                             </div>
-                            {match.finished &&
-                              userInMatch &&
-                              (isManualWinCondition ? (
-                                <div>{match.won ? "✔️" : "❌"}</div>
-                              ) : (
-                                match.score && (
-                                  <div className="flex items-center gap-2">
-                                    <Trophy className="h-4 w-4 text-muted-foreground" />
-                                    <span className="font-semibold">
-                                      Score: {match.score}
-                                    </span>
-                                    {match.placement && (
-                                      <Badge variant="outline">
-                                        #{match.placement}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                )
-                              ))}
                           </div>
+                          {match.comment && (
+                            <p className="max-h-10 overflow-scroll text-wrap text-sm text-muted-foreground">
+                              <b className="font-semibold">{"Comment: "}</b>
+                              {match.comment}
+                            </p>
+                          )}
 
                           {match.players.length > 0 && (
-                            <div className="border-t pt-3">
-                              <div className="flex flex-wrap gap-2">
+                            <ScrollArea className="border-t pt-3">
+                              <div className="flex max-h-20 flex-wrap gap-2">
                                 {match.players.map((player) => (
                                   <div
                                     key={player.id}
@@ -617,7 +613,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                                   </div>
                                 ))}
                               </div>
-                            </div>
+                            </ScrollArea>
                           )}
                         </Link>
                       );
@@ -909,7 +905,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
             <CardHeader>
               <CardTitle>Head-to-Head Performance</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2 sm:p-4">
               <ScrollArea>
                 <div className="flex max-h-[50vh] w-full flex-col gap-2">
                   {gameStats.headToHead.map((opponent) => {
@@ -943,7 +939,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                     return (
                       <div
                         key={`${opponent.player.id}-${opponent.player.type}`}
-                        className="flex flex-col gap-2 rounded-lg border p-4"
+                        className="flex flex-col gap-2 rounded-lg border p-2"
                       >
                         <div className="mb-3 flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -957,11 +953,10 @@ export default function GameStats({ gameId }: { gameId: number }) {
                                 {opponent.player.name}
                               </div>
                               <div className="flex h-4 items-center gap-1 text-sm text-muted-foreground">
-                                <span>{totalGames} games together</span>
+                                <span>{totalGames} games</span>
                                 <Separator orientation="vertical" />
                                 <span>
                                   {Math.round(overallWinRate * 100)}% overall
-                                  win rate
                                 </span>
                               </div>
                             </div>
@@ -974,7 +969,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                               {opponent.competitiveTies}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              Competitive Record
+                              Comp Record
                             </div>
                           </div>
                         </div>
@@ -996,7 +991,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                                 </span>
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                Overall Win Rate
+                                Overall
                               </div>
                             </div>
                           )}
@@ -1010,7 +1005,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                                   </span>
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                  Competitive Win Rate
+                                  Competitive
                                 </div>
                                 <div className="text-xs text-muted-foreground">
                                   {totalCompetitiveGames} games
@@ -1027,7 +1022,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                                   </span>
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                  Co-op Success Rate
+                                  Co-op
                                 </div>
                                 <div className="text-xs text-muted-foreground">
                                   {totalCooperativeGames} games
@@ -1066,9 +1061,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <div className="flex justify-between text-sm">
-                                  <span>
-                                    Competitive vs {opponent.player.name}
-                                  </span>
+                                  <span>Comp vs {opponent.player.name}</span>
                                   <span>
                                     {Math.round(competitiveWinRate * 100)}%
                                   </span>
@@ -1103,7 +1096,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                           <div className="flex flex-col gap-2">
                             <div className="flex justify-between text-sm">
                               <span>
-                                Competitive Win Rate vs {opponent.player.name}
+                                Comp Win Rate vs {opponent.player.name}
                               </span>
 
                               <span>
@@ -1119,7 +1112,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                           <div className="flex flex-col gap-2">
                             <div className="flex justify-between text-sm">
                               <span>
-                                Cooperative Win Rate with {opponent.player.name}
+                                Coop Win Rate with {opponent.player.name}
                               </span>
 
                               <span>
