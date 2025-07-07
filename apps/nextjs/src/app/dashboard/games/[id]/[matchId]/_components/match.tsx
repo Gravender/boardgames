@@ -436,11 +436,8 @@ export function Match({ matchId }: { matchId: number }) {
             <CardDescription>{`Target Score: ${match.scoresheet.targetScore}`}</CardDescription>
           )}
         </CardHeader>
-        <Card>
-          <Table
-            containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg"
-            className="table-fixed"
-          >
+        <Card className="pb-0">
+          <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
             <>
               <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
                 <HeaderRow match={match} players={players} />
@@ -621,7 +618,7 @@ const BodyRow = ({
         <TableHead
           scope="row"
           className={cn(
-            "sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg",
+            "sticky left-0 z-10 max-w-[95vw] bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:max-w-[90vw] sm:text-lg",
             round.color && "over:opacity-50 hover:dark:opacity-80",
           )}
           style={{
@@ -791,7 +788,7 @@ const CommentsRow = ({ match }: { match: Match }) => {
       <TableRow>
         <TableHead
           scope="row"
-          className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+          className="sticky left-0 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
         >
           {"Details(optional)"}
         </TableHead>
@@ -842,7 +839,7 @@ const CommentsRow = ({ match }: { match: Match }) => {
     <TableRow>
       <TableHead
         scope="row"
-        className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+        className="sticky left-0 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
       >
         {"Details(optional)"}
       </TableHead>
@@ -983,7 +980,7 @@ const TotalRow = ({
     <TableRow>
       <TableHead
         scope="row"
-        className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+        className="sticky left-0 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
       >
         Total
       </TableHead>

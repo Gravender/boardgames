@@ -39,10 +39,10 @@ export function CommentDialog({
           variant="ghost"
           className="h-fit min-h-12 min-w-[50%] max-w-full items-start justify-start"
         >
-          <span className="text-wrap text-start text-base text-primary">
+          <p className="max-h-[10vh] overflow-scroll text-wrap text-start text-base text-primary">
             <b className="text-lg font-semibold text-primary">Comment:</b>
             {comment ?? "No comment"}
-          </span>
+          </p>
         </Button>
       </DialogTrigger>
       <DialogContent>
