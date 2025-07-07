@@ -11,6 +11,7 @@ import {
   Plus,
   Table,
   Trash,
+  Trash2,
 } from "lucide-react";
 import { z } from "zod/v4";
 
@@ -41,6 +42,7 @@ import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardFooter,
   CardHeader,
@@ -282,6 +284,16 @@ const GameForm = ({
   );
   const [openAlert, setOpenAlert] = useState(false);
   const [gameRolesOpen, setGameRolesOpen] = useState(false);
+  const [editGameRoleIndex, setEditGameRoleIndex] = useState<number | null>(
+    null,
+  );
+  const [newGameRole, setNewGameRole] = useState<{
+    name: string;
+    description: string | null;
+  }>({
+    name: "",
+    description: null,
+  });
 
   const [isUploading, setIsUploading] = useState(false);
   const { startUpload } = useUploadThing("imageUploader");
@@ -364,7 +376,11 @@ const GameForm = ({
           originalRole?.name !== role.name ||
           originalRole.description !== role.description
         );
-      }) || values.roles.some((role) => role.id < 0);
+      }) ||
+      values.roles.some((role) => role.id < 0) ||
+      data.roles.filter(
+        (role) => !values.roles.find((vRole) => vRole.id === role.id),
+      ).length > 0;
     const gameChanged =
       nameChanged ||
       ownedByChanged ||
@@ -715,8 +731,11 @@ const GameForm = ({
       setIsUploading(false);
     }
   }
-
   const roles = form.watch("roles");
+  const { append: appendRole, remove: removeRole } = useFieldArray({
+    control: form.control,
+    name: "roles",
+  });
 
   return (
     <AlertDialog open={openAlert} onOpenChange={setOpenAlert}>
@@ -1066,6 +1085,7 @@ const GameForm = ({
                 <Collapsible
                   open={gameRolesOpen}
                   onOpenChange={setGameRolesOpen}
+                  className="space-y-2"
                 >
                   <CollapsibleTrigger asChild>
                     <Button
@@ -1081,85 +1101,206 @@ const GameForm = ({
                       )}
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-4">
+                  <CollapsibleContent className="space-y-2">
                     <ScrollArea>
-                      <div className="flex max-h-80 flex-col gap-4">
+                      <div className="flex max-h-[40vh] flex-col gap-2">
                         {roles.map((role) => {
                           const roleIndex = roles.findIndex(
                             (r) => r.id === role.id,
                           );
+                          if (roleIndex === editGameRoleIndex) {
+                            return (
+                              <Card key={role.id} className="gap-2 p-2 py-2">
+                                <CardContent className="flex flex-col gap-2 px-2">
+                                  <FormField
+                                    control={form.control}
+                                    name={`roles.${roleIndex}.name`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel className="sr-only">
+                                          Name
+                                        </FormLabel>
+                                        <FormControl>
+                                          <Input
+                                            placeholder="Role name"
+                                            {...field}
+                                          />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={form.control}
+                                    name={`roles.${roleIndex}.description`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel className="sr-only">
+                                          Description
+                                        </FormLabel>
+                                        <FormControl>
+                                          <Textarea
+                                            placeholder="Description for role"
+                                            className="resize-none"
+                                            {...field}
+                                            value={field.value ?? ""}
+                                            onChange={(e) => {
+                                              if (e.target.value === "") {
+                                                field.onChange(null);
+                                                return;
+                                              }
+                                              field.onChange(e.target.value);
+                                            }}
+                                          />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </CardContent>
+                                <CardFooter className="justify-end p-2 pt-2">
+                                  <CardAction>
+                                    <Button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditGameRoleIndex(null);
+                                      }}
+                                    >
+                                      Save
+                                    </Button>
+                                  </CardAction>
+                                </CardFooter>
+                              </Card>
+                            );
+                          }
+
                           return (
-                            <div
-                              className="flex flex-col gap-2 px-2"
-                              key={role.id}
-                            >
-                              <FormField
-                                control={form.control}
-                                name={`roles.${roleIndex}.name`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Name</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        placeholder="Role name"
-                                        {...field}
+                            <Card key={role.id} className="p-2 py-2">
+                              <CardContent className="flex flex-row justify-between gap-2 px-4">
+                                <div className="flex flex-1 items-center gap-3">
+                                  <div className="flex-1">
+                                    <h4 className="text-sm font-medium text-white">
+                                      {role.name}
+                                    </h4>
+                                    {role.description && (
+                                      <p className="max-w-xs truncate text-xs text-gray-400">
+                                        {role.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      setEditGameRoleIndex(roleIndex)
+                                    }
+                                    className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+                                  >
+                                    <svg
+                                      className="h-4 w-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                       />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={form.control}
-                                name={`roles.${roleIndex}.description`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Description</FormLabel>
-                                    <FormControl>
-                                      <Textarea
-                                        placeholder="Tell us a little bit about yourself"
-                                        className="resize-none"
-                                        {...field}
-                                        value={field.value ?? ""}
-                                        onChange={(e) => {
-                                          if (e.target.value === "") {
-                                            field.onChange(null);
-                                            return;
-                                          }
-                                          field.onChange(e.target.value);
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
+                                    </svg>
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeRole(roleIndex)}
+                                    className="h-8 w-8 p-0 text-red-400 hover:bg-red-900/20 hover:text-red-300"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
                           );
                         })}
-
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="w-full"
-                          onClick={() => {
-                            const minId = Math.min(
-                              ...roles.map((role) => role.id),
-                              0,
-                            );
-                            form.setValue("roles", [
-                              ...roles,
-                              {
-                                id: minId - 1,
-                                name: "",
-                                description: "",
-                              },
-                            ]);
-                          }}
-                        >
-                          <Plus />
-                          <span>Role</span>
-                        </Button>
+                        {editGameRoleIndex === -1 ? (
+                          <Card className="gap-2 p-2 py-2">
+                            <CardContent className="flex flex-col gap-4 px-2">
+                              <Input
+                                placeholder="Role Name"
+                                value={newGameRole.name}
+                                onChange={(e) => {
+                                  setNewGameRole({
+                                    name: e.target.value,
+                                    description: newGameRole.description,
+                                  });
+                                }}
+                              />
+                              <Textarea
+                                placeholder="Role Description"
+                                value={newGameRole.description ?? ""}
+                                onChange={(e) =>
+                                  setNewGameRole({
+                                    name: newGameRole.name,
+                                    description: e.target.value,
+                                  })
+                                }
+                              />
+                            </CardContent>
+                            <CardFooter className="justify-end gap-2 p-2 pt-2">
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => {
+                                  setEditGameRoleIndex(null);
+                                  setNewGameRole({
+                                    name: "",
+                                    description: null,
+                                  });
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                type="button"
+                                onClick={() => {
+                                  const minId = Math.min(
+                                    ...roles.map((role) => role.id),
+                                    0,
+                                  );
+                                  appendRole({
+                                    id: minId - 1,
+                                    name: newGameRole.name,
+                                    description: newGameRole.description,
+                                  });
+                                  setEditGameRoleIndex(null);
+                                  setNewGameRole({
+                                    name: "",
+                                    description: null,
+                                  });
+                                }}
+                              >
+                                Save
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="w-full"
+                            onClick={() => {
+                              setEditGameRoleIndex(-1);
+                            }}
+                          >
+                            <Plus />
+                            Role
+                          </Button>
+                        )}
                       </div>
                     </ScrollArea>
                   </CollapsibleContent>

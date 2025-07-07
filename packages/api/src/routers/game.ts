@@ -522,7 +522,13 @@ export const gameRouter = createTRPCRouter({
               },
             },
           },
-          roles: true,
+          roles: {
+            where: {
+              deletedAt: {
+                isNull: true,
+              },
+            },
+          },
         },
       });
       if (!result) return null;
@@ -762,7 +768,13 @@ export const gameRouter = createTRPCRouter({
               },
             },
           },
-          roles: true,
+          roles: {
+            where: {
+              deletedAt: {
+                isNull: true,
+              },
+            },
+          },
         },
       });
       if (!result) return null;
