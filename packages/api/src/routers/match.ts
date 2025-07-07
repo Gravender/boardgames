@@ -15,6 +15,7 @@ import type {
 import {
   match,
   matchPlayer,
+  matchPlayerRole,
   player,
   round,
   roundPlayer,
@@ -54,7 +55,8 @@ export const matchRouter = createTRPCRouter({
                   .array(
                     insertPlayerSchema
                       .pick({ id: true })
-                      .required({ id: true }),
+                      .required({ id: true })
+                      .extend({ roles: z.array(z.number()) }),
                   )
                   .min(1),
               }),
@@ -178,7 +180,7 @@ export const matchRouter = createTRPCRouter({
           });
         }
 
-        const insertedMatchPlayers: { id: number }[] = [];
+        const insertedMatchPlayers: { id: number; playerId: number }[] = [];
         if (
           input.teams.length === 1 &&
           input.teams[0] !== undefined &&
@@ -198,6 +200,7 @@ export const matchRouter = createTRPCRouter({
           returnedMatchPlayers.forEach((returnedMatchPlayer) =>
             insertedMatchPlayers.push({
               id: returnedMatchPlayer.id,
+              playerId: returnedMatchPlayer.playerId,
             }),
           );
         } else {
@@ -219,6 +222,7 @@ export const matchRouter = createTRPCRouter({
               returnedMatchPlayers.forEach((returnedMatchPlayer) =>
                 insertedMatchPlayers.push({
                   id: returnedMatchPlayer.id,
+                  playerId: returnedMatchPlayer.playerId,
                 }),
               );
             } else {
@@ -250,11 +254,13 @@ export const matchRouter = createTRPCRouter({
               returnedMatchPlayers.forEach((returnedMatchPlayer) =>
                 insertedMatchPlayers.push({
                   id: returnedMatchPlayer.id,
+                  playerId: returnedMatchPlayer.playerId,
                 }),
               );
             }
           }
         }
+
         if (
           returnedScoresheet.rounds.length > 0 &&
           insertedMatchPlayers.length > 0
@@ -286,6 +292,24 @@ export const matchRouter = createTRPCRouter({
             }));
           });
           await transaction.insert(roundPlayer).values(roundPlayersToInsert);
+        }
+        const matchPlayerRolesToInsert = input.teams.flatMap((team) =>
+          team.players.flatMap((player) => {
+            const foundMatchPlayer = insertedMatchPlayers.find(
+              (mp) => mp.playerId === player.id,
+            );
+            if (!foundMatchPlayer) return [];
+            return player.roles.map((roleId) => ({
+              matchPlayerId: foundMatchPlayer.id,
+              roleId,
+            }));
+          }),
+        );
+
+        if (matchPlayerRolesToInsert.length > 0) {
+          await transaction
+            .insert(matchPlayerRole)
+            .values(matchPlayerRolesToInsert);
         }
         const createdMatch = await transaction.query.match.findFirst({
           where: {

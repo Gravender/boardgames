@@ -4,6 +4,10 @@ import * as schema from "../schema";
 
 export const relations = defineRelations(schema, (r) => ({
   matchPlayer: {
+    roles: r.many.gameRole({
+      from: r.matchPlayer.id.through(r.matchPlayerRole.matchPlayerId),
+      to: r.gameRole.id.through(r.matchPlayerRole.roleId),
+    }),
     rounds: r.many.round({
       from: r.matchPlayer.id.through(r.roundPlayer.matchPlayerId),
       to: r.round.id.through(r.roundPlayer.roundId),
@@ -318,6 +322,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.game.id.through(r.sharedGame.linkedGameId),
       to: r.sharedMatch.sharedGameId.through(r.sharedGame.id),
     }),
+    roles: r.many.gameRole({
+      from: r.game.id,
+      to: r.gameRole.gameId,
+    }),
     scoresheets: r.many.scoresheet({
       from: r.game.id,
       to: r.scoresheet.gameId,
@@ -327,6 +335,10 @@ export const relations = defineRelations(schema, (r) => ({
           isNull: true,
         },
       },
+    }),
+    tags: r.many.tag({
+      from: r.game.id.through(r.gameTag.gameId),
+      to: r.tag.id.through(r.gameTag.tagId),
     }),
   },
   location: {
@@ -717,6 +729,28 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.matchImage.imageId,
       to: r.image.id,
       optional: false,
+    }),
+  },
+  tag: {
+    createdBy: r.one.user({
+      from: r.tag.createdBy,
+      to: r.user.id,
+      optional: false,
+    }),
+    games: r.many.game({
+      from: r.tag.id.through(r.gameTag.tagId),
+      to: r.game.id.through(r.gameTag.gameId),
+    }),
+  },
+  gameRole: {
+    game: r.one.game({
+      from: r.gameRole.gameId,
+      to: r.game.id,
+      optional: false,
+    }),
+    matchPlayers: r.many.matchPlayer({
+      from: r.gameRole.id.through(r.matchPlayerRole.roleId),
+      to: r.matchPlayer.id.through(r.matchPlayerRole.matchPlayerId),
     }),
   },
 }));

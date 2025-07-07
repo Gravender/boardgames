@@ -11,7 +11,15 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
-import { CalendarIcon, Plus, Trash2, User, Users, X } from "lucide-react";
+import {
+  CalendarIcon,
+  Plus,
+  Search,
+  Trash2,
+  User,
+  Users,
+  X,
+} from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -52,6 +60,7 @@ import {
   useForm,
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
+import { Label } from "@board-games/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -95,6 +104,9 @@ export function AddMatchDialog({
   const { data: players } = useSuspenseQuery(
     trpc.player.getPlayersByGame.queryOptions({ game: { id: gameId } }),
   );
+  const { data: roles } = useSuspenseQuery(
+    trpc.game.getGameRoles.queryOptions({ gameId: gameId }),
+  );
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-h-[90vh] overflow-y-auto p-4 sm:max-w-[800px] sm:p-6">
@@ -105,6 +117,7 @@ export function AddMatchDialog({
           locations={locations}
           scoresheets={scoreSheets}
           players={players}
+          roles={roles}
           setIsOpen={setIsOpen}
         />
       </DialogContent>
@@ -147,6 +160,7 @@ const playersSchema = z
         imageUrl: z.string().nullable(),
         matches: z.number(),
         team: z.number().nullable(),
+        roles: z.array(z.number()),
       }),
   )
   .refine((players) => players.length > 0, {
@@ -173,6 +187,7 @@ function Content({
   locations,
   scoresheets,
   players,
+  roles,
   setIsOpen,
 }: {
   gameId: Game["id"];
@@ -181,6 +196,7 @@ function Content({
   locations: RouterOutputs["location"]["getLocations"];
   scoresheets: RouterOutputs["game"]["getGameScoresheets"];
   players: RouterOutputs["player"]["getPlayersByGame"];
+  roles: RouterOutputs["game"]["getGameRoles"];
   setIsOpen: Dispatch<SetStateAction<boolean>>;
 }) {
   const [isPlayers, setIsPlayers] = useState(false);
@@ -198,6 +214,7 @@ function Content({
               name: currentUser.name,
               matches: currentUser.matches,
               team: null,
+              roles: [],
             },
           ]
         : [],
@@ -227,6 +244,7 @@ function Content({
           gameId={gameId}
           parentForm={form}
           players={players}
+          roles={roles}
           setIsPlayers={setIsPlayers}
         />
       ) : (
@@ -307,16 +325,19 @@ const AddMatchForm = ({
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     const mappedTeams = values.players.reduce<
-      Record<string, { name: string; players: { id: number }[] }>
+      Record<
+        string,
+        { name: string; players: { id: number; roles: number[] }[] }
+      >
     >((acc, player) => {
       if (player.team === null) {
         const noTeam = acc["No Team"];
         if (noTeam) {
-          noTeam.players.push({ id: player.id });
+          noTeam.players.push({ id: player.id, roles: player.roles });
         } else {
           acc["No Team"] = {
             name: "No Team" as const,
-            players: [{ id: player.id }],
+            players: [{ id: player.id, roles: player.roles }],
           };
         }
       } else {
@@ -326,11 +347,11 @@ const AddMatchForm = ({
         }
         const team = acc[foundTeam.name];
         if (team) {
-          team.players.push({ id: player.id });
+          team.players.push({ id: player.id, roles: player.roles });
         } else {
           acc[foundTeam.name] = {
             name: foundTeam.name,
-            players: [{ id: player.id }],
+            players: [{ id: player.id, roles: player.roles }],
           };
         }
       }
@@ -660,15 +681,18 @@ const AddPlayersForm = ({
   gameId,
   parentForm,
   players,
+  roles,
   setIsPlayers,
 }: {
   gameId: number;
   parentForm: UseFormReturn<z.infer<typeof formSchema>>;
   players: NonNullable<RouterOutputs["player"]["getPlayersByGame"]>;
+  roles: NonNullable<RouterOutputs["game"]["getGameRoles"]>;
   setIsPlayers: Dispatch<SetStateAction<boolean>>;
 }) => {
   const trpc = useTRPC();
   const [searchTerm, setSearchTerm] = useState("");
+  const [roleSearchTerm, setRoleSearchTerm] = useState("");
   const [showGroups, setShowGroups] = useState(false);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
 
@@ -691,6 +715,7 @@ const AddPlayersForm = ({
                   name: currentUser.name,
                   matches: currentUser.matches,
                   team: null,
+                  roles: [],
                 },
               ]
             : [],
@@ -721,6 +746,7 @@ const AddPlayersForm = ({
             name: playerExists.name,
             matches: playerExists.matches,
             team: null,
+            roles: [],
           });
         }
       }
@@ -729,6 +755,12 @@ const AddPlayersForm = ({
   };
   const formTeams = parentForm.watch("teams");
   const formPlayers = form.watch("players");
+
+  const filteredRoles = roles.filter(
+    (role) =>
+      role.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
+      role.description?.toLowerCase().includes(roleSearchTerm.toLowerCase()),
+  );
 
   if (showAddPlayer) {
     return (
@@ -875,6 +907,25 @@ const AddPlayersForm = ({
                                   const foundPlayer = field.value.find(
                                     (i) => i.id === player.id,
                                   );
+                                  const playerIndex = field.value.findIndex(
+                                    (i) => i.id === player.id,
+                                  );
+                                  const togglePlayerRole = (roleId: number) => {
+                                    if (playerIndex === -1) return;
+                                    const player = field.value[playerIndex];
+                                    if (!player) return;
+                                    const roles = [...player.roles];
+                                    const roleIndex = roles.indexOf(roleId);
+                                    if (roleIndex > -1) {
+                                      roles.splice(roleIndex, 1);
+                                    } else {
+                                      roles.push(roleId);
+                                    }
+                                    update(playerIndex, {
+                                      ...player,
+                                      roles,
+                                    });
+                                  };
                                   return (
                                     <FormItem
                                       key={player.id}
@@ -888,11 +939,7 @@ const AddPlayersForm = ({
                                       <FormControl>
                                         <Checkbox
                                           className="hidden"
-                                          checked={
-                                            field.value.findIndex(
-                                              (i) => i.id === player.id,
-                                            ) > -1
-                                          }
+                                          checked={playerIndex > -1}
                                           onCheckedChange={(checked) => {
                                             return checked
                                               ? append({
@@ -902,6 +949,7 @@ const AddPlayersForm = ({
                                                   name: player.name,
                                                   matches: player.matches,
                                                   team: null,
+                                                  roles: [],
                                                 })
                                               : remove(
                                                   field.value.findIndex(
@@ -930,6 +978,7 @@ const AddPlayersForm = ({
                                                 </Badge>
                                               )}
                                             </div>
+
                                             <div className="text-xs text-muted-foreground">
                                               {player.matches} matches
                                             </div>
@@ -937,6 +986,117 @@ const AddPlayersForm = ({
                                         </div>
                                       </FormLabel>
                                       <div className="flex items-center gap-2">
+                                        {foundPlayer && (
+                                          <Popover>
+                                            <PopoverTrigger asChild>
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                              >
+                                                Roles (
+                                                {foundPlayer.roles.length})
+                                              </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-96">
+                                              <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                  <h4 className="font-medium">
+                                                    Select Game Roles
+                                                  </h4>
+                                                </div>
+
+                                                {/* Search Roles */}
+                                                <div className="relative">
+                                                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+                                                  <Input
+                                                    placeholder="Search roles..."
+                                                    value={roleSearchTerm}
+                                                    onChange={(e) =>
+                                                      setRoleSearchTerm(
+                                                        e.target.value,
+                                                      )
+                                                    }
+                                                    className="pl-10 text-sm"
+                                                  />
+                                                </div>
+
+                                                {/* Roles List */}
+                                                <div className="max-h-64 space-y-2 overflow-y-auto">
+                                                  {filteredRoles.length ===
+                                                  0 ? (
+                                                    <p className="py-4 text-center text-sm text-muted-foreground">
+                                                      {roleSearchTerm
+                                                        ? "No roles found matching your search"
+                                                        : "No roles available"}
+                                                    </p>
+                                                  ) : (
+                                                    filteredRoles.map(
+                                                      (role) => (
+                                                        <div
+                                                          key={role.id}
+                                                          className="flex items-center space-x-3 rounded p-2"
+                                                        >
+                                                          <Checkbox
+                                                            id={`${player.id}-${role.id}`}
+                                                            checked={foundPlayer.roles.includes(
+                                                              role.id,
+                                                            )}
+                                                            onCheckedChange={() =>
+                                                              togglePlayerRole(
+                                                                role.id,
+                                                              )
+                                                            }
+                                                          />
+                                                          <div className="flex-1 gap-2">
+                                                            <Label
+                                                              htmlFor={`${player.id}-${role.id}`}
+                                                            >
+                                                              {role.name}
+                                                            </Label>
+
+                                                            <p className="text-xs text-muted-foreground">
+                                                              {role.description}
+                                                            </p>
+                                                          </div>
+                                                        </div>
+                                                      ),
+                                                    )
+                                                  )}
+                                                </div>
+
+                                                {/* Selected Roles Summary */}
+                                                {foundPlayer.roles.length >
+                                                  0 && (
+                                                  <div className="border-foreground-secondary flex flex-col gap-2 border-t pt-2">
+                                                    <p className="text-xs text-foreground">
+                                                      Selected roles:
+                                                    </p>
+                                                    <div className="flex flex-wrap gap-1">
+                                                      {foundPlayer.roles.map(
+                                                        (roleId) => {
+                                                          const role =
+                                                            roles.find(
+                                                              (r) =>
+                                                                r.id === roleId,
+                                                            );
+                                                          return role ? (
+                                                            <Badge
+                                                              key={roleId}
+                                                              variant="secondary"
+                                                              className="w-28 truncate text-xs"
+                                                            >
+                                                              {role.name}
+                                                            </Badge>
+                                                          ) : null;
+                                                        },
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </PopoverContent>
+                                          </Popover>
+                                        )}
                                         {formTeams.length > 0 &&
                                           foundPlayer && (
                                             <Select
@@ -1239,6 +1399,7 @@ const AddPlayerForm = ({
           name: player.name,
           matches: 0,
           team: null,
+          roles: [],
         });
         void Promise.all([
           queryClient.invalidateQueries(
@@ -1247,9 +1408,6 @@ const AddPlayerForm = ({
             }),
           ),
           queryClient.invalidateQueries(trpc.player.getPlayers.queryOptions()),
-          queryClient.invalidateQueries(
-            trpc.dashboard.getPlayers.queryOptions(),
-          ),
         ]);
         setIsAddPlayer(false);
         toast("Player created successfully!");

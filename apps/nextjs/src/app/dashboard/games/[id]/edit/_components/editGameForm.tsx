@@ -9,8 +9,10 @@ import {
   Copy,
   Minus,
   Plus,
+  SquarePen,
   Table,
   Trash,
+  Trash2,
 } from "lucide-react";
 import { z } from "zod/v4";
 
@@ -41,6 +43,7 @@ import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardFooter,
   CardHeader,
@@ -70,6 +73,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@board-games/ui/popover";
+import { ScrollArea } from "@board-games/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -78,6 +82,7 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 import { Separator } from "@board-games/ui/separator";
+import { Textarea } from "@board-games/ui/textarea";
 import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
@@ -134,6 +139,7 @@ export function EditGameForm({
             name: data.game.gameImg.name,
           }
       : null,
+    roles: data.roles,
   });
   const [scoresheets, setScoresheets] = useState<
     z.infer<typeof scoresheetsSchema>
@@ -278,6 +284,17 @@ const GameForm = ({
         : null,
   );
   const [openAlert, setOpenAlert] = useState(false);
+  const [gameRolesOpen, setGameRolesOpen] = useState(false);
+  const [editGameRoleIndex, setEditGameRoleIndex] = useState<number | null>(
+    null,
+  );
+  const [newGameRole, setNewGameRole] = useState<{
+    name: string;
+    description: string | null;
+  }>({
+    name: "",
+    description: null,
+  });
 
   const [isUploading, setIsUploading] = useState(false);
   const { startUpload } = useUploadThing("imageUploader");
@@ -290,6 +307,14 @@ const GameForm = ({
         await queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
         await queryClient.invalidateQueries(
           trpc.game.getGame.queryOptions({ id: data.game.id }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.game.getGameRoles.queryOptions({
+            gameId: data.game.id,
+          }),
+        );
+        await queryClient.invalidateQueries(
+          trpc.game.getEditGame.queryOptions({ id: data.game.id }),
         );
         await queryClient.invalidateQueries(
           trpc.game.getGameMetaData.queryOptions({ id: data.game.id }),
@@ -345,6 +370,18 @@ const GameForm = ({
     const scoresheetChanged = scoresheets.some(
       (scoresheet) => scoresheet.scoreSheetChanged || scoresheet.roundChanged,
     );
+    const rolesChanged =
+      values.roles.some((role) => {
+        const originalRole = data.roles.find((r) => r.id === role.id);
+        return (
+          originalRole?.name !== role.name ||
+          originalRole.description !== role.description
+        );
+      }) ||
+      values.roles.some((role) => role.id < 0) ||
+      data.roles.filter(
+        (role) => !values.roles.find((vRole) => vRole.id === role.id),
+      ).length > 0;
     const gameChanged =
       nameChanged ||
       ownedByChanged ||
@@ -355,7 +392,26 @@ const GameForm = ({
       yearPublishedChanged ||
       imageChanged;
 
-    if (gameChanged || scoresheetChanged) {
+    if (gameChanged || scoresheetChanged || rolesChanged) {
+      const updatedRoles = values.roles
+        .map((role) => {
+          const originalRole = data.roles.find((r) => r.id === role.id);
+          if (originalRole === undefined) return null;
+          const nameChanged = role.name !== originalRole.name;
+          const descriptionChanged =
+            role.description !== originalRole.description;
+          if (!nameChanged && !descriptionChanged) return null;
+          return {
+            id: role.id,
+            name: role.name,
+            description: role.description,
+          };
+        })
+        .filter((role) => role !== null);
+      const newRoles = values.roles.filter((role) => role.id < 0);
+      const deletedRoles = data.roles
+        .filter((role) => !values.roles.find((vRole) => vRole.id === role.id))
+        .map((role) => role.id);
       const game = gameChanged
         ? {
             type: "updateGame" as const,
@@ -567,12 +623,18 @@ const GameForm = ({
           game: game,
           scoresheets: changedScoresheets,
           scoresheetsToDelete: scoresheetsToDelete,
+          updatedRoles: updatedRoles,
+          newRoles: newRoles,
+          deletedRoles: deletedRoles,
         });
       } else {
         mutation.mutate({
           game: game,
           scoresheets: [],
           scoresheetsToDelete: [],
+          updatedRoles: updatedRoles,
+          newRoles: newRoles,
+          deletedRoles: deletedRoles,
         });
       }
     }
@@ -652,6 +714,7 @@ const GameForm = ({
             type: "file",
             file: "",
           },
+          roles: values.roles,
         },
         image: imageId
           ? {
@@ -669,6 +732,11 @@ const GameForm = ({
       setIsUploading(false);
     }
   }
+  const roles = form.watch("roles");
+  const { append: appendRole, remove: removeRole } = useFieldArray({
+    control: form.control,
+    name: "roles",
+  });
 
   return (
     <AlertDialog open={openAlert} onOpenChange={setOpenAlert}>
@@ -1015,6 +1083,216 @@ const GameForm = ({
                     </div>
                   )}
                 </div>
+                <Collapsible
+                  open={gameRolesOpen}
+                  onOpenChange={setGameRolesOpen}
+                  className="space-y-2"
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      className="flex w-full items-center justify-between"
+                      variant="ghost"
+                      size="sm"
+                    >
+                      <span>Game Roles</span>
+                      {gameRolesOpen ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-2">
+                    <ScrollArea>
+                      <div className="flex max-h-[40vh] flex-col gap-2">
+                        {roles.map((role) => {
+                          const roleIndex = roles.findIndex(
+                            (r) => r.id === role.id,
+                          );
+                          if (roleIndex === editGameRoleIndex) {
+                            return (
+                              <Card key={role.id} className="gap-2 p-2 py-2">
+                                <CardContent className="flex flex-col gap-2 px-2">
+                                  <FormField
+                                    control={form.control}
+                                    name={`roles.${roleIndex}.name`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel className="sr-only">
+                                          Name
+                                        </FormLabel>
+                                        <FormControl>
+                                          <Input
+                                            placeholder="Role name"
+                                            {...field}
+                                          />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={form.control}
+                                    name={`roles.${roleIndex}.description`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel className="sr-only">
+                                          Description
+                                        </FormLabel>
+                                        <FormControl>
+                                          <Textarea
+                                            placeholder="Description for role"
+                                            className="resize-none"
+                                            {...field}
+                                            value={field.value ?? ""}
+                                            onChange={(e) => {
+                                              if (e.target.value === "") {
+                                                field.onChange(null);
+                                                return;
+                                              }
+                                              field.onChange(e.target.value);
+                                            }}
+                                          />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </CardContent>
+                                <CardFooter className="justify-end p-2 pt-2">
+                                  <CardAction>
+                                    <Button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditGameRoleIndex(null);
+                                      }}
+                                    >
+                                      Save
+                                    </Button>
+                                  </CardAction>
+                                </CardFooter>
+                              </Card>
+                            );
+                          }
+
+                          return (
+                            <Card key={role.id} className="p-2 py-2">
+                              <CardContent className="flex flex-row justify-between gap-2 px-4">
+                                <div className="flex flex-1 items-center gap-3">
+                                  <div className="flex-1">
+                                    <h4 className="text-sm font-medium text-white">
+                                      {role.name}
+                                    </h4>
+                                    {role.description && (
+                                      <p className="max-w-xs truncate text-xs text-gray-400">
+                                        {role.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() =>
+                                      setEditGameRoleIndex(roleIndex)
+                                    }
+                                  >
+                                    <SquarePen className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeRole(roleIndex)}
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                        {editGameRoleIndex === -1 ? (
+                          <Card className="gap-2 p-2 py-2">
+                            <CardContent className="flex flex-col gap-4 px-2">
+                              <Input
+                                placeholder="Role Name"
+                                value={newGameRole.name}
+                                onChange={(e) => {
+                                  setNewGameRole({
+                                    name: e.target.value,
+                                    description: newGameRole.description,
+                                  });
+                                }}
+                              />
+                              <Textarea
+                                placeholder="Role Description"
+                                value={newGameRole.description ?? ""}
+                                onChange={(e) =>
+                                  setNewGameRole({
+                                    name: newGameRole.name,
+                                    description: e.target.value,
+                                  })
+                                }
+                              />
+                            </CardContent>
+                            <CardFooter className="justify-end gap-2 p-2 pt-2">
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => {
+                                  setEditGameRoleIndex(null);
+                                  setNewGameRole({
+                                    name: "",
+                                    description: null,
+                                  });
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                type="button"
+                                onClick={() => {
+                                  const minId = Math.min(
+                                    ...roles.map((role) => role.id),
+                                    0,
+                                  );
+                                  appendRole({
+                                    id: minId - 1,
+                                    name: newGameRole.name,
+                                    description: newGameRole.description,
+                                  });
+                                  setEditGameRoleIndex(null);
+                                  setNewGameRole({
+                                    name: "",
+                                    description: null,
+                                  });
+                                }}
+                              >
+                                Save
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="w-full"
+                            onClick={() => {
+                              setEditGameRoleIndex(-1);
+                            }}
+                          >
+                            <Plus />
+                            Role
+                          </Button>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </CollapsibleContent>
+                </Collapsible>
                 <Separator className="w-full" orientation="horizontal" />
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
