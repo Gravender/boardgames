@@ -42,11 +42,11 @@ export function DetailDialog({
       <DialogTrigger asChild>
         <Button
           variant="ghost"
-          className="h-full w-full min-w-20 items-start justify-start p-0"
+          className="h-full w-full min-w-20 max-w-[] items-start justify-start p-0"
         >
-          <span className="max-h-10 min-h-6 overflow-scroll text-wrap text-start text-base text-primary">
+          <p className="max-h-10 min-h-6 overflow-scroll whitespace-normal text-wrap break-words text-start text-base text-primary">
             {data.details ?? ""}
-          </span>
+          </p>
         </Button>
       </DialogTrigger>
       <DialogContent>

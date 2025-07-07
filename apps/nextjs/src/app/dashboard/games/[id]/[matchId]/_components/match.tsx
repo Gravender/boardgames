@@ -437,7 +437,10 @@ export function Match({ matchId }: { matchId: number }) {
           )}
         </CardHeader>
         <Card>
-          <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
+          <Table
+            containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg"
+            className="table-fixed"
+          >
             <>
               <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
                 <HeaderRow match={match} players={players} />

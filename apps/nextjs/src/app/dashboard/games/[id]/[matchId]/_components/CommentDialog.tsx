@@ -37,10 +37,10 @@ export function CommentDialog({
       <DialogTrigger asChild>
         <Button
           variant="ghost"
-          className="h-fit min-w-[50%] items-start justify-start"
+          className="h-fit min-h-12 min-w-[50%] max-w-full items-start justify-start"
         >
-          <span className="text-lg font-semibold text-primary">Comment:</span>
           <span className="text-wrap text-start text-base text-primary">
+            <b className="text-lg font-semibold text-primary">Comment:</b>
             {comment ?? "No comment"}
           </span>
         </Button>
