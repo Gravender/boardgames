@@ -1284,10 +1284,10 @@ const ManageTeamContent = ({
         <DialogTitle>Edit Teams</DialogTitle>
       </DialogHeader>
 
-      <div className="border-b border-gray-700 p-6">
+      <div className="border-b border-gray-700 py-2 sm:p-6">
         {showAddTeam ? (
           <Card className="py-2">
-            <CardContent className="flex items-center gap-2 py-2">
+            <CardContent className="flex items-center gap-3 px-2 sm:px-4">
               <Input
                 value={newTeam}
                 onChange={(e) => setNewTeam(e.target.value)}
@@ -1318,6 +1318,8 @@ const ManageTeamContent = ({
               <Button
                 type="button"
                 variant="secondary"
+                size="sm"
+                className="text-sm sm:text-base"
                 onClick={() => {
                   const lowestId =
                     formTeams.reduce(
@@ -1343,7 +1345,7 @@ const ManageTeamContent = ({
                   setShowAddTeam(false);
                   setNewTeam("");
                 }}
-                className="border-gray-600 bg-transparent text-xs text-gray-300"
+                className="text-sm sm:text-base"
               >
                 Cancel
               </Button>
@@ -1373,7 +1375,7 @@ const ManageTeamContent = ({
 
             return (
               <Card key={team.id}>
-                <CardContent className="flex justify-between gap-2 py-2">
+                <CardContent className="flex flex-col gap-2 py-2">
                   <div className="flex flex-col gap-1">
                     {activeTeamEdit === team.id ? (
                       <FormField
@@ -1428,8 +1430,30 @@ const ManageTeamContent = ({
                   <div className="flex items-center gap-2">
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          Roles ({team.roles.length})
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start overflow-x-auto"
+                        >
+                          {team.roles.length > 0 ? (
+                            <div>
+                              {team.roles.map((role) => {
+                                const foundRole = roles.find(
+                                  (r) => r.id === role,
+                                );
+                                if (!foundRole) return null;
+                                return (
+                                  <Badge key={foundRole.id}>
+                                    {foundRole.name}
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">
+                              No roles selected
+                            </span>
+                          )}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-96">
@@ -1577,14 +1601,15 @@ const ManageTeamContent = ({
                     <Button
                       type="button"
                       variant="outline"
-                      size="icon"
+                      size="sm"
                       onClick={() => {
                         remove(foundIndex);
+                        setActiveTeamEdit(null);
                       }}
-                      className="h-10 w-10 border-destructive text-destructive hover:bg-destructive hover:text-destructive hover:text-white"
+                      className="border-destructive text-destructive hover:bg-destructive hover:text-destructive hover:text-white"
                     >
                       <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Remove team</span>
+                      <span>Delete team</span>
                     </Button>
                   </div>
                 </CardContent>
