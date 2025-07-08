@@ -556,6 +556,7 @@ export const matchRouter = createTRPCRouter({
                 },
               },
               playerRounds: true,
+              roles: true,
             },
             orderBy: (matchPlayer, { asc }) => asc(matchPlayer.placement),
           },
@@ -579,6 +580,7 @@ export const matchRouter = createTRPCRouter({
                           matchPlayer: {
                             with: {
                               team: true,
+                              roles: true,
                             },
                           },
                           sharedPlayer: {
@@ -729,6 +731,7 @@ export const matchRouter = createTRPCRouter({
           placement: matchPlayer.placement,
           winner: matchPlayer.winner,
           teamId: matchPlayer.teamId,
+          roles: matchPlayer.roles,
         };
       });
       refinedPlayers.sort((a, b) => {

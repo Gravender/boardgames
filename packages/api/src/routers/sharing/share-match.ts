@@ -252,6 +252,7 @@ export const shareMatchRouter = createTRPCRouter({
               matchPlayer: {
                 with: {
                   team: true,
+                  roles: true,
                 },
               },
               sharedPlayer: {
@@ -415,6 +416,11 @@ export const shareMatchRouter = createTRPCRouter({
         placement: number | null;
         winner: boolean | null;
         teamId: number | null;
+        roles: {
+          id: number;
+          name: string;
+          description: string | null;
+        }[];
       }[] = returnedSharedMatch.sharedMatchPlayers
         .map((sharedMatchPlayer) => {
           const sharedPlayer = sharedMatchPlayer.sharedPlayer;
@@ -431,6 +437,7 @@ export const shareMatchRouter = createTRPCRouter({
               placement: sharedMatchPlayer.matchPlayer.placement,
               winner: sharedMatchPlayer.matchPlayer.winner,
               teamId: sharedMatchPlayer.matchPlayer.teamId,
+              roles: sharedMatchPlayer.matchPlayer.roles,
             };
 
           return {
@@ -443,6 +450,7 @@ export const shareMatchRouter = createTRPCRouter({
             placement: sharedMatchPlayer.matchPlayer.placement,
             winner: sharedMatchPlayer.matchPlayer.winner,
             teamId: sharedMatchPlayer.matchPlayer.teamId,
+            roles: sharedMatchPlayer.matchPlayer.roles,
           };
         })
         .filter((player) => player !== null);
