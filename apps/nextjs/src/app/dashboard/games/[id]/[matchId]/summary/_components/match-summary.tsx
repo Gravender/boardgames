@@ -4,13 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
-import {
-  CalendarIcon,
-  ClockIcon,
-  MapPinIcon,
-  MessageSquareIcon,
-  Users,
-} from "lucide-react";
+import { CalendarIcon, ClockIcon, MapPinIcon, Users } from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
@@ -77,9 +71,13 @@ export default function MatchSummary({ matchId }: { matchId: number }) {
                   </div>
 
                   {match.comment && (
-                    <div className="flex items-center gap-2 sm:col-span-2">
-                      <MessageSquareIcon className="h-4 w-4 text-muted-foreground" />
-                      <span>{match.comment}</span>
+                    <div className="flex min-h-6 min-w-6 items-center gap-2">
+                      <p className="max-h-20 overflow-scroll">
+                        <span className="text-muted-foreground">
+                          Comment:&nbsp;
+                        </span>
+                        {match.comment}
+                      </p>
                     </div>
                   )}
                 </div>

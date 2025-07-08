@@ -1,5 +1,6 @@
 "use client";
 
+import type { Dispatch, SetStateAction } from "react";
 import type { z } from "zod/v4";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,7 +10,7 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { differenceInSeconds } from "date-fns";
-import { ListPlus, Pause, Play, RotateCcw } from "lucide-react";
+import { ListPlus, Pause, Play, RotateCcw, SquarePen } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { roundTypes } from "@board-games/db/constants";
@@ -19,6 +20,7 @@ import {
   calculatePlacement,
   formatDuration,
 } from "@board-games/shared";
+import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import {
   Card,
@@ -74,12 +76,15 @@ import { useDebouncedUpdateMatchData } from "~/hooks/use-debounced-update-match"
 import { useTRPC } from "~/trpc/react";
 import { CommentDialog } from "./CommentDialog";
 import { DetailDialog } from "./DetailDialog";
+import PlayerEditorDialog from "./edit-player-dialog";
+import TeamEditorDialog from "./edit-team-dialog";
 import { ManualWinnerDialog } from "./ManualWinnerDialog";
 import { MatchImages } from "./match-images";
 import { TieBreakerDialog } from "./TieBreakerDialog";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
 type Player = Match["players"][number];
+type Team = Match["teams"][number];
 export function Match({ matchId }: { matchId: number }) {
   const trpc = useTRPC();
   const { data: match } = useSuspenseQuery(
@@ -87,6 +92,8 @@ export function Match({ matchId }: { matchId: number }) {
   );
 
   const [players, setPlayers] = useState<Player[]>([]);
+  const [team, setTeam] = useState<Team | null>(null);
+  const [player, setPlayer] = useState<Player | null>(null);
   const [manualWinners, setManualWinners] = useState<
     z.infer<typeof ManualWinnerPlayerSchema>
   >([]);
@@ -105,6 +112,13 @@ export function Match({ matchId }: { matchId: number }) {
     if (match && match.scoresheet.rounds.length !== players[0]?.rounds.length) {
       setDuration(match.duration);
       setIsRunning(match.running);
+      setPlayers(match.players);
+    }
+    const hasTeamChanges = match?.players.some((player) => {
+      const foundPlayer = players.find((p) => p.id === player.playerId);
+      return !foundPlayer || foundPlayer.teamId !== player.teamId;
+    });
+    if (match && hasTeamChanges) {
       setPlayers(match.players);
     }
   }, [match, players]);
@@ -436,14 +450,15 @@ export function Match({ matchId }: { matchId: number }) {
             <CardDescription>{`Target Score: ${match.scoresheet.targetScore}`}</CardDescription>
           )}
         </CardHeader>
-        <Card>
-          <Table
-            containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg"
-            className="table-fixed"
-          >
+        <Card className="pb-0">
+          <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
             <>
               <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
-                <HeaderRow match={match} players={players} />
+                <HeaderRow
+                  match={match}
+                  setTeam={setTeam}
+                  setPlayer={setPlayer}
+                />
               </TableHeader>
               <TableBody>
                 {match.scoresheet.rounds.map((round) => (
@@ -523,12 +538,34 @@ export function Match({ matchId }: { matchId: number }) {
           players={tieBreakers}
           teams={match.teams}
         />
+        <TeamEditorDialog
+          team={team}
+          players={match.players}
+          gameId={match.gameId}
+          onClose={() => setTeam(null)}
+        />
+        <PlayerEditorDialog
+          teams={match.teams}
+          player={player}
+          players={match.players}
+          gameId={match.gameId}
+          matchId={match.id}
+          onClose={() => setPlayer(null)}
+        />
       </div>
     </div>
   );
 }
 
-const HeaderRow = ({ match, players }: { match: Match; players: Player[] }) => {
+const HeaderRow = ({
+  match,
+  setTeam,
+  setPlayer,
+}: {
+  match: Match;
+  setTeam: Dispatch<SetStateAction<Team | null>>;
+  setPlayer: Dispatch<SetStateAction<Player | null>>;
+}) => {
   if (match.teams.length > 0) {
     return (
       <TableRow>
@@ -541,9 +578,11 @@ const HeaderRow = ({ match, players }: { match: Match; players: Player[] }) => {
           </div>
         </TableHead>
         {match.teams
-          .filter((team) => players.find((player) => player.teamId === team.id))
+          .filter((team) =>
+            match.players.find((player) => player.teamId === team.id),
+          )
           .map((team) => {
-            const teamPlayers = players.filter(
+            const teamPlayers = match.players.filter(
               (player) => player.teamId === team.id,
             );
             return (
@@ -552,16 +591,34 @@ const HeaderRow = ({ match, players }: { match: Match; players: Player[] }) => {
                 scope="col"
                 key={team.id}
               >
-                <div className="flex max-h-10 w-full flex-col gap-1 overflow-scroll">
-                  <span className="font-semibold">{`Team: ${team.name}`}</span>
-                  <span>
-                    {teamPlayers.map((player) => player.name).join(", ")}
-                  </span>
+                <div className="flex flex-col items-center justify-center gap-1 py-1">
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    size="sm"
+                    className="font-semibold"
+                    onClick={() => setTeam(team)}
+                  >
+                    {`Team: ${team.name}`}
+                    <SquarePen className="h-4 w-4" />
+                  </Button>
+                  <div className="flex max-h-10 w-full flex-row flex-wrap justify-center gap-1 overflow-scroll">
+                    {teamPlayers.map((player) => {
+                      return (
+                        <button
+                          key={player.id}
+                          onClick={() => setPlayer(player)}
+                        >
+                          <Badge>{player.name}</Badge>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </TableHead>
             );
           })}
-        {players
+        {match.players
           .filter((player) => player.teamId === null)
           .map((player) => (
             <TableHead
@@ -569,7 +626,16 @@ const HeaderRow = ({ match, players }: { match: Match; players: Player[] }) => {
               scope="col"
               key={player.id}
             >
-              {player.name}
+              <Button
+                variant="ghost"
+                type="button"
+                size="sm"
+                className="font-semibold"
+                onClick={() => setPlayer(player)}
+              >
+                {player.name}
+                <SquarePen className="h-4 w-4" />
+              </Button>
             </TableHead>
           ))}
       </TableRow>
@@ -585,7 +651,7 @@ const HeaderRow = ({ match, players }: { match: Match; players: Player[] }) => {
           <AddRoundDialog match={match} />
         </div>
       </TableHead>
-      {players.map((player) => (
+      {match.players.map((player) => (
         <TableHead className="min-w-20 text-center" scope="col" key={player.id}>
           {player.name}
         </TableHead>
@@ -621,7 +687,7 @@ const BodyRow = ({
         <TableHead
           scope="row"
           className={cn(
-            "sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg",
+            "sticky left-0 z-10 max-w-[95vw] bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:max-w-[90vw] sm:text-lg",
             round.color && "over:opacity-50 hover:dark:opacity-80",
           )}
           style={{
@@ -791,7 +857,7 @@ const CommentsRow = ({ match }: { match: Match }) => {
       <TableRow>
         <TableHead
           scope="row"
-          className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+          className="sticky left-0 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
         >
           {"Details(optional)"}
         </TableHead>
@@ -842,7 +908,7 @@ const CommentsRow = ({ match }: { match: Match }) => {
     <TableRow>
       <TableHead
         scope="row"
-        className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+        className="sticky left-0 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
       >
         {"Details(optional)"}
       </TableHead>
@@ -983,7 +1049,7 @@ const TotalRow = ({
     <TableRow>
       <TableHead
         scope="row"
-        className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+        className="sticky left-0 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
       >
         Total
       </TableHead>
