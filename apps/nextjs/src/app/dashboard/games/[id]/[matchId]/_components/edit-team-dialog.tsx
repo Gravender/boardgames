@@ -249,7 +249,7 @@ function Content({
             )}
           />
           <div>
-            <Label>Team roles (applied to all member)</Label>
+            <Label>Team roles (applied to all members)</Label>
             <ScrollArea>
               <div className="flex max-h-[20vh] flex-col gap-2">
                 {roles.map((role) => {
