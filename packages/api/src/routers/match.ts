@@ -1629,6 +1629,13 @@ export const matchRouter = createTRPCRouter({
             roles: z.array(z.number()),
           }),
         ),
+        playersToUpdate: z.array(
+          z.object({
+            id: z.number(),
+            rolesToAdd: z.array(z.number()),
+            rolesToRemove: z.array(z.number()),
+          }),
+        ),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -1645,7 +1652,6 @@ export const matchRouter = createTRPCRouter({
             message: "Team not found.",
           });
         }
-        console.log("currentTeam", currentTeam);
         if (input.team.type === "update") {
           await tx
             .update(team)
@@ -1657,7 +1663,6 @@ export const matchRouter = createTRPCRouter({
             );
         }
         if (input.playersToAdd.length > 0) {
-          console.log("adding players", input.playersToAdd);
           await tx
             .update(matchPlayer)
             .set({
@@ -1679,12 +1684,10 @@ export const matchRouter = createTRPCRouter({
             })),
           );
           if (rolesToAdd.length > 0) {
-            console.log("adding roles", rolesToAdd);
             await tx.insert(matchPlayerRole).values(rolesToAdd);
           }
         }
         if (input.playersToRemove.length > 0) {
-          console.log("removing players", input.playersToRemove);
           const updatedMatchPlayers = await tx
             .update(matchPlayer)
             .set({
@@ -1700,7 +1703,6 @@ export const matchRouter = createTRPCRouter({
               ),
             )
             .returning();
-          console.log("updatedMatchPlayers", updatedMatchPlayers);
           if (updatedMatchPlayers.length < 1) {
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
@@ -1714,7 +1716,38 @@ export const matchRouter = createTRPCRouter({
             })),
           );
           if (rolesToRemove.length > 0) {
-            console.log("removing roles", rolesToRemove);
+            for (const roleToRemove of rolesToRemove) {
+              await tx
+                .delete(matchPlayerRole)
+                .where(
+                  and(
+                    eq(
+                      matchPlayerRole.matchPlayerId,
+                      roleToRemove.matchPlayerId,
+                    ),
+                    eq(matchPlayerRole.roleId, roleToRemove.roleId),
+                  ),
+                );
+            }
+          }
+        }
+        if (input.playersToUpdate.length > 0) {
+          const rolesToAdd = input.playersToUpdate.flatMap((p) =>
+            p.rolesToAdd.map((role) => ({
+              matchPlayerId: p.id,
+              roleId: role,
+            })),
+          );
+          const rolesToRemove = input.playersToUpdate.flatMap((p) =>
+            p.rolesToRemove.map((role) => ({
+              matchPlayerId: p.id,
+              roleId: role,
+            })),
+          );
+          if (rolesToAdd.length > 0) {
+            await tx.insert(matchPlayerRole).values(rolesToAdd);
+          }
+          if (rolesToRemove.length > 0) {
             for (const roleToRemove of rolesToRemove) {
               await tx
                 .delete(matchPlayerRole)
@@ -1732,13 +1765,20 @@ export const matchRouter = createTRPCRouter({
         }
       });
     }),
-  updateMatchPlayerRoles: protectedUserProcedure
+  updateMatchPlayerTeamAndRoles: protectedUserProcedure
     .input(
       z.object({
-        matchPlayer: selectMatchPlayerSchema.pick({
-          id: true,
-          matchId: true,
-        }),
+        matchPlayer: z.discriminatedUnion("type", [
+          z.object({
+            type: z.literal("original"),
+            id: z.number(),
+          }),
+          z.object({
+            type: z.literal("update"),
+            id: z.number(),
+            teamId: z.number().nullable(),
+          }),
+        ]),
         rolesToAdd: z.array(z.number()),
         rolesToRemove: z.array(z.number()),
       }),
@@ -1748,7 +1788,6 @@ export const matchRouter = createTRPCRouter({
         const originalMatchPlayer = await tx.query.matchPlayer.findFirst({
           where: {
             id: input.matchPlayer.id,
-            matchId: input.matchPlayer.matchId,
           },
         });
         if (!originalMatchPlayer) {
@@ -1756,6 +1795,14 @@ export const matchRouter = createTRPCRouter({
             code: "NOT_FOUND",
             message: "Match player not found.",
           });
+        }
+        if (input.matchPlayer.type === "update") {
+          await tx
+            .update(matchPlayer)
+            .set({
+              teamId: input.matchPlayer.teamId,
+            })
+            .where(eq(matchPlayer.id, input.matchPlayer.id));
         }
         if (input.rolesToAdd.length > 0) {
           await tx.insert(matchPlayerRole).values(

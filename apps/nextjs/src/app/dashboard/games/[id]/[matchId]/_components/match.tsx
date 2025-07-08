@@ -76,6 +76,7 @@ import { useDebouncedUpdateMatchData } from "~/hooks/use-debounced-update-match"
 import { useTRPC } from "~/trpc/react";
 import { CommentDialog } from "./CommentDialog";
 import { DetailDialog } from "./DetailDialog";
+import PlayerEditorDialog from "./edit-player-dialog";
 import TeamEditorDialog from "./edit-team-dialog";
 import { ManualWinnerDialog } from "./ManualWinnerDialog";
 import { MatchImages } from "./match-images";
@@ -92,6 +93,7 @@ export function Match({ matchId }: { matchId: number }) {
 
   const [players, setPlayers] = useState<Player[]>([]);
   const [team, setTeam] = useState<Team | null>(null);
+  const [player, setPlayer] = useState<Player | null>(null);
   const [manualWinners, setManualWinners] = useState<
     z.infer<typeof ManualWinnerPlayerSchema>
   >([]);
@@ -456,7 +458,11 @@ export function Match({ matchId }: { matchId: number }) {
           <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
             <>
               <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
-                <HeaderRow match={match} setTeam={setTeam} />
+                <HeaderRow
+                  match={match}
+                  setTeam={setTeam}
+                  setPlayer={setPlayer}
+                />
               </TableHeader>
               <TableBody>
                 {match.scoresheet.rounds.map((round) => (
@@ -542,6 +548,14 @@ export function Match({ matchId }: { matchId: number }) {
           gameId={match.gameId}
           onClose={() => setTeam(null)}
         />
+        <PlayerEditorDialog
+          teams={match.teams}
+          player={player}
+          players={match.players}
+          gameId={match.gameId}
+          matchId={match.id}
+          onClose={() => setPlayer(null)}
+        />
       </div>
     </div>
   );
@@ -550,9 +564,11 @@ export function Match({ matchId }: { matchId: number }) {
 const HeaderRow = ({
   match,
   setTeam,
+  setPlayer,
 }: {
   match: Match;
   setTeam: Dispatch<SetStateAction<Team | null>>;
+  setPlayer: Dispatch<SetStateAction<Player | null>>;
 }) => {
   if (match.teams.length > 0) {
     return (
@@ -593,7 +609,10 @@ const HeaderRow = ({
                   <div className="flex max-h-10 w-full flex-row flex-wrap justify-center gap-1 overflow-scroll">
                     {teamPlayers.map((player) => {
                       return (
-                        <button>
+                        <button
+                          key={player.id}
+                          onClick={() => setPlayer(player)}
+                        >
                           <Badge>{player.name}</Badge>
                         </button>
                       );
@@ -611,7 +630,16 @@ const HeaderRow = ({
               scope="col"
               key={player.id}
             >
-              {player.name}
+              <Button
+                variant="ghost"
+                type="button"
+                size="sm"
+                className="font-semibold"
+                onClick={() => setPlayer(player)}
+              >
+                {player.name}
+                <SquarePen className="h-4 w-4" />
+              </Button>
             </TableHead>
           ))}
       </TableRow>

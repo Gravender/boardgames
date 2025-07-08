@@ -177,6 +177,27 @@ function Content({
         };
       })
       .filter((p) => p !== null);
+    const playersToUpdate = data.players
+      .map((player) => {
+        const foundPlayer = players.find((p) => p.id === player.id);
+        if (!foundPlayer) return null;
+        const rolesToAdd = data.roles.filter(
+          (role) => !foundPlayer.roles.map((r) => r.id).includes(role),
+        );
+        const rolesToRemove = foundPlayer.roles
+          .filter(
+            (role) =>
+              teamRoles.includes(role.id) && !data.roles.includes(role.id),
+          )
+          .map((role) => role.id);
+        if (rolesToAdd.length === 0 && rolesToRemove.length === 0) return null;
+        return {
+          id: foundPlayer.id,
+          rolesToAdd: rolesToAdd,
+          rolesToRemove: rolesToRemove,
+        };
+      })
+      .filter((p) => p !== null);
     updateTeam.mutate({
       match: {
         id: team.matchId,
@@ -193,6 +214,7 @@ function Content({
           },
       playersToAdd: playersToAdd,
       playersToRemove: playersToRemove,
+      playersToUpdate: playersToUpdate,
     });
   };
 
