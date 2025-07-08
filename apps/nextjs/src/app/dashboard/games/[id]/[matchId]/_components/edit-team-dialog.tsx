@@ -152,7 +152,7 @@ function Content({
     const playersToAdd = data.players
       .filter((player) => !originalTeamPlayers.find((p) => p.id === player.id))
       .map((p) => {
-        const foundPlayer = players.find((p) => p.id === p.id);
+        const foundPlayer = players.find((player) => player.id === p.id);
         if (!foundPlayer) return null;
         const rolesToAdd = data.roles.filter(
           (role) => !foundPlayer.roles.map((r) => r.id).includes(role),
@@ -166,7 +166,7 @@ function Content({
     const playersToRemove = originalTeamPlayers
       .filter((player) => !data.players.find((p) => p.id === player.id))
       .map((p) => {
-        const foundPlayer = players.find((p) => p.id === p.id);
+        const foundPlayer = players.find((player) => player.id === p.id);
         if (!foundPlayer) return null;
         const rolesToRemove = foundPlayer.roles
           .filter((role) => data.roles.map((r) => r).includes(role.id))
@@ -291,7 +291,7 @@ function Content({
             </ScrollArea>
           </div>
           {formRoles.length > 0 && (
-            <div className="flex items-center justify-between gap-2 overflow-x-auto">
+            <div className="flex items-center gap-2 overflow-x-auto">
               {formRoles.map((roleId) => {
                 const role = roles.find((r) => r.id === roleId);
                 if (!role) return null;

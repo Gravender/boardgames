@@ -130,21 +130,26 @@ function Content({
       roles: player.roles.map((role) => role.id),
     },
   });
+  const getTeamRoles = (
+    teamPlayers: Player[],
+    allRoles: typeof roles,
+  ): number[] => {
+    return allRoles.reduce<number[]>((acc, role) => {
+      const roleInEveryPlayer = teamPlayers.every((p) =>
+        p.roles.map((r) => r.id).includes(role.id),
+      );
+      if (!acc.includes(role.id) && roleInEveryPlayer) {
+        acc.push(role.id);
+      }
+      return acc;
+    }, []);
+  };
   const formTeam = form.watch("team");
   const formRoles = form.watch("roles");
   const sameTeamPlayers = players.filter(
     (p) => formTeam !== null && p.teamId === formTeam,
   );
-  const teamRoles = roles.reduce<number[]>((acc, role) => {
-    const roleInEveryPlayer = sameTeamPlayers.every((p) =>
-      p.roles.map((r) => r.id).includes(role.id),
-    );
-    if (!acc.includes(role.id) && roleInEveryPlayer) {
-      acc.push(role.id);
-    }
-
-    return acc;
-  }, []);
+  const teamRoles = getTeamRoles(sameTeamPlayers, roles);
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     const isSameTeam = data.team === player.teamId;
     const rolesToAdd = data.roles.filter(
@@ -199,20 +204,11 @@ function Content({
                         (p) =>
                           value !== "no-team" && p.teamId === Number(value),
                       );
-                      const rolesToAdd = roles
-                        .reduce<number[]>((acc, role) => {
-                          const roleInEveryPlayer = newTeamPlayers.every((p) =>
-                            p.roles.map((r) => r.id).includes(role.id),
-                          );
-                          if (!acc.includes(role.id) && roleInEveryPlayer) {
-                            acc.push(role.id);
-                          }
-
-                          return acc;
-                        }, [])
-                        .filter((role) => !formRoles.find((r) => r === role));
+                      const rolesToAdd = getTeamRoles(
+                        newTeamPlayers,
+                        roles,
+                      ).filter((role) => !formRoles.find((r) => r === role));
                       const newRoles = [...formRoles, ...rolesToAdd];
-                      console.log("rolesToAdd", newRoles);
                       form.setValue("roles", newRoles);
                     }}
                   >
@@ -291,7 +287,7 @@ function Content({
           <div className="flex flex-col gap-2 border-t pt-4">
             <Label>All Roles (individual + team)</Label>
             {formRoles.length > 0 && (
-              <div className="flex items-center justify-between gap-2 overflow-x-auto">
+              <div className="flex items-center gap-2 overflow-x-auto">
                 {formRoles.map((roleId) => {
                   const role = roles.find((r) => r.id === roleId);
                   if (!role) return null;

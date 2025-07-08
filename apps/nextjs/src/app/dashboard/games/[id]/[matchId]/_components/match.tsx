@@ -114,15 +114,11 @@ export function Match({ matchId }: { matchId: number }) {
       setIsRunning(match.running);
       setPlayers(match.players);
     }
-    const currentPlayers = match?.players.reduce((acc, player) => {
+    const hasTeamChanges = match?.players.some((player) => {
       const foundPlayer = players.find((p) => p.id === player.playerId);
-      if (!foundPlayer) {
-        return false;
-      } else {
-        return foundPlayer.teamId === player.teamId;
-      }
-    }, true);
-    if (match && !currentPlayers) {
+      return !foundPlayer || foundPlayer.teamId !== player.teamId;
+    });
+    if (match && hasTeamChanges) {
       setPlayers(match.players);
     }
   }, [match, players]);
