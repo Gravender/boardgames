@@ -81,6 +81,7 @@ const playerSchema = insertPlayerSchema
     imageUrl: z.string().or(fileSchema).optional(),
     matches: z.number(),
     teamId: z.number().nullable(),
+    roles: z.array(z.number()),
   });
 const matchSchema = insertMatchSchema
   .pick({
@@ -621,6 +622,7 @@ const mapPlayers = (
     ),
     playerId: player.playerId,
     teamId: player.teamId,
+    roles: player.roles.map((role) => role.id),
   }));
 };
 const PlayersContent = ({
@@ -1263,6 +1265,7 @@ const PlayerContent = ({
               imageUrl: image?.file ?? null,
               matches: 0,
               teamId: null,
+              roles: [],
             });
             setAddedPlayers([
               ...addedPlayers,

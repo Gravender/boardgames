@@ -445,6 +445,7 @@ export const matchRouter = createTRPCRouter({
                 },
               },
               playerRounds: true,
+              roles: true,
             },
             orderBy: {
               order: "asc",
@@ -491,6 +492,7 @@ export const matchRouter = createTRPCRouter({
           teamId: matchPlayer.teamId,
           isUser: matchPlayer.player.isUser,
           order: matchPlayer.order,
+          roles: matchPlayer.roles,
         };
       });
       refinedPlayers.sort((a, b) => {
@@ -1599,6 +1601,181 @@ export const matchRouter = createTRPCRouter({
           .set({ details: input.details })
           .where(eq(team.id, input.id));
       }
+    }),
+  updateMatchTeam: protectedUserProcedure
+    .input(
+      z.object({
+        match: selectMatchSchema.pick({ id: true }),
+        team: z.discriminatedUnion("type", [
+          z.object({
+            type: z.literal("original"),
+            id: z.number(),
+          }),
+          z.object({
+            type: z.literal("update"),
+            id: z.number(),
+            name: z.string(),
+          }),
+        ]),
+        playersToAdd: z.array(
+          z.object({
+            id: z.number(),
+            roles: z.array(z.number()),
+          }),
+        ),
+        playersToRemove: z.array(
+          z.object({
+            id: z.number(),
+            roles: z.array(z.number()),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.transaction(async (tx) => {
+        const currentTeam = await tx.query.team.findFirst({
+          where: {
+            id: input.team.id,
+            matchId: input.match.id,
+          },
+        });
+        if (!currentTeam) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Team not found.",
+          });
+        }
+        console.log("currentTeam", currentTeam);
+        if (input.team.type === "update") {
+          await tx
+            .update(team)
+            .set({
+              name: input.team.name,
+            })
+            .where(
+              and(eq(team.id, input.team.id), eq(team.matchId, input.match.id)),
+            );
+        }
+        if (input.playersToAdd.length > 0) {
+          console.log("adding players", input.playersToAdd);
+          await tx
+            .update(matchPlayer)
+            .set({
+              teamId: currentTeam.id,
+            })
+            .where(
+              and(
+                eq(matchPlayer.matchId, input.match.id),
+                inArray(
+                  matchPlayer.id,
+                  input.playersToAdd.map((p) => p.id),
+                ),
+              ),
+            );
+          const rolesToAdd = input.playersToAdd.flatMap((p) =>
+            p.roles.map((role) => ({
+              matchPlayerId: p.id,
+              roleId: role,
+            })),
+          );
+          if (rolesToAdd.length > 0) {
+            console.log("adding roles", rolesToAdd);
+            await tx.insert(matchPlayerRole).values(rolesToAdd);
+          }
+        }
+        if (input.playersToRemove.length > 0) {
+          console.log("removing players", input.playersToRemove);
+          const updatedMatchPlayers = await tx
+            .update(matchPlayer)
+            .set({
+              teamId: null,
+            })
+            .where(
+              and(
+                eq(matchPlayer.matchId, input.match.id),
+                inArray(
+                  matchPlayer.id,
+                  input.playersToRemove.map((p) => p.id),
+                ),
+              ),
+            )
+            .returning();
+          console.log("updatedMatchPlayers", updatedMatchPlayers);
+          if (updatedMatchPlayers.length < 1) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to remove players from match",
+            });
+          }
+          const rolesToRemove = input.playersToRemove.flatMap((p) =>
+            p.roles.map((role) => ({
+              matchPlayerId: p.id,
+              roleId: role,
+            })),
+          );
+          if (rolesToRemove.length > 0) {
+            console.log("removing roles", rolesToRemove);
+            for (const roleToRemove of rolesToRemove) {
+              await tx
+                .delete(matchPlayerRole)
+                .where(
+                  and(
+                    eq(
+                      matchPlayerRole.matchPlayerId,
+                      roleToRemove.matchPlayerId,
+                    ),
+                    eq(matchPlayerRole.roleId, roleToRemove.roleId),
+                  ),
+                );
+            }
+          }
+        }
+      });
+    }),
+  updateMatchPlayerRoles: protectedUserProcedure
+    .input(
+      z.object({
+        matchPlayer: selectMatchPlayerSchema.pick({
+          id: true,
+          matchId: true,
+        }),
+        rolesToAdd: z.array(z.number()),
+        rolesToRemove: z.array(z.number()),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.transaction(async (tx) => {
+        const originalMatchPlayer = await tx.query.matchPlayer.findFirst({
+          where: {
+            id: input.matchPlayer.id,
+            matchId: input.matchPlayer.matchId,
+          },
+        });
+        if (!originalMatchPlayer) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Match player not found.",
+          });
+        }
+        if (input.rolesToAdd.length > 0) {
+          await tx.insert(matchPlayerRole).values(
+            input.rolesToAdd.map((roleId) => ({
+              matchPlayerId: input.matchPlayer.id,
+              roleId,
+            })),
+          );
+        }
+        if (input.rolesToRemove.length > 0) {
+          await tx
+            .delete(matchPlayerRole)
+            .where(
+              and(
+                eq(matchPlayerRole.matchPlayerId, input.matchPlayer.id),
+                inArray(matchPlayerRole.roleId, input.rolesToRemove),
+              ),
+            );
+        }
+      });
     }),
   editMatch: protectedUserProcedure
     .input(
