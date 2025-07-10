@@ -48,6 +48,7 @@ import {
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
+import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -602,18 +603,21 @@ const HeaderRow = ({
                     {`Team: ${team.name}`}
                     <SquarePen className="h-4 w-4" />
                   </Button>
-                  <div className="flex max-h-10 w-full flex-row flex-wrap justify-center gap-1 overflow-scroll">
-                    {teamPlayers.map((player) => {
-                      return (
-                        <button
-                          key={player.id}
-                          onClick={() => setPlayer(player)}
-                        >
-                          <Badge>{player.name}</Badge>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <ScrollArea>
+                    <div className="flex max-h-10 w-full flex-row flex-wrap justify-center gap-1">
+                      {teamPlayers.map((player) => {
+                        return (
+                          <button
+                            key={player.id}
+                            onClick={() => setPlayer(player)}
+                          >
+                            <Badge>{player.name}</Badge>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
                 </div>
               </TableHead>
             );
@@ -653,7 +657,16 @@ const HeaderRow = ({
       </TableHead>
       {match.players.map((player) => (
         <TableHead className="min-w-20 text-center" scope="col" key={player.id}>
-          {player.name}
+          <Button
+            variant="ghost"
+            type="button"
+            size="sm"
+            className="font-semibold"
+            onClick={() => setPlayer(player)}
+          >
+            {player.name}
+            <SquarePen className="h-4 w-4" />
+          </Button>
         </TableHead>
       ))}
     </TableRow>
@@ -857,7 +870,7 @@ const CommentsRow = ({ match }: { match: Match }) => {
       <TableRow>
         <TableHead
           scope="row"
-          className="sticky left-0 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+          className="sticky left-0 z-10 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
         >
           {"Details(optional)"}
         </TableHead>
@@ -908,7 +921,7 @@ const CommentsRow = ({ match }: { match: Match }) => {
     <TableRow>
       <TableHead
         scope="row"
-        className="sticky left-0 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+        className="sticky left-0 z-10 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
       >
         {"Details(optional)"}
       </TableHead>

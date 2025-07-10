@@ -20,6 +20,7 @@ import {
   FormMessage,
   useForm,
 } from "@board-games/ui/form";
+import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Textarea } from "@board-games/ui/textarea";
 
 import { useTRPC } from "~/trpc/react";
@@ -44,9 +45,12 @@ export function DetailDialog({
           variant="ghost"
           className="h-full w-full min-w-20 items-start justify-start p-0"
         >
-          <p className="max-h-10 min-h-6 overflow-scroll whitespace-normal text-wrap break-words text-start text-base text-primary">
-            {data.details ?? ""}
-          </p>
+          <ScrollArea>
+            <p className="max-h-10 min-h-6 w-full whitespace-normal text-wrap break-words text-start text-base text-primary">
+              {data.details ?? ""}
+            </p>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
         </Button>
       </DialogTrigger>
       <DialogContent>

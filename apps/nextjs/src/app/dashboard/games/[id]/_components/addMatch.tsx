@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -110,7 +110,7 @@ export function AddMatchDialog({
   );
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto p-4 sm:max-w-[800px] sm:p-6">
+      <DialogContent className="max-h-[90vh] p-4 sm:max-w-[800px] sm:p-6">
         <Content
           gameId={gameId}
           gameName={gameName}
@@ -152,6 +152,7 @@ const locationSchema = z
     isDefault: z.boolean(),
   })
   .nullish();
+const roleSchema = z.array(z.number());
 const playersSchema = z
   .array(
     insertPlayerSchema
@@ -161,7 +162,7 @@ const playersSchema = z
         imageUrl: z.string().nullable(),
         matches: z.number(),
         team: z.number().nullable(),
-        roles: z.array(z.number()),
+        roles: roleSchema,
       }),
   )
   .refine((players) => players.length > 0, {
@@ -701,11 +702,11 @@ const AddPlayersForm = ({
 }) => {
   const trpc = useTRPC();
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleSearchTerm, setRoleSearchTerm] = useState("");
   const [showGroups, setShowGroups] = useState(false);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
 
   const [showTeamModal, setShowTeamModal] = useState(false);
+  const [showRoleModal, setShowRoleModal] = useState<number | null>(null);
 
   const { data: groups } = useQuery(trpc.group.getGroups.queryOptions());
 
@@ -770,12 +771,6 @@ const AddPlayersForm = ({
   const formTeams = form.watch("teams");
   const formPlayers = form.watch("players");
 
-  const filteredRoles = roles.filter(
-    (role) =>
-      role.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
-      role.description?.toLowerCase().includes(roleSearchTerm.toLowerCase()),
-  );
-
   if (showAddPlayer) {
     return (
       <AddPlayerForm
@@ -793,6 +788,28 @@ const AddPlayersForm = ({
         setShowTeamModal={setShowTeamModal}
       />
     );
+  }
+  if (showRoleModal) {
+    const foundPlayer = formPlayers.find((p) => p.id === showRoleModal);
+    const playerIndex = formPlayers.findIndex((p) => p.id === showRoleModal);
+    if (foundPlayer && playerIndex > -1) {
+      const foundTeam = formTeams.find((t) => t.id === foundPlayer.team);
+      return (
+        <ManagePlayerRoles
+          player={foundPlayer}
+          teamRoles={foundTeam?.roles ?? []}
+          roles={roles}
+          onClose={() => setShowRoleModal(null)}
+          onSave={(roles) => {
+            update(playerIndex, {
+              ...foundPlayer,
+              roles,
+            });
+            setShowRoleModal(null);
+          }}
+        />
+      );
+    }
   }
 
   return (
@@ -927,22 +944,7 @@ const AddPlayersForm = ({
                                   const playerIndex = field.value.findIndex(
                                     (i) => i.id === player.id,
                                   );
-                                  const togglePlayerRole = (roleId: number) => {
-                                    if (playerIndex === -1) return;
-                                    const player = field.value[playerIndex];
-                                    if (!player) return;
-                                    const roles = [...player.roles];
-                                    const roleIndex = roles.indexOf(roleId);
-                                    if (roleIndex > -1) {
-                                      roles.splice(roleIndex, 1);
-                                    } else {
-                                      roles.push(roleId);
-                                    }
-                                    update(playerIndex, {
-                                      ...player,
-                                      roles,
-                                    });
-                                  };
+
                                   return (
                                     <FormItem
                                       key={player.id}
@@ -1004,115 +1006,16 @@ const AddPlayersForm = ({
                                       </FormLabel>
                                       <div className="flex items-center gap-2">
                                         {foundPlayer && (
-                                          <Popover>
-                                            <PopoverTrigger asChild>
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                              >
-                                                Roles (
-                                                {foundPlayer.roles.length})
-                                              </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-96">
-                                              <div className="space-y-4">
-                                                <div className="flex items-center justify-between">
-                                                  <h4 className="font-medium">
-                                                    Select Game Roles
-                                                  </h4>
-                                                </div>
-
-                                                {/* Search Roles */}
-                                                <div className="relative">
-                                                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
-                                                  <Input
-                                                    placeholder="Search roles..."
-                                                    value={roleSearchTerm}
-                                                    onChange={(e) =>
-                                                      setRoleSearchTerm(
-                                                        e.target.value,
-                                                      )
-                                                    }
-                                                    className="pl-10 text-sm"
-                                                  />
-                                                </div>
-
-                                                {/* Roles List */}
-                                                <div className="max-h-64 space-y-2 overflow-y-auto">
-                                                  {filteredRoles.length ===
-                                                  0 ? (
-                                                    <p className="py-4 text-center text-sm text-muted-foreground">
-                                                      {roleSearchTerm
-                                                        ? "No roles found matching your search"
-                                                        : "No roles available"}
-                                                    </p>
-                                                  ) : (
-                                                    filteredRoles.map(
-                                                      (role) => (
-                                                        <div
-                                                          key={role.id}
-                                                          className="flex items-center space-x-3 rounded p-2"
-                                                        >
-                                                          <Checkbox
-                                                            id={`${player.id}-${role.id}`}
-                                                            checked={foundPlayer.roles.includes(
-                                                              role.id,
-                                                            )}
-                                                            onCheckedChange={() =>
-                                                              togglePlayerRole(
-                                                                role.id,
-                                                              )
-                                                            }
-                                                          />
-                                                          <div className="flex-1 gap-2">
-                                                            <Label
-                                                              htmlFor={`${player.id}-${role.id}`}
-                                                            >
-                                                              {role.name}
-                                                            </Label>
-
-                                                            <p className="text-xs text-muted-foreground">
-                                                              {role.description}
-                                                            </p>
-                                                          </div>
-                                                        </div>
-                                                      ),
-                                                    )
-                                                  )}
-                                                </div>
-
-                                                {/* Selected Roles Summary */}
-                                                {foundPlayer.roles.length >
-                                                  0 && (
-                                                  <div className="border-foreground-secondary flex flex-col gap-2 border-t pt-2">
-                                                    <p className="text-xs text-foreground">
-                                                      Selected roles:
-                                                    </p>
-                                                    <div className="flex flex-wrap gap-1">
-                                                      {foundPlayer.roles.map(
-                                                        (roleId) => {
-                                                          const role =
-                                                            roles.find(
-                                                              (r) =>
-                                                                r.id === roleId,
-                                                            );
-                                                          return role ? (
-                                                            <Badge
-                                                              key={roleId}
-                                                              variant="secondary"
-                                                              className="w-28 truncate text-xs"
-                                                            >
-                                                              {role.name}
-                                                            </Badge>
-                                                          ) : null;
-                                                        },
-                                                      )}
-                                                    </div>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            </PopoverContent>
-                                          </Popover>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            type="button"
+                                            onClick={() => {
+                                              setShowRoleModal(foundPlayer.id);
+                                            }}
+                                          >
+                                            Roles ({foundPlayer.roles.length})
+                                          </Button>
                                         )}
                                         {formTeams.length > 0 &&
                                           foundPlayer && (
@@ -1232,19 +1135,19 @@ const ManageTeamContent = ({
   setShowTeamModal: Dispatch<SetStateAction<boolean>>;
 }) => {
   const [newTeam, setNewTeam] = useState("");
-  const [roleSearchTerm, setRoleSearchTerm] = useState("");
+  const [editingTeamRoles, setEditingTeamRoles] = useState(false);
   const [originalTeams] = useState(() => form.getValues("teams"));
   const [activeTeamEdit, setActiveTeamEdit] = useState<number | null>(null);
   const [showAddTeam, setShowAddTeam] = useState(false);
   const formTeams = form.watch("teams");
   const formPlayers = form.watch("players");
-  const { append, remove } = useFieldArray({
+  const { append, remove, update } = useFieldArray({
     control: form.control,
     name: "teams",
   });
   const updatePlayers = () => {
     let teamRemoved = false;
-    const mappedPlayers = form.getValues("players").map((player) => {
+    const mappedPlayers = formPlayers.map((player) => {
       const foundTeam = formTeams.find((t) => t.id === player.team);
       if (foundTeam !== undefined) {
         return player;
@@ -1273,11 +1176,53 @@ const ManageTeamContent = ({
     form.setValue("players", mappedPlayers);
     setShowTeamModal(false);
   };
-  const filteredRoles = roles.filter(
-    (role) =>
-      role.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
-      role.description?.toLowerCase().includes(roleSearchTerm.toLowerCase()),
-  );
+
+  if (editingTeamRoles && activeTeamEdit) {
+    const foundTeam = formTeams.find((t) => t.id === activeTeamEdit);
+    if (foundTeam) {
+      const onClose = () => {
+        setEditingTeamRoles(false);
+        setActiveTeamEdit(null);
+      };
+      const onSave = (roles: number[]) => {
+        const rolesToAdd = roles.filter(
+          (role) => !foundTeam.roles.includes(role),
+        );
+        const rolesToRemove = foundTeam.roles.filter(
+          (role) => !roles.includes(role),
+        );
+        const mappedPlayers = formPlayers.map((player) => {
+          if (player.team === foundTeam.id) {
+            const playerRoles = player.roles.filter(
+              (role) => !rolesToRemove.includes(role),
+            );
+            return {
+              ...player,
+              roles: [...playerRoles, ...rolesToAdd],
+            };
+          }
+          return player;
+        });
+        form.setValue("players", mappedPlayers);
+        const teamIndex = formTeams.findIndex((t) => t.id === activeTeamEdit);
+        update(teamIndex, {
+          id: foundTeam.id,
+          roles,
+          name: foundTeam.name,
+        });
+        onClose();
+      };
+      return (
+        <ManageTeamRoles
+          team={foundTeam}
+          roles={roles}
+          onClose={onClose}
+          onSave={onSave}
+        />
+      );
+    }
+  }
+
   return (
     <Form {...form}>
       <DialogHeader>
@@ -1363,7 +1308,7 @@ const ManageTeamContent = ({
         )}
       </div>
       <ScrollArea>
-        <div className="flex max-h-96 flex-col gap-2 p-2">
+        <div className="flex max-h-96 flex-col gap-2">
           {formTeams.map((team) => {
             const foundIndex = formTeams.findIndex((t) => t.id === team.id);
             if (foundIndex === -1) {
@@ -1375,7 +1320,7 @@ const ManageTeamContent = ({
 
             return (
               <Card key={team.id}>
-                <CardContent className="flex flex-col gap-2 py-2">
+                <CardContent className="flex flex-col gap-2 px-4 py-2">
                   <div className="flex flex-col gap-1">
                     {activeTeamEdit === team.id ? (
                       <FormField
@@ -1427,177 +1372,27 @@ const ManageTeamContent = ({
                       <span>{team.roles.length} team roles</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-start overflow-x-auto"
-                        >
-                          {team.roles.length > 0 ? (
-                            <div>
-                              {team.roles.map((role) => {
-                                const foundRole = roles.find(
-                                  (r) => r.id === role,
-                                );
-                                if (!foundRole) return null;
-                                return (
-                                  <Badge key={foundRole.id}>
-                                    {foundRole.name}
-                                  </Badge>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">
-                              No roles selected
-                            </span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-96">
-                        <FormField
-                          control={form.control}
-                          name={`teams.${foundIndex}.roles`}
-                          render={({ field }) => (
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-medium">
-                                  Select Game Roles
-                                </h4>
-                              </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditingTeamRoles(true);
+                        setActiveTeamEdit(team.id);
+                      }}
+                    >
+                      {team.roles.length > 0 ? (
+                        <div>
+                          {`${team.roles.length} role${team.roles.length !== 1 ? "s" : ""} selected`}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          No roles selected
+                        </span>
+                      )}
+                    </Button>
 
-                              {/* Search Roles */}
-                              <div className="relative">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
-                                <Input
-                                  placeholder="Search roles..."
-                                  value={roleSearchTerm}
-                                  onChange={(e) =>
-                                    setRoleSearchTerm(e.target.value)
-                                  }
-                                  className="pl-10 text-sm"
-                                />
-                              </div>
-
-                              {/* Roles List */}
-                              <div className="max-h-64 space-y-2 overflow-y-auto">
-                                {filteredRoles.length === 0 ? (
-                                  <p className="py-4 text-center text-sm text-muted-foreground">
-                                    {roleSearchTerm
-                                      ? "No roles found matching your search"
-                                      : "No roles available"}
-                                  </p>
-                                ) : (
-                                  filteredRoles.map((role) => (
-                                    <div
-                                      key={role.id}
-                                      className="flex items-center space-x-3 rounded p-2"
-                                    >
-                                      <Checkbox
-                                        id={`${team.id}-${role.id}`}
-                                        checked={field.value.includes(role.id)}
-                                        onCheckedChange={() => {
-                                          const foundRoleIndex =
-                                            field.value.findIndex(
-                                              (r) => r === role.id,
-                                            );
-                                          if (foundRoleIndex > -1) {
-                                            const newRoles = [
-                                              ...field.value.filter(
-                                                (r) => r !== role.id,
-                                              ),
-                                            ];
-                                            field.onChange(newRoles);
-                                            const mappedPlayers =
-                                              formPlayers.map((player) => {
-                                                if (player.team === team.id) {
-                                                  return {
-                                                    ...player,
-                                                    roles: player.roles.filter(
-                                                      (r) => r !== role.id,
-                                                    ),
-                                                  };
-                                                }
-                                                return player;
-                                              });
-
-                                            form.setValue(
-                                              "players",
-                                              mappedPlayers,
-                                            );
-                                          } else {
-                                            field.onChange([
-                                              ...field.value,
-                                              role.id,
-                                            ]);
-                                            const mappedPlayers =
-                                              formPlayers.map((player) => {
-                                                if (player.team === team.id) {
-                                                  return {
-                                                    ...player,
-                                                    roles: [
-                                                      ...player.roles,
-                                                      role.id,
-                                                    ],
-                                                  };
-                                                }
-                                                return player;
-                                              });
-
-                                            form.setValue(
-                                              "players",
-                                              mappedPlayers,
-                                            );
-                                          }
-                                        }}
-                                      />
-                                      <div className="flex-1 gap-2">
-                                        <Label
-                                          htmlFor={`${team.id}-${role.id}`}
-                                        >
-                                          {role.name}
-                                        </Label>
-
-                                        <p className="text-xs text-muted-foreground">
-                                          {role.description}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  ))
-                                )}
-                              </div>
-
-                              {/* Selected Roles Summary */}
-                              {team.roles.length > 0 && (
-                                <div className="border-foreground-secondary flex flex-col gap-2 border-t pt-2">
-                                  <p className="text-xs text-foreground">
-                                    Selected roles:
-                                  </p>
-                                  <div className="flex flex-wrap gap-2">
-                                    {team.roles.map((roleId) => {
-                                      const role = roles.find(
-                                        (r) => r.id === roleId,
-                                      );
-                                      return role ? (
-                                        <Badge
-                                          key={roleId}
-                                          variant="secondary"
-                                          className="w-28 truncate text-xs"
-                                        >
-                                          {role.name}
-                                        </Badge>
-                                      ) : null;
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        />
-                      </PopoverContent>
-                    </Popover>
                     <Button
                       type="button"
                       variant="outline"
@@ -1609,7 +1404,7 @@ const ManageTeamContent = ({
                       className="border-destructive text-destructive hover:bg-destructive hover:text-destructive hover:text-white"
                     >
                       <Trash2 className="h-4 w-4" />
-                      <span>Delete team</span>
+                      <span>Team</span>
                     </Button>
                   </div>
                 </CardContent>
@@ -1638,6 +1433,354 @@ const ManageTeamContent = ({
           Save
         </Button>
       </DialogFooter>
+    </Form>
+  );
+};
+const ManageTeamRoles = ({
+  team,
+  roles,
+  onClose,
+  onSave,
+}: {
+  team: {
+    id: number;
+    name: string;
+    roles: number[];
+  };
+  roles: RouterOutputs["game"]["getGameRoles"];
+  onClose: () => void;
+  onSave: (roles: number[]) => void;
+}) => {
+  const [roleSearchTerm, setRoleSearchTerm] = useState("");
+  const formSchema = z.object({
+    roles: roleSchema,
+  });
+  const form = useForm({
+    schema: formSchema,
+    defaultValues: {
+      roles: team.roles,
+    },
+  });
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    onSave(values.roles);
+  };
+
+  const filteredRoles = useMemo(() => {
+    const filteredRoles = roles.filter(
+      (role) =>
+        role.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
+        role.description?.toLowerCase().includes(roleSearchTerm.toLowerCase()),
+    );
+    filteredRoles.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      const aDesc = a.description?.toLowerCase() ?? "";
+      const bDesc = b.description?.toLowerCase() ?? "";
+
+      const aNameIndex = aName.indexOf(roleSearchTerm);
+      const bNameIndex = bName.indexOf(roleSearchTerm);
+      const aDescIndex = aDesc.indexOf(roleSearchTerm);
+      const bDescIndex = bDesc.indexOf(roleSearchTerm);
+
+      const aIndex = aNameIndex !== -1 ? aNameIndex : aDescIndex;
+      const bIndex = bNameIndex !== -1 ? bNameIndex : bDescIndex;
+
+      if (aIndex !== bIndex) return aIndex - bIndex;
+
+      if (aName !== bName) return aName.localeCompare(bName);
+
+      return aDesc.localeCompare(bDesc);
+    });
+    return filteredRoles;
+  }, [roles, roleSearchTerm]);
+
+  const formRoles = form.watch("roles");
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <DialogHeader>
+          <DialogTitle>Edit {team.name} Roles</DialogTitle>
+        </DialogHeader>
+        <FormField
+          control={form.control}
+          name={`roles`}
+          render={({ field }) => (
+            <div className="flex flex-col gap-2 py-2 pt-4">
+              {/* Search Roles */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+                <Input
+                  placeholder="Search roles..."
+                  value={roleSearchTerm}
+                  onChange={(e) => setRoleSearchTerm(e.target.value)}
+                  className="pl-10 text-sm"
+                />
+              </div>
+
+              {/* Roles List */}
+              <ScrollArea className="h-[30vh]">
+                <div className="flex flex-col gap-2">
+                  {filteredRoles.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-muted-foreground">
+                      {roleSearchTerm
+                        ? "No roles found matching your search"
+                        : "No roles available"}
+                    </p>
+                  ) : (
+                    filteredRoles.map((role) => (
+                      <div
+                        key={role.id}
+                        className="flex items-center space-x-3 rounded p-2"
+                      >
+                        <Checkbox
+                          id={`${role.id}`}
+                          checked={field.value.includes(role.id)}
+                          onCheckedChange={() => {
+                            const foundRoleIndex = field.value.findIndex(
+                              (r) => r === role.id,
+                            );
+                            if (foundRoleIndex > -1) {
+                              const newRoles = [
+                                ...field.value.filter((r) => r !== role.id),
+                              ];
+                              field.onChange(newRoles);
+                            } else {
+                              field.onChange([...field.value, role.id]);
+                            }
+                          }}
+                        />
+                        <div className="flex-1 gap-2">
+                          <Label htmlFor={`${role.id}`}>{role.name}</Label>
+
+                          <p className="text-xs text-muted-foreground">
+                            {role.description}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+
+              {/* Selected Roles Summary */}
+              {formRoles.length > 0 && (
+                <div className="border-foreground-secondary flex flex-col gap-2 border-t pt-2">
+                  <p className="text-xs text-foreground">Selected roles:</p>
+                  <ScrollArea>
+                    <div className="flex max-h-12 flex-wrap gap-2">
+                      {formRoles.map((roleId) => {
+                        const role = roles.find((r) => r.id === roleId);
+                        return role ? (
+                          <Badge
+                            key={roleId}
+                            variant="secondary"
+                            className="w-28 truncate text-nowrap text-xs"
+                          >
+                            {role.name}
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+            </div>
+          )}
+        />
+        <DialogFooter className="gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              onClose();
+            }}
+          >
+            Cancel
+          </Button>
+          <Button type="submit">Save</Button>
+        </DialogFooter>
+      </form>
+    </Form>
+  );
+};
+const ManagePlayerRoles = ({
+  player,
+  teamRoles,
+  roles,
+  onClose,
+  onSave,
+}: {
+  player: {
+    id: number;
+    name: string;
+    roles: number[];
+  };
+  teamRoles: number[];
+  roles: RouterOutputs["game"]["getGameRoles"];
+  onClose: () => void;
+  onSave: (roles: number[]) => void;
+}) => {
+  const [roleSearchTerm, setRoleSearchTerm] = useState("");
+  const formSchema = z.object({
+    roles: roleSchema,
+  });
+  const form = useForm({
+    schema: formSchema,
+    defaultValues: {
+      roles: player.roles,
+    },
+  });
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    onSave(values.roles);
+  };
+
+  const filteredRoles = useMemo(() => {
+    const filteredRoles = roles.filter(
+      (role) =>
+        role.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
+        role.description?.toLowerCase().includes(roleSearchTerm.toLowerCase()),
+    );
+    filteredRoles.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      const aDesc = a.description?.toLowerCase() ?? "";
+      const bDesc = b.description?.toLowerCase() ?? "";
+
+      const aNameIndex = aName.indexOf(roleSearchTerm);
+      const bNameIndex = bName.indexOf(roleSearchTerm);
+      const aDescIndex = aDesc.indexOf(roleSearchTerm);
+      const bDescIndex = bDesc.indexOf(roleSearchTerm);
+
+      const aIndex = aNameIndex !== -1 ? aNameIndex : aDescIndex;
+      const bIndex = bNameIndex !== -1 ? bNameIndex : bDescIndex;
+
+      if (aIndex !== bIndex) return aIndex - bIndex;
+
+      if (aName !== bName) return aName.localeCompare(bName);
+
+      return aDesc.localeCompare(bDesc);
+    });
+    return filteredRoles;
+  }, [roles, roleSearchTerm]);
+
+  const formRoles = form.watch("roles");
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <DialogHeader>
+          <DialogTitle>Edit {player.name} Roles</DialogTitle>
+        </DialogHeader>
+        <FormField
+          control={form.control}
+          name={`roles`}
+          render={({ field }) => (
+            <div className="flex flex-col gap-2 py-2 pt-4">
+              {/* Search Roles */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+                <Input
+                  placeholder="Search roles..."
+                  value={roleSearchTerm}
+                  onChange={(e) => setRoleSearchTerm(e.target.value)}
+                  className="pl-10 text-sm"
+                />
+              </div>
+
+              {/* Roles List */}
+              <ScrollArea className="h-[30vh]">
+                <div className="flex flex-col gap-2">
+                  {filteredRoles.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-muted-foreground">
+                      {roleSearchTerm
+                        ? "No roles found matching your search"
+                        : "No roles available"}
+                    </p>
+                  ) : (
+                    filteredRoles.map((role) => {
+                      const isTeamRole =
+                        teamRoles.findIndex((r) => r === role.id) > -1;
+                      return (
+                        <div
+                          key={role.id}
+                          className="flex items-center space-x-3 rounded p-2"
+                        >
+                          <Checkbox
+                            id={`${role.id}`}
+                            checked={field.value.includes(role.id)}
+                            onCheckedChange={() => {
+                              const foundRoleIndex = field.value.findIndex(
+                                (r) => r === role.id,
+                              );
+                              if (foundRoleIndex > -1) {
+                                const newRoles = [
+                                  ...field.value.filter((r) => r !== role.id),
+                                ];
+                                field.onChange(newRoles);
+                              } else {
+                                field.onChange([...field.value, role.id]);
+                              }
+                            }}
+                            disabled={isTeamRole}
+                          />
+                          <div className="flex-1 gap-2">
+                            <Label htmlFor={`${role.id}`}>
+                              {role.name}
+                              {isTeamRole ? " (Team)" : ""}
+                            </Label>
+
+                            <p className="text-xs text-muted-foreground">
+                              {role.description}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </ScrollArea>
+
+              {/* Selected Roles Summary */}
+              {formRoles.length > 0 && (
+                <div className="border-foreground-secondary flex flex-col gap-2 border-t pt-2">
+                  <p className="text-xs text-foreground">Selected roles:</p>
+                  <ScrollArea>
+                    <div className="flex max-h-12 flex-wrap gap-2">
+                      {formRoles.map((roleId) => {
+                        const role = roles.find((r) => r.id === roleId);
+                        const isTeamRole =
+                          teamRoles.findIndex((r) => r === roleId) > -1;
+                        return role ? (
+                          <Badge
+                            key={roleId}
+                            variant="secondary"
+                            className="w-28 truncate text-nowrap text-xs"
+                          >
+                            {role.name}
+                            {isTeamRole ? " (Team)" : ""}
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+            </div>
+          )}
+        />
+        <DialogFooter className="gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              onClose();
+            }}
+          >
+            Cancel
+          </Button>
+          <Button type="submit">Save</Button>
+        </DialogFooter>
+      </form>
     </Form>
   );
 };

@@ -4,6 +4,7 @@ import type { RouterOutputs } from "@board-games/api";
 import { getOrdinalSuffix } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
+import { Separator } from "@board-games/ui/separator";
 import { cn } from "@board-games/ui/utils";
 
 import { PlayerImage } from "~/components/player-image";
@@ -98,9 +99,36 @@ export default function ShareMatchResults({
       <CardHeader>
         <CardTitle>Match Results</CardTitle>
       </CardHeader>
-      <CardContent className="p-2 pt-0 sm:p-6">
+      <CardContent className="flex flex-col gap-2 p-2 pt-0 sm:p-6">
         {matchResults().map((data) => {
           if (data.teamType === "Team") {
+            const roles = data.players.reduce<
+              { id: number; name: string; description: string | null }[]
+            >((acc, player) => {
+              if (player.roles.length > 0) {
+                player.roles.forEach((role) => {
+                  const foundRole = acc.find((r) => r.id === role.id);
+                  if (!foundRole) {
+                    acc.push({
+                      id: role.id,
+                      name: role.name,
+                      description: role.description,
+                    });
+                  }
+                });
+              }
+
+              return acc;
+            }, []);
+            const teamRoles = roles.filter((role) => {
+              return data.players.every((player) => {
+                if ("roles" in player) {
+                  const foundRole = player.roles.find((r) => r.id === role.id);
+                  return foundRole !== undefined;
+                }
+                return false;
+              });
+            });
             return (
               <div
                 key={data.id}
@@ -112,9 +140,22 @@ export default function ShareMatchResults({
                 )}
               >
                 <div className="flex items-center justify-between gap-2 pb-4">
-                  <div className="flex items-center gap-2">
+                  <div className="flex min-h-5 items-center gap-2">
                     <Users className="h-5 w-5 text-muted-foreground" />
                     <h3 className="font-semibold"> {`Team: ${data.name}`}</h3>
+                    <Separator orientation="vertical" />
+                    {teamRoles.length > 0 && (
+                      <span className="text-sm font-medium">Roles:</span>
+                    )}
+                    {teamRoles.map((role) => (
+                      <Badge
+                        key={role.id}
+                        variant="secondary"
+                        className="text-sm font-medium text-foreground"
+                      >
+                        {role.name}
+                      </Badge>
+                    ))}
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-sm font-medium">{data.score} pts</div>
@@ -146,7 +187,7 @@ export default function ShareMatchResults({
                   </div>
                 </div>
 
-                <ul className="space-y-3 pl-2">
+                <ul className="flex max-h-28 flex-col flex-wrap gap-2 overflow-y-auto pl-2">
                   {data.players.map((player) => {
                     return (
                       <li key={player.id} className="flex items-center">
@@ -170,6 +211,24 @@ export default function ShareMatchResults({
                                 {calculatePerformance(player)}
                               </Badge>
                             )}
+                            <div className="flex max-w-60 gap-2 overflow-x-auto">
+                              {player.roles
+                                .filter((role) => {
+                                  const foundRole = teamRoles.find(
+                                    (r) => r.id === role.id,
+                                  );
+                                  return !foundRole;
+                                })
+                                .map((role) => (
+                                  <Badge
+                                    key={role.id}
+                                    variant="outline"
+                                    className="text-nowrap text-sm font-medium text-foreground"
+                                  >
+                                    {role.name}
+                                  </Badge>
+                                ))}
+                            </div>
                           </div>
                         </div>
                       </li>
@@ -183,8 +242,10 @@ export default function ShareMatchResults({
               <div
                 key={data.id}
                 className={cn(
-                  "flex items-center rounded-lg p-3",
-                  data.winner ? "bg-yellow-50 dark:bg-yellow-950/20" : "",
+                  "flex items-center rounded-lg border p-3",
+                  data.winner
+                    ? "border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20"
+                    : "",
                 )}
               >
                 <PlayerImage
