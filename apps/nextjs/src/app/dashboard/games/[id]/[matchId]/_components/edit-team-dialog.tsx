@@ -31,7 +31,7 @@ import {
 } from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
-import { ScrollArea } from "@board-games/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
@@ -57,7 +57,7 @@ export default function TeamEditorDialog({
   );
   return (
     <Dialog open={team !== null} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto p-4 sm:max-w-[800px] sm:p-6">
+      <DialogContent className="max-h-[90vh] p-4 sm:max-w-[800px] sm:p-6">
         {team && (
           <Content
             team={team}
@@ -291,17 +291,24 @@ function Content({
             </ScrollArea>
           </div>
           {formRoles.length > 0 && (
-            <div className="flex items-center gap-2 overflow-x-auto">
-              {formRoles.map((roleId) => {
-                const role = roles.find((r) => r.id === roleId);
-                if (!role) return null;
-                return (
-                  <Badge key={roleId} variant="outline">
-                    {role.name}
-                  </Badge>
-                );
-              })}
-            </div>
+            <ScrollArea>
+              <div className="flex max-w-60 items-center gap-2 sm:max-w-80">
+                {formRoles.map((roleId) => {
+                  const role = roles.find((r) => r.id === roleId);
+                  if (!role) return null;
+                  return (
+                    <Badge
+                      key={roleId}
+                      variant="outline"
+                      className="text-nowrap"
+                    >
+                      {role.name}
+                    </Badge>
+                  );
+                })}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           )}
 
           <FormField

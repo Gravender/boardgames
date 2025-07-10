@@ -153,35 +153,37 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
                         Game-Specific Performance
                       </span>
                     </div>
-                    <div className="max-h-32 space-y-2 overflow-y-auto">
-                      {player.gameStats.map((game) => (
-                        <div
-                          key={game.id}
-                          className="flex items-center justify-between rounded border p-2"
-                        >
-                          <div>
-                            <div className="text-sm font-medium">
-                              {game.name}
+                    <ScrollArea>
+                      <div className="flex max-h-32 flex-col gap-2">
+                        {player.gameStats.map((game) => (
+                          <div
+                            key={game.id}
+                            className="flex items-center justify-between rounded border p-2"
+                          >
+                            <div>
+                              <div className="text-sm font-medium">
+                                {game.name}
+                              </div>
+                              <div className="flex gap-1 text-xs text-muted-foreground">
+                                <span>
+                                  {game.plays} play{game.plays !== 1 ? "s" : ""}
+                                </span>
+                                <span>•</span>
+                                <span>{formatDuration(game.playtime)}</span>
+                              </div>
                             </div>
-                            <div className="flex gap-1 text-xs text-muted-foreground">
-                              <span>
-                                {game.plays} play{game.plays !== 1 ? "s" : ""}
-                              </span>
-                              <span>•</span>
-                              <span>{formatDuration(game.playtime)}</span>
+                            <div className="text-right">
+                              <div className="text-sm font-bold">
+                                {Math.round(game.winRate * 100)}%
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {game.wins}/{game.plays} wins
+                              </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-sm font-bold">
-                              {Math.round(game.winRate * 100)}%
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {game.wins}/{game.plays} wins
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   </div>
                 </TabsContent>
 

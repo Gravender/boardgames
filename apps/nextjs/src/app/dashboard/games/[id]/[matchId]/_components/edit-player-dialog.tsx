@@ -29,7 +29,7 @@ import {
   useForm,
 } from "@board-games/ui/form";
 import { Label } from "@board-games/ui/label";
-import { ScrollArea } from "@board-games/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -66,7 +66,7 @@ export default function PlayerEditorDialog({
 
   return (
     <Dialog open={player !== null} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto p-4 sm:max-w-[800px] sm:p-6">
+      <DialogContent className="p-4 sm:max-w-[800px] sm:p-6">
         {player && (
           <Content
             teams={teams}
@@ -180,55 +180,58 @@ function Content({
       <DialogHeader>
         <DialogTitle>Edit {player.name}</DialogTitle>
         <DialogDescription>
-          Edit the team and roles of {player.name}.
+          Edit the {teams.length > 0 ? "team and roles" : "roles"} of{" "}
+          {player.name}.
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <FormField
-            control={form.control}
-            name="team"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Team Assignment</FormLabel>
-                <FormControl>
-                  <Select
-                    value={field.value ? field.value.toString() : "no-team"}
-                    onValueChange={(value) => {
-                      if (value === "no-team") {
-                        field.onChange(null);
-                        return;
-                      }
-                      field.onChange(Number(value));
-                      const newTeamPlayers = players.filter(
-                        (p) =>
-                          value !== "no-team" && p.teamId === Number(value),
-                      );
-                      const rolesToAdd = getTeamRoles(
-                        newTeamPlayers,
-                        roles,
-                      ).filter((role) => !formRoles.find((r) => r === role));
-                      const newRoles = [...formRoles, ...rolesToAdd];
-                      form.setValue("roles", newRoles);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a team" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="no-team">No team</SelectItem>
-                      {teams.map((team) => (
-                        <SelectItem key={team.id} value={team.id.toString()}>
-                          {team.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {teams.length > 0 && (
+            <FormField
+              control={form.control}
+              name="team"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Team Assignment</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value ? field.value.toString() : "no-team"}
+                      onValueChange={(value) => {
+                        if (value === "no-team") {
+                          field.onChange(null);
+                          return;
+                        }
+                        field.onChange(Number(value));
+                        const newTeamPlayers = players.filter(
+                          (p) =>
+                            value !== "no-team" && p.teamId === Number(value),
+                        );
+                        const rolesToAdd = getTeamRoles(
+                          newTeamPlayers,
+                          roles,
+                        ).filter((role) => !formRoles.find((r) => r === role));
+                        const newRoles = [...formRoles, ...rolesToAdd];
+                        form.setValue("roles", newRoles);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="no-team">No team</SelectItem>
+                        {teams.map((team) => (
+                          <SelectItem key={team.id} value={team.id.toString()}>
+                            {team.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
           <div>
             <Label>Individual roles</Label>
             <ScrollArea>
@@ -285,25 +288,31 @@ function Content({
             </ScrollArea>
           </div>
           <div className="flex flex-col gap-2 border-t pt-4">
-            <Label>All Roles (individual + team)</Label>
+            <Label>
+              All Roles{teams.length > 0 ? " (individual + team)" : ""}
+            </Label>
             {formRoles.length > 0 && (
-              <div className="flex items-center gap-2 overflow-x-auto">
-                {formRoles.map((roleId) => {
-                  const role = roles.find((r) => r.id === roleId);
-                  if (!role) return null;
-                  const isTeamRole =
-                    teamRoles.includes(role.id) && formTeam !== null;
-                  return (
-                    <Badge
-                      key={roleId}
-                      variant={isTeamRole ? "outline" : "secondary"}
-                    >
-                      {role.name}
-                      {isTeamRole && "(Team)"}
-                    </Badge>
-                  );
-                })}
-              </div>
+              <ScrollArea>
+                <div className="flex max-w-60 items-center gap-2 sm:max-w-80">
+                  {formRoles.map((roleId) => {
+                    const role = roles.find((r) => r.id === roleId);
+                    if (!role) return null;
+                    const isTeamRole =
+                      teamRoles.includes(role.id) && formTeam !== null;
+                    return (
+                      <Badge
+                        key={roleId}
+                        variant={isTeamRole ? "outline" : "secondary"}
+                        className="text-nowrap"
+                      >
+                        {role.name}
+                        {isTeamRole && "(Team)"}
+                      </Badge>
+                    );
+                  })}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
             )}
           </div>
 
