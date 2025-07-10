@@ -92,6 +92,12 @@ export const gameRouter = createTRPCRouter({
             ),
           }),
         ),
+        roles: z.array(
+          z.object({
+            name: z.string(),
+            description: z.string().nullable(),
+          }),
+        ),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -146,6 +152,15 @@ export const gameRouter = createTRPCRouter({
             code: "INTERNAL_SERVER_ERROR",
             message: "Failed to create game",
           });
+        }
+        if (input.roles.length > 0) {
+          const mappedRoles = input.roles.map((role) => ({
+            name: role.name,
+            description: role.description,
+            gameId: returningGame.id,
+            createdBy: ctx.userId,
+          }));
+          await transaction.insert(gameRole).values(mappedRoles);
         }
         if (input.scoresheets.length === 0) {
           const [returnedScoresheet] = await transaction
