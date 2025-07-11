@@ -1612,6 +1612,11 @@ export const gameRouter = createTRPCRouter({
             }
             if (player.roles.length >= 2) {
               const accPlayer = acc[`${player.type}-${player.id}`];
+              if (!accPlayer) {
+                console.error(
+                  `Player ${player.type}-${player.id} not found in accumulator`,
+                );
+              }
               const roleCombos = combinations(player.roles, 2);
               for (const roleCombo of roleCombos) {
                 const sortedCombo = roleCombo
