@@ -31,3 +31,22 @@ export function getOrdinalSuffix(number: number): string {
       return "th";
   }
 }
+
+export function combinations<T>(arr: T[], min = 2): T[][] {
+  const result: T[][] = [];
+  const n = arr.length;
+
+  const helper = (start: number, combo: T[]) => {
+    if (combo.length >= min) result.push([...combo]);
+    for (let i = start; i < n; i++) {
+      const arrValue = arr[i];
+      if (arrValue === undefined) continue;
+      combo.push(arrValue);
+      helper(i + 1, combo);
+      combo.pop();
+    }
+  };
+
+  helper(0, []);
+  return result;
+}
