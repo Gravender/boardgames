@@ -77,6 +77,13 @@ export const baseGameSchema = z
       });
     }
   });
+export const editRoleSchema = z.object({
+  id: z.number(),
+  name: z.string().min(1, {
+    message: "Role name is required",
+  }),
+  description: z.string().nullable(),
+});
 export const createGameSchema = baseGameSchema.omit({ gameImg: true }).extend({
   gameImg: z
     .discriminatedUnion("type", [
@@ -92,6 +99,7 @@ export const createGameSchema = baseGameSchema.omit({ gameImg: true }).extend({
       }),
     ])
     .nullable(),
+  roles: z.array(editRoleSchema),
 });
 
 export const editGameSchema = baseGameSchema.omit({ gameImg: true }).extend({
@@ -109,16 +117,9 @@ export const editGameSchema = baseGameSchema.omit({ gameImg: true }).extend({
       }),
     ])
     .nullable(),
-  roles: z.array(
-    z.object({
-      id: z.number(),
-      name: z.string().min(1, {
-        message: "Role name is required",
-      }),
-      description: z.string().nullable(),
-    }),
-  ),
+  roles: z.array(editRoleSchema),
 });
+
 export const sharedEditGameSchema = baseGameSchema.omit({
   gameImg: true,
   ownedBy: true,

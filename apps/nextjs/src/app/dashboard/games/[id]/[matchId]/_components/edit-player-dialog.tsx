@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import { Search } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -28,6 +30,7 @@ import {
   FormMessage,
   useForm,
 } from "@board-games/ui/form";
+import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import {
@@ -39,6 +42,7 @@ import {
 } from "@board-games/ui/select";
 
 import { Spinner } from "~/components/spinner";
+import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useTRPC } from "~/trpc/react";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
@@ -99,6 +103,8 @@ function Content({
   matchId: number;
   onClose: () => void;
 }) {
+  const [roleSearchTerm, setRoleSearchTerm] = useState("");
+
   const queryClient = useQueryClient();
   const trpc = useTRPC();
 
@@ -175,6 +181,8 @@ function Content({
     });
   };
 
+  const filteredRoles = useFilteredRoles(roles, roleSearchTerm);
+
   return (
     <>
       <DialogHeader>
@@ -185,7 +193,7 @@ function Content({
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {teams.length > 0 && (
             <FormField
               control={form.control}
@@ -232,11 +240,22 @@ function Content({
               )}
             />
           )}
-          <div>
+          <div className="flex flex-col gap-2">
             <Label>Individual roles</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+              <Input
+                placeholder="Search roles..."
+                value={roleSearchTerm}
+                onChange={(e) => setRoleSearchTerm(e.target.value)}
+                className="pl-10 text-sm"
+                aria-label="Search roles"
+                type="search"
+              />
+            </div>
             <ScrollArea>
-              <div className="flex max-h-[20vh] flex-col gap-2">
-                {roles.map((role) => {
+              <div className="flex max-h-36 flex-col gap-2">
+                {filteredRoles.map((role) => {
                   const roleIndex = formRoles.findIndex((r) => r === role.id);
                   const isTeamRole =
                     teamRoles.includes(role.id) && formTeam !== null;

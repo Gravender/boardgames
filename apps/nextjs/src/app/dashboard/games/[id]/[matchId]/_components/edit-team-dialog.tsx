@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import { Search } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -35,6 +36,7 @@ import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
+import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useTRPC } from "~/trpc/react";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
@@ -57,7 +59,7 @@ export default function TeamEditorDialog({
   );
   return (
     <Dialog open={team !== null} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] p-4 sm:max-w-[800px] sm:p-6">
+      <DialogContent className="p-4 sm:max-w-[800px] sm:p-6">
         {team && (
           <Content
             team={team}
@@ -84,6 +86,8 @@ function Content({
   gameId: number;
   onClose: () => void;
 }) {
+  const [roleSearchTerm, setRoleSearchTerm] = useState("");
+
   const queryClient = useQueryClient();
   const trpc = useTRPC();
 
@@ -225,6 +229,9 @@ function Content({
       (player) => !formPlayers.find((p) => p.id === player.id),
     );
   }, [players, formPlayers]);
+
+  const filteredRoles = useFilteredRoles(roles, roleSearchTerm);
+
   return (
     <>
       <DialogHeader>
@@ -248,11 +255,22 @@ function Content({
               </FormItem>
             )}
           />
-          <div>
+          <div className="flex flex-col gap-2">
             <Label>Team roles (applied to all members)</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+              <Input
+                placeholder="Search roles..."
+                value={roleSearchTerm}
+                onChange={(e) => setRoleSearchTerm(e.target.value)}
+                className="pl-10 text-sm"
+                aria-label="Search team roles by name or description"
+                type="search"
+              />
+            </div>
             <ScrollArea>
-              <div className="flex max-h-[20vh] flex-col gap-2">
-                {roles.map((role) => {
+              <div className="flex max-h-36 flex-col gap-2">
+                {filteredRoles.map((role) => {
                   const roleIndex = formRoles.findIndex((r) => r === role.id);
                   return (
                     <FormField
@@ -319,7 +337,7 @@ function Content({
                 <FormLabel>Team Players</FormLabel>
                 <FormControl>
                   <ScrollArea>
-                    <div className="flex max-h-[20vh] flex-col gap-2">
+                    <div className="flex max-h-32 flex-col gap-2">
                       {playerField.value.map((player, index) => {
                         const foundPlayer = players.find(
                           (p) => p.id === player.id,
@@ -382,7 +400,7 @@ function Content({
           <div>
             <Label>Available Players</Label>
             <ScrollArea>
-              <div className="flex max-h-[20vh] flex-col gap-2">
+              <div className="flex max-h-32 flex-col gap-2">
                 {availablePlayers.map((player) => {
                   const foundPlayer = players.find((p) => p.id === player.id);
                   if (!foundPlayer) return null;

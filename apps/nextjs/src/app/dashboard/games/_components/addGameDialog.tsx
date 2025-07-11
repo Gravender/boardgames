@@ -8,8 +8,11 @@ import {
   Copy,
   Minus,
   Plus,
+  Search,
+  SquarePen,
   Table,
   Trash,
+  Trash2,
 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { z } from "zod/v4";
@@ -23,11 +26,17 @@ import {
 import {
   baseRoundSchema,
   createGameSchema,
+  editRoleSchema,
   gameIcons,
   scoreSheetSchema,
 } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
-import { CardContent } from "@board-games/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardFooter,
+} from "@board-games/ui/card";
 import { Checkbox } from "@board-games/ui/checkbox";
 import {
   Collapsible,
@@ -58,6 +67,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@board-games/ui/popover";
+import { ScrollArea } from "@board-games/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -66,12 +76,14 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 import { Separator } from "@board-games/ui/separator";
+import { Textarea } from "@board-games/ui/textarea";
 import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import { GradientPicker } from "~/components/color-picker";
 import { GameImage } from "~/components/game-image";
 import { Spinner } from "~/components/spinner";
+import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 import { RoundPopOver } from "./roundPopOver";
@@ -84,7 +96,7 @@ export function AddGameDialog({
   const [isOpen, setIsOpen] = useState(defaultIsOpen);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen} modal={true}>
       <DialogContent className="sm:max-w-md">
         <Content setIsOpen={setIsOpen} />
       </DialogContent>
@@ -123,6 +135,7 @@ function Content({ setIsOpen }: { setIsOpen: (isOpen: boolean) => void }) {
     playtimeMin: null,
     playtimeMax: null,
     yearPublished: null,
+    roles: [],
   });
   const [moreOptions, setMoreOptions] = useState(false);
   const [isScoresheet, setIsScoresheet] = useState(false);
@@ -225,6 +238,7 @@ const AddGameForm = ({
         : null,
   );
   const [isUploading, setIsUploading] = useState(false);
+  const [gameRolesOpen, setGameRolesOpen] = useState(false);
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -295,6 +309,7 @@ const AddGameForm = ({
               }
             : null,
         scoresheets: scoreSheets,
+        roles: values.roles,
       });
     } else {
       try {
@@ -337,6 +352,7 @@ const AddGameForm = ({
               }
             : null,
           scoresheets: scoreSheets,
+          roles: values.roles,
         });
       } catch (error) {
         console.error("Error uploading Image:", error);
@@ -347,6 +363,21 @@ const AddGameForm = ({
       }
     }
   };
+  const roles = form.watch("roles");
+  if (gameRolesOpen) {
+    const onSave = (roles: z.infer<typeof createGameSchema>["roles"]) => {
+      form.setValue("roles", roles);
+      setGameRolesOpen(false);
+    };
+
+    return (
+      <RolesForm
+        originalRoles={roles}
+        onSave={onSave}
+        onClose={() => setGameRolesOpen(false)}
+      />
+    );
+  }
   return (
     <Form {...form}>
       <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
@@ -671,7 +702,13 @@ const AddGameForm = ({
                 </div>
               )}
             </div>
-
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setGameRolesOpen(true)}
+            >
+              Edit Game Roles{roles.length > 0 && ` (${roles.length})`}
+            </Button>
             <Separator className="w-full" orientation="horizontal" />
             <div className="flex flex-col">
               <div className="flex items-center justify-between">
@@ -767,6 +804,256 @@ const AddGameForm = ({
               "Submit"
             )}
           </Button>
+        </DialogFooter>
+      </form>
+    </Form>
+  );
+};
+const RolesForm = ({
+  originalRoles,
+  onSave,
+  onClose,
+}: {
+  originalRoles: { id: number; name: string; description: string | null }[];
+  onSave: (
+    roles: { id: number; name: string; description: string | null }[],
+  ) => void;
+  onClose: () => void;
+}) => {
+  const [editGameRoleIndex, setEditGameRoleIndex] = useState<number | null>(
+    null,
+  );
+  const [roleSearchTerm, setRoleSearchTerm] = useState("");
+  const [newGameRole, setNewGameRole] = useState<{
+    name: string;
+    description: string | null;
+  }>({
+    name: "",
+    description: null,
+  });
+
+  const formSchema = z.object({
+    roles: z.array(editRoleSchema),
+  });
+  const form = useForm({
+    schema: formSchema,
+    defaultValues: { roles: originalRoles },
+  });
+  const onSubmit = (data: z.infer<typeof formSchema>) => {
+    onSave(data.roles);
+  };
+  const roles = form.watch("roles");
+  const { append: appendRole, remove: removeRole } = useFieldArray({
+    control: form.control,
+    name: "roles",
+  });
+
+  const filteredRoles = useFilteredRoles(roles, roleSearchTerm);
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <CardContent className="space-y-8">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+            <Input
+              placeholder="Search roles..."
+              value={roleSearchTerm}
+              onChange={(e) => setRoleSearchTerm(e.target.value)}
+              className="pl-10 text-sm"
+              aria-label="Search roles"
+              type="search"
+            />
+          </div>
+          <ScrollArea>
+            <div className="flex max-h-[40vh] flex-col gap-2">
+              {editGameRoleIndex === -1 ? (
+                <Card className="gap-2 p-2 py-2">
+                  <CardContent className="flex flex-col gap-4 px-2">
+                    <Input
+                      placeholder="Role Name"
+                      value={newGameRole.name}
+                      onChange={(e) => {
+                        setNewGameRole({
+                          name: e.target.value,
+                          description: newGameRole.description,
+                        });
+                      }}
+                    />
+                    <Textarea
+                      placeholder="Role Description"
+                      value={newGameRole.description ?? ""}
+                      onChange={(e) =>
+                        setNewGameRole({
+                          name: newGameRole.name,
+                          description:
+                            e.target.value === "" ? null : e.target.value,
+                        })
+                      }
+                    />
+                  </CardContent>
+                  <CardFooter className="justify-end gap-2 p-2 pt-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        setEditGameRoleIndex(null);
+                        setNewGameRole({
+                          name: "",
+                          description: null,
+                        });
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const minId = Math.min(
+                          ...roles.map((role) => role.id),
+                          0,
+                        );
+                        appendRole({
+                          id: isNaN(minId) ? -1 : minId - 1,
+                          name: newGameRole.name,
+                          description: newGameRole.description,
+                        });
+                        setEditGameRoleIndex(null);
+                        setNewGameRole({
+                          name: "",
+                          description: null,
+                        });
+                      }}
+                    >
+                      Save
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => {
+                    setEditGameRoleIndex(-1);
+                  }}
+                >
+                  <Plus />
+                  Role
+                </Button>
+              )}
+              {filteredRoles.map((role) => {
+                const roleIndex = roles.findIndex((r) => r.id === role.id);
+                if (roleIndex === editGameRoleIndex) {
+                  return (
+                    <Card key={role.id} className="gap-2 p-2 py-2">
+                      <CardContent className="flex flex-col gap-2 px-2">
+                        <FormField
+                          control={form.control}
+                          name={`roles.${roleIndex}.name`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="sr-only">Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Role name" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`roles.${roleIndex}.description`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="sr-only">
+                                Description
+                              </FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Description for role"
+                                  className="resize-none"
+                                  {...field}
+                                  value={field.value ?? ""}
+                                  onChange={(e) => {
+                                    if (e.target.value === "") {
+                                      field.onChange(null);
+                                      return;
+                                    }
+                                    field.onChange(e.target.value);
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </CardContent>
+                      <CardFooter className="justify-end p-2 pt-2">
+                        <CardAction>
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              setEditGameRoleIndex(null);
+                            }}
+                          >
+                            Save
+                          </Button>
+                        </CardAction>
+                      </CardFooter>
+                    </Card>
+                  );
+                }
+
+                return (
+                  <Card key={role.id} className="p-2 py-2">
+                    <CardContent className="flex flex-row justify-between gap-2 px-4">
+                      <div className="flex flex-1 items-center gap-3">
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium">{role.name}</h4>
+                          {role.description && (
+                            <p className="max-w-xs truncate text-xs text-muted-foreground">
+                              {role.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setEditGameRoleIndex(roleIndex)}
+                        >
+                          <SquarePen className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeRole(roleIndex)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </CardContent>
+        <DialogFooter className="gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              onClose();
+            }}
+          >
+            Cancel
+          </Button>
+          <Button type="submit">Save</Button>
         </DialogFooter>
       </form>
     </Form>

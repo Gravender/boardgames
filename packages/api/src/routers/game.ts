@@ -92,6 +92,12 @@ export const gameRouter = createTRPCRouter({
             ),
           }),
         ),
+        roles: z.array(
+          z.object({
+            name: z.string(),
+            description: z.string().nullable(),
+          }),
+        ),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -146,6 +152,15 @@ export const gameRouter = createTRPCRouter({
             code: "INTERNAL_SERVER_ERROR",
             message: "Failed to create game",
           });
+        }
+        if (input.roles.length > 0) {
+          const mappedRoles = input.roles.map((role) => ({
+            name: role.name,
+            description: role.description,
+            gameId: returningGame.id,
+            createdBy: ctx.userId,
+          }));
+          await transaction.insert(gameRole).values(mappedRoles);
         }
         if (input.scoresheets.length === 0) {
           const [returnedScoresheet] = await transaction
@@ -1317,6 +1332,30 @@ export const gameRouter = createTRPCRouter({
                       (accRoleCombo.placements[player.placement] ?? 0) + 1;
                   }
                 }
+                const globalCombo = comboRoles[roleComboKey];
+                if (!globalCombo) {
+                  comboRoles[roleComboKey] = {
+                    roles: player.roles.map((r) => ({
+                      id: r.id,
+                      name: r.name,
+                      description: r.description,
+                    })),
+                    matchCount: 1,
+                    wins: player.isWinner ? 1 : 0,
+                    winRate: player.isWinner ? 1 : 0,
+                    placements:
+                      player.placement > 0 ? { [player.placement]: 1 } : {},
+                  };
+                } else {
+                  globalCombo.matchCount++;
+                  globalCombo.wins += player.isWinner ? 1 : 0;
+                  globalCombo.winRate =
+                    globalCombo.wins / globalCombo.matchCount;
+                  if (player.placement > 0) {
+                    globalCombo.placements[player.placement] =
+                      (globalCombo.placements[player.placement] ?? 0) + 1;
+                  }
+                }
               }
               if (!isCoop) {
                 tempPlacements[player.placement] = 1;
@@ -1869,12 +1908,12 @@ export const gameRouter = createTRPCRouter({
         headToHead: headToHeadStats(matches),
         roleStats: Object.values(roleStats).map((role) => ({
           ...role,
-          winRate: role.wins / role.matchCount,
+          winRate: role.matchCount > 0 ? role.wins / role.matchCount : 0,
           players: Object.values(role.players),
         })),
         roleCombos: Object.values(comboRoles).map((combo) => ({
           ...combo,
-          winRate: combo.wins / combo.matchCount,
+          winRate: combo.matchCount > 0 ? combo.wins / combo.matchCount : 0,
         })),
       };
     }),
