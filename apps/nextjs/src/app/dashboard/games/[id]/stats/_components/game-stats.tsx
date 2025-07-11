@@ -9,6 +9,7 @@ import { formatDuration } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent } from "@board-games/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
+import { cn } from "@board-games/ui/utils";
 
 import { GameImage } from "~/components/game-image";
 import { useTRPC } from "~/trpc/react";
@@ -159,12 +160,19 @@ export default function GameStats({ gameId }: { gameId: number }) {
 
       {/* Charts */}
       <Tabs defaultValue="overview">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList
+          className={cn(
+            "grid w-full",
+            gameStats.roleStats.length > 0 ? "grid-cols-5" : "grid-cols-4",
+          )}
+        >
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="players">Stats</TabsTrigger>
           <TabsTrigger value="scoresheet">Scoresheets</TabsTrigger>
           <TabsTrigger value="advanced">Advanced</TabsTrigger>
-          <TabsTrigger value="roles">Roles</TabsTrigger>
+          {gameStats.roleStats.length > 0 && (
+            <TabsTrigger value="roles">Roles</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -185,13 +193,16 @@ export default function GameStats({ gameId }: { gameId: number }) {
             headToHead={gameStats.headToHead}
           />
         </TabsContent>
-        <TabsContent value="roles" className="space-y-6">
-          <RolesTab
-            roleCombos={gameStats.roleCombos}
-            roleStats={gameStats.roleStats}
-            players={gameStats.players}
-          />
-        </TabsContent>
+        {gameStats.roleStats.length > 0 && (
+          <TabsContent value="roles" className="space-y-6">
+            <RolesTab
+              userStats={userStats}
+              roleCombos={gameStats.roleCombos}
+              roleStats={gameStats.roleStats}
+              players={gameStats.players}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

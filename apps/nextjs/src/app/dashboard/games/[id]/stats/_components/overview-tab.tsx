@@ -31,6 +31,7 @@ import { PlayerImage } from "~/components/player-image";
 
 type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type Matches = GameStats["matches"];
+type Match = Matches[number];
 export default function OverviewTab({ matches }: { matches: Matches }) {
   const finishedMatches = matches.filter((match) => match.finished);
   const lastMatch = finishedMatches[0];
@@ -93,184 +94,10 @@ export default function OverviewTab({ matches }: { matches: Matches }) {
                       Players
                     </h4>
                     {/* Group players by team */}
-                    {(() => {
-                      // Get all unique teams
-                      const teams = lastMatch.players
-                        .filter((p) => p.team !== null)
-                        .map((p) => p.team)
-                        .filter(
-                          (team, index, self) =>
-                            self.findIndex((t) => t?.id === team?.id) === index,
-                        );
-
-                      // Players without teams
-                      const noTeamPlayers = lastMatch.players.filter(
-                        (p) => p.team === null,
-                      );
-
-                      return (
-                        <>
-                          {/* Display team groups if there are teams */}
-                          {teams.length > 0 && (
-                            <div className="flex flex-col gap-2">
-                              {teams.map((team) => {
-                                const teamPlayers = lastMatch.players.filter(
-                                  (player) => player.team?.id === team?.id,
-                                );
-                                if (teamPlayers.length === 0) return null;
-                                return (
-                                  <div
-                                    key={team?.id}
-                                    className={cn(
-                                      "rounded-lg border p-4",
-                                      teamPlayers[0]?.isWinner
-                                        ? "border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20"
-                                        : "",
-                                    )}
-                                  >
-                                    <div className="flex items-center justify-between gap-2 pb-4">
-                                      <div className="flex items-center gap-2">
-                                        <Users className="h-5 w-5 text-muted-foreground" />
-                                        <h3 className="font-semibold">
-                                          {`Team: ${team?.name}`}
-                                        </h3>
-                                      </div>
-                                      <div className="flex items-center gap-3">
-                                        <div className="text-sm font-medium">
-                                          {teamPlayers[0]?.score} pts
-                                        </div>
-                                        {lastMatch.scoresheet.winCondition ===
-                                        "Manual" ? (
-                                          teamPlayers[0]?.isWinner ? (
-                                            "✔️"
-                                          ) : (
-                                            "❌"
-                                          )
-                                        ) : (
-                                          <>
-                                            {teamPlayers[0]?.placement ===
-                                              1 && (
-                                              <Trophy className="ml-auto h-5 w-5 text-yellow-500" />
-                                            )}
-                                            {teamPlayers[0]?.placement ===
-                                              2 && (
-                                              <Medal className="ml-auto h-5 w-5 text-gray-400" />
-                                            )}
-                                            {teamPlayers[0]?.placement ===
-                                              3 && (
-                                              <Award className="ml-auto h-5 w-5 text-amber-700" />
-                                            )}
-                                            {teamPlayers[0]?.placement &&
-                                              teamPlayers[0].placement > 3 && (
-                                                <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
-                                                  {teamPlayers[0].placement}
-                                                  {getOrdinalSuffix(
-                                                    teamPlayers[0].placement,
-                                                  )}
-                                                </div>
-                                              )}
-                                          </>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-3 border-l-2 border-muted-foreground/20 pl-2 sm:grid-cols-2">
-                                      {teamPlayers.map((player) => (
-                                        <li
-                                          key={player.id}
-                                          className="flex items-center"
-                                        >
-                                          <PlayerImage
-                                            className="mr-3 h-8 w-8"
-                                            image={player.image}
-                                            alt={player.name}
-                                          />
-
-                                          <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2">
-                                              <p className="truncate font-medium">
-                                                {player.name}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        </li>
-                                      ))}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          {/* Display players with no team */}
-                          {noTeamPlayers.length > 0 && (
-                            <div
-                              className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${
-                                teams.length > 0 ? "mt-4" : ""
-                              }`}
-                            >
-                              {noTeamPlayers.map((player) => (
-                                <div
-                                  key={player.id}
-                                  className={cn(
-                                    "flex items-center gap-3 rounded-lg",
-                                    player.isWinner
-                                      ? "bg-yellow-50 dark:bg-yellow-950/20"
-                                      : "",
-                                  )}
-                                >
-                                  <PlayerImage
-                                    className="size-8"
-                                    image={player.image}
-                                    alt={player.name}
-                                  />
-                                  <div className="flex items-center gap-2">
-                                    <p className="font-medium">{player.name}</p>
-                                    <div className="flex items-center gap-2">
-                                      {player.score !== null &&
-                                        lastMatch.scoresheet.winCondition !==
-                                          "Manual" && (
-                                          <span className="text-sm">
-                                            Score: {player.score}
-                                          </span>
-                                        )}
-                                      {lastMatch.scoresheet.winCondition ===
-                                      "Manual" ? (
-                                        player.isWinner ? (
-                                          "✔️"
-                                        ) : (
-                                          "❌"
-                                        )
-                                      ) : (
-                                        <>
-                                          {player.placement === 1 && (
-                                            <Trophy className="ml-auto h-5 w-5 text-yellow-500" />
-                                          )}
-                                          {player.placement === 2 && (
-                                            <Medal className="ml-auto h-5 w-5 text-gray-400" />
-                                          )}
-                                          {player.placement === 3 && (
-                                            <Award className="ml-auto h-5 w-5 text-amber-700" />
-                                          )}
-                                          {player.placement &&
-                                            player.placement > 3 && (
-                                              <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
-                                                {player.placement}
-                                                {getOrdinalSuffix(
-                                                  player.placement,
-                                                )}
-                                              </div>
-                                            )}
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
+                    <PlayerGroupDisplay
+                      players={lastMatch.players}
+                      scoresheet={lastMatch.scoresheet}
+                    />
                   </div>
 
                   {lastMatch.winners.length > 0 && (
@@ -445,5 +272,181 @@ export default function OverviewTab({ matches }: { matches: Matches }) {
         </Card>
       </div>
     </>
+  );
+}
+function PlacementIndicator({
+  placement,
+  isManual,
+  isWinner,
+}: {
+  placement: number | null | undefined;
+  isManual: boolean;
+  isWinner: boolean | null;
+}) {
+  if (isManual) {
+    return isWinner ? "✔️" : "❌";
+  }
+
+  if (!placement) return null;
+
+  switch (placement) {
+    case 1:
+      return <Trophy className="ml-auto h-5 w-5 text-yellow-500" />;
+    case 2:
+      return <Medal className="ml-auto h-5 w-5 text-gray-400" />;
+    case 3:
+      return <Award className="ml-auto h-5 w-5 text-amber-700" />;
+    default:
+      return (
+        <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
+          {placement}
+          {getOrdinalSuffix(placement)}
+        </div>
+      );
+  }
+}
+function PlayerGroupDisplay({
+  players,
+  scoresheet,
+}: {
+  players: Match["players"];
+  scoresheet: Match["scoresheet"];
+}) {
+  const teams = players
+    .filter((p) => p.team !== null)
+    .map((p) => p.team)
+    .filter(
+      (team, index, self) =>
+        self.findIndex((t) => t?.id === team?.id) === index,
+    );
+
+  const noTeamPlayers = players.filter((p) => p.team === null);
+
+  return (
+    <>
+      {teams.length > 0 && (
+        <TeamGroups teams={teams} players={players} scoresheet={scoresheet} />
+      )}
+      {noTeamPlayers.length > 0 && (
+        <NoTeamPlayers
+          players={noTeamPlayers}
+          scoresheet={scoresheet}
+          hasTeams={teams.length > 0}
+        />
+      )}
+    </>
+  );
+}
+function TeamGroups({
+  teams,
+  players,
+  scoresheet,
+}: {
+  teams: Match["players"][number]["team"][];
+  players: Match["players"];
+  scoresheet: Match["scoresheet"];
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      {teams.map((team) => {
+        const teamPlayers = players.filter(
+          (player) => player.team?.id === team?.id,
+        );
+        if (teamPlayers.length === 0) return null;
+        return (
+          <div
+            key={team?.id}
+            className={cn(
+              "rounded-lg border p-4",
+              teamPlayers[0]?.isWinner
+                ? "border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20"
+                : "",
+            )}
+          >
+            <div className="flex items-center justify-between gap-2 pb-4">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-muted-foreground" />
+                <h3 className="font-semibold">{`Team: ${team?.name}`}</h3>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="text-sm font-medium">
+                  {teamPlayers[0]?.score} pts
+                </div>
+                <PlacementIndicator
+                  placement={teamPlayers[0]?.placement}
+                  isManual={scoresheet.winCondition === "Manual"}
+                  isWinner={teamPlayers[0]?.isWinner ?? false}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 border-l-2 border-muted-foreground/20 pl-2 sm:grid-cols-2">
+              {teamPlayers.map((player) => (
+                <li key={player.id} className="flex items-center">
+                  <PlayerImage
+                    className="mr-3 h-8 w-8"
+                    image={player.image}
+                    alt={player.name}
+                  />
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate font-medium">{player.name}</p>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+function NoTeamPlayers({
+  players,
+  scoresheet,
+  hasTeams,
+}: {
+  players: Match["players"];
+  scoresheet: Match["scoresheet"];
+  hasTeams: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "grid grid-cols-1 gap-3 sm:grid-cols-2",
+        hasTeams ? "mt-4" : "",
+      )}
+    >
+      {players.map((player) => (
+        <div
+          key={player.id}
+          className={cn(
+            "flex items-center gap-3 rounded-lg",
+            player.isWinner ? "bg-yellow-50 dark:bg-yellow-950/20" : "",
+          )}
+        >
+          <PlayerImage
+            className="size-8"
+            image={player.image}
+            alt={player.name}
+          />
+          <div className="flex items-center gap-2">
+            <p className="font-medium">{player.name}</p>
+            <div className="flex items-center gap-2">
+              {player.score !== null &&
+                scoresheet.winCondition !== "Manual" && (
+                  <span className="text-sm">Score: {player.score}</span>
+                )}
+              <PlacementIndicator
+                placement={player.placement}
+                isManual={scoresheet.winCondition === "Manual"}
+                isWinner={player.isWinner ?? false}
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

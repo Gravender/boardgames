@@ -36,6 +36,7 @@ import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
+import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useTRPC } from "~/trpc/react";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
@@ -229,34 +230,7 @@ function Content({
     );
   }, [players, formPlayers]);
 
-  const filteredRoles = useMemo(() => {
-    const filteredRoles = roles.filter(
-      (role) =>
-        role.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
-        role.description?.toLowerCase().includes(roleSearchTerm.toLowerCase()),
-    );
-    filteredRoles.sort((a, b) => {
-      const aName = a.name.toLowerCase();
-      const bName = b.name.toLowerCase();
-      const aDesc = a.description?.toLowerCase() ?? "";
-      const bDesc = b.description?.toLowerCase() ?? "";
-
-      const aNameIndex = aName.indexOf(roleSearchTerm);
-      const bNameIndex = bName.indexOf(roleSearchTerm);
-      const aDescIndex = aDesc.indexOf(roleSearchTerm);
-      const bDescIndex = bDesc.indexOf(roleSearchTerm);
-
-      const aIndex = aNameIndex !== -1 ? aNameIndex : aDescIndex;
-      const bIndex = bNameIndex !== -1 ? bNameIndex : bDescIndex;
-
-      if (aIndex !== bIndex) return aIndex - bIndex;
-
-      if (aName !== bName) return aName.localeCompare(bName);
-
-      return aDesc.localeCompare(bDesc);
-    });
-    return filteredRoles;
-  }, [roles, roleSearchTerm]);
+  const filteredRoles = useFilteredRoles(roles, roleSearchTerm);
 
   return (
     <>
@@ -290,6 +264,8 @@ function Content({
                 value={roleSearchTerm}
                 onChange={(e) => setRoleSearchTerm(e.target.value)}
                 className="pl-10 text-sm"
+                aria-label="Search team roles by name or description"
+                type="search"
               />
             </div>
             <ScrollArea>

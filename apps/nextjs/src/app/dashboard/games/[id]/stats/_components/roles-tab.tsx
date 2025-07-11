@@ -5,6 +5,7 @@ import {
   Award,
   BarChart3,
   Shuffle,
+  Star,
   Target,
   TrendingDown,
   TrendingUp,
@@ -62,12 +63,14 @@ type RoleStats = GameStats["roleStats"][number];
 type Players = GameStats["players"];
 type PlayerStats = Players[number];
 export default function RolesTab({
+  userStats,
   roleCombos,
   roleStats,
   players,
 }: {
   roleCombos: RoleCombos;
   roleStats: RoleStats[];
+  userStats: PlayerStats | undefined;
   players: Players;
 }) {
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerStats | null>(
@@ -89,6 +92,40 @@ export default function RolesTab({
     });
     return sortedRoles.slice(0, 5);
   }, [roleStats]);
+  const roleRecommendations = useMemo(() => {
+    if (!userStats) return [];
+
+    return userStats.roles
+      .filter((role) => role.matchCount >= 5)
+      .sort((a, b) => {
+        // Sort by win rate, then by match count
+        if (Math.abs(a.winRate - b.winRate) > 0.1) return b.winRate - a.winRate;
+        return b.matchCount - a.matchCount;
+      })
+      .map((role, index) => ({
+        ...role,
+        rank: index + 1,
+        recommendation:
+          index === 0
+            ? "Best"
+            : index === 1
+              ? "Good"
+              : index === 2
+                ? "Average"
+                : "Consider Improving",
+      }));
+  }, [userStats]);
+  const bestRoleCombos = useMemo(() => {
+    if (!userStats) return [];
+
+    return userStats.roleCombos
+      .filter((combo) => combo.matchCount >= 5)
+      .sort((a, b) => {
+        if (Math.abs(a.winRate - b.winRate) > 0.1) return b.winRate - a.winRate;
+        return b.matchCount - a.matchCount;
+      })
+      .slice(0, 6);
+  }, [userStats]);
   return (
     <Card>
       <CardHeader>
@@ -222,6 +259,157 @@ export default function RolesTab({
             </div>
 
             {/* Role Recommendations */}
+            {roleRecommendations.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Star className="h-5 w-5" />
+                    Your Role Recommendations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {roleRecommendations.slice(0, 6).map((role) => (
+                      <div key={role.roleId} className="rounded-lg border p-4">
+                        <div className="mb-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold">
+                              {role.name}
+                            </span>
+                          </div>
+                          <Badge
+                            variant={
+                              role.rank === 1
+                                ? "default"
+                                : role.rank <= 3
+                                  ? "secondary"
+                                  : "outline"
+                            }
+                            className="text-xs"
+                          >
+                            #{role.rank}
+                          </Badge>
+                        </div>
+
+                        {role.description && (
+                          <p className="mb-2 text-xs text-muted-foreground">
+                            {role.description}
+                          </p>
+                        )}
+
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Win Rate:
+                            </span>
+                            <span
+                              className={`font-semibold ${
+                                role.winRate >= 0.7
+                                  ? "text-green-600"
+                                  : role.winRate >= 0.5
+                                    ? "text-yellow-600"
+                                    : "text-red-600"
+                              }`}
+                            >
+                              {Math.round(role.winRate * 100)}%
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Avg Place:
+                            </span>
+                            <span className="font-semibold">
+                              {formatPlacementDistribution(role.placements)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Games:
+                            </span>
+                            <span className="font-semibold">
+                              {role.matchCount}
+                            </span>
+                          </div>
+                        </div>
+
+                        <Progress value={role.winRate * 100} className="mt-3" />
+
+                        <div className="mt-2">
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${
+                              role.recommendation === "Best"
+                                ? "border-green-500 text-green-700"
+                                : role.recommendation === "Good"
+                                  ? "border-blue-500 text-blue-700"
+                                  : role.recommendation === "Average"
+                                    ? "border-yellow-500 text-yellow-700"
+                                    : "border-red-500 text-red-700"
+                            }`}
+                          >
+                            {role.recommendation}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Best Role Combos */}
+            {bestRoleCombos.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shuffle className="h-5 w-5" />
+                    Your Best Role Combinations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {bestRoleCombos.map((combo, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between rounded-lg border p-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {combo.roles.map((role, roleIndex) => (
+                              <div
+                                key={role.id}
+                                className="flex items-center gap-1"
+                              >
+                                <Badge variant="outline" className="text-xs">
+                                  {role.name}
+                                </Badge>
+                                {roleIndex < combo.roles.length - 1 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    +
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {combo.matchCount} games
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold">
+                            {Math.round(combo.winRate * 100)}%
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Avg place:{" "}
+                            {formatPlacementDistribution(combo.placements)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="player" className="space-y-6">

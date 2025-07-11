@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
@@ -83,6 +83,7 @@ import { cn } from "@board-games/ui/utils";
 import { GradientPicker } from "~/components/color-picker";
 import { GameImage } from "~/components/game-image";
 import { Spinner } from "~/components/spinner";
+import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 import { RoundPopOver } from "./roundPopOver";
@@ -847,34 +848,7 @@ const RolesForm = ({
     name: "roles",
   });
 
-  const filteredRoles = useMemo(() => {
-    const filteredRoles = roles.filter(
-      (role) =>
-        role.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
-        role.description?.toLowerCase().includes(roleSearchTerm.toLowerCase()),
-    );
-    filteredRoles.sort((a, b) => {
-      const aName = a.name.toLowerCase();
-      const bName = b.name.toLowerCase();
-      const aDesc = a.description?.toLowerCase() ?? "";
-      const bDesc = b.description?.toLowerCase() ?? "";
-
-      const aNameIndex = aName.indexOf(roleSearchTerm);
-      const bNameIndex = bName.indexOf(roleSearchTerm);
-      const aDescIndex = aDesc.indexOf(roleSearchTerm);
-      const bDescIndex = bDesc.indexOf(roleSearchTerm);
-
-      const aIndex = aNameIndex !== -1 ? aNameIndex : aDescIndex;
-      const bIndex = bNameIndex !== -1 ? bNameIndex : bDescIndex;
-
-      if (aIndex !== bIndex) return aIndex - bIndex;
-
-      if (aName !== bName) return aName.localeCompare(bName);
-
-      return aDesc.localeCompare(bDesc);
-    });
-    return filteredRoles;
-  }, [roles, roleSearchTerm]);
+  const filteredRoles = useFilteredRoles(roles, roleSearchTerm);
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -886,6 +860,8 @@ const RolesForm = ({
               value={roleSearchTerm}
               onChange={(e) => setRoleSearchTerm(e.target.value)}
               className="pl-10 text-sm"
+              aria-label="Search roles"
+              type="search"
             />
           </div>
           <ScrollArea>
@@ -909,7 +885,8 @@ const RolesForm = ({
                       onChange={(e) =>
                         setNewGameRole({
                           name: newGameRole.name,
-                          description: e.target.value,
+                          description:
+                            e.target.value === "" ? null : e.target.value,
                         })
                       }
                     />
