@@ -1341,7 +1341,7 @@ const RolesForm = ({
                           0,
                         );
                         appendRole({
-                          id: minId - 1,
+                          id: isNaN(minId) ? -1 : minId - 1,
                           name: newGameRole.name,
                           description: newGameRole.description,
                         });
