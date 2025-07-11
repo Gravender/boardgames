@@ -532,7 +532,12 @@ export default function AdvancedTab({
             <ScrollArea>
               <div className="flex max-h-[40vh] w-full flex-col gap-2">
                 {userStats.roles
-                  .sort((a, b) => b.winRate - a.winRate)
+                  .sort((a, b) => {
+                    if (a.matchCount > 10 && b.matchCount > 10) {
+                      return b.winRate - a.winRate;
+                    }
+                    return b.matchCount - a.matchCount;
+                  })
                   .map((role) => {
                     const averagePlacement = getAveragePlacement(
                       role.placements,
