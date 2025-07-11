@@ -542,16 +542,25 @@ export default function RolesTab({
                     </CardHeader>
                     <CardContent>
                       <ChartContainer
-                        config={{
-                          winRate: {
-                            label: "Win Rate",
-                            color: "hsl(var(--chart-1))",
-                          },
-                          placement: {
-                            label: "Placement",
-                            color: "hsl(var(--chart-3))",
-                          },
-                        }}
+                        config={
+                          selectedRoleAvgPlacement === null
+                            ? {
+                                winRate: {
+                                  label: "Win Rate",
+                                  color: "hsl(var(--chart-1))",
+                                },
+                              }
+                            : {
+                                winRate: {
+                                  label: "Win Rate",
+                                  color: "hsl(var(--chart-1))",
+                                },
+                                placement: {
+                                  label: "Placement",
+                                  color: "hsl(var(--chart-3))",
+                                },
+                              }
+                        }
                         className="h-[400px] w-full"
                       >
                         <ResponsiveContainer width="100%" height="100%">
@@ -562,8 +571,14 @@ export default function RolesTab({
                               );
                               const formattedPlacement =
                                 avgPlacement === null
-                                  ? ""
+                                  ? 0
                                   : (5 - Number.parseFloat(avgPlacement)) * 25;
+                              if (selectedRoleAvgPlacement === null) {
+                                return {
+                                  role: role.name,
+                                  winRate: role.winRate * 100,
+                                };
+                              }
 
                               return {
                                 role: role.name,
