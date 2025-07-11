@@ -27,6 +27,9 @@ export function useFilteredRoles(roles: Role[], roleSearchTerm: string) {
       const aDescIndex = aDesc.indexOf(searchTerm);
       const bDescIndex = bDesc.indexOf(searchTerm);
 
+      if (aNameIndex !== -1 && bNameIndex === -1) return -1;
+      if (aNameIndex === -1 && bNameIndex !== -1) return 1;
+
       const aIndex = aNameIndex !== -1 ? aNameIndex : aDescIndex;
       const bIndex = bNameIndex !== -1 ? bNameIndex : bDescIndex;
 
