@@ -54,6 +54,7 @@ import {
   TableRow,
 } from "@board-games/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
+import { cn } from "@board-games/ui/utils";
 
 import { PlayerImage } from "~/components/player-image";
 
@@ -126,6 +127,14 @@ export default function RolesTab({
       })
       .slice(0, 6);
   }, [userStats]);
+  const selectedRoleAvgPlacement = useMemo(() => {
+    if (!selectedRole) return null;
+    return formatPlacementDistribution(selectedRole.placements);
+  }, [selectedRole]);
+  const selectedPlayerAvgPlacement = useMemo(() => {
+    if (!selectedPlayer) return null;
+    return formatPlacementDistribution(selectedPlayer.placements);
+  }, [selectedPlayer]);
   return (
     <Card>
       <CardHeader>
@@ -503,18 +512,21 @@ export default function RolesTab({
                       >
                         <ResponsiveContainer width="100%" height="100%">
                           <RadarChart
-                            data={selectedPlayer.roles.map((role) => ({
-                              role: role.name,
-                              winRate: role.winRate * 100,
-                              placement:
-                                (5 -
-                                  Number.parseFloat(
-                                    formatPlacementDistribution(
-                                      role.placements,
-                                    ),
-                                  )) *
-                                25, // Invert and scale placement (lower is better)
-                            }))}
+                            data={selectedPlayer.roles.map((role) => {
+                              const avgPlacement = formatPlacementDistribution(
+                                role.placements,
+                              );
+                              const formattedPlacement =
+                                avgPlacement === null
+                                  ? ""
+                                  : (5 - Number.parseFloat(avgPlacement)) * 25;
+
+                              return {
+                                role: role.name,
+                                winRate: role.winRate * 100,
+                                placement: formattedPlacement, // Invert and scale placement (lower is better)
+                              };
+                            })}
                           >
                             <PolarGrid />
                             <PolarAngleAxis dataKey="role" />
@@ -553,12 +565,11 @@ export default function RolesTab({
                             <TableHead className="text-center">
                               Win Rate
                             </TableHead>
-                            <TableHead className="text-center">
-                              Avg Placement
-                            </TableHead>
-                            <TableHead className="text-center">
-                              Performance
-                            </TableHead>
+                            {selectedPlayerAvgPlacement !== null && (
+                              <TableHead className="text-center">
+                                Avg Placement
+                              </TableHead>
+                            )}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -596,15 +607,13 @@ export default function RolesTab({
                                     ) : null}
                                   </div>
                                 </TableCell>
-                                <TableCell className="text-center font-semibold">
-                                  {formatPlacementDistribution(role.placements)}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  <Progress
-                                    value={role.winRate * 100}
-                                    className="w-16"
-                                  />
-                                </TableCell>
+                                {selectedPlayerAvgPlacement !== null && (
+                                  <TableCell className="text-center font-semibold">
+                                    {formatPlacementDistribution(
+                                      role.placements,
+                                    )}
+                                  </TableCell>
+                                )}
                               </TableRow>
                             ))}
                         </TableBody>
@@ -660,12 +669,14 @@ export default function RolesTab({
                                 <div className="font-semibold">
                                   {Math.round(combo.winRate * 100)}%
                                 </div>
-                                <div className="text-xs text-muted-foreground">
-                                  Avg place:{" "}
-                                  {formatPlacementDistribution(
-                                    combo.placements,
-                                  )}
-                                </div>
+                                {selectedPlayerAvgPlacement !== null && (
+                                  <div className="text-xs text-muted-foreground">
+                                    Avg place:{" "}
+                                    {formatPlacementDistribution(
+                                      combo.placements,
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -754,7 +765,14 @@ export default function RolesTab({
                     )}
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div
+                      className={cn(
+                        "grid gap-4",
+                        selectedRoleAvgPlacement === null
+                          ? "grid-cols-3"
+                          : "grid-cols-2 md:grid-cols-4",
+                      )}
+                    >
                       <div className="text-center">
                         <div className="text-2xl font-bold text-primary">
                           {selectedRole.matchCount}
@@ -779,14 +797,16 @@ export default function RolesTab({
                           Players
                         </div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-600">
-                          {formatPlacementDistribution(selectedRole.placements)}
+                      {selectedRoleAvgPlacement !== null && (
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-purple-600">
+                            {selectedRoleAvgPlacement}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Avg Placement
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          Avg Placement
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -803,57 +823,61 @@ export default function RolesTab({
                     <div className="space-y-4">
                       {Object.values(selectedRole.players)
                         .sort((a, b) => b.winRate - a.winRate)
-                        .map((player, index) => (
-                          <div
-                            key={player.id}
-                            className="flex items-center justify-between rounded-lg border p-4"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="text-lg font-bold text-muted-foreground">
-                                #{index + 1}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <PlayerImage
-                                  className="h-7 w-7 sm:h-10 sm:w-10"
-                                  image={player.image}
-                                  alt={player.name}
-                                />
-                                <div>
-                                  <div className="flex items-center gap-2 font-semibold">
-                                    {player.name}
-                                    {player.isUser && (
-                                      <Badge
-                                        variant="secondary"
-                                        className="text-xs"
-                                      >
-                                        You
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {player.totalMatches} games played
+                        .map((player, index) => {
+                          const avgPlacement = formatPlacementDistribution(
+                            player.placements,
+                          );
+                          return (
+                            <div
+                              key={player.id}
+                              className="flex items-center justify-between rounded-lg border p-4"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="text-lg font-bold text-muted-foreground">
+                                  #{index + 1}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <PlayerImage
+                                    className="h-7 w-7 sm:h-10 sm:w-10"
+                                    image={player.image}
+                                    alt={player.name}
+                                  />
+                                  <div>
+                                    <div className="flex items-center gap-2 font-semibold">
+                                      {player.name}
+                                      {player.isUser && (
+                                        <Badge
+                                          variant="secondary"
+                                          className="text-xs"
+                                        >
+                                          You
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {player.totalMatches} games played
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                            <div className="space-y-1 text-right">
-                              <div className="text-xl font-bold">
-                                {Math.round(player.winRate * 100)}%
+                              <div className="space-y-1 text-right">
+                                <div className="text-xl font-bold">
+                                  {Math.round(player.winRate * 100)}%
+                                </div>
+                                <div className="flex items-center gap-2 text-xs">
+                                  <span className="text-green-600">
+                                    {player.totalWins} wins
+                                  </span>
+                                  {avgPlacement !== null && (
+                                    <span className="text-blue-600">
+                                      {avgPlacement} avg place
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2 text-xs">
-                                <span className="text-green-600">
-                                  {player.totalWins} wins
-                                </span>
-                                <span className="text-blue-600">
-                                  {formatPlacementDistribution(
-                                    player.placements,
-                                  )}{" "}
-                                  avg place
-                                </span>
-                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                     </div>
                   </CardContent>
                 </Card>
@@ -874,95 +898,107 @@ export default function RolesTab({
                 <div className="space-y-4">
                   {roleCombos
                     .sort((a, b) => b.winRate - a.winRate)
-                    .map((combo, index) => (
-                      <div key={index} className="rounded-lg border p-4">
-                        <div className="mb-3 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="text-lg font-bold text-muted-foreground">
-                              #{index + 1}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              {combo.roles.map((role, roleIndex) => (
-                                <div
-                                  key={role.id}
-                                  className="flex items-center gap-1"
-                                >
-                                  <Badge variant="outline" className="text-sm">
-                                    {role.name}
-                                  </Badge>
-                                  {roleIndex < combo.roles.length - 1 && (
-                                    <span className="text-muted-foreground">
-                                      +
-                                    </span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          <Badge
-                            variant={
-                              combo.winRate >= 0.5 ? "default" : "secondary"
-                            }
-                          >
-                            {Math.round(combo.winRate * 100)}% Win Rate
-                          </Badge>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
-                          <div>
-                            <span className="text-muted-foreground">
-                              Games:
-                            </span>
-                            <div className="font-medium">
-                              {combo.matchCount}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Wins:</span>
-                            <div className="font-medium text-green-600">
-                              {combo.wins}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">
-                              Win Rate:
-                            </span>
-                            <div className="font-medium">
-                              {Math.round(combo.winRate * 100)}%
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">
-                              Avg Placement:
-                            </span>
-                            <div className="font-medium">
-                              {formatPlacementDistribution(combo.placements)}
-                            </div>
-                          </div>
-                        </div>
-
-                        <Progress
-                          value={combo.winRate * 100}
-                          className="mt-3"
-                        />
-
-                        {/* Show role descriptions if available */}
-                        {combo.roles.some((role) => role.description) && (
-                          <div className="mt-3 border-t pt-3">
-                            <div className="space-y-1 text-xs text-muted-foreground">
-                              {combo.roles
-                                .filter((role) => role.description)
-                                .map((role) => (
-                                  <div key={role.id}>
-                                    <strong>{role.name}:</strong>{" "}
-                                    {role.description}
+                    .map((combo, index) => {
+                      const avgPlacement = formatPlacementDistribution(
+                        combo.placements,
+                      );
+                      return (
+                        <div key={index} className="rounded-lg border p-4">
+                          <div className="mb-3 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="text-lg font-bold text-muted-foreground">
+                                #{index + 1}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                {combo.roles.map((role, roleIndex) => (
+                                  <div
+                                    key={role.id}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <Badge
+                                      variant="outline"
+                                      className="text-sm"
+                                    >
+                                      {role.name}
+                                    </Badge>
+                                    {roleIndex < combo.roles.length - 1 && (
+                                      <span className="text-muted-foreground">
+                                        +
+                                      </span>
+                                    )}
                                   </div>
                                 ))}
+                              </div>
                             </div>
+                            <Badge
+                              variant={
+                                combo.winRate >= 0.5 ? "default" : "secondary"
+                              }
+                            >
+                              {Math.round(combo.winRate * 100)}% Win Rate
+                            </Badge>
                           </div>
-                        )}
-                      </div>
-                    ))}
+
+                          <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
+                            <div>
+                              <span className="text-muted-foreground">
+                                Games:
+                              </span>
+                              <div className="font-medium">
+                                {combo.matchCount}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">
+                                Wins:
+                              </span>
+                              <div className="font-medium text-green-600">
+                                {combo.wins}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">
+                                Win Rate:
+                              </span>
+                              <div className="font-medium">
+                                {Math.round(combo.winRate * 100)}%
+                              </div>
+                            </div>
+                            {avgPlacement !== null && (
+                              <div>
+                                <span className="text-muted-foreground">
+                                  Avg Placement:
+                                </span>
+                                <div className="font-medium">
+                                  {avgPlacement}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <Progress
+                            value={combo.winRate * 100}
+                            className="mt-3"
+                          />
+
+                          {/* Show role descriptions if available */}
+                          {combo.roles.some((role) => role.description) && (
+                            <div className="mt-3 border-t pt-3">
+                              <div className="space-y-1 text-xs text-muted-foreground">
+                                {combo.roles
+                                  .filter((role) => role.description)
+                                  .map((role) => (
+                                    <div key={role.id}>
+                                      <strong>{role.name}:</strong>{" "}
+                                      {role.description}
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                 </div>
               </CardContent>
             </Card>
@@ -977,12 +1013,13 @@ const formatPlacementDistribution = (placements: Record<number, number>) => {
     (sum, count) => sum + count,
     0,
   );
-  if (total === 0) return "No data";
+  if (total === 0) return null;
 
   const avgPlacement =
     Object.entries(placements).reduce((sum, [place, count]) => {
       return sum + Number.parseInt(place) * count;
     }, 0) / total;
+  if (avgPlacement === 0) return null;
 
   return avgPlacement.toFixed(1);
 };
