@@ -572,7 +572,7 @@ const HeaderRow = ({
       <TableRow>
         <TableHead
           scope="col"
-          className="bg-sidebar sticky left-0 top-0 w-20 sm:w-36"
+          className="bg-sidebar sticky left-0 top-0 z-10 w-20 sm:w-36"
         >
           <div>
             <AddRoundDialog match={match} />
