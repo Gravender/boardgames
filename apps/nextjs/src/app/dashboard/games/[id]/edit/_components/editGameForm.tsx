@@ -1281,7 +1281,7 @@ const RolesForm = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <CardContent className="space-y-8">
+        <CardContent className="space-y-8 px-2 sm:px-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
             <Input
@@ -1317,6 +1317,7 @@ const RolesForm = ({
                           description: e.target.value,
                         })
                       }
+                      className="max-w-[90vw]"
                     />
                   </CardContent>
                   <CardFooter className="justify-end gap-2 p-2 pt-2">
@@ -1434,12 +1435,12 @@ const RolesForm = ({
 
                 return (
                   <Card key={role.id} className="p-2 py-2">
-                    <CardContent className="flex flex-row justify-between gap-2 px-4">
+                    <CardContent className="flex flex-row justify-between gap-2 px-1 sm:px-4">
                       <div className="flex flex-1 items-center gap-3">
-                        <div className="flex-1">
+                        <div className="max-w-[90vw]">
                           <h4 className="text-sm font-medium">{role.name}</h4>
                           {role.description && (
-                            <p className="max-w-xs truncate text-xs text-muted-foreground">
+                            <p className="max-w-xs truncate text-wrap text-xs text-muted-foreground">
                               {role.description}
                             </p>
                           )}
@@ -1451,6 +1452,7 @@ const RolesForm = ({
                           variant="ghost"
                           size="icon"
                           onClick={() => setEditGameRoleIndex(roleIndex)}
+                          className="h-8 w-8"
                         >
                           <SquarePen className="h-4 w-4" />
                         </Button>
@@ -1459,7 +1461,7 @@ const RolesForm = ({
                           variant="ghost"
                           size="icon"
                           onClick={() => removeRole(roleIndex)}
-                          className="text-destructive hover:text-destructive"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
