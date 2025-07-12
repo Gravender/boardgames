@@ -4,6 +4,7 @@ import type { RouterOutputs } from "@board-games/api";
 import { getOrdinalSuffix } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
+import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
 import { cn } from "@board-games/ui/utils";
 
@@ -144,18 +145,25 @@ export default function ShareMatchResults({
                     <Users className="h-5 w-5 text-muted-foreground" />
                     <h3 className="font-semibold"> {`Team: ${data.name}`}</h3>
                     <Separator orientation="vertical" />
+
                     {teamRoles.length > 0 && (
-                      <span className="text-sm font-medium">Roles:</span>
+                      <>
+                        <span className="text-sm font-medium">Roles:</span>
+                        <ScrollArea>
+                          <div className="flex max-w-[50vw] items-center gap-2">
+                            {teamRoles.map((role) => (
+                              <Badge
+                                key={role.id}
+                                variant="secondary"
+                                className="text-sm font-medium text-foreground"
+                              >
+                                {role.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </>
                     )}
-                    {teamRoles.map((role) => (
-                      <Badge
-                        key={role.id}
-                        variant="secondary"
-                        className="text-sm font-medium text-foreground"
-                      >
-                        {role.name}
-                      </Badge>
-                    ))}
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-sm font-medium">{data.score} pts</div>

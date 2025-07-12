@@ -111,7 +111,7 @@ export function AddMatchDialog({
   );
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-h-[90vh] p-4 sm:max-w-[800px] sm:p-6">
+      <DialogContent className="p-4 sm:max-w-[800px] sm:p-6">
         <Content
           gameId={gameId}
           gameName={gameName}
@@ -819,21 +819,23 @@ const AddPlayersForm = ({
         <DialogTitle>Select Players</DialogTitle>
         <DialogDescription>Add players to your match</DialogDescription>
       </DialogHeader>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col items-center gap-2 xs:flex-row">
         <Input
           placeholder="Search players..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1"
+          className="flex-grow"
         />
-        <Button variant="outline" onClick={() => setShowGroups(!showGroups)}>
-          <Users className="h-4 w-4" />
-          Groups
-        </Button>
-        <Button variant="outline" onClick={() => setShowAddPlayer(true)}>
-          <Plus className="h-4 w-4" />
-          New
-        </Button>
+        <div className="flex w-full items-center justify-between gap-2 xs:w-auto xs:justify-start">
+          <Button variant="outline" onClick={() => setShowGroups(!showGroups)}>
+            <Users className="h-4 w-4" />
+            Groups
+          </Button>
+          <Button variant="outline" onClick={() => setShowAddPlayer(true)}>
+            <Plus className="h-4 w-4" />
+            New
+          </Button>
+        </div>
       </div>
 
       <Form {...form}>
@@ -846,7 +848,7 @@ const AddPlayersForm = ({
                 {showGroups && groups ? (
                   <div className="space-y-4">
                     <h3 className="text-sm font-medium">Select a Group</h3>
-                    <ScrollArea className="h-[300px]">
+                    <ScrollArea className="h-[70vh]">
                       <div className="space-y-2">
                         {groups
                           .filter((group) =>
@@ -904,7 +906,7 @@ const AddPlayersForm = ({
                       </Button>
                     </div>
                     <ScrollArea className="sm:p-1">
-                      <div className="grid max-h-[25rem] gap-2 rounded-lg sm:max-h-[40rem]">
+                      <div className="grid max-h-[65vh] gap-2 rounded-lg">
                         {players
                           .filter((player) =>
                             player.name
@@ -1005,7 +1007,7 @@ const AddPlayersForm = ({
                                           </div>
                                         </div>
                                       </FormLabel>
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex flex-col items-center gap-2 xs:flex-row">
                                         {foundPlayer && (
                                           <Button
                                             variant="outline"
@@ -1014,6 +1016,7 @@ const AddPlayersForm = ({
                                             onClick={() => {
                                               setShowRoleModal(foundPlayer.id);
                                             }}
+                                            className="w-full xs:w-auto"
                                           >
                                             Roles ({foundPlayer.roles.length})
                                           </Button>

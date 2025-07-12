@@ -140,6 +140,7 @@ function Content({
     teamPlayers: Player[],
     allRoles: typeof roles,
   ): number[] => {
+    if (teamPlayers.length === 0) return [];
     return allRoles.reduce<number[]>((acc, role) => {
       const roleInEveryPlayer = teamPlayers.every((p) =>
         p.roles.map((r) => r.id).includes(role.id),
@@ -193,7 +194,10 @@ function Content({
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+        >
           {teams.length > 0 && (
             <FormField
               control={form.control}
@@ -209,17 +213,27 @@ function Content({
                           field.onChange(null);
                           return;
                         }
-                        field.onChange(Number(value));
+                        const teamId = Number(value);
+                        field.onChange(teamId);
+
                         const newTeamPlayers = players.filter(
-                          (p) =>
-                            value !== "no-team" && p.teamId === Number(value),
+                          (p) => p.teamId === teamId,
                         );
-                        const rolesToAdd = getTeamRoles(
+                        const newTeamRoles = getTeamRoles(
                           newTeamPlayers,
                           roles,
-                        ).filter((role) => !formRoles.find((r) => r === role));
-                        const newRoles = [...formRoles, ...rolesToAdd];
-                        form.setValue("roles", newRoles);
+                        );
+                        const customRoles = formRoles.filter(
+                          (roleId) => !teamRoles.includes(roleId),
+                        );
+                        const updatedRoles = [
+                          ...customRoles,
+                          ...newTeamRoles.filter(
+                            (r) => !customRoles.includes(r),
+                          ),
+                        ];
+
+                        form.setValue("roles", updatedRoles);
                       }}
                     >
                       <SelectTrigger>
