@@ -254,7 +254,7 @@ function Content({
               />
             </div>
             <ScrollArea>
-              <div className="flex max-h-36 flex-col gap-2">
+              <div className="flex max-h-[20vh] flex-col gap-2">
                 {filteredRoles.map((role) => {
                   const roleIndex = formRoles.findIndex((r) => r === role.id);
                   const isTeamRole =

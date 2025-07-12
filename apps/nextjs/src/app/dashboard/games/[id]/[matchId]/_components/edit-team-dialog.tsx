@@ -269,7 +269,7 @@ function Content({
               />
             </div>
             <ScrollArea>
-              <div className="flex max-h-36 flex-col gap-2">
+              <div className="flex max-h-[20vh] flex-col gap-2">
                 {filteredRoles.map((role) => {
                   const roleIndex = formRoles.findIndex((r) => r === role.id);
                   return (
@@ -337,7 +337,7 @@ function Content({
                 <FormLabel>Team Players</FormLabel>
                 <FormControl>
                   <ScrollArea>
-                    <div className="flex max-h-32 flex-col gap-2">
+                    <div className="flex max-h-[20vh] flex-col gap-2">
                       {playerField.value.map((player, index) => {
                         const foundPlayer = players.find(
                           (p) => p.id === player.id,
@@ -400,7 +400,7 @@ function Content({
           <div>
             <Label>Available Players</Label>
             <ScrollArea>
-              <div className="flex max-h-32 flex-col gap-2">
+              <div className="flex max-h-[20vh] flex-col gap-2">
                 {availablePlayers.map((player) => {
                   const foundPlayer = players.find((p) => p.id === player.id);
                   if (!foundPlayer) return null;
