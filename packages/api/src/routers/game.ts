@@ -1242,14 +1242,33 @@ export const gameRouter = createTRPCRouter({
                   },
                 };
                 seenRoleMatchIds.set(role.id, new Set());
-                roleBasedPlayerSeenMatchIds.set(role.id, new Map());
-                roleBasedPlayerSeenMatchIds
-                  .get(role.id)
-                  ?.set(`${player.type}-${player.id}`, new Set());
-                roleBasedPlayerSeenMatchIds
-                  .get(role.id)
-                  ?.get(`${player.type}-${player.id}`)
-                  ?.add(match.id);
+                let roleBasedPlayerMap = roleBasedPlayerSeenMatchIds.get(
+                  role.id,
+                );
+                if (!roleBasedPlayerMap) {
+                  roleBasedPlayerMap = new Map();
+                  const playerSet = new Set<number>();
+                  playerSet.add(match.id);
+                  roleBasedPlayerMap.set(
+                    `${player.type}-${player.id}`,
+                    playerSet,
+                  );
+                  roleBasedPlayerSeenMatchIds.set(role.id, roleBasedPlayerMap);
+                } else {
+                  let playerSet = roleBasedPlayerMap.get(
+                    `${player.type}-${player.id}`,
+                  );
+                  if (!playerSet) {
+                    playerSet = new Set();
+                    playerSet.add(match.id);
+                    roleBasedPlayerMap.set(
+                      `${player.type}-${player.id}`,
+                      playerSet,
+                    );
+                  } else {
+                    playerSet.add(match.id);
+                  }
+                }
               } else {
                 accRole.playerCount++;
                 if (player.placement > 0) {
@@ -1277,21 +1296,69 @@ export const gameRouter = createTRPCRouter({
                     placements:
                       player.placement > 0 ? { [player.placement]: 1 } : {},
                   };
-                  roleBasedPlayerSeenMatchIds
-                    .get(role.id)
-                    ?.set(`${player.type}-${player.id}`, new Set());
-                  roleBasedPlayerSeenMatchIds
-                    .get(role.id)
-                    ?.get(`${player.type}-${player.id}`)
-                    ?.add(match.id);
+                  let roleBasedPlayerMatchIds = roleBasedPlayerSeenMatchIds.get(
+                    role.id,
+                  );
+                  if (!roleBasedPlayerMatchIds) {
+                    roleBasedPlayerMatchIds = new Map();
+                    const playerSet = new Set<number>();
+                    playerSet.add(match.id);
+                    roleBasedPlayerMatchIds.set(
+                      `${player.type}-${player.id}`,
+                      playerSet,
+                    );
+                    roleBasedPlayerSeenMatchIds.set(
+                      role.id,
+                      roleBasedPlayerMatchIds,
+                    );
+                  } else {
+                    let playerSet = roleBasedPlayerMatchIds.get(
+                      `${player.type}-${player.id}`,
+                    );
+                    if (!playerSet) {
+                      playerSet = new Set();
+                      playerSet.add(match.id);
+                      roleBasedPlayerMatchIds.set(
+                        `${player.type}-${player.id}`,
+                        playerSet,
+                      );
+                    } else {
+                      playerSet.add(match.id);
+                    }
+                  }
                 } else {
-                  if (
-                    roleBasedPlayerSeenMatchIds
-                      .get(role.id)
-                      ?.get(`${player.type}-${player.id}`)
-                      ?.has(match.id)
-                  ) {
+                  let roleBasedPlayerMatchIds = roleBasedPlayerSeenMatchIds.get(
+                    role.id,
+                  );
+                  if (!roleBasedPlayerMatchIds) {
+                    roleBasedPlayerMatchIds = new Map();
+                    const playerSet = new Set<number>();
+                    playerSet.add(match.id);
+                    roleBasedPlayerMatchIds.set(
+                      `${player.type}-${player.id}`,
+                      playerSet,
+                    );
+                    roleBasedPlayerSeenMatchIds.set(
+                      role.id,
+                      roleBasedPlayerMatchIds,
+                    );
                     accPlayer.totalMatches++;
+                  } else {
+                    const playerSet = roleBasedPlayerMatchIds.get(
+                      `${player.type}-${player.id}`,
+                    );
+                    if (!playerSet) {
+                      const playerSet = new Set<number>();
+                      playerSet.add(match.id);
+                      roleBasedPlayerMatchIds.set(
+                        `${player.type}-${player.id}`,
+                        playerSet,
+                      );
+                      accPlayer.totalMatches++;
+                    } else if (!playerSet.has(match.id)) {
+                      playerSet.add(match.id);
+                      accPlayer.totalMatches++;
+                    }
                   }
                   accPlayer.totalWins += player.isWinner ? 1 : 0;
                   accPlayer.winRate =
@@ -1383,6 +1450,10 @@ export const gameRouter = createTRPCRouter({
                   rounds: tempPlayerRounds,
                 };
               }
+              playerSeenRoleMatchIds.set(
+                `${player.type}-${player.id}`,
+                new Map(),
+              );
               acc[`${player.type}-${player.id}`] = {
                 id: player.id,
                 type: player.type,
@@ -1440,7 +1511,27 @@ export const gameRouter = createTRPCRouter({
                       placements:
                         player.placement > 0 ? { [player.placement]: 1 } : {},
                     };
-                    seenRoleMatchIds.set(role.id, new Set());
+                    let playerRoleMatchIds = playerSeenRoleMatchIds.get(
+                      `${player.type}-${player.id}`,
+                    );
+                    if (!playerRoleMatchIds) {
+                      playerSeenRoleMatchIds.set(
+                        `${player.type}-${player.id}`,
+                        new Map(),
+                      );
+                      playerRoleMatchIds = playerSeenRoleMatchIds.get(
+                        `${player.type}-${player.id}`,
+                      );
+                    }
+
+                    let playerRoleMap = playerRoleMatchIds?.get(role.id);
+                    if (!playerRoleMap) {
+                      playerRoleMap = new Set();
+                      playerRoleMap.add(match.id);
+                      playerRoleMatchIds?.set(role.id, playerRoleMap);
+                    } else {
+                      playerRoleMap.add(match.id);
+                    }
                     return acc;
                   },
                   {} as Record<
@@ -1462,10 +1553,18 @@ export const gameRouter = createTRPCRouter({
             } else {
               accPlayer.recentForm.push(player.isWinner ? "win" : "loss");
               const current = accPlayer.streaks.current;
-              playerSeenRoleMatchIds.set(
+              let playerRoleMatchIds = playerSeenRoleMatchIds.get(
                 `${player.type}-${player.id}`,
-                new Map(),
               );
+              if (!playerRoleMatchIds) {
+                playerSeenRoleMatchIds.set(
+                  `${player.type}-${player.id}`,
+                  new Map(),
+                );
+                playerRoleMatchIds = playerSeenRoleMatchIds.get(
+                  `${player.type}-${player.id}`,
+                );
+              }
               player.roles.forEach((role) => {
                 const accRole = accPlayer.roles[role.id];
                 if (!accRole) {
@@ -1480,13 +1579,15 @@ export const gameRouter = createTRPCRouter({
                     placements:
                       player.placement > 0 ? { [player.placement]: 1 } : {},
                   };
-                  playerSeenRoleMatchIds
-                    .get(`${player.type}-${player.id}`)
-                    ?.set(role.id, new Set());
-                  playerSeenRoleMatchIds
-                    .get(`${player.type}-${player.id}`)
-                    ?.get(role.id)
-                    ?.add(match.id);
+
+                  let playerRoleMap = playerRoleMatchIds?.get(role.id);
+                  if (!playerRoleMap) {
+                    playerRoleMap = new Set();
+                    playerRoleMap.add(match.id);
+                    playerRoleMatchIds?.set(role.id, playerRoleMap);
+                  } else {
+                    playerRoleMap.add(match.id);
+                  }
                 } else {
                   if (
                     playerSeenRoleMatchIds
