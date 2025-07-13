@@ -101,6 +101,12 @@ export default function RolesTab({
       if (a.matchCount > 10 && b.matchCount > 10) {
         return b.winRate - a.winRate;
       }
+      if (a.matchCount > 10 && b.matchCount <= 10) {
+        return 1;
+      }
+      if (a.matchCount <= 10 && b.matchCount > 10) {
+        return -1;
+      }
       return b.matchCount - a.matchCount;
     });
     return sortedRoles.slice(0, 5);
@@ -636,6 +642,12 @@ export default function RolesTab({
                             if (a.matchCount > 10 && b.matchCount > 10) {
                               return b.winRate - a.winRate;
                             }
+                            if (a.matchCount > 10 && b.matchCount <= 10) {
+                              return 1;
+                            }
+                            if (a.matchCount <= 10 && b.matchCount > 10) {
+                              return -1;
+                            }
                             return b.matchCount - a.matchCount;
                           })
                           .map((role) => (
@@ -701,6 +713,12 @@ export default function RolesTab({
                             .sort((a, b) => {
                               if (a.matchCount > 10 && b.matchCount > 10) {
                                 return b.winRate - a.winRate;
+                              }
+                              if (a.matchCount > 10 && b.matchCount <= 10) {
+                                return 1;
+                              }
+                              if (a.matchCount <= 10 && b.matchCount > 10) {
+                                return -1;
                               }
                               return b.matchCount - a.matchCount;
                             })
@@ -922,7 +940,18 @@ export default function RolesTab({
                     <ScrollArea>
                       <div className="flex max-h-[40vh] flex-col gap-2">
                         {Object.values(selectedRole.players)
-                          .sort((a, b) => b.winRate - a.winRate)
+                          .sort((a, b) => {
+                            if (a.totalMatches > 10 && b.totalMatches > 10) {
+                              return b.winRate - a.winRate;
+                            }
+                            if (a.totalMatches > 10 && b.totalMatches <= 10) {
+                              return 1;
+                            }
+                            if (a.totalMatches <= 10 && b.totalMatches > 10) {
+                              return -1;
+                            }
+                            return b.totalMatches - a.totalMatches;
+                          })
                           .map((player, index) => {
                             const avgPlacement = formatPlacementDistribution(
                               player.placements,
@@ -1002,6 +1031,12 @@ export default function RolesTab({
                       .sort((a, b) => {
                         if (a.matchCount > 10 && b.matchCount > 10) {
                           return b.winRate - a.winRate;
+                        }
+                        if (a.matchCount > 10 && b.matchCount <= 10) {
+                          return 1;
+                        }
+                        if (a.matchCount <= 10 && b.matchCount > 10) {
+                          return -1;
                         }
                         return b.matchCount - a.matchCount;
                       })
