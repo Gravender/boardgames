@@ -632,7 +632,12 @@ export default function RolesTab({
                       </TableHeader>
                       <TableBody>
                         {selectedPlayer.roles
-                          .sort((a, b) => b.winRate - a.winRate)
+                          .sort((a, b) => {
+                            if (a.matchCount > 10 && b.matchCount > 10) {
+                              return b.winRate - a.winRate;
+                            }
+                            return b.matchCount - a.matchCount;
+                          })
                           .map((role) => (
                             <TableRow key={role.roleId}>
                               <TableCell>
@@ -693,7 +698,12 @@ export default function RolesTab({
                       <ScrollArea>
                         <div className="flex max-h-[40vh] flex-col gap-2">
                           {selectedPlayer.roleCombos
-                            .sort((a, b) => b.winRate - a.winRate)
+                            .sort((a, b) => {
+                              if (a.matchCount > 10 && b.matchCount > 10) {
+                                return b.winRate - a.winRate;
+                              }
+                              return b.matchCount - a.matchCount;
+                            })
                             .map((combo, index) => (
                               <div
                                 key={index}

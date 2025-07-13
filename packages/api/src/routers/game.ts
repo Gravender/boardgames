@@ -839,6 +839,7 @@ export const gameRouter = createTRPCRouter({
                 } | null;
                 totalMatches: number;
                 totalWins: number;
+                totalLosses: number;
                 winRate: number;
                 placements: Record<number, number>;
               }
@@ -1192,6 +1193,10 @@ export const gameRouter = createTRPCRouter({
       });
       const seenRoleMatchIds = new Map<number, Set<number>>();
       const seenRoleComboMatchIds = new Map<string, Set<number>>();
+      const roleBasedPlayerSeenMatchIds = new Map<
+        number,
+        Map<string, Set<number>>
+      >();
       const playerSeenRoleComboMatchIds = new Map<
         string,
         Map<string, Set<number>>
@@ -1229,6 +1234,7 @@ export const gameRouter = createTRPCRouter({
                       image: player.image,
                       totalMatches: 1,
                       totalWins: player.isWinner ? 1 : 0,
+                      totalLosses: player.isWinner ? 0 : 1,
                       winRate: player.isWinner ? 1 : 0,
                       placements:
                         player.placement > 0 ? { [player.placement]: 1 } : {},
@@ -1236,6 +1242,14 @@ export const gameRouter = createTRPCRouter({
                   },
                 };
                 seenRoleMatchIds.set(role.id, new Set());
+                roleBasedPlayerSeenMatchIds.set(role.id, new Map());
+                roleBasedPlayerSeenMatchIds
+                  .get(role.id)
+                  ?.set(`${player.type}-${player.id}`, new Set());
+                roleBasedPlayerSeenMatchIds
+                  .get(role.id)
+                  ?.get(`${player.type}-${player.id}`)
+                  ?.add(match.id);
               } else {
                 accRole.playerCount++;
                 if (player.placement > 0) {
@@ -1244,8 +1258,11 @@ export const gameRouter = createTRPCRouter({
                 }
                 accRole.wins += player.isWinner ? 1 : 0;
                 accRole.losses += player.isWinner ? 0 : 1;
-                accRole.matchCount++;
-                accRole.winRate = accRole.wins / accRole.matchCount;
+                if (seenRoleMatchIds.get(role.id)?.has(match.id)) {
+                  accRole.matchCount++;
+                }
+                accRole.winRate =
+                  accRole.wins / (accRole.wins + accRole.losses);
                 const accPlayer = accRole.players[player.id];
                 if (!accPlayer) {
                   accRole.players[player.id] = {
@@ -1255,15 +1272,31 @@ export const gameRouter = createTRPCRouter({
                     image: player.image,
                     totalMatches: 1,
                     totalWins: player.isWinner ? 1 : 0,
+                    totalLosses: player.isWinner ? 0 : 1,
                     winRate: player.isWinner ? 1 : 0,
                     placements:
                       player.placement > 0 ? { [player.placement]: 1 } : {},
                   };
+                  roleBasedPlayerSeenMatchIds
+                    .get(role.id)
+                    ?.set(`${player.type}-${player.id}`, new Set());
+                  roleBasedPlayerSeenMatchIds
+                    .get(role.id)
+                    ?.get(`${player.type}-${player.id}`)
+                    ?.add(match.id);
                 } else {
-                  accPlayer.totalMatches++;
+                  if (
+                    roleBasedPlayerSeenMatchIds
+                      .get(role.id)
+                      ?.get(`${player.type}-${player.id}`)
+                      ?.has(match.id)
+                  ) {
+                    accPlayer.totalMatches++;
+                  }
                   accPlayer.totalWins += player.isWinner ? 1 : 0;
                   accPlayer.winRate =
-                    accPlayer.totalWins / accPlayer.totalMatches;
+                    accPlayer.totalWins /
+                    (accPlayer.totalWins + accPlayer.totalLosses);
                   if (player.placement > 0) {
                     accPlayer.placements[player.placement] =
                       (accPlayer.placements[player.placement] ?? 0) + 1;
