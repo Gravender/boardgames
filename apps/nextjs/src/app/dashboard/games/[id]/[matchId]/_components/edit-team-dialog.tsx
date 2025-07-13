@@ -59,7 +59,7 @@ export default function TeamEditorDialog({
   );
   return (
     <Dialog open={team !== null} onOpenChange={onClose}>
-      <DialogContent className="p-4 sm:max-w-[800px] sm:p-6">
+      <DialogContent className="gap-2 p-4 sm:max-w-[800px] sm:gap-4 sm:p-6">
         {team && (
           <Content
             team={team}
@@ -236,14 +236,14 @@ function Content({
     <>
       <DialogHeader>
         <DialogTitle>Edit {team.name}</DialogTitle>
-        <DialogDescription>
+        <DialogDescription className="sr-only">
           Edit the name and roles of your team.
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-2"
         >
           <FormField
             control={form.control}
@@ -272,7 +272,7 @@ function Content({
               />
             </div>
             <ScrollArea>
-              <div className="flex max-h-[20vh] flex-col gap-2">
+              <div className="flex max-h-[15vh] flex-col gap-2">
                 {filteredRoles.map((role) => {
                   const roleIndex = formRoles.findIndex((r) => r === role.id);
                   return (
@@ -312,8 +312,8 @@ function Content({
             </ScrollArea>
           </div>
           {formRoles.length > 0 && (
-            <ScrollArea>
-              <div className="flex max-w-60 items-center gap-2 sm:max-w-80">
+            <ScrollArea className="hidden sm:relative">
+              <div className="hidden max-w-60 items-center gap-2 sm:flex sm:max-w-80">
                 {formRoles.map((roleId) => {
                   const role = roles.find((r) => r.id === roleId);
                   if (!role) return null;
@@ -331,125 +331,132 @@ function Content({
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
           )}
-
-          <FormField
-            control={form.control}
-            name="players"
-            render={({ field: playerField }) => (
-              <FormItem>
-                <FormLabel>Team Players</FormLabel>
-                <FormControl>
-                  <ScrollArea>
-                    <div className="flex max-h-[20vh] flex-col gap-2">
-                      {playerField.value.map((player, index) => {
-                        const foundPlayer = players.find(
-                          (p) => p.id === player.id,
-                        );
-                        if (!foundPlayer) return null;
-                        return (
-                          <FormField
-                            key={player.id}
-                            control={form.control}
-                            name={`players.${index}`}
-                            render={() => (
-                              <FormItem className="flex w-full items-center justify-between gap-2">
-                                <FormLabel className="flex w-full items-center gap-1 text-sm font-normal sm:gap-2">
-                                  <PlayerImage
-                                    className="size-8"
-                                    image={foundPlayer.image}
-                                    alt={foundPlayer.name}
-                                  />
-                                  <div className="text-sm font-medium">
-                                    {foundPlayer.name}
-                                    {foundPlayer.isUser && (
-                                      <Badge
+          <ScrollArea>
+            <div className="flex max-h-[25vh] flex-col gap-2">
+              <FormField
+                control={form.control}
+                name="players"
+                render={({ field: playerField }) => (
+                  <FormItem>
+                    <FormLabel>Team Players</FormLabel>
+                    <FormControl>
+                      <ScrollArea>
+                        <div className="flex max-h-[15vh] flex-col gap-2">
+                          {playerField.value.map((player, index) => {
+                            const foundPlayer = players.find(
+                              (p) => p.id === player.id,
+                            );
+                            if (!foundPlayer) return null;
+                            return (
+                              <FormField
+                                key={player.id}
+                                control={form.control}
+                                name={`players.${index}`}
+                                render={() => (
+                                  <FormItem className="flex w-full items-center justify-between gap-2">
+                                    <FormLabel className="flex w-full items-center gap-1 text-sm font-normal sm:gap-2">
+                                      <PlayerImage
+                                        className="size-8"
+                                        image={foundPlayer.image}
+                                        alt={foundPlayer.name}
+                                      />
+                                      <div className="text-sm font-medium">
+                                        {foundPlayer.name}
+                                        {foundPlayer.isUser && (
+                                          <Badge
+                                            variant="outline"
+                                            className="ml-2 text-xs"
+                                          >
+                                            You
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Button
                                         variant="outline"
-                                        className="ml-2 text-xs"
+                                        className="text-destructive hover:bg-destructive hover:text-white"
+                                        type="button"
+                                        onClick={() => {
+                                          playerField.onChange(
+                                            formPlayers.filter(
+                                              (p) => p.id !== player.id,
+                                            ),
+                                          );
+                                        }}
                                       >
-                                        You
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </FormLabel>
-                                <FormControl>
-                                  <Button
-                                    variant="outline"
-                                    className="text-destructive hover:bg-destructive hover:text-white"
-                                    type="button"
-                                    onClick={() => {
-                                      playerField.onChange(
-                                        formPlayers.filter(
-                                          (p) => p.id !== player.id,
-                                        ),
-                                      );
-                                    }}
-                                  >
-                                    Remove
-                                  </Button>
-                                </FormControl>
+                                        Remove
+                                      </Button>
+                                    </FormControl>
 
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        );
-                      })}
-                    </div>
-                  </ScrollArea>
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <div>
-            <Label>Available Players</Label>
-            <ScrollArea>
-              <div className="flex max-h-[20vh] flex-col gap-2">
-                {availablePlayers.map((player) => {
-                  const foundPlayer = players.find((p) => p.id === player.id);
-                  if (!foundPlayer) return null;
-                  return (
-                    <div
-                      key={player.id}
-                      className="flex w-full items-center justify-between gap-2"
-                    >
-                      <div className="flex w-full items-center gap-1 text-sm font-normal sm:gap-2">
-                        <PlayerImage
-                          className="size-8"
-                          image={foundPlayer.image}
-                          alt={foundPlayer.name}
-                        />
-                        <div className="text-sm font-medium">
-                          {foundPlayer.name}
-                          {foundPlayer.isUser && (
-                            <Badge variant="outline" className="ml-2 text-xs">
-                              You
-                            </Badge>
-                          )}
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            );
+                          })}
                         </div>
-                      </div>
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          form.setValue("players", [
-                            ...formPlayers,
-                            {
-                              id: player.id,
-                              name: foundPlayer.name,
-                              roles: form.getValues("roles"),
-                            },
-                          ]);
-                        }}
-                      >
-                        Add
-                      </Button>
-                    </div>
-                  );
-                })}
+                      </ScrollArea>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <div>
+                <Label>Available Players</Label>
+                <ScrollArea>
+                  <div className="flex max-h-[15vh] flex-col gap-2">
+                    {availablePlayers.map((player) => {
+                      const foundPlayer = players.find(
+                        (p) => p.id === player.id,
+                      );
+                      if (!foundPlayer) return null;
+                      return (
+                        <div
+                          key={player.id}
+                          className="flex w-full items-center justify-between gap-2"
+                        >
+                          <div className="flex w-full items-center gap-1 text-sm font-normal sm:gap-2">
+                            <PlayerImage
+                              className="size-8"
+                              image={foundPlayer.image}
+                              alt={foundPlayer.name}
+                            />
+                            <div className="text-sm font-medium">
+                              {foundPlayer.name}
+                              {foundPlayer.isUser && (
+                                <Badge
+                                  variant="outline"
+                                  className="ml-2 text-xs"
+                                >
+                                  You
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              form.setValue("players", [
+                                ...formPlayers,
+                                {
+                                  id: player.id,
+                                  name: foundPlayer.name,
+                                  roles: form.getValues("roles"),
+                                },
+                              ]);
+                            }}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
               </div>
-            </ScrollArea>
-          </div>
-
-          <DialogFooter>
+            </div>
+          </ScrollArea>
+          <DialogFooter className="flex-row justify-end">
             <Button type="submit" disabled={updateTeam.isPending}>
               {updateTeam.isPending ? (
                 <>
