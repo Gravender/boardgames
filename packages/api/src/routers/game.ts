@@ -1192,9 +1192,13 @@ export const gameRouter = createTRPCRouter({
       });
       const seenRoleMatchIds = new Map<number, Set<number>>();
       const seenRoleComboMatchIds = new Map<string, Set<number>>();
-      const playerSeenRoleMatchIds = new Map<
-        number,
+      const playerSeenRoleComboMatchIds = new Map<
+        string,
         Map<string, Set<number>>
+      >();
+      const playerSeenRoleMatchIds = new Map<
+        string,
+        Map<number, Set<number>>
       >();
       const players = matches.reduce(
         (acc, match) => {
@@ -1425,6 +1429,10 @@ export const gameRouter = createTRPCRouter({
             } else {
               accPlayer.recentForm.push(player.isWinner ? "win" : "loss");
               const current = accPlayer.streaks.current;
+              playerSeenRoleMatchIds.set(
+                `${player.type}-${player.id}`,
+                new Map(),
+              );
               player.roles.forEach((role) => {
                 const accRole = accPlayer.roles[role.id];
                 if (!accRole) {
@@ -1439,9 +1447,20 @@ export const gameRouter = createTRPCRouter({
                     placements:
                       player.placement > 0 ? { [player.placement]: 1 } : {},
                   };
-                  seenRoleMatchIds.set(role.id, new Set());
+                  playerSeenRoleMatchIds
+                    .get(`${player.type}-${player.id}`)
+                    ?.set(role.id, new Set());
+                  playerSeenRoleMatchIds
+                    .get(`${player.type}-${player.id}`)
+                    ?.get(role.id)
+                    ?.add(match.id);
                 } else {
-                  if (seenRoleMatchIds.get(role.id)?.has(match.id)) {
+                  if (
+                    playerSeenRoleMatchIds
+                      .get(`${player.type}-${player.id}`)
+                      ?.get(role.id)
+                      ?.has(match.id)
+                  ) {
                     accRole.matchCount++;
                   }
                   accRole.winRate =
@@ -1679,8 +1698,8 @@ export const gameRouter = createTRPCRouter({
                 const playerCombo = accPlayer?.roleCombos[roleComboKey];
                 if (accPlayer && playerCombo) {
                   if (
-                    playerSeenRoleMatchIds
-                      .get(player.id)
+                    playerSeenRoleComboMatchIds
+                      .get(`${player.type}-${player.id}`)
                       ?.get(roleComboKey)
                       ?.has(match.id)
                   ) {
@@ -1708,9 +1727,12 @@ export const gameRouter = createTRPCRouter({
                     placements:
                       player.placement > 0 ? { [player.placement]: 1 } : {},
                   };
-                  playerSeenRoleMatchIds.set(player.id, new Map());
-                  playerSeenRoleMatchIds
-                    .get(player.id)
+                  playerSeenRoleComboMatchIds.set(
+                    `${player.type}-${player.id}`,
+                    new Map(),
+                  );
+                  playerSeenRoleComboMatchIds
+                    .get(`${player.type}-${player.id}`)
                     ?.set(roleComboKey, new Set());
                 }
               }
