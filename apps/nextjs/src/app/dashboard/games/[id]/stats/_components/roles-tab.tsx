@@ -54,7 +54,7 @@ import {
   PopoverTrigger,
 } from "@board-games/ui/popover";
 import { Progress } from "@board-games/ui/progress";
-import { ScrollArea } from "@board-games/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -641,9 +641,12 @@ export default function RolesTab({
                                     {role.name}
                                   </span>
                                   {role.description && (
-                                    <div className="text-xs text-muted-foreground">
-                                      {role.description}
-                                    </div>
+                                    <ScrollArea>
+                                      <div className="max-w-[20vw] text-xs text-muted-foreground">
+                                        {role.description}
+                                      </div>
+                                      <ScrollBar orientation="horizontal" />
+                                    </ScrollArea>
                                   )}
                                 </div>
                               </TableCell>
@@ -1033,7 +1036,12 @@ export default function RolesTab({
                               </Badge>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
+                            <div
+                              className={cn(
+                                "grid grid-cols-2 gap-4 text-sm md:grid-cols-4",
+                                avgPlacement !== null && "md:grid-cols-5",
+                              )}
+                            >
                               <div>
                                 <span className="text-muted-foreground">
                                   Games:
@@ -1048,6 +1056,14 @@ export default function RolesTab({
                                 </span>
                                 <div className="font-medium text-green-600">
                                   {combo.wins}
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">
+                                  Losses:
+                                </span>
+                                <div className="font-medium text-red-600">
+                                  {combo.losses}
                                 </div>
                               </div>
                               <div>

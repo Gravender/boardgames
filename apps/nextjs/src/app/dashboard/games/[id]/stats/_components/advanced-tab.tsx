@@ -374,7 +374,7 @@ export default function AdvancedTab({
                     {/* Enhanced Statistics Grid */}
                     <div
                       className={cn(
-                        "grid grid-cols-2 gap-3",
+                        "grid grid-cols-2 gap-3 md:grid-cols-3",
                         totalCards === 3 && "md:grid-cols-4",
                         totalCards === 2 && "md:grid-cols-3",
                       )}
