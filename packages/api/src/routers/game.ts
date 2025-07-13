@@ -1277,9 +1277,19 @@ export const gameRouter = createTRPCRouter({
                 }
                 accRole.wins += player.isWinner ? 1 : 0;
                 accRole.losses += player.isWinner ? 0 : 1;
-                if (seenRoleMatchIds.get(role.id)?.has(match.id)) {
+                let roleMatchSet = seenRoleMatchIds.get(role.id);
+                if (!roleMatchSet) {
+                  roleMatchSet = new Set();
+                  roleMatchSet.add(match.id);
+                  seenRoleMatchIds.set(role.id, roleMatchSet);
                   accRole.matchCount++;
+                } else {
+                  if (!roleMatchSet.has(match.id)) {
+                    roleMatchSet.add(match.id);
+                    accRole.matchCount++;
+                  }
                 }
+
                 accRole.winRate =
                   accRole.wins / (accRole.wins + accRole.losses);
                 const accPlayer = accRole.players[player.id];
@@ -1450,10 +1460,18 @@ export const gameRouter = createTRPCRouter({
                   rounds: tempPlayerRounds,
                 };
               }
-              playerSeenRoleMatchIds.set(
+              let playerSeenRoleMatch = playerSeenRoleMatchIds.get(
                 `${player.type}-${player.id}`,
-                new Map(),
               );
+              if (!playerSeenRoleMatch) {
+                playerSeenRoleMatchIds.set(
+                  `${player.type}-${player.id}`,
+                  new Map(),
+                );
+                playerSeenRoleMatch = playerSeenRoleMatchIds.get(
+                  `${player.type}-${player.id}`,
+                );
+              }
               acc[`${player.type}-${player.id}`] = {
                 id: player.id,
                 type: player.type,
@@ -1589,14 +1607,30 @@ export const gameRouter = createTRPCRouter({
                     playerRoleMap.add(match.id);
                   }
                 } else {
-                  if (
-                    playerSeenRoleMatchIds
-                      .get(`${player.type}-${player.id}`)
-                      ?.get(role.id)
-                      ?.has(match.id)
-                  ) {
-                    accRole.matchCount++;
+                  let playerSeenRoleMatch = playerSeenRoleMatchIds.get(
+                    `${player.type}-${player.id}`,
+                  );
+                  if (!playerSeenRoleMatch) {
+                    playerSeenRoleMatchIds.set(
+                      `${player.type}-${player.id}`,
+                      new Map(),
+                    );
+                    playerSeenRoleMatch = playerSeenRoleMatchIds.get(
+                      `${player.type}-${player.id}`,
+                    );
                   }
+                  let playerRoleMatch = playerSeenRoleMatch?.get(role.id);
+                  if (!playerRoleMatch) {
+                    playerRoleMatch = new Set();
+                    playerRoleMatch.add(match.id);
+                    playerSeenRoleMatch?.set(role.id, playerRoleMatch);
+                    accRole.matchCount++;
+                  } else {
+                    if (!playerRoleMatch.has(match.id)) {
+                      accRole.matchCount++;
+                    }
+                  }
+
                   accRole.winRate =
                     (accRole.wins + (player.isWinner ? 1 : 0)) /
                     accRole.matchCount;
@@ -1817,7 +1851,7 @@ export const gameRouter = createTRPCRouter({
                   seenRoleComboMatchIds.set(roleComboKey, new Set());
                 } else {
                   globalCombo.players++;
-                  if (seenRoleComboMatchIds.get(roleComboKey)?.has(match.id)) {
+                  if (!seenRoleComboMatchIds.get(roleComboKey)?.has(match.id)) {
                     globalCombo.matchCount++;
                   }
                   globalCombo.wins += player.isWinner ? 1 : 0;
@@ -1832,7 +1866,7 @@ export const gameRouter = createTRPCRouter({
                 const playerCombo = accPlayer?.roleCombos[roleComboKey];
                 if (accPlayer && playerCombo) {
                   if (
-                    playerSeenRoleComboMatchIds
+                    !playerSeenRoleComboMatchIds
                       .get(`${player.type}-${player.id}`)
                       ?.get(roleComboKey)
                       ?.has(match.id)
