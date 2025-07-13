@@ -1888,11 +1888,11 @@ export const gameRouter = createTRPCRouter({
           }),
           roles: Object.values(player.roles).map((role) => ({
             ...role,
-            winRate: role.wins / role.matchCount,
+            winRate: role.wins / (role.wins + role.losses),
           })),
           roleCombos: Object.values(player.roleCombos).map((combo) => ({
             ...combo,
-            winRate: combo.wins / combo.matchCount,
+            winRate: combo.wins / (combo.wins + combo.losses),
           })),
         })),
         winRate: userWinRate,
@@ -1902,12 +1902,18 @@ export const gameRouter = createTRPCRouter({
         headToHead: headToHeadStats(matches),
         roleStats: Object.values(roleStats).map((role) => ({
           ...role,
-          winRate: role.matchCount > 0 ? role.wins / role.matchCount : 0,
+          winRate:
+            role.wins + role.losses > 0
+              ? role.wins / (role.wins + role.losses)
+              : 0,
           players: Object.values(role.players),
         })),
         roleCombos: Object.values(comboRoles).map((combo) => ({
           ...combo,
-          winRate: combo.matchCount > 0 ? combo.wins / combo.matchCount : 0,
+          winRate:
+            combo.wins + combo.losses > 0
+              ? combo.wins / (combo.wins + combo.losses)
+              : 0,
         })),
       };
     }),
