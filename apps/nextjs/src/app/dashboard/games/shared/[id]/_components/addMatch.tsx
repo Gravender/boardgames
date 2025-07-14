@@ -1147,7 +1147,7 @@ const AddPlayerForm = ({
           ),
           queryClient.invalidateQueries(trpc.player.getPlayers.queryOptions()),
           queryClient.invalidateQueries(
-            trpc.dashboard.getPlayers.queryOptions(),
+            trpc.dashboard.getUserStats.pathFilter(),
           ),
         ]);
         setIsAddPlayer(false);

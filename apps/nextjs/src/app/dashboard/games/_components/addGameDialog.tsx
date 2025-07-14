@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import {
   ChevronDown,
   ChevronUp,
@@ -83,6 +83,7 @@ import { cn } from "@board-games/ui/utils";
 import { GradientPicker } from "~/components/color-picker";
 import { GameImage } from "~/components/game-image";
 import { Spinner } from "~/components/spinner";
+import { useInvalidateGames } from "~/hooks/invalidate/game";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
@@ -241,19 +242,13 @@ const AddGameForm = ({
   const [gameRolesOpen, setGameRolesOpen] = useState(false);
 
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
+  const invalidateGames = useInvalidateGames();
   const posthog = usePostHog();
 
   const addGame = useMutation(
     trpc.game.create.mutationOptions({
       onSuccess: async (result) => {
-        await queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
-        await queryClient.invalidateQueries(
-          trpc.dashboard.getGames.queryOptions(),
-        );
-        await queryClient.invalidateQueries(
-          trpc.dashboard.getUniqueGames.queryOptions(),
-        );
+        await Promise.all(invalidateGames());
         setImagePreview(null);
         form.reset();
         setIsUploading(false);

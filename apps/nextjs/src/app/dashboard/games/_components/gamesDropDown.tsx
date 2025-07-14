@@ -32,6 +32,10 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
+import {
+  useInvalidateEditGame,
+  useInvalidateGames,
+} from "~/hooks/invalidate/game";
 import { useTRPC } from "~/trpc/react";
 
 export function GamesDropDown({
@@ -43,12 +47,15 @@ export function GamesDropDown({
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const invalidateEditGame = useInvalidateEditGame();
+  const invalidateGames = useInvalidateGames();
   const deleteGame = useMutation(
     trpc.game.deleteGame.mutationOptions({
       onSuccess: async () => {
         await Promise.all([
-          queryClient.invalidateQueries(trpc.game.getGames.queryOptions()),
-          queryClient.invalidateQueries(trpc.player.getPlayers.queryOptions()),
+          ...invalidateEditGame(data.id),
+          ...invalidateGames(),
+          queryClient.invalidateQueries(trpc.player.pathFilter()),
           queryClient.invalidateQueries(trpc.dashboard.pathFilter()),
         ]);
       },
