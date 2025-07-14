@@ -212,6 +212,14 @@ export const gameRouter = createTRPCRouter({
         }
         return returningGame;
       });
+      analyticsServerClient.capture({
+        distinctId: ctx.auth.userId ?? "",
+        event: "game created",
+        properties: {
+          gameName: result.name,
+          gameId: result.id,
+        },
+      });
       return result;
     }),
   getGame: protectedUserProcedure

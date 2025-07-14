@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import {
   ChevronDown,
   ChevronUp,
@@ -91,6 +91,7 @@ import { cn } from "@board-games/ui/utils";
 import { GradientPicker } from "~/components/color-picker";
 import { GameImage } from "~/components/game-image";
 import { Spinner } from "~/components/spinner";
+import { useInvalidateEditGame } from "~/hooks/invalidate/game";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
@@ -293,34 +294,11 @@ const GameForm = ({
   const { startUpload } = useUploadThing("imageUploader");
   const router = useRouter();
 
-  const queryClient = useQueryClient();
+  const invalidateEditGame = useInvalidateEditGame();
   const mutation = useMutation(
     trpc.game.updateGame.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
-        await queryClient.invalidateQueries(
-          trpc.game.getGame.queryOptions({ id: data.game.id }),
-        );
-        await queryClient.invalidateQueries(
-          trpc.game.getGameRoles.queryOptions({
-            gameId: data.game.id,
-          }),
-        );
-        await queryClient.invalidateQueries(
-          trpc.game.getEditGame.queryOptions({ id: data.game.id }),
-        );
-        await queryClient.invalidateQueries(
-          trpc.game.getGameMetaData.queryOptions({ id: data.game.id }),
-        );
-        await queryClient.invalidateQueries(
-          trpc.game.getGameName.queryOptions({ id: data.game.id }),
-        );
-        await queryClient.invalidateQueries(
-          trpc.game.getGameStats.queryOptions({ id: data.game.id }),
-        );
-        await queryClient.invalidateQueries(
-          trpc.dashboard.getGames.queryOptions(),
-        );
+        await Promise.all(invalidateEditGame(data.game.id));
         toast("Game updated successfully!");
         form.reset();
         setImagePreview(null);

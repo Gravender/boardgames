@@ -412,7 +412,12 @@ export const matchRouter = createTRPCRouter({
           createdMatch,
           shareFriends,
         );
-        return returningMatch;
+        return {
+          match: createdMatch,
+          players: insertedMatchPlayers.map((mp) => ({
+            playerId: mp.playerId,
+          })),
+        };
       });
       return response;
     }),

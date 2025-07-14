@@ -4,12 +4,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import {
   CalendarIcon,
@@ -21,6 +16,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -80,6 +76,12 @@ import { cn } from "@board-games/ui/utils";
 
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
+import { useInvalidateGame, useInvalidateGames } from "~/hooks/invalidate/game";
+import { useInvalidateLocations } from "~/hooks/invalidate/location";
+import {
+  useInvalidatePlayer,
+  useInvalidatePlayers,
+} from "~/hooks/invalidate/player";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
@@ -245,7 +247,6 @@ function Content({
     <>
       {isPlayers ? (
         <AddPlayersForm
-          gameId={gameId}
           parentForm={form}
           players={players}
           roles={roles}
@@ -286,24 +287,36 @@ const AddMatchForm = ({
   const [showAddLocation, setShowAddLocation] = useState(false);
   const [newLocation, setNewLocation] = useState("");
 
-  const queryClient = useQueryClient();
   const router = useRouter();
+  const invalidatePlayers = useInvalidatePlayers();
+  const invalidateLocations = useInvalidateLocations();
+  const invalidateGames = useInvalidateGames();
+  const invalidateGame = useInvalidateGame();
+  const invalidatePlayer = useInvalidatePlayer();
+  const posthog = usePostHog();
 
   const createMatch = useMutation(
     trpc.match.createMatch.mutationOptions({
-      onSuccess: (response) => {
-        void Promise.all([
-          queryClient.invalidateQueries(
-            trpc.player.getPlayersByGame.queryFilter({ game: { id: gameId } }),
-          ),
-          queryClient.invalidateQueries(trpc.player.getPlayers.queryOptions()),
-          queryClient.invalidateQueries(
-            trpc.game.getGame.queryOptions({ id: gameId }),
-          ),
-          queryClient.invalidateQueries(trpc.dashboard.pathFilter()),
+      onSuccess: async (response) => {
+        const playersToInvalidate = response.players.flatMap((p) => {
+          return invalidatePlayer(p.playerId);
+        });
+        await Promise.all([
+          ...invalidateGames(),
+          ...invalidateGame(gameId),
+          ...invalidatePlayers(),
+          ...playersToInvalidate,
         ]);
-        router.push(`/dashboard/games/${gameId}/${response.id}`);
+        router.push(`/dashboard/games/${gameId}/${response.match.id}`);
         setIsSubmitting(false);
+      },
+      onError: (error) => {
+        posthog.capture("game create error", { error });
+        toast.error("Error", {
+          description: "There was a problem adding your game.",
+        });
+
+        throw new Error("There was a problem adding your game.");
       },
     }),
   );
@@ -311,9 +324,7 @@ const AddMatchForm = ({
   const createLocation = useMutation(
     trpc.location.create.mutationOptions({
       onSuccess: async (result) => {
-        await queryClient.invalidateQueries(
-          trpc.location.getLocations.queryOptions(),
-        );
+        await Promise.all([invalidateLocations()]);
         setNewLocation("");
         setShowAddLocation(false);
         form.setValue("location", {
@@ -328,6 +339,9 @@ const AddMatchForm = ({
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
+    posthog.capture("add match begin", {
+      gameId: gameId,
+    });
     const mappedTeams = values.players.reduce<
       Record<
         string,
@@ -689,13 +703,11 @@ const AddPlayersFormSchema = z.object({
 });
 type addPlayersFormType = z.infer<typeof AddPlayersFormSchema>;
 const AddPlayersForm = ({
-  gameId,
   parentForm,
   players,
   roles,
   setIsPlayers,
 }: {
-  gameId: number;
   parentForm: UseFormReturn<z.infer<typeof formSchema>>;
   players: NonNullable<RouterOutputs["player"]["getPlayersByGame"]>;
   roles: NonNullable<RouterOutputs["game"]["getGameRoles"]>;
@@ -775,7 +787,6 @@ const AddPlayersForm = ({
   if (showAddPlayer) {
     return (
       <AddPlayerForm
-        gameId={gameId}
         addMatchPlayer={append}
         setIsAddPlayer={setShowAddPlayer}
       />
@@ -1742,11 +1753,9 @@ const addPlayerSchema = insertPlayerSchema.pick({ name: true }).extend({
   imageUrl: fileSchema,
 });
 const AddPlayerForm = ({
-  gameId,
   addMatchPlayer,
   setIsAddPlayer,
 }: {
-  gameId: number;
   addMatchPlayer: UseFieldArrayAppend<addPlayersFormType, "players">;
   setIsAddPlayer: Dispatch<SetStateAction<boolean>>;
 }) => {
@@ -1756,7 +1765,7 @@ const AddPlayerForm = ({
 
   const { startUpload } = useUploadThing("imageUploader");
 
-  const queryClient = useQueryClient();
+  const invalidatePlayers = useInvalidatePlayers();
 
   const form = useForm({
     schema: addPlayerSchema,
@@ -1767,7 +1776,7 @@ const AddPlayerForm = ({
   });
   const createPlayer = useMutation(
     trpc.player.create.mutationOptions({
-      onSuccess: (player) => {
+      onSuccess: async (player) => {
         setIsUploading(false);
         addMatchPlayer({
           id: player.id,
@@ -1777,14 +1786,7 @@ const AddPlayerForm = ({
           team: null,
           roles: [],
         });
-        void Promise.all([
-          queryClient.invalidateQueries(
-            trpc.player.getPlayersByGame.queryFilter({
-              game: { id: gameId },
-            }),
-          ),
-          queryClient.invalidateQueries(trpc.player.getPlayers.queryOptions()),
-        ]);
+        await Promise.all([...invalidatePlayers()]);
         setIsAddPlayer(false);
         toast("Player created successfully!");
       },
