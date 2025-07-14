@@ -941,16 +941,16 @@ export default function RolesTab({
                       <div className="flex max-h-[40vh] flex-col gap-2">
                         {Object.values(selectedRole.players)
                           .sort((a, b) => {
-                            if (a.totalMatches > 10 && b.totalMatches > 10) {
+                            if (a.matchCount > 10 && b.matchCount > 10) {
                               return b.winRate - a.winRate;
                             }
-                            if (a.totalMatches > 10 && b.totalMatches <= 10) {
+                            if (a.matchCount > 10 && b.matchCount <= 10) {
                               return 1;
                             }
-                            if (a.totalMatches <= 10 && b.totalMatches > 10) {
+                            if (a.matchCount <= 10 && b.matchCount > 10) {
                               return -1;
                             }
-                            return b.totalMatches - a.totalMatches;
+                            return b.matchCount - a.matchCount;
                           })
                           .map((player, index) => {
                             const avgPlacement = formatPlacementDistribution(
@@ -984,7 +984,7 @@ export default function RolesTab({
                                         )}
                                       </div>
                                       <div className="text-sm text-muted-foreground">
-                                        {player.totalMatches} games played
+                                        {player.matchCount} games played
                                       </div>
                                     </div>
                                   </div>
