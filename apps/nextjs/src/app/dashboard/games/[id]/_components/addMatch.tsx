@@ -311,12 +311,12 @@ const AddMatchForm = ({
         setIsSubmitting(false);
       },
       onError: (error) => {
-        posthog.capture("game create error", { error });
+        posthog.capture("match create error", { error, gameId });
         toast.error("Error", {
-          description: "There was a problem adding your game.",
+          description: "There was a problem adding your match.",
         });
 
-        throw new Error("There was a problem adding your game.");
+        throw new Error("There was a problem adding your match.");
       },
     }),
   );
