@@ -708,6 +708,21 @@ type RoleStats = {
   players: Record<string, RolePlayerStats>;
 };
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type ComboRoleStats = {
+  roles: {
+    id: number;
+    name: string;
+    description: string | null;
+  }[];
+  matchCount: number;
+  matchIds: Set<number>;
+  wins: number;
+  losses: number;
+  players: Set<string>;
+  winRate: number;
+  placements: Record<number, number>;
+};
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type PlayerScoresheetStats = {
   id: number;
   bestScore: number | null;
@@ -830,480 +845,18 @@ export function playerAndRolesAggregated(
     },
     {} as Record<number, RoleStats & { matchIds: Set<number> }>,
   );
-  const comboRoles: Record<
-    string,
-    {
-      roles: {
-        id: number;
-        name: string;
-        description: string | null;
-      }[];
-      matchCount: number;
-      matchIds: Set<number>;
-      wins: number;
-      losses: number;
-      players: Set<string>;
-      winRate: number;
-      placements: Record<number, number>;
-    }
-  > = {};
+  const comboRoles: Record<string, ComboRoleStats> = {};
   const players = playerMatches.reduce(
     (acc, match) => {
       if (!match.finished) return acc;
       const currentScoresheet = match.scoresheet;
       const isCoop = currentScoresheet.isCoop;
       match.players.forEach((player) => {
-        const accPlayer = acc[`${player.type}-${player.id}`];
-        player.roles.forEach((role) => {
-          const accRole = roleStats[role.id];
-          if (!accRole) {
-            roleStats[role.id] = {
-              roleId: role.id,
-              name: role.name,
-              description: role.description,
-              playerCount: 1,
-              placements: player.placement > 0 ? { [player.placement]: 1 } : {},
-              wins: player.isWinner ? 1 : 0,
-              losses: player.isWinner ? 0 : 1,
-              matchCount: 1,
-              matchIds: new Set([match.id]),
-              winRate: player.isWinner ? 1 : 0,
-              players: {
-                [player.id]: {
-                  id: player.id,
-                  name: player.name,
-                  isUser: player.isUser,
-                  image: player.image,
-                  totalMatches: 1,
-                  matchIds: new Set([match.id]),
-                  totalWins: player.isWinner ? 1 : 0,
-                  totalLosses: player.isWinner ? 0 : 1,
-                  winRate: player.isWinner ? 1 : 0,
-                  placements:
-                    player.placement > 0 ? { [player.placement]: 1 } : {},
-                },
-              },
-            };
-          } else {
-            accRole.playerCount++;
-            if (player.placement > 0) {
-              accRole.placements[player.placement] =
-                (accRole.placements[player.placement] ?? 0) + 1;
-            }
-            accRole.wins += player.isWinner ? 1 : 0;
-            accRole.losses += player.isWinner ? 0 : 1;
-            accRole.matchIds.add(match.id);
-            accRole.winRate = accRole.wins / (accRole.wins + accRole.losses);
-            const accPlayer = accRole.players[player.id];
-            if (!accPlayer) {
-              accRole.players[player.id] = {
-                id: player.id,
-                name: player.name,
-                isUser: player.isUser,
-                image: player.image,
-                totalMatches: 1,
-                matchIds: new Set([match.id]),
-                totalWins: player.isWinner ? 1 : 0,
-                totalLosses: player.isWinner ? 0 : 1,
-                winRate: player.isWinner ? 1 : 0,
-                placements:
-                  player.placement > 0 ? { [player.placement]: 1 } : {},
-              };
-            } else {
-              accPlayer.totalWins += player.isWinner ? 1 : 0;
-              accPlayer.totalLosses += player.isWinner ? 0 : 1;
-              accPlayer.winRate =
-                accPlayer.totalWins /
-                (accPlayer.totalWins + accPlayer.totalLosses);
-              accPlayer.matchIds.add(match.id);
-              if (player.placement > 0) {
-                accPlayer.placements[player.placement] =
-                  (accPlayer.placements[player.placement] ?? 0) + 1;
-              }
-            }
-          }
-        });
-        if (!accPlayer) {
-          const tempPlacements: Record<number, number> = {};
-          const tempPlayerCount: Record<
-            number,
-            {
-              playerCount: number;
-              placements: Record<number, number>;
-              wins: number;
-              plays: number;
-            }
-          > = {};
-          const tempScoresheets: Record<number, PlayerScoresheetStats> = {};
-
-          if (!isCoop) {
-            tempPlacements[player.placement] = 1;
-            tempPlayerCount[match.players.length] = {
-              playerCount: match.players.length,
-              placements: {
-                [player.placement]: 1,
-              },
-              wins: player.isWinner ? 1 : 0,
-              plays: 1,
-            };
-          }
-          if (currentScoresheet.parentId) {
-            const tempPlayerRounds = updateRoundStatistics(
-              player.playerRounds,
-              currentScoresheet.rounds,
-              currentScoresheet.winCondition,
-              match.date,
-              player.isWinner ?? false,
-            );
-            tempScoresheets[currentScoresheet.parentId] = {
-              id: currentScoresheet.parentId,
-              bestScore: player.score,
-              worstScore: player.score,
-              scores: [
-                {
-                  date: match.date,
-                  score: player.score,
-                  isWin: player.isWinner ?? false,
-                },
-              ],
-              winRate: player.isWinner ? 1 : 0,
-              plays: 1,
-              wins: player.isWinner ? 1 : 0,
-              placements: !isCoop ? tempPlacements : {},
-              rounds: tempPlayerRounds,
-            };
-          }
-          acc[`${player.type}-${player.id}`] = {
-            id: player.id,
-            type: player.type,
-            name: player.name,
-            isUser: player.isUser,
-            coopWins: player.isWinner && isCoop ? 1 : 0,
-            competitiveWins: player.isWinner && !isCoop ? 1 : 0,
-            coopWinRate: player.isWinner && isCoop ? 1 : 0,
-            competitiveWinRate: player.isWinner && !isCoop ? 1 : 0,
-            coopMatches: isCoop ? 1 : 0,
-            competitiveMatches: !isCoop ? 1 : 0,
-            coopScores: isCoop
-              ? [
-                  {
-                    date: match.date,
-                    score: player.score,
-                    isWin: player.isWinner ?? false,
-                  },
-                ]
-              : [],
-            competitiveScores: !isCoop
-              ? [
-                  {
-                    date: match.date,
-                    score: player.score,
-                    isWin: player.isWinner ?? false,
-                  },
-                ]
-              : [],
-            image: player.image,
-            placements: !isCoop ? tempPlacements : {},
-            streaks: {
-              current: {
-                type: player.isWinner ? "win" : "loss",
-                count: 1,
-              },
-              longest: {
-                wins: player.isWinner ? 1 : 0,
-                losses: player.isWinner ? 0 : 1,
-              },
-            },
-            recentForm: player.isWinner ? ["win"] : ["loss"],
-            playerCount: !isCoop ? tempPlayerCount : {},
-            scoresheets: tempScoresheets,
-            roles: player.roles.reduce(
-              (acc, role) => {
-                acc[role.id] = {
-                  roleId: role.id,
-                  name: role.name,
-                  description: role.description,
-                  matchIds: new Set([match.id]),
-                  winRate: player.isWinner ? 1 : 0,
-                  losses: player.isWinner ? 0 : 1,
-                  wins: player.isWinner ? 1 : 0,
-                  placements:
-                    player.placement > 0 ? { [player.placement]: 1 } : {},
-                };
-                return acc;
-              },
-              {} as Record<number, PlayerRoleStats>,
-            ),
-            roleCombos: {},
-          };
-        } else {
-          accPlayer.recentForm.push(player.isWinner ? "win" : "loss");
-          const current = accPlayer.streaks.current;
-          player.roles.forEach((role) => {
-            const accRole = accPlayer.roles[role.id];
-            if (!accRole) {
-              accPlayer.roles[role.id] = {
-                roleId: role.id,
-                name: role.name,
-                description: role.description,
-                matchIds: new Set([match.id]),
-                winRate: player.isWinner ? 1 : 0,
-                wins: player.isWinner ? 1 : 0,
-                losses: player.isWinner ? 0 : 1,
-                placements:
-                  player.placement > 0 ? { [player.placement]: 1 } : {},
-              };
-            } else {
-              accRole.matchIds.add(match.id);
-              accRole.wins += player.isWinner ? 1 : 0;
-              accRole.losses += player.isWinner ? 0 : 1;
-              accRole.winRate = accRole.wins / (accRole.wins + accRole.losses);
-              if (player.placement > 0) {
-                accRole.placements[player.placement] =
-                  (accRole.placements[player.placement] ?? 0) + 1;
-              }
-            }
-          });
-          if (
-            (player.isWinner && current.type === "win") ||
-            (!player.isWinner && current.type === "loss")
-          ) {
-            current.count = current.count + 1;
-          } else {
-            current.type = player.isWinner ? "win" : "loss";
-            current.count = 1;
-          }
-
-          const longest = accPlayer.streaks.longest;
-          if (current.count > longest.wins && current.type === "win") {
-            longest.wins = current.count;
-          }
-          if (current.count > longest.losses && current.type === "loss") {
-            longest.losses = current.count;
-          }
-          if (isCoop) {
-            if (player.isWinner) accPlayer.coopWins++;
-            accPlayer.coopMatches++;
-            accPlayer.coopScores.push({
-              date: match.date,
-              score: player.score,
-              isWin: player.isWinner ?? false,
-            });
-          } else {
-            if (player.isWinner) accPlayer.competitiveWins++;
-            accPlayer.competitiveMatches++;
-            accPlayer.placements[player.placement] =
-              (accPlayer.placements[player.placement] ?? 0) + 1;
-            accPlayer.competitiveScores.push({
-              date: match.date,
-              score: player.score,
-              isWin: player.isWinner ?? false,
-            });
-            const playerCount = accPlayer.playerCount[match.players.length];
-            if (playerCount) {
-              playerCount.plays = playerCount.plays + 1;
-              playerCount.wins = playerCount.wins + (player.isWinner ? 1 : 0);
-              playerCount.placements[player.placement] =
-                (playerCount.placements[player.placement] ?? 0) + 1;
-            } else {
-              accPlayer.playerCount[match.players.length] = {
-                playerCount: match.players.length,
-                placements: {
-                  [player.placement]: 1,
-                },
-                wins: player.isWinner ? 1 : 0,
-                plays: 1,
-              };
-            }
-          }
-          if (currentScoresheet.parentId) {
-            const accScoresheet =
-              accPlayer.scoresheets[currentScoresheet.parentId];
-            if (!accScoresheet) {
-              const tempPlayerRounds = updateRoundStatistics(
-                player.playerRounds,
-                currentScoresheet.rounds,
-                currentScoresheet.winCondition,
-                match.date,
-                player.isWinner ?? false,
-              );
-              accPlayer.scoresheets[currentScoresheet.parentId] = {
-                id: currentScoresheet.parentId,
-                bestScore: player.score,
-                worstScore: player.score,
-                scores: [
-                  {
-                    date: match.date,
-                    score: player.score,
-                    isWin: player.isWinner ?? false,
-                  },
-                ],
-                winRate: player.isWinner ? 1 : 0,
-                plays: 1,
-                wins: player.isWinner ? 1 : 0,
-                placements: accPlayer.placements,
-                rounds: tempPlayerRounds,
-              };
-            } else {
-              accScoresheet.plays++;
-              accScoresheet.wins += player.isWinner ? 1 : 0;
-              if (player.score !== null) {
-                if (currentScoresheet.winCondition === "Lowest Score") {
-                  accScoresheet.bestScore = accScoresheet.bestScore
-                    ? Math.min(accScoresheet.bestScore, player.score)
-                    : player.score;
-                  accScoresheet.worstScore = accScoresheet.worstScore
-                    ? Math.max(accScoresheet.worstScore, player.score)
-                    : player.score;
-                } else if (currentScoresheet.winCondition === "Highest Score") {
-                  accScoresheet.bestScore = accScoresheet.bestScore
-                    ? Math.max(accScoresheet.bestScore, player.score)
-                    : player.score;
-                  accScoresheet.worstScore = accScoresheet.worstScore
-                    ? Math.min(accScoresheet.worstScore, player.score)
-                    : player.score;
-                }
-              }
-              accScoresheet.scores.push({
-                date: match.date,
-                score: player.score,
-                isWin: player.isWinner ?? false,
-              });
-              player.playerRounds.forEach((pRound) => {
-                const foundRound = currentScoresheet.rounds.find(
-                  (round) => round.id === pRound.roundId,
-                );
-                if (foundRound?.parentId) {
-                  const accPlayerRound =
-                    accScoresheet.rounds[foundRound.parentId];
-                  if (!accPlayerRound) {
-                    accScoresheet.rounds[foundRound.parentId] = {
-                      id: foundRound.id,
-                      bestScore:
-                        currentScoresheet.winCondition === "Lowest Score" ||
-                        currentScoresheet.winCondition === "Highest Score"
-                          ? pRound.score
-                          : null,
-                      worstScore:
-                        currentScoresheet.winCondition === "Lowest Score" ||
-                        currentScoresheet.winCondition === "Highest Score"
-                          ? pRound.score
-                          : null,
-                      scores: [
-                        {
-                          date: match.date,
-                          score: pRound.score,
-                          isWin: player.isWinner ?? false,
-                        },
-                      ],
-                    };
-                  } else {
-                    if (pRound.score !== null) {
-                      if (currentScoresheet.winCondition === "Lowest Score") {
-                        accPlayerRound.bestScore = Math.min(
-                          accPlayerRound.bestScore ?? 0,
-                          pRound.score,
-                        );
-                        accPlayerRound.worstScore = Math.max(
-                          accPlayerRound.worstScore ?? 0,
-                          pRound.score,
-                        );
-                      } else if (
-                        currentScoresheet.winCondition === "Highest Score"
-                      ) {
-                        accPlayerRound.bestScore = Math.max(
-                          accPlayerRound.bestScore ?? 0,
-                          pRound.score,
-                        );
-                        accPlayerRound.worstScore = Math.min(
-                          accPlayerRound.worstScore ?? 0,
-                          pRound.score,
-                        );
-                      }
-                    }
-                    accPlayerRound.scores.push({
-                      date: match.date,
-                      score: pRound.score,
-                      isWin: player.isWinner ?? false,
-                    });
-                  }
-                }
-              });
-              if (!isCoop)
-                accScoresheet.placements[player.placement] =
-                  (accScoresheet.placements[player.placement] ?? 0) + 1;
-            }
-          }
-        }
+        updateRoleStats(roleStats, player, match);
+        updatePlayerStats(acc, player, match, isCoop, currentScoresheet);
         if (player.roles.length >= 2) {
           const accPlayer = acc[`${player.type}-${player.id}`];
-          if (!accPlayer) {
-            console.error(
-              `Player ${player.type}-${player.id} not found in accumulator`,
-            );
-          }
-          const roleCombos = combinations(player.roles, 2);
-          for (const roleCombo of roleCombos) {
-            const sortedCombo = roleCombo
-              .slice()
-              .sort((a, b) => a.name.localeCompare(b.name));
-            const roleComboKey = sortedCombo.map((r) => r.name).join(" + ");
-            const globalCombo = comboRoles[roleComboKey];
-            if (!globalCombo) {
-              comboRoles[roleComboKey] = {
-                roles: sortedCombo.map((r) => ({
-                  id: r.id,
-                  name: r.name,
-                  description: r.description,
-                })),
-                matchCount: 1,
-                matchIds: new Set([match.id]),
-                players: new Set([`${player.type}-${player.id}`]),
-                wins: player.isWinner ? 1 : 0,
-                losses: player.isWinner ? 0 : 1,
-                winRate: player.isWinner ? 1 : 0,
-                placements:
-                  player.placement > 0 ? { [player.placement]: 1 } : {},
-              };
-            } else {
-              globalCombo.matchIds.add(match.id);
-              globalCombo.wins += player.isWinner ? 1 : 0;
-              globalCombo.losses += player.isWinner ? 0 : 1;
-              globalCombo.players.add(`${player.type}-${player.id}`);
-              globalCombo.winRate =
-                globalCombo.wins / (globalCombo.wins + globalCombo.losses);
-              if (player.placement > 0) {
-                globalCombo.placements[player.placement] =
-                  (globalCombo.placements[player.placement] ?? 0) + 1;
-              }
-            }
-            const playerCombo = accPlayer?.roleCombos[roleComboKey];
-            if (accPlayer && playerCombo) {
-              playerCombo.matchIds.add(match.id);
-              playerCombo.losses += player.isWinner ? 0 : 1;
-              playerCombo.wins += player.isWinner ? 1 : 0;
-              playerCombo.winRate =
-                playerCombo.wins / (playerCombo.wins + playerCombo.losses);
-              if (player.placement > 0) {
-                playerCombo.placements[player.placement] =
-                  (playerCombo.placements[player.placement] ?? 0) + 1;
-              }
-            } else if (accPlayer) {
-              accPlayer.roleCombos[roleComboKey] = {
-                roles: sortedCombo.map((r) => ({
-                  id: r.id,
-                  name: r.name,
-                  description: r.description,
-                })),
-                matchIds: new Set([match.id]),
-                wins: player.isWinner ? 1 : 0,
-                losses: player.isWinner ? 0 : 1,
-                winRate: player.isWinner ? 1 : 0,
-                placements:
-                  player.placement > 0 ? { [player.placement]: 1 } : {},
-              };
-            }
-          }
+          updateComboRoles(comboRoles, accPlayer, player, match);
         }
       });
       return acc;
@@ -1313,15 +866,20 @@ export function playerAndRolesAggregated(
   return {
     roleStats: Object.values(roleStats).map((role) => ({
       ...role,
+      players: Object.values(role.players).map((player) => ({
+        ...player,
+        matchCount: player.matchIds.size,
+        winRate: player.totalWins / (player.totalWins + player.totalLosses),
+      })),
       winRate: role.wins / (role.wins + role.losses),
-      players: role.players.size,
-      matches: role.matchIds.size,
+      playerCount: Object.values(role.players).length,
+      matchCount: role.matchIds.size,
     })),
     comboRolesStats: Object.values(comboRoles).map((combo) => ({
       ...combo,
       winRate: combo.wins / (combo.wins + combo.losses),
-      players: combo.players.size,
-      matches: combo.matchIds.size,
+      playerCount: combo.players.size,
+      matchCount: combo.matchIds.size,
     })),
     playerStats: Object.values(players).map((player) => ({
       ...player,
@@ -1364,15 +922,474 @@ export function playerAndRolesAggregated(
       roles: Object.values(player.roles).map((role) => ({
         ...role,
         winRate: role.wins / (role.wins + role.losses),
-        matches: role.matchIds.size,
+        matchCount: role.matchIds.size,
       })),
       roleCombos: Object.values(player.roleCombos).map((combo) => ({
         ...combo,
         winRate: combo.wins / (combo.wins + combo.losses),
-        matches: combo.matchIds.size,
+        matchCount: combo.matchIds.size,
       })),
     })),
   };
+}
+function updateRoleStats(
+  roleStats: Record<number, RoleStats & { matchIds: Set<number> }>,
+  player: Player,
+  match: PlayerMatch,
+) {
+  player.roles.forEach((role) => {
+    const accRole = roleStats[role.id];
+    if (!accRole) {
+      roleStats[role.id] = {
+        roleId: role.id,
+        name: role.name,
+        description: role.description,
+        playerCount: 1,
+        placements: player.placement > 0 ? { [player.placement]: 1 } : {},
+        wins: player.isWinner ? 1 : 0,
+        losses: player.isWinner ? 0 : 1,
+        matchCount: 1,
+        matchIds: new Set([match.id]),
+        winRate: player.isWinner ? 1 : 0,
+        players: {
+          [`${player.type}-${player.id}`]: {
+            id: player.id,
+            name: player.name,
+            isUser: player.isUser,
+            image: player.image,
+            totalMatches: 1,
+            matchIds: new Set([match.id]),
+            totalWins: player.isWinner ? 1 : 0,
+            totalLosses: player.isWinner ? 0 : 1,
+            winRate: player.isWinner ? 1 : 0,
+            placements: player.placement > 0 ? { [player.placement]: 1 } : {},
+          },
+        },
+      };
+    } else {
+      accRole.playerCount++;
+      if (player.placement > 0) {
+        accRole.placements[player.placement] =
+          (accRole.placements[player.placement] ?? 0) + 1;
+      }
+      accRole.wins += player.isWinner ? 1 : 0;
+      accRole.losses += player.isWinner ? 0 : 1;
+      accRole.matchIds.add(match.id);
+      accRole.winRate = accRole.wins / (accRole.wins + accRole.losses);
+      const accPlayer = accRole.players[`${player.type}-${player.id}`];
+      if (!accPlayer) {
+        accRole.players[`${player.type}-${player.id}`] = {
+          id: player.id,
+          name: player.name,
+          isUser: player.isUser,
+          image: player.image,
+          totalMatches: 1,
+          matchIds: new Set([match.id]),
+          totalWins: player.isWinner ? 1 : 0,
+          totalLosses: player.isWinner ? 0 : 1,
+          winRate: player.isWinner ? 1 : 0,
+          placements: player.placement > 0 ? { [player.placement]: 1 } : {},
+        };
+      } else {
+        accPlayer.totalWins += player.isWinner ? 1 : 0;
+        accPlayer.totalLosses += player.isWinner ? 0 : 1;
+        accPlayer.winRate =
+          accPlayer.totalWins / (accPlayer.totalWins + accPlayer.totalLosses);
+        accPlayer.matchIds.add(match.id);
+        if (player.placement > 0) {
+          accPlayer.placements[player.placement] =
+            (accPlayer.placements[player.placement] ?? 0) + 1;
+        }
+      }
+    }
+  });
+}
+function updatePlayerStats(
+  acc: Record<string, PlayerStats>,
+  player: Player,
+  match: PlayerMatch,
+  isCoop: boolean,
+  currentScoresheet: PlayerMatch["scoresheet"],
+) {
+  const accPlayer = acc[`${player.type}-${player.id}`];
+  if (!accPlayer) {
+    const tempPlacements: Record<number, number> = {};
+    const tempPlayerCount: Record<
+      number,
+      {
+        playerCount: number;
+        placements: Record<number, number>;
+        wins: number;
+        plays: number;
+      }
+    > = {};
+    const tempScoresheets: Record<number, PlayerScoresheetStats> = {};
+
+    if (!isCoop) {
+      tempPlacements[player.placement] = 1;
+      tempPlayerCount[match.players.length] = {
+        playerCount: match.players.length,
+        placements: {
+          [player.placement]: 1,
+        },
+        wins: player.isWinner ? 1 : 0,
+        plays: 1,
+      };
+    }
+    if (currentScoresheet.parentId) {
+      const tempPlayerRounds = updateRoundStatistics(
+        player.playerRounds,
+        currentScoresheet.rounds,
+        currentScoresheet.winCondition,
+        match.date,
+        player.isWinner ?? false,
+      );
+      tempScoresheets[currentScoresheet.parentId] = {
+        id: currentScoresheet.parentId,
+        bestScore: player.score,
+        worstScore: player.score,
+        scores: [
+          {
+            date: match.date,
+            score: player.score,
+            isWin: player.isWinner ?? false,
+          },
+        ],
+        winRate: player.isWinner ? 1 : 0,
+        plays: 1,
+        wins: player.isWinner ? 1 : 0,
+        placements: !isCoop ? tempPlacements : {},
+        rounds: tempPlayerRounds,
+      };
+    }
+    acc[`${player.type}-${player.id}`] = {
+      id: player.id,
+      type: player.type,
+      name: player.name,
+      isUser: player.isUser,
+      coopWins: player.isWinner && isCoop ? 1 : 0,
+      competitiveWins: player.isWinner && !isCoop ? 1 : 0,
+      coopWinRate: player.isWinner && isCoop ? 1 : 0,
+      competitiveWinRate: player.isWinner && !isCoop ? 1 : 0,
+      coopMatches: isCoop ? 1 : 0,
+      competitiveMatches: !isCoop ? 1 : 0,
+      coopScores: isCoop
+        ? [
+            {
+              date: match.date,
+              score: player.score,
+              isWin: player.isWinner ?? false,
+            },
+          ]
+        : [],
+      competitiveScores: !isCoop
+        ? [
+            {
+              date: match.date,
+              score: player.score,
+              isWin: player.isWinner ?? false,
+            },
+          ]
+        : [],
+      image: player.image,
+      placements: !isCoop ? tempPlacements : {},
+      streaks: {
+        current: {
+          type: player.isWinner ? "win" : "loss",
+          count: 1,
+        },
+        longest: {
+          wins: player.isWinner ? 1 : 0,
+          losses: player.isWinner ? 0 : 1,
+        },
+      },
+      recentForm: player.isWinner ? ["win"] : ["loss"],
+      playerCount: !isCoop ? tempPlayerCount : {},
+      scoresheets: tempScoresheets,
+      roles: player.roles.reduce(
+        (acc, role) => {
+          acc[role.id] = {
+            roleId: role.id,
+            name: role.name,
+            description: role.description,
+            matchIds: new Set([match.id]),
+            winRate: player.isWinner ? 1 : 0,
+            losses: player.isWinner ? 0 : 1,
+            wins: player.isWinner ? 1 : 0,
+            placements: player.placement > 0 ? { [player.placement]: 1 } : {},
+          };
+          return acc;
+        },
+        {} as Record<number, PlayerRoleStats>,
+      ),
+      roleCombos: {},
+    };
+  } else {
+    accPlayer.recentForm.push(player.isWinner ? "win" : "loss");
+    const current = accPlayer.streaks.current;
+    player.roles.forEach((role) => {
+      const accRole = accPlayer.roles[role.id];
+      if (!accRole) {
+        accPlayer.roles[role.id] = {
+          roleId: role.id,
+          name: role.name,
+          description: role.description,
+          matchIds: new Set([match.id]),
+          winRate: player.isWinner ? 1 : 0,
+          wins: player.isWinner ? 1 : 0,
+          losses: player.isWinner ? 0 : 1,
+          placements: player.placement > 0 ? { [player.placement]: 1 } : {},
+        };
+      } else {
+        accRole.matchIds.add(match.id);
+        accRole.wins += player.isWinner ? 1 : 0;
+        accRole.losses += player.isWinner ? 0 : 1;
+        accRole.winRate = accRole.wins / (accRole.wins + accRole.losses);
+        if (player.placement > 0) {
+          accRole.placements[player.placement] =
+            (accRole.placements[player.placement] ?? 0) + 1;
+        }
+      }
+    });
+    if (
+      (player.isWinner && current.type === "win") ||
+      (!player.isWinner && current.type === "loss")
+    ) {
+      current.count = current.count + 1;
+    } else {
+      current.type = player.isWinner ? "win" : "loss";
+      current.count = 1;
+    }
+
+    const longest = accPlayer.streaks.longest;
+    if (current.count > longest.wins && current.type === "win") {
+      longest.wins = current.count;
+    }
+    if (current.count > longest.losses && current.type === "loss") {
+      longest.losses = current.count;
+    }
+    if (isCoop) {
+      if (player.isWinner) accPlayer.coopWins++;
+      accPlayer.coopMatches++;
+      accPlayer.coopScores.push({
+        date: match.date,
+        score: player.score,
+        isWin: player.isWinner ?? false,
+      });
+    } else {
+      if (player.isWinner) accPlayer.competitiveWins++;
+      accPlayer.competitiveMatches++;
+      accPlayer.placements[player.placement] =
+        (accPlayer.placements[player.placement] ?? 0) + 1;
+      accPlayer.competitiveScores.push({
+        date: match.date,
+        score: player.score,
+        isWin: player.isWinner ?? false,
+      });
+      const playerCount = accPlayer.playerCount[match.players.length];
+      if (playerCount) {
+        playerCount.plays = playerCount.plays + 1;
+        playerCount.wins = playerCount.wins + (player.isWinner ? 1 : 0);
+        playerCount.placements[player.placement] =
+          (playerCount.placements[player.placement] ?? 0) + 1;
+      } else {
+        accPlayer.playerCount[match.players.length] = {
+          playerCount: match.players.length,
+          placements: {
+            [player.placement]: 1,
+          },
+          wins: player.isWinner ? 1 : 0,
+          plays: 1,
+        };
+      }
+    }
+    if (currentScoresheet.parentId) {
+      const accScoresheet = accPlayer.scoresheets[currentScoresheet.parentId];
+      if (!accScoresheet) {
+        const tempPlayerRounds = updateRoundStatistics(
+          player.playerRounds,
+          currentScoresheet.rounds,
+          currentScoresheet.winCondition,
+          match.date,
+          player.isWinner ?? false,
+        );
+        accPlayer.scoresheets[currentScoresheet.parentId] = {
+          id: currentScoresheet.parentId,
+          bestScore: player.score,
+          worstScore: player.score,
+          scores: [
+            {
+              date: match.date,
+              score: player.score,
+              isWin: player.isWinner ?? false,
+            },
+          ],
+          winRate: player.isWinner ? 1 : 0,
+          plays: 1,
+          wins: player.isWinner ? 1 : 0,
+          placements: accPlayer.placements,
+          rounds: tempPlayerRounds,
+        };
+      } else {
+        accScoresheet.plays++;
+        accScoresheet.wins += player.isWinner ? 1 : 0;
+        if (player.score !== null) {
+          if (currentScoresheet.winCondition === "Lowest Score") {
+            accScoresheet.bestScore = accScoresheet.bestScore
+              ? Math.min(accScoresheet.bestScore, player.score)
+              : player.score;
+            accScoresheet.worstScore = accScoresheet.worstScore
+              ? Math.max(accScoresheet.worstScore, player.score)
+              : player.score;
+          } else if (currentScoresheet.winCondition === "Highest Score") {
+            accScoresheet.bestScore = accScoresheet.bestScore
+              ? Math.max(accScoresheet.bestScore, player.score)
+              : player.score;
+            accScoresheet.worstScore = accScoresheet.worstScore
+              ? Math.min(accScoresheet.worstScore, player.score)
+              : player.score;
+          }
+        }
+        accScoresheet.scores.push({
+          date: match.date,
+          score: player.score,
+          isWin: player.isWinner ?? false,
+        });
+        player.playerRounds.forEach((pRound) => {
+          const foundRound = currentScoresheet.rounds.find(
+            (round) => round.id === pRound.roundId,
+          );
+          if (foundRound?.parentId) {
+            const accPlayerRound = accScoresheet.rounds[foundRound.parentId];
+            if (!accPlayerRound) {
+              accScoresheet.rounds[foundRound.parentId] = {
+                id: foundRound.id,
+                bestScore:
+                  currentScoresheet.winCondition === "Lowest Score" ||
+                  currentScoresheet.winCondition === "Highest Score"
+                    ? pRound.score
+                    : null,
+                worstScore:
+                  currentScoresheet.winCondition === "Lowest Score" ||
+                  currentScoresheet.winCondition === "Highest Score"
+                    ? pRound.score
+                    : null,
+                scores: [
+                  {
+                    date: match.date,
+                    score: pRound.score,
+                    isWin: player.isWinner ?? false,
+                  },
+                ],
+              };
+            } else {
+              if (pRound.score !== null) {
+                if (currentScoresheet.winCondition === "Lowest Score") {
+                  accPlayerRound.bestScore =
+                    accPlayerRound.bestScore !== null
+                      ? Math.min(accPlayerRound.bestScore, pRound.score)
+                      : pRound.score;
+                  accPlayerRound.worstScore =
+                    accPlayerRound.worstScore !== null
+                      ? Math.max(accPlayerRound.worstScore, pRound.score)
+                      : pRound.score;
+                } else if (currentScoresheet.winCondition === "Highest Score") {
+                  accPlayerRound.bestScore =
+                    accPlayerRound.bestScore !== null
+                      ? Math.max(accPlayerRound.bestScore, pRound.score)
+                      : pRound.score;
+                  accPlayerRound.worstScore =
+                    accPlayerRound.worstScore !== null
+                      ? Math.min(accPlayerRound.worstScore, pRound.score)
+                      : pRound.score;
+                }
+              }
+              accPlayerRound.scores.push({
+                date: match.date,
+                score: pRound.score,
+                isWin: player.isWinner ?? false,
+              });
+            }
+          }
+        });
+        if (!isCoop && player.placement > 0)
+          accScoresheet.placements[player.placement] =
+            (accScoresheet.placements[player.placement] ?? 0) + 1;
+      }
+    }
+  }
+}
+function updateComboRoles(
+  comboRoles: Record<string, ComboRoleStats>,
+  accPlayer: PlayerStats | undefined,
+  player: Player,
+  match: PlayerMatch,
+) {
+  if (!accPlayer) {
+    console.error(
+      `Player ${player.type}-${player.id} not found in accumulator`,
+    );
+  }
+  const roleCombos = combinations(player.roles, 2);
+  for (const roleCombo of roleCombos) {
+    const sortedCombo = roleCombo
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name));
+    const roleComboKey = sortedCombo.map((r) => r.name).join(" + ");
+    const globalCombo = comboRoles[roleComboKey];
+    if (!globalCombo) {
+      comboRoles[roleComboKey] = {
+        roles: sortedCombo.map((r) => ({
+          id: r.id,
+          name: r.name,
+          description: r.description,
+        })),
+        matchCount: 1,
+        matchIds: new Set([match.id]),
+        players: new Set([`${player.type}-${player.id}`]),
+        wins: player.isWinner ? 1 : 0,
+        losses: player.isWinner ? 0 : 1,
+        winRate: player.isWinner ? 1 : 0,
+        placements: player.placement > 0 ? { [player.placement]: 1 } : {},
+      };
+    } else {
+      globalCombo.matchIds.add(match.id);
+      globalCombo.wins += player.isWinner ? 1 : 0;
+      globalCombo.losses += player.isWinner ? 0 : 1;
+      globalCombo.players.add(`${player.type}-${player.id}`);
+      globalCombo.winRate =
+        globalCombo.wins / (globalCombo.wins + globalCombo.losses);
+      if (player.placement > 0) {
+        globalCombo.placements[player.placement] =
+          (globalCombo.placements[player.placement] ?? 0) + 1;
+      }
+    }
+    const playerCombo = accPlayer?.roleCombos[roleComboKey];
+    if (accPlayer && playerCombo) {
+      playerCombo.matchIds.add(match.id);
+      playerCombo.losses += player.isWinner ? 0 : 1;
+      playerCombo.wins += player.isWinner ? 1 : 0;
+      playerCombo.winRate =
+        playerCombo.wins / (playerCombo.wins + playerCombo.losses);
+      if (player.placement > 0) {
+        playerCombo.placements[player.placement] =
+          (playerCombo.placements[player.placement] ?? 0) + 1;
+      }
+    } else if (accPlayer) {
+      accPlayer.roleCombos[roleComboKey] = {
+        roles: sortedCombo.map((r) => ({
+          id: r.id,
+          name: r.name,
+          description: r.description,
+        })),
+        matchIds: new Set([match.id]),
+        wins: player.isWinner ? 1 : 0,
+        losses: player.isWinner ? 0 : 1,
+        winRate: player.isWinner ? 1 : 0,
+        placements: player.placement > 0 ? { [player.placement]: 1 } : {},
+      };
+    }
+  }
 }
 export function headToHeadStats(playerMatches: PlayerMatch[]) {
   const headToHead = playerMatches.reduce(
