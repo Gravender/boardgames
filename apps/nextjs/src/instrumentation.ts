@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/nextjs";
+
 export async function register() {
   // eslint-disable-next-line no-restricted-properties
   if (process.env.NEXT_RUNTIME === "nodejs") {
@@ -8,3 +10,4 @@ export async function register() {
     await import("../sentry.edge.config");
   }
 }
+export const onRequestError = Sentry.captureRequestError;

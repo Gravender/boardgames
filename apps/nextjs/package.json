@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev:spotlight": "npx @spotlightjs/spotlight",
     "build": "pnpm with-env next build",
     "clean": "git clean -xdf .cache .next .turbo node_modules",
     "dev": "pnpm with-env next dev --turbo",
@@ -48,6 +49,7 @@
     "@board-games/prettier-config": "workspace:*",
     "@board-games/tailwind-config": "workspace:*",
     "@board-games/tsconfig": "workspace:*",
+    "@spotlightjs/spotlight": "^3.0.1",
     "@types/lodash.debounce": "^4.0.9",
     "@types/node": "^22.15.29",
     "@types/react": "catalog:react19",

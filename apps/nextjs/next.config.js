@@ -34,6 +34,7 @@ let nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  reactStrictMode: true,
   // PostHog rewrites
   async rewrites() {
     return [
