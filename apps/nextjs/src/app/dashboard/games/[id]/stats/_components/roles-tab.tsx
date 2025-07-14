@@ -984,7 +984,7 @@ export default function RolesTab({
                                         )}
                                       </div>
                                       <div className="text-sm text-muted-foreground">
-                                        {player.totalMatches} games played
+                                        {player.matchCount} games played
                                       </div>
                                     </div>
                                   </div>
