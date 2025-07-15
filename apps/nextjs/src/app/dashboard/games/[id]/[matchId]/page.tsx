@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
-import { Match } from "~/app/dashboard/games/[id]/[matchId]/_components/match";
+import { Scoresheet } from "~/components/match/scoresheet";
 import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
 
 interface Props {
@@ -20,7 +20,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
   }
   const match = await caller.match.getMatch({ id: Number(matchId) });
-  if (!match) redirect(`/dashboard/games/${gameId}`);
+  if (!match)
+    return {
+      title: `404 - Match Not Found`,
+      description: `Match for ${matchId} not found`,
+    };
   return {
     title: `${match.name} Scoresheet`,
     description: `Scoresheet Table for ${match.name}`,
@@ -40,7 +44,7 @@ export default async function Page({ params }: Props) {
   return (
     <HydrateClient>
       <Suspense>
-        <Match matchId={Number(matchId)} />
+        <Scoresheet matchId={Number(matchId)} />
       </Suspense>
     </HydrateClient>
   );

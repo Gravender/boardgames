@@ -1361,6 +1361,192 @@ export const matchRouter = createTRPCRouter({
         }
       });
     }),
+  updateMatchRoundScore: protectedUserProcedure
+    .input(
+      z.discriminatedUnion("type", [
+        z.object({
+          type: z.literal("player"),
+          match: selectMatchSchema.pick({
+            id: true,
+          }),
+          matchPlayerId: z.number(),
+          round: selectRoundPlayerSchema.pick({
+            id: true,
+            score: true,
+          }),
+        }),
+        z.object({
+          type: z.literal("team"),
+          match: selectMatchSchema.pick({
+            id: true,
+          }),
+          teamId: z.number(),
+          round: selectRoundPlayerSchema.pick({
+            id: true,
+            score: true,
+          }),
+        }),
+      ]),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.transaction(async (tx) => {
+        const foundMatch = await tx.query.match.findFirst({
+          where: {
+            id: input.match.id,
+            userId: ctx.userId,
+          },
+        });
+        if (!foundMatch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Match not found.",
+          });
+        }
+        if (input.type === "player") {
+          const foundPlayer = await tx.query.matchPlayer.findFirst({
+            where: {
+              id: input.matchPlayerId,
+              matchId: input.match.id,
+            },
+            with: {
+              playerRounds: {
+                where: {
+                  roundId: input.round.id,
+                },
+              },
+            },
+          });
+          if (!foundPlayer) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Match player not found.",
+            });
+          }
+          if (foundPlayer.playerRounds.length === 0) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Player round not found.",
+            });
+          }
+          const playerRoundId = foundPlayer.playerRounds[0]?.id;
+          if (!playerRoundId) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Player round not found.",
+            });
+          }
+          await tx
+            .update(roundPlayer)
+            .set({
+              score: input.round.score,
+            })
+            .where(eq(roundPlayer.id, playerRoundId));
+        }
+        if (input.type === "team") {
+          const foundPlayers = await tx.query.matchPlayer.findMany({
+            where: {
+              matchId: input.match.id,
+              teamId: input.teamId,
+              deletedAt: {
+                isNull: true,
+              },
+            },
+          });
+          if (foundPlayers.length === 0) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Team players not found.",
+            });
+          }
+          await tx
+            .update(roundPlayer)
+            .set({
+              score: input.round.score,
+            })
+            .where(
+              and(
+                eq(roundPlayer.roundId, input.round.id),
+                inArray(
+                  roundPlayer.matchPlayerId,
+                  foundPlayers.map((p) => p.id),
+                ),
+              ),
+            );
+        }
+      });
+    }),
+  updateMatchPlayerScore: protectedUserProcedure
+    .input(
+      z.discriminatedUnion("type", [
+        z.object({
+          type: z.literal("player"),
+          match: selectMatchSchema.pick({
+            id: true,
+          }),
+          matchPlayerId: z.number(),
+          score: z.number().nullable(),
+        }),
+        z.object({
+          type: z.literal("team"),
+          match: selectMatchSchema.pick({
+            id: true,
+          }),
+          teamId: z.number(),
+          score: z.number().nullable(),
+        }),
+      ]),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.transaction(async (tx) => {
+        const foundMatch = await tx.query.match.findFirst({
+          where: {
+            id: input.match.id,
+            userId: ctx.userId,
+          },
+        });
+        if (!foundMatch) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Match not found.",
+          });
+        }
+        if (input.type === "player") {
+          const foundPlayer = await tx.query.matchPlayer.findFirst({
+            where: {
+              id: input.matchPlayerId,
+              matchId: input.match.id,
+            },
+          });
+          if (!foundPlayer) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Match player not found.",
+            });
+          }
+          await tx
+            .update(matchPlayer)
+            .set({ score: input.score })
+            .where(eq(matchPlayer.id, input.matchPlayerId));
+        } else {
+          const foundTeam = await tx.query.team.findFirst({
+            where: {
+              id: input.teamId,
+              matchId: input.match.id,
+            },
+          });
+          if (!foundTeam) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Team not found.",
+            });
+          }
+          await tx
+            .update(matchPlayer)
+            .set({ score: input.score })
+            .where(eq(matchPlayer.teamId, foundTeam.id));
+        }
+      });
+    }),
   updateMatchScores: protectedUserProcedure
     .input(
       z.object({
