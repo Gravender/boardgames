@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // TODO: Finish implementing
 
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
@@ -35,9 +35,9 @@ import { TableCell, TableHead, TableRow } from "./ui/table";
 import { Text } from "./ui/text";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
-type ScoreSheet = Match["scoresheet"];
 type Player = Match["players"][number];
 type Round = Match["scoresheet"]["rounds"][number];
+
 const ManualWinnerPlayerSchema = z
   .array(
     z.object({
@@ -521,7 +521,7 @@ const PlayerRoundCell = ({
           }}
           keyboardType="numeric"
           className="min-h-5 w-full min-w-5 border-none bg-transparent text-center outline-none"
-          style={{ outline: "none", outlineColor: "transparent" }}
+          style={{ outlineColor: "transparent" }}
         />
       ) : (
         <Checkbox
@@ -545,7 +545,7 @@ const FooterTotalCell = ({ total }: { total: number | null }) => {
   return (
     <TableCell className="min-w-20 flex-1">
       <View className="flex flex-row items-center justify-center">
-        {total === null && (
+        {total !== null && (
           <Text className="text-center text-sm">
             {total === Infinity ? 0 : total === -Infinity ? 0 : total}
           </Text>
@@ -575,7 +575,7 @@ const FooterManualScore = ({
         }}
         keyboardType="numeric"
         className="min-h-5 min-w-5 text-center"
-        style={{ outline: "none", outlineColor: "transparent" }}
+        style={{ outlineColor: "transparent" }}
       />
     </TableCell>
   );
