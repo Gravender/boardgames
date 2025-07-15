@@ -11,6 +11,7 @@ import {
 } from "@tanstack/react-query";
 import { differenceInSeconds } from "date-fns";
 import { Pause, Play, RotateCcw, SquarePen } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 
 import type { RouterOutputs } from "@board-games/api";
 import {
@@ -34,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@board-games/ui/table";
+import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import type { ManualWinnerPlayerSchema } from "~/components/match/scoresheet/ManualWinnerDialog";
@@ -458,7 +460,7 @@ const CommentsRow = ({ match }: { match: Match }) => {
           scope="row"
           className="sticky left-0 z-10 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
         >
-          {"Details(optional)"}
+          {"Details"}
         </TableHead>
         {match.teams
           .filter((team) =>
@@ -724,6 +726,7 @@ function ScoresheetFooter({ match }: { match: Match }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const posthog = usePostHog();
 
   const invalidateMatch = async () =>
     queryClient.invalidateQueries(
@@ -753,9 +756,20 @@ function ScoresheetFooter({ match }: { match: Match }) {
         await queryClient.invalidateQueries(
           trpc.game.getGame.queryOptions({ id: match.gameId }),
         );
+        posthog.capture("match finished", {
+          gameId: match.gameId,
+          matchId: match.id,
+          type: "standard",
+        });
 
         router.push(`/dashboard/games/${match.gameId}/${match.id}/summary`);
         setIsSubmitting(false);
+      },
+      onError: (error) => {
+        posthog.capture("match finished error", { error });
+        toast.error("Error", {
+          description: "There was a problem finishing your match.",
+        });
       },
     }),
   );
@@ -780,6 +794,10 @@ function ScoresheetFooter({ match }: { match: Match }) {
   };
 
   const onFinish = () => {
+    posthog.capture("match finish begin", {
+      gameId: match.gameId,
+      matchId: match.id,
+    });
     if (match.running) {
       pauseMatchDuration.mutate({
         id: match.id,

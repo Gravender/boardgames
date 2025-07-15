@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ListPlus } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { roundTypes } from "@board-games/db/constants";
@@ -32,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@board-games/ui/select";
+import { toast } from "@board-games/ui/toast";
 
 import { GradientPicker } from "~/components/color-picker";
 import { NumberInput } from "~/components/number-input";
@@ -74,6 +76,7 @@ const AddRoundDialogContent = ({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const posthog = usePostHog();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm({
@@ -92,10 +95,20 @@ const AddRoundDialogContent = ({
         await queryClient.invalidateQueries(
           trpc.match.getMatch.queryOptions({ id: match.id }),
         );
+        posthog.capture("round added to match", {
+          gameId: match.gameId,
+          matchId: match.id,
+        });
         router.refresh();
         setIsSubmitting(false);
         setOpen(false);
         form.reset();
+      },
+      onError: (error) => {
+        posthog.capture("round added to match error", { error });
+        toast.error("Error", {
+          description: "There was a problem adding your round.",
+        });
       },
     }),
   );
