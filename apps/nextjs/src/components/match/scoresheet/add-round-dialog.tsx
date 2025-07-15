@@ -121,7 +121,7 @@ const AddRoundDialogContent = ({
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmitForm)} className="space-y-8">
-          <div className="w- full flex items-center gap-2">
+          <div className="flex w-full items-center gap-2">
             <FormField
               control={form.control}
               name="color"
@@ -152,7 +152,7 @@ const AddRoundDialogContent = ({
               )}
             />
           </div>
-          <div className="w-ull flex items-center gap-4">
+          <div className="flex w-full items-center gap-4">
             <FormField
               control={form.control}
               name="type"

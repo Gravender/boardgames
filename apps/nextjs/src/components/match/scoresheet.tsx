@@ -609,9 +609,7 @@ const TotalRow = ({ match }: { match: Match }) => {
               <TableCell key={`${team.id}-total`}>
                 <div className="flex items-center justify-center">
                   {total !== null && (
-                    <span className="text-center">
-                      {total === Infinity ? 0 : total === -Infinity ? 0 : total}
-                    </span>
+                    <span className="text-center">{total}</span>
                   )}
                 </div>
               </TableCell>
@@ -643,9 +641,7 @@ const TotalRow = ({ match }: { match: Match }) => {
               <TableCell key={`${player.id}-total`}>
                 <div className="flex items-center justify-center">
                   {total !== null && (
-                    <span className="text-center">
-                      {total === Infinity ? 0 : total === -Infinity ? 0 : total}
-                    </span>
+                    <span className="text-center">{total}</span>
                   )}
                 </div>
               </TableCell>
@@ -685,11 +681,7 @@ const TotalRow = ({ match }: { match: Match }) => {
         return (
           <TableCell key={`${player.id}-total`}>
             <div className="flex items-center justify-center">
-              {total !== null && (
-                <span className="text-center">
-                  {total === Infinity ? 0 : total === -Infinity ? 0 : total}
-                </span>
-              )}
+              {total !== null && <span className="text-center">{total}</span>}
             </div>
           </TableCell>
         );
