@@ -113,7 +113,7 @@ export function AddMatchDialog({
   );
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="p-4 sm:max-w-[800px] sm:p-6">
+      <DialogContent className="gap-2 p-4 sm:max-w-[800px] sm:gap-4 sm:p-6">
         <Content
           gameId={gameId}
           gameName={gameName}
@@ -828,7 +828,9 @@ const AddPlayersForm = ({
     <>
       <DialogHeader>
         <DialogTitle>Select Players</DialogTitle>
-        <DialogDescription>Add players to your match</DialogDescription>
+        <DialogDescription className="sr-only xs:not-sr-only">
+          Add players to your match
+        </DialogDescription>
       </DialogHeader>
       <div className="flex flex-col items-center gap-2 xs:flex-row">
         <Input
@@ -857,9 +859,9 @@ const AddPlayersForm = ({
             render={() => (
               <FormItem>
                 {showGroups && groups ? (
-                  <div className="space-y-4">
+                  <div className="flex flex-col gap-2">
                     <h3 className="text-sm font-medium">Select a Group</h3>
-                    <ScrollArea className="h-[70vh]">
+                    <ScrollArea className="h-[50vh]">
                       <div className="space-y-2">
                         {groups
                           .filter((group) =>
@@ -917,7 +919,7 @@ const AddPlayersForm = ({
                       </Button>
                     </div>
                     <ScrollArea className="sm:p-1">
-                      <div className="grid max-h-[65vh] gap-2 rounded-lg">
+                      <div className="grid max-h-[50vh] gap-2 rounded-lg">
                         {players
                           .filter((player) =>
                             player.name
@@ -1323,7 +1325,7 @@ const ManageTeamContent = ({
         )}
       </div>
       <ScrollArea>
-        <div className="flex max-h-96 flex-col gap-2">
+        <div className="flex max-h-[50vh] flex-col gap-2">
           {formTeams.map((team) => {
             const foundIndex = formTeams.findIndex((t) => t.id === team.id);
             if (foundIndex === -1) {
