@@ -1,6 +1,7 @@
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Users } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -25,6 +26,7 @@ import {
   useForm,
 } from "@board-games/ui/form";
 import { ScrollArea } from "@board-games/ui/scroll-area";
+import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import { PlayerImage } from "~/components/player-image";
@@ -91,10 +93,12 @@ function Content({
   const trpc = useTRPC();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const posthog = usePostHog();
+
   const updateWinner = useMutation(
     trpc.match.updateMatchManualWinner.mutationOptions({
-      onSuccess: () => {
-        void Promise.all([
+      onSuccess: async () => {
+        await Promise.all([
           queryClient.invalidateQueries(
             trpc.match.getMatch.queryOptions({ id: matchId }),
           ),
@@ -102,8 +106,19 @@ function Content({
             trpc.game.getGame.queryOptions({ id: gameId }),
           ),
         ]);
+        posthog.capture("match finished", {
+          gameId: gameId,
+          matchId: matchId,
+          type: "manual",
+        });
 
         router.push(`/dashboard/games/${gameId}/${matchId}/summary`);
+      },
+      onError: (error) => {
+        posthog.capture("manual winner update error", { error });
+        toast.error("Error", {
+          description: "There was a problem updating your Match winners.",
+        });
       },
     }),
   );
