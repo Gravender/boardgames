@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { User } from "lucide-react";
 import { z } from "zod/v4";
 
@@ -31,6 +31,10 @@ import { Input } from "@board-games/ui/input";
 import { toast } from "@board-games/ui/toast";
 
 import { Spinner } from "~/components/spinner";
+import {
+  useInvalidatePlayer,
+  useInvalidatePlayers,
+} from "~/hooks/invalidate/player";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
@@ -72,8 +76,10 @@ const PlayerContent = ({
 
   const { startUpload } = useUploadThing("imageUploader");
 
-  const queryClient = useQueryClient();
   const router = useRouter();
+
+  const invalidatePlayer = useInvalidatePlayer();
+  const invalidatePlayers = useInvalidatePlayers();
 
   const playerSchema = (
     player.type === "original" ? originalPlayerSchema : sharedPlayerSchema
@@ -103,15 +109,10 @@ const PlayerContent = ({
   const mutation = useMutation(
     trpc.player.update.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.player.getPlayers.queryOptions(),
-        );
-        await queryClient.invalidateQueries(
-          trpc.player.getPlayer.queryOptions({ id: player.id }),
-        );
-        await queryClient.invalidateQueries(
-          trpc.dashboard.getPlayers.queryOptions(),
-        );
+        await Promise.all([
+          ...invalidatePlayer(player.id),
+          ...invalidatePlayers(),
+        ]);
         router.refresh();
         toast.success("Player updated successfully!");
         form.reset();

@@ -4,7 +4,7 @@ import type { z } from "zod/v4";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { PlusIcon, User } from "lucide-react";
 
 import { insertPlayerSchema } from "@board-games/db/zodSchema";
@@ -32,6 +32,7 @@ import { Input } from "@board-games/ui/input";
 import { toast } from "@board-games/ui/toast";
 
 import { Spinner } from "~/components/spinner";
+import { useInvalidatePlayers } from "~/hooks/invalidate/player";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
@@ -75,8 +76,8 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
 
   const { startUpload } = useUploadThing("imageUploader");
 
-  const queryClient = useQueryClient();
   const router = useRouter();
+  const playersInvalidate = useInvalidatePlayers();
 
   const form = useForm({
     schema: playerSchema,
@@ -89,15 +90,7 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
     trpc.player.create.mutationOptions({
       onSuccess: async () => {
         setIsUploading(false);
-        await queryClient.invalidateQueries(
-          trpc.player.getPlayers.queryOptions(),
-        );
-        await queryClient.invalidateQueries(
-          trpc.player.getPlayersByGame.queryFilter(),
-        );
-        await queryClient.invalidateQueries(
-          trpc.dashboard.getPlayers.queryOptions(),
-        );
+        await Promise.all(playersInvalidate());
         setOpen(false);
         form.reset();
         router.refresh();

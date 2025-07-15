@@ -18,6 +18,7 @@ import {
   calculateFinalScore,
   calculatePlacement,
   formatDuration,
+  imageSchema,
 } from "@board-games/shared";
 
 import type { RouterOutputs } from "~/utils/api";
@@ -42,8 +43,9 @@ const ManualWinnerPlayerSchema = z
     z.object({
       id: z.number(),
       name: z.string(),
-      imageUrl: z.string().nullable(),
-      score: z.number(),
+      image: imageSchema.nullable(),
+      score: z.number().nullable(),
+      teamId: z.number().nullable(),
     }),
   )
   .min(1);
@@ -108,11 +110,27 @@ export function MatchScoresheet({ data }: { data: Match }) {
       },
     }),
   );
+  const invalidateMatch = async () =>
+    queryClient.invalidateQueries(
+      trpc.match.getMatch.queryOptions({ id: data.id }),
+    );
   const updateMatchScores = useMutation(
     trpc.match.updateMatchScores.mutationOptions(),
   );
-  const updateMatchDuration = useMutation(
-    trpc.match.updateMatchDuration.mutationOptions(),
+  const startMatchDuration = useMutation(
+    trpc.match.matchStart.mutationOptions({
+      onSuccess: invalidateMatch,
+    }),
+  );
+  const pauseMatchDuration = useMutation(
+    trpc.match.matchPause.mutationOptions({
+      onSuccess: invalidateMatch,
+    }),
+  );
+  const resetMatchDuration = useMutation(
+    trpc.match.matchResetDuration.mutationOptions({
+      onSuccess: invalidateMatch,
+    }),
   );
 
   useEffect(() => {
@@ -125,19 +143,12 @@ export function MatchScoresheet({ data }: { data: Match }) {
     return () => clearInterval(interval);
   }, [isRunning]);
 
-  useEffect(() => {
-    if (isRunning && duration % 30 === 0 && data.duration !== duration) {
-      const debounce = setTimeout(() => {
-        updateMatchDuration.mutate({
-          match: { id: data.id },
-          duration: duration,
-        });
-      }, 1000);
-      return () => clearTimeout(debounce);
-    }
-  }, [isRunning, duration, data, updateMatchDuration]);
-
   const onFinish = () => {
+    if (isRunning) {
+      pauseMatchDuration.mutate({
+        id: data.id,
+      });
+    }
     setIsSubmitting(true);
     setIsRunning(false);
     const submittedPlayers = players.flatMap((player) =>
@@ -151,24 +162,25 @@ export function MatchScoresheet({ data }: { data: Match }) {
 
     if (data.scoresheet.winCondition === "Manual") {
       setManualWinners(
-        players.map((player) => ({
-          id: player.id,
-          name: player.name,
-          imageUrl: player.image?.url ?? null,
-          score: calculateFinalScore(
-            player.rounds.map((round) => ({
-              score: round.score ?? 0,
-            })),
-            data.scoresheet,
-          ),
-        })),
+        players.map((player) => {
+          return {
+            id: player.id,
+            name: player.name,
+            image: player.image,
+            score: calculateFinalScore(
+              player.rounds.map((round) => ({
+                score: round.score,
+              })),
+              data.scoresheet,
+            ),
+            teamId: player.teamId,
+          };
+        }),
       );
       setOpenManualWinnerDialog(true);
       updateMatchScores.mutate({
         match: {
           id: data.id,
-          duration: duration,
-          running: false,
         },
         roundPlayers: submittedPlayers,
         matchPlayers: players.map((player) => ({
@@ -208,12 +220,25 @@ export function MatchScoresheet({ data }: { data: Match }) {
   };
 
   const toggleClock = () => {
-    setIsRunning(!isRunning);
-    setHasPlayersChanged(true);
+    if (isRunning) {
+      pauseMatchDuration.mutate({
+        id: data.id,
+      });
+      setIsRunning(false);
+    } else {
+      startMatchDuration.mutate({
+        id: data.id,
+      });
+      setIsRunning(true);
+    }
   };
 
   const resetClock = () => {
+    resetMatchDuration.mutate({
+      id: data.id,
+    });
     setDuration(0);
+    setIsRunning(false);
   };
 
   const handleScoreChange = (
@@ -516,13 +541,15 @@ const TotalCell = () => {
     </TableCell>
   );
 };
-const FooterTotalCell = ({ total }: { total: number }) => {
+const FooterTotalCell = ({ total }: { total: number | null }) => {
   return (
     <TableCell className="min-w-20 flex-1">
       <View className="flex flex-row items-center justify-center">
-        <Text className="text-center text-sm">
-          {total === Infinity ? 0 : total === -Infinity ? 0 : total}
-        </Text>
+        {total === null && (
+          <Text className="text-center text-sm">
+            {total === Infinity ? 0 : total === -Infinity ? 0 : total}
+          </Text>
+        )}
       </View>
     </TableCell>
   );

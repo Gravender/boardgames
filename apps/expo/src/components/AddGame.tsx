@@ -223,8 +223,8 @@ function AddGameContent({
           playtimeMin: values.game.playtimeMin,
           playtimeMax: values.game.playtimeMax,
           yearPublished: values.game.yearPublished,
-          imageId: null,
         },
+        image: null,
         scoresheets: values.scoresheet
           ? [
               {
@@ -236,6 +236,7 @@ function AddGameContent({
               },
             ]
           : [],
+        roles: [],
       });
       return;
     }
@@ -271,8 +272,13 @@ function AddGameContent({
           playtimeMin: values.game.playtimeMin,
           playtimeMax: values.game.playtimeMax,
           yearPublished: values.game.yearPublished,
-          imageId: imageId,
         },
+        image: imageId
+          ? {
+              type: "file",
+              imageId: imageId,
+            }
+          : null,
         scoresheets: values.scoresheet
           ? [
               {
@@ -284,6 +290,7 @@ function AddGameContent({
               },
             ]
           : [],
+        roles: [],
       });
       form.reset();
       setImagePreview(null);

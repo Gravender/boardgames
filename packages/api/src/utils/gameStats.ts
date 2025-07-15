@@ -125,7 +125,7 @@ type Player = {
   }[];
 };
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
-type PlayerMatch = {
+export type PlayerMatch = {
   type: "original" | "shared";
   id: number;
   gameId: number;
