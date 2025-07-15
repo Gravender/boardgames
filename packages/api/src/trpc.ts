@@ -112,7 +112,6 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 
 const isAuthed = t.middleware(async ({ ctx, next }) => {
   if (!ctx.auth.userId) {
-    console.log(ctx);
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({
@@ -180,5 +179,9 @@ const isUser = t.middleware(async ({ ctx, next }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
-export const protectedProcedure = t.procedure.use(isAuthed);
-export const protectedUserProcedure = t.procedure.use(isUser);
+export const protectedProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(isAuthed);
+export const protectedUserProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(isUser);
