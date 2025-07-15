@@ -80,15 +80,13 @@ export default function AddScoresheetModal({
   const form = useForm<FormSchemaType>({
     resolver: standardSchemaResolver(formSchema),
     defaultValues: {
-      scoresheet: scoresheet
-        ? scoresheet
-        : {
-            name: "Default",
-            winCondition: "Highest Score",
-            isCoop: false,
-            roundsScore: "Aggregate",
-            targetScore: 0,
-          },
+      scoresheet: scoresheet ?? {
+        name: "Default",
+        winCondition: "Highest Score",
+        isCoop: false,
+        roundsScore: "Aggregate",
+        targetScore: 0,
+      },
       rounds:
         rounds.length > 0
           ? rounds

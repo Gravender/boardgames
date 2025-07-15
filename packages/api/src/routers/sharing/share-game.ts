@@ -25,8 +25,13 @@ import {
 import { selectSharedGameSchema } from "@board-games/db/zodSchema";
 import { baseRoundSchema, editScoresheetSchema } from "@board-games/shared";
 
+import type { PlayerMatch } from "../../utils/gameStats";
 import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
 import { processPlayer, shareMatchWithFriends } from "../../utils/addMatch";
+import {
+  headToHeadStats,
+  playerAndRolesAggregated,
+} from "../../utils/gameStats";
 import { cloneSharedLocationForUser } from "../../utils/handleSharedLocation";
 
 export const shareGameRouter = createTRPCRouter({
@@ -140,6 +145,7 @@ export const shareGameRouter = createTRPCRouter({
           game: {
             with: {
               image: true,
+              roles: true,
             },
           },
           sharedMatches: {
@@ -150,7 +156,11 @@ export const shareGameRouter = createTRPCRouter({
               match: {
                 with: {
                   location: true,
-                  scoresheet: true,
+                  scoresheet: {
+                    with: {
+                      rounds: true,
+                    },
+                  },
                 },
               },
               sharedMatchPlayers: {
@@ -158,6 +168,8 @@ export const shareGameRouter = createTRPCRouter({
                   matchPlayer: {
                     with: {
                       team: true,
+                      playerRounds: true,
+                      roles: true,
                     },
                   },
                   sharedPlayer: {
@@ -176,6 +188,12 @@ export const shareGameRouter = createTRPCRouter({
                   },
                 },
               },
+              sharedLocation: {
+                with: {
+                  location: true,
+                  linkedLocation: true,
+                },
+              },
             },
           },
           linkedGame: {
@@ -191,60 +209,7 @@ export const shareGameRouter = createTRPCRouter({
           message: "Shared game not found.",
         });
       }
-      const matches: {
-        type: "shared";
-        id: number;
-        date: Date;
-        location: string | null;
-        won: boolean;
-        placement: number | null;
-        score: number | null;
-        name: string;
-        duration: number;
-        finished: boolean;
-        scoresheet: {
-          winCondition: z.infer<typeof selectScoreSheetSchema>["winCondition"];
-          targetScore: z.infer<typeof selectScoreSheetSchema>["targetScore"];
-          isCoop: z.infer<typeof selectScoreSheetSchema>["isCoop"];
-        };
-        players: {
-          id: number;
-          type: "shared";
-          name: string;
-          isWinner: boolean | null;
-          isUser: boolean;
-          score: number | null;
-          placement: number;
-          image: {
-            name: string;
-            url: string | null;
-            type: "file" | "svg";
-            usageType: "player" | "match" | "game";
-          } | null;
-          team: {
-            id: number;
-            name: string;
-            matchId: number;
-            details: string | null;
-            createdAt: Date;
-            updatedAt: Date | null;
-          } | null;
-        }[];
-        winners: {
-          id: number;
-          name: string;
-          isWinner: boolean | null;
-          score: number | null;
-          team: {
-            id: number;
-            name: string;
-            matchId: number;
-            details: string | null;
-            createdAt: Date;
-            updatedAt: Date | null;
-          } | null;
-        }[];
-      }[] = returnedGame.sharedMatches
+      const matches: PlayerMatch[] = returnedGame.sharedMatches
         .map((mMatch) => {
           if (!mMatch.match.finished) return null;
           const winners = mMatch.sharedMatchPlayers.filter(
@@ -253,19 +218,41 @@ export const shareGameRouter = createTRPCRouter({
           const foundSharedPlayer = mMatch.sharedMatchPlayers.find(
             (p) => p.sharedPlayer?.linkedPlayer?.isUser,
           );
+          const mSharedLocation = mMatch.sharedLocation;
+          const mLinkedLocation = mSharedLocation?.linkedLocation;
           const mappedShareMatch = {
             type: "shared" as const,
             shareId: mMatch.id,
             id: mMatch.match.id,
+            gameId: input.id,
             name: mMatch.match.name,
             date: mMatch.match.date,
-            location: mMatch.match.location?.name ?? null,
+            location: mSharedLocation
+              ? {
+                  type: mLinkedLocation
+                    ? ("linked" as const)
+                    : ("shared" as const),
+                  name: mLinkedLocation?.name ?? mSharedLocation.location.name,
+                }
+              : null,
             duration: mMatch.match.duration,
             finished: mMatch.match.finished,
+            comment: mMatch.match.comment,
             scoresheet: {
+              id: mMatch.match.scoresheet.id,
+              parentId: mMatch.match.scoresheet.parentId,
               winCondition: mMatch.match.scoresheet.winCondition,
+              roundScore: mMatch.match.scoresheet.roundsScore,
               targetScore: mMatch.match.scoresheet.targetScore,
               isCoop: mMatch.match.scoresheet.isCoop,
+              rounds: mMatch.match.scoresheet.rounds.map((round) => ({
+                id: round.id,
+                parentId: round.parentId,
+                name: round.name,
+                type: round.type,
+                score: round.score,
+                order: round.order,
+              })),
             },
             won: foundSharedPlayer?.matchPlayer.winner ?? false,
             placement: foundSharedPlayer?.matchPlayer.placement ?? null,
@@ -296,6 +283,21 @@ export const shareGameRouter = createTRPCRouter({
                     linkedPlayer !== null
                       ? linkedPlayer.image
                       : returnedSharedMatchPlayer.sharedPlayer.player.image,
+                  playerRounds:
+                    returnedSharedMatchPlayer.matchPlayer.playerRounds.map(
+                      (round) => ({
+                        id: round.id,
+                        roundId: round.roundId,
+                        score: round.score,
+                      }),
+                    ),
+                  roles: returnedSharedMatchPlayer.matchPlayer.roles.map(
+                    (role) => ({
+                      id: role.id,
+                      name: role.name,
+                      description: role.description,
+                    }),
+                  ),
                 };
               })
               .filter((player) => player !== null),
@@ -323,78 +325,8 @@ export const shareGameRouter = createTRPCRouter({
         })
         .filter((match) => match !== null);
       matches.sort((a, b) => compareAsc(a.date, b.date));
-      const players = matches.reduce(
-        (acc, match) => {
-          if (!match.finished) return acc;
-          match.players.forEach((player) => {
-            const accPlayer = acc[player.id];
-            if (!accPlayer) {
-              const tempPlacements: Record<number, number> = {};
-              tempPlacements[player.placement] = 1;
-              acc[player.id] = {
-                id: player.id,
-                type: player.type,
-                name: player.name,
-                plays: 1,
-                isUser: player.isUser,
-                wins: player.isWinner ? 1 : 0,
-                winRate: player.isWinner ? 1 : 0,
-                image: player.image,
-                bestScore: player.score,
-                worstScore: player.score,
-                placements: tempPlacements,
-              };
-            } else {
-              accPlayer.plays++;
-              if (player.isWinner) accPlayer.wins++;
-              if (match.scoresheet.winCondition === "Highest Score") {
-                accPlayer.bestScore = Math.max(
-                  accPlayer.bestScore ?? 0,
-                  player.score ?? 0,
-                );
-                accPlayer.worstScore = Math.min(
-                  accPlayer.worstScore ?? 0,
-                  player.score ?? 0,
-                );
-              } else if (match.scoresheet.winCondition === "Lowest Score") {
-                accPlayer.bestScore = Math.min(
-                  accPlayer.bestScore ?? 0,
-                  player.score ?? 0,
-                );
-                accPlayer.worstScore = Math.max(
-                  accPlayer.worstScore ?? 0,
-                  player.score ?? 0,
-                );
-              } else {
-                accPlayer.bestScore = null;
-                accPlayer.worstScore = null;
-              }
-            }
-          });
-          return acc;
-        },
-        {} as Record<
-          number,
-          {
-            id: number;
-            type: "shared";
-            name: string;
-            isUser: boolean;
-            plays: number;
-            wins: number;
-            bestScore: number | null;
-            worstScore: number | null;
-            winRate: number;
-            image: {
-              name: string;
-              url: string | null;
-              type: "file" | "svg";
-              usageType: "player" | "match" | "game";
-            } | null;
-            placements: Record<number, number>;
-          }
-        >,
-      );
+      const { roleStats, comboRolesStats, playerStats } =
+        playerAndRolesAggregated(matches, returnedGame.game.roles);
 
       const duration = matches.reduce((acc, match) => {
         return acc + match.duration;
@@ -423,13 +355,13 @@ export const shareGameRouter = createTRPCRouter({
         ownedBy: linkedGame ? linkedGame.ownedBy : returnedGame.game.ownedBy,
         matches: matches,
         duration: duration,
-        players: Object.values(players).map((player) => ({
-          ...player,
-          winRate: player.wins / player.plays,
-        })),
+        players: playerStats,
         winRate: userWinRate,
         totalMatches: totalMatches,
         wonMatches: wonMatches,
+        headToHead: headToHeadStats(matches),
+        roleStats: roleStats,
+        roleCombos: comboRolesStats,
       };
     }),
   getPlayersBySharedGame: protectedUserProcedure

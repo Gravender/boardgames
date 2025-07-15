@@ -206,7 +206,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                   {lastMatch.location && (
                     <div className="flex items-center gap-2">
                       <MapPinIcon className="h-5 w-5" />
-                      <span>{lastMatch.location}</span>
+                      <span>{lastMatch.location.name}</span>
                     </div>
                   )}
                 </div>
@@ -488,7 +488,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
         </TabsContent>
 
         <TabsContent value="players" className="space-y-6">
-          <PlayerStatsTable data={gameStats.players} />
+          <PlayerStatsTable players={gameStats.players} />
         </TabsContent>
 
         <TabsContent value="personal" className="space-y-6">
@@ -510,7 +510,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                           Matches Played
                         </h3>
                         <p className="mt-1 text-2xl font-bold">
-                          {currentPlayer.plays}
+                          {currentPlayer.scoresheets[0]?.plays}
                         </p>
                       </div>
                       <div className="rounded-lg bg-muted/30 p-4">
@@ -518,7 +518,10 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                           Win Rate
                         </h3>
                         <p className="mt-1 text-2xl font-bold">
-                          {(currentPlayer.winRate * 100).toFixed(2)}%
+                          {(
+                            (currentPlayer.scoresheets[0]?.winRate ?? 0) * 100
+                          ).toFixed(2)}
+                          %
                         </p>
                       </div>
                       <div className="rounded-lg bg-muted/30 p-4">
@@ -526,7 +529,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                           Best Score
                         </h3>
                         <p className="mt-1 text-2xl font-bold">
-                          {currentPlayer.bestScore ?? "N/A"}
+                          {currentPlayer.scoresheets[0]?.bestScore ?? "N/A"}
                         </p>
                       </div>
                       <div className="rounded-lg bg-muted/30 p-4">
@@ -534,7 +537,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                           Worst Score
                         </h3>
                         <p className="mt-1 text-2xl font-bold">
-                          {currentPlayer.worstScore ?? "N/A"}
+                          {currentPlayer.scoresheets[0]?.worstScore ?? "N/A"}
                         </p>
                       </div>
                     </div>
