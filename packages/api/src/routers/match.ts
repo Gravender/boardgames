@@ -434,6 +434,13 @@ export const matchRouter = createTRPCRouter({
         },
         with: {
           scoresheet: {
+            columns: {
+              id: true,
+              winCondition: true,
+              targetScore: true,
+              roundsScore: true,
+              isCoop: true,
+            },
             with: {
               rounds: {
                 orderBy: {

@@ -104,7 +104,7 @@ export function RoundPopOver({
 
                     <FormControl>
                       <NumberInput
-                        value={field.value}
+                        defaultValue={field.value}
                         onValueChange={field.onChange}
                         className="border-none text-center"
                       />

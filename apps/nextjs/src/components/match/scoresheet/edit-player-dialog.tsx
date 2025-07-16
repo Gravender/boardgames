@@ -143,7 +143,7 @@ function Content({
     if (teamPlayers.length === 0) return [];
     return allRoles.reduce<number[]>((acc, role) => {
       const roleInEveryPlayer = teamPlayers.every((p) =>
-        p.roles.map((r) => r.id).includes(role.id),
+        p.roles.some((r) => r.id === role.id),
       );
       if (!acc.includes(role.id) && roleInEveryPlayer) {
         acc.push(role.id);

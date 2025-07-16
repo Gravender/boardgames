@@ -673,7 +673,7 @@ const BodyRow = ({
                 <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
                   {round.type === "Numeric" ? (
                     <NumberInput
-                      value={roundPlayers[0]?.score ?? ""}
+                      defaultValue={roundPlayers[0]?.score ?? ""}
                       onValueChange={(value) => {
                         handleTeamScoreChange(team, round, value);
                       }}
@@ -714,7 +714,7 @@ const BodyRow = ({
                 <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
                   {round.type === "Numeric" ? (
                     <NumberInput
-                      value={roundPlayer?.score ?? ""}
+                      defaultValue={roundPlayer?.score ?? ""}
                       onValueChange={(value) => {
                         handleScoreChange(player, round, value);
                       }}
@@ -771,7 +771,7 @@ const BodyRow = ({
             <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
               {round.type === "Numeric" ? (
                 <NumberInput
-                  value={roundPlayer?.score ?? ""}
+                  defaultValue={roundPlayer?.score ?? ""}
                   onValueChange={(value) => {
                     handleScoreChange(player, round, value);
                   }}

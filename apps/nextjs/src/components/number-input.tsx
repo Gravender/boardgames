@@ -1,23 +1,34 @@
-import { forwardRef, useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
 
 import { Input } from "@board-games/ui/input";
 import { cn } from "@board-games/ui/utils";
 
+import { useDebounce } from "~/hooks/use-debounce";
+
 interface NumberInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  defaultValue?: string | number;
   onValueChange?: (value: number | null) => void;
   debounceTime?: number;
 }
 export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
-  ({ onValueChange, debounceTime = 500, value, className, ...props }, ref) => {
+  (
+    { defaultValue, onValueChange, debounceTime = 700, className, ...props },
+    ref,
+  ) => {
     const [internalValue, setInternalValue] = useState<string>(
-      `${value?.toString() ?? ""}`,
+      `${defaultValue?.toString() ?? ""}`,
     );
-    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
+    const debouncedOnChange = useDebounce((value: number | null) => {
+      const startValue = defaultValue?.toString() ?? "";
+      const numericValue =
+        startValue === "" || startValue === "-" ? null : parseFloat(startValue);
+      if (value !== numericValue) {
+        onValueChange?.(value);
+      }
+    }, debounceTime);
 
-      // Allow a single minus sign, single zero, or remove leading zeros for other numbers
+    const validateValue = (value: string) => {
       let validValue = value;
       if (value !== "-") {
         const numberPart = value.replace(/^-/, "");
@@ -31,42 +42,35 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
       // Validate the input: allow empty string, single minus, or valid integer
       const isValid =
         validValue === "" || validValue === "-" || /^-?\d+$/.test(validValue);
+      const numericValue =
+        validValue === "" || validValue === "-" ? null : parseFloat(validValue);
+      return {
+        parsedValue: numericValue,
+        isValid,
+      };
+    };
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setInternalValue(value);
+
+      const { isValid, parsedValue } = validateValue(value);
 
       if (isValid) {
-        const numericValue =
-          validValue === "" || validValue === "-"
-            ? null
-            : parseFloat(validValue);
-        if ((numericValue ?? 0) > 10000000000000) return;
-        if ((numericValue ?? 0) < -10000000000000) return;
-
-        setInternalValue(validValue);
-
-        // Call the original onChange if it exists
-        props.onChange?.(e);
-
-        // Debounce the onValueChange call
-        if (onValueChange) {
-          onValueChange(numericValue);
-          if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-          }
-          debounceTimerRef.current = setTimeout(() => {
-            if (validValue === "") {
-              setInternalValue("0");
-            }
-          }, debounceTime);
-        }
+        debouncedOnChange(parsedValue);
+      }
+    };
+    const handleBlur = () => {
+      const { isValid, parsedValue } = validateValue(internalValue);
+      if (isValid) {
+        debouncedOnChange(parsedValue);
       }
     };
 
     useEffect(() => {
-      return () => {
-        if (debounceTimerRef.current) {
-          clearTimeout(debounceTimerRef.current);
-        }
-      };
-    }, []);
+      if (defaultValue !== undefined) {
+        setInternalValue(defaultValue.toString());
+      }
+    }, [defaultValue]);
 
     return (
       <Input
@@ -81,6 +85,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
         pattern="-?[0-9]*"
         value={internalValue}
         onChange={handleChange}
+        onBlur={handleBlur}
       />
     );
   },

@@ -22,7 +22,6 @@ import {
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Card } from "@board-games/ui/card";
-import { Checkbox } from "@board-games/ui/checkbox";
 import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
@@ -51,6 +50,7 @@ import { TieBreakerDialog } from "~/components/match/scoresheet/TieBreakerDialog
 import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
+import { DebouncedCheckbox } from "../debounced-checkbox";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
 type Player = Match["players"][number];
@@ -324,7 +324,7 @@ const BodyRow = ({
                 <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
                   {round.type === "Numeric" ? (
                     <NumberInput
-                      value={roundPlayers[0]?.score ?? ""}
+                      defaultValue={roundPlayers[0]?.score ?? ""}
                       onValueChange={(value) => {
                         updateTeamScore(team.id, round.id, value);
                       }}
@@ -333,8 +333,8 @@ const BodyRow = ({
                   ) : (
                     <>
                       <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
-                      <Checkbox
-                        onCheckedChange={(isChecked) => {
+                      <DebouncedCheckbox
+                        onDebouncedChange={(isChecked) => {
                           updateTeamScore(
                             team.id,
                             round.id,
@@ -363,7 +363,7 @@ const BodyRow = ({
                 <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
                   {round.type === "Numeric" ? (
                     <NumberInput
-                      value={roundPlayer?.score ?? ""}
+                      defaultValue={roundPlayer?.score ?? ""}
                       onValueChange={(value) => {
                         updatePlayerScore(player.id, round.id, value);
                       }}
@@ -372,8 +372,8 @@ const BodyRow = ({
                   ) : (
                     <>
                       <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
-                      <Checkbox
-                        onCheckedChange={(isChecked) => {
+                      <DebouncedCheckbox
+                        onDebouncedChange={(isChecked) => {
                           updatePlayerScore(
                             player.id,
                             round.id,
@@ -423,7 +423,7 @@ const BodyRow = ({
             <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
               {round.type === "Numeric" ? (
                 <NumberInput
-                  value={roundPlayer?.score ?? ""}
+                  defaultValue={roundPlayer?.score ?? ""}
                   onValueChange={(value) => {
                     updatePlayerScore(player.id, round.id, value);
                   }}
@@ -432,8 +432,8 @@ const BodyRow = ({
               ) : (
                 <>
                   <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
-                  <Checkbox
-                    onCheckedChange={(isChecked) => {
+                  <DebouncedCheckbox
+                    onDebouncedChange={(isChecked) => {
                       updatePlayerScore(
                         player.id,
                         round.id,
@@ -592,7 +592,7 @@ const TotalRow = ({ match }: { match: Match }) => {
                 <TableCell key={`${team.id}-total`}>
                   <NumberInput
                     className="text-center"
-                    value={firstTeamPlayer.score ?? ""}
+                    defaultValue={firstTeamPlayer.score ?? ""}
                     onValueChange={(value) => {
                       updateTeamScore(team.id, value);
                     }}
@@ -625,7 +625,7 @@ const TotalRow = ({ match }: { match: Match }) => {
                 <TableCell key={`${player.id}-total`}>
                   <NumberInput
                     className="text-center"
-                    value={player.score ?? ""}
+                    defaultValue={player.score ?? ""}
                     onValueChange={(value) => {
                       updatePlayerScore(player.id, value);
                     }}
@@ -666,7 +666,7 @@ const TotalRow = ({ match }: { match: Match }) => {
             <TableCell key={`${player.id}-total`}>
               <NumberInput
                 className="text-center"
-                value={player.score ?? ""}
+                defaultValue={player.score ?? ""}
                 onValueChange={(value) => {
                   updatePlayerScore(player.id, value);
                 }}
