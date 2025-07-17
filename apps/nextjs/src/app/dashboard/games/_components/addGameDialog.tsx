@@ -98,7 +98,7 @@ export function AddGameDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen} modal={true}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="p-2 sm:max-w-md sm:p-6">
         <Content setIsOpen={setIsOpen} />
       </DialogContent>
       <div className="flex h-full w-full flex-col justify-end">
@@ -1067,6 +1067,18 @@ const AddScoreSheetForm = ({
 }) => {
   const form = useForm({
     schema: scoreSheetWithRoundsSchema.check((ctx) => {
+      if (
+        ctx.value.scoresheet.winCondition !== "Manual" &&
+        ctx.value.scoresheet.roundsScore === "None"
+      ) {
+        ctx.issues.push({
+          code: "custom",
+          input: ctx.value,
+          message:
+            "Rounds score cannot be None when win condition is not Manual.",
+          path: ["scoresheet.roundsScore"],
+        });
+      }
       if (ctx.value.scoresheet.isCoop) {
         if (
           ctx.value.scoresheet.winCondition !== "Manual" &&
@@ -1080,6 +1092,36 @@ const AddScoreSheetForm = ({
             path: ["scoresheet.winCondition"],
           });
         }
+      }
+      if (
+        ctx.value.scoresheet.winCondition !== "Manual" &&
+        ctx.value.scoresheet.roundsScore !== "Manual" &&
+        ctx.value.rounds.length === 0
+      ) {
+        ctx.issues.push({
+          code: "custom",
+          input: ctx.value,
+          message:
+            "Rounds cannot be empty when win condition is not Manual and rounds score is not Manual.",
+          path: ["scoresheet.roundsScore"],
+          params: {
+            roundsScore: ctx.value.scoresheet.roundsScore,
+            winCondition: ctx.value.scoresheet.winCondition,
+            rounds: ctx.value.rounds,
+          },
+        });
+        ctx.issues.push({
+          code: "custom",
+          input: ctx.value,
+          message:
+            "Rounds cannot be empty when win condition is not Manual and rounds score is not Manual.",
+          path: ["scoresheet.winCondition"],
+          params: {
+            roundsScore: ctx.value.scoresheet.roundsScore,
+            winCondition: ctx.value.scoresheet.winCondition,
+            rounds: ctx.value.rounds,
+          },
+        });
       }
     }),
     defaultValues: {
@@ -1098,13 +1140,37 @@ const AddScoreSheetForm = ({
     onBack();
   };
 
-  const conditions = scoreSheetWinConditions;
-  const roundsScoreOptions = scoreSheetRoundsScore;
+  const winConditionOptions = scoreSheetWinConditions;
+  const roundsScoreOptions: (typeof scoreSheetRoundsScore)[number][] =
+    scoreSheetRoundsScore.filter((option) => option !== "None");
+
+  const manualWinConditionOptions = scoreSheetRoundsScore;
+  const coopWinConditionOptions: (typeof scoreSheetWinConditions)[number][] = [
+    "Manual",
+    "Target Score",
+  ];
+  const formWinCondition = form.watch("scoresheet.winCondition");
+  const formRoundsScore = form.watch("scoresheet.roundsScore");
+  const formIsCoop = form.watch("scoresheet.isCoop");
+
+  useEffect(() => {
+    if (formWinCondition !== "Manual" && formRoundsScore === "None") {
+      form.setValue("scoresheet.roundsScore", "Aggregate");
+    }
+    if (formIsCoop) {
+      if (
+        formWinCondition !== "Manual" &&
+        formWinCondition !== "Target Score"
+      ) {
+        form.setValue("scoresheet.winCondition", "Manual");
+      }
+    }
+  }, [formWinCondition, formRoundsScore, form, formIsCoop]);
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent className="flex flex-col gap-2 px-2 sm:gap-4 sm:px-6">
           <FormField
             control={form.control}
             name="scoresheet.name"
@@ -1150,30 +1216,21 @@ const AddScoreSheetForm = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {form.getValues("scoresheet.isCoop")
-                      ? conditions
-                          .filter(
-                            (condition) =>
-                              condition === "Manual" ||
-                              condition === "Target Score",
-                          )
-                          .map((condition) => (
-                            <SelectItem key={condition} value={condition}>
-                              {condition}
-                            </SelectItem>
-                          ))
-                      : conditions.map((condition) => (
-                          <SelectItem key={condition} value={condition}>
-                            {condition}
-                          </SelectItem>
-                        ))}
+                    {(formIsCoop
+                      ? coopWinConditionOptions
+                      : winConditionOptions
+                    ).map((condition) => (
+                      <SelectItem key={condition} value={condition}>
+                        {condition}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
-          {form.getValues("scoresheet.winCondition") === "Target Score" && (
+          {formWinCondition === "Target Score" && (
             <FormField
               control={form.control}
               name={`scoresheet.targetScore`}
@@ -1212,7 +1269,10 @@ const AddScoreSheetForm = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {roundsScoreOptions.map((condition) => (
+                    {(formWinCondition === "Manual"
+                      ? manualWinConditionOptions
+                      : roundsScoreOptions
+                    ).map((condition) => (
                       <SelectItem key={condition} value={condition}>
                         {condition}
                       </SelectItem>
@@ -1246,9 +1306,9 @@ const AddRounds = ({
     control: form.control,
   });
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 pb-4">
       <div className="text-xl font-semibold">Rows</div>
-      <div className="flex max-h-64 flex-col gap-2 overflow-auto">
+      <div className="flex max-h-[25vh] flex-col gap-2 overflow-auto">
         {fields.map((field, index) => {
           return (
             <div

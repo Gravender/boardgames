@@ -1,6 +1,7 @@
 import type { z } from "zod/v4";
 import { Settings } from "lucide-react";
 
+import type { editScoresheetSchemaForm } from "@board-games/shared";
 import type { UseFormReturn } from "@board-games/ui/form";
 import { roundTypes } from "@board-games/db/constants";
 import { insertRoundSchema } from "@board-games/db/zodSchema";
@@ -26,7 +27,6 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 
-import type { scoresheetSchema } from "./editGameForm";
 import { NumberInput } from "~/components/number-input";
 
 export function RoundPopOver({
@@ -35,7 +35,7 @@ export function RoundPopOver({
   disabled = false,
 }: {
   index: number;
-  form: UseFormReturn<z.infer<typeof scoresheetSchema>>;
+  form: UseFormReturn<z.infer<typeof editScoresheetSchemaForm>>;
   disabled?: boolean;
 }) {
   const { fields, update } = useFieldArray({
@@ -43,6 +43,7 @@ export function RoundPopOver({
     control: form.control,
   });
   const roundsTypeOptions = roundTypes;
+  const formType = form.watch(`rounds.${index}.type`);
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -94,7 +95,7 @@ export function RoundPopOver({
                 </FormItem>
               )}
             />
-            {fields[index]?.type === "Checkbox" && (
+            {formType === "Checkbox" && (
               <FormField
                 control={form.control}
                 name={`rounds.${index}.score`}
