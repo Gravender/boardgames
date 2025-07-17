@@ -208,8 +208,8 @@ importers:
         specifier: catalog:react19
         version: 19.0.0(react@19.0.0)
       react-hook-form:
-        specifier: ^7.57.0
-        version: 7.57.0(react@19.0.0)
+        specifier: ^7.60.0
+        version: 7.60.0(react@19.0.0)
       react-native:
         specifier: 0.79.2
         version: 0.79.2(@babel/core@7.27.4)(@types/react@19.1.6)(bufferutil@4.0.9)(react@19.0.0)
@@ -442,7 +442,7 @@ importers:
         version: 2.2.2
       uploadthing:
         specifier: ^7.4.1
-        version: 7.4.4(express@5.1.0)(next@15.3.3(@babel/core@7.27.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.15.29)(typescript@5.8.3)))
+        version: 7.4.4(express@5.1.0)(next@15.3.3(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.15.29)(typescript@5.8.3)))
       zod:
         specifier: 'catalog:'
         version: 3.25.49
@@ -564,8 +564,8 @@ importers:
   packages/ui:
     dependencies:
       '@hookform/resolvers':
-        specifier: ^5.0.1
-        version: 5.0.1(react-hook-form@7.57.0(react@19.0.0))
+        specifier: ^5.1.1
+        version: 5.1.1(react-hook-form@7.60.0(react@19.0.0))
       '@radix-ui/react-accordion':
         specifier: ^1.2.11
         version: 1.2.11(@types/react-dom@19.1.5(@types/react@19.1.6))(@types/react@19.1.6)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -648,8 +648,8 @@ importers:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react-hook-form:
-        specifier: ^7.57.0
-        version: 7.57.0(react@19.0.0)
+        specifier: ^7.60.0
+        version: 7.60.0(react@19.0.0)
       recharts:
         specifier: ^2.15.3
         version: 2.15.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -2531,8 +2531,8 @@ packages:
   '@formkit/auto-animate@0.8.2':
     resolution: {integrity: sha512-SwPWfeRa5veb1hOIBMdzI+73te5puUBHmqqaF1Bu7FjvxlYSz/kJcZKSa9Cg60zL0uRNeJL2SbRxV6Jp6Q1nFQ==}
 
-  '@hookform/resolvers@5.0.1':
-    resolution: {integrity: sha512-u/+Jp83luQNx9AdyW2fIPGY6Y7NG68eN2ZW8FOJYL+M0i4s49+refdJdOp/A9n9HFQtQs3HIDHQvX3ZET2o7YA==}
+  '@hookform/resolvers@5.1.1':
+    resolution: {integrity: sha512-J/NVING3LMAEvexJkyTLjruSm7aOFx7QX21pzkiJfMoNG0wl5aFEjLTl7ay7IQb9EWY6AkrBy7tHL2Alijpdcg==}
     peerDependencies:
       react-hook-form: ^7.55.0
 
@@ -8360,8 +8360,8 @@ packages:
     peerDependencies:
       react: '>=17.0.0'
 
-  react-hook-form@7.57.0:
-    resolution: {integrity: sha512-RbEks3+cbvTP84l/VXGUZ+JMrKOS8ykQCRYdm5aYsxnDquL0vspsyNhGRO7pcH6hsZqWlPOjLye7rJqdtdAmlg==}
+  react-hook-form@7.60.0:
+    resolution: {integrity: sha512-SBrYOvMbDB7cV8ZfNpaiLcgjH/a1c7aK0lK+aNigpf4xWLO8q+o4tcvVurv3c4EOyzn/3dCsYt4GKD42VvJ/+A==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
@@ -11857,10 +11857,10 @@ snapshots:
 
   '@formkit/auto-animate@0.8.2': {}
 
-  '@hookform/resolvers@5.0.1(react-hook-form@7.57.0(react@19.0.0))':
+  '@hookform/resolvers@5.1.1(react-hook-form@7.60.0(react@19.0.0))':
     dependencies:
       '@standard-schema/utils': 0.3.0
-      react-hook-form: 7.57.0(react@19.0.0)
+      react-hook-form: 7.60.0(react@19.0.0)
 
   '@humanfs/core@0.19.1': {}
 
@@ -18460,7 +18460,7 @@ snapshots:
     dependencies:
       react: 19.0.0
 
-  react-hook-form@7.57.0(react@19.0.0):
+  react-hook-form@7.60.0(react@19.0.0):
     dependencies:
       react: 19.0.0
 
