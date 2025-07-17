@@ -20,7 +20,7 @@ import {
   FormMessage,
   useForm,
 } from "@board-games/ui/form";
-import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
+import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Textarea } from "@board-games/ui/textarea";
 
 import { useTRPC } from "~/trpc/react";
@@ -38,14 +38,12 @@ export function CommentDialog({
       <DialogTrigger asChild>
         <Button
           variant="ghost"
-          className="h-fit min-h-12 min-w-[50%] max-w-full items-start justify-start"
+          className="] h-fit w-full items-start justify-start p-0"
         >
           <ScrollArea>
-            <p className="max-h-[10vh] w-full text-wrap text-start text-base text-primary">
-              <b className="text-lg font-semibold text-primary">Comment:</b>
+            <p className="max-h-[5vh] w-full text-wrap text-start">
               {comment ?? "No comment"}
             </p>
-            <ScrollBar orientation="horizontal" />
           </ScrollArea>
         </Button>
       </DialogTrigger>

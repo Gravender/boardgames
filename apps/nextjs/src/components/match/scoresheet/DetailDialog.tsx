@@ -28,6 +28,7 @@ import { useTRPC } from "~/trpc/react";
 export function DetailDialog({
   matchId,
   data,
+  placeholder,
 }: {
   matchId: number;
   data: {
@@ -36,6 +37,7 @@ export function DetailDialog({
     details: string | null;
     type: "Player" | "Team";
   };
+  placeholder?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -43,12 +45,18 @@ export function DetailDialog({
       <DialogTrigger asChild>
         <Button
           variant="ghost"
-          className="h-full w-full min-w-20 items-start justify-start p-0"
+          className="w-full min-w-20 items-start justify-start p-0 px-1"
         >
           <ScrollArea>
-            <p className="max-h-10 min-h-6 w-full whitespace-normal text-wrap break-words text-start text-base text-primary">
-              {data.details ?? ""}
-            </p>
+            <div className="max-h-10 w-full">
+              {data.details && data.details !== "" ? (
+                <p className="whitespace-normal text-wrap break-words text-start">
+                  {data.details}
+                </p>
+              ) : (
+                <p>{placeholder ?? ""}</p>
+              )}
+            </div>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
         </Button>
