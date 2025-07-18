@@ -16,7 +16,7 @@ export function CalendarDay({ day, matches }: CalendarDayProps) {
     return (
       <Link
         href={`/dashboard/calendar/${matches.date.toString().split(" ")[0]}`}
-        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-secondary text-sm font-normal text-secondary-foreground hover:bg-secondary/80 aria-selected:opacity-100 sm:h-12 sm:w-12 sm:text-lg md:h-16 md:w-16 lg:h-20 lg:w-20"
+        className="relative mx-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-secondary text-sm font-normal text-secondary-foreground hover:bg-secondary/80 aria-selected:opacity-100 sm:h-12 sm:w-12 sm:text-lg md:h-16 md:w-16 lg:h-20 lg:w-20"
       >
         <span>{day.getDate()}</span>
         <span
@@ -29,13 +29,13 @@ export function CalendarDay({ day, matches }: CalendarDayProps) {
     );
   }
   return (
-    <div
+    <td
       className={cn(
-        "h-9 w-9 font-normal aria-selected:opacity-100 sm:h-12 sm:w-12 md:h-16 md:w-16 lg:h-20 lg:w-20",
+        "mx-1 h-9 w-9 font-normal aria-selected:opacity-100 sm:h-12 sm:w-12 md:h-16 md:w-16 lg:h-20 lg:w-20",
         "flex items-center justify-center rounded-lg text-sm sm:text-lg",
       )}
     >
       <span>{day.getDate()}</span>
-    </div>
+    </td>
   );
 }

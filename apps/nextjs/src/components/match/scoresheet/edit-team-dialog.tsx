@@ -312,8 +312,8 @@ function Content({
             </ScrollArea>
           </div>
           {formRoles.length > 0 && (
-            <ScrollArea className="hidden sm:relative">
-              <div className="hidden max-w-60 items-center gap-2 sm:flex sm:max-w-80">
+            <ScrollArea className="hidden overflow-auto sm:relative">
+              <div className="hidden items-center gap-2 overflow-visible sm:flex">
                 {formRoles.map((roleId) => {
                   const role = roles.find((r) => r.id === roleId);
                   if (!role) return null;

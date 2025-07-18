@@ -34,7 +34,7 @@ import {
   insertScoreSheetSchema,
   selectGameSchema,
 } from "@board-games/db/zodSchema";
-import { baseRoundSchema, editScoresheetSchema } from "@board-games/shared";
+import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 import analyticsServerClient from "../analytics";
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
@@ -1287,61 +1287,7 @@ export const gameRouter = createTRPCRouter({
           }),
           z.object({ type: z.literal("default"), id: z.number() }),
         ]),
-        scoresheets: z.array(
-          z.discriminatedUnion("type", [
-            z.object({
-              type: z.literal("New"),
-              scoresheet: editScoresheetSchema.extend({
-                isDefault: z.boolean().optional(),
-              }),
-              rounds: z.array(
-                baseRoundSchema.extend({
-                  order: z.number(),
-                }),
-              ),
-            }),
-            z.object({
-              type: z.literal("Update Scoresheet"),
-              scoresheet: editScoresheetSchema.omit({ name: true }).extend({
-                id: z.number(),
-                scoresheetType: z.literal("original").or(z.literal("shared")),
-                name: z.string().optional(),
-                isDefault: z.boolean().optional(),
-              }),
-            }),
-            z.object({
-              type: z.literal("Update Scoresheet & Rounds"),
-              scoresheet: editScoresheetSchema
-                .omit({ name: true })
-                .extend({
-                  id: z.number(),
-                  scoresheetType: z.literal("original").or(z.literal("shared")),
-                  name: z.string().optional(),
-                  isDefault: z.boolean().optional(),
-                })
-                .or(
-                  z.object({
-                    id: z.number(),
-                    scoresheetType: z
-                      .literal("original")
-                      .or(z.literal("shared")),
-                  }),
-                ),
-              roundsToEdit: z.array(
-                baseRoundSchema
-                  .omit({ name: true, order: true })
-                  .extend({ id: z.number(), name: z.string().optional() }),
-              ),
-              roundsToAdd: z.array(
-                baseRoundSchema.extend({
-                  scoresheetId: z.number(),
-                  order: z.number(),
-                }),
-              ),
-              roundsToDelete: z.array(z.number()),
-            }),
-          ]),
-        ),
+        scoresheets: z.array(editScoresheetSchemaApiInput),
         scoresheetsToDelete: z.array(
           z.object({
             id: z.number(),

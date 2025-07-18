@@ -1,8 +1,7 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
 import type { z } from "zod/v4";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { notFound, useRouter } from "next/navigation";
 import {
   useMutation,
@@ -10,7 +9,14 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { differenceInSeconds } from "date-fns";
-import { Pause, Play, RotateCcw, SquarePen } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Pause,
+  Play,
+  RotateCcw,
+  SquarePen,
+} from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -21,36 +27,25 @@ import {
 } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
-import { Card } from "@board-games/ui/card";
-import { Checkbox } from "@board-games/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
-import { Separator } from "@board-games/ui/separator";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@board-games/ui/table";
 import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import type { ManualWinnerPlayerSchema } from "~/components/match/scoresheet/ManualWinnerDialog";
 import type { TieBreakerPlayerSchema } from "~/components/match/scoresheet/TieBreakerDialog";
-import { AddRoundDialog } from "~/components/match/scoresheet/add-round-dialog";
 import { CommentDialog } from "~/components/match/scoresheet/CommentDialog";
-import { DetailDialog } from "~/components/match/scoresheet/DetailDialog";
-import PlayerEditorDialog from "~/components/match/scoresheet/edit-player-dialog";
-import TeamEditorDialog from "~/components/match/scoresheet/edit-team-dialog";
 import { ManualWinnerDialog } from "~/components/match/scoresheet/ManualWinnerDialog";
 import { MatchImages } from "~/components/match/scoresheet/match-images";
+import { ScoreSheetTable } from "~/components/match/scoresheet/table";
 import { TieBreakerDialog } from "~/components/match/scoresheet/TieBreakerDialog";
-import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
+import { FormattedDate } from "../formatted-date";
+import { DetailDialog } from "./scoresheet/DetailDialog";
+import PlayerEditorDialog from "./scoresheet/edit-player-dialog";
+import TeamEditorDialog from "./scoresheet/edit-team-dialog";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
 type Player = Match["players"][number];
@@ -68,34 +63,276 @@ export function Scoresheet({ matchId }: { matchId: number }) {
 function ScoresheetContent({ match }: { match: Match }) {
   return (
     <div className="flex w-full justify-center">
-      <div className="w-full max-w-6xl sm:px-4">
-        <ScoreSheetTable match={match} />
+      <div className="flex w-full max-w-6xl flex-col gap-2 px-2 sm:gap-4 sm:px-4">
+        <Card>
+          <CardHeader className="py-2 sm:py-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-2xl font-bold">{match.name}</CardTitle>
+              <Badge
+                variant={match.scoresheet.isCoop ? "secondary" : "default"}
+              >
+                {match.scoresheet.isCoop ? "Cooperative" : "Competitive"}
+              </Badge>
+            </div>
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+              <FormattedDate Icon={Calendar} date={match.date} />
+              {match.location && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  {match.location.name}
+                </div>
+              )}
+            </div>
+          </CardHeader>
+        </Card>
+        {match.scoresheet.winCondition === "Manual" &&
+        match.scoresheet.rounds.length === 0 ? (
+          <ManualScoreSheet match={match} />
+        ) : (
+          <ScoreSheetTable match={match} />
+        )}
         <ScoresheetFooter match={match} />
       </div>
     </div>
   );
 }
-function ScoreSheetTable({ match }: { match: Match }) {
+function ManualScoreSheet({ match }: { match: Match }) {
+  const trpc = useTRPC();
+  const { data: roles } = useSuspenseQuery(
+    trpc.game.getGameRoles.queryOptions({ gameId: match.gameId }),
+  );
+
   const [team, setTeam] = useState<Team | null>(null);
   const [player, setPlayer] = useState<Player | null>(null);
+
+  const mappedTeams = useMemo(() => {
+    const mappedTeams = match.teams
+      .map((team) => {
+        const teamPlayers = match.players.filter(
+          (player) => player.teamId === team.id,
+        );
+        if (teamPlayers.length === 0) return null;
+        const teamRoles = roles.filter((role) => {
+          const roleInEveryPlayer = teamPlayers.every((p) =>
+            p.roles.some((r) => r.id === role.id),
+          );
+          return roleInEveryPlayer;
+        });
+        return {
+          ...team,
+          players: teamPlayers.map((player) => ({
+            ...player,
+            roles: player.roles.filter(
+              (role) => !teamRoles.some((r) => r.id === role.id),
+            ),
+          })),
+          roles: teamRoles,
+        };
+      })
+      .filter((team) => team !== null);
+    return mappedTeams;
+  }, [match, roles]);
+  const individualPlayers = useMemo(() => {
+    return match.players.filter((player) => player.teamId === null);
+  }, [match]);
+
   return (
     <>
-      <Card className="pb-0">
-        <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
-          <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
-            <HeaderRow match={match} setTeam={setTeam} setPlayer={setPlayer} />
-          </TableHeader>
-          <TableBody>
-            {match.scoresheet.rounds.map((round) => (
-              <BodyRow key={`round-${round.id}`} match={match} round={round} />
-            ))}
-          </TableBody>
-          <TableFooter>
-            <CommentsRow match={match} />
-            <TotalRow match={match} />
-          </TableFooter>
-        </Table>
-      </Card>
+      <ScrollArea>
+        <div className="flex max-h-[60vh] flex-col gap-4 sm:max-h-[70vh]">
+          {mappedTeams.length > 0 && (
+            <ScrollArea>
+              <div
+                className={cn(
+                  "grid max-h-[50vh] grid-cols-1 gap-4 sm:max-h-[60vh]",
+                  mappedTeams.length >= 2 && "sm:grid-cols-2",
+                  mappedTeams.length >= 3 && "md:grid-cols-3",
+                  mappedTeams.length >= 4 && "xl:grid-cols-4",
+                )}
+              >
+                {mappedTeams.map((team) => {
+                  return (
+                    <Card key={team.id}>
+                      <CardHeader className="pb-0 pt-2 sm:pt-4">
+                        <CardTitle className="flex items-center justify-between gap-2 text-xl">
+                          {team.name}
+                          <Button
+                            variant="ghost"
+                            type="button"
+                            size="icon"
+                            onClick={() => setTeam(team)}
+                          >
+                            <SquarePen className="h-4 w-4" />
+                          </Button>
+                        </CardTitle>
+
+                        <ScrollArea className="w-full overflow-auto">
+                          <div className="hidden items-center gap-2 overflow-visible sm:flex">
+                            {team.roles.map((role) => {
+                              return (
+                                <Badge
+                                  key={role.id}
+                                  variant="outline"
+                                  className="text-nowrap"
+                                >
+                                  {role.name}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                          <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="text-muted-foreground">
+                          <Label className="text-sm font-medium">
+                            Team Notes
+                          </Label>
+                          <DetailDialog
+                            matchId={match.id}
+                            data={{
+                              id: team.id,
+                              name: team.name,
+                              details: team.details,
+                              type: "Team",
+                            }}
+                            placeholder="No notes for this team"
+                          />
+                        </div>
+                        <ScrollArea>
+                          <div className="flex max-h-[20vh] flex-col gap-2">
+                            {team.players.map((player) => {
+                              return (
+                                <div
+                                  key={`${player.id}-${player.playerId}`}
+                                  className="flex flex-col rounded-lg border p-3"
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="font-medium">
+                                      {player.name}
+                                    </span>
+                                    <Button
+                                      variant="ghost"
+                                      type="button"
+                                      size="icon"
+                                      className="font-semibold"
+                                      onClick={() => setPlayer(player)}
+                                    >
+                                      <SquarePen className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+
+                                  <ScrollArea className="w-full overflow-auto">
+                                    <div className="hidden items-center gap-2 overflow-visible sm:flex">
+                                      {player.roles.map((role) => {
+                                        return (
+                                          <Badge
+                                            key={role.id}
+                                            variant="outline"
+                                            className="text-nowrap"
+                                          >
+                                            {role.name}
+                                          </Badge>
+                                        );
+                                      })}
+                                    </div>
+                                    <ScrollBar orientation="horizontal" />
+                                  </ScrollArea>
+                                  <div className="text-muted-foreground">
+                                    <Label className="text-xs font-medium">
+                                      Player Notes
+                                    </Label>
+                                    <DetailDialog
+                                      matchId={match.id}
+                                      data={{
+                                        id: player.id,
+                                        name: player.name,
+                                        details: player.details,
+                                        type: "Player",
+                                      }}
+                                      placeholder="No notes for this player"
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </ScrollArea>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          )}
+          {individualPlayers.length > 0 && (
+            <ScrollArea>
+              <div
+                className={cn(
+                  "grid max-h-[50vh] grid-cols-1 gap-4 sm:max-h-[60vh]",
+                  individualPlayers.length >= 2 && "sm:grid-cols-2",
+                  individualPlayers.length >= 3 && "md:grid-cols-3",
+                  individualPlayers.length >= 4 && "xl:grid-cols-4",
+                )}
+              >
+                {individualPlayers.map((player) => {
+                  return (
+                    <Card key={`${player.id}-${player.playerId}`}>
+                      <CardHeader className="pb-0 pt-2 sm:pt-4">
+                        <CardTitle className="flex items-center justify-between gap-2 text-xl">
+                          {player.name}
+                          <Button
+                            variant="ghost"
+                            type="button"
+                            size="icon"
+                            className="font-semibold"
+                            onClick={() => setPlayer(player)}
+                          >
+                            <SquarePen className="h-4 w-4" />
+                          </Button>
+                        </CardTitle>
+                        <ScrollArea className="hidden w-full overflow-auto sm:relative">
+                          <div className="hidden items-center gap-2 overflow-visible sm:flex">
+                            {player.roles.map((role) => {
+                              return (
+                                <Badge
+                                  key={role.id}
+                                  variant="outline"
+                                  className="text-nowrap"
+                                >
+                                  {role.name}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                          <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-muted-foreground">
+                          <Label className="text-sm font-medium">
+                            Player Notes
+                          </Label>
+                          <DetailDialog
+                            matchId={match.id}
+                            data={{
+                              id: player.id,
+                              name: player.name,
+                              details: player.details,
+                              type: "Player",
+                            }}
+                            placeholder="No notes for this player"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
+      </ScrollArea>
       <TeamEditorDialog
         team={team}
         players={match.players}
@@ -113,584 +350,6 @@ function ScoreSheetTable({ match }: { match: Match }) {
     </>
   );
 }
-const HeaderRow = ({
-  match,
-  setTeam,
-  setPlayer,
-}: {
-  match: Match;
-  setTeam: Dispatch<SetStateAction<Team | null>>;
-  setPlayer: Dispatch<SetStateAction<Player | null>>;
-}) => {
-  if (match.teams.length > 0) {
-    return (
-      <TableRow>
-        <TableHead
-          scope="col"
-          className="bg-sidebar sticky left-0 top-0 z-10 w-20 sm:w-36"
-        >
-          <div>
-            <AddRoundDialog match={match} />
-          </div>
-        </TableHead>
-        {match.teams
-          .filter((team) =>
-            match.players.find((player) => player.teamId === team.id),
-          )
-          .map((team) => {
-            const teamPlayers = match.players.filter(
-              (player) => player.teamId === team.id,
-            );
-            return (
-              <TableHead
-                className="min-w-20 text-center"
-                scope="col"
-                key={team.id}
-              >
-                <div className="flex flex-col items-center justify-center gap-1 py-1">
-                  <Button
-                    variant="ghost"
-                    type="button"
-                    size="sm"
-                    className="font-semibold"
-                    onClick={() => setTeam(team)}
-                  >
-                    {`Team: ${team.name}`}
-                    <SquarePen className="h-4 w-4" />
-                  </Button>
-                  <ScrollArea>
-                    <div className="flex max-h-10 w-full flex-row flex-wrap justify-center gap-1">
-                      {teamPlayers.map((player) => {
-                        return (
-                          <button
-                            key={player.id}
-                            onClick={() => setPlayer(player)}
-                          >
-                            <Badge>{player.name}</Badge>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
-                </div>
-              </TableHead>
-            );
-          })}
-        {match.players
-          .filter((player) => player.teamId === null)
-          .map((player) => (
-            <TableHead
-              className="min-w-20 text-center"
-              scope="col"
-              key={player.id}
-            >
-              <Button
-                variant="ghost"
-                type="button"
-                size="sm"
-                className="font-semibold"
-                onClick={() => setPlayer(player)}
-              >
-                {player.name}
-                <SquarePen className="h-4 w-4" />
-              </Button>
-            </TableHead>
-          ))}
-      </TableRow>
-    );
-  }
-  return (
-    <TableRow>
-      <TableHead
-        scope="col"
-        className="bg-sidebar sticky left-0 top-0 w-20 sm:w-36"
-      >
-        <div>
-          <AddRoundDialog match={match} />
-        </div>
-      </TableHead>
-      {match.players.map((player) => (
-        <TableHead className="min-w-20 text-center" scope="col" key={player.id}>
-          <Button
-            variant="ghost"
-            type="button"
-            size="sm"
-            className="font-semibold"
-            onClick={() => setPlayer(player)}
-          >
-            {player.name}
-            <SquarePen className="h-4 w-4" />
-          </Button>
-        </TableHead>
-      ))}
-    </TableRow>
-  );
-};
-const BodyRow = ({
-  match,
-  round,
-}: {
-  match: Match;
-  round: Match["scoresheet"]["rounds"][number];
-}) => {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-
-  const updateRoundScore = useMutation(
-    trpc.match.updateMatchRoundScore.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: match.id }),
-        );
-      },
-    }),
-  );
-  const updateTeamScore = (
-    teamId: number,
-    roundId: number,
-    value: number | null,
-  ) => {
-    updateRoundScore.mutate({
-      match: {
-        id: match.id,
-      },
-      type: "team",
-      teamId: teamId,
-      round: {
-        id: roundId,
-        score: value,
-      },
-    });
-  };
-  const updatePlayerScore = (
-    playerId: number,
-    roundId: number,
-    value: number | null,
-  ) => {
-    updateRoundScore.mutate({
-      match: {
-        id: match.id,
-      },
-      type: "player",
-      matchPlayerId: playerId,
-      round: {
-        id: roundId,
-        score: value,
-      },
-    });
-  };
-  if (match.teams.length > 0) {
-    return (
-      <TableRow>
-        <TableHead
-          scope="row"
-          className={cn(
-            "sticky left-0 z-10 max-w-[95vw] bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:max-w-[90vw] sm:text-lg",
-            round.color && "over:opacity-50 hover:dark:opacity-80",
-          )}
-          style={{
-            backgroundColor: round.color ?? "",
-          }}
-        >
-          <span
-            style={{
-              mixBlendMode: round.color ? "multiply" : "normal",
-            }}
-          >
-            {round.name}
-          </span>
-        </TableHead>
-        {match.teams
-          .filter((team) =>
-            match.players.find((player) => player.teamId === team.id),
-          )
-          .map((team) => {
-            const teamPlayer = match.players.filter(
-              (player) => player.teamId === team.id,
-            );
-            const roundPlayers = teamPlayer
-              .flatMap((player) => {
-                return player.rounds.find(
-                  (roundPlayer) => roundPlayer.roundId === round.id,
-                );
-              })
-              .filter((roundPlayer) => roundPlayer !== undefined);
-            return (
-              <TableCell
-                key={`team-${team.id}-round-${round.id}`}
-                className="p-0"
-              >
-                <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
-                  {round.type === "Numeric" ? (
-                    <NumberInput
-                      value={roundPlayers[0]?.score ?? ""}
-                      onValueChange={(value) => {
-                        updateTeamScore(team.id, round.id, value);
-                      }}
-                      className="border-none text-center"
-                    />
-                  ) : (
-                    <>
-                      <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
-                      <Checkbox
-                        onCheckedChange={(isChecked) => {
-                          updateTeamScore(
-                            team.id,
-                            round.id,
-                            isChecked ? round.score : null,
-                          );
-                        }}
-                        checked={roundPlayers[0]?.score === round.score}
-                      />
-                    </>
-                  )}
-                </div>
-              </TableCell>
-            );
-          })}
-        {match.players
-          .filter((player) => player.teamId === null)
-          .map((player) => {
-            const roundPlayer = player.rounds.find(
-              (roundPlayer) => roundPlayer.roundId === round.id,
-            );
-            return (
-              <TableCell
-                key={`player-${player.id}-round-${round.id}`}
-                className="p-0"
-              >
-                <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
-                  {round.type === "Numeric" ? (
-                    <NumberInput
-                      value={roundPlayer?.score ?? ""}
-                      onValueChange={(value) => {
-                        updatePlayerScore(player.id, round.id, value);
-                      }}
-                      className="border-none text-center"
-                    />
-                  ) : (
-                    <>
-                      <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
-                      <Checkbox
-                        onCheckedChange={(isChecked) => {
-                          updatePlayerScore(
-                            player.id,
-                            round.id,
-                            isChecked ? round.score : null,
-                          );
-                        }}
-                        checked={roundPlayer?.score === round.score}
-                      />
-                    </>
-                  )}
-                </div>
-              </TableCell>
-            );
-          })}
-      </TableRow>
-    );
-  }
-  return (
-    <TableRow>
-      <TableHead
-        scope="row"
-        className={cn(
-          "sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg",
-          round.color && "hover:opacity-50 hover:dark:opacity-80",
-        )}
-        style={{
-          backgroundColor: round.color ?? "",
-        }}
-      >
-        <span
-          style={{
-            mixBlendMode: round.color ? "multiply" : "normal",
-          }}
-        >
-          {round.name}
-        </span>
-      </TableHead>
-      {match.players.map((player) => {
-        const roundPlayer = player.rounds.find(
-          (roundPlayer) => roundPlayer.roundId === round.id,
-        );
-        return (
-          <TableCell
-            key={`player-${player.id}-round-${round.id}`}
-            className="p-0"
-          >
-            <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
-              {round.type === "Numeric" ? (
-                <NumberInput
-                  value={roundPlayer?.score ?? ""}
-                  onValueChange={(value) => {
-                    updatePlayerScore(player.id, round.id, value);
-                  }}
-                  className="border-none text-center"
-                />
-              ) : (
-                <>
-                  <Label className="hidden">{`Checkbox to toggle score: ${round.score}`}</Label>
-                  <Checkbox
-                    onCheckedChange={(isChecked) => {
-                      updatePlayerScore(
-                        player.id,
-                        round.id,
-                        isChecked ? round.score : null,
-                      );
-                    }}
-                    checked={roundPlayer?.score === round.score}
-                  />
-                </>
-              )}
-            </div>
-          </TableCell>
-        );
-      })}
-    </TableRow>
-  );
-};
-
-const CommentsRow = ({ match }: { match: Match }) => {
-  if (match.teams.length > 0) {
-    return (
-      <TableRow>
-        <TableHead
-          scope="row"
-          className="sticky left-0 z-10 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
-        >
-          {"Details"}
-        </TableHead>
-        {match.teams
-          .filter((team) =>
-            match.players.find((player) => player.teamId === team.id),
-          )
-          .map((team) => (
-            <TableCell
-              key={`${team.id}-details`}
-              className="border-b border-r p-2"
-            >
-              <DetailDialog
-                matchId={match.id}
-                data={{
-                  id: team.id,
-                  name: team.name,
-                  details: team.details,
-                  type: "Team",
-                }}
-              />
-            </TableCell>
-          ))}
-        {match.players
-          .filter((player) => player.teamId === null)
-          .map((player) => {
-            return (
-              <TableCell
-                key={`${player.id}-details`}
-                className="border-b border-r p-2"
-              >
-                <DetailDialog
-                  matchId={match.id}
-                  data={{
-                    id: player.id,
-                    name: player.name,
-                    details: player.details,
-                    type: "Player",
-                  }}
-                />
-              </TableCell>
-            );
-          })}
-      </TableRow>
-    );
-  }
-  return (
-    <TableRow>
-      <TableHead
-        scope="row"
-        className="sticky left-0 z-10 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
-      >
-        {"Details(optional)"}
-      </TableHead>
-
-      {match.players.map((player) => {
-        return (
-          <TableCell
-            key={`${player.id}-details`}
-            className="border-b border-r p-2"
-          >
-            <DetailDialog
-              matchId={match.id}
-              data={{
-                id: player.id,
-                name: player.name,
-                details: player.details,
-                type: "Player",
-              }}
-            />
-          </TableCell>
-        );
-      })}
-    </TableRow>
-  );
-};
-
-const TotalRow = ({ match }: { match: Match }) => {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const updateMatchPlayerScore = useMutation(
-    trpc.match.updateMatchPlayerScore.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: match.id }),
-        );
-      },
-    }),
-  );
-  const updateTeamScore = (teamId: number, value: number | null) => {
-    updateMatchPlayerScore.mutate({
-      match: {
-        id: match.id,
-      },
-      type: "team",
-      teamId: teamId,
-      score: value,
-    });
-  };
-  const updatePlayerScore = (playerId: number, value: number | null) => {
-    updateMatchPlayerScore.mutate({
-      match: {
-        id: match.id,
-      },
-      type: "player",
-      matchPlayerId: playerId,
-      score: value,
-    });
-  };
-  if (match.teams.length > 0) {
-    return (
-      <TableRow>
-        <TableHead
-          scope="row"
-          className="sticky left-0 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
-        >
-          Total
-        </TableHead>
-        {match.teams
-          .filter((team) =>
-            match.players.find((player) => player.teamId === team.id),
-          )
-          .map((team) => {
-            const teamPlayer = match.players.filter(
-              (player) => player.teamId === team.id,
-            );
-            const firstTeamPlayer = teamPlayer[0];
-            if (firstTeamPlayer === undefined) return null;
-            if (match.scoresheet.roundsScore === "Manual") {
-              return (
-                <TableCell key={`${team.id}-total`}>
-                  <NumberInput
-                    className="text-center"
-                    value={firstTeamPlayer.score ?? ""}
-                    onValueChange={(value) => {
-                      updateTeamScore(team.id, value);
-                    }}
-                  />
-                </TableCell>
-              );
-            }
-
-            const total = calculateFinalScore(
-              firstTeamPlayer.rounds.map((round) => ({
-                score: round.score,
-              })),
-              match.scoresheet,
-            );
-            return (
-              <TableCell key={`${team.id}-total`}>
-                <div className="flex items-center justify-center">
-                  {total !== null && (
-                    <span className="text-center">{total}</span>
-                  )}
-                </div>
-              </TableCell>
-            );
-          })}
-        {match.players
-          .filter((player) => player.teamId === null)
-          .map((player) => {
-            if (match.scoresheet.roundsScore === "Manual") {
-              return (
-                <TableCell key={`${player.id}-total`}>
-                  <NumberInput
-                    className="text-center"
-                    value={player.score ?? ""}
-                    onValueChange={(value) => {
-                      updatePlayerScore(player.id, value);
-                    }}
-                  />
-                </TableCell>
-              );
-            }
-            const total = calculateFinalScore(
-              player.rounds.map((round) => ({
-                score: round.score,
-              })),
-              match.scoresheet,
-            );
-            return (
-              <TableCell key={`${player.id}-total`}>
-                <div className="flex items-center justify-center">
-                  {total !== null && (
-                    <span className="text-center">{total}</span>
-                  )}
-                </div>
-              </TableCell>
-            );
-          })}
-      </TableRow>
-    );
-  }
-  return (
-    <TableRow>
-      <TableHead
-        scope="row"
-        className="sticky left-0 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
-      >
-        Total
-      </TableHead>
-      {match.players.map((player) => {
-        if (match.scoresheet.roundsScore === "Manual") {
-          return (
-            <TableCell key={`${player.id}-total`}>
-              <NumberInput
-                className="text-center"
-                value={player.score ?? ""}
-                onValueChange={(value) => {
-                  updatePlayerScore(player.id, value);
-                }}
-              />
-            </TableCell>
-          );
-        }
-        const total = calculateFinalScore(
-          player.rounds.map((round) => ({
-            score: round.score,
-          })),
-          match.scoresheet,
-        );
-        return (
-          <TableCell key={`${player.id}-total`}>
-            <div className="flex items-center justify-center">
-              {total !== null && <span className="text-center">{total}</span>}
-            </div>
-          </TableCell>
-        );
-      })}
-    </TableRow>
-  );
-};
 function ScoresheetFooter({ match }: { match: Match }) {
   const [duration, setDuration] = useState(match.duration);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -915,8 +574,8 @@ function ScoresheetFooter({ match }: { match: Match }) {
 
   return (
     <>
-      <div className="flex flex-col gap-2 p-6 pb-0">
-        <div className="flex w-full justify-between px-2 pt-6">
+      <div className="flex flex-col gap-2 pb-0">
+        <div className="flex w-full justify-between p-2">
           <div className="flex items-center justify-center gap-2">
             <div className="text-center text-2xl font-bold">
               {formatDuration(duration, true)}
@@ -944,13 +603,16 @@ function ScoresheetFooter({ match }: { match: Match }) {
             )}
           </Button>
         </div>
-        <Separator />
-        <div className="flex w-full flex-col gap-2">
-          <div className="flex w-full items-start">
+
+        <Card className="pb-2">
+          <CardHeader className="pb-0 pt-2 sm:pt-4">
+            <CardTitle className="text-xl">Comment:</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4">
             <CommentDialog matchId={match.id} comment={match.comment} />
-          </div>
-          <MatchImages matchId={match.id} duration={duration} />
-        </div>
+          </CardContent>
+        </Card>
+        <MatchImages matchId={match.id} duration={duration} />
       </div>
       <ManualWinnerDialog
         isOpen={openManualWinnerDialog}

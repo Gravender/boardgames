@@ -134,10 +134,35 @@ export const scoreSheetSchema = insertScoreSheetSchema
     type: true,
     gameId: true,
   })
-  .required({ name: true, isCoop: true });
-export const editScoresheetSchema = scoreSheetSchema.extend({
-  isDefault: z.boolean().optional(),
-});
+  .required({ name: true, isCoop: true })
+  .check((ctx) => {
+    if (
+      ctx.value.winCondition !== "Manual" &&
+      ctx.value.roundsScore === "None"
+    ) {
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
+        message:
+          "Rounds score cannot be None when win condition is not Manual.",
+        path: ["roundsScore"],
+      });
+    }
+    if (ctx.value.isCoop) {
+      if (
+        ctx.value.winCondition !== "Manual" &&
+        ctx.value.winCondition !== "Target Score"
+      ) {
+        ctx.issues.push({
+          code: "custom",
+          input: ctx.value,
+          message:
+            "Win condition must be Manual or Target Score for Coop games.",
+          path: ["winCondition"],
+        });
+      }
+    }
+  });
 
 export const baseRoundSchema = insertRoundSchema
   .pick({
@@ -155,6 +180,148 @@ export const roundSchema = baseRoundSchema.extend({
 });
 
 export const roundsSchema = z.array(roundSchema);
+
+const baseEditScoresheetSchema = {
+  isDefault: z.boolean().optional(),
+  id: z.number(),
+};
+const originalEditScoresheetSchema = scoreSheetSchema.extend({
+  scoresheetType: z.literal("original"),
+  ...baseEditScoresheetSchema,
+});
+const sharedEditScoresheetSchema = scoreSheetSchema.extend({
+  scoresheetType: z.literal("shared"),
+  ...baseEditScoresheetSchema,
+});
+const newEditScoresheetSchema = scoreSheetSchema.extend({
+  ...baseEditScoresheetSchema,
+  id: z.null(),
+});
+export const editScoresheetSchemaForm = z
+  .discriminatedUnion("scoresheetType", [
+    originalEditScoresheetSchema.extend({
+      scoreSheetChanged: z.boolean(),
+      roundChanged: z.boolean(),
+      rounds: roundsSchema,
+    }),
+    sharedEditScoresheetSchema.extend({
+      permission: z.literal("view").or(z.literal("edit")),
+      scoreSheetChanged: z.boolean(),
+      roundChanged: z.boolean(),
+      rounds: roundsSchema,
+    }),
+    newEditScoresheetSchema.extend({
+      scoresheetType: z.literal("new"),
+      rounds: roundsSchema,
+    }),
+  ])
+  .check((ctx) => {
+    if (
+      ctx.value.winCondition !== "Manual" &&
+      ctx.value.roundsScore === "None"
+    ) {
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
+        message:
+          "Rounds score cannot be None when win condition is not Manual.",
+        path: ["roundsScore"],
+      });
+    }
+    if (ctx.value.isCoop) {
+      if (
+        ctx.value.winCondition !== "Manual" &&
+        ctx.value.winCondition !== "Target Score"
+      ) {
+        ctx.issues.push({
+          code: "custom",
+          input: ctx.value,
+          message:
+            "Win condition must be Manual or Target Score for Coop games.",
+          path: ["winCondition"],
+        });
+      }
+    }
+    if (
+      ctx.value.winCondition !== "Manual" &&
+      ctx.value.roundsScore !== "Manual" &&
+      ctx.value.rounds.length === 0
+    ) {
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
+        message:
+          "Rounds cannot be empty when win condition is not Manual and rounds score is not Manual.",
+        path: ["roundsScore"],
+        params: {
+          roundsScore: ctx.value.roundsScore,
+          winCondition: ctx.value.winCondition,
+          rounds: ctx.value.rounds,
+        },
+      });
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
+        message:
+          "Rounds cannot be empty when win condition is not Manual and rounds score is not Manual.",
+        path: ["winCondition"],
+        params: {
+          roundsScore: ctx.value.roundsScore,
+          winCondition: ctx.value.winCondition,
+          rounds: ctx.value.rounds,
+        },
+      });
+    }
+  });
+
+export const editScoresheetSchemaApiInput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("New"),
+    scoresheet: newEditScoresheetSchema.omit({ id: true }),
+    rounds: roundsSchema,
+  }),
+  z.object({
+    type: z.literal("Update Scoresheet"),
+    scoresheet: z.discriminatedUnion("scoresheetType", [
+      originalEditScoresheetSchema.extend({
+        name: z.string().optional(),
+      }),
+      sharedEditScoresheetSchema.extend({
+        name: z.string().optional(),
+      }),
+    ]),
+  }),
+  z.object({
+    type: z.literal("Update Scoresheet & Rounds"),
+    scoresheet: z
+      .discriminatedUnion("scoresheetType", [
+        originalEditScoresheetSchema.extend({
+          name: z.string().optional(),
+        }),
+        sharedEditScoresheetSchema.extend({
+          name: z.string().optional(),
+        }),
+      ])
+      .or(
+        z.object({
+          id: z.number(),
+          scoresheetType: z.literal("original").or(z.literal("shared")),
+        }),
+      ),
+    roundsToEdit: z.array(
+      baseRoundSchema
+        .omit({ name: true, order: true })
+        .extend({ id: z.number(), name: z.string().optional() }),
+    ),
+    roundsToAdd: z.array(
+      baseRoundSchema.extend({
+        scoresheetId: z.number(),
+        order: z.number(),
+      }),
+    ),
+    roundsToDelete: z.array(z.number()),
+  }),
+]);
 
 export const imageSchema = insertImageSchema
   .pick({

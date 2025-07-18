@@ -45,7 +45,7 @@ const scoresheets = createTable(
       .notNull(),
     targetScore: integer("target_score").default(0).notNull(),
     roundsScore: text("rounds_score", {
-      enum: ["Aggregate", "Manual", "Best Of"],
+      enum: ["Aggregate", "Manual", "Best Of", "None"],
     })
       .default("Aggregate")
       .notNull(),

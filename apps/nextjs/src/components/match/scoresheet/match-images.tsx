@@ -102,7 +102,7 @@ export function MatchImages({
 
   return (
     <>
-      <Card className="max-w-[800px] border-none">
+      <Card className="w-full border-none">
         <CardHeader className="hidden p-2 pb-2 pt-2">
           <CardTitle className="text-base">Match Images</CardTitle>
         </CardHeader>

@@ -203,7 +203,7 @@ const AddRoundDialogContent = ({
 
                     <FormControl>
                       <NumberInput
-                        value={field.value}
+                        defaultValue={field.value}
                         onValueChange={field.onChange}
                         className="text-center"
                       />

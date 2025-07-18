@@ -27,9 +27,8 @@ import {
 import {
   editGameSchema,
   editRoleSchema,
-  editScoresheetSchema,
+  editScoresheetSchemaForm,
   gameIcons,
-  roundsSchema,
 } from "@board-games/shared";
 import {
   AlertDialog,
@@ -97,18 +96,8 @@ import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 import { RoundPopOver } from "./roundPopOver";
 
-export const scoresheetSchema = editScoresheetSchema.extend({
-  scoresheetType: z.literal("original").or(z.literal("shared")),
-  permission: z.literal("view").or(z.literal("edit")).nullable(),
-  scoresheetId: z.number().nullable(),
-  rounds: roundsSchema,
-  scoreSheetChanged: z.boolean(),
-  roundChanged: z.boolean(),
-
-  isDefault: z.boolean().optional(),
-});
 const scoresheetsSchema = z
-  .array(scoresheetSchema)
+  .array(editScoresheetSchemaForm)
   .min(1)
   .check((ctx) => {
     const numberDefaultScoresheets = ctx.value.filter(
@@ -159,7 +148,9 @@ export function EditGameForm({
   const [activeScoreSheet, setActiveScoreSheet] = useState(0);
   const [isScoresheet, setIsScoresheet] = useState(false);
 
-  const updateScoreSheets = (scoresheet: z.infer<typeof scoresheetSchema>) => {
+  const updateScoreSheets = (
+    scoresheet: z.infer<typeof editScoresheetSchemaForm>,
+  ) => {
     setScoresheets((prev) => {
       if (prev.length === 0) {
         return [
@@ -176,13 +167,20 @@ export function EditGameForm({
           return scoresheet;
         }
         if (scoresheet.isDefault) {
-          return {
-            ...prevScoreSheet,
-            isDefault: false,
-            scoreSheetChanged: prevScoreSheet.isDefault
-              ? true
-              : prevScoreSheet.scoreSheetChanged,
-          };
+          if (prevScoreSheet.scoresheetType === "new") {
+            return {
+              ...prevScoreSheet,
+              isDefault: false,
+            };
+          } else {
+            return {
+              ...prevScoreSheet,
+              isDefault: false,
+              scoreSheetChanged: prevScoreSheet.isDefault
+                ? true
+                : prevScoreSheet.scoreSheetChanged,
+            };
+          }
         }
         return prevScoreSheet;
       });
@@ -203,9 +201,8 @@ export function EditGameForm({
         <ScoresheetForm
           scoresheet={
             scoresheets[activeScoreSheet] ?? {
-              scoresheetId: null,
-              permission: "edit",
-              scoresheetType: "original",
+              scoresheetType: "new",
+              id: null,
               name:
                 scoresheets.length === 0
                   ? "Default"
@@ -214,8 +211,6 @@ export function EditGameForm({
               isCoop: false,
               roundsScore: "Aggregate",
               targetScore: 0,
-              scoreSheetChanged: true,
-              roundChanged: true,
 
               rounds: [
                 {
@@ -339,7 +334,10 @@ const GameForm = ({
       values.yearPublished !== data.game.yearPublished;
     const imageChanged = image !== undefined;
     const scoresheetChanged = scoresheets.some(
-      (scoresheet) => scoresheet.scoreSheetChanged || scoresheet.roundChanged,
+      (scoresheet) =>
+        scoresheet.scoresheetType === "new" ||
+        scoresheet.scoreSheetChanged ||
+        scoresheet.roundChanged,
     );
     const rolesChanged =
       values.roles.some((role) => {
@@ -403,7 +401,9 @@ const GameForm = ({
         const changedScoresheets = scoresheets
           .filter(
             (scoresheet) =>
-              scoresheet.scoreSheetChanged || scoresheet.roundChanged,
+              scoresheet.scoresheetType === "new" ||
+              scoresheet.scoreSheetChanged ||
+              scoresheet.roundChanged,
           )
           .map<
             | RouterInputs["game"]["updateGame"]["scoresheets"][number]
@@ -411,10 +411,10 @@ const GameForm = ({
           >((scoresheet) => {
             const foundScoresheet = data.scoresheets.find(
               (dataScoresheet) =>
-                dataScoresheet.id === scoresheet.scoresheetId &&
+                dataScoresheet.id === scoresheet.id &&
                 dataScoresheet.scoresheetType === scoresheet.scoresheetType,
             );
-            if (!foundScoresheet) {
+            if (!foundScoresheet || scoresheet.scoresheetType === "new") {
               const newScoresheet: Extract<
                 RouterInputs["game"]["updateGame"]["scoresheets"][number],
                 { type: "New" }
@@ -580,7 +580,7 @@ const GameForm = ({
             (foundScoresheet) =>
               !scoresheets.find(
                 (scoresheet) =>
-                  scoresheet.scoresheetId === foundScoresheet.id &&
+                  scoresheet.id === foundScoresheet.id &&
                   scoresheet.scoresheetType === foundScoresheet.scoresheetType,
               ),
           )
@@ -1094,7 +1094,7 @@ const GameForm = ({
                     {scoresheets.map((scoreSheet, index) => {
                       return (
                         <div
-                          key={`${index}-${scoreSheet.scoresheetId}`}
+                          key={`${index}-${scoreSheet.id}`}
                           className="flex items-center justify-between gap-2"
                         >
                           <Table />
@@ -1473,50 +1473,65 @@ const ScoresheetForm = ({
   setScoresheet,
   setIsScoresheet,
 }: {
-  scoresheet: z.infer<typeof scoresheetSchema>;
-  setScoresheet: (scoresheet: z.infer<typeof scoresheetSchema>) => void;
+  scoresheet: z.infer<typeof editScoresheetSchemaForm>;
+  setScoresheet: (scoresheet: z.infer<typeof editScoresheetSchemaForm>) => void;
   setIsScoresheet: (isScoresheet: boolean) => void;
 }) => {
   const form = useForm({
-    schema: scoresheetSchema.check((ctx) => {
-      if (ctx.value.isCoop) {
-        if (
-          ctx.value.winCondition !== "Manual" &&
-          ctx.value.winCondition !== "Target Score"
-        ) {
-          ctx.issues.push({
-            code: "custom",
-            input: ctx.value,
-            message:
-              "Win condition must be Manual or Target Score for Coop games.",
-            path: ["winCondition"],
-          });
-        }
-      }
-    }),
+    schema: editScoresheetSchemaForm,
 
     defaultValues: scoresheet,
   });
   const onBack = () => {
     setIsScoresheet(false);
   };
-  const onSubmit = (data: z.infer<typeof scoresheetSchema>) => {
-    data.scoreSheetChanged = true;
-    data.roundChanged = true;
+  const onSubmit = (data: z.infer<typeof editScoresheetSchemaForm>) => {
+    if (data.scoresheetType !== "new") {
+      data.scoreSheetChanged = true;
+      data.roundChanged = true;
+    }
     setScoresheet(data);
     onBack();
   };
 
   const winConditionOptions = scoreSheetWinConditions;
-  const roundsScoreOptions = scoreSheetRoundsScore;
+  const roundsScoreOptions: (typeof scoreSheetRoundsScore)[number][] =
+    scoreSheetRoundsScore.filter((option) => option !== "None");
+
+  const manualWinConditionOptions = scoreSheetRoundsScore;
+  const coopWinConditionOptions: (typeof scoreSheetWinConditions)[number][] = [
+    "Manual",
+    "Target Score",
+  ];
+  const formWinCondition = form.watch("winCondition");
+  const formRoundsScore = form.watch("roundsScore");
+  const formIsCoop = form.watch("isCoop");
+
+  useEffect(() => {
+    if (formWinCondition !== "Manual" && formRoundsScore === "None") {
+      form.setValue("roundsScore", "Aggregate");
+    }
+    if (formIsCoop) {
+      if (
+        formWinCondition !== "Manual" &&
+        formWinCondition !== "Target Score"
+      ) {
+        form.setValue("winCondition", "Manual");
+        form.setValue("roundsScore", "Manual");
+      }
+    }
+  }, [formWinCondition, formRoundsScore, form, formIsCoop]);
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <CardContent className="space-y-8">
+        <CardContent className="space-y-8 pb-4">
           <FormField
             control={form.control}
             name="name"
-            disabled={scoresheet.permission === "view"}
+            disabled={
+              scoresheet.scoresheetType === "shared" &&
+              scoresheet.permission === "view"
+            }
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Sheet Name</FormLabel>
@@ -1530,7 +1545,10 @@ const ScoresheetForm = ({
           <FormField
             control={form.control}
             name="isCoop"
-            disabled={scoresheet.permission === "view"}
+            disabled={
+              scoresheet.scoresheetType === "shared" &&
+              scoresheet.permission === "view"
+            }
             render={({ field }) => (
               <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                 <FormLabel>Is Co-op?</FormLabel>
@@ -1565,7 +1583,10 @@ const ScoresheetForm = ({
           <FormField
             control={form.control}
             name="winCondition"
-            disabled={scoresheet.permission === "view"}
+            disabled={
+              scoresheet.scoresheetType === "shared" &&
+              scoresheet.permission === "view"
+            }
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Win Condition</FormLabel>
@@ -1580,34 +1601,28 @@ const ScoresheetForm = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {form.getValues("isCoop")
-                      ? winConditionOptions
-                          .filter(
-                            (condition) =>
-                              condition === "Manual" ||
-                              condition === "Target Score",
-                          )
-                          .map((condition) => (
-                            <SelectItem key={condition} value={condition}>
-                              {condition}
-                            </SelectItem>
-                          ))
-                      : winConditionOptions.map((condition) => (
-                          <SelectItem key={condition} value={condition}>
-                            {condition}
-                          </SelectItem>
-                        ))}
+                    {(formIsCoop
+                      ? coopWinConditionOptions
+                      : winConditionOptions
+                    ).map((condition) => (
+                      <SelectItem key={condition} value={condition}>
+                        {condition}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
-          {form.getValues("winCondition") === "Target Score" && (
+          {formWinCondition === "Target Score" && (
             <FormField
               control={form.control}
               name={`targetScore`}
-              disabled={scoresheet.permission === "view"}
+              disabled={
+                scoresheet.scoresheetType === "shared" &&
+                scoresheet.permission === "view"
+              }
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Target Score</FormLabel>
@@ -1631,13 +1646,17 @@ const ScoresheetForm = ({
           <FormField
             control={form.control}
             name="roundsScore"
-            disabled={scoresheet.permission === "view"}
+            disabled={
+              scoresheet.scoresheetType === "shared" &&
+              scoresheet.permission === "view"
+            }
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Scoring Method</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value}
+                  defaultValue={formRoundsScore}
                   disabled={field.disabled}
                 >
                   <FormControl>
@@ -1646,7 +1665,10 @@ const ScoresheetForm = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {roundsScoreOptions.map((condition) => (
+                    {(formWinCondition === "Manual"
+                      ? manualWinConditionOptions
+                      : roundsScoreOptions
+                    ).map((condition) => (
                       <SelectItem key={condition} value={condition}>
                         {condition}
                       </SelectItem>
@@ -1659,7 +1681,15 @@ const ScoresheetForm = ({
           />
 
           <Separator className="w-full" orientation="horizontal" />
-          <AddRounds form={form} editable={scoresheet.permission === "edit"} />
+          <AddRounds
+            form={form}
+            editable={
+              !(
+                scoresheet.scoresheetType === "shared" &&
+                scoresheet.permission === "view"
+              )
+            }
+          />
         </CardContent>
         <CardFooter className="flex flex-row justify-end gap-2">
           <Button type="reset" variant="secondary" onClick={() => onBack()}>
@@ -1675,7 +1705,7 @@ const AddRounds = ({
   form,
   editable,
 }: {
-  form: UseFormReturn<z.infer<typeof scoresheetSchema>>;
+  form: UseFormReturn<z.infer<typeof editScoresheetSchemaForm>>;
   editable: boolean;
 }) => {
   const { fields, remove, append } = useFieldArray({
@@ -1683,111 +1713,123 @@ const AddRounds = ({
     control: form.control,
   });
   return (
-    <div className="flex flex-col gap-2">
-      <div className="text-xl font-semibold">Rows</div>
-      <div className="flex max-h-64 flex-col gap-2 overflow-auto">
-        {fields.map((field, index) => {
-          return (
-            <div
-              key={field.id}
-              className="flex items-center justify-between gap-2"
+    <FormField
+      control={form.control}
+      name="rounds"
+      render={() => (
+        <FormItem>
+          <FormLabel>Rows</FormLabel>
+          <div className="flex max-h-64 flex-col gap-2 overflow-auto">
+            {fields.map((field, index) => {
+              return (
+                <div
+                  key={field.id}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <FormField
+                      control={form.control}
+                      name={`rounds.${index}.color`}
+                      disabled={!editable}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="hidden">Round Color</FormLabel>
+                          <FormControl>
+                            <GradientPicker
+                              color={field.value ?? null}
+                              setColor={field.onChange}
+                              disabled={field.disabled}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`rounds.${index}.name`}
+                      disabled={!editable}
+                      render={({ field }) => (
+                        <FormItem className="space-y-0">
+                          <FormLabel className="hidden">Round Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Round name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RoundPopOver
+                      index={index}
+                      form={form}
+                      disabled={!editable}
+                    />
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      type="button"
+                      disabled={!editable}
+                      onClick={() => {
+                        const round = form.getValues("rounds")[index];
+                        append({
+                          roundId: null,
+                          name: `Round ${fields.length + 1}`,
+                          type: round?.type,
+                          score: round?.score,
+                          color: round?.color,
+                          order: fields.length + 1,
+                        });
+                      }}
+                    >
+                      <Copy />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      type="button"
+                      disabled={!editable}
+                      onClick={() => remove(index)}
+                    >
+                      <Trash />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <FormMessage />
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size={"icon"}
+              disabled={!editable}
+              onClick={() =>
+                append({
+                  roundId: null,
+                  name: `Round ${fields.length + 1}`,
+                  type: "Numeric",
+                  score: 0,
+                  order: fields.length + 1,
+                })
+              }
             >
-              <div className="flex items-center gap-2">
-                <FormField
-                  control={form.control}
-                  name={`rounds.${index}.color`}
-                  disabled={!editable}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="hidden">Round Color</FormLabel>
-                      <FormControl>
-                        <GradientPicker
-                          color={field.value ?? null}
-                          setColor={field.onChange}
-                          disabled={field.disabled}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`rounds.${index}.name`}
-                  disabled={!editable}
-                  render={({ field }) => (
-                    <FormItem className="space-y-0">
-                      <FormLabel className="hidden">Round Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Round name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <RoundPopOver index={index} form={form} disabled={!editable} />
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  type="button"
-                  disabled={!editable}
-                  onClick={() => {
-                    const round = form.getValues("rounds")[index];
-                    append({
-                      ...field,
-                      name: `Round ${fields.length + 1}`,
-                      type: round?.type,
-                      score: round?.score,
-                      order: fields.length + 1,
-                    });
-                  }}
-                >
-                  <Copy />
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  type="button"
-                  disabled={!editable}
-                  onClick={() => remove(index)}
-                >
-                  <Trash />
-                </Button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="flex items-center justify-end gap-2">
-        <Button
-          type="button"
-          variant="secondary"
-          size={"icon"}
-          disabled={!editable}
-          onClick={() =>
-            append({
-              roundId: null,
-              name: `Round ${fields.length + 1}`,
-              type: "Numeric",
-              score: 0,
-              order: fields.length + 1,
-            })
-          }
-        >
-          <Plus />
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          size={"icon"}
-          disabled={!editable}
-          onClick={() => remove(form.getValues("rounds").length - 1)}
-        >
-          <Minus />
-        </Button>
-      </div>
-    </div>
+              <Plus />
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size={"icon"}
+              disabled={!editable}
+              onClick={() => remove(form.getValues("rounds").length - 1)}
+            >
+              <Minus />
+            </Button>
+          </div>
+        </FormItem>
+      )}
+    />
   );
 };
