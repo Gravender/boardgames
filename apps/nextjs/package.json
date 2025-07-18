@@ -35,7 +35,7 @@
     "next": "^15.3.3",
     "posthog-js": "^1.252.0",
     "react": "catalog:react19",
-    "react-day-picker": "8.10.1",
+    "react-day-picker": "9.8.0",
     "react-dom": "catalog:react19",
     "server-only": "^0.0.1",
     "superjson": "2.2.2",
