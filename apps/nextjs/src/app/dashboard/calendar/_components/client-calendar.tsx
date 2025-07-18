@@ -66,11 +66,11 @@ export function ClientCalendar({ matchDayMap }: ClientCalendarProps) {
             day_hidden: "invisible",
           }}
           components={{
-            Day: ({ date, ...props }) => {
+            DayButton: ({ day, ...props }) => {
               return (
                 <CalendarDay
-                  day={date}
-                  matches={matchDayMap.get(format(date, "MM-dd-yy"))}
+                  day={day.date}
+                  matches={matchDayMap.get(format(day.date, "MM-dd-yy"))}
                   {...props}
                 />
               );
