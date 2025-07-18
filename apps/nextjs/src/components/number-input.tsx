@@ -20,12 +20,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
     );
 
     const debouncedOnChange = useDebounce((value: number | null) => {
-      const startValue = defaultValue?.toString() ?? "";
-      const numericValue =
-        startValue === "" || startValue === "-" ? null : parseFloat(startValue);
-      if (value !== numericValue) {
-        onValueChange?.(value);
-      }
+      onValueChange?.(value);
     }, debounceTime);
 
     const validateValue = (value: string) => {

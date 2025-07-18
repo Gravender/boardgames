@@ -38,7 +38,7 @@ export function CommentDialog({
       <DialogTrigger asChild>
         <Button
           variant="ghost"
-          className="] h-fit w-full items-start justify-start p-0"
+          className="h-fit w-full items-start justify-start p-0"
         >
           <ScrollArea>
             <p className="max-h-[5vh] w-full text-wrap text-start">

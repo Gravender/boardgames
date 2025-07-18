@@ -1774,10 +1774,11 @@ const AddRounds = ({
                       onClick={() => {
                         const round = form.getValues("rounds")[index];
                         append({
-                          ...field,
+                          roundId: null,
                           name: `Round ${fields.length + 1}`,
                           type: round?.type,
                           score: round?.score,
+                          color: round?.color,
                           order: fields.length + 1,
                         });
                       }}

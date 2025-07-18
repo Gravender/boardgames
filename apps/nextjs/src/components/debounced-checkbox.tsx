@@ -16,9 +16,7 @@ export function DebouncedCheckbox({
   const [checked, setChecked] = useState(props.checked);
 
   const debouncedOnChange = useDebounce((newChecked: boolean) => {
-    if (newChecked !== checked) {
-      onDebouncedChange?.(newChecked);
-    }
+    onDebouncedChange?.(newChecked);
   }, debounceDelay);
 
   const handleChange = (newChecked: boolean) => {

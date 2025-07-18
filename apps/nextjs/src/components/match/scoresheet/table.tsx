@@ -128,7 +128,7 @@ const HeaderRow = ({
                 </Button>
                 <ScrollArea>
                   <div className="flex max-h-10 w-full flex-row flex-wrap justify-center gap-1">
-                    {match.players.map((player) => {
+                    {team.players.map((player) => {
                       return (
                         <button
                           key={player.id}
