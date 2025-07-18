@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
 import type { TransactionType } from "@board-games/db/client";
+import type { scoreSheetRoundsScore } from "@board-games/db/constants";
 import { sharedLocation, shareRequest } from "@board-games/db/schema";
 
 export interface FriendSharingSettings {
@@ -150,7 +151,7 @@ export type SharedEntry = {
           | "No Winner"
           | "Target Score";
         targetScore: number;
-        roundsScore: "Manual" | "Aggregate" | "Best Of";
+        roundsScore: (typeof scoreSheetRoundsScore)[number];
         type: "Template" | "Default" | "Match" | "Game";
       }[];
     }
@@ -214,7 +215,7 @@ export function collectShares(
           | "No Winner"
           | "Target Score";
         targetScore: number;
-        roundsScore: "Manual" | "Aggregate" | "Best Of";
+        roundsScore: (typeof scoreSheetRoundsScore)[number];
         type: "Template" | "Default" | "Match" | "Game";
       };
     }[];
