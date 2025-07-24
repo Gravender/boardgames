@@ -80,7 +80,7 @@ export function AddMatchDialog({
     trpc.game.getGameScoresheets.queryOptions({ gameId: gameId }),
   );
   const { data: players } = useSuspenseQuery(
-    trpc.player.getPlayersByGame.queryOptions({ game: { id: gameId } }),
+    trpc.player.getPlayersByGame.queryOptions({ id: gameId, type: "original" }),
   );
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -91,7 +91,7 @@ export function AddMatchDialog({
           matches={matches}
           locations={locations}
           scoresheets={scoreSheets}
-          players={players}
+          gamePlayers={players}
           setIsOpen={setIsOpen}
         />
       </DialogContent>
@@ -132,6 +132,7 @@ const playersSchema = z
       .pick({ name: true, id: true })
       .required({ name: true, id: true })
       .extend({
+        type: z.literal("original").or(z.literal("shared")),
         imageUrl: z.string().nullable(),
         matches: z.number(),
         teamId: z.number().nullable(),
@@ -162,7 +163,7 @@ function Content({
   gameName,
   locations,
   scoresheets,
-  players,
+  gamePlayers,
   setIsOpen,
 }: {
   gameId: Game["id"];
@@ -170,11 +171,11 @@ function Content({
   matches: number;
   locations: RouterOutputs["location"]["getLocations"];
   scoresheets: RouterOutputs["game"]["getGameScoresheets"];
-  players: RouterOutputs["player"]["getPlayersByGame"];
+  gamePlayers: RouterOutputs["player"]["getPlayersByGame"];
   setIsOpen: Dispatch<SetStateAction<boolean>>;
 }) {
   const [isPlayers, setIsPlayers] = useState(false);
-  const currentUser = players.find((player) => player.isUser);
+  const currentUser = gamePlayers.find((player) => player.isUser);
   const form = useForm({
     schema: formSchema,
     defaultValues: {
@@ -220,7 +221,10 @@ function Content({
     <>
       {isPlayers ? (
         <AddPlayersDialogForm
-          gameId={gameId}
+          game={{
+            id: gameId,
+            type: "original" as const,
+          }}
           players={form.getValues("players")}
           teams={form.getValues("teams")}
           setPlayersAndTeams={setPlayersAndTeams}
@@ -319,17 +323,30 @@ const AddMatchForm = ({
     const mappedTeams = values.players.reduce<
       Record<
         string,
-        { name: string; players: { id: number; roles: number[] }[] }
+        {
+          name: string;
+          players: {
+            type: "original" | "shared";
+            id: number;
+            roles: number[];
+          }[];
+        }
       >
     >((acc, player) => {
       if (player.teamId === null) {
         const noTeam = acc["No Team"];
         if (noTeam) {
-          noTeam.players.push({ id: player.id, roles: player.roles });
+          noTeam.players.push({
+            type: player.type,
+            id: player.id,
+            roles: player.roles,
+          });
         } else {
           acc["No Team"] = {
             name: "No Team" as const,
-            players: [{ id: player.id, roles: player.roles }],
+            players: [
+              { type: player.type, id: player.id, roles: player.roles },
+            ],
           };
         }
       } else {
@@ -339,18 +356,27 @@ const AddMatchForm = ({
         }
         const team = acc[foundTeam.name];
         if (team) {
-          team.players.push({ id: player.id, roles: player.roles });
+          team.players.push({
+            type: player.type,
+            id: player.id,
+            roles: player.roles,
+          });
         } else {
           acc[foundTeam.name] = {
             name: foundTeam.name,
-            players: [{ id: player.id, roles: player.roles }],
+            players: [
+              { type: player.type, id: player.id, roles: player.roles },
+            ],
           };
         }
       }
       return acc;
     }, {});
     createMatch.mutate({
-      gameId: gameId,
+      game: {
+        id: gameId,
+        type: "original" as const,
+      },
       name: values.name,
       date: values.date,
       teams: Object.values(mappedTeams),

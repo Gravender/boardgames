@@ -1,4 +1,3 @@
-import { currentUser } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 import { compareAsc, compareDesc } from "date-fns";
 import { and, eq, sql } from "drizzle-orm";
@@ -12,7 +11,6 @@ import {
 } from "@board-games/db/schema";
 import {
   insertPlayerSchema,
-  selectGameSchema,
   selectGroupSchema,
   selectPlayerSchema,
 } from "@board-games/db/zodSchema";
@@ -33,7 +31,8 @@ export const playerRouter = createTRPCRouter({
   getPlayersByGame: protectedUserProcedure
     .input(
       z.object({
-        game: selectGameSchema.pick({ id: true }),
+        id: z.number(),
+        type: z.literal("original").or(z.literal("shared")),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -51,15 +50,18 @@ export const playerRouter = createTRPCRouter({
         },
         with: {
           image: true,
-          matches: {
-            where: {
-              finished: true,
-              gameId: input.game.id,
-            },
-            columns: {
-              id: true,
-            },
-          },
+          matches:
+            input.type === "original"
+              ? {
+                  where: {
+                    finished: true,
+                    gameId: input.id,
+                  },
+                  columns: {
+                    id: true,
+                  },
+                }
+              : undefined,
           sharedLinkedPlayers: {
             with: {
               sharedMatches: {
@@ -73,9 +75,14 @@ export const playerRouter = createTRPCRouter({
                     },
                   },
                   sharedGame: {
-                    where: {
-                      linkedGameId: input.game.id,
-                    },
+                    where:
+                      input.type === "original"
+                        ? {
+                            linkedGameId: input.id,
+                          }
+                        : {
+                            id: input.id,
+                          },
                   },
                 },
               },
@@ -83,44 +90,56 @@ export const playerRouter = createTRPCRouter({
           },
         },
       });
-      if (playersQuery.length === 0) {
-        const user = await currentUser();
-        await ctx.db.insert(player).values({
-          createdBy: ctx.userId,
-          isUser: true,
-          name: user?.fullName ?? "Me",
-        });
-        const returnedPlayer = await ctx.db.query.player.findFirst({
-          where: {
-            createdBy: ctx.userId,
+
+      const sharedPlayers = await ctx.db.query.sharedPlayer.findMany({
+        where: {
+          sharedWithId: ctx.userId,
+          linkedPlayerId: {
+            isNull: true,
           },
-          with: { image: true },
+        },
+        with: {
+          player: {
+            with: {
+              image: true,
+            },
+          },
+          sharedMatches: {
+            where: {
+              sharedWithId: ctx.userId,
+            },
+            with: {
+              match: {
+                where: {
+                  finished: true,
+                },
+                columns: {
+                  id: true,
+                },
+              },
+              sharedGame: {
+                where:
+                  input.type === "original"
+                    ? {
+                        linkedGameId: input.id,
+                      }
+                    : {
+                        id: input.id,
+                      },
+              },
+            },
+          },
+        },
+      });
+      if (playersQuery.length === 0 && sharedPlayers.length === 0) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Players not found.",
         });
-        if (!returnedPlayer) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-        }
-        const returnPlay: {
-          id: number;
-          isUser: boolean;
-          name: string;
-          matches: number;
-          image: {
-            name: string;
-            url: string | null;
-            type: "file" | "svg";
-            usageType: "player" | "match" | "game";
-          } | null;
-        } = {
-          id: returnedPlayer.id,
-          name: returnedPlayer.name,
-          matches: 0,
-          isUser: true,
-          image: returnedPlayer.image,
-        };
-        return [returnPlay];
       }
       const mappedPlayers: {
         id: number;
+        type: "original" | "shared";
         name: string;
         isUser: boolean;
         image: {
@@ -141,12 +160,26 @@ export const playerRouter = createTRPCRouter({
           .filter((match) => match);
         return {
           id: player.id,
+          type: "original" as const,
           isUser: player.isUser,
           name: player.name,
           image: player.image,
           matches: player.matches.length + linkedMatches.length,
         };
       });
+      for (const returnedSharedPlayer of sharedPlayers) {
+        const filteredMatches = returnedSharedPlayer.sharedMatches.filter(
+          (m) => m.match !== null && m.sharedGame !== null,
+        );
+        mappedPlayers.push({
+          type: "shared" as const,
+          isUser: false,
+          id: returnedSharedPlayer.id,
+          name: returnedSharedPlayer.player.name,
+          image: returnedSharedPlayer.player.image,
+          matches: filteredMatches.length,
+        });
+      }
       mappedPlayers.sort((a, b) => b.matches - a.matches);
       return mappedPlayers;
     }),

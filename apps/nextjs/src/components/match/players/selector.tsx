@@ -52,6 +52,7 @@ const playersSchema = z
       .pick({ name: true, id: true })
       .required({ name: true, id: true })
       .extend({
+        type: z.literal("original").or(z.literal("shared")),
         imageUrl: z.string().nullable(),
         matches: z.number(),
         teamId: z.number().nullable(),
@@ -74,6 +75,7 @@ const AddPlayersFormSchema = z.object({
 type addPlayersFormType = z.infer<typeof AddPlayersFormSchema>;
 export interface Player {
   id: number;
+  type: "original" | "shared";
   name: string;
   teamId: number | null;
   roles: number[];
@@ -86,13 +88,16 @@ export interface Team {
   roles: number[];
 }
 export const AddPlayersDialogForm = ({
-  gameId,
+  game,
   players,
   teams,
   setPlayersAndTeams,
   cancel,
 }: {
-  gameId: number;
+  game: {
+    id: number;
+    type: "original" | "shared";
+  };
   players: Player[];
   teams: Team[];
   setPlayersAndTeams: (players: Player[], teams: Team[]) => void;
@@ -100,18 +105,21 @@ export const AddPlayersDialogForm = ({
 }) => {
   const trpc = useTRPC();
   const { data: roles } = useQuery(
-    trpc.game.getGameRoles.queryOptions({ gameId: gameId }),
+    trpc.game.getGameRoles.queryOptions({ gameId: game.id }),
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [showGroups, setShowGroups] = useState(false);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
 
   const [showTeamModal, setShowTeamModal] = useState(false);
-  const [showRoleModal, setShowRoleModal] = useState<number | null>(null);
+  const [showRoleModal, setShowRoleModal] = useState<{
+    id: number;
+    type: "original" | "shared";
+  } | null>(null);
 
   const { data: groups } = useQuery(trpc.group.getGroups.queryOptions());
   const { data: gamePlayers } = useQuery(
-    trpc.player.getPlayersByGame.queryOptions({ game: { id: gameId } }),
+    trpc.player.getPlayersByGame.queryOptions({ id: game.id, type: game.type }),
   );
 
   const currentUser = gamePlayers?.find((player) => player.isUser);
@@ -125,6 +133,7 @@ export const AddPlayersDialogForm = ({
             ? [
                 {
                   id: currentUser.id,
+                  type: currentUser.type,
                   imageUrl: currentUser.image?.url ?? "",
                   name: currentUser.name,
                   teamId: null,
@@ -159,6 +168,7 @@ export const AddPlayersDialogForm = ({
         if (!playerSelected) {
           append({
             id: player.id,
+            type: "original" as const,
             imageUrl: playerExists.imageUrl,
             name: playerExists.name,
             matches: playerExists.matches,
@@ -181,6 +191,7 @@ export const AddPlayersDialogForm = ({
     }) => {
       append({
         id: player.id,
+        type: "original" as const,
         imageUrl: player.imageUrl,
         name: player.name,
         matches: 0,
@@ -252,8 +263,12 @@ export const AddPlayersDialogForm = ({
     );
   }
   if (showRoleModal) {
-    const foundPlayer = formPlayers.find((p) => p.id === showRoleModal);
-    const playerIndex = formPlayers.findIndex((p) => p.id === showRoleModal);
+    const foundPlayer = formPlayers.find(
+      (p) => p.id === showRoleModal.id && p.type === showRoleModal.type,
+    );
+    const playerIndex = formPlayers.findIndex(
+      (p) => p.id === showRoleModal.id && p.type === showRoleModal.type,
+    );
     if (foundPlayer && playerIndex > -1) {
       const foundTeam = formTeams.find((t) => t.id === foundPlayer.teamId);
       return (
@@ -341,10 +356,14 @@ export const AddPlayersDialogForm = ({
                               .toSorted((a, b) => {
                                 const foundA = form
                                   .getValues("players")
-                                  .find((i) => i.id === a.id);
+                                  .find(
+                                    (i) => i.id === a.id && i.type === a.type,
+                                  );
                                 const foundB = form
                                   .getValues("players")
-                                  .find((i) => i.id === b.id);
+                                  .find(
+                                    (i) => i.id === b.id && i.type === b.type,
+                                  );
                                 if (foundA && foundB) {
                                   return 0;
                                 }
@@ -362,20 +381,24 @@ export const AddPlayersDialogForm = ({
                               .map((player) => {
                                 return (
                                   <FormField
-                                    key={player.id}
+                                    key={`${player.id}-${player.type}`}
                                     control={form.control}
                                     name="players"
                                     render={({ field }) => {
                                       const foundPlayer = field.value.find(
-                                        (i) => i.id === player.id,
+                                        (i) =>
+                                          i.id === player.id &&
+                                          i.type === player.type,
                                       );
                                       const playerIndex = field.value.findIndex(
-                                        (i) => i.id === player.id,
+                                        (i) =>
+                                          i.id === player.id &&
+                                          i.type === player.type,
                                       );
 
                                       return (
                                         <FormItem
-                                          key={player.id}
+                                          key={`${player.id}-${player.type}`}
                                           className={cn(
                                             "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-1 sm:p-2",
                                             foundPlayer
@@ -391,6 +414,7 @@ export const AddPlayersDialogForm = ({
                                                 return checked
                                                   ? append({
                                                       id: player.id,
+                                                      type: player.type,
                                                       imageUrl:
                                                         player.image?.url ??
                                                         null,
@@ -402,7 +426,9 @@ export const AddPlayersDialogForm = ({
                                                   : remove(
                                                       field.value.findIndex(
                                                         (i) =>
-                                                          i.id === player.id,
+                                                          i.id === player.id &&
+                                                          i.type ===
+                                                            player.type,
                                                       ),
                                                     );
                                               }}
@@ -416,7 +442,7 @@ export const AddPlayersDialogForm = ({
                                                 alt={player.name}
                                               />
                                               <div>
-                                                <div className="text-sm font-medium">
+                                                <div className="flex gap-1 text-sm font-medium">
                                                   {player.name}
                                                   {player.isUser && (
                                                     <Badge
@@ -424,6 +450,14 @@ export const AddPlayersDialogForm = ({
                                                       className="ml-2 text-xs"
                                                     >
                                                       You
+                                                    </Badge>
+                                                  )}
+                                                  {player.type === "shared" && (
+                                                    <Badge
+                                                      variant="outline"
+                                                      className="bg-blue-600 text-xs text-white"
+                                                    >
+                                                      Shared
                                                     </Badge>
                                                   )}
                                                 </div>
@@ -441,9 +475,10 @@ export const AddPlayersDialogForm = ({
                                                 size="sm"
                                                 type="button"
                                                 onClick={() => {
-                                                  setShowRoleModal(
-                                                    foundPlayer.id,
-                                                  );
+                                                  setShowRoleModal({
+                                                    id: foundPlayer.id,
+                                                    type: foundPlayer.type,
+                                                  });
                                                 }}
                                                 className="w-full xs:w-auto"
                                               >
@@ -464,7 +499,10 @@ export const AddPlayersDialogForm = ({
                                                       update(
                                                         field.value.findIndex(
                                                           (i) =>
-                                                            i.id === player.id,
+                                                            i.id ===
+                                                              player.id &&
+                                                            i.type ===
+                                                              player.type,
                                                         ),
                                                         {
                                                           ...foundPlayer,
@@ -494,7 +532,10 @@ export const AddPlayersDialogForm = ({
                                                       update(
                                                         field.value.findIndex(
                                                           (i) =>
-                                                            i.id === player.id,
+                                                            i.id ===
+                                                              player.id &&
+                                                            i.type ===
+                                                              player.type,
                                                         ),
                                                         {
                                                           ...foundPlayer,
@@ -525,7 +566,9 @@ export const AddPlayersDialogForm = ({
                                                 </Select>
                                               )}
                                             {formPlayers.findIndex(
-                                              (i) => i.id === player.id,
+                                              (i) =>
+                                                i.id === player.id &&
+                                                i.type === player.type,
                                             ) > -1 && (
                                               <Badge className="hidden sm:block">
                                                 Selected
