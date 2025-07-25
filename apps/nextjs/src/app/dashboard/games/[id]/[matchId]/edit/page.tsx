@@ -20,7 +20,8 @@ export default async function Page({
   const match = await caller.match.getMatch({ id: Number(matchId) });
   if (!match) redirect(`/dashboard/games/${gameId}`);
   const players = await caller.player.getPlayersByGame({
-    game: { id: match.gameId },
+    id: match.gameId,
+    type: "original",
   });
   prefetch(trpc.location.getLocations.queryOptions());
   return (
