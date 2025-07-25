@@ -167,7 +167,8 @@ export function EditMatchForm({
           await Promise.all([
             queryClient.invalidateQueries(
               trpc.player.getPlayersByGame.queryFilter({
-                game: { id: result.gameId },
+                id: result.gameId,
+                type: "original",
               }),
             ),
             queryClient.invalidateQueries(
@@ -380,6 +381,7 @@ export function EditMatchForm({
                 form={form}
                 gamePlayers={players.map((player) => ({
                   id: player.id,
+                  type: player.type,
                   name: player.name,
                   isUser: player.isUser,
                   image: player.image,

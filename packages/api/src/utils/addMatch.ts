@@ -4,16 +4,27 @@ import { eq } from "drizzle-orm";
 
 import type { TransactionType } from "@board-games/db/client";
 import type {
+  insertMatchPlayerSchema,
+  insertRoundPlayerSchema,
+  selectRoundSchema,
+  selectScoreSheetSchema,
   selectSharedLocationSchema,
   selectSharedMatchSchema,
 } from "@board-games/db/zodSchema";
 import {
+  game,
+  matchPlayer,
+  matchPlayerRole,
   player,
+  round,
+  roundPlayer,
+  scoresheet,
   sharedGame,
   sharedMatch,
   sharedMatchPlayer,
   sharedPlayer,
   shareRequest,
+  team,
 } from "@board-games/db/schema";
 
 import { handleLocationSharing } from "./sharing";
@@ -418,4 +429,339 @@ export async function processPlayer(
     playerId: insertedPlayer.id,
     teamId,
   };
+}
+export async function getGame(
+  input: {
+    id: number;
+    type: "original" | "shared";
+  },
+  transaction: TransactionType,
+  userId: number,
+) {
+  if (input.type === "original") {
+    const returnedGame = await transaction.query.game.findFirst({
+      where: {
+        id: input.id,
+      },
+    });
+    if (!returnedGame) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Game not found.",
+      });
+    }
+    return returnedGame.id;
+  } else {
+    const returnedSharedGame = await transaction.query.sharedGame.findFirst({
+      where: {
+        id: input.id,
+        sharedWithId: userId,
+      },
+      with: {
+        game: true,
+      },
+    });
+    if (!returnedSharedGame) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Shared game not found.",
+      });
+    }
+    if (returnedSharedGame.linkedGameId !== null) {
+      return returnedSharedGame.linkedGameId;
+    } else {
+      const [returnedGame] = await transaction
+        .insert(game)
+        .values({
+          name: returnedSharedGame.game.name,
+          userId: userId,
+          yearPublished: returnedSharedGame.game.yearPublished,
+          description: returnedSharedGame.game.description,
+          rules: returnedSharedGame.game.rules,
+          playersMax: returnedSharedGame.game.playersMax,
+          playersMin: returnedSharedGame.game.playersMin,
+          playtimeMax: returnedSharedGame.game.playtimeMax,
+          playtimeMin: returnedSharedGame.game.playtimeMin,
+        })
+        .returning();
+      if (!returnedGame) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Game not created.",
+        });
+      }
+      await transaction
+        .update(sharedGame)
+        .set({ linkedGameId: returnedGame.id })
+        .where(eq(sharedGame.id, returnedSharedGame.id));
+      return returnedGame.id;
+    }
+  }
+}
+export async function getScoreSheetAndRounds(
+  input: {
+    id: number;
+    type: "original" | "shared";
+    matchName: string;
+    gameId: number;
+  },
+  transaction: TransactionType,
+  userId: number,
+) {
+  let returnedScoresheet:
+    | (z.infer<typeof selectScoreSheetSchema> & {
+        rounds: z.infer<typeof selectRoundSchema>[];
+      })
+    | undefined;
+  if (input.type === "original") {
+    returnedScoresheet = await transaction.query.scoresheet.findFirst({
+      where: {
+        userId: userId,
+        id: input.id,
+      },
+      with: {
+        rounds: {
+          orderBy: {
+            order: "asc",
+          },
+        },
+      },
+    });
+  } else {
+    const returnedSharedScoresheet =
+      await transaction.query.sharedScoresheet.findFirst({
+        where: {
+          id: input.id,
+          sharedWithId: userId,
+        },
+      });
+    if (!returnedSharedScoresheet) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Shared scoresheet not found.",
+      });
+    }
+    returnedScoresheet = await transaction.query.scoresheet.findFirst({
+      where: {
+        id: returnedSharedScoresheet.scoresheetId,
+        userId: returnedSharedScoresheet.ownerId,
+      },
+      with: {
+        rounds: {
+          orderBy: {
+            order: "asc",
+          },
+        },
+      },
+    });
+    if (!returnedScoresheet) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "No scoresheet found for given scoresheetId",
+      });
+    }
+  }
+  if (!returnedScoresheet) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "No scoresheet found for given scoresheetId",
+    });
+  }
+  const [insertedScoresheet] = await transaction
+    .insert(scoresheet)
+    .values({
+      parentId: returnedScoresheet.id,
+      name: `${input.matchName} Scoresheet`,
+      gameId: input.gameId,
+      userId: userId,
+      isCoop: returnedScoresheet.isCoop,
+      winCondition: returnedScoresheet.winCondition,
+      targetScore: returnedScoresheet.targetScore,
+      roundsScore: returnedScoresheet.roundsScore,
+      type: "Match",
+    })
+    .returning();
+  if (!insertedScoresheet) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Scoresheet Not Created Successfully",
+    });
+  }
+  const mappedRounds = returnedScoresheet.rounds.map((round) => ({
+    ...round,
+    scoresheetId: insertedScoresheet.id,
+  }));
+  const insertedRounds = await transaction
+    .insert(round)
+    .values(mappedRounds)
+    .returning();
+  return {
+    scoresheet: insertedScoresheet,
+    rounds: insertedRounds,
+  };
+}
+export async function getMatchPlayersAndTeams(
+  matchId: number,
+  teams: {
+    name: string;
+    players: { id: number; type: "original" | "shared"; roles: number[] }[];
+  }[],
+  rounds: {
+    id: number;
+  }[],
+  transaction: TransactionType,
+  userId: number,
+) {
+  const insertedMatchPlayers: {
+    id: number;
+    playerId: number;
+    roles: number[];
+  }[] = [];
+  if (
+    teams.length === 1 &&
+    teams[0] !== undefined &&
+    teams[0].name === "No Team"
+  ) {
+    const inputPlayers = teams[0].players;
+    const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
+      await Promise.all(
+        inputPlayers.map(async (p) => {
+          const processedPlayer = await processPlayer(
+            transaction,
+            matchId,
+            p,
+            null,
+            userId,
+          );
+          return processedPlayer;
+        }),
+      );
+    const returnedMatchPlayers = await transaction
+      .insert(matchPlayer)
+      .values(playersToInsert)
+      .returning();
+
+    returnedMatchPlayers.forEach((returnedMatchPlayer) => {
+      const foundMatchPlayer = inputPlayers.find(
+        (mp) => mp.id === returnedMatchPlayer.playerId,
+      );
+      if (!foundMatchPlayer) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Match player not created",
+        });
+      }
+      insertedMatchPlayers.push({
+        id: returnedMatchPlayer.id,
+        playerId: returnedMatchPlayer.playerId,
+        roles: foundMatchPlayer.roles,
+      });
+    });
+  } else {
+    for (const inputTeam of teams) {
+      if (inputTeam.name === "No Team") {
+        const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
+          await Promise.all(
+            inputTeam.players.map(async (p) => {
+              const processedPlayer = await processPlayer(
+                transaction,
+                matchId,
+                p,
+                null,
+                userId,
+              );
+              return processedPlayer;
+            }),
+          );
+        const returnedMatchPlayers = await transaction
+          .insert(matchPlayer)
+          .values(playersToInsert)
+          .returning();
+
+        returnedMatchPlayers.forEach((returnedMatchPlayer) => {
+          const foundMatchPlayer = inputTeam.players.find(
+            (mp) => mp.id === returnedMatchPlayer.playerId,
+          );
+          if (!foundMatchPlayer) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Match player not created",
+            });
+          }
+          insertedMatchPlayers.push({
+            id: returnedMatchPlayer.id,
+            playerId: returnedMatchPlayer.playerId,
+            roles: foundMatchPlayer.roles,
+          });
+        });
+      } else {
+        const [returnedTeam] = await transaction
+          .insert(team)
+          .values({ name: inputTeam.name, matchId: matchId })
+          .returning();
+
+        if (!returnedTeam) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Team Not Created Successfully",
+          });
+        }
+
+        const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
+          await Promise.all(
+            inputTeam.players.map(async (p) => {
+              const processedPlayer = await processPlayer(
+                transaction,
+                matchId,
+                p,
+                returnedTeam.id,
+                userId,
+              );
+              return processedPlayer;
+            }),
+          );
+        const returnedMatchPlayers = await transaction
+          .insert(matchPlayer)
+          .values(playersToInsert)
+          .returning();
+
+        returnedMatchPlayers.forEach((returnedMatchPlayer) => {
+          const foundMatchPlayer = inputTeam.players.find(
+            (mp) => mp.id === returnedMatchPlayer.playerId,
+          );
+          if (!foundMatchPlayer) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Match player not created",
+            });
+          }
+          insertedMatchPlayers.push({
+            id: returnedMatchPlayer.id,
+            playerId: returnedMatchPlayer.playerId,
+            roles: foundMatchPlayer.roles,
+          });
+        });
+      }
+    }
+  }
+  const rolesToAdd = insertedMatchPlayers.flatMap((p) =>
+    p.roles.map((role) => ({
+      matchPlayerId: p.id,
+      roleId: role,
+    })),
+  );
+  if (rolesToAdd.length > 0) {
+    await transaction.insert(matchPlayerRole).values(rolesToAdd);
+  }
+  const roundPlayersToInsert: z.infer<typeof insertRoundPlayerSchema>[] =
+    rounds.flatMap((round) => {
+      return insertedMatchPlayers.map((player) => ({
+        roundId: round.id,
+        matchPlayerId: player.id,
+      }));
+    });
+  if (roundPlayersToInsert.length > 0) {
+    await transaction.insert(roundPlayer).values(roundPlayersToInsert);
+  }
+  return insertedMatchPlayers;
 }

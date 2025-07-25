@@ -7,8 +7,6 @@ import { z } from "zod/v4";
 import type {
   insertMatchPlayerSchema,
   insertRoundPlayerSchema,
-  insertRoundSchema,
-  selectRoundSchema,
   selectScoreSheetSchema,
   selectTeamSchema,
 } from "@board-games/db/zodSchema";
@@ -17,7 +15,6 @@ import {
   matchPlayer,
   matchPlayerRole,
   player,
-  round,
   roundPlayer,
   scoresheet,
   team,
@@ -32,7 +29,12 @@ import {
 import { calculatePlacement } from "@board-games/shared";
 
 import { createTRPCRouter, protectedUserProcedure } from "../trpc";
-import { shareMatchWithFriends } from "../utils/addMatch";
+import {
+  getGame,
+  getMatchPlayersAndTeams,
+  getScoreSheetAndRounds,
+  shareMatchWithFriends,
+} from "../utils/addMatch";
 import { cloneSharedLocationForUser } from "../utils/handleSharedLocation";
 import { aggregatePlayerStats } from "../utils/playerStatsAggregator";
 
@@ -43,10 +45,13 @@ export const matchRouter = createTRPCRouter({
         .pick({
           name: true,
           date: true,
-          gameId: true,
         })
         .required({ name: true })
         .extend({
+          game: z.object({
+            id: z.number(),
+            type: z.literal("original").or(z.literal("shared")),
+          }),
           teams: z
             .array(
               z.object({
@@ -56,7 +61,10 @@ export const matchRouter = createTRPCRouter({
                     insertPlayerSchema
                       .pick({ id: true })
                       .required({ id: true })
-                      .extend({ roles: z.array(z.number()) }),
+                      .extend({
+                        type: z.literal("original").or(z.literal("shared")),
+                        roles: z.array(z.number()),
+                      }),
                   )
                   .min(1),
               }),
@@ -76,80 +84,24 @@ export const matchRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const response = await ctx.db.transaction(async (transaction) => {
-        let returnedScoresheet:
-          | (z.infer<typeof selectScoreSheetSchema> & {
-              rounds: z.infer<typeof selectRoundSchema>[];
-            })
-          | undefined;
-        if (input.scoresheet.scoresheetType === "original") {
-          returnedScoresheet = await transaction.query.scoresheet.findFirst({
-            where: {
-              gameId: input.gameId,
-              userId: ctx.userId,
-              id: input.scoresheet.id,
-            },
-            with: {
-              rounds: {
-                orderBy: {
-                  order: "asc",
-                },
-              },
-            },
-          });
-        } else {
-          const sharedScoresheet =
-            await transaction.query.sharedScoresheet.findFirst({
-              where: {
-                id: input.scoresheet.id,
-                sharedWithId: ctx.userId,
-              },
-            });
-          if (!sharedScoresheet) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Shared Scoresheet not found.",
-            });
-          }
-          returnedScoresheet = await transaction.query.scoresheet.findFirst({
-            where: {
-              id: sharedScoresheet.scoresheetId,
-              userId: sharedScoresheet.ownerId,
-            },
-            with: {
-              rounds: {
-                orderBy: {
-                  order: "asc",
-                },
-              },
-            },
-          });
-        }
-        if (!returnedScoresheet) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "No scoresheet found for given scoresheetId",
-          });
-        }
-        const [insertedScoresheet] = await transaction
-          .insert(scoresheet)
-          .values({
-            parentId: returnedScoresheet.id,
-            name: `${input.name} Scoresheet`,
-            gameId: returnedScoresheet.gameId,
-            userId: ctx.userId,
-            isCoop: returnedScoresheet.isCoop,
-            winCondition: returnedScoresheet.winCondition,
-            targetScore: returnedScoresheet.targetScore,
-            roundsScore: returnedScoresheet.roundsScore,
-            type: "Match",
-          })
-          .returning();
-        if (!insertedScoresheet) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Scoresheet Not Created Successfully",
-          });
-        }
+        const returnedGameId = await getGame(
+          {
+            id: input.game.id,
+            type: input.game.type,
+          },
+          transaction,
+          ctx.userId,
+        );
+        const returnedScoresheet = await getScoreSheetAndRounds(
+          {
+            id: input.scoresheet.id,
+            type: input.scoresheet.scoresheetType,
+            matchName: input.name,
+            gameId: returnedGameId,
+          },
+          transaction,
+          ctx.userId,
+        );
         let locationId: number | null = null;
         if (input.location) {
           if (input.location.type === "original") {
@@ -167,10 +119,10 @@ export const matchRouter = createTRPCRouter({
           .values({
             name: input.name,
             date: input.date,
-            gameId: input.gameId,
+            gameId: returnedGameId,
             locationId: locationId,
             userId: ctx.userId,
-            scoresheetId: insertedScoresheet.id,
+            scoresheetId: returnedScoresheet.scoresheet.id,
           })
           .returning();
         if (!returningMatch) {
@@ -180,137 +132,13 @@ export const matchRouter = createTRPCRouter({
           });
         }
 
-        const insertedMatchPlayers: { id: number; playerId: number }[] = [];
-        if (
-          input.teams.length === 1 &&
-          input.teams[0] !== undefined &&
-          input.teams[0].name === "No Team"
-        ) {
-          const inputPlayers = input.teams[0].players;
-          const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
-            inputPlayers.map((player) => ({
-              matchId: returningMatch.id,
-              playerId: player.id,
-            }));
-          const returnedMatchPlayers = await transaction
-            .insert(matchPlayer)
-            .values(playersToInsert)
-            .returning();
-
-          returnedMatchPlayers.forEach((returnedMatchPlayer) =>
-            insertedMatchPlayers.push({
-              id: returnedMatchPlayer.id,
-              playerId: returnedMatchPlayer.playerId,
-            }),
-          );
-        } else {
-          for (const inputTeam of input.teams) {
-            if (inputTeam.name === "No Team") {
-              const playersToInsert = inputTeam.players.map<
-                z.infer<typeof insertMatchPlayerSchema>
-              >((player) => ({
-                matchId: returningMatch.id,
-                playerId: player.id,
-                teamId: null,
-              }));
-
-              const returnedMatchPlayers = await transaction
-                .insert(matchPlayer)
-                .values(playersToInsert)
-                .returning();
-
-              returnedMatchPlayers.forEach((returnedMatchPlayer) =>
-                insertedMatchPlayers.push({
-                  id: returnedMatchPlayer.id,
-                  playerId: returnedMatchPlayer.playerId,
-                }),
-              );
-            } else {
-              const [returningTeam] = await transaction
-                .insert(team)
-                .values({ name: inputTeam.name, matchId: returningMatch.id })
-                .returning();
-
-              if (!returningTeam) {
-                throw new TRPCError({
-                  code: "INTERNAL_SERVER_ERROR",
-                  message: "Team Not Created Successfully",
-                });
-              }
-
-              const playersToInsert = inputTeam.players.map<
-                z.infer<typeof insertMatchPlayerSchema>
-              >((player) => ({
-                matchId: returningMatch.id,
-                playerId: player.id,
-                teamId: returningTeam.id, // Assign player to team
-              }));
-
-              const returnedMatchPlayers = await transaction
-                .insert(matchPlayer)
-                .values(playersToInsert)
-                .returning();
-
-              returnedMatchPlayers.forEach((returnedMatchPlayer) =>
-                insertedMatchPlayers.push({
-                  id: returnedMatchPlayer.id,
-                  playerId: returnedMatchPlayer.playerId,
-                }),
-              );
-            }
-          }
-        }
-
-        if (
-          returnedScoresheet.rounds.length > 0 &&
-          insertedMatchPlayers.length > 0
-        ) {
-          const returnedRounds = returnedScoresheet.rounds.map<
-            z.infer<typeof insertRoundSchema>
-          >((round) => ({
-            parentId: round.id,
-            color: round.color,
-            name: round.name,
-            type: round.type,
-            lookup: round.lookup,
-            modifier: round.modifier,
-            score: round.score,
-            toggleScore: round.toggleScore,
-            scoresheetId: insertedScoresheet.id,
-            order: round.order,
-          }));
-          const insertedRounds = await transaction
-            .insert(round)
-            .values(returnedRounds)
-            .returning();
-          const roundPlayersToInsert: z.infer<
-            typeof insertRoundPlayerSchema
-          >[] = insertedRounds.flatMap((round) => {
-            return insertedMatchPlayers.map((player) => ({
-              roundId: round.id,
-              matchPlayerId: player.id,
-            }));
-          });
-          await transaction.insert(roundPlayer).values(roundPlayersToInsert);
-        }
-        const matchPlayerRolesToInsert = input.teams.flatMap((team) =>
-          team.players.flatMap((player) => {
-            const foundMatchPlayer = insertedMatchPlayers.find(
-              (mp) => mp.playerId === player.id,
-            );
-            if (!foundMatchPlayer) return [];
-            return player.roles.map((roleId) => ({
-              matchPlayerId: foundMatchPlayer.id,
-              roleId,
-            }));
-          }),
+        const insertedMatchPlayers = await getMatchPlayersAndTeams(
+          returningMatch.id,
+          input.teams,
+          returnedScoresheet.rounds,
+          transaction,
+          ctx.userId,
         );
-
-        if (matchPlayerRolesToInsert.length > 0) {
-          await transaction
-            .insert(matchPlayerRole)
-            .values(matchPlayerRolesToInsert);
-        }
         const createdMatch = await transaction.query.match.findFirst({
           where: {
             id: returningMatch.id,

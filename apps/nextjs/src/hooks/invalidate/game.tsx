@@ -25,7 +25,10 @@ export function useInvalidateGame() {
           }),
         ),
         queryClient.invalidateQueries(
-          trpc.player.getPlayersByGame.queryFilter({ game: { id: gameId } }),
+          trpc.player.getPlayersByGame.queryFilter({
+            id: gameId,
+            type: "original",
+          }),
         ),
       ];
     },
