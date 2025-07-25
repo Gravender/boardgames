@@ -11,10 +11,7 @@ import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
 import type { UseFormReturn } from "@board-games/ui/form";
-import {
-  insertMatchSchema,
-  insertPlayerSchema,
-} from "@board-games/db/zodSchema";
+import { insertMatchSchema } from "@board-games/db/zodSchema";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Calendar } from "@board-games/ui/calendar";
@@ -50,7 +47,10 @@ import {
 import { toast } from "@board-games/ui/toast";
 
 import type { Player, Team } from "~/components/match/players/selector";
-import { AddPlayersDialogForm } from "~/components/match/players/selector";
+import {
+  AddPlayersDialogForm,
+  playersSchema,
+} from "~/components/match/players/selector";
 import { Spinner } from "~/components/spinner";
 import { useInvalidateGame, useInvalidateGames } from "~/hooks/invalidate/game";
 import { useInvalidateLocations } from "~/hooks/invalidate/location";
@@ -125,23 +125,7 @@ const locationSchema = z
     isDefault: z.boolean(),
   })
   .nullish();
-const roleSchema = z.array(z.number());
-const playersSchema = z
-  .array(
-    insertPlayerSchema
-      .pick({ name: true, id: true })
-      .required({ name: true, id: true })
-      .extend({
-        type: z.literal("original").or(z.literal("shared")),
-        imageUrl: z.string().nullable(),
-        matches: z.number(),
-        teamId: z.number().nullable(),
-        roles: roleSchema,
-      }),
-  )
-  .refine((players) => players.length > 0, {
-    message: "You must add at least one player",
-  });
+
 const formSchema = matchSchema.extend({
   players: playersSchema,
   location: locationSchema,

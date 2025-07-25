@@ -281,7 +281,8 @@ const AddMatchForm = ({
         void Promise.all([
           queryClient.invalidateQueries(
             trpc.player.getPlayersByGame.queryFilter({
-              game: { id: response.gameId },
+              id: response.gameId,
+              type: "shared",
             }),
           ),
           queryClient.invalidateQueries(trpc.player.getPlayers.queryOptions()),
@@ -1142,7 +1143,8 @@ const AddPlayerForm = ({
         void Promise.all([
           queryClient.invalidateQueries(
             trpc.player.getPlayersByGame.queryFilter({
-              game: { id: gameId },
+              id: gameId,
+              type: "shared",
             }),
           ),
           queryClient.invalidateQueries(trpc.player.getPlayers.queryOptions()),

@@ -45,8 +45,8 @@ import { PlayerGroupSelector } from "./group-selector";
 import { ManagePlayerRoles } from "./player-role";
 import { ManageTeamContent } from "./team-selector";
 
-const roleSchema = z.array(z.number());
-const playersSchema = z
+export const roleSchema = z.array(z.number());
+export const playersSchema = z
   .array(
     insertPlayerSchema
       .pick({ name: true, id: true })
@@ -160,7 +160,9 @@ export const AddPlayersDialogForm = ({
     group: NonNullable<RouterOutputs["group"]["getGroups"]>[number],
   ) => {
     group.players.forEach((player) => {
-      const playerExists = players.find((p) => p.id === player.id);
+      const playerExists = players.find(
+        (p) => p.id === player.id && p.type === "original",
+      );
       if (playerExists) {
         const playerSelected = form
           .getValues("players")
