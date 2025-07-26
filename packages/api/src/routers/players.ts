@@ -61,7 +61,7 @@ export const playerRouter = createTRPCRouter({
                     id: true,
                   },
                 }
-              : undefined,
+              : false,
           sharedLinkedPlayers: {
             with: {
               sharedMatches: {
@@ -164,7 +164,8 @@ export const playerRouter = createTRPCRouter({
           isUser: player.isUser,
           name: player.name,
           image: player.image,
-          matches: player.matches.length + linkedMatches.length,
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          matches: (player.matches?.length ?? 0) + (linkedMatches.length ?? 0),
         };
       });
       for (const returnedSharedPlayer of sharedPlayers) {
@@ -177,7 +178,8 @@ export const playerRouter = createTRPCRouter({
           id: returnedSharedPlayer.id,
           name: returnedSharedPlayer.player.name,
           image: returnedSharedPlayer.player.image,
-          matches: filteredMatches.length,
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          matches: filteredMatches.length ?? 0,
         });
       }
       mappedPlayers.sort((a, b) => b.matches - a.matches);

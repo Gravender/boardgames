@@ -2,6 +2,8 @@ import { z } from "zod/v4";
 
 import {
   insertImageSchema,
+  insertMatchSchema,
+  insertPlayerSchema,
   insertRoundSchema,
   insertScoreSheetSchema,
 } from "@board-games/db/zodSchema";
@@ -331,3 +333,49 @@ export const imageSchema = insertImageSchema
     usageType: true,
   })
   .required({ name: true, url: true });
+export const matchRoleSchema = z.array(z.number());
+export const matchLocationSchema = z
+  .object({
+    id: z.number(),
+    name: z.string(),
+    type: z.literal("original").or(z.literal("shared")),
+    isDefault: z.boolean(),
+  })
+  .nullish();
+export const addMatchPlayersSchema = z
+  .array(
+    insertPlayerSchema
+      .pick({ name: true, id: true })
+      .required({ name: true, id: true })
+      .extend({
+        type: z.literal("original").or(z.literal("shared")),
+        imageUrl: z.string().nullable(),
+        matches: z.number(),
+        teamId: z.number().nullable(),
+        roles: matchRoleSchema,
+      }),
+  )
+  .refine((players) => players.length > 0, {
+    message: "You must add at least one player",
+  });
+export const matchSchema = insertMatchSchema
+  .pick({
+    name: true,
+    date: true,
+  })
+  .required({ name: true, date: true });
+export const addMatchSchema = matchSchema.extend({
+  players: addMatchPlayersSchema,
+  location: matchLocationSchema,
+  scoresheet: z.object({
+    id: z.number(),
+    scoresheetType: z.literal("original").or(z.literal("shared")),
+  }),
+  teams: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      roles: matchRoleSchema,
+    }),
+  ),
+});

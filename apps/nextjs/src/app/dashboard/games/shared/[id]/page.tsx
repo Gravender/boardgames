@@ -14,7 +14,23 @@ export default async function SharedGamePage({ params }: Props) {
   if (isNaN(Number(id))) redirect("/dashboard/games");
   void prefetch(trpc.sharing.getSharedGame.queryOptions({ id: Number(id) }));
   void prefetch(
-    trpc.game.getGameScoresheets.queryOptions({ gameId: Number(id) }),
+    trpc.game.getGameScoresheets.queryOptions({
+      gameId: Number(id),
+      type: "shared",
+    }),
+  );
+  void prefetch(
+    trpc.game.getGameScoresheets.queryOptions({
+      gameId: Number(id),
+      type: "original",
+    }),
+  );
+  void prefetch(trpc.location.getLocations.queryOptions());
+  void prefetch(
+    trpc.player.getPlayersByGame.queryOptions({
+      id: Number(id),
+      type: "shared",
+    }),
   );
   return (
     <HydrateClient>

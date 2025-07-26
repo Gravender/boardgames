@@ -7,7 +7,7 @@ export function useInvalidateGame() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   return useCallback(
-    (gameId: number) => {
+    (gameId: number, type: "original" | "shared") => {
       return [
         queryClient.invalidateQueries(
           trpc.game.getGame.queryOptions({
@@ -27,7 +27,7 @@ export function useInvalidateGame() {
         queryClient.invalidateQueries(
           trpc.player.getPlayersByGame.queryFilter({
             id: gameId,
-            type: "original",
+            type: type,
           }),
         ),
       ];
@@ -40,9 +40,9 @@ export function useInvalidateEditGame() {
   const queryClient = useQueryClient();
   const invalidateGame = useInvalidateGame();
   return useCallback(
-    (gameId: number) => {
+    (gameId: number, type: "original" | "shared") => {
       return [
-        ...invalidateGame(gameId),
+        ...invalidateGame(gameId, type),
         queryClient.invalidateQueries(
           trpc.game.getGameMetaData.queryOptions({
             id: gameId,
@@ -56,11 +56,13 @@ export function useInvalidateEditGame() {
         queryClient.invalidateQueries(
           trpc.game.getGameScoresheets.queryOptions({
             gameId: gameId,
+            type: type,
           }),
         ),
         queryClient.invalidateQueries(
           trpc.game.getGameRoles.queryOptions({
-            gameId: gameId,
+            id: gameId,
+            type: type,
           }),
         ),
         queryClient.invalidateQueries(

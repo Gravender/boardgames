@@ -65,7 +65,7 @@ export default function PlayerEditorDialog({
 }) {
   const trpc = useTRPC();
   const { data: roles } = useSuspenseQuery(
-    trpc.game.getGameRoles.queryOptions({ gameId: gameId }),
+    trpc.game.getGameRoles.queryOptions({ id: gameId, type: "original" }),
   );
 
   return (

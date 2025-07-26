@@ -9,10 +9,10 @@ import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 
 import { GameImage } from "~/components/game-image";
+import { AddMatchDialog } from "~/components/match/add";
 import { useTRPC } from "~/trpc/react";
 import { GameDetails as GameDetailsComponent } from "../../_components/game-details";
 import { MatchesList } from "../../_components/matches-list";
-import { AddMatchDialog } from "./addMatch";
 
 export default function GameDetails({ gameId }: { gameId: number }) {
   const trpc = useTRPC();
@@ -78,6 +78,7 @@ export default function GameDetails({ gameId }: { gameId: number }) {
         <div className="absolute bottom-4 right-6 z-10 sm:right-10">
           <AddMatchDialog
             gameId={gameId}
+            gameType="original"
             gameName={game.name}
             matches={game.matches.length}
           />

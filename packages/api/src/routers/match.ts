@@ -131,7 +131,6 @@ export const matchRouter = createTRPCRouter({
             message: "Match Not Created Successfully",
           });
         }
-
         const insertedMatchPlayers = await getMatchPlayersAndTeams(
           returningMatch.id,
           input.teams,
