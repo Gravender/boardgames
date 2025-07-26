@@ -293,7 +293,7 @@ const GameForm = ({
   const mutation = useMutation(
     trpc.game.updateGame.mutationOptions({
       onSuccess: async () => {
-        await Promise.all(invalidateEditGame(data.game.id));
+        await Promise.all(invalidateEditGame(data.game.id, "original"));
         toast("Game updated successfully!");
         form.reset();
         setImagePreview(null);

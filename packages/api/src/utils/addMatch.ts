@@ -531,7 +531,7 @@ export async function getScoreSheetAndRounds(
     const returnedSharedScoresheet =
       await transaction.query.sharedScoresheet.findFirst({
         where: {
-          id: input.id,
+          scoresheetId: input.id,
           sharedWithId: userId,
         },
       });
@@ -589,15 +589,22 @@ export async function getScoreSheetAndRounds(
   }
   const mappedRounds = returnedScoresheet.rounds.map((round) => ({
     ...round,
+    id: undefined,
     scoresheetId: insertedScoresheet.id,
   }));
-  const insertedRounds = await transaction
-    .insert(round)
-    .values(mappedRounds)
-    .returning();
+  if (mappedRounds.length > 0) {
+    const insertedRounds = await transaction
+      .insert(round)
+      .values(mappedRounds)
+      .returning();
+    return {
+      scoresheet: insertedScoresheet,
+      rounds: insertedRounds,
+    };
+  }
   return {
     scoresheet: insertedScoresheet,
-    rounds: insertedRounds,
+    rounds: [],
   };
 }
 export async function getMatchPlayersAndTeams(
@@ -623,27 +630,29 @@ export async function getMatchPlayersAndTeams(
     teams[0].name === "No Team"
   ) {
     const inputPlayers = teams[0].players;
-    const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
-      await Promise.all(
-        inputPlayers.map(async (p) => {
-          const processedPlayer = await processPlayer(
-            transaction,
-            matchId,
-            p,
-            null,
-            userId,
-          );
-          return processedPlayer;
-        }),
-      );
+    const playersToInsert: {
+      processedPlayer: z.infer<typeof insertMatchPlayerSchema>;
+      roles: number[];
+    }[] = await Promise.all(
+      inputPlayers.map(async (p) => {
+        const processedPlayer = await processPlayer(
+          transaction,
+          matchId,
+          p,
+          null,
+          userId,
+        );
+        return { processedPlayer, roles: p.roles };
+      }),
+    );
     const returnedMatchPlayers = await transaction
       .insert(matchPlayer)
-      .values(playersToInsert)
+      .values(playersToInsert.map((p) => p.processedPlayer))
       .returning();
 
     returnedMatchPlayers.forEach((returnedMatchPlayer) => {
-      const foundMatchPlayer = inputPlayers.find(
-        (mp) => mp.id === returnedMatchPlayer.playerId,
+      const foundMatchPlayer = playersToInsert.find(
+        (mp) => mp.processedPlayer.playerId === returnedMatchPlayer.playerId,
       );
       if (!foundMatchPlayer) {
         throw new TRPCError({
@@ -660,27 +669,30 @@ export async function getMatchPlayersAndTeams(
   } else {
     for (const inputTeam of teams) {
       if (inputTeam.name === "No Team") {
-        const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
-          await Promise.all(
-            inputTeam.players.map(async (p) => {
-              const processedPlayer = await processPlayer(
-                transaction,
-                matchId,
-                p,
-                null,
-                userId,
-              );
-              return processedPlayer;
-            }),
-          );
+        const playersToInsert: {
+          processedPlayer: z.infer<typeof insertMatchPlayerSchema>;
+          roles: number[];
+        }[] = await Promise.all(
+          inputTeam.players.map(async (p) => {
+            const processedPlayer = await processPlayer(
+              transaction,
+              matchId,
+              p,
+              null,
+              userId,
+            );
+            return { processedPlayer, roles: p.roles };
+          }),
+        );
         const returnedMatchPlayers = await transaction
           .insert(matchPlayer)
-          .values(playersToInsert)
+          .values(playersToInsert.map((p) => p.processedPlayer))
           .returning();
 
         returnedMatchPlayers.forEach((returnedMatchPlayer) => {
-          const foundMatchPlayer = inputTeam.players.find(
-            (mp) => mp.id === returnedMatchPlayer.playerId,
+          const foundMatchPlayer = playersToInsert.find(
+            (mp) =>
+              mp.processedPlayer.playerId === returnedMatchPlayer.playerId,
           );
           if (!foundMatchPlayer) {
             throw new TRPCError({
@@ -707,27 +719,30 @@ export async function getMatchPlayersAndTeams(
           });
         }
 
-        const playersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
-          await Promise.all(
-            inputTeam.players.map(async (p) => {
-              const processedPlayer = await processPlayer(
-                transaction,
-                matchId,
-                p,
-                returnedTeam.id,
-                userId,
-              );
-              return processedPlayer;
-            }),
-          );
+        const playersToInsert: {
+          processedPlayer: z.infer<typeof insertMatchPlayerSchema>;
+          roles: number[];
+        }[] = await Promise.all(
+          inputTeam.players.map(async (p) => {
+            const processedPlayer = await processPlayer(
+              transaction,
+              matchId,
+              p,
+              returnedTeam.id,
+              userId,
+            );
+            return { processedPlayer, roles: p.roles };
+          }),
+        );
         const returnedMatchPlayers = await transaction
           .insert(matchPlayer)
-          .values(playersToInsert)
+          .values(playersToInsert.map((p) => p.processedPlayer))
           .returning();
 
         returnedMatchPlayers.forEach((returnedMatchPlayer) => {
-          const foundMatchPlayer = inputTeam.players.find(
-            (mp) => mp.id === returnedMatchPlayer.playerId,
+          const foundMatchPlayer = playersToInsert.find(
+            (mp) =>
+              mp.processedPlayer.playerId === returnedMatchPlayer.playerId,
           );
           if (!foundMatchPlayer) {
             throw new TRPCError({

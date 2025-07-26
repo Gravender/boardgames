@@ -34,7 +34,23 @@ export default async function Page({ params }: Props) {
   if (isNaN(Number(id))) redirect("/dashboard/games");
   void prefetch(trpc.game.getGame.queryOptions({ id: Number(id) }));
   void prefetch(
-    trpc.game.getGameScoresheets.queryOptions({ gameId: Number(id) }),
+    trpc.game.getGameScoresheets.queryOptions({
+      gameId: Number(id),
+      type: "original",
+    }),
+  );
+  void prefetch(trpc.location.getLocations.queryOptions());
+  void prefetch(
+    trpc.player.getPlayersByGame.queryOptions({
+      id: Number(id),
+      type: "original",
+    }),
+  );
+  void prefetch(
+    trpc.game.getGameRoles.queryOptions({
+      id: Number(id),
+      type: "original",
+    }),
   );
   return (
     <HydrateClient>

@@ -99,7 +99,7 @@ function ScoresheetContent({ match }: { match: Match }) {
 function ManualScoreSheet({ match }: { match: Match }) {
   const trpc = useTRPC();
   const { data: roles } = useSuspenseQuery(
-    trpc.game.getGameRoles.queryOptions({ gameId: match.gameId }),
+    trpc.game.getGameRoles.queryOptions({ id: match.gameId, type: "original" }),
   );
 
   const [team, setTeam] = useState<Team | null>(null);

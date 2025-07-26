@@ -390,97 +390,254 @@ export const gameRouter = createTRPCRouter({
       };
     }),
   getGameScoresheets: protectedUserProcedure
-    .input(z.object({ gameId: z.number() }))
+    .input(
+      z.object({
+        gameId: z.number(),
+        type: z.literal("original").or(z.literal("shared")),
+      }),
+    )
     .query(async ({ ctx, input }) => {
-      const returnedScoresheets = await ctx.db.query.scoresheet.findMany({
-        where: {
-          userId: ctx.userId,
-          gameId: input.gameId,
-          OR: [
-            {
-              type: "Default",
-            },
-            {
-              type: "Game",
-            },
-          ],
-          deletedAt: {
-            isNull: true,
-          },
-        },
-      });
-      const linkedGames = await ctx.db.query.sharedGame.findMany({
-        where: {
-          linkedGameId: input.gameId,
-          sharedWithId: ctx.userId,
-        },
-        with: {
-          sharedScoresheets: {
-            with: {
-              scoresheet: {
-                where: {
-                  OR: [
-                    {
-                      type: "Default",
-                    },
-                    {
-                      type: "Game",
-                    },
-                  ],
-                },
-              },
-            },
-          },
-        },
-      });
-      const mappedLinkedScoresheet: {
-        scoresheetType: "shared";
-        id: number;
-        name: string;
-        type: z.infer<typeof selectScoreSheetSchema>["type"];
-      }[] = linkedGames
-        .flatMap((linkedGame) => {
-          return linkedGame.sharedScoresheets.map(
-            (returnedSharedScoresheet) => {
-              if (!returnedSharedScoresheet.scoresheet) {
-                return null;
-              }
-              return {
-                scoresheetType: "shared" as const,
-                id: returnedSharedScoresheet.id,
-                name: returnedSharedScoresheet.scoresheet.name,
-                type: returnedSharedScoresheet.isDefault
-                  ? ("Default" as const)
-                  : ("Game" as const),
-              };
-            },
-          );
-        })
-        .filter((scoresheet) => scoresheet !== null);
       const mappedScoresheets: {
         scoresheetType: "shared" | "original";
         id: number;
         name: string;
         type: z.infer<typeof selectScoreSheetSchema>["type"];
-      }[] = [
-        ...returnedScoresheets.map((returnedScoresheet) => {
-          return {
+      }[] = [];
+      if (input.type === "original") {
+        const returnedGame = await ctx.db.query.game.findFirst({
+          where: {
+            id: input.gameId,
+            userId: ctx.userId,
+            deletedAt: {
+              isNull: true,
+            },
+          },
+          with: {
+            scoresheets: {
+              where: {
+                OR: [
+                  {
+                    type: "Default",
+                  },
+                  {
+                    type: "Game",
+                  },
+                ],
+              },
+              with: {
+                rounds: true,
+              },
+            },
+            linkedGames: {
+              where: {
+                sharedWithId: ctx.userId,
+              },
+              with: {
+                sharedScoresheets: {
+                  with: {
+                    scoresheet: {
+                      where: {
+                        OR: [
+                          {
+                            type: "Default",
+                          },
+                          {
+                            type: "Game",
+                          },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+        if (!returnedGame) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Game not found.",
+          });
+        }
+        returnedGame.scoresheets.forEach((scoresheet) => {
+          mappedScoresheets.push({
             scoresheetType: "original" as const,
-            id: returnedScoresheet.id,
-            name: returnedScoresheet.name,
-            type: returnedScoresheet.type,
-          };
-        }),
-        ...mappedLinkedScoresheet,
-      ];
+            id: scoresheet.id,
+            name: scoresheet.name,
+            type: scoresheet.type,
+          });
+        });
+        returnedGame.linkedGames.forEach((linkedGame) => {
+          linkedGame.sharedScoresheets.forEach((sharedScoresheet) => {
+            if (sharedScoresheet.scoresheet) {
+              mappedScoresheets.push({
+                scoresheetType: "shared" as const,
+                id: sharedScoresheet.scoresheet.id,
+                name: sharedScoresheet.scoresheet.name,
+                type: sharedScoresheet.isDefault
+                  ? ("Default" as const)
+                  : ("Game" as const),
+              });
+            }
+          });
+        });
+      } else {
+        const returnedSharedGame = await ctx.db.query.sharedGame.findFirst({
+          where: {
+            id: input.gameId,
+            sharedWithId: ctx.userId,
+          },
+          with: {
+            sharedScoresheets: {
+              with: {
+                scoresheet: {
+                  where: {
+                    OR: [
+                      {
+                        type: "Default",
+                      },
+                      {
+                        type: "Game",
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+            linkedGame: {
+              with: {
+                scoresheets: {
+                  where: {
+                    OR: [
+                      {
+                        type: "Default",
+                      },
+                      {
+                        type: "Game",
+                      },
+                    ],
+                  },
+                },
+                linkedGames: {
+                  where: {
+                    id: {
+                      NOT: input.gameId,
+                    },
+                  },
+                  columns: {
+                    id: true,
+                  },
+                  with: {
+                    sharedScoresheets: {
+                      with: {
+                        scoresheet: {
+                          where: {
+                            OR: [
+                              {
+                                type: "Default",
+                              },
+                              {
+                                type: "Game",
+                              },
+                            ],
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+        if (!returnedSharedGame) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared game not found.",
+          });
+        }
+        returnedSharedGame.sharedScoresheets.forEach((sharedScoresheet) => {
+          if (sharedScoresheet.scoresheet) {
+            mappedScoresheets.push({
+              scoresheetType: "shared" as const,
+              id: sharedScoresheet.scoresheet.id,
+              name: sharedScoresheet.scoresheet.name,
+              type: sharedScoresheet.isDefault
+                ? ("Default" as const)
+                : ("Game" as const),
+            });
+          }
+        });
+        returnedSharedGame.linkedGame?.scoresheets.forEach((scoresheet) => {
+          mappedScoresheets.push({
+            scoresheetType: "original" as const,
+            id: scoresheet.id,
+            name: scoresheet.name,
+            type: scoresheet.type,
+          });
+        });
+        returnedSharedGame.linkedGame?.linkedGames.forEach((linkedGame) => {
+          linkedGame.sharedScoresheets.forEach((sharedScoresheet) => {
+            if (sharedScoresheet.scoresheet) {
+              mappedScoresheets.push({
+                scoresheetType: "shared" as const,
+                id: sharedScoresheet.scoresheet.id,
+                name: sharedScoresheet.scoresheet.name,
+                type: sharedScoresheet.isDefault
+                  ? ("Default" as const)
+                  : ("Game" as const),
+              });
+            }
+          });
+        });
+      }
+
       return mappedScoresheets;
     }),
   getGameRoles: protectedUserProcedure
-    .input(z.object({ gameId: z.number() }))
+    .input(
+      z.object({
+        id: z.number(),
+        type: z.literal("original").or(z.literal("shared")),
+      }),
+    )
     .query(async ({ ctx, input }) => {
+      let gameId: number | undefined = undefined;
+      if (input.type === "original") {
+        const returnedGame = await ctx.db.query.game.findFirst({
+          where: {
+            id: input.id,
+            userId: ctx.userId,
+            deletedAt: {
+              isNull: true,
+            },
+          },
+        });
+        if (!returnedGame) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Game not found.",
+          });
+        }
+        gameId = input.id;
+      } else {
+        const returnedSharedGame = await ctx.db.query.sharedGame.findFirst({
+          where: {
+            id: input.id,
+            sharedWithId: ctx.userId,
+          },
+        });
+        if (!returnedSharedGame) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared game not found.",
+          });
+        }
+        gameId = returnedSharedGame.linkedGameId ?? returnedSharedGame.gameId;
+      }
       const result = await ctx.db.query.gameRole.findMany({
         where: {
-          gameId: input.gameId,
+          gameId: gameId,
           createdBy: ctx.userId,
           deletedAt: {
             isNull: true,

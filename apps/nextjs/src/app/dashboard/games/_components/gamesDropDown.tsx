@@ -53,7 +53,7 @@ export function GamesDropDown({
     trpc.game.deleteGame.mutationOptions({
       onSuccess: async () => {
         await Promise.all([
-          ...invalidateEditGame(data.id),
+          ...invalidateEditGame(data.id, data.type),
           ...invalidateGames(),
           queryClient.invalidateQueries(trpc.player.pathFilter()),
           queryClient.invalidateQueries(trpc.dashboard.pathFilter()),

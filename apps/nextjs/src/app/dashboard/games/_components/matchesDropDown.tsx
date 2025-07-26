@@ -60,7 +60,7 @@ export function MatchDropDown({ match }: { match: Game["matches"][number] }) {
           queryClient.invalidateQueries(
             trpc.game.getGame.queryOptions({ id: match.gameId }),
           ),
-          ...invalidateGame(match.gameId),
+          ...invalidateGame(match.gameId, match.type),
           ...invalidateGames(),
         ]);
         setIsDeleteDialogOpen(false);

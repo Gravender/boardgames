@@ -6,7 +6,7 @@ import { Plus, Users } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
-import { insertPlayerSchema } from "@board-games/db/zodSchema";
+import { addMatchPlayersSchema, matchRoleSchema } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -45,30 +45,13 @@ import { PlayerGroupSelector } from "./group-selector";
 import { ManagePlayerRoles } from "./player-role";
 import { ManageTeamContent } from "./team-selector";
 
-export const roleSchema = z.array(z.number());
-export const playersSchema = z
-  .array(
-    insertPlayerSchema
-      .pick({ name: true, id: true })
-      .required({ name: true, id: true })
-      .extend({
-        type: z.literal("original").or(z.literal("shared")),
-        imageUrl: z.string().nullable(),
-        matches: z.number(),
-        teamId: z.number().nullable(),
-        roles: roleSchema,
-      }),
-  )
-  .refine((players) => players.length > 0, {
-    message: "You must add at least one player",
-  });
 const AddPlayersFormSchema = z.object({
-  players: playersSchema,
+  players: addMatchPlayersSchema,
   teams: z.array(
     z.object({
       id: z.number(),
       name: z.string(),
-      roles: z.array(z.number()),
+      roles: matchRoleSchema,
     }),
   ),
 });
@@ -105,7 +88,7 @@ export const AddPlayersDialogForm = ({
 }) => {
   const trpc = useTRPC();
   const { data: roles } = useQuery(
-    trpc.game.getGameRoles.queryOptions({ gameId: game.id }),
+    trpc.game.getGameRoles.queryOptions({ id: game.id, type: game.type }),
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [showGroups, setShowGroups] = useState(false);
@@ -567,15 +550,6 @@ export const AddPlayersDialogForm = ({
                                                   </SelectContent>
                                                 </Select>
                                               )}
-                                            {formPlayers.findIndex(
-                                              (i) =>
-                                                i.id === player.id &&
-                                                i.type === player.type,
-                                            ) > -1 && (
-                                              <Badge className="hidden sm:block">
-                                                Selected
-                                              </Badge>
-                                            )}
                                           </div>
                                         </FormItem>
                                       );

@@ -1,17 +1,17 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
+import type { z } from "zod/v4";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, X } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
-import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
 import type { UseFormReturn } from "@board-games/ui/form";
-import { insertMatchSchema } from "@board-games/db/zodSchema";
+import { addMatchSchema } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Calendar } from "@board-games/ui/calendar";
@@ -47,10 +47,7 @@ import {
 import { toast } from "@board-games/ui/toast";
 
 import type { Player, Team } from "~/components/match/players/selector";
-import {
-  AddPlayersDialogForm,
-  playersSchema,
-} from "~/components/match/players/selector";
+import { AddPlayersDialogForm } from "~/components/match/players/selector";
 import { Spinner } from "~/components/spinner";
 import { useInvalidateGame, useInvalidateGames } from "~/hooks/invalidate/game";
 import { useInvalidateLocations } from "~/hooks/invalidate/location";
@@ -64,10 +61,12 @@ type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 
 export function AddMatchDialog({
   gameId,
+  gameType,
   gameName,
   matches,
 }: {
   gameId: Game["id"];
+  gameType: "shared" | "original";
   gameName: Game["name"];
   matches: number;
 }) {
@@ -77,16 +76,20 @@ export function AddMatchDialog({
     trpc.location.getLocations.queryOptions(),
   );
   const { data: scoreSheets } = useSuspenseQuery(
-    trpc.game.getGameScoresheets.queryOptions({ gameId: gameId }),
+    trpc.game.getGameScoresheets.queryOptions({
+      gameId: gameId,
+      type: gameType,
+    }),
   );
   const { data: players } = useSuspenseQuery(
-    trpc.player.getPlayersByGame.queryOptions({ id: gameId, type: "original" }),
+    trpc.player.getPlayersByGame.queryOptions({ id: gameId, type: gameType }),
   );
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="gap-2 p-4 sm:max-w-[800px] sm:gap-4 sm:p-6">
         <Content
           gameId={gameId}
+          gameType={gameType}
           gameName={gameName}
           matches={matches}
           locations={locations}
@@ -111,39 +114,11 @@ export function AddMatchDialog({
     </Dialog>
   );
 }
-const matchSchema = insertMatchSchema
-  .pick({
-    name: true,
-    date: true,
-  })
-  .required({ name: true, date: true });
-const locationSchema = z
-  .object({
-    id: z.number(),
-    name: z.string(),
-    type: z.literal("original").or(z.literal("shared")),
-    isDefault: z.boolean(),
-  })
-  .nullish();
 
-const formSchema = matchSchema.extend({
-  players: playersSchema,
-  location: locationSchema,
-  scoresheet: z.object({
-    id: z.number(),
-    scoresheetType: z.literal("original").or(z.literal("shared")),
-  }),
-  teams: z.array(
-    z.object({
-      id: z.number(),
-      name: z.string(),
-      roles: z.array(z.number()),
-    }),
-  ),
-});
 function Content({
   matches,
   gameId,
+  gameType,
   gameName,
   locations,
   scoresheets,
@@ -151,6 +126,7 @@ function Content({
   setIsOpen,
 }: {
   gameId: Game["id"];
+  gameType: "original" | "shared";
   gameName: Game["name"];
   matches: number;
   locations: RouterOutputs["location"]["getLocations"];
@@ -161,7 +137,15 @@ function Content({
   const [isPlayers, setIsPlayers] = useState(false);
   const currentUser = gamePlayers.find((player) => player.isUser);
   const form = useForm({
-    schema: formSchema,
+    schema: addMatchSchema.refine(
+      (s) =>
+        scoresheets.find(
+          (scoresheet) =>
+            scoresheet.id === s.scoresheet.id &&
+            scoresheet.scoresheetType === s.scoresheet.scoresheetType,
+        ) !== undefined,
+      { message: "Must select a scoresheet", path: ["scoresheet"] },
+    ),
     defaultValues: {
       name: `${gameName} #${matches + 1}`,
       date: new Date(),
@@ -169,6 +153,7 @@ function Content({
         ? [
             {
               id: currentUser.id,
+              type: currentUser.type,
               imageUrl: currentUser.image?.url ?? "",
               name: currentUser.name,
               matches: currentUser.matches,
@@ -207,7 +192,7 @@ function Content({
         <AddPlayersDialogForm
           game={{
             id: gameId,
-            type: "original" as const,
+            type: gameType,
           }}
           players={form.getValues("players")}
           teams={form.getValues("teams")}
@@ -217,6 +202,7 @@ function Content({
       ) : (
         <AddMatchForm
           gameId={gameId}
+          gameType={gameType}
           form={form}
           locations={locations}
           scoresheets={scoresheets}
@@ -230,6 +216,7 @@ function Content({
 
 const AddMatchForm = ({
   gameId,
+  gameType,
   locations,
   scoresheets,
   form,
@@ -237,9 +224,10 @@ const AddMatchForm = ({
   setIsPlayers,
 }: {
   gameId: Game["id"];
+  gameType: "original" | "shared";
   locations: RouterOutputs["location"]["getLocations"];
   scoresheets: RouterOutputs["game"]["getGameScoresheets"];
-  form: UseFormReturn<z.infer<typeof formSchema>>;
+  form: UseFormReturn<z.infer<typeof addMatchSchema>>;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
   setIsPlayers: Dispatch<SetStateAction<boolean>>;
 }) => {
@@ -265,15 +253,17 @@ const AddMatchForm = ({
         });
         await Promise.all([
           ...invalidateGames(),
-          ...invalidateGame(gameId),
+          ...invalidateGame(response.match.gameId, "original"),
           ...invalidatePlayers(),
           ...playersToInvalidate,
         ]);
-        router.push(`/dashboard/games/${gameId}/${response.match.id}`);
+        router.push(
+          `/dashboard/games/${response.match.gameId}/${response.match.id}`,
+        );
         setIsSubmitting(false);
       },
       onError: (error) => {
-        posthog.capture("match create error", { error, gameId });
+        posthog.capture("match create error", { error, gameId, gameType });
         toast.error("Error", {
           description: "There was a problem adding your match.",
         });
@@ -299,7 +289,7 @@ const AddMatchForm = ({
     }),
   );
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (values: z.infer<typeof addMatchSchema>) => {
     setIsSubmitting(true);
     posthog.capture("add match begin", {
       gameId: gameId,
@@ -359,7 +349,7 @@ const AddMatchForm = ({
     createMatch.mutate({
       game: {
         id: gameId,
-        type: "original" as const,
+        type: gameType,
       },
       name: values.name,
       date: values.date,
