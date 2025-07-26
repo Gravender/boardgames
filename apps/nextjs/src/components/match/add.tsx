@@ -253,15 +253,17 @@ const AddMatchForm = ({
         });
         await Promise.all([
           ...invalidateGames(),
-          ...invalidateGame(gameId, gameType),
+          ...invalidateGame(response.match.gameId, "original"),
           ...invalidatePlayers(),
           ...playersToInvalidate,
         ]);
-        router.push(`/dashboard/games/${gameId}/${response.match.id}`);
+        router.push(
+          `/dashboard/games/${response.match.gameId}/${response.match.id}`,
+        );
         setIsSubmitting(false);
       },
       onError: (error) => {
-        posthog.capture("match create error", { error, gameId });
+        posthog.capture("match create error", { error, gameId, gameType });
         toast.error("Error", {
           description: "There was a problem adding your match.",
         });
