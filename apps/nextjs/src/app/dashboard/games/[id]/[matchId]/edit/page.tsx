@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
+import { EditMatchForm } from "~/components/match/edit";
 import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
-import { EditMatchForm } from "./_components/editMatch";
 
 export default async function Page({
   params,

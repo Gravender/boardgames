@@ -379,3 +379,14 @@ export const addMatchSchema = matchSchema.extend({
     }),
   ),
 });
+export const editMatchSchema = matchSchema.extend({
+  players: addMatchPlayersSchema,
+  location: matchLocationSchema,
+  teams: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      roles: matchRoleSchema,
+    }),
+  ),
+});
