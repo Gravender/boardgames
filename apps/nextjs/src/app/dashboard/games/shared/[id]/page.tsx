@@ -19,12 +19,6 @@ export default async function SharedGamePage({ params }: Props) {
       type: "shared",
     }),
   );
-  void prefetch(
-    trpc.game.getGameScoresheets.queryOptions({
-      gameId: Number(id),
-      type: "original",
-    }),
-  );
   void prefetch(trpc.location.getLocations.queryOptions());
   void prefetch(
     trpc.player.getPlayersByGame.queryOptions({

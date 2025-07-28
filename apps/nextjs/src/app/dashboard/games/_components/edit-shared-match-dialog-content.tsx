@@ -61,17 +61,19 @@ export function EditSharedMatchForm({
       onSuccess: async (result) => {
         console.log("result", result);
         if (result !== null) {
-          if (result.type == "shared") {
+          if (result.match.type == "shared") {
             await queryClient.invalidateQueries(
-              trpc.sharing.getSharedGame.queryOptions({ id: result.gameId }),
+              trpc.sharing.getSharedGame.queryOptions({
+                id: result.match.gameId,
+              }),
             );
             await queryClient.invalidateQueries(
-              trpc.sharing.getSharedMatch.queryOptions({ id: result.id }),
+              trpc.sharing.getSharedMatch.queryOptions({ id: result.match.id }),
             );
           }
-          if (result.type == "linked") {
+          if (result.match.type == "linked") {
             await queryClient.invalidateQueries(
-              trpc.game.getGame.queryOptions({ id: result.gameId }),
+              trpc.game.getGame.queryOptions({ id: result.match.gameId }),
             );
           }
         }
@@ -150,7 +152,7 @@ export function EditSharedMatchForm({
                       disabled={(date) =>
                         date > new Date() || date < new Date("1900-01-01")
                       }
-                      initialFocus
+                      autoFocus
                     />
                   </PopoverContent>
                 </Popover>
