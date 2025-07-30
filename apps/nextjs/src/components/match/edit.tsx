@@ -474,15 +474,6 @@ export function EditMatchForm({
               >
                 Cancel
               </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  console.log(form.formState.errors);
-                  console.log(form.getValues());
-                }}
-              >
-                Error
-              </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>

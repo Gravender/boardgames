@@ -68,6 +68,12 @@ export async function addPlayersToMatch(
       };
     }),
   );
+  if (playersToInsert.length > 0) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Edit Match No Match Players to Insert",
+    });
+  }
   const returnedMatchPlayers = await transaction
     .insert(matchPlayer)
     .values(playersToInsert.map((p) => p.processedPlayer))
@@ -80,7 +86,7 @@ export async function addPlayersToMatch(
     if (!foundMatchPlayer) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Match player not created",
+        message: "Edit Match Match players not created",
       });
     }
     insertedMatchPlayers.push({
@@ -119,5 +125,7 @@ export async function addPlayersToMatch(
         };
       });
     });
-  await transaction.insert(roundPlayer).values(roundPlayersToInsert);
+  if (roundPlayersToInsert.length > 0) {
+    await transaction.insert(roundPlayer).values(roundPlayersToInsert);
+  }
 }
