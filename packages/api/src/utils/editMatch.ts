@@ -68,7 +68,7 @@ export async function addPlayersToMatch(
       };
     }),
   );
-  if (playersToInsert.length > 0) {
+  if (playersToInsert.length === 0) {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
       message: "Edit Match No Match Players to Insert",
