@@ -553,7 +553,7 @@ function ScoresheetFooter({ match }: { match: Match }) {
             name: foundPlayer?.name ?? "",
             image: foundPlayer?.image ?? null,
             placement: player.placement,
-            score: player.score,
+            score: foundPlayer !== undefined ? foundPlayer.score : player.score,
             teamId: foundPlayer?.teamId ?? null,
           };
         }),

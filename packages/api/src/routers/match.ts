@@ -1553,6 +1553,7 @@ export const matchRouter = createTRPCRouter({
             selectMatchPlayerSchema.pick({
               id: true,
               placement: true,
+              score: true,
             }),
           )
           .refine((placements) => placements.length > 0),
@@ -1573,6 +1574,7 @@ export const matchRouter = createTRPCRouter({
 
         const placementSqlChunks: SQL[] = [sql`(case`];
         const winnerSqlChunks: SQL[] = [sql`(case`];
+        const scoreSqlChunks: SQL[] = [sql`(case`];
 
         for (const player of input.playersPlacement) {
           placementSqlChunks.push(
@@ -1581,14 +1583,19 @@ export const matchRouter = createTRPCRouter({
           winnerSqlChunks.push(
             sql`when ${matchPlayer.id} = ${player.id} then ${player.placement === 1}::boolean`,
           );
+          scoreSqlChunks.push(
+            sql`when ${matchPlayer.id} = ${player.id} then ${sql`${player.score}::integer`}`,
+          );
         }
 
         placementSqlChunks.push(sql`end)`);
         winnerSqlChunks.push(sql`end)`);
+        scoreSqlChunks.push(sql`end)`);
 
         // Join each array of CASE chunks into a single SQL expression
         const finalPlacementSql = sql.join(placementSqlChunks, sql.raw(" "));
         const finalWinnerSql = sql.join(winnerSqlChunks, sql.raw(" "));
+        const finalScoreSql = sql.join(scoreSqlChunks, sql.raw(" "));
 
         // Perform the bulk update
         await transaction
@@ -1596,6 +1603,7 @@ export const matchRouter = createTRPCRouter({
           .set({
             placement: finalPlacementSql,
             winner: finalWinnerSql,
+            score: finalScoreSql,
           })
           .where(inArray(matchPlayer.id, ids));
       });

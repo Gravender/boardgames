@@ -139,6 +139,7 @@ function Content({
       playersPlacement: values.players.map((player) => ({
         id: player.matchPlayerId,
         placement: player.placement,
+        score: player.score,
       })),
     });
   }
