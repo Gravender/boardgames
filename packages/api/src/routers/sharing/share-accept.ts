@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod/v4";
@@ -14,9 +15,9 @@ import {
   shareRequest,
 } from "@board-games/db/schema";
 
-import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
+import { protectedUserProcedure } from "../../trpc";
 
-export const shareAcceptanceRouter = createTRPCRouter({
+export const shareAcceptanceRouter = {
   acceptGameShareRequest: protectedUserProcedure
     .input(
       z.object({
@@ -1607,4 +1608,4 @@ export const shareAcceptanceRouter = createTRPCRouter({
       });
       return response;
     }),
-});
+} satisfies TRPCRouterRecord;

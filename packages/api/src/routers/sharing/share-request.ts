@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { subDays } from "date-fns";
 import { and, eq, inArray } from "drizzle-orm";
@@ -20,10 +21,10 @@ import {
   shareRequest,
 } from "@board-games/db/schema";
 
-import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
+import { protectedUserProcedure } from "../../trpc";
 import { handleLocationSharing } from "../../utils/sharing";
 
-export const shareRequestRouter = createTRPCRouter({
+export const shareRequestRouter = {
   requestShareGame: protectedUserProcedure
     .input(
       z
@@ -1564,7 +1565,7 @@ export const shareRequestRouter = createTRPCRouter({
       });
       return response;
     }),
-});
+} satisfies TRPCRouterRecord;
 
 async function requestShareGameToFriend(
   transaction: TransactionType,

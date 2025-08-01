@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareAsc, differenceInSeconds } from "date-fns";
@@ -25,7 +26,7 @@ import {
 } from "@board-games/db/zodSchema";
 import { calculatePlacement } from "@board-games/shared";
 
-import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import { protectedUserProcedure } from "../trpc";
 import {
   getGame,
   getMatchPlayersAndTeams,
@@ -36,7 +37,7 @@ import { addPlayersToMatch } from "../utils/editMatch";
 import { cloneSharedLocationForUser } from "../utils/handleSharedLocation";
 import { aggregatePlayerStats } from "../utils/playerStatsAggregator";
 
-export const matchRouter = createTRPCRouter({
+export const matchRouter = {
   createMatch: protectedUserProcedure
     .input(
       insertMatchSchema
@@ -2270,4 +2271,4 @@ export const matchRouter = createTRPCRouter({
         };
       }
     }),
-});
+} satisfies TRPCRouterRecord;

@@ -1,10 +1,11 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
 
 import { selectSharedPlayerSchema } from "@board-games/db/zodSchema";
 
 import type { PlayerMatch } from "../../utils/player";
-import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
+import { protectedUserProcedure } from "../../trpc";
 import {
   aggregatePlayerStats,
   getTeamStats,
@@ -12,7 +13,7 @@ import {
   teammateFrequency,
 } from "../../utils/player";
 
-export const sharePlayerRouter = createTRPCRouter({
+export const sharePlayerRouter = {
   getSharedPlayer: protectedUserProcedure
     .input(selectSharedPlayerSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
@@ -261,4 +262,4 @@ export const sharePlayerRouter = createTRPCRouter({
           .filter((game) => game !== null),
       };
     }),
-});
+} satisfies TRPCRouterRecord;

@@ -2,7 +2,6 @@ import "~/styles/globals.css";
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
 
 import { Toaster } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
@@ -63,15 +62,13 @@ export default function RootLayout({
           disableTransitionOnChange
           enableColorScheme
         >
-          <ClerkProvider>
-            <CSPostHogProvider>
-              <TRPCReactProvider>{children}</TRPCReactProvider>
-              <Toaster />
-              <SpeedInsights />
+          <CSPostHogProvider>
+            <TRPCReactProvider>{children}</TRPCReactProvider>
+            <Toaster />
+            <SpeedInsights />
 
-              <PostHogPageView />
-            </CSPostHogProvider>
-          </ClerkProvider>
+            <PostHogPageView />
+          </CSPostHogProvider>
         </ThemeProvider>
       </body>
     </html>

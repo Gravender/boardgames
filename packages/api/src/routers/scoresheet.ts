@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 
@@ -7,9 +8,9 @@ import {
   selectScoreSheetSchema,
 } from "@board-games/db/zodSchema";
 
-import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import { protectedUserProcedure } from "../trpc";
 
-export const scoresheetRouter = createTRPCRouter({
+export const scoresheetRouter = {
   create: protectedUserProcedure
     .input(insertScoreSheetSchema.omit({ createdBy: true, id: true }))
     .mutation(async ({ ctx, input }) => {
@@ -37,4 +38,4 @@ export const scoresheetRouter = createTRPCRouter({
         .from(scoresheet)
         .where(eq(scoresheet.id, input.id));
     }),
-});
+} satisfies TRPCRouterRecord;

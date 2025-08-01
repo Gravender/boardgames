@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod/v4";
@@ -13,9 +14,9 @@ import type {
 } from "@board-games/db/zodSchema";
 import { scoresheet } from "@board-games/db/schema";
 
-import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
+import { protectedUserProcedure } from "../../trpc";
 
-export const shareMetaRouter = createTRPCRouter({
+export const shareMetaRouter = {
   getShareRequest: protectedUserProcedure
     .input(z.object({ requestId: z.number() }))
     .query(async ({ ctx, input }) => {
@@ -901,4 +902,4 @@ export const shareMetaRouter = createTRPCRouter({
     ).filter((item) => item !== null);
     return mappedItems;
   }),
-});
+} satisfies TRPCRouterRecord;

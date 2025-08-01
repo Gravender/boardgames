@@ -1,6 +1,8 @@
-import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import type { TRPCRouterRecord } from "@trpc/server";
 
-export const userRouter = createTRPCRouter({
+import { protectedUserProcedure } from "../trpc";
+
+export const userRouter = {
   hasGames: protectedUserProcedure.query(async ({ ctx }) => {
     const gameExists = await ctx.db.query.game.findFirst({
       where: {
@@ -18,4 +20,4 @@ export const userRouter = createTRPCRouter({
     }
     return true;
   }),
-});
+} satisfies TRPCRouterRecord;

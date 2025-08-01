@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
@@ -26,7 +27,7 @@ import { selectSharedGameSchema } from "@board-games/db/zodSchema";
 import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 import type { PlayerMatch } from "../../utils/gameStats";
-import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
+import { protectedUserProcedure } from "../../trpc";
 import { processPlayer, shareMatchWithFriends } from "../../utils/addMatch";
 import {
   headToHeadStats,
@@ -34,7 +35,7 @@ import {
 } from "../../utils/gameStats";
 import { cloneSharedLocationForUser } from "../../utils/handleSharedLocation";
 
-export const shareGameRouter = createTRPCRouter({
+export const shareGameRouter = {
   getSharedGame: protectedUserProcedure
     .input(selectSharedGameSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
@@ -1284,4 +1285,4 @@ export const shareGameRouter = createTRPCRouter({
         }
       });
     }),
-});
+} satisfies TRPCRouterRecord;

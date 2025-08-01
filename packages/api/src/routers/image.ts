@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod/v4";
@@ -6,10 +7,10 @@ import { image, matchImage } from "@board-games/db/schema";
 import { insertImageSchema } from "@board-games/db/zodSchema";
 
 import analyticsServerClient from "../analytics";
-import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import { protectedUserProcedure } from "../trpc";
 import { utapi } from "../uploadthing";
 
-export const imageRouter = createTRPCRouter({
+export const imageRouter = {
   create: protectedUserProcedure
     .input(insertImageSchema.omit({ createdBy: true, id: true }))
     .mutation(async ({ ctx, input }) => {
@@ -139,4 +140,4 @@ export const imageRouter = createTRPCRouter({
         }
       });
     }),
-});
+} satisfies TRPCRouterRecord;

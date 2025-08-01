@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareDesc } from "date-fns";
@@ -37,7 +38,7 @@ import {
 import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 import analyticsServerClient from "../analytics";
-import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import { protectedUserProcedure } from "../trpc";
 import { utapi } from "../uploadthing";
 import {
   headToHeadStats,
@@ -45,7 +46,7 @@ import {
   playerAndRolesAggregated,
 } from "../utils/gameStats";
 
-export const gameRouter = createTRPCRouter({
+export const gameRouter = {
   create: protectedUserProcedure
     .input(
       z.object({
@@ -2320,4 +2321,4 @@ export const gameRouter = createTRPCRouter({
         }
       }
     }),
-});
+} satisfies TRPCRouterRecord;

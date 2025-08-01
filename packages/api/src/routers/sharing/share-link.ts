@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod/v4";
@@ -10,9 +11,9 @@ import type {
 } from "@board-games/db/zodSchema";
 import { game, scoresheet } from "@board-games/db/schema";
 
-import { createTRPCRouter, publicProcedure } from "../../trpc";
+import { publicProcedure } from "../../trpc";
 
-export const shareLinkRouter = createTRPCRouter({
+export const shareLinkRouter = {
   getSharedItemByToken: publicProcedure
     .input(
       z.object({
@@ -170,4 +171,4 @@ export const shareLinkRouter = createTRPCRouter({
         permission: sharedItem.permission,
       };
     }),
-});
+} satisfies TRPCRouterRecord;

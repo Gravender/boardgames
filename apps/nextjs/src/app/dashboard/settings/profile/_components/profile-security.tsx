@@ -2,7 +2,6 @@
 
 import type { SessionWithActivitiesResource } from "@clerk/types";
 import { useEffect, useState } from "react";
-import { useSession, useUser } from "@clerk/nextjs";
 import { compareDesc, formatDistanceToNow } from "date-fns";
 import {
   Clock,

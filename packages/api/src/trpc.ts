@@ -38,8 +38,6 @@ export const createTRPCContext = async (opts: {
     authApi,
     session,
     db,
-    userId: session?.user.id,
-    ...opts,
   };
 };
 
@@ -117,24 +115,19 @@ const isAuthed = t.middleware(async ({ ctx, next }) => {
   }
   return next({
     ctx: {
-      auth: ctx.auth,
+      session: { ...ctx.session, user: ctx.session.user },
     },
   });
 });
 
 const isUser = t.middleware(async ({ ctx, next }) => {
-  const returnedUser = await ctx.db.query.user.findFirst({
-    where: {
-      id: ctx.userId,
-    },
-  });
-  if (!returnedUser) {
+  if (!ctx.session?.user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({
     ctx: {
-      auth: ctx.auth,
-      userId: returnedUser.id,
+      session: { ...ctx.session },
+      userId: ctx.session.user.id,
     },
   });
 });

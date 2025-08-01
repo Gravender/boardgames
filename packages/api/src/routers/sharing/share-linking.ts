@@ -1,12 +1,13 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod/v4";
 
 import { sharedGame, sharedPlayer } from "@board-games/db/schema";
 
-import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
+import { protectedUserProcedure } from "../../trpc";
 
-export const shareLinkingRouter = createTRPCRouter({
+export const shareLinkingRouter = {
   linkSharedPlayer: protectedUserProcedure
     .input(
       z.object({
@@ -108,4 +109,4 @@ export const shareLinkingRouter = createTRPCRouter({
           : "Shared game unlinked successfully.",
       };
     }),
-});
+} satisfies TRPCRouterRecord;
