@@ -101,7 +101,7 @@ export const relations = defineRelations(schema, (r) => ({
     }),
     images: r.many.image({
       from: r.user.id,
-      to: r.image.userId,
+      to: r.image.createdBy,
     }),
     groups: r.many.group({
       from: r.user.id,
@@ -137,7 +137,7 @@ export const relations = defineRelations(schema, (r) => ({
     }),
     games: r.many.game({
       from: r.user.id,
-      to: r.game.userId,
+      to: r.game.createdBy,
       where: {
         deletedAt: {
           isNull: true,
@@ -146,7 +146,7 @@ export const relations = defineRelations(schema, (r) => ({
     }),
     matches: r.many.match({
       from: r.user.id,
-      to: r.match.userId,
+      to: r.match.createdBy,
       where: {
         deletedAt: {
           isNull: true,
@@ -284,7 +284,7 @@ export const relations = defineRelations(schema, (r) => ({
   },
   game: {
     createdBy: r.one.user({
-      from: r.game.userId,
+      from: r.game.createdBy,
       to: r.user.id,
     }),
     image: r.one.image({
@@ -525,7 +525,7 @@ export const relations = defineRelations(schema, (r) => ({
   },
   match: {
     createdBy: r.one.user({
-      from: r.match.userId,
+      from: r.match.createdBy,
       to: r.user.id,
     }),
     game: r.one.game({
@@ -611,7 +611,7 @@ export const relations = defineRelations(schema, (r) => ({
   },
   scoresheet: {
     createdBy: r.one.user({
-      from: r.scoresheet.userId,
+      from: r.scoresheet.createdBy,
       to: r.user.id,
     }),
     game: r.one.game({

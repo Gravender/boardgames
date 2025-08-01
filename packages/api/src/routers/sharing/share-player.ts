@@ -44,7 +44,7 @@ export const sharePlayerRouter = createTRPCRouter({
                       },
                       linkedGame: {
                         where: {
-                          userId: ctx.userId,
+                          createdBy: ctx.userId,
                         },
                         with: {
                           image: true,

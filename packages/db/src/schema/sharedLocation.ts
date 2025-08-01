@@ -16,11 +16,11 @@ const sharedLocation = createTable(
   "shared_location",
   {
     id: serial("id").primaryKey(),
-    ownerId: integer("owner_id")
-      .references(() => user.id)
+    ownerId: text("owner_id")
+      .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
-    sharedWithId: integer("shared_with_id")
-      .references(() => user.id)
+    sharedWithId: text("shared_with_id")
+      .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
     locationId: integer("location_id")
       .references(() => location.id)

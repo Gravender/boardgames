@@ -50,7 +50,7 @@ export const gameRouter = createTRPCRouter({
     .input(
       z.object({
         game: insertGameSchema.omit({
-          userId: true,
+          createdBy: true,
           id: true,
           createdAt: true,
           updatedAt: true,
@@ -75,7 +75,7 @@ export const gameRouter = createTRPCRouter({
                 id: true,
                 createdAt: true,
                 updatedAt: true,
-                userId: true,
+                createdBy: true,
                 type: true,
                 gameId: true,
               })
@@ -144,7 +144,7 @@ export const gameRouter = createTRPCRouter({
             playtimeMax: input.game.playtimeMax,
             yearPublished: input.game.yearPublished,
             imageId: imageId,
-            userId: ctx.userId,
+            createdBy: ctx.userId,
           })
           .returning();
         if (!returningGame) {
@@ -167,7 +167,7 @@ export const gameRouter = createTRPCRouter({
             .insert(scoresheet)
             .values({
               name: "Default",
-              userId: ctx.userId,
+              createdBy: ctx.userId,
               gameId: returningGame.id,
               type: "Default",
             })
@@ -190,7 +190,7 @@ export const gameRouter = createTRPCRouter({
               .insert(scoresheet)
               .values({
                 ...inputScoresheet.scoresheet,
-                userId: ctx.userId,
+                createdBy: ctx.userId,
                 gameId: returningGame.id,
                 type: "Game",
               })
@@ -213,7 +213,7 @@ export const gameRouter = createTRPCRouter({
         return returningGame;
       });
       analyticsServerClient.capture({
-        distinctId: ctx.auth.userId ?? "",
+        distinctId: ctx.userId,
         event: "game created",
         properties: {
           gameName: result.name,
@@ -228,7 +228,7 @@ export const gameRouter = createTRPCRouter({
       const result = await ctx.db.query.game.findFirst({
         where: {
           id: input.id,
-          userId: ctx.userId,
+          createdBy: ctx.userId,
           deletedAt: {
             isNull: true,
           },
@@ -407,7 +407,7 @@ export const gameRouter = createTRPCRouter({
         const returnedGame = await ctx.db.query.game.findFirst({
           where: {
             id: input.gameId,
-            userId: ctx.userId,
+            createdBy: ctx.userId,
             deletedAt: {
               isNull: true,
             },
@@ -607,7 +607,7 @@ export const gameRouter = createTRPCRouter({
         const returnedGame = await ctx.db.query.game.findFirst({
           where: {
             id: input.id,
-            userId: ctx.userId,
+            createdBy: ctx.userId,
             deletedAt: {
               isNull: true,
             },
@@ -667,7 +667,7 @@ export const gameRouter = createTRPCRouter({
         },
         where: {
           id: input.id,
-          userId: ctx.userId,
+          createdBy: ctx.userId,
           deletedAt: {
             isNull: true,
           },
@@ -828,7 +828,7 @@ export const gameRouter = createTRPCRouter({
       const result = await ctx.db.query.game.findFirst({
         where: {
           id: input.id,
-          userId: ctx.userId,
+          createdBy: ctx.userId,
           deletedAt: {
             isNull: true,
           },
@@ -1065,7 +1065,7 @@ export const gameRouter = createTRPCRouter({
       const result = await ctx.db.query.game.findFirst({
         where: {
           id: input.id,
-          userId: ctx.userId,
+          createdBy: ctx.userId,
           deletedAt: {
             isNull: true,
           },
@@ -1083,7 +1083,7 @@ export const gameRouter = createTRPCRouter({
       const result = await ctx.db.query.game.findFirst({
         where: {
           id: input.id,
-          userId: ctx.userId,
+          createdBy: ctx.userId,
           deletedAt: {
             isNull: true,
           },
@@ -1180,7 +1180,7 @@ export const gameRouter = createTRPCRouter({
         ownedBy: true,
       },
       where: {
-        userId: ctx.userId,
+        createdBy: ctx.userId,
         deletedAt: {
           isNull: true,
         },
@@ -1471,7 +1471,7 @@ export const gameRouter = createTRPCRouter({
       const existingGame = await ctx.db.query.game.findFirst({
         where: {
           id: input.game.id,
-          userId: ctx.userId,
+          createdBy: ctx.userId,
         },
       });
       if (!existingGame) {
@@ -1563,7 +1563,7 @@ export const gameRouter = createTRPCRouter({
             if (existingImage) {
               if (existingImage.type === "file" && existingImage.fileId) {
                 analyticsServerClient.capture({
-                  distinctId: ctx.auth.userId ?? "",
+                  distinctId: ctx.userId,
                   event: "uploadthing begin image delete",
                   properties: {
                     imageName: existingImage.name,
@@ -1574,7 +1574,7 @@ export const gameRouter = createTRPCRouter({
                 const result = await utapi.deleteFiles(existingImage.fileId);
                 if (!result.success) {
                   analyticsServerClient.capture({
-                    distinctId: ctx.auth.userId ?? "",
+                    distinctId: ctx.userId,
                     event: "uploadthing image delete error",
                     properties: {
                       imageName: existingImage.name,
@@ -1615,7 +1615,7 @@ export const gameRouter = createTRPCRouter({
                   roundsScore: inputScoresheet.scoresheet.roundsScore,
                   targetScore: inputScoresheet.scoresheet.targetScore,
 
-                  userId: ctx.userId,
+                  createdBy: ctx.userId,
                   gameId: existingGame.id,
                   type: "Game",
                 })
@@ -1878,7 +1878,9 @@ export const gameRouter = createTRPCRouter({
         const updatedMatches = await tx
           .update(match)
           .set({ deletedAt: new Date() })
-          .where(and(eq(match.gameId, input.id), eq(match.userId, ctx.userId)))
+          .where(
+            and(eq(match.gameId, input.id), eq(match.createdBy, ctx.userId)),
+          )
           .returning();
         await tx
           .update(matchPlayer)
@@ -1896,7 +1898,7 @@ export const gameRouter = createTRPCRouter({
         const [deletedGame] = await tx
           .update(game)
           .set({ deletedAt: new Date() })
-          .where(and(eq(game.id, input.id), eq(game.userId, ctx.userId)))
+          .where(and(eq(game.id, input.id), eq(game.createdBy, ctx.userId)))
           .returning();
         if (!deletedGame) {
           throw new TRPCError({
@@ -1907,7 +1909,7 @@ export const gameRouter = createTRPCRouter({
         return deletedGame;
       });
       analyticsServerClient.capture({
-        distinctId: ctx.auth.userId ?? "",
+        distinctId: ctx.userId,
         event: "game delete",
         properties: {
           gameName: result.name,
@@ -2006,7 +2008,7 @@ export const gameRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const currentGames = await ctx.db.query.game.findMany({
         where: {
-          userId: ctx.userId,
+          createdBy: ctx.userId,
           deletedAt: {
             isNull: true,
           },
@@ -2094,7 +2096,7 @@ export const gameRouter = createTRPCRouter({
             playersMax: mappedGame.maxPlayers,
             playtimeMin: mappedGame.minPlayTime,
             playtimeMax: mappedGame.maxPlayTime,
-            userId: ctx.userId,
+            createdBy: ctx.userId,
           })
           .returning();
         if (!returningGame) {
@@ -2113,7 +2115,7 @@ export const gameRouter = createTRPCRouter({
           .insert(scoresheet)
           .values({
             name: "Default",
-            userId: ctx.userId,
+            createdBy: ctx.userId,
             gameId: returningGame.id,
             isCoop: mappedGame.isCoop,
             type: "Default",
@@ -2138,7 +2140,7 @@ export const gameRouter = createTRPCRouter({
             .values({
               name: returnedScoresheet.name,
               gameId: returnedScoresheet.gameId,
-              userId: ctx.userId,
+              createdBy: ctx.userId,
               isCoop: returnedScoresheet.isCoop,
               winCondition: returnedScoresheet.winCondition,
               targetScore: returnedScoresheet.targetScore,
@@ -2162,7 +2164,7 @@ export const gameRouter = createTRPCRouter({
             throw new Error("Failed to create round");
           }
           const matchToInsert: z.infer<typeof insertMatchSchema> = {
-            userId: ctx.userId,
+            createdBy: ctx.userId,
             scoresheetId: playScoresheet.id,
             gameId: returningGame.id,
             name: `${mappedGame.name} #${index + 1}`,

@@ -30,7 +30,7 @@ import {
 import { handleLocationSharing } from "./sharing";
 
 interface ShareFriendConfig {
-  friendUserId: number;
+  friendUserId: string;
   shareLocation: boolean;
   sharePlayers: boolean;
   defaultPermissionForMatches: "view" | "edit";
@@ -45,7 +45,7 @@ interface ShareFriendConfig {
 }
 export async function shareMatchWithFriends(
   transaction: TransactionType,
-  userId: number,
+  userId: string,
   createdMatch: {
     id: number;
     location: {
@@ -136,7 +136,7 @@ export async function shareMatchWithFriends(
 }
 async function handleGameSharing(
   transaction: TransactionType,
-  ownerId: number,
+  ownerId: string,
   gameId: number,
   shareFriend: ShareFriendConfig,
   newShareId: number,
@@ -184,7 +184,7 @@ async function handleGameSharing(
 }
 async function createSharedMatch(
   transaction: TransactionType,
-  ownerId: number,
+  ownerId: string,
   matchId: number,
   shareFriend: ShareFriendConfig,
   sharedGameId: number,
@@ -211,7 +211,7 @@ async function createSharedMatch(
 }
 async function handlePlayerSharing(
   transaction: TransactionType,
-  userId: number,
+  userId: string,
   matchPlayer: {
     id: number;
     player: {
@@ -248,7 +248,7 @@ async function handlePlayerSharing(
 }
 async function createOrFindSharedPlayer(
   transaction: TransactionType,
-  userId: number,
+  userId: string,
   playerId: number,
   shareFriend: ShareFriendConfig,
   parentShare: {
@@ -312,7 +312,7 @@ async function createOrFindSharedPlayer(
 }
 async function createSharedMatchPlayer(
   transaction: TransactionType,
-  userId: number,
+  userId: string,
 
   matchPlayer: {
     id: number;
@@ -351,7 +351,7 @@ export async function processPlayer(
   matchId: number,
   playerToProcess: { id: number; type: "original" | "shared" },
   teamId: number | null,
-  userId: number,
+  userId: string,
 ) {
   if (playerToProcess.type === "original") {
     return {
@@ -436,7 +436,7 @@ export async function getGame(
     type: "original" | "shared";
   },
   transaction: TransactionType,
-  userId: number,
+  userId: string,
 ) {
   if (input.type === "original") {
     const returnedGame = await transaction.query.game.findFirst({
@@ -474,7 +474,7 @@ export async function getGame(
         .insert(game)
         .values({
           name: returnedSharedGame.game.name,
-          userId: userId,
+          createdBy: userId,
           yearPublished: returnedSharedGame.game.yearPublished,
           description: returnedSharedGame.game.description,
           rules: returnedSharedGame.game.rules,
@@ -506,7 +506,7 @@ export async function getScoreSheetAndRounds(
     gameId: number;
   },
   transaction: TransactionType,
-  userId: number,
+  userId: string,
 ) {
   let returnedScoresheet:
     | (z.infer<typeof selectScoreSheetSchema> & {
@@ -516,7 +516,7 @@ export async function getScoreSheetAndRounds(
   if (input.type === "original") {
     returnedScoresheet = await transaction.query.scoresheet.findFirst({
       where: {
-        userId: userId,
+        createdBy: userId,
         id: input.id,
       },
       with: {
@@ -544,7 +544,7 @@ export async function getScoreSheetAndRounds(
     returnedScoresheet = await transaction.query.scoresheet.findFirst({
       where: {
         id: returnedSharedScoresheet.scoresheetId,
-        userId: returnedSharedScoresheet.ownerId,
+        createdBy: returnedSharedScoresheet.ownerId,
       },
       with: {
         rounds: {
@@ -573,7 +573,7 @@ export async function getScoreSheetAndRounds(
       parentId: returnedScoresheet.id,
       name: `${input.matchName} Scoresheet`,
       gameId: input.gameId,
-      userId: userId,
+      createdBy: userId,
       isCoop: returnedScoresheet.isCoop,
       winCondition: returnedScoresheet.winCondition,
       targetScore: returnedScoresheet.targetScore,
@@ -617,7 +617,7 @@ export async function getMatchPlayersAndTeams(
     id: number;
   }[],
   transaction: TransactionType,
-  userId: number,
+  userId: string,
 ) {
   const insertedMatchPlayers: {
     id: number;

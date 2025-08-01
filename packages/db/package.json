@@ -33,6 +33,8 @@
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
     "push": "pnpm with-env drizzle-kit push",
+    "migrate": "pnpm with-env drizzle-kit migrate",
+    "generate": "pnpm with-env drizzle-kit generate",
     "seed": "pnpm with-env tsx src/seeding/seed.ts",
     "studio": "pnpm with-env drizzle-kit studio",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",

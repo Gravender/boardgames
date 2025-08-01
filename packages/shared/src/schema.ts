@@ -132,7 +132,7 @@ export const scoreSheetSchema = insertScoreSheetSchema
     id: true,
     createdAt: true,
     updatedAt: true,
-    userId: true,
+    createdBy: true,
     type: true,
     gameId: true,
   })

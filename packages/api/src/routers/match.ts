@@ -119,7 +119,7 @@ export const matchRouter = createTRPCRouter({
             date: input.date,
             gameId: returnedGameId,
             locationId: locationId,
-            userId: ctx.userId,
+            createdBy: ctx.userId,
             scoresheetId: returnedScoresheet.scoresheet.id,
           })
           .returning();
@@ -252,7 +252,7 @@ export const matchRouter = createTRPCRouter({
       const returnedMatch = await ctx.db.query.match.findFirst({
         where: {
           id: input.id,
-          userId: ctx.userId,
+          createdBy: ctx.userId,
           deletedAt: {
             isNull: true,
           },
@@ -373,7 +373,7 @@ export const matchRouter = createTRPCRouter({
       const returnedMatch = await ctx.db.query.match.findFirst({
         where: {
           id: input.id,
-          userId: ctx.userId,
+          createdBy: ctx.userId,
           deletedAt: {
             isNull: true,
           },
@@ -711,7 +711,7 @@ export const matchRouter = createTRPCRouter({
       const returnedMatch = await ctx.db.query.match.findFirst({
         where: {
           id: input.id,
-          userId: ctx.userId,
+          createdBy: ctx.userId,
           deletedAt: {
             isNull: true,
           },
@@ -747,7 +747,7 @@ export const matchRouter = createTRPCRouter({
       .from(match)
       .where(
         or(
-          and(eq(match.userId, ctx.userId), isNull(match.deletedAt)),
+          and(eq(match.createdBy, ctx.userId), isNull(match.deletedAt)),
           sharedMatches.length > 0
             ? inArray(
                 match.id,
@@ -781,7 +781,7 @@ export const matchRouter = createTRPCRouter({
 
       const matches = await ctx.db.query.match.findMany({
         where: {
-          userId: ctx.userId,
+          createdBy: ctx.userId,
           deletedAt: {
             isNull: true,
           },
@@ -1084,7 +1084,7 @@ export const matchRouter = createTRPCRouter({
         const deletedMatch = await tx.query.match.findFirst({
           where: {
             id: input.id,
-            userId: ctx.userId,
+            createdBy: ctx.userId,
           },
         });
         if (!deletedMatch)
@@ -1137,7 +1137,7 @@ export const matchRouter = createTRPCRouter({
             running: input.match.running,
           })
           .where(
-            and(eq(match.id, input.match.id), eq(match.userId, ctx.userId)),
+            and(eq(match.id, input.match.id), eq(match.createdBy, ctx.userId)),
           );
         if (input.roundPlayers.length > 0) {
           const sqlChunks: SQL[] = [];
@@ -1231,7 +1231,7 @@ export const matchRouter = createTRPCRouter({
         const foundMatch = await tx.query.match.findFirst({
           where: {
             id: input.match.id,
-            userId: ctx.userId,
+            createdBy: ctx.userId,
           },
         });
         if (!foundMatch) {
@@ -1339,7 +1339,7 @@ export const matchRouter = createTRPCRouter({
         const foundMatch = await tx.query.match.findFirst({
           where: {
             id: input.match.id,
-            userId: ctx.userId,
+            createdBy: ctx.userId,
           },
         });
         if (!foundMatch) {
@@ -1403,7 +1403,7 @@ export const matchRouter = createTRPCRouter({
       const foundMatch = await ctx.db.query.match.findFirst({
         where: {
           id: input.match.id,
-          userId: ctx.userId,
+          createdBy: ctx.userId,
         },
       });
       if (!foundMatch) {
@@ -1490,7 +1490,7 @@ export const matchRouter = createTRPCRouter({
           finished: false,
           startTime: new Date(),
         })
-        .where(and(eq(match.id, input.id), eq(match.userId, ctx.userId)));
+        .where(and(eq(match.id, input.id), eq(match.createdBy, ctx.userId)));
     }),
   matchPause: protectedUserProcedure
     .input(selectMatchSchema.pick({ id: true }))
@@ -1499,7 +1499,7 @@ export const matchRouter = createTRPCRouter({
       const foundMatch = await ctx.db.query.match.findFirst({
         where: {
           id: input.id,
-          userId: ctx.userId,
+          createdBy: ctx.userId,
         },
       });
       if (!foundMatch) {
@@ -1542,7 +1542,7 @@ export const matchRouter = createTRPCRouter({
           running: false,
           startTime: null,
         })
-        .where(and(eq(match.id, input.id), eq(match.userId, ctx.userId)));
+        .where(and(eq(match.id, input.id), eq(match.createdBy, ctx.userId)));
     }),
   updateMatchPlacement: protectedUserProcedure
     .input(
@@ -1567,7 +1567,7 @@ export const matchRouter = createTRPCRouter({
             finished: true,
           })
           .where(
-            and(eq(match.id, input.match.id), eq(match.userId, ctx.userId)),
+            and(eq(match.id, input.match.id), eq(match.createdBy, ctx.userId)),
           );
 
         const ids = input.playersPlacement.map((p) => p.id);
@@ -1943,7 +1943,7 @@ export const matchRouter = createTRPCRouter({
           const returnedMatch = await tx.query.match.findFirst({
             where: {
               id: input.match.id,
-              userId: ctx.userId,
+              createdBy: ctx.userId,
               deletedAt: {
                 isNull: true,
               },

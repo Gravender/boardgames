@@ -2,8 +2,8 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
-  integer,
   serial,
+  text,
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -17,9 +17,9 @@ const locations = createTable(
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 256 }).notNull(),
     isDefault: boolean("is_default").default(false).notNull(),
-    createdBy: integer("created_by")
-      .references(() => user.id)
-      .notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

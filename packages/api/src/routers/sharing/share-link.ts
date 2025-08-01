@@ -100,7 +100,7 @@ export const shareLinkRouter = createTRPCRouter({
               .where(
                 and(
                   eq(game.id, childShareRequest.itemId),
-                  eq(game.userId, childShareRequest.ownerId),
+                  eq(game.createdBy, childShareRequest.ownerId),
                 ),
               );
             if (!returnGame) {
@@ -119,7 +119,7 @@ export const shareLinkRouter = createTRPCRouter({
             const returnedMatch = await ctx.db.query.match.findFirst({
               where: {
                 id: childShareRequest.itemId,
-                userId: sharedItem.ownerId,
+                createdBy: sharedItem.ownerId,
               },
               with: {
                 location: true,
@@ -144,7 +144,7 @@ export const shareLinkRouter = createTRPCRouter({
               .where(
                 and(
                   eq(scoresheet.id, childShareRequest.itemId),
-                  eq(scoresheet.userId, sharedItem.ownerId),
+                  eq(scoresheet.createdBy, sharedItem.ownerId),
                 ),
               );
             if (!returnedScoresheet) {

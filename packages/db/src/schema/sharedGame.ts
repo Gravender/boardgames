@@ -10,14 +10,14 @@ const sharedGame = createTable(
   "shared_game",
   {
     id: serial("id").primaryKey(),
-    ownerId: integer("owner_id")
-      .references(() => user.id)
+    ownerId: text("owner_id")
+      .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
-    sharedWithId: integer("shared_with_id")
-      .references(() => user.id)
+    sharedWithId: text("shared_with_id")
+      .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
     gameId: integer("game_id")
-      .references(() => game.id)
+      .references(() => game.id, { onDelete: "cascade" })
       .notNull(),
     linkedGameId: integer("linked_game_id").references(() => game.id),
     permission: text("permission", { enum: ["view", "edit"] })

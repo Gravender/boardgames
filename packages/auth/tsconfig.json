@@ -1,0 +1,10 @@
+{
+  "extends": "@board-games/tsconfig/base.json",
+  "include": [
+    "*.ts",
+    "src"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

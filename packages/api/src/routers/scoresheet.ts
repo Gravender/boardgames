@@ -11,11 +11,11 @@ import { createTRPCRouter, protectedUserProcedure } from "../trpc";
 
 export const scoresheetRouter = createTRPCRouter({
   create: protectedUserProcedure
-    .input(insertScoreSheetSchema.omit({ userId: true, id: true }))
+    .input(insertScoreSheetSchema.omit({ createdBy: true, id: true }))
     .mutation(async ({ ctx, input }) => {
       const returnedScoreSheet = await ctx.db
         .insert(scoresheet)
-        .values({ ...input, userId: ctx.userId })
+        .values({ ...input, createdBy: ctx.userId })
         .returning();
       if (!returnedScoreSheet[0]?.id) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });

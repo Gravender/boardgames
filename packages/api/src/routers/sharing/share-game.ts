@@ -653,7 +653,7 @@ export const shareGameRouter = createTRPCRouter({
             .insert(game)
             .values({
               name: returnedSharedGame.game.name,
-              userId: ctx.userId,
+              createdBy: ctx.userId,
               yearPublished: returnedSharedGame.game.yearPublished,
               description: returnedSharedGame.game.description,
               rules: returnedSharedGame.game.rules,
@@ -683,7 +683,7 @@ export const shareGameRouter = createTRPCRouter({
         if (input.scoresheet.scoresheetType === "original") {
           returnedScoresheet = await transaction.query.scoresheet.findFirst({
             where: {
-              userId: ctx.userId,
+              createdBy: ctx.userId,
               id: input.scoresheet.id,
             },
             with: {
@@ -711,7 +711,7 @@ export const shareGameRouter = createTRPCRouter({
           returnedScoresheet = await transaction.query.scoresheet.findFirst({
             where: {
               id: sharedScoresheet.scoresheetId,
-              userId: sharedScoresheet.ownerId,
+              createdBy: sharedScoresheet.ownerId,
             },
             with: {
               rounds: {
@@ -734,7 +734,7 @@ export const shareGameRouter = createTRPCRouter({
             parentId: returnedScoresheet.id,
             name: `${input.name} Scoresheet`,
             gameId: gameId,
-            userId: ctx.userId,
+            createdBy: ctx.userId,
             isCoop: returnedScoresheet.isCoop,
             winCondition: returnedScoresheet.winCondition,
             targetScore: returnedScoresheet.targetScore,
@@ -767,7 +767,7 @@ export const shareGameRouter = createTRPCRouter({
             date: input.date,
             gameId: gameId,
             locationId: locationId,
-            userId: ctx.userId,
+            createdBy: ctx.userId,
             scoresheetId: insertedScoresheet.id,
           })
           .returning();
@@ -1075,7 +1075,7 @@ export const shareGameRouter = createTRPCRouter({
                     roundsScore: inputScoresheet.scoresheet.roundsScore,
                     targetScore: inputScoresheet.scoresheet.targetScore,
 
-                    userId: returnedSharedGame.linkedGameId
+                    createdBy: returnedSharedGame.linkedGameId
                       ? ctx.userId
                       : returnedSharedGame.ownerId,
                     gameId:

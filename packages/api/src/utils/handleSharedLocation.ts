@@ -8,7 +8,7 @@ import { location, sharedLocation } from "@board-games/db/schema";
 export async function cloneSharedLocationForUser(
   tx: TransactionType,
   sharedLocationId: number,
-  userId: number,
+  userId: string,
 ) {
   const returnedSharedLocation = await tx.query.sharedLocation.findFirst({
     where: {

@@ -85,7 +85,7 @@ export const shareMetaRouter = createTRPCRouter({
             const returnedGame = await ctx.db.query.game.findFirst({
               where: {
                 id: childShareRequest.itemId,
-                userId: sharedItem.ownerId,
+                createdBy: sharedItem.ownerId,
               },
               with: {
                 image: true,
@@ -108,7 +108,7 @@ export const shareMetaRouter = createTRPCRouter({
             const returnedMatch = await ctx.db.query.match.findFirst({
               where: {
                 id: childShareRequest.itemId,
-                userId: sharedItem.ownerId,
+                createdBy: sharedItem.ownerId,
               },
               with: {
                 location: true,
@@ -140,7 +140,7 @@ export const shareMetaRouter = createTRPCRouter({
               .where(
                 and(
                   eq(scoresheet.id, childShareRequest.itemId),
-                  eq(scoresheet.userId, sharedItem.ownerId),
+                  eq(scoresheet.createdBy, sharedItem.ownerId),
                 ),
               );
             if (!returnedScoresheet) {
@@ -517,7 +517,7 @@ export const shareMetaRouter = createTRPCRouter({
         deletedAt: {
           isNull: true,
         },
-        userId: ctx.userId,
+        createdBy: ctx.userId,
       },
       with: {
         matches: {
@@ -628,7 +628,7 @@ export const shareMetaRouter = createTRPCRouter({
             const returnedGame = await ctx.db.query.game.findFirst({
               where: {
                 id: sharedItem.itemId,
-                userId: sharedItem.ownerId,
+                createdBy: sharedItem.ownerId,
               },
               with: {
                 image: true,
@@ -669,7 +669,7 @@ export const shareMetaRouter = createTRPCRouter({
             const returnedMatch = await ctx.db.query.match.findFirst({
               where: {
                 id: sharedItem.itemId,
-                userId: sharedItem.ownerId,
+                createdBy: sharedItem.ownerId,
               },
               with: {
                 game: {
@@ -775,7 +775,7 @@ export const shareMetaRouter = createTRPCRouter({
             const returnedGame = await ctx.db.query.game.findFirst({
               where: {
                 id: sharedItem.itemId,
-                userId: sharedItem.ownerId,
+                createdBy: sharedItem.ownerId,
               },
               with: {
                 image: true,
@@ -817,7 +817,7 @@ export const shareMetaRouter = createTRPCRouter({
             const returnedMatch = await ctx.db.query.match.findFirst({
               where: {
                 id: sharedItem.itemId,
-                userId: sharedItem.ownerId,
+                createdBy: sharedItem.ownerId,
               },
               with: {
                 game: {

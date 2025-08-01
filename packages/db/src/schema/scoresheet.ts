@@ -23,7 +23,9 @@ const scoresheets = createTable(
     gameId: integer("game_id")
       .references(() => game.id)
       .notNull(),
-    userId: integer("user_id").references(() => user.id),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

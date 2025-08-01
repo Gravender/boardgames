@@ -84,7 +84,7 @@ export const shareLinkingRouter = createTRPCRouter({
         const gameEntry = await ctx.db.query.game.findFirst({
           where: {
             id: input.linkedGameId,
-            userId: ctx.userId,
+            createdBy: ctx.userId,
           },
         });
 

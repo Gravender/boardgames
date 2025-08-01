@@ -495,7 +495,7 @@ export const playerRouter = createTRPCRouter({
                           },
                           linkedGame: {
                             where: {
-                              userId: ctx.userId,
+                              createdBy: ctx.userId,
                             },
                             with: {
                               image: true,
@@ -964,7 +964,7 @@ export const playerRouter = createTRPCRouter({
             }
             if (imageToDelete.type === "file" && imageToDelete.fileId) {
               analyticsServerClient.capture({
-                distinctId: ctx.auth.userId ?? "",
+                distinctId: ctx.userId,
                 event: "uploadthing begin image delete",
                 properties: {
                   imageName: imageToDelete.name,
@@ -975,7 +975,7 @@ export const playerRouter = createTRPCRouter({
               const result = await utapi.deleteFiles(imageToDelete.fileId);
               if (!result.success) {
                 analyticsServerClient.capture({
-                  distinctId: ctx.auth.userId ?? "",
+                  distinctId: ctx.userId,
                   event: "uploadthing image delete error",
                   properties: {
                     imageName: imageToDelete.name,

@@ -29,9 +29,9 @@ export interface FriendSharingSettings {
  */
 export async function handleLocationSharing(
   transaction: TransactionType,
-  ownerId: number,
+  ownerId: string,
   locationId: number,
-  friendId: number,
+  friendId: string,
   locationPermission: "view" | "edit",
   autoAcceptLocation: boolean,
   parentShareId: number,

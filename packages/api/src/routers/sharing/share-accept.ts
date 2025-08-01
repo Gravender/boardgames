@@ -73,7 +73,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
           .where(
             and(
               eq(game.id, existingRequest.itemId),
-              eq(game.userId, existingRequest.ownerId),
+              eq(game.createdBy, existingRequest.ownerId),
             ),
           );
         if (!returnedGame) {
@@ -130,7 +130,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
           const returnedScoresheet = await tx.query.scoresheet.findFirst({
             where: {
               id: returnedScoresheetRequest.itemId,
-              userId: existingRequest.ownerId,
+              createdBy: existingRequest.ownerId,
             },
           });
           if (!returnedScoresheet) {
@@ -238,7 +238,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
           const returnedMatch = await tx.query.match.findFirst({
             where: {
               id: returnedMatchRequest.itemId,
-              userId: existingRequest.ownerId,
+              createdBy: existingRequest.ownerId,
             },
             with: {
               matchPlayers: true,
@@ -527,7 +527,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
         const returnedMatch = await tx.query.match.findFirst({
           where: {
             id: existingRequest.itemId,
-            userId: existingRequest.ownerId,
+            createdBy: existingRequest.ownerId,
           },
           with: {
             matchPlayers: true,
@@ -723,7 +723,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
                 const returnedScoresheet = await tx.query.scoresheet.findFirst({
                   where: {
                     id: returnedScoresheetRequest.itemId,
-                    userId: returnedScoresheetRequest.ownerId,
+                    createdBy: returnedScoresheetRequest.ownerId,
                   },
                 });
                 if (!returnedScoresheet) {
@@ -1240,7 +1240,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
               const returnedGame = await tx.query.game.findFirst({
                 where: {
                   id: gameShareRequest.itemId,
-                  userId: gameShareRequest.ownerId,
+                  createdBy: gameShareRequest.ownerId,
                 },
               });
               if (!returnedGame) {
@@ -1302,7 +1302,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
                   const returnedMatch = await tx.query.match.findFirst({
                     where: {
                       id: matchShareRequest.itemId,
-                      userId: matchShareRequest.ownerId,
+                      createdBy: matchShareRequest.ownerId,
                     },
                     with: {
                       matchPlayers: true,
@@ -1415,7 +1415,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
                     await tx.query.scoresheet.findFirst({
                       where: {
                         id: scoresheetShareRequest.itemId,
-                        userId: scoresheetShareRequest.ownerId,
+                        createdBy: scoresheetShareRequest.ownerId,
                       },
                     });
                   if (!returnedScoresheet) {
@@ -1482,7 +1482,7 @@ export const shareAcceptanceRouter = createTRPCRouter({
                   const returnedMatch = await tx.query.match.findFirst({
                     where: {
                       id: matchShareRequest.itemId,
-                      userId: matchShareRequest.ownerId,
+                      createdBy: matchShareRequest.ownerId,
                     },
                     with: {
                       matchPlayers: true,

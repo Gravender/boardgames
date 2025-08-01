@@ -8,11 +8,11 @@ const friendRequest = createTable(
   "friend_request",
   {
     id: serial("id").primaryKey(),
-    userId: integer("user_id")
-      .references(() => user.id)
-      .notNull(),
-    requesteeId: integer("requestee_id")
-      .references(() => user.id)
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    requesteeId: text("requestee_id")
+      .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
     status: text("status", { enum: ["pending", "accepted", "rejected"] })
       .default("pending")

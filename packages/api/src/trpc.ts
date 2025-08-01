@@ -1,12 +1,9 @@
-import type { getAuth } from "@clerk/nextjs/server";
-import { currentUser } from "@clerk/nextjs/server";
 import { initTRPC, TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import superjson from "superjson";
 import { z, ZodError } from "zod/v4";
 
+import type { Auth } from "@board-games/auth";
 import { db } from "@board-games/db/client";
-import { player, user } from "@board-games/db/schema";
 
 /**
  * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
@@ -16,8 +13,6 @@ import { player, user } from "@board-games/db/schema";
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-
-type AuthObject = ReturnType<typeof getAuth>;
 
 /**
  * 1. CONTEXT
@@ -31,13 +26,19 @@ type AuthObject = ReturnType<typeof getAuth>;
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = (opts: {
+export const createTRPCContext = async (opts: {
   headers: Headers;
-  auth: AuthObject;
+  auth: Auth;
 }) => {
+  const authApi = opts.auth.api;
+  const session = await authApi.getSession({
+    headers: opts.headers,
+  });
   return {
+    authApi,
+    session,
     db,
-    userId: opts.auth.userId,
+    userId: session?.user.id,
     ...opts,
   };
 };
@@ -111,7 +112,7 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 });
 
 const isAuthed = t.middleware(async ({ ctx, next }) => {
-  if (!ctx.auth.userId) {
+  if (!ctx.session?.user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({
@@ -122,47 +123,14 @@ const isAuthed = t.middleware(async ({ ctx, next }) => {
 });
 
 const isUser = t.middleware(async ({ ctx, next }) => {
-  const returnedUser = await ctx.db.transaction(async (tx) => {
-    if (ctx.auth.userId === null) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
-    }
-    const [returnedUser] = await tx
-      .select()
-      .from(user)
-      .where(eq(user.clerkUserId, ctx.auth.userId));
-
-    if (!returnedUser) {
-      const clerkUser = await currentUser();
-      const [insertedUser] = await tx
-        .insert(user)
-        .values({
-          clerkUserId: ctx.auth.userId,
-          email: clerkUser?.emailAddresses[0]?.emailAddress,
-          name: clerkUser?.fullName,
-        })
-        .returning();
-      if (!insertedUser)
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Could not insert user",
-        });
-      const [insertedPlayer] = await tx
-        .insert(player)
-        .values({
-          name: clerkUser?.fullName ?? "",
-          createdBy: insertedUser.id,
-          isUser: true,
-        })
-        .returning();
-      if (!insertedPlayer)
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Could not insert player",
-        });
-      return insertedUser;
-    }
-    return returnedUser;
+  const returnedUser = await ctx.db.query.user.findFirst({
+    where: {
+      id: ctx.userId,
+    },
   });
+  if (!returnedUser) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
   return next({
     ctx: {
       auth: ctx.auth,
