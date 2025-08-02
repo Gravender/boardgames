@@ -1,19 +1,9 @@
 import React from "react";
 import { Button, Text, TextInput, View } from "react-native";
-import * as Linking from "expo-linking";
 import { Link, useRouter } from "expo-router";
-import { useOAuth, useSignIn } from "@clerk/clerk-expo";
+import { authClient } from "~/utils/auth";
 
 export default function Page() {
-  const { startOAuthFlow: startGithubOAuthFlow } = useOAuth({
-    strategy: "oauth_github",
-    redirectUrl: Linking.createURL("/", { scheme: "expo" }),
-  });
-  const { startOAuthFlow: startGoogleOAuthFlow } = useOAuth({
-    strategy: "oauth_google",
-    redirectUrl: Linking.createURL("/", { scheme: "expo" }),
-  });
-  const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
 
   const [emailAddress, setEmailAddress] = React.useState("");
@@ -21,72 +11,43 @@ export default function Page() {
 
   // Handle the submission of the sign-in form
   const onSignInPress = React.useCallback(async () => {
-    if (!isLoaded) return;
-
-    // Start the sign-in process using the email and password provided
     try {
-      const signInAttempt = await signIn.create({
-        identifier: emailAddress,
+      await authClient.signIn.email({
+        email: emailAddress,
         password,
       });
-
-      // If sign-in process is complete, set the created session as active
-      // and redirect the user
-      if (signInAttempt.status === "complete") {
-        await setActive({ session: signInAttempt.createdSessionId });
-        router.replace("/");
-      } else {
-        // If the status isn't complete, check why. User might need to
-        // complete further steps.
-        console.error(JSON.stringify(signInAttempt, null, 2));
-      }
+      router.replace("/");
     } catch (err) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
-      console.error(JSON.stringify(err, null, 2));
+      console.error("Sign in error:", err);
     }
-  }, [isLoaded, signIn, emailAddress, password, setActive, router]);
+  }, [emailAddress, password, router]);
 
-  const handleSIgnInWithGitHub = React.useCallback(async () => {
+  const handleSignInWithGitHub = React.useCallback(async () => {
     try {
-      const { createdSessionId, setActive } = await startGithubOAuthFlow({
-        redirectUrl: Linking.createURL("/games", { scheme: "expo" }),
+      await authClient.signIn.social({
+        provider: "github",
+        callbackURL: "/",
       });
-      if (createdSessionId) {
-        await setActive?.({ session: createdSessionId });
-      } else {
-        // Modify this code to use signIn or signUp to set this missing requirements you set in your dashboard.
-        throw new Error(
-          "There are unmet requirements, modifiy this else to handle them",
-        );
-      }
     } catch (err) {
-      console.log(JSON.stringify(err, null, 2));
-      console.log("error signing in", err);
+      console.log("error signing in with GitHub", err);
     }
-  }, [startGithubOAuthFlow]);
+  }, []);
 
-  const handleSIgnInWithGoogle = React.useCallback(async () => {
+  const handleSignInWithGoogle = React.useCallback(async () => {
     try {
-      const { createdSessionId, setActive } = await startGoogleOAuthFlow();
-      if (createdSessionId) {
-        await setActive?.({ session: createdSessionId });
-      } else {
-        // Modify this code to use signIn or signUp to set this missing requirements you set in your dashboard.
-        throw new Error(
-          "There are unmet requirements, modifiy this else to handle them",
-        );
-      }
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/",
+      });
     } catch (err) {
-      console.log(JSON.stringify(err, null, 2));
-      console.log("error signing in", err);
+      console.log("error signing in with Google", err);
     }
-  }, [startGoogleOAuthFlow]);
+  }, []);
 
   return (
     <View>
-      <Button title="Sign in with GitHub" onPress={handleSIgnInWithGitHub} />
-      <Button title="Sign in with Google" onPress={handleSIgnInWithGoogle} />
+      <Button title="Sign in with GitHub" onPress={handleSignInWithGitHub} />
+      <Button title="Sign in with Google" onPress={handleSignInWithGoogle} />
       <TextInput
         autoCapitalize="none"
         value={emailAddress}

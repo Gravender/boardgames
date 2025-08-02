@@ -30,6 +30,7 @@ import { cn } from "@board-games/ui/utils";
 import { authClient } from "~/auth/client";
 
 const formSchema = z.object({
+  name: z.string().min(2),
   username: z.string().min(3),
   email: z.string().email(),
   password: z.string().min(8),
@@ -45,6 +46,7 @@ export function SignupForm({
     schema: formSchema,
     defaultValues: {
       username: "",
+      name: "",
       email: "",
       password: "",
     },
@@ -64,7 +66,8 @@ export function SignupForm({
       {
         email: values.email,
         password: values.password,
-        name: values.username,
+        username: values.username,
+        name: values.name,
         callbackURL: "/dashboard",
       },
       {
@@ -123,7 +126,20 @@ export function SignupForm({
                         <FormItem>
                           <FormLabel>Username</FormLabel>
                           <FormControl>
-                            <Input placeholder="shadcn" {...field} />
+                            <Input placeholder="username" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="John Doe" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
