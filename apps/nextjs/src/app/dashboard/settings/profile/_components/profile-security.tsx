@@ -1,6 +1,7 @@
-"use server";
+"use client";
 
 import { redirect } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import {
   Clock,
@@ -28,8 +29,21 @@ import {
 
 import { authClient } from "~/auth/client";
 
-export async function ProfileSecurity() {
-  const sessions = await authClient.listSessions();
+export function ProfileSecurity() {
+  const {
+    data: sessions,
+    isError,
+    isLoading,
+  } = useQuery({
+    queryKey: ["sessions"],
+    queryFn: async () => {
+      const sessions = await authClient.listSessions();
+      if (sessions.error) {
+        throw new Error(sessions.error.message);
+      }
+      return sessions.data;
+    },
+  });
   const currentSession = authClient.useSession();
 
   const getDeviceIcon = (userAgent?: string) => {
@@ -54,9 +68,12 @@ export async function ProfileSecurity() {
     return <Monitor className="h-5 w-5" />;
   };
 
-  if (sessions.error) {
+  if (isLoading) return <div>Loading...</div>;
+  if (isError) {
     return redirect("/login");
   }
+  if (sessions === undefined) return <div>Error</div>;
+  //TODO add ability to delete sessions
 
   return (
     <div className="space-y-6">
@@ -68,8 +85,8 @@ export async function ProfileSecurity() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {sessions.data.length > 0 ? (
-            sessions.data.map((session) => {
+          {sessions.length > 0 ? (
+            sessions.map((session) => {
               const isCurrent = currentSession.data?.session.id === session.id;
               const userAgent = session.userAgent ?? "";
               const ipAddress = session.ipAddress ?? "Unknown IP";

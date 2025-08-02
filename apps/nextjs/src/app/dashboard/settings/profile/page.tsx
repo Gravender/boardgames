@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 
+import { getSession } from "@board-games/api/auth";
 import { Separator } from "@board-games/ui/separator";
 
-import { authClient } from "~/auth/client";
 import { ProfileHeader } from "./_components/profile-header";
 import { ProfileTabs } from "./_components/profile-tabs";
 
@@ -11,7 +11,7 @@ export default async function ProfilePage({
 }: {
   searchParams: Promise<{ tab?: string }>;
 }) {
-  const { data: session } = authClient.useSession();
+  const session = await getSession();
 
   if (!session) {
     redirect("/login");

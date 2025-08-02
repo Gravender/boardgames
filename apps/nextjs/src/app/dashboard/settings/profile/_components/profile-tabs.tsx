@@ -51,7 +51,7 @@ export function ProfileTabs({
         <ProfileSecurity />
       </TabsContent>
       <TabsContent value="connected" className="mt-6">
-        <ProfileConnectedAccounts user={user} />
+        <ProfileConnectedAccounts />
       </TabsContent>
     </Tabs>
   );
