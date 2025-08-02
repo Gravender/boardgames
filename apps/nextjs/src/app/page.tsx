@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
 import {
   ArrowRight,
   BarChart2,
@@ -17,15 +16,16 @@ import {
   Users,
 } from "lucide-react";
 
+import { getSession } from "@board-games/api/auth";
 import { Button } from "@board-games/ui/button";
 
 import { FeatureInfoModal } from "~/components/feature-info-modal";
 import { ModeToggle } from "~/components/theme-toggle";
 
 export default async function Home() {
-  const { userId } = await auth();
+  const session = await getSession();
 
-  if (userId) {
+  if (session) {
     redirect("/dashboard");
   }
   return (

@@ -29,7 +29,7 @@ export async function seedFriends(d3Seed: number) {
     );
 
     for (const userB of potentialFriends) {
-      const key = `${Math.min(userA.id, userB.id)}-${Math.max(userA.id, userB.id)}`;
+      const key = `${[userA.id, userB.id].sort()[0]}-${[userA.id, userB.id].sort()[1]}`;
       if (friendPairs.has(key)) continue;
       friendPairs.add(key);
 
@@ -83,7 +83,7 @@ export async function seedFriends(d3Seed: number) {
     const autoShareMatches = faker.datatype.boolean(0.5);
     return {
       createdById: f.userId,
-      friendId: f.friendId,
+      friendId: f.id,
       autoShareMatches,
       sharePlayersWithMatch: autoShareMatches
         ? faker.datatype.boolean(0.3)

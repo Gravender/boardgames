@@ -1,6 +1,5 @@
 import * as React from "react";
 import Link from "next/link";
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import { Calendar1, Dices, MapPin, User, UsersRound } from "lucide-react";
 
 import {
@@ -76,12 +75,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <SignedIn>
-          <NavUser />
-        </SignedIn>
-        <SignedOut>
-          <SignInButton />
-        </SignedOut>
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

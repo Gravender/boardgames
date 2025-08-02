@@ -1,14 +1,13 @@
 import type { TRPCQueryOptions } from "@trpc/tanstack-react-query";
 import { cache } from "react";
 import { headers } from "next/headers";
-import { NextRequest } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 
 import type { AppRouter } from "@board-games/api";
 import { appRouter, createTRPCContext } from "@board-games/api";
 
+import { auth } from "~/auth/server";
 import { createQueryClient } from "./query-client";
 
 /**
@@ -20,9 +19,7 @@ const createContext = cache(async () => {
   heads.set("x-trpc-source", "rsc");
   return createTRPCContext({
     headers: heads,
-    auth: getAuth(
-      new NextRequest("https://notused.com", { headers: await headers() }),
-    ),
+    auth,
   });
 });
 

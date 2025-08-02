@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, serial, text, timestamp, unique } from "drizzle-orm/pg-core";
+import { serial, text, timestamp, unique } from "drizzle-orm/pg-core";
 
 import { createTable } from "./baseTable";
 import user from "./user";
@@ -8,11 +8,11 @@ const friendRequest = createTable(
   "friend_request",
   {
     id: serial("id").primaryKey(),
-    userId: integer("user_id")
-      .references(() => user.id)
-      .notNull(),
-    requesteeId: integer("requestee_id")
-      .references(() => user.id)
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    requesteeId: text("requestee_id")
+      .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
     status: text("status", { enum: ["pending", "accepted", "rejected"] })
       .default("pending")

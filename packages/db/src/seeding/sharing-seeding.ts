@@ -177,7 +177,7 @@ export async function seedSharing(d3Seed: number) {
           const returnedGame = await db.query.game.findFirst({
             where: {
               id: returnedUserShareRequest.itemId,
-              userId: returnedUserShareRequest.ownerId,
+              createdBy: returnedUserShareRequest.ownerId,
             },
             with: {
               scoresheets: true,
@@ -299,7 +299,7 @@ export async function seedSharing(d3Seed: number) {
             ) {
               const sharedWithGames = await db.query.game.findMany({
                 where: {
-                  userId: returnedUserShareRequest.sharedWithId,
+                  createdBy: returnedUserShareRequest.sharedWithId,
                 },
               });
               const [returnedSharedGame] = await db
@@ -427,7 +427,7 @@ export async function seedSharing(d3Seed: number) {
                 if (cShareRequest.itemType === "match") {
                   const existingMatch = await db.query.match.findFirst({
                     where: {
-                      userId: returnedUserShareRequest.ownerId,
+                      createdBy: returnedUserShareRequest.ownerId,
                       id: cShareRequest.itemId,
                     },
                   });
@@ -488,7 +488,7 @@ export async function seedSharing(d3Seed: number) {
                             where: {
                               ownerId: returnedUserShareRequest.ownerId,
                               sharedWithId:
-                                returnedUserShareRequest.sharedWithId ?? 0,
+                                returnedUserShareRequest.sharedWithId ?? "",
                               playerId: returnedMatchPlayer.playerId,
                             },
                           });
@@ -498,7 +498,7 @@ export async function seedSharing(d3Seed: number) {
                             sharedPlayerId: existingSharedPlayer.id,
                             ownerId: returnedUserShareRequest.ownerId,
                             sharedWithId:
-                              returnedUserShareRequest.sharedWithId ?? 0,
+                              returnedUserShareRequest.sharedWithId ?? "",
                             sharedMatchId: returnedSharedMatch.id,
                             permission: cShareRequest.permission,
                           };
@@ -507,7 +507,7 @@ export async function seedSharing(d3Seed: number) {
                           matchPlayerId: returnedMatchPlayer.id,
                           ownerId: returnedUserShareRequest.ownerId,
                           sharedWithId:
-                            returnedUserShareRequest.sharedWithId ?? 0,
+                            returnedUserShareRequest.sharedWithId ?? "",
                           sharedMatchId: returnedSharedMatch.id,
                           permission: cShareRequest.permission,
                         };
@@ -539,7 +539,7 @@ export async function seedSharing(d3Seed: number) {
           const returnedMatch = await db.query.match.findFirst({
             where: {
               id: returnedUserShareRequest.itemId,
-              userId: returnedUserShareRequest.ownerId,
+              createdBy: returnedUserShareRequest.ownerId,
             },
             with: {
               game: {
@@ -704,7 +704,7 @@ export async function seedSharing(d3Seed: number) {
                 if (cShareRequest.itemType === "game") {
                   const sharedWithGames = await db.query.game.findMany({
                     where: {
-                      userId: returnedUserShareRequest.sharedWithId,
+                      createdBy: returnedUserShareRequest.sharedWithId,
                     },
                   });
                   await db.insert(sharedGame).values({
@@ -763,7 +763,7 @@ export async function seedSharing(d3Seed: number) {
                 const existingMatch = await db.query.match.findFirst({
                   where: {
                     id: returnedMatch.id,
-                    userId: returnedUserShareRequest.ownerId,
+                    createdBy: returnedUserShareRequest.ownerId,
                   },
                 });
                 if (!existingMatch) {
@@ -823,7 +823,7 @@ export async function seedSharing(d3Seed: number) {
                           where: {
                             ownerId: returnedUserShareRequest.ownerId,
                             sharedWithId:
-                              returnedUserShareRequest.sharedWithId ?? 0,
+                              returnedUserShareRequest.sharedWithId ?? "",
                             playerId: returnedMatchPlayer.playerId,
                           },
                         });
@@ -833,7 +833,7 @@ export async function seedSharing(d3Seed: number) {
                           sharedPlayerId: existingSharedPlayer.id,
                           ownerId: returnedUserShareRequest.ownerId,
                           sharedWithId:
-                            returnedUserShareRequest.sharedWithId ?? 0,
+                            returnedUserShareRequest.sharedWithId ?? "",
                           sharedMatchId: returnedSharedMatch.id,
                           permission: returnedUserShareRequest.permission,
                         };
@@ -842,7 +842,7 @@ export async function seedSharing(d3Seed: number) {
                         matchPlayerId: returnedMatchPlayer.id,
                         ownerId: returnedUserShareRequest.ownerId,
                         sharedWithId:
-                          returnedUserShareRequest.sharedWithId ?? 0,
+                          returnedUserShareRequest.sharedWithId ?? "",
                         sharedMatchId: returnedSharedMatch.id,
                         permission: returnedUserShareRequest.permission,
                       };
@@ -1046,7 +1046,7 @@ export async function seedSharing(d3Seed: number) {
               );
               const sharedWithGames = await db.query.game.findMany({
                 where: {
-                  userId: returnedUserShareRequest.sharedWithId,
+                  createdBy: returnedUserShareRequest.sharedWithId,
                 },
               });
               for (const cShareRequest of childShareRequest) {
@@ -1138,7 +1138,7 @@ export async function seedSharing(d3Seed: number) {
                     await db.query.scoresheet.findFirst({
                       where: {
                         id: cShareRequest.itemId,
-                        userId: returnedUserShareRequest.ownerId,
+                        createdBy: returnedUserShareRequest.ownerId,
                       },
                     });
                   if (!returnedScoresheet) {
@@ -1166,7 +1166,7 @@ export async function seedSharing(d3Seed: number) {
                   const returnedMatch = await db.query.match.findFirst({
                     where: {
                       id: cShareRequest.itemId,
-                      userId: returnedUserShareRequest.ownerId,
+                      createdBy: returnedUserShareRequest.ownerId,
                     },
                   });
                   if (!returnedMatch) {
@@ -1184,7 +1184,7 @@ export async function seedSharing(d3Seed: number) {
                     const existingMatch = await db.query.match.findFirst({
                       where: {
                         id: cShareRequest.itemId,
-                        userId: returnedUserShareRequest.ownerId,
+                        createdBy: returnedUserShareRequest.ownerId,
                       },
                     });
                     if (!existingMatch) {
@@ -1249,7 +1249,7 @@ export async function seedSharing(d3Seed: number) {
                                 where: {
                                   ownerId: returnedUserShareRequest.ownerId,
                                   sharedWithId:
-                                    returnedUserShareRequest.sharedWithId ?? 0,
+                                    returnedUserShareRequest.sharedWithId ?? "",
                                   playerId: returnedMatchPlayer.playerId,
                                 },
                               });
@@ -1259,7 +1259,7 @@ export async function seedSharing(d3Seed: number) {
                                 sharedPlayerId: existingSharedPlayer.id,
                                 ownerId: returnedUserShareRequest.ownerId,
                                 sharedWithId:
-                                  returnedUserShareRequest.sharedWithId ?? 0,
+                                  returnedUserShareRequest.sharedWithId ?? "",
                                 sharedMatchId: returnedSharedMatch.id,
                                 permission: cShareRequest.permission,
                               };
@@ -1268,7 +1268,7 @@ export async function seedSharing(d3Seed: number) {
                               matchPlayerId: returnedMatchPlayer.id,
                               ownerId: returnedUserShareRequest.ownerId,
                               sharedWithId:
-                                returnedUserShareRequest.sharedWithId ?? 0,
+                                returnedUserShareRequest.sharedWithId ?? "",
                               sharedMatchId: returnedSharedMatch.id,
                               permission: cShareRequest.permission,
                             };

@@ -54,7 +54,7 @@ export function FriendSettings({
   onFormChange,
   onFormSubmit,
 }: {
-  friendId: number;
+  friendId: string;
   initialSettings: RouterOutputs["friend"]["getFriend"]["settings"];
   onFormChange?: (isDirty: boolean) => void;
   onFormSubmit?: () => void;

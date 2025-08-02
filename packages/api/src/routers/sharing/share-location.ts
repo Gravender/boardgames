@@ -1,8 +1,10 @@
+import type { TRPCRouterRecord } from "@trpc/server";
+
 import { selectSharedLocationSchema } from "@board-games/db/zodSchema";
 
-import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
+import { protectedUserProcedure } from "../../trpc";
 
-export const shareLocationRouter = createTRPCRouter({
+export const shareLocationRouter = {
   getSharedLocation: protectedUserProcedure
     .input(selectSharedLocationSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
@@ -137,4 +139,4 @@ export const shareLocationRouter = createTRPCRouter({
         matches: locationMatches,
       };
     }),
-});
+} satisfies TRPCRouterRecord;

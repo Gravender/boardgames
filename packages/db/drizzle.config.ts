@@ -13,7 +13,7 @@ export default defineConfig({
   dbCredentials: {
     url: postgresUrl,
   },
-  tablesFilter: ["boardgames_*"],
+  tablesFilter: ["user", "account", "verification", "session", "boardgames_*"],
   verbose: true,
   strict: true,
 });

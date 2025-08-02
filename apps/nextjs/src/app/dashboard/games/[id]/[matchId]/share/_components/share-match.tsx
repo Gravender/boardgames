@@ -67,7 +67,7 @@ import { useTRPC } from "~/trpc/react";
 
 const formSchema = z.object({
   shareMethod: z.enum(["friends", "link"]),
-  friendIds: z.array(z.number()).optional(),
+  friendIds: z.array(z.string()).optional(),
   permission: z.enum(["view", "edit"]),
   linkExpiry: z.enum(["1day", "7days", "30days", "never"]).default("7days"),
   includePlayers: z.boolean(),
@@ -78,7 +78,7 @@ export default function ShareMatchPage({ matchId }: { matchId: number }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFriends, setSelectedFriends] = useState<
-    { id: number; name: string; email: string }[]
+    { id: string; name: string; email: string }[]
   >([]);
 
   const trpc = useTRPC();
@@ -138,7 +138,7 @@ export default function ShareMatchPage({ matchId }: { matchId: number }) {
     },
   });
 
-  const removeFriend = (id: number) => {
+  const removeFriend = (id: string) => {
     setSelectedFriends((current) =>
       current.filter((friend) => friend.id !== id),
     );

@@ -34,7 +34,7 @@ export async function seedScoresheets(d3Seed: number) {
         scoresheetData.push({
           name: `${game.name} Default`,
           gameId: game.id,
-          userId: game.userId,
+          createdBy: game.createdBy,
           winCondition: winCondition,
           roundsScore: faker.helpers.weightedArrayElement([
             { weight: 0.7, value: "Aggregate" },
@@ -52,7 +52,7 @@ export async function seedScoresheets(d3Seed: number) {
         scoresheetData.push({
           name: `${game.name} Scoresheet ${i + 1}`,
           gameId: game.id,
-          userId: game.userId,
+          createdBy: game.createdBy,
           winCondition: winCondition,
           roundsScore: faker.helpers.weightedArrayElement([
             { weight: 0.7, value: "Aggregate" },

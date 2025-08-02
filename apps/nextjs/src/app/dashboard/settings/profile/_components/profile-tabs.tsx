@@ -4,13 +4,22 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 
-import type { SerializableUser } from "../page";
 import { ProfileConnectedAccounts } from "./profile-connected-accounts";
 import { ProfileDetails } from "./profile-details";
 import { ProfileSecurity } from "./profile-security";
 
 interface ProfileTabsProps {
-  user: SerializableUser;
+  user: {
+    id: string;
+    name: string;
+    emailVerified: boolean;
+    email: string;
+    createdAt: Date;
+    updatedAt: Date;
+    image?: string | null | undefined;
+    username?: string | null | undefined;
+    displayUsername?: string | null | undefined;
+  };
   defaultTab?: string;
 }
 
@@ -36,13 +45,13 @@ export function ProfileTabs({
         <TabsTrigger value="connected">Connected Accounts</TabsTrigger>
       </TabsList>
       <TabsContent value="details" className="mt-6">
-        <ProfileDetails serializableUser={user} />
+        <ProfileDetails user={user} />
       </TabsContent>
       <TabsContent value="security" className="mt-6">
         <ProfileSecurity />
       </TabsContent>
       <TabsContent value="connected" className="mt-6">
-        <ProfileConnectedAccounts serializableUser={user} />
+        <ProfileConnectedAccounts user={user} />
       </TabsContent>
     </Tabs>
   );

@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareAsc, differenceInSeconds } from "date-fns";
@@ -11,9 +12,9 @@ import {
   selectSharedMatchSchema,
 } from "@board-games/db/zodSchema";
 
-import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
+import { protectedUserProcedure } from "../../trpc";
 
-export const shareMatchRouter = createTRPCRouter({
+export const shareMatchRouter = {
   getSharedMatch: protectedUserProcedure
     .input(selectSharedMatchSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
@@ -1349,4 +1350,4 @@ export const shareMatchRouter = createTRPCRouter({
       });
       return response;
     }),
-});
+} satisfies TRPCRouterRecord;

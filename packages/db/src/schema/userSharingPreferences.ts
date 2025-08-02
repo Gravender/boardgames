@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, serial, text, timestamp, unique } from "drizzle-orm/pg-core";
+import { serial, text, timestamp, unique } from "drizzle-orm/pg-core";
 
 import { createTable } from "./baseTable";
 import user from "./user";
@@ -8,8 +8,8 @@ const userSharingPreference = createTable(
   "user_sharing_preference",
   {
     id: serial("id").primaryKey(),
-    userId: integer("user_id")
-      .references(() => user.id)
+    userId: text("user_id")
+      .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
     allowSharing: text("allow_sharing", {
       enum: ["anyone", "friends", "links", "none"],

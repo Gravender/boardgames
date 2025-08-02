@@ -17,7 +17,7 @@ export async function seedPlayers(d3Seed: number) {
   console.log("Inserting players...\n");
   await db.insert(player).values(
     users.map((u) => ({
-      name: u.name ?? "",
+      name: u.name,
       createdBy: u.id,
       isUser: true,
     })),
@@ -42,7 +42,7 @@ export async function seedPlayers(d3Seed: number) {
           .insert(image)
           .values({
             url: faker.image.avatar(),
-            userId: user.id,
+            createdBy: user.id,
             name: playerName,
             usageType: "player",
             type: "file",

@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod/v4";
@@ -11,9 +12,9 @@ import {
 } from "@board-games/db/schema";
 import { insertLocationSchema } from "@board-games/db/zodSchema";
 
-import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import { protectedUserProcedure } from "../trpc";
 
-export const locationRouter = createTRPCRouter({
+export const locationRouter = {
   getLocations: protectedUserProcedure.query(async ({ ctx }) => {
     const userLocations = await ctx.db.query.location.findMany({
       where: {
@@ -387,4 +388,4 @@ export const locationRouter = createTRPCRouter({
         }
       });
     }),
-});
+} satisfies TRPCRouterRecord;

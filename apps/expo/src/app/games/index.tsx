@@ -2,7 +2,6 @@ import React from "react";
 import { Platform, View } from "react-native";
 import { FullWindowOverlay } from "react-native-screens";
 import { Link, Stack } from "expo-router";
-import { SignedIn, SignedOut } from "@clerk/clerk-expo";
 import { PortalHost } from "@rn-primitives/portal";
 import { FlashList } from "@shopify/flash-list";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +11,7 @@ import { AddGame } from "~/components/AddGame";
 import { GamesCard } from "~/components/GameCard";
 import { Text } from "~/components/ui/text";
 import { trpc } from "~/utils/api";
+import { authClient } from "~/utils/auth";
 
 function GamesTable({ games }: { games: RouterOutputs["game"]["getGames"] }) {
   return (
@@ -37,6 +37,7 @@ const WindowOverlay =
 
 export default function Index() {
   const gamesQuery = useQuery(trpc.game.getGames.queryOptions());
+  const { data: session } = authClient.useSession();
 
   return (
     <View className="bg-background">
@@ -55,17 +56,18 @@ export default function Index() {
       />
       <View className="h-full w-full p-4">
         <View>
-          <SignedIn>
+          {session !== null ? (
             <GamesTable games={gamesQuery.data ?? []} />
-          </SignedIn>
-          <SignedOut>
-            <Link href="/(auth)/sign-in">
-              <Text>Sign in</Text>
-            </Link>
-            <Link href="/(auth)/sign-up">
-              <Text>Sign up</Text>
-            </Link>
-          </SignedOut>
+          ) : (
+            <View>
+              <Link href="/(auth)/sign-in">
+                <Text>Sign in</Text>
+              </Link>
+              <Link href="/(auth)/sign-up">
+                <Text>Sign up</Text>
+              </Link>
+            </View>
+          )}
         </View>
       </View>
       <WindowOverlay>

@@ -30,7 +30,7 @@ export function FriendSettingsDialog({
   friendId,
   initialSettings,
 }: {
-  friendId: number;
+  friendId: string;
   initialSettings: RouterOutputs["friend"]["getFriend"]["settings"];
 }) {
   const [open, setOpen] = useState(false);

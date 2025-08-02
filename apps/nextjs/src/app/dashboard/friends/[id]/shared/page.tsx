@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
 
 import { HydrateClient } from "~/trpc/server";
 import { FriendProfileSkeleton } from "../_components/friend-profile-skeleton";
@@ -11,7 +10,6 @@ interface Props {
 export default async function FriendSharedPage({ params }: Props) {
   const id = (await params).id;
 
-  if (isNaN(Number(id))) redirect("/dashboard/friends");
   return (
     <HydrateClient>
       <div className="container mx-auto px-4 py-8">
@@ -20,7 +18,7 @@ export default async function FriendSharedPage({ params }: Props) {
         </div>
 
         <Suspense fallback={<FriendProfileSkeleton />}>
-          <FriendSharedItemsPage friendId={Number(id)} />
+          <FriendSharedItemsPage friendId={id} />
         </Suspense>
       </div>
     </HydrateClient>

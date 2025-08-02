@@ -177,7 +177,7 @@ export type PlayerMatch = {
 type OriginalMatch = {
   id: number;
   name: string;
-  userId: number | null;
+  createdBy: string | null;
   gameId: number;
   finished: boolean;
   comment: string | null;
@@ -191,7 +191,7 @@ type OriginalMatch = {
     id: number;
     name: string;
     isDefault: boolean;
-    createdBy: number;
+    createdBy: string;
     createdAt: Date;
     updatedAt: Date | null;
     deletedAt: Date | null;
@@ -211,7 +211,7 @@ type OriginalMatch = {
       name: string;
       description: string | null;
       gameId: number;
-      createdBy: number;
+      createdBy: string;
       createdAt: Date;
       updatedAt: Date | null;
       deletedAt: Date | null;
@@ -226,7 +226,7 @@ type OriginalMatch = {
     }[];
     player: {
       id: number;
-      createdBy: number;
+      createdBy: string;
       isUser: boolean;
       friendId: number | null;
       name: string;
@@ -236,7 +236,7 @@ type OriginalMatch = {
       deletedAt: Date | null;
       image: {
         id: number;
-        userId: number | null;
+        createdBy: string | null;
         name: string;
         url: string | null;
         fileId: string | null;
@@ -262,7 +262,7 @@ type OriginalMatch = {
     parentId: number | null;
     name: string;
     gameId: number;
-    userId: number | null;
+    createdBy: string | null;
     createdAt: Date;
     updatedAt: Date | null;
     deletedAt: Date | null;
@@ -288,8 +288,8 @@ type OriginalMatch = {
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type SharedMatch = {
   id: number;
-  ownerId: number;
-  sharedWithId: number;
+  ownerId: string;
+  sharedWithId: string;
   matchId: number;
   sharedGameId: number;
   sharedLocationId: number | null;
@@ -299,7 +299,7 @@ type SharedMatch = {
   match: {
     id: number;
     name: string;
-    userId: number | null;
+    createdBy: string | null;
     gameId: number;
     scoresheetId: number;
     createdAt: Date;
@@ -314,7 +314,7 @@ type SharedMatch = {
       parentId: number | null;
       name: string;
       gameId: number;
-      userId: number | null;
+      createdBy: string | null;
       createdAt: Date;
       updatedAt: Date | null;
       deletedAt: Date | null;
@@ -339,8 +339,8 @@ type SharedMatch = {
   };
   sharedLocation: {
     id: number;
-    ownerId: number;
-    sharedWithId: number;
+    ownerId: string;
+    sharedWithId: string;
     locationId: number;
     linkedLocationId: number | null;
     isDefault: boolean;
@@ -351,7 +351,7 @@ type SharedMatch = {
       id: number;
       name: string;
       isDefault: boolean;
-      createdBy: number;
+      createdBy: string;
       createdAt: Date;
       updatedAt: Date | null;
       deletedAt: Date | null;
@@ -360,7 +360,7 @@ type SharedMatch = {
       id: number;
       name: string;
       isDefault: boolean;
-      createdBy: number;
+      createdBy: string;
       createdAt: Date;
       updatedAt: Date | null;
       deletedAt: Date | null;
@@ -368,8 +368,8 @@ type SharedMatch = {
   } | null;
   sharedMatchPlayers: {
     id: number;
-    ownerId: number;
-    sharedWithId: number;
+    ownerId: string;
+    sharedWithId: string;
     matchPlayerId: number;
     sharedMatchId: number;
     sharedPlayerId: number | null;
@@ -407,7 +407,7 @@ type SharedMatch = {
         name: string;
         description: string | null;
         gameId: number;
-        createdBy: number;
+        createdBy: string;
         createdAt: Date;
         updatedAt: Date | null;
         deletedAt: Date | null;
@@ -415,8 +415,8 @@ type SharedMatch = {
     };
     sharedPlayer: {
       id: number;
-      ownerId: number;
-      sharedWithId: number;
+      ownerId: string;
+      sharedWithId: string;
       playerId: number;
       linkedPlayerId: number | null;
       permission: "view" | "edit";
@@ -424,7 +424,7 @@ type SharedMatch = {
       updatedAt: Date | null;
       player: {
         id: number;
-        createdBy: number;
+        createdBy: string;
         isUser: boolean;
         friendId: number | null;
         name: string;
@@ -434,7 +434,7 @@ type SharedMatch = {
         deletedAt: Date | null;
         image: {
           id: number;
-          userId: number | null;
+          createdBy: string | null;
           name: string;
           url: string | null;
           fileId: string | null;
@@ -448,7 +448,7 @@ type SharedMatch = {
       };
       linkedPlayer: {
         id: number;
-        createdBy: number;
+        createdBy: string;
         isUser: boolean;
         friendId: number | null;
         name: string;
@@ -458,7 +458,7 @@ type SharedMatch = {
         deletedAt: Date | null;
         image: {
           id: number;
-          userId: number | null;
+          createdBy: string | null;
           name: string;
           url: string | null;
           fileId: string | null;
@@ -671,7 +671,7 @@ type Roles = {
   name: string;
   description: string | null;
   gameId: number;
-  createdBy: number;
+  createdBy: string;
   createdAt: Date;
   updatedAt: Date | null;
   deletedAt: Date | null;

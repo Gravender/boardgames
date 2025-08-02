@@ -12,9 +12,9 @@ const gameRoles = createTable("game_role", {
   gameId: integer("game_id")
     .notNull()
     .references(() => game.id),
-  createdBy: integer("created_by")
+  createdBy: text("created_by")
     .notNull()
-    .references(() => user.id),
+    .references(() => user.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),

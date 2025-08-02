@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { SignOutButton, useUser } from "@clerk/nextjs";
-import { ChevronsUpDown, LogOut, UserRoundPen } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { BadgeCheck, ChevronsUpDown, CreditCard, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import {
@@ -21,12 +21,23 @@ import {
   useSidebar,
 } from "@board-games/ui/sidebar";
 
-export function NavUser() {
-  const { user } = useUser();
-  const { isMobile } = useSidebar();
-  if (!user) return null;
+import { authClient } from "~/auth/client";
 
-  const initials = `${user.firstName ?? ""}${user.lastName?.[0] ?? ""}`;
+export function NavUser() {
+  const { isMobile } = useSidebar();
+  const router = useRouter();
+
+  const { data: session } = authClient.useSession();
+
+  const handleLogout = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/login");
+        },
+      },
+    });
+  };
 
   return (
     <SidebarMenu>
@@ -40,18 +51,16 @@ export function NavUser() {
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage
                   className="object-cover"
-                  src={user.imageUrl}
-                  alt={user.fullName ?? ""}
+                  src={session?.user.image ?? ""}
+                  alt={session?.user.name ?? ""}
                 />
                 <AvatarFallback className="rounded-lg">CN</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {user.fullName ?? ""}
+                  {session?.user.name}
                 </span>
-                <span className="truncate text-xs">
-                  {user.emailAddresses[0]?.emailAddress ?? ""}
-                </span>
+                <span className="truncate text-xs">{session?.user.email}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -64,48 +73,42 @@ export function NavUser() {
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
+                <Avatar className="size-8 rounded-lg">
                   <AvatarImage
-                    className="object-cover"
-                    src={user.imageUrl}
-                    alt={user.fullName ?? ""}
+                    src={session?.user.image ?? ""}
+                    alt={session?.user.name ?? ""}
                   />
-                  <AvatarFallback className="rounded-lg">
-                    {initials}
-                  </AvatarFallback>
+                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">
-                    {user.fullName ?? ""}
+                    {session?.user.name}
                   </span>
                   <span className="truncate text-xs">
-                    {user.emailAddresses[0]?.emailAddress ?? ""}
+                    {session?.user.email}
                   </span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Link
-                  prefetch={true}
-                  href="/dashboard/settings/profile"
-                  className="flex items-center gap-2"
-                >
-                  <UserRoundPen className="h-5 w-5" />
-                  Profile
-                </Link>
-              </DropdownMenuItem>
+              <Link href="/dashboard/account">
+                <DropdownMenuItem>
+                  <BadgeCheck />
+                  Account
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/dashboard/billing">
+                <DropdownMenuItem>
+                  <CreditCard />
+                  Billing
+                </DropdownMenuItem>
+              </Link>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <SignOutButton>
-                <button className="flex w-full items-center gap-2">
-                  <LogOut />
-                  Log out
-                </button>
-              </SignOutButton>
+            <DropdownMenuItem onClick={() => handleLogout()}>
+              <LogOut />
+              Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

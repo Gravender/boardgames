@@ -1,5 +1,4 @@
 import type { z } from "zod/v4";
-import { createClerkClient } from "@clerk/backend";
 import { faker } from "@faker-js/faker";
 
 import type { insertUserSchema } from "@board-games/db/zodSchema";
@@ -10,15 +9,12 @@ import { resetTable } from "./seed";
 
 export async function seedUsers(d3Seed: number) {
   faker.seed(d3Seed);
-  const clerkClient = createClerkClient({
-    secretKey: process.env.CLERK_SECRET_KEY,
-  });
-  const { data: clerkUsers } = await clerkClient.users.getUserList();
-  const usersToInsert: z.infer<typeof insertUserSchema>[] = clerkUsers.map(
+  const currentUsers = await db.query.user.findMany();
+  const usersToInsert: z.infer<typeof insertUserSchema>[] = currentUsers.map(
     (u) => ({
-      clerkUserId: u.id,
-      name: u.fullName,
-      email: u.emailAddresses[0]?.emailAddress,
+      id: u.id,
+      name: u.name,
+      email: u.email,
     }),
   );
   await resetTable(user);

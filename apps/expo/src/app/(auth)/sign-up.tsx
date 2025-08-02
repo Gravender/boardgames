@@ -1,136 +1,75 @@
 import * as React from "react";
 import { Button, Text, TextInput, View } from "react-native";
-import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
-import { useOAuth, useSignUp } from "@clerk/clerk-expo";
+
+import { authClient } from "~/utils/auth";
 
 export default function SignUpScreen() {
-  const { startOAuthFlow: startGithubOAuthFlow } = useOAuth({
-    strategy: "oauth_github",
-  });
-  const { startOAuthFlow: startGoogleOAuthFlow } = useOAuth({
-    strategy: "oauth_google",
-  });
-  const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
 
   const [emailAddress, setEmailAddress] = React.useState("");
+  const [name, setName] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [pendingVerification, setPendingVerification] = React.useState(false);
-  const [code, setCode] = React.useState("");
+  const [username, setUsername] = React.useState("");
 
-  const handleSIgnInWithGitHub = React.useCallback(async () => {
+  const handleSignUpWithGitHub = React.useCallback(async () => {
     try {
-      const { createdSessionId, setActive } = await startGithubOAuthFlow({
-        redirectUrl: Linking.createURL("/games", { scheme: "expo" }),
+      await authClient.signIn.social({
+        provider: "github",
+        callbackURL: "/",
       });
-      if (createdSessionId) {
-        await setActive?.({ session: createdSessionId });
-      } else {
-        // Modify this code to use signIn or signUp to set this missing requirements you set in your dashboard.
-        throw new Error(
-          "There are unmet requirements, modifiy this else to handle them",
-        );
-      }
     } catch (err) {
-      console.log(JSON.stringify(err, null, 2));
-      console.log("error signing in", err);
+      console.log("error signing up with GitHub", err);
     }
-  }, [startGithubOAuthFlow]);
+  }, []);
 
-  const handleSIgnInWithGoogle = React.useCallback(async () => {
+  const handleSignUpWithGoogle = React.useCallback(async () => {
     try {
-      const { createdSessionId, setActive } = await startGoogleOAuthFlow();
-      if (createdSessionId) {
-        await setActive?.({ session: createdSessionId });
-      } else {
-        // Modify this code to use signIn or signUp to set this missing requirements you set in your dashboard.
-        throw new Error(
-          "There are unmet requirements, modifiy this else to handle them",
-        );
-      }
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/",
+      });
     } catch (err) {
-      console.log(JSON.stringify(err, null, 2));
-      console.log("error signing in", err);
+      console.log("error signing up with Google", err);
     }
-  }, [startGoogleOAuthFlow]);
+  }, []);
 
   // Handle submission of sign-up form
   const onSignUpPress = async () => {
-    if (!isLoaded) return;
-
-    // Start sign-up process using email and password provided
     try {
-      await signUp.create({
-        emailAddress,
+      await authClient.signUp.email({
+        email: emailAddress,
+        name,
+        username,
         password,
       });
-
-      // Send user an email with verification code
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-
-      // Set 'pendingVerification' to true to display second form
-      // and capture OTP code
-      setPendingVerification(true);
+      router.replace("/");
     } catch (err) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
-      console.error(JSON.stringify(err, null, 2));
+      console.error("Sign up error:", err);
     }
   };
-
-  // Handle submission of verification form
-  const onVerifyPress = async () => {
-    if (!isLoaded) return;
-
-    try {
-      // Use the code the user provided to attempt verification
-      const signUpAttempt = await signUp.attemptEmailAddressVerification({
-        code,
-      });
-
-      // If verification was completed, set the session to active
-      // and redirect the user
-      if (signUpAttempt.status === "complete") {
-        await setActive({ session: signUpAttempt.createdSessionId });
-        router.replace("/");
-      } else {
-        // If the status is not complete, check why. User may need to
-        // complete further steps.
-        console.error(JSON.stringify(signUpAttempt, null, 2));
-      }
-    } catch (err) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
-      console.error(JSON.stringify(err, null, 2));
-    }
-  };
-
-  if (pendingVerification) {
-    return (
-      <>
-        <Text>Verify your email</Text>
-        <TextInput
-          value={code}
-          placeholder="Enter your verification code"
-          onChangeText={(code) => setCode(code)}
-        />
-        <Button title="Verify" onPress={onVerifyPress} />
-      </>
-    );
-  }
 
   return (
     <View>
       <>
         <Text>Sign up</Text>
-        <Button title="Sign up with GitHub" onPress={handleSIgnInWithGitHub} />
-        <Button title="Sign Up with Google" onPress={handleSIgnInWithGoogle} />
+        <Button title="Sign up with GitHub" onPress={handleSignUpWithGitHub} />
+        <Button title="Sign Up with Google" onPress={handleSignUpWithGoogle} />
         <TextInput
           autoCapitalize="none"
           value={emailAddress}
           placeholder="Enter email"
           onChangeText={(email) => setEmailAddress(email)}
+        />
+        <TextInput
+          value={name}
+          placeholder="Enter name"
+          onChangeText={(name) => setName(name)}
+        />
+        <TextInput
+          value={username}
+          placeholder="Enter username"
+          onChangeText={(username) => setUsername(username)}
         />
         <TextInput
           value={password}

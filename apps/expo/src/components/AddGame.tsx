@@ -2,7 +2,6 @@ import { Fragment, useState } from "react";
 import { ActivityIndicator, Alert, Image, View } from "react-native";
 import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
-import { useAuth } from "@clerk/clerk-expo";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -45,6 +44,7 @@ import { Dices } from "~/lib/icons/Dices";
 import { Plus } from "~/lib/icons/Plus";
 import { Table } from "~/lib/icons/Table";
 import { trpc } from "~/utils/api";
+import { authClient } from "~/utils/auth";
 import { useUploadThing } from "~/utils/uploadthing";
 import AddScoresheetModal from "./AddScoresheetModal";
 import { Separator } from "./ui/separator";
@@ -157,11 +157,15 @@ function AddGameContent({
 
   const queryClient = useQueryClient();
 
-  const { getToken } = useAuth();
   const { startUpload } = useUploadThing("imageUploader", {
-    headers: async () => {
-      const authToken = await getToken();
-      return { Authorization: authToken ?? undefined };
+    headers: () => {
+      const headers = new Map<string, string>();
+      headers.set("x-uploadthing-source", "expo-react");
+      const cookies = authClient.getCookie();
+      if (cookies) {
+        headers.set("Cookie", cookies);
+      }
+      return headers;
     },
     onUploadError: (err: unknown) => {
       let errorMessage = "Unknown error occurred";

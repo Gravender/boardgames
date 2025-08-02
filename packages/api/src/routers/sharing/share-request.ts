@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { subDays } from "date-fns";
 import { and, eq, inArray } from "drizzle-orm";
@@ -20,10 +21,10 @@ import {
   shareRequest,
 } from "@board-games/db/schema";
 
-import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
+import { protectedUserProcedure } from "../../trpc";
 import { handleLocationSharing } from "../../utils/sharing";
 
-export const shareRequestRouter = createTRPCRouter({
+export const shareRequestRouter = {
   requestShareGame: protectedUserProcedure
     .input(
       z
@@ -57,7 +58,7 @@ export const shareRequestRouter = createTRPCRouter({
               friends: z
                 .array(
                   z.object({
-                    id: z.number(),
+                    id: z.string(),
                   }),
                 )
                 .min(1),
@@ -70,7 +71,9 @@ export const shareRequestRouter = createTRPCRouter({
         const [returnedGame] = await tx
           .select()
           .from(game)
-          .where(and(eq(game.id, input.gameId), eq(game.userId, ctx.userId)));
+          .where(
+            and(eq(game.id, input.gameId), eq(game.createdBy, ctx.userId)),
+          );
         if (!returnedGame) {
           throw new TRPCError({
             code: "NOT_FOUND",
@@ -106,7 +109,7 @@ export const shareRequestRouter = createTRPCRouter({
             const returnedMatch = await tx.query.match.findFirst({
               where: {
                 id: matchToShare.matchId,
-                userId: ctx.userId,
+                createdBy: ctx.userId,
               },
               with: {
                 matchPlayers: {
@@ -226,7 +229,7 @@ export const shareRequestRouter = createTRPCRouter({
               friends: z
                 .array(
                   z.object({
-                    id: z.number(),
+                    id: z.string(),
                   }),
                 )
                 .min(1),
@@ -239,7 +242,7 @@ export const shareRequestRouter = createTRPCRouter({
         const returnedMatch = await tx.query.match.findFirst({
           where: {
             id: input.matchId,
-            userId: ctx.userId,
+            createdBy: ctx.userId,
           },
           with: {
             matchPlayers: true,
@@ -296,7 +299,7 @@ export const shareRequestRouter = createTRPCRouter({
           const gamesScoreSheets = await tx.query.scoresheet.findMany({
             where: {
               gameId: returnedMatch.gameId,
-              userId: ctx.userId,
+              createdBy: ctx.userId,
               OR: [
                 {
                   type: "Default",
@@ -513,7 +516,7 @@ export const shareRequestRouter = createTRPCRouter({
                 const gamesScoreSheets = await tx2.query.scoresheet.findMany({
                   where: {
                     gameId: returnedMatch.gameId,
-                    userId: ctx.userId,
+                    createdBy: ctx.userId,
                     OR: [
                       {
                         type: "Default",
@@ -781,7 +784,7 @@ export const shareRequestRouter = createTRPCRouter({
               friends: z
                 .array(
                   z.object({
-                    id: z.number(),
+                    id: z.string(),
                   }),
                 )
                 .min(1),
@@ -832,7 +835,7 @@ export const shareRequestRouter = createTRPCRouter({
             const returnedMatch = await tx.query.match.findFirst({
               where: {
                 id: matchToShare.matchId,
-                userId: ctx.userId,
+                createdBy: ctx.userId,
               },
               with: {
                 matchPlayers: true,
@@ -901,7 +904,7 @@ export const shareRequestRouter = createTRPCRouter({
               const gamesScoreSheets = await tx.query.scoresheet.findMany({
                 where: {
                   gameId: returnedMatch.gameId,
-                  userId: ctx.userId,
+                  createdBy: ctx.userId,
                   OR: [
                     {
                       type: "Default",
@@ -1097,7 +1100,7 @@ export const shareRequestRouter = createTRPCRouter({
                 const returnedMatch = await tx2.query.match.findFirst({
                   where: {
                     id: matchToShare.matchId,
-                    userId: ctx.userId,
+                    createdBy: ctx.userId,
                   },
                   with: {
                     matchPlayers: {
@@ -1234,7 +1237,7 @@ export const shareRequestRouter = createTRPCRouter({
                   const gamesScoreSheets = await tx2.query.scoresheet.findMany({
                     where: {
                       gameId: returnedMatch.gameId,
-                      userId: ctx.userId,
+                      createdBy: ctx.userId,
                       OR: [{ type: "Default" }, { type: "Game" }],
                     },
                   });
@@ -1562,13 +1565,13 @@ export const shareRequestRouter = createTRPCRouter({
       });
       return response;
     }),
-});
+} satisfies TRPCRouterRecord;
 
 async function requestShareGameToFriend(
   transaction: TransactionType,
-  friendToShareTo: { id: number },
+  friendToShareTo: { id: string },
   shareMessages: { success: boolean; message: string }[],
-  userId: number,
+  userId: string,
   input: {
     gameId: number;
     permission: "view" | "edit";
@@ -1579,7 +1582,7 @@ async function requestShareGameToFriend(
     }[];
     scoresheetsToShare: { scoresheetId: number; permission: "view" | "edit" }[];
     expiresAt?: Date | undefined;
-  } & { type: "friends"; friends: { id: number }[] },
+  } & { type: "friends"; friends: { id: string }[] },
   returnedGame: {
     id: number;
   },
@@ -1670,8 +1673,8 @@ async function requestShareGameToFriend(
 }
 async function validateFriendSharingPermissions(
   transaction: TransactionType,
-  currentUserId: number,
-  friendId: number,
+  currentUserId: string,
+  friendId: string,
 ) {
   // Check sharing preferences
   const recipientSettings =
@@ -1708,8 +1711,8 @@ async function validateFriendSharingPermissions(
 }
 async function hasExistingShare(
   transaction: TransactionType,
-  userId: number,
-  friendId: number,
+  userId: string,
+  friendId: string,
   itemType: "game" | "match" | "player" | "location" | "scoresheet",
   itemId: number,
 ) {
@@ -1740,8 +1743,8 @@ async function hasExistingShare(
 }
 async function createGameShareRequest(
   transaction: TransactionType,
-  userId: number,
-  friendId: number,
+  userId: string,
+  friendId: string,
   input: {
     gameId: number;
     permission: "view" | "edit";
@@ -1750,7 +1753,7 @@ async function createGameShareRequest(
   friendSettings:
     | {
         id: number;
-        createdById: number;
+        createdById: string;
         friendId: number;
         autoShareMatches: boolean;
         sharePlayersWithMatch: boolean;
@@ -1817,13 +1820,13 @@ async function createGameShareRequest(
 }
 async function sharedMatchWithFriends(
   transaction: TransactionType,
-  userId: number,
+  userId: string,
   matchToShare: {
     matchId: number;
     permission: "view" | "edit";
     includePlayers: boolean;
   },
-  friendId: number,
+  friendId: string,
   parentShare: {
     id: number;
     permission: "view" | "edit";
@@ -1832,7 +1835,7 @@ async function sharedMatchWithFriends(
   friendSettings:
     | {
         id: number;
-        createdById: number;
+        createdById: string;
         friendId: number;
         autoShareMatches: boolean;
         sharePlayersWithMatch: boolean;
@@ -1853,7 +1856,7 @@ async function sharedMatchWithFriends(
   const returnedMatch = await transaction.query.match.findFirst({
     where: {
       id: matchToShare.matchId,
-      userId: userId,
+      createdBy: userId,
     },
     with: {
       matchPlayers: {
@@ -2020,8 +2023,8 @@ async function sharedMatchWithFriends(
 }
 async function handleMatchSharing(
   transaction: TransactionType,
-  ownerId: number,
-  friendId: number,
+  ownerId: string,
+  friendId: string,
   matchId: number,
   gameId: number,
   sharedGame: {
@@ -2029,8 +2032,8 @@ async function handleMatchSharing(
     createdAt: Date;
     updatedAt: Date | null;
     gameId: number;
-    ownerId: number;
-    sharedWithId: number;
+    ownerId: string;
+    sharedWithId: string;
     linkedGameId: number | null;
     permission: "view" | "edit";
   } | null,
@@ -2040,15 +2043,15 @@ async function handleMatchSharing(
     updatedAt: Date | null;
     isDefault: boolean;
     locationId: number;
-    ownerId: number;
-    sharedWithId: number;
+    ownerId: string;
+    sharedWithId: string;
     permission: "view" | "edit";
     linkedLocationId: number | null;
   } | null,
   friendSettings:
     | {
         id: number;
-        createdById: number;
+        createdById: string;
         friendId: number;
         autoShareMatches: boolean;
         sharePlayersWithMatch: boolean;
@@ -2128,8 +2131,8 @@ async function handleMatchSharing(
 }
 async function shareScoresheetsWithFriend(
   transaction: TransactionType,
-  userId: number,
-  friendId: number,
+  userId: string,
+  friendId: string,
   gameId: number,
   scoreSheets: {
     scoresheetId: number;

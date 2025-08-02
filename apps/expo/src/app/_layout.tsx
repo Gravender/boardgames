@@ -1,7 +1,6 @@
 import type { Theme } from "@react-navigation/native";
 import { Drawer } from "expo-router/drawer";
 import { StatusBar } from "expo-status-bar";
-import { ClerkLoaded, ClerkProvider } from "@clerk/clerk-expo";
 import {
   DarkTheme,
   DefaultTheme,
@@ -13,7 +12,6 @@ import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
 import { NAV_THEME } from "~/lib/constants";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { queryClient } from "~/utils/api";
-import { tokenCache } from "~/utils/cache";
 
 import "../styles.css";
 
@@ -40,12 +38,6 @@ export {
 } from "expo-router";
 
 export default function RootLayout() {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const publishableKey: string = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
-  if (!publishableKey) {
-    throw new Error("Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to your .env file");
-  }
   const hasMounted = useRef(false);
   const { colorScheme, isDarkColorScheme } = useColorScheme();
   const [isColorSchemeLoaded, setIsColorSchemeLoaded] = useState(false);
@@ -63,80 +55,72 @@ export default function RootLayout() {
   }
 
   return (
-    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-      <QueryClientProvider client={queryClient}>
-        <ClerkLoaded>
-          <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-            <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <Drawer
-                screenOptions={{
-                  drawerStyle: {
-                    backgroundColor: isDarkColorScheme
-                      ? "hsl(240, 5.9%, 10%)"
-                      : "hsl(0, 0%, 98%)",
-                  },
-                  drawerLabelStyle: {
-                    color: isDarkColorScheme
-                      ? "hsl(240, 4.8%, 95.9%)"
-                      : "hsl(240, 5.9%, 10%)",
-                  },
-                  headerTitle(props) {
-                    return (
-                      <Text className="text-xl font-semibold">
-                        {toOptions(props.children)}
-                      </Text>
-                    );
-                  },
-                  headerRight: () => <ThemeToggle />,
-                }}
-              >
-                <Drawer.Screen
-                  name="index"
-                  options={{ drawerLabel: "home", title: "Home" }}
-                />
-                <Drawer.Screen
-                  name="games/index"
-                  options={{
-                    drawerLabel: "Games",
-                    title: "Games",
-                    drawerIcon: () => (
-                      <Dices
-                        className="text-primary"
-                        size={25}
-                        strokeWidth={1.5}
-                      />
-                    ),
-                  }}
-                />
-                <Drawer.Screen
-                  name="games/[id]/[matchId]/index"
-                  options={{
-                    drawerItemStyle: { display: "none" }, // Hide from drawer
-                    title: "Match Details",
-                  }}
-                />
-                <Drawer.Screen
-                  name="games/[id]/[matchId]/scoresheet"
-                  options={{
-                    drawerItemStyle: { display: "none" }, // Hide from drawer
-                    title: "Match Scoresheet",
-                  }}
-                />
-                <Drawer.Screen
-                  name="games/[id]/index"
-                  options={{
-                    drawerItemStyle: { display: "none" }, // Hide from drawer
-                    title: "Game Details",
-                  }}
-                />
-              </Drawer>
-              <PortalHost />
-            </GestureHandlerRootView>
-          </ThemeProvider>
-        </ClerkLoaded>
-      </QueryClientProvider>
-    </ClerkProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+        <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <Drawer
+            screenOptions={{
+              drawerStyle: {
+                backgroundColor: isDarkColorScheme
+                  ? "hsl(240, 5.9%, 10%)"
+                  : "hsl(0, 0%, 98%)",
+              },
+              drawerLabelStyle: {
+                color: isDarkColorScheme
+                  ? "hsl(240, 4.8%, 95.9%)"
+                  : "hsl(240, 5.9%, 10%)",
+              },
+              headerTitle(props) {
+                return (
+                  <Text className="text-xl font-semibold">
+                    {toOptions(props.children)}
+                  </Text>
+                );
+              },
+              headerRight: () => <ThemeToggle />,
+            }}
+          >
+            <Drawer.Screen
+              name="index"
+              options={{ drawerLabel: "home", title: "Home" }}
+            />
+            <Drawer.Screen
+              name="games/index"
+              options={{
+                drawerLabel: "Games",
+                title: "Games",
+                drawerIcon: () => (
+                  <Dices className="text-primary" size={25} strokeWidth={1.5} />
+                ),
+              }}
+            />
+            <Drawer.Screen
+              name="games/[id]/[matchId]/index"
+              options={{
+                drawerItemStyle: { display: "none" }, // Hide from drawer
+                title: "Match Details",
+              }}
+            />
+            <Drawer.Screen
+              name="games/[id]/[matchId]/scoresheet"
+              options={{
+                drawerItemStyle: { display: "none" }, // Hide from drawer
+                title: "Match Scoresheet",
+              }}
+            />
+            <Drawer.Screen
+              name="games/[id]/index"
+              options={{
+                drawerItemStyle: { display: "none" }, // Hide from drawer
+                title: "Game Details",
+              }}
+            />
+          </Drawer>
+          <PortalHost />
+        </GestureHandlerRootView>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 function toOptions(name: string) {

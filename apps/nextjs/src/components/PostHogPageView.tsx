@@ -1,30 +1,29 @@
 "use client";
 
 import { useEffect } from "react";
-import { useAuth, useUser } from "@clerk/nextjs";
 import { usePostHog } from "posthog-js/react";
+
+import { authClient } from "~/auth/client";
 
 export default function PostHogPageView() {
   const posthog = usePostHog();
 
-  const { isSignedIn, userId } = useAuth();
-  const { user } = useUser();
+  const { data: session } = authClient.useSession();
 
   useEffect(() => {
     // 👉 Check the sign in status and user info,
     //    and identify the user if they aren't already
-    if (isSignedIn && userId && user && !posthog._isIdentified()) {
+    if (session && !posthog._isIdentified()) {
       // 👉 Identify the user
-      posthog.identify(userId, {
-        email: user.primaryEmailAddress?.emailAddress,
-        username: user.username,
+      posthog.identify(session.user.id, {
+        email: session.user.email,
       });
     }
 
     // 👉 Reset the user if they sign out
-    if (!isSignedIn && posthog._isIdentified()) {
+    if (!session && posthog._isIdentified()) {
       posthog.reset();
     }
-  }, [isSignedIn, posthog, user, userId]);
+  }, [session, posthog]);
   return null;
 }

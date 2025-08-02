@@ -18,7 +18,9 @@ const games = createTable(
   {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 256 }).notNull(),
-    userId: integer("user_id").references(() => user.id),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -37,7 +39,7 @@ const games = createTable(
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [
-    index("boardgames_game_user_id_index").on(table.userId),
+    index("boardgames_game_user_id_index").on(table.createdBy),
     index("boardgames_game_id_index").on(table.id),
   ],
 );

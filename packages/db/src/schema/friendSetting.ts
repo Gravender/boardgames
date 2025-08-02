@@ -17,9 +17,9 @@ const friendSettings = createTable(
   "friend_setting",
   {
     id: serial("id").primaryKey(),
-    createdById: integer("created_by_id")
-      .references(() => user.id)
-      .notNull(),
+    createdById: text("created_by_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
     friendId: integer("friend_id")
       .references(() => friend.id)
       .notNull(),

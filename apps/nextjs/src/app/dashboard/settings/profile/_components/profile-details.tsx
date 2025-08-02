@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { z } from "zod/v4";
 
 import { Button } from "@board-games/ui/button";
@@ -26,11 +24,10 @@ import {
 import { Input } from "@board-games/ui/input";
 import { toast } from "@board-games/ui/toast";
 
-import type { SerializableUser } from "../page";
+import { authClient } from "~/auth/client";
 
 const profileFormSchema = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters."),
-  lastName: z.string().min(2, "Last name must be at least 2 characters."),
+  name: z.string().min(2, "Name must be at least 2 characters."),
   username: z
     .string()
     .min(2, "Username must be at least 2 characters.")
@@ -43,18 +40,25 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 interface ProfileDetailsProps {
-  serializableUser: SerializableUser;
+  user: {
+    id: string;
+    name: string;
+    emailVerified: boolean;
+    email: string;
+    createdAt: Date;
+    updatedAt: Date;
+    image?: string | null | undefined;
+    username?: string | null | undefined;
+    displayUsername?: string | null | undefined;
+  };
 }
 
-export function ProfileDetails({ serializableUser }: ProfileDetailsProps) {
-  const router = useRouter();
+export function ProfileDetails({ user }: ProfileDetailsProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useUser();
 
   const defaultValues: Partial<ProfileFormValues> = {
-    firstName: serializableUser.firstName ?? "",
-    lastName: serializableUser.lastName ?? "",
-    username: serializableUser.username ?? "",
+    name: user.name,
+    username: user.username ?? "",
   };
 
   const form = useForm({
@@ -63,31 +67,27 @@ export function ProfileDetails({ serializableUser }: ProfileDetailsProps) {
   });
 
   async function onSubmit(data: ProfileFormValues) {
-    setIsLoading(true);
-    if (!user) {
-      toast.error("Not logged in");
-      return;
-    }
-    try {
-      await user.update({
-        firstName: data.firstName,
-        lastName: data.lastName,
-        username: data.username,
-      });
-
-      toast.success("Profile updated", {
-        description: "Your profile has been updated successfully.",
-      });
-
-      router.refresh();
-    } catch (error) {
-      toast.error("Error", {
-        description: "Failed to update profile. Please try again.",
-      });
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
+    await authClient.updateUser(
+      { name: data.name, username: data.username },
+      {
+        onSuccess: () => {
+          toast.success("Profile updated", {
+            description: "Your profile has been updated successfully.",
+          });
+          setIsLoading(false);
+        },
+        onLoading: () => {
+          toast.loading("Updating profile...");
+          setIsLoading(true);
+        },
+        onError: () => {
+          toast.error("Error", {
+            description: "Failed to update profile. Please try again.",
+          });
+          setIsLoading(false);
+        },
+      },
+    );
   }
 
   return (
@@ -102,34 +102,19 @@ export function ProfileDetails({ serializableUser }: ProfileDetailsProps) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="John" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

@@ -20,7 +20,9 @@ const matches = createTable(
   {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 256 }).notNull().default(""),
-    userId: integer("user_id").references(() => user.id),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
     gameId: integer("game_id")
       .notNull()
       .references(() => game.id),
@@ -47,7 +49,7 @@ const matches = createTable(
   },
   (table) => [
     index("boardgames_match_game_id_index").on(table.gameId),
-    index("boardgames_match_user_id_index").on(table.userId),
+    index("boardgames_match_user_id_index").on(table.createdBy),
     index("boardgames_match_id_index").on(table.id),
   ],
 );

@@ -1,4 +1,3 @@
-import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 import { compareAsc, subMonths } from "date-fns";
 import { and, asc, count, desc, eq, isNull, sql } from "drizzle-orm";
@@ -77,7 +76,7 @@ export const dashboardRouter = {
         ) {
           const id = Number(seg);
           const match = await ctx.db.query.match.findFirst({
-            where: { id, userId: ctx.userId },
+            where: { id, createdBy: ctx.userId },
             with: { game: { columns: { name: true } } },
           });
           if (!match) continue;
@@ -152,7 +151,7 @@ export const dashboardRouter = {
           switch (parent) {
             case "games": {
               const row = await ctx.db.query.game.findFirst({
-                where: { id, userId: ctx.userId },
+                where: { id, createdBy: ctx.userId },
                 columns: { name: true },
               });
               if (!row) continue;
@@ -208,7 +207,7 @@ export const dashboardRouter = {
               const returnedFriend = await ctx.db.query.friend.findFirst({
                 where: {
                   userId: ctx.userId,
-                  friendId: id,
+                  friendId: seg,
                 },
                 with: {
                   friend: true,
@@ -217,30 +216,8 @@ export const dashboardRouter = {
               if (!returnedFriend) {
                 return null;
               }
-              const client = await clerkClient();
 
-              const clerkUser = await client.users
-                .getUser(returnedFriend.friend.clerkUserId)
-                .catch((error) => {
-                  console.error(error);
-                });
-              if (!clerkUser) continue;
-              const getFullName = () => {
-                if (clerkUser.fullName) {
-                  return clerkUser.fullName;
-                }
-                if (clerkUser.firstName && clerkUser.lastName) {
-                  return `${clerkUser.firstName} ${clerkUser.lastName}`;
-                }
-                if (clerkUser.firstName) {
-                  return clerkUser.firstName;
-                }
-                if (clerkUser.lastName) {
-                  return clerkUser.lastName;
-                }
-                return "Unknown";
-              };
-              crumbs.push({ name: getFullName(), path: href });
+              crumbs.push({ name: returnedFriend.friend.name, path: href });
               break;
             }
             default: {
@@ -272,7 +249,7 @@ export const dashboardRouter = {
         lastPlayed: sql`max(${match.date})`.mapWith(match.date),
       })
       .from(game)
-      .where(and(eq(game.userId, ctx.userId), isNull(game.deletedAt)))
+      .where(and(eq(game.createdBy, ctx.userId), isNull(game.deletedAt)))
       .leftJoin(match, eq(game.id, match.gameId))
       .groupBy(game.id)
       .orderBy(desc(count(match)), asc(game.name))
@@ -321,7 +298,7 @@ export const dashboardRouter = {
       .from(match)
       .where(
         and(
-          eq(match.userId, ctx.userId),
+          eq(match.createdBy, ctx.userId),
           eq(match.finished, true),
           isNull(match.deletedAt),
         ),
@@ -330,7 +307,7 @@ export const dashboardRouter = {
         game,
         and(
           eq(match.gameId, game.id),
-          eq(game.userId, ctx.userId),
+          eq(game.createdBy, ctx.userId),
           isNull(game.deletedAt),
         ),
       );
@@ -399,7 +376,7 @@ export const dashboardRouter = {
   getUniqueGames: protectedUserProcedure.query(async ({ ctx }) => {
     const originalGames = await ctx.db.query.game.findMany({
       where: {
-        userId: ctx.userId,
+        createdBy: ctx.userId,
         deletedAt: {
           isNull: true,
         },
@@ -516,7 +493,7 @@ export const dashboardRouter = {
   getPlayersWIthMatches: protectedUserProcedure.query(async ({ ctx }) => {
     const originalMatches = await ctx.db.query.match.findMany({
       where: {
-        userId: ctx.userId,
+        createdBy: ctx.userId,
         finished: true,
         deletedAt: {
           isNull: true,
@@ -556,7 +533,7 @@ export const dashboardRouter = {
             },
             linkedGame: {
               where: {
-                userId: ctx.userId,
+                createdBy: ctx.userId,
               },
               with: {
                 image: true,
@@ -987,7 +964,7 @@ export const dashboardRouter = {
                         },
                         linkedGame: {
                           where: {
-                            userId: ctx.userId,
+                            createdBy: ctx.userId,
                           },
                           with: {
                             image: true,

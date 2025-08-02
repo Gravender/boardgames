@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, serial, timestamp, unique } from "drizzle-orm/pg-core";
+import { index, serial, text, timestamp, unique } from "drizzle-orm/pg-core";
 
 import { createTable } from "./baseTable";
 import user from "./user";
@@ -8,11 +8,11 @@ const friend = createTable(
   "friend",
   {
     id: serial("id").primaryKey(),
-    userId: integer("user_id")
-      .references(() => user.id)
-      .notNull(),
-    friendId: integer("friend_id")
-      .references(() => user.id)
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    friendId: text("friend_id")
+      .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
