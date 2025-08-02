@@ -5,6 +5,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, oAuthProxy, username } from "better-auth/plugins";
 
 import { db } from "@board-games/db/client";
+import * as schema from "@board-games/db/schema";
 
 export function initAuth(options: {
   baseUrl: string;
@@ -19,6 +20,14 @@ export function initAuth(options: {
   const config = {
     database: drizzleAdapter(db, {
       provider: "pg",
+      schema: {
+        ...schema,
+        user: schema.user,
+        account: schema.account,
+        verification: schema.verification,
+        session: schema.session,
+      },
+      debugLogs: true,
     }),
     emailAndPassword: {
       enabled: true,

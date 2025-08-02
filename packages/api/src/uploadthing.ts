@@ -6,6 +6,8 @@ import z from "zod/v4";
 import { db } from "@board-games/db/client";
 import { image, matchImage } from "@board-games/db/schema";
 
+import { getSession } from "./auth";
+
 const f = createUploadthing();
 
 export const uploadRouter = {
@@ -35,9 +37,11 @@ export const uploadRouter = {
         }),
       ]),
     )
-    .middleware(({ input }) => {
-      //TODO: Add auth check
-      return { usageType: input.usageType, input };
+    .middleware(async ({ input }) => {
+      const session = await getSession();
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
+      if (!session) throw new UploadThingError("Unauthorized");
+      return { userId: session.user.id, usageType: input.usageType, input };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       const [returnedImage] = await db
@@ -45,6 +49,7 @@ export const uploadRouter = {
         .values({
           name: file.name,
           url: file.url,
+          createdBy: metadata.userId,
           type: "file",
           fileId: file.key,
           fileSize: file.size,
@@ -59,6 +64,7 @@ export const uploadRouter = {
         const returnedMatch = await db.query.match.findFirst({
           where: {
             id: metadata.input.matchId,
+            createdBy: metadata.userId,
           },
         });
         if (!returnedMatch) {
@@ -70,7 +76,7 @@ export const uploadRouter = {
           .values({
             matchId: metadata.input.matchId,
             imageId: returnedImage.id,
-            createdBy: "TODO",
+            createdBy: metadata.userId,
             caption: metadata.input.caption,
             duration: metadata.input.duration,
           })
@@ -80,7 +86,7 @@ export const uploadRouter = {
           throw new UploadThingError("MatchImage not added to database");
         }
       }
-      return { uploadedBy: "TODO", imageId: returnedImage.id };
+      return { uploadedBy: metadata.userId, imageId: returnedImage.id };
     }),
 } satisfies FileRouter;
 export type uploadRouter = typeof uploadRouter;

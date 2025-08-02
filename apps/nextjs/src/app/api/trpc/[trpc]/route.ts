@@ -2,8 +2,7 @@ import type { NextRequest } from "next/server";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
 import { appRouter, createTRPCContext } from "@board-games/api";
-
-import { auth } from "~/auth/server";
+import { auth } from "@board-games/api/auth";
 
 /**
  * Configure basic CORS headers

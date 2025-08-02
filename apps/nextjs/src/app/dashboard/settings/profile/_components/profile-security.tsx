@@ -1,8 +1,7 @@
-"use client";
+"use server";
 
-import type { SessionWithActivitiesResource } from "@clerk/types";
-import { useEffect, useState } from "react";
-import { compareDesc, formatDistanceToNow } from "date-fns";
+import { redirect } from "next/navigation";
+import { formatDistanceToNow } from "date-fns";
 import {
   Clock,
   Globe,
@@ -27,49 +26,37 @@ import {
   TooltipTrigger,
 } from "@board-games/ui/tooltip";
 
-export function ProfileSecurity() {
-  const { user } = useUser();
-  const { session: currentSession } = useSession();
-  const [sessionList, setSessionList] = useState<
-    SessionWithActivitiesResource[]
-  >([]);
+import { authClient } from "~/auth/client";
 
-  useEffect(() => {
-    async function getData() {
-      if (!user) return;
-      try {
-        const res = await user.getSessions();
-        setSessionList(res);
-      } catch (error) {
-        console.error("Failed to fetch sessions:", error);
-      }
-    }
-    void getData();
-  }, [user]);
+export async function ProfileSecurity() {
+  const sessions = await authClient.listSessions();
+  const currentSession = authClient.useSession();
 
-  const getDeviceIcon = (session: SessionWithActivitiesResource) => {
-    const { deviceType, isMobile } = session.latestActivity;
-
-    const deviceTypeLower = deviceType?.toLowerCase() ?? "";
+  const getDeviceIcon = (userAgent?: string) => {
+    const userAgentLower = userAgent?.toLowerCase() ?? "";
 
     if (
-      deviceTypeLower.includes("iphone") ||
-      deviceTypeLower.includes("android")
+      userAgentLower.includes("iphone") ||
+      userAgentLower.includes("android")
     ) {
       return <SmartphoneIcon className="h-5 w-5" />;
-    } else if (deviceTypeLower.includes("ipad")) {
+    } else if (userAgentLower.includes("ipad")) {
       return <Tablet className="h-5 w-5" />;
     } else if (
-      deviceTypeLower.includes("macbook") ||
-      deviceTypeLower.includes("laptop")
+      userAgentLower.includes("macbook") ||
+      userAgentLower.includes("laptop")
     ) {
       return <Laptop className="h-5 w-5" />;
-    } else if (isMobile) {
+    } else if (userAgentLower.includes("mobile")) {
       return <SmartphoneIcon className="h-5 w-5" />;
     }
 
     return <Monitor className="h-5 w-5" />;
   };
+
+  if (sessions.error) {
+    return redirect("/login");
+  }
 
   return (
     <div className="space-y-6">
@@ -81,35 +68,24 @@ export function ProfileSecurity() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {sessionList
-            .toSorted((a, b) => compareDesc(a.lastActiveAt, b.lastActiveAt))
-            .map((session) => {
-              const isCurrent = currentSession?.id === session.id;
-              const {
-                city,
-                country,
-                browserName,
-                browserVersion,
-                deviceType,
-                ipAddress,
-                isMobile,
-              } = session.latestActivity;
+          {sessions.data.length > 0 ? (
+            sessions.data.map((session) => {
+              const isCurrent = currentSession.data?.session.id === session.id;
+              const userAgent = session.userAgent ?? "";
+              const ipAddress = session.ipAddress ?? "Unknown IP";
 
-              const title =
-                (deviceType ?? isMobile) ? "Mobile device" : "Desktop device";
+              const title = userAgent.includes("Mobile")
+                ? "Mobile device"
+                : "Desktop device";
 
-              const browser =
-                `${browserName ?? ""} ${browserVersion ?? ""}`.trim() ||
-                "Web browser";
+              const browser = userAgent || "Web browser";
 
-              const location =
-                [city ?? "", country ?? ""].filter(Boolean).join(", ").trim() ||
-                "Unknown location";
+              const location = "Unknown location"; // Better Auth doesn't provide location by default
 
-              const lastActive = formatDistanceToNow(session.lastActiveAt, {
+              const lastActive = formatDistanceToNow(session.updatedAt, {
                 addSuffix: true,
               });
-              const isActive = session.status === "active";
+              const isActive = session.expiresAt > new Date();
 
               return (
                 <div
@@ -121,7 +97,7 @@ export function ProfileSecurity() {
                       <div
                         className={`rounded-full p-2 ${isCurrent ? "bg-primary/10" : "bg-muted"}`}
                       >
-                        {getDeviceIcon(session)}
+                        {getDeviceIcon(userAgent)}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -139,7 +115,7 @@ export function ProfileSecurity() {
                               variant="outline"
                               className="border-destructive/20 bg-destructive/10 text-xs text-destructive"
                             >
-                              Terminated
+                              Expired
                             </Badge>
                           )}
                         </div>
@@ -165,7 +141,7 @@ export function ProfileSecurity() {
                             <TooltipTrigger asChild>
                               <div className="flex cursor-help items-center gap-1">
                                 <Globe className="h-3 w-3" />
-                                <span>{ipAddress ?? "Unknown IP"}</span>
+                                <span>{ipAddress}</span>
                               </div>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -178,7 +154,12 @@ export function ProfileSecurity() {
                   </div>
                 </div>
               );
-            })}
+            })
+          ) : (
+            <div className="text-center text-muted-foreground">
+              No session information available
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

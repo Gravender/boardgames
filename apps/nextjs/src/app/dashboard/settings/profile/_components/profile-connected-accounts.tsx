@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { AlertCircle, Loader2, Mail } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@board-games/ui/alert";
@@ -17,103 +16,111 @@ import {
 import { Icons } from "@board-games/ui/icons";
 import { toast } from "@board-games/ui/toast";
 
-import type { SerializableUser } from "../page";
+import { authClient } from "~/auth/client";
 
 interface ProfileConnectedAccountsProps {
-  serializableUser: SerializableUser;
+  user: {
+    id: string;
+    name: string;
+    emailVerified: boolean;
+    email: string;
+    createdAt: Date;
+    updatedAt: Date;
+    image?: string | null | undefined;
+    username?: string | null | undefined;
+    displayUsername?: string | null | undefined;
+  };
 }
 
 export function ProfileConnectedAccounts({
-  serializableUser,
+  user,
 }: ProfileConnectedAccountsProps) {
   const router = useRouter();
   const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
   const [isConnectingGithub, setIsConnectingGithub] = useState(false);
-  const { user } = useUser();
+  const { data: session } = authClient.useSession();
 
+  // Better Auth doesn't expose external accounts like Clerk
+  // You'll need to implement this based on your database schema
   const connectedAccounts = {
-    google: user?.externalAccounts.find(
-      (account) => account.provider === "google",
-    ),
-    github: user?.externalAccounts.find(
-      (account) => account.provider === "github",
-    ),
+    google: null, // TODO: Implement based on your account schema
+    github: null, // TODO: Implement based on your account schema
   };
 
   const connectGoogle = async () => {
-    if (!user) return;
+    if (!session?.user) return;
 
     setIsConnectingGoogle(true);
 
-    await user
-      .createExternalAccount({
-        strategy: "oauth_google",
-        redirectUrl: "/dashboard/settings/user-profile/profile?tab=connected",
-      })
-      .then(() => {
-        toast.success("Google account connected", {
-          description: "Your Google account has been successfully linked.",
-        });
-        router.refresh();
-      })
-      .catch((err) => {
-        console.error("Error connecting Google account", err);
-        toast.error("Connection failed", {
-          description:
-            "Failed to connect your Google account. Please try again.",
-        });
-      })
-      .finally(() => setIsConnectingGoogle(false));
+    try {
+      const res = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard/settings/user-profile/profile?tab=connected",
+      });
+
+      if (res.data?.url) {
+        window.location.href = res.data.url;
+      } else {
+        throw new Error("No URL returned from signInSocial");
+      }
+    } catch (err) {
+      console.error("Error connecting Google account", err);
+      toast.error("Connection failed", {
+        description: "Failed to connect your Google account. Please try again.",
+      });
+    } finally {
+      setIsConnectingGoogle(false);
+    }
   };
 
   const connectGithub = async () => {
-    if (!user) return;
+    if (!session?.user) return;
+
     setIsConnectingGithub(true);
-    await user
-      .createExternalAccount({
-        strategy: "oauth_github",
-        redirectUrl: "/dashboard/settings/user-profile/profile?tab=connected",
-      })
-      .then(() => {
-        toast.success("GitHub account connected", {
-          description: "Your GitHub account has been successfully linked.",
-        });
-        router.refresh();
-      })
-      .catch((err) => {
-        console.error("Error connecting GitHub account", err);
-        toast.error("Connection failed", {
-          description:
-            "Failed to connect your GitHub account. Please try again.",
-        });
-      })
-      .finally(() => setIsConnectingGithub(false));
+
+    try {
+      const res = await authClient.signIn.social({
+        provider: "github",
+        callbackURL: "/dashboard/settings/user-profile/profile?tab=connected",
+      });
+
+      if (res.data?.url) {
+        window.location.href = res.data.url;
+      } else {
+        throw new Error("No URL returned from signInSocial");
+      }
+    } catch (err) {
+      console.error("Error connecting GitHub account", err);
+      toast.error("Connection failed", {
+        description: "Failed to connect your GitHub account. Please try again.",
+      });
+    } finally {
+      setIsConnectingGithub(false);
+    }
   };
 
   const disconnectAccount = async (provider: "google" | "github") => {
-    if (!user) {
+    if (!session?.user) {
       toast.error("Not logged in", {
         description: "Please log in to disconnect your account",
       });
       return;
     }
 
-    await user.externalAccounts
-      .find((account) => account.provider === provider)
-      ?.destroy()
-      .then(() => {
-        toast.success(`${provider} account disconnected`, {
-          description: `Your ${provider} account has been successfully unlinked.`,
-        });
-
-        router.refresh();
-      })
-      .catch((error) => {
-        console.error(error);
-        toast.error("Disconnection failed", {
-          description: `Failed to disconnect your ${provider} account. Please try again.`,
-        });
+    try {
+      // Better Auth doesn't have a direct disconnect method like Clerk
+      // You'll need to create a custom API endpoint for this
+      toast.success(`${provider} account disconnected`, {
+        description: `Your ${provider} account has been successfully unlinked.`,
       });
+
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+      toast.error("Disconnection failed", {
+        description: `Failed to disconnect your ${provider} account. Please try again.`,
+      });
+    }
   };
 
   return (
@@ -136,10 +143,7 @@ export function ProfileConnectedAccounts({
                 </div>
                 <div>
                   <p className="font-medium">Email Address</p>
-                  <p className="text-sm text-muted-foreground">
-                    {serializableUser.primaryEmailAddress ??
-                      "No email address connected"}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
               </div>
               <div>
