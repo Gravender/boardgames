@@ -12,13 +12,13 @@ import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 import { FriendSettingsDialog } from "./friend-settings-dialog";
 
-export default function FriendProfilePage({ friendId }: { friendId: number }) {
+export default function FriendProfilePage({ friendId }: { friendId: string }) {
   const trpc = useTRPC();
 
   const { data: friend } = useSuspenseQuery(
     trpc.friend.getFriend.queryOptions({ friendId: friendId }),
   );
-
+  //TODO update to better auth user
   const hasLinkedPlayer = friend.linkedPlayer;
   return (
     <div className="space-y-8">
@@ -36,7 +36,7 @@ export default function FriendProfilePage({ friendId }: { friendId: number }) {
             </p>
           </div>
           <FriendSettingsDialog
-            friendId={friend.id}
+            friendId={friend.friendId}
             initialSettings={friend.settings}
           />
         </CardHeader>

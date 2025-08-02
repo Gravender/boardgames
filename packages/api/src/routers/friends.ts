@@ -305,7 +305,7 @@ export const friendsRouter = {
     .query(async ({ ctx, input }) => {
       const returnedFriend = await ctx.db.query.friend.findFirst({
         columns: {
-          friendId: false,
+          friendId: true,
           userId: false,
           createdAt: false,
           updatedAt: false,
@@ -737,6 +737,7 @@ export const friendsRouter = {
       if (!rawFP)
         return {
           id: returnedFriend.id,
+          friendId: returnedFriend.friendId,
           linkedPlayerFound: false as const,
           clerkUser: {
             name: returnedFriend.user.name,
@@ -848,6 +849,7 @@ export const friendsRouter = {
       };
       return {
         id: returnedFriend.id,
+        friendId: returnedFriend.friendId,
         linkedPlayerFound: true as const,
         clerkUser: {
           name: returnedFriend.user.name,
@@ -903,7 +905,7 @@ export const friendsRouter = {
   updateFriendSettings: protectedUserProcedure
     .input(
       z.object({
-        friendId: z.number(),
+        friendId: z.string(),
         settings: z.object({
           autoShareMatches: z.boolean(),
           sharePlayersWithMatch: z.boolean(),
@@ -927,7 +929,7 @@ export const friendsRouter = {
       const returnedFriend = await ctx.db.query.friend.findFirst({
         where: {
           userId: ctx.userId,
-          id: input.friendId,
+          friendId: input.friendId,
         },
         with: {
           friendSetting: true,
@@ -939,7 +941,7 @@ export const friendsRouter = {
       if (!returnedFriend.friendSetting) {
         await ctx.db.insert(friendSetting).values({
           createdById: ctx.userId,
-          friendId: input.friendId,
+          friendId: returnedFriend.id,
           ...input.settings,
         });
       } else {

@@ -1,6 +1,7 @@
 import React from "react";
 import { Button, Text, TextInput, View } from "react-native";
 import { Link, useRouter } from "expo-router";
+
 import { authClient } from "~/utils/auth";
 
 export default function Page() {

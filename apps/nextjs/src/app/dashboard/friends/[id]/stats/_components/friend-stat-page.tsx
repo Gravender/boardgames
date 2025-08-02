@@ -30,7 +30,7 @@ import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 import { GameDetails } from "./game-details";
 
-export function FriendStatsPage({ friendId }: { friendId: number }) {
+export function FriendStatsPage({ friendId }: { friendId: string }) {
   const trpc = useTRPC();
 
   const { data: friend } = useSuspenseQuery(

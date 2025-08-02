@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, serial, text, timestamp, unique } from "drizzle-orm/pg-core";
+import { serial, text, timestamp, unique } from "drizzle-orm/pg-core";
 
 import { createTable } from "./baseTable";
 import user from "./user";

@@ -93,12 +93,8 @@
           "name": "account_user_id_boardgames_user_id_fk",
           "tableFrom": "account",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -182,12 +178,8 @@
           "name": "boardgames_friend_user_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_friend",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -195,12 +187,8 @@
           "name": "boardgames_friend_friend_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_friend",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "friend_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["friend_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -210,10 +198,7 @@
         "boardgames_friend__user_id_friend_id_unique": {
           "name": "boardgames_friend__user_id_friend_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "friend_id"
-          ]
+          "columns": ["user_id", "friend_id"]
         }
       },
       "policies": {},
@@ -269,12 +254,8 @@
           "name": "boardgames_friend_request_user_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_friend_request",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -282,12 +263,8 @@
           "name": "boardgames_friend_request_requestee_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_friend_request",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "requestee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["requestee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -297,10 +274,7 @@
         "boardgames_friend_request_user_id_requestee_id_unique": {
           "name": "boardgames_friend_request_user_id_requestee_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "requestee_id"
-          ]
+          "columns": ["user_id", "requestee_id"]
         }
       },
       "policies": {},
@@ -500,12 +474,8 @@
           "name": "boardgames_friend_setting_created_by_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_friend_setting",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "created_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -513,12 +483,8 @@
           "name": "boardgames_friend_setting_friend_id_boardgames_friend_id_fk",
           "tableFrom": "boardgames_friend_setting",
           "tableTo": "boardgames_friend",
-          "columnsFrom": [
-            "friend_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["friend_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -528,10 +494,7 @@
         "boardgames_friend_settings_unique": {
           "name": "boardgames_friend_settings_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "created_by_id",
-            "friend_id"
-          ]
+          "columns": ["created_by_id", "friend_id"]
         }
       },
       "policies": {},
@@ -672,12 +635,8 @@
           "name": "boardgames_game_created_by_boardgames_user_id_fk",
           "tableFrom": "boardgames_game",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -685,12 +644,8 @@
           "name": "boardgames_game_image_id_boardgames_image_id_fk",
           "tableFrom": "boardgames_game",
           "tableTo": "boardgames_image",
-          "columnsFrom": [
-            "image_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["image_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -761,12 +716,8 @@
           "name": "boardgames_game_role_game_id_boardgames_game_id_fk",
           "tableFrom": "boardgames_game_role",
           "tableTo": "boardgames_game",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -774,12 +725,8 @@
           "name": "boardgames_game_role_created_by_boardgames_user_id_fk",
           "tableFrom": "boardgames_game_role",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -813,12 +760,8 @@
           "name": "boardgames_game_tag_game_id_boardgames_game_id_fk",
           "tableFrom": "boardgames_game_tag",
           "tableTo": "boardgames_game",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -826,12 +769,8 @@
           "name": "boardgames_game_tag_tag_id_boardgames_tag_id_fk",
           "tableFrom": "boardgames_game_tag",
           "tableTo": "boardgames_tag",
-          "columnsFrom": [
-            "tag_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tag_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -839,10 +778,7 @@
       "compositePrimaryKeys": {
         "boardgames_game_tag_game_id_tag_id_pk": {
           "name": "boardgames_game_tag_game_id_tag_id_pk",
-          "columns": [
-            "game_id",
-            "tag_id"
-          ]
+          "columns": ["game_id", "tag_id"]
         }
       },
       "uniqueConstraints": {},
@@ -908,12 +844,8 @@
           "name": "boardgames_group_created_by_boardgames_user_id_fk",
           "tableFrom": "boardgames_group",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -966,12 +898,8 @@
           "name": "boardgames_group_player_group_id_boardgames_group_id_fk",
           "tableFrom": "boardgames_group_player",
           "tableTo": "boardgames_group",
-          "columnsFrom": [
-            "group_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["group_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -979,12 +907,8 @@
           "name": "boardgames_group_player_player_id_boardgames_player_id_fk",
           "tableFrom": "boardgames_group_player",
           "tableTo": "boardgames_player",
-          "columnsFrom": [
-            "player_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["player_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -994,10 +918,7 @@
         "boardgames_group_player_group_id_player_id_unique": {
           "name": "boardgames_group_player_group_id_player_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "group_id",
-            "player_id"
-          ]
+          "columns": ["group_id", "player_id"]
         }
       },
       "policies": {},
@@ -1098,12 +1019,8 @@
           "name": "boardgames_image_created_by_boardgames_user_id_fk",
           "tableFrom": "boardgames_image",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1185,12 +1102,8 @@
           "name": "boardgames_location_created_by_boardgames_user_id_fk",
           "tableFrom": "boardgames_location",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1360,12 +1273,8 @@
           "name": "boardgames_match_created_by_boardgames_user_id_fk",
           "tableFrom": "boardgames_match",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1373,12 +1282,8 @@
           "name": "boardgames_match_game_id_boardgames_game_id_fk",
           "tableFrom": "boardgames_match",
           "tableTo": "boardgames_game",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1386,12 +1291,8 @@
           "name": "boardgames_match_scoresheet_id_boardgames_scoresheet_id_fk",
           "tableFrom": "boardgames_match",
           "tableTo": "boardgames_scoresheet",
-          "columnsFrom": [
-            "scoresheet_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scoresheet_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1399,12 +1300,8 @@
           "name": "boardgames_match_location_id_boardgames_location_id_fk",
           "tableFrom": "boardgames_match",
           "tableTo": "boardgames_location",
-          "columnsFrom": [
-            "location_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["location_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1475,12 +1372,8 @@
           "name": "boardgames_match_image_match_id_boardgames_match_id_fk",
           "tableFrom": "boardgames_match_image",
           "tableTo": "boardgames_match",
-          "columnsFrom": [
-            "match_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["match_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1488,12 +1381,8 @@
           "name": "boardgames_match_image_image_id_boardgames_image_id_fk",
           "tableFrom": "boardgames_match_image",
           "tableTo": "boardgames_image",
-          "columnsFrom": [
-            "image_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["image_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1501,12 +1390,8 @@
           "name": "boardgames_match_image_created_by_boardgames_user_id_fk",
           "tableFrom": "boardgames_match_image",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1603,12 +1488,8 @@
           "name": "boardgames_match_player_match_id_boardgames_match_id_fk",
           "tableFrom": "boardgames_match_player",
           "tableTo": "boardgames_match",
-          "columnsFrom": [
-            "match_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["match_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1616,12 +1497,8 @@
           "name": "boardgames_match_player_player_id_boardgames_player_id_fk",
           "tableFrom": "boardgames_match_player",
           "tableTo": "boardgames_player",
-          "columnsFrom": [
-            "player_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["player_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1629,12 +1506,8 @@
           "name": "boardgames_match_player_team_id_boardgames_team_id_fk",
           "tableFrom": "boardgames_match_player",
           "tableTo": "boardgames_team",
-          "columnsFrom": [
-            "team_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["team_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1644,10 +1517,7 @@
         "boardgames_match_player_match_id_player_id_unique": {
           "name": "boardgames_match_player_match_id_player_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "match_id",
-            "player_id"
-          ]
+          "columns": ["match_id", "player_id"]
         }
       },
       "policies": {},
@@ -1677,12 +1547,8 @@
           "name": "boardgames_match_player_role_match_player_id_boardgames_match_player_id_fk",
           "tableFrom": "boardgames_match_player_role",
           "tableTo": "boardgames_match_player",
-          "columnsFrom": [
-            "match_player_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["match_player_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1690,12 +1556,8 @@
           "name": "boardgames_match_player_role_role_id_boardgames_game_role_id_fk",
           "tableFrom": "boardgames_match_player_role",
           "tableTo": "boardgames_game_role",
-          "columnsFrom": [
-            "role_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["role_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1703,10 +1565,7 @@
       "compositePrimaryKeys": {
         "boardgames_match_player_role_match_player_id_role_id_pk": {
           "name": "boardgames_match_player_role_match_player_id_role_id_pk",
-          "columns": [
-            "match_player_id",
-            "role_id"
-          ]
+          "columns": ["match_player_id", "role_id"]
         }
       },
       "uniqueConstraints": {},
@@ -1828,12 +1687,8 @@
           "name": "boardgames_player_created_by_boardgames_user_id_fk",
           "tableFrom": "boardgames_player",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1841,12 +1696,8 @@
           "name": "boardgames_player_friend_id_boardgames_friend_id_fk",
           "tableFrom": "boardgames_player",
           "tableTo": "boardgames_friend",
-          "columnsFrom": [
-            "friend_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["friend_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1854,12 +1705,8 @@
           "name": "boardgames_player_image_id_boardgames_image_id_fk",
           "tableFrom": "boardgames_player",
           "tableTo": "boardgames_image",
-          "columnsFrom": [
-            "image_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["image_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1869,10 +1716,7 @@
         "boardgames_player_created_by_friend_id_unique": {
           "name": "boardgames_player_created_by_friend_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "created_by",
-            "friend_id"
-          ]
+          "columns": ["created_by", "friend_id"]
         }
       },
       "policies": {},
@@ -1993,12 +1837,8 @@
           "name": "boardgames_round_scoresheet_id_boardgames_scoresheet_id_fk",
           "tableFrom": "boardgames_round",
           "tableTo": "boardgames_scoresheet",
-          "columnsFrom": [
-            "scoresheet_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scoresheet_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2057,12 +1897,8 @@
           "name": "boardgames_round_player_round_boardgames_round_id_fk",
           "tableFrom": "boardgames_round_player",
           "tableTo": "boardgames_round",
-          "columnsFrom": [
-            "round"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["round"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2070,12 +1906,8 @@
           "name": "boardgames_round_player_match_player_id_boardgames_match_player_id_fk",
           "tableFrom": "boardgames_round_player",
           "tableTo": "boardgames_match_player",
-          "columnsFrom": [
-            "match_player_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["match_player_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2085,10 +1917,7 @@
         "boardgames_round_player_round_match_player_id_unique": {
           "name": "boardgames_round_player_round_match_player_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "round",
-            "match_player_id"
-          ]
+          "columns": ["round", "match_player_id"]
         }
       },
       "policies": {},
@@ -2206,12 +2035,8 @@
           "name": "boardgames_scoresheet_game_id_boardgames_game_id_fk",
           "tableFrom": "boardgames_scoresheet",
           "tableTo": "boardgames_game",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2219,12 +2044,8 @@
           "name": "boardgames_scoresheet_created_by_boardgames_user_id_fk",
           "tableFrom": "boardgames_scoresheet",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2300,12 +2121,8 @@
           "name": "session_user_id_boardgames_user_id_fk",
           "tableFrom": "session",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2315,9 +2132,7 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -2472,12 +2287,8 @@
           "name": "boardgames_share_request_owner_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_share_request",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["owner_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2485,12 +2296,8 @@
           "name": "boardgames_share_request_shared_with_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_share_request",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "shared_with_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shared_with_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2500,9 +2307,7 @@
         "boardgames_share_request_token_unique": {
           "name": "boardgames_share_request_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -2631,12 +2436,8 @@
           "name": "boardgames_shared_game_owner_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_shared_game",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["owner_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2644,12 +2445,8 @@
           "name": "boardgames_shared_game_shared_with_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_shared_game",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "shared_with_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shared_with_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2657,12 +2454,8 @@
           "name": "boardgames_shared_game_game_id_boardgames_game_id_fk",
           "tableFrom": "boardgames_shared_game",
           "tableTo": "boardgames_game",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2670,12 +2463,8 @@
           "name": "boardgames_shared_game_linked_game_id_boardgames_game_id_fk",
           "tableFrom": "boardgames_shared_game",
           "tableTo": "boardgames_game",
-          "columnsFrom": [
-            "linked_game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["linked_game_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2815,12 +2604,8 @@
           "name": "boardgames_shared_location_owner_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_shared_location",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["owner_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2828,12 +2613,8 @@
           "name": "boardgames_shared_location_shared_with_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_shared_location",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "shared_with_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shared_with_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2841,12 +2622,8 @@
           "name": "boardgames_shared_location_location_id_boardgames_location_id_fk",
           "tableFrom": "boardgames_shared_location",
           "tableTo": "boardgames_location",
-          "columnsFrom": [
-            "location_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["location_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2854,12 +2631,8 @@
           "name": "boardgames_shared_location_linked_location_id_boardgames_location_id_fk",
           "tableFrom": "boardgames_shared_location",
           "tableTo": "boardgames_location",
-          "columnsFrom": [
-            "linked_location_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["linked_location_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3013,12 +2786,8 @@
           "name": "boardgames_shared_match_owner_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_shared_match",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["owner_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3026,12 +2795,8 @@
           "name": "boardgames_shared_match_shared_with_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_shared_match",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "shared_with_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shared_with_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3039,12 +2804,8 @@
           "name": "boardgames_shared_match_match_id_boardgames_match_id_fk",
           "tableFrom": "boardgames_shared_match",
           "tableTo": "boardgames_match",
-          "columnsFrom": [
-            "match_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["match_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3052,12 +2813,8 @@
           "name": "boardgames_shared_match_shared_game_id_boardgames_shared_game_id_fk",
           "tableFrom": "boardgames_shared_match",
           "tableTo": "boardgames_shared_game",
-          "columnsFrom": [
-            "shared_game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shared_game_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3065,12 +2822,8 @@
           "name": "boardgames_shared_match_shared_location_id_boardgames_shared_location_id_fk",
           "tableFrom": "boardgames_shared_match",
           "tableTo": "boardgames_shared_location",
-          "columnsFrom": [
-            "shared_location_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shared_location_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3224,12 +2977,8 @@
           "name": "boardgames_shared_match_player_owner_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_shared_match_player",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["owner_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3237,12 +2986,8 @@
           "name": "boardgames_shared_match_player_shared_with_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_shared_match_player",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "shared_with_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shared_with_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3250,12 +2995,8 @@
           "name": "boardgames_shared_match_player_match_player_id_boardgames_match_player_id_fk",
           "tableFrom": "boardgames_shared_match_player",
           "tableTo": "boardgames_match_player",
-          "columnsFrom": [
-            "match_player_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["match_player_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3263,12 +3004,8 @@
           "name": "boardgames_shared_match_player_shared_match_id_boardgames_shared_match_id_fk",
           "tableFrom": "boardgames_shared_match_player",
           "tableTo": "boardgames_shared_match",
-          "columnsFrom": [
-            "shared_match_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shared_match_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3276,12 +3013,8 @@
           "name": "boardgames_shared_match_player_shared_player_id_boardgames_shared_player_id_fk",
           "tableFrom": "boardgames_shared_match_player",
           "tableTo": "boardgames_shared_player",
-          "columnsFrom": [
-            "shared_player_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shared_player_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3414,12 +3147,8 @@
           "name": "boardgames_shared_player_owner_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_shared_player",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["owner_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3427,12 +3156,8 @@
           "name": "boardgames_shared_player_shared_with_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_shared_player",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "shared_with_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shared_with_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3440,12 +3165,8 @@
           "name": "boardgames_shared_player_player_id_boardgames_player_id_fk",
           "tableFrom": "boardgames_shared_player",
           "tableTo": "boardgames_player",
-          "columnsFrom": [
-            "player_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["player_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3453,12 +3174,8 @@
           "name": "boardgames_shared_player_linked_player_id_boardgames_player_id_fk",
           "tableFrom": "boardgames_shared_player",
           "tableTo": "boardgames_player",
-          "columnsFrom": [
-            "linked_player_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["linked_player_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3613,12 +3330,8 @@
           "name": "boardgames_shared_scoresheet_owner_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_shared_scoresheet",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["owner_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3626,12 +3339,8 @@
           "name": "boardgames_shared_scoresheet_shared_with_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_shared_scoresheet",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "shared_with_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shared_with_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3639,12 +3348,8 @@
           "name": "boardgames_shared_scoresheet_scoresheet_id_boardgames_scoresheet_id_fk",
           "tableFrom": "boardgames_shared_scoresheet",
           "tableTo": "boardgames_scoresheet",
-          "columnsFrom": [
-            "scoresheet_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scoresheet_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3652,12 +3357,8 @@
           "name": "boardgames_shared_scoresheet_shared_game_id_boardgames_shared_game_id_fk",
           "tableFrom": "boardgames_shared_scoresheet",
           "tableTo": "boardgames_shared_game",
-          "columnsFrom": [
-            "shared_game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["shared_game_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3710,12 +3411,8 @@
           "name": "boardgames_tag_created_by_boardgames_user_id_fk",
           "tableFrom": "boardgames_tag",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3774,12 +3471,8 @@
           "name": "boardgames_team_match_id_boardgames_match_id_fk",
           "tableFrom": "boardgames_team",
           "tableTo": "boardgames_match",
-          "columnsFrom": [
-            "match_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["match_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3880,16 +3573,12 @@
         "boardgames_user_email_unique": {
           "name": "boardgames_user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         },
         "boardgames_user_username_unique": {
           "name": "boardgames_user_username_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
+          "columns": ["username"]
         }
       },
       "policies": {},
@@ -3939,12 +3628,8 @@
           "name": "boardgames_user_sharing_preference_user_id_boardgames_user_id_fk",
           "tableFrom": "boardgames_user_sharing_preference",
           "tableTo": "boardgames_user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3954,9 +3639,7 @@
         "boardgames_user_sharing_preference_user_id_unique": {
           "name": "boardgames_user_sharing_preference_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
+          "columns": ["user_id"]
         }
       },
       "policies": {},

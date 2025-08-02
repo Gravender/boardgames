@@ -15,16 +15,17 @@ test.describe("Game Page", () => {
   }
   async function deleteGames(browserName: string) {
     const clerkUserId = getClerkUserId();
+    //TODO - fix this
     const [returnedUser] = await db
       .select()
       .from(user)
-      .where(eq(user.clerkUserId, clerkUserId));
+      .where(eq(user.id, clerkUserId));
     if (returnedUser) {
       const browserGameName = browserName + "_" + GAME_NAME;
       const editedBrowserGameName = browserName + "_" + EDITED_GAME_NAME;
       const returnedGames = await db.query.game.findMany({
         where: {
-          userId: returnedUser.id,
+          createdBy: returnedUser.id,
           name: {
             OR: [browserGameName, editedBrowserGameName],
           },

@@ -407,7 +407,7 @@ type SharedMatch = {
         name: string;
         description: string | null;
         gameId: number;
-        createdBy: number;
+        createdBy: string;
         createdAt: Date;
         updatedAt: Date | null;
         deletedAt: Date | null;

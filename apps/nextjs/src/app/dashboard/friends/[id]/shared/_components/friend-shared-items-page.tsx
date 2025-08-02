@@ -8,7 +8,7 @@ import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 import { FriendSharedItems } from "./friend-shared-items";
 
-export function FriendSharedItemsPage({ friendId }: { friendId: number }) {
+export function FriendSharedItemsPage({ friendId }: { friendId: string }) {
   const trpc = useTRPC();
 
   const { data: friend } = useSuspenseQuery(

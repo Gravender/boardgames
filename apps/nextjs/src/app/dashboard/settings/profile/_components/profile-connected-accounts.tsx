@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 "use client";
 
 import { useState } from "react";
@@ -99,6 +100,7 @@ export function ProfileConnectedAccounts({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   const disconnectAccount = async (provider: "google" | "github") => {
     if (!session?.user) {
       toast.error("Not logged in", {
