@@ -6,7 +6,6 @@
       "dom.iterable"
     ],
     "jsx": "preserve",
-    "rootDir": "."
   },
   "extends": "@board-games/tsconfig/internal-package.json",
   "include": [
