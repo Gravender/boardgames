@@ -739,20 +739,18 @@ export const friendsRouter = {
           id: returnedFriend.id,
           friendId: returnedFriend.friendId,
           linkedPlayerFound: false as const,
-          clerkUser: {
-            name: returnedFriend.user.name,
-            username: returnedFriend.user.username,
-            email: returnedFriend.user.email,
-            image:
-              returnedFriend.user.image !== ""
-                ? {
-                    name: returnedFriend.user.name,
-                    type: "file" as const,
-                    usageType: "player" as const,
-                    url: returnedFriend.user.image,
-                  }
-                : null,
-          },
+          name: returnedFriend.user.name,
+          username: returnedFriend.user.username,
+          email: returnedFriend.user.email,
+          image:
+            returnedFriend.user.image !== ""
+              ? {
+                  name: returnedFriend.user.name,
+                  type: "file" as const,
+                  usageType: "player" as const,
+                  url: returnedFriend.user.image,
+                }
+              : null,
           settings: returnedFriend.friendSetting,
           sharedWith,
           sharedTo,
@@ -851,20 +849,18 @@ export const friendsRouter = {
         id: returnedFriend.id,
         friendId: returnedFriend.friendId,
         linkedPlayerFound: true as const,
-        clerkUser: {
-          name: returnedFriend.user.name,
-          username: returnedFriend.user.username,
-          email: returnedFriend.user.email,
-          image:
-            returnedFriend.user.image !== ""
-              ? {
-                  name: returnedFriend.user.name,
-                  type: "file" as const,
-                  usageType: "player" as const,
-                  url: returnedFriend.user.image,
-                }
-              : null,
-        },
+        name: returnedFriend.user.name,
+        username: returnedFriend.user.username,
+        email: returnedFriend.user.email,
+        image:
+          returnedFriend.user.image !== ""
+            ? {
+                name: returnedFriend.user.name,
+                type: "file" as const,
+                usageType: "player" as const,
+                url: returnedFriend.user.image,
+              }
+            : null,
         sharedWith,
         sharedTo,
         settings: returnedFriend.friendSetting,

@@ -26,13 +26,13 @@ export default function FriendProfilePage({ friendId }: { friendId: string }) {
         <CardHeader className="flex flex-row items-center gap-4">
           <PlayerImage
             className="size-16"
-            image={friend.clerkUser.image}
-            alt={friend.clerkUser.name}
+            image={friend.image}
+            alt={friend.name}
           />
           <div className="flex-grow">
-            <CardTitle>{friend.clerkUser.name}</CardTitle>
+            <CardTitle>{friend.name}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              {friend.clerkUser.username && `@${friend.clerkUser.username}`}
+              {friend.username && `@${friend.username}`}
             </p>
           </div>
           <FriendSettingsDialog

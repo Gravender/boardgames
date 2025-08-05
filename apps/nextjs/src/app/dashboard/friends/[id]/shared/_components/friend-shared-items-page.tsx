@@ -20,12 +20,12 @@ export function FriendSharedItemsPage({ friendId }: { friendId: string }) {
       <Card>
         <CardHeader className="flex flex-row items-center gap-4">
           <PlayerImage
-            image={friend.clerkUser.image}
-            alt={friend.clerkUser.name}
+            image={friend.image}
+            alt={friend.name}
             className="size-16"
           />
           <div>
-            <CardTitle>{friend.clerkUser.name}</CardTitle>
+            <CardTitle>{friend.name}</CardTitle>
             <p className="text-sm text-muted-foreground">Shared Items</p>
           </div>
         </CardHeader>
