@@ -1,5 +1,19 @@
 {
-  "extends": "@board-games/tsconfig/base.json",
-  "include": ["*.ts", "src"],
-  "exclude": ["node_modules"]
+  "compilerOptions": {
+    "lib": [
+      "ES2023",
+      "dom",
+      "dom.iterable"
+    ],
+    "jsx": "preserve",
+    "rootDir": "."
+  },
+  "extends": "@board-games/tsconfig/internal-package.json",
+  "include": [
+    "*.ts",
+    "src"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
