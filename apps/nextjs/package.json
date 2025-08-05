@@ -39,6 +39,7 @@
     "server-only": "^0.0.1",
     "superjson": "2.2.2",
     "svix": "^1.61.4",
+    "ua-parser-js": "^2.0.4",
     "uploadthing": "^7.4.1",
     "zod": "catalog:",
     "zustand": "^5.0.2"
