@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
@@ -21,15 +20,6 @@ export default function LoginPage() {
           href="/"
           className="flex items-center gap-2 self-center font-medium"
         >
-          <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Image
-              width={50}
-              height={50}
-              src={"/"}
-              alt="Board Games Tracker"
-              priority
-            />
-          </div>
           Board Games Tracker
         </Link>
         <LoginForm />

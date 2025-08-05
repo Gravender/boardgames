@@ -27,7 +27,6 @@ export function initAuth(options: {
         verification: schema.verification,
         session: schema.session,
       },
-      debugLogs: true,
     }),
     emailAndPassword: {
       enabled: true,

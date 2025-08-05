@@ -80,7 +80,7 @@ export function LoginForm({
       password: values.password,
       fetchOptions: {
         onSuccess: () => {
-          toast.success("Successfully signed up.");
+          toast.success("Successfully logged in");
           redirect("/dashboard");
         },
         onError: () => {

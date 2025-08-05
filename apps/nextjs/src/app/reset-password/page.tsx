@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
@@ -23,15 +22,6 @@ export default function ResetPasswordPage() {
           href="/"
           className="flex items-center gap-2 self-center font-medium"
         >
-          <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Image
-              width={50}
-              height={50}
-              src={""}
-              alt="Board Games Tracker"
-              priority
-            />
-          </div>
           Board Games Tracker
         </Link>
         <Suspense fallback={<Skeleton className="h-72 w-full" />}>

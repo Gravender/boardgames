@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 
-import { ProfileConnectedAccounts } from "./profile-connected-accounts";
+import { ProfileConnectedAccounts } from "~/components/better-auth/provider/connected-accounts";
 import { ProfileDetails } from "./profile-details";
 import { ProfileSecurity } from "./profile-security";
 

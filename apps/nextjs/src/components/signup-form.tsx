@@ -76,7 +76,7 @@ export function SignupForm({
           redirect("/dashboard");
         },
         onError: (ctx) => {
-          console.log(ctx);
+          console.error(ctx);
           toast.error(ctx.error.message);
         },
       },
