@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod/v4";
 
@@ -7,9 +8,9 @@ import {
   insertRoundSchema,
 } from "@board-games/db/zodSchema";
 
-import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import { protectedUserProcedure } from "../trpc";
 
-export const roundRouter = createTRPCRouter({
+export const roundRouter = {
   addRound: protectedUserProcedure
     .input(
       z.object({
@@ -38,4 +39,4 @@ export const roundRouter = createTRPCRouter({
         }));
       await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);
     }),
-});
+} satisfies TRPCRouterRecord;

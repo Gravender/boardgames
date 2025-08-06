@@ -4,6 +4,8 @@ import { vercel } from "@t3-oss/env-nextjs/presets-zod";
 import { config } from "dotenv";
 import { z } from "zod/v4";
 
+import { authEnv } from "@board-games/auth/env";
+
 config();
 
 export const env = createEnv({
@@ -11,7 +13,7 @@ export const env = createEnv({
    * Specify your server-side environment variables schema here. This way you can ensure the app
    * isn't built with invalid env vars.
    */
-  extends: [vercel()],
+  extends: [authEnv(), vercel()],
   shared: {
     NODE_ENV: z
       .enum(["development", "test", "production"])

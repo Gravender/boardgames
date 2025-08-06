@@ -30,7 +30,7 @@ import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 import { GameDetails } from "./game-details";
 
-export function FriendStatsPage({ friendId }: { friendId: number }) {
+export function FriendStatsPage({ friendId }: { friendId: string }) {
   const trpc = useTRPC();
 
   const { data: friend } = useSuspenseQuery(
@@ -52,13 +52,11 @@ export function FriendStatsPage({ friendId }: { friendId: number }) {
           <CardDescription>
             <div className="flex w-full flex-col items-center justify-center gap-2 text-secondary-foreground">
               <PlayerImage
-                image={friend.clerkUser.image}
-                alt={friend.clerkUser.name}
+                image={friend.image}
+                alt={friend.name}
                 className="size-16"
               />
-              <span className="text-xl font-semibold">
-                {friend.clerkUser.name}
-              </span>
+              <span className="text-xl font-semibold">{friend.name}</span>
             </div>
           </CardDescription>
         </CardHeader>

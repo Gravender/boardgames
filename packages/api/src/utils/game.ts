@@ -96,8 +96,8 @@ export function mapMatches(
         };
         sharedGame: {
           id: number;
-          ownerId: number;
-          sharedWithId: number;
+          ownerId: string;
+          sharedWithId: string;
           gameId: number;
           linkedGameId: number | null;
           permission: "view" | "edit";
@@ -148,16 +148,16 @@ export function mapMatches(
         } | null;
         sharedMatchPlayers: {
           id: number;
-          ownerId: number;
-          sharedWithId: number;
+          ownerId: string;
+          sharedWithId: string;
           matchPlayerId: number;
           sharedMatchId: number;
           sharedPlayerId: number | null;
           permission: "view" | "edit";
           sharedPlayer: {
             id: number;
-            ownerId: number;
-            sharedWithId: number;
+            ownerId: string;
+            sharedWithId: string;
             playerId: number;
             linkedPlayerId: number | null;
             permission: "view" | "edit";
@@ -303,16 +303,16 @@ export function mapMatches(
 export function mapSharedMatchPlayers(
   sharedMatchPlayers: {
     id: number;
-    ownerId: number;
-    sharedWithId: number;
+    ownerId: string;
+    sharedWithId: string;
     matchPlayerId: number;
     sharedMatchId: number;
     sharedPlayerId: number | null;
     permission: "view" | "edit";
     sharedPlayer: {
       id: number;
-      ownerId: number;
-      sharedWithId: number;
+      ownerId: string;
+      sharedWithId: string;
       playerId: number;
       linkedPlayerId: number | null;
       permission: "view" | "edit";

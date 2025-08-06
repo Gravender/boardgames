@@ -1,47 +1,64 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import React, { useState } from "react";
+// import { useRouter } from "next/navigation";
 import { Camera, Mail } from "lucide-react";
-import { z } from "zod/v4";
 
-import { fileSchema } from "@board-games/shared";
+// import { z } from "zod/v4";
+
+// import { fileSchema } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent } from "@board-games/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@board-games/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  useForm,
-} from "@board-games/ui/form";
-import { Input } from "@board-games/ui/input";
-import { toast } from "@board-games/ui/toast";
 
-import type { SerializableUser } from "../page";
-import { Spinner } from "~/components/spinner";
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogDescription,
+//   DialogFooter,
+//   DialogHeader,
+//   DialogTitle,
+// } from "@board-games/ui/dialog";
+// import {
+//   Form,
+//   FormControl,
+//   FormDescription,
+//   FormField,
+//   FormItem,
+//   FormLabel,
+//   FormMessage,
+//   useForm,
+// } from "@board-games/ui/form";
+// import { Input } from "@board-games/ui/input";
+// import { toast } from "@board-games/ui/toast";
+
+// import { Spinner } from "~/components/spinner";
 
 interface ProfileHeaderProps {
-  user: SerializableUser;
+  user: {
+    id: string;
+    name: string;
+    emailVerified: boolean;
+    email: string;
+    createdAt: Date;
+    updatedAt: Date;
+    image?: string | null | undefined;
+    username?: string | null | undefined;
+    displayUsername?: string | null | undefined;
+  };
 }
 
 export function ProfileHeader({ user }: ProfileHeaderProps) {
-  const [isEditPictureOpen, setIsEditPictureOpen] = useState(false);
-  const initials = `${user.firstName ?? ""}${user.lastName?.[0] ?? ""}`;
+  const [_, setIsEditPictureOpen] = useState(false);
+  const initials = (() => {
+    if (!user.name) return "";
 
+    const nameParts = user.name.trim().split(" ");
+    const first = nameParts[0]?.[0] ?? "";
+    const second = nameParts[1]?.[0] ?? "";
+
+    return `${first}${second}`.toUpperCase();
+  })();
   return (
     <>
       <Card>
@@ -49,10 +66,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
           <div className="flex flex-col items-start gap-6 md:flex-row md:items-center">
             <div className="relative">
               <Avatar className="h-24 w-24">
-                <AvatarImage
-                  src={user.imageUrl}
-                  alt={user.fullName ?? "User"}
-                />
+                <AvatarImage src={user.image ?? ""} alt={user.name} />
                 <AvatarFallback className="text-lg">{initials}</AvatarFallback>
               </Avatar>
               <Button
@@ -67,12 +81,12 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
             </div>
 
             <div className="space-y-1.5">
-              <h1 className="text-2xl font-bold">{user.fullName}</h1>
+              <h1 className="text-2xl font-bold">{user.name}</h1>
               <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:gap-6">
-                {user.primaryEmailAddress && (
+                {user.email && (
                   <div className="flex items-center gap-1">
                     <Mail className="h-4 w-4" />
-                    <span>{user.primaryEmailAddress}</span>
+                    <span>{user.email}</span>
                   </div>
                 )}
               </div>
@@ -80,16 +94,16 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
           </div>
         </CardContent>
       </Card>
-      <EditProfilePictureDialog
+      {/* <EditProfilePictureDialog
         serializableUser={user}
         isOpen={isEditPictureOpen}
         setIsOpen={setIsEditPictureOpen}
-      />
+      /> */}
     </>
   );
 }
 
-interface EditProfilePictureDialogProps {
+/* interface EditProfilePictureDialogProps {
   serializableUser: SerializableUser;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -252,4 +266,4 @@ function EditProfilePictureContent({
       </form>
     </Form>
   );
-}
+} */

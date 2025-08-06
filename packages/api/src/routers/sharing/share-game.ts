@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
@@ -26,7 +27,7 @@ import { selectSharedGameSchema } from "@board-games/db/zodSchema";
 import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 import type { PlayerMatch } from "../../utils/gameStats";
-import { createTRPCRouter, protectedUserProcedure } from "../../trpc";
+import { protectedUserProcedure } from "../../trpc";
 import { processPlayer, shareMatchWithFriends } from "../../utils/addMatch";
 import {
   headToHeadStats,
@@ -34,7 +35,7 @@ import {
 } from "../../utils/gameStats";
 import { cloneSharedLocationForUser } from "../../utils/handleSharedLocation";
 
-export const shareGameRouter = createTRPCRouter({
+export const shareGameRouter = {
   getSharedGame: protectedUserProcedure
     .input(selectSharedGameSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
@@ -653,7 +654,7 @@ export const shareGameRouter = createTRPCRouter({
             .insert(game)
             .values({
               name: returnedSharedGame.game.name,
-              userId: ctx.userId,
+              createdBy: ctx.userId,
               yearPublished: returnedSharedGame.game.yearPublished,
               description: returnedSharedGame.game.description,
               rules: returnedSharedGame.game.rules,
@@ -683,7 +684,7 @@ export const shareGameRouter = createTRPCRouter({
         if (input.scoresheet.scoresheetType === "original") {
           returnedScoresheet = await transaction.query.scoresheet.findFirst({
             where: {
-              userId: ctx.userId,
+              createdBy: ctx.userId,
               id: input.scoresheet.id,
             },
             with: {
@@ -711,7 +712,7 @@ export const shareGameRouter = createTRPCRouter({
           returnedScoresheet = await transaction.query.scoresheet.findFirst({
             where: {
               id: sharedScoresheet.scoresheetId,
-              userId: sharedScoresheet.ownerId,
+              createdBy: sharedScoresheet.ownerId,
             },
             with: {
               rounds: {
@@ -734,7 +735,7 @@ export const shareGameRouter = createTRPCRouter({
             parentId: returnedScoresheet.id,
             name: `${input.name} Scoresheet`,
             gameId: gameId,
-            userId: ctx.userId,
+            createdBy: ctx.userId,
             isCoop: returnedScoresheet.isCoop,
             winCondition: returnedScoresheet.winCondition,
             targetScore: returnedScoresheet.targetScore,
@@ -767,7 +768,7 @@ export const shareGameRouter = createTRPCRouter({
             date: input.date,
             gameId: gameId,
             locationId: locationId,
-            userId: ctx.userId,
+            createdBy: ctx.userId,
             scoresheetId: insertedScoresheet.id,
           })
           .returning();
@@ -1075,7 +1076,7 @@ export const shareGameRouter = createTRPCRouter({
                     roundsScore: inputScoresheet.scoresheet.roundsScore,
                     targetScore: inputScoresheet.scoresheet.targetScore,
 
-                    userId: returnedSharedGame.linkedGameId
+                    createdBy: returnedSharedGame.linkedGameId
                       ? ctx.userId
                       : returnedSharedGame.ownerId,
                     gameId:
@@ -1284,4 +1285,4 @@ export const shareGameRouter = createTRPCRouter({
         }
       });
     }),
-});
+} satisfies TRPCRouterRecord;

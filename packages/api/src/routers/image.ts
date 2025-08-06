@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod/v4";
@@ -6,16 +7,16 @@ import { image, matchImage } from "@board-games/db/schema";
 import { insertImageSchema } from "@board-games/db/zodSchema";
 
 import analyticsServerClient from "../analytics";
-import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import { protectedUserProcedure } from "../trpc";
 import { utapi } from "../uploadthing";
 
-export const imageRouter = createTRPCRouter({
+export const imageRouter = {
   create: protectedUserProcedure
-    .input(insertImageSchema.omit({ userId: true, id: true }))
+    .input(insertImageSchema.omit({ createdBy: true, id: true }))
     .mutation(async ({ ctx, input }) => {
       const [dbImage] = await ctx.db
         .insert(image)
-        .values({ ...input, userId: ctx.userId })
+        .values({ ...input, createdBy: ctx.userId })
         .returning();
       if (!dbImage) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
@@ -55,7 +56,7 @@ export const imageRouter = createTRPCRouter({
       await ctx.db.delete(image).where(eq(image.id, imageToDelete.id));
       if (imageToDelete.type === "file" && imageToDelete.fileId) {
         analyticsServerClient.capture({
-          distinctId: ctx.auth.userId ?? "",
+          distinctId: ctx.userId,
           event: "uploadthing begin image delete",
           properties: {
             imageName: imageToDelete.name,
@@ -66,7 +67,7 @@ export const imageRouter = createTRPCRouter({
         const result = await utapi.deleteFiles(imageToDelete.fileId);
         if (!result.success) {
           analyticsServerClient.capture({
-            distinctId: ctx.auth.userId ?? "",
+            distinctId: ctx.userId,
             event: "uploadthing image delete error",
             properties: {
               imageName: imageToDelete.name,
@@ -92,7 +93,7 @@ export const imageRouter = createTRPCRouter({
         });
         if (!returnedMatchImage) {
           analyticsServerClient.capture({
-            distinctId: ctx.auth.userId ?? "",
+            distinctId: ctx.userId,
             event: "delete match image error",
             properties: {
               id: input.id,
@@ -110,7 +111,7 @@ export const imageRouter = createTRPCRouter({
           returnedMatchImage.image.fileId
         ) {
           analyticsServerClient.capture({
-            distinctId: ctx.auth.userId ?? "",
+            distinctId: ctx.userId,
             event: "uploadthing begin image delete",
             properties: {
               imageName: returnedMatchImage.image.name,
@@ -123,7 +124,7 @@ export const imageRouter = createTRPCRouter({
           );
           if (!result.success) {
             analyticsServerClient.capture({
-              distinctId: ctx.auth.userId ?? "",
+              distinctId: ctx.userId,
               event: "uploadthing image delete error",
               properties: {
                 imageName: returnedMatchImage.image.name,
@@ -139,4 +140,4 @@ export const imageRouter = createTRPCRouter({
         }
       });
     }),
-});
+} satisfies TRPCRouterRecord;

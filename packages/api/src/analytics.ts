@@ -2,9 +2,10 @@ import "server-only";
 
 import { PostHog } from "posthog-node";
 
+import { env } from "./env";
+
 function serverSideAnalytics() {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const posthogClient = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
+  const posthogClient = new PostHog(env.NEXT_PUBLIC_POSTHOG_KEY, {
     host: "https://us.i.posthog.com",
     flushAt: 1,
     flushInterval: 0,

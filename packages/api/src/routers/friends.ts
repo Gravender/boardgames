@@ -1,12 +1,11 @@
-import { clerkClient } from "@clerk/nextjs/server";
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod/v4";
 
 import { friend, friendRequest, friendSetting } from "@board-games/db/schema";
 
-import { createTRPCRouter, protectedUserProcedure } from "../trpc";
-import { getFullName } from "../utils/clerk";
+import { protectedUserProcedure } from "../trpc";
 import { mapMatches } from "../utils/game";
 import { collectShares } from "../utils/sharing";
 
@@ -26,7 +25,7 @@ type GameAgg = {
   winRate: number;
 };
 
-export const friendsRouter = createTRPCRouter({
+export const friendsRouter = {
   sendFriendRequest: protectedUserProcedure
     .input(
       z.discriminatedUnion("type", [
@@ -46,23 +45,15 @@ export const friendsRouter = createTRPCRouter({
       ]),
     )
     .mutation(async ({ ctx, input }) => {
-      const client = await clerkClient();
-      const { data } =
-        input.type === "email"
-          ? await client.users.getUserList({
-              emailAddress: [input.email],
-            })
-          : await client.users.getUserList({
-              username: [input.username],
-            });
-      const returnedClerkUser = data[0];
-      if (!returnedClerkUser) {
-        return { success: false, message: "User Not Found" };
-      }
       const returnedUser = await ctx.db.query.user.findFirst({
-        where: {
-          clerkUserId: returnedClerkUser.id,
-        },
+        where:
+          input.type === "email"
+            ? {
+                email: input.email,
+              }
+            : {
+                username: input.username,
+              },
       });
       if (!returnedUser) {
         return { success: false, message: "User Not Found" };
@@ -99,7 +90,7 @@ export const friendsRouter = createTRPCRouter({
 
       return {
         success: true,
-        message: `Friend request sent to ${returnedClerkUser.fullName}`,
+        message: `Friend request sent to ${returnedUser.name}`,
       };
     }),
 
@@ -145,7 +136,7 @@ export const friendsRouter = createTRPCRouter({
       return { success: true, message: "Friend request cancelled." };
     }),
   unFriend: protectedUserProcedure
-    .input(z.object({ friendId: z.number() }))
+    .input(z.object({ friendId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await ctx.db.transaction(async (transaction) => {
         await transaction
@@ -186,11 +177,6 @@ export const friendsRouter = createTRPCRouter({
         user: true,
       },
     });
-    const client = await clerkClient();
-
-    const { data: clerkUsers } = await client.users.getUserList({
-      userId: requests.map((f) => f.user.clerkUserId),
-    });
     const mappedRequests: {
       id: number;
       status: "pending" | "accepted" | "rejected";
@@ -205,25 +191,17 @@ export const friendsRouter = createTRPCRouter({
       } | null;
       createdAt: Date;
     }[] = requests.map((returnedRequest) => {
-      const clerkUser = clerkUsers.find(
-        (u) => u.id === returnedRequest.user.clerkUserId,
-      );
-      if (!clerkUser)
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Friend not found",
-        });
       return {
         id: returnedRequest.id,
         status: returnedRequest.status,
-        name: getFullName(clerkUser),
-        userName: clerkUser.username,
-        email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
+        name: returnedRequest.user.name,
+        userName: returnedRequest.user.username,
+        email: returnedRequest.user.email,
         image:
-          clerkUser.imageUrl !== ""
+          returnedRequest.user.image !== ""
             ? {
-                name: getFullName(clerkUser),
-                url: clerkUser.imageUrl,
+                name: returnedRequest.user.name,
+                url: returnedRequest.user.image,
                 type: "file",
                 usageType: "player",
               }
@@ -244,11 +222,6 @@ export const friendsRouter = createTRPCRouter({
         requestee: true,
       },
     });
-    const client = await clerkClient();
-
-    const { data: clerkUsers } = await client.users.getUserList({
-      userId: requests.map((f) => f.requestee.clerkUserId),
-    });
     const mappedRequests: {
       id: number;
       status: "pending" | "accepted" | "rejected";
@@ -263,25 +236,17 @@ export const friendsRouter = createTRPCRouter({
       } | null;
       createdAt: Date;
     }[] = requests.map((returnedRequest) => {
-      const clerkUser = clerkUsers.find(
-        (u) => u.id === returnedRequest.requestee.clerkUserId,
-      );
-      if (!clerkUser)
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Friend not found",
-        });
       return {
         id: returnedRequest.id,
         status: returnedRequest.status,
-        name: getFullName(clerkUser),
-        userName: clerkUser.username,
-        email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
+        name: returnedRequest.requestee.name,
+        userName: returnedRequest.requestee.username,
+        email: returnedRequest.requestee.email,
         image:
-          clerkUser.imageUrl !== ""
+          returnedRequest.requestee.image !== ""
             ? {
-                name: getFullName(clerkUser),
-                url: clerkUser.imageUrl,
+                name: returnedRequest.requestee.name,
+                url: returnedRequest.requestee.image,
                 type: "file",
                 usageType: "player",
               }
@@ -301,13 +266,8 @@ export const friendsRouter = createTRPCRouter({
         friendPlayer: true,
       },
     });
-    const client = await clerkClient();
-
-    const { data: clerkUsers } = await client.users.getUserList({
-      userId: returnedFriends.map((f) => f.friend.clerkUserId),
-    });
     const mappedFriends: {
-      id: number;
+      id: string;
       name: string;
       userName: string | null;
       email: string | null;
@@ -320,24 +280,16 @@ export const friendsRouter = createTRPCRouter({
       createdAt: Date;
       linkedPlayerFound: boolean;
     }[] = returnedFriends.map((returnedFriend) => {
-      const clerkUser = clerkUsers.find(
-        (u) => u.id === returnedFriend.friend.clerkUserId,
-      );
-      if (!clerkUser)
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Friend not found",
-        });
       return {
         id: returnedFriend.friend.id,
-        name: getFullName(clerkUser),
-        userName: clerkUser.username,
-        email: clerkUser.emailAddresses[0]?.emailAddress ?? null,
+        name: returnedFriend.friend.name,
+        userName: returnedFriend.friend.username,
+        email: returnedFriend.friend.email,
         image:
-          clerkUser.imageUrl !== ""
+          returnedFriend.friend.image !== ""
             ? {
-                name: getFullName(clerkUser),
-                url: clerkUser.imageUrl,
+                name: returnedFriend.friend.name,
+                url: returnedFriend.friend.image,
                 type: "file",
                 usageType: "player",
               }
@@ -349,11 +301,11 @@ export const friendsRouter = createTRPCRouter({
     return mappedFriends;
   }),
   getFriend: protectedUserProcedure
-    .input(z.object({ friendId: z.number() }))
+    .input(z.object({ friendId: z.string() }))
     .query(async ({ ctx, input }) => {
       const returnedFriend = await ctx.db.query.friend.findFirst({
         columns: {
-          friendId: false,
+          friendId: true,
           userId: false,
           createdAt: false,
           updatedAt: false,
@@ -367,8 +319,9 @@ export const friendsRouter = createTRPCRouter({
           friend: {
             columns: {
               name: true,
-              clerkUserId: true,
+              username: true,
               email: true,
+              image: true,
               createdAt: true,
               updatedAt: false,
               id: false,
@@ -452,9 +405,10 @@ export const friendsRouter = createTRPCRouter({
           },
           user: {
             columns: {
-              name: false,
-              clerkUserId: false,
-              email: false,
+              name: true,
+              username: true,
+              email: true,
+              image: true,
               createdAt: false,
               updatedAt: false,
               id: false,
@@ -764,17 +718,6 @@ export const friendsRouter = createTRPCRouter({
       if (!returnedFriend) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Friend not found" });
       }
-      const client = await clerkClient();
-
-      const clerkUser = await client.users
-        .getUser(returnedFriend.friend.clerkUserId)
-        .catch((error) => {
-          console.error(error);
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Friend not found",
-          });
-        });
 
       // “You → friend”
       const sharedWith = collectShares(
@@ -794,21 +737,20 @@ export const friendsRouter = createTRPCRouter({
       if (!rawFP)
         return {
           id: returnedFriend.id,
+          friendId: returnedFriend.friendId,
           linkedPlayerFound: false as const,
-          clerkUser: {
-            name: getFullName(clerkUser),
-            username: clerkUser.username,
-            email: clerkUser.emailAddresses[0]?.emailAddress,
-            image:
-              clerkUser.imageUrl !== ""
-                ? {
-                    name: getFullName(clerkUser),
-                    type: "file" as const,
-                    usageType: "player" as const,
-                    url: clerkUser.imageUrl,
-                  }
-                : null,
-          },
+          name: returnedFriend.user.name,
+          username: returnedFriend.user.username,
+          email: returnedFriend.user.email,
+          image:
+            returnedFriend.user.image !== ""
+              ? {
+                  name: returnedFriend.user.name,
+                  type: "file" as const,
+                  usageType: "player" as const,
+                  url: returnedFriend.user.image,
+                }
+              : null,
           settings: returnedFriend.friendSetting,
           sharedWith,
           sharedTo,
@@ -905,21 +847,20 @@ export const friendsRouter = createTRPCRouter({
       };
       return {
         id: returnedFriend.id,
+        friendId: returnedFriend.friendId,
         linkedPlayerFound: true as const,
-        clerkUser: {
-          name: getFullName(clerkUser),
-          username: clerkUser.username,
-          email: clerkUser.emailAddresses[0]?.emailAddress,
-          image:
-            clerkUser.imageUrl !== ""
-              ? {
-                  name: getFullName(clerkUser),
-                  type: "file" as const,
-                  usageType: "player" as const,
-                  url: clerkUser.imageUrl,
-                }
-              : null,
-        },
+        name: returnedFriend.user.name,
+        username: returnedFriend.user.username,
+        email: returnedFriend.user.email,
+        image:
+          returnedFriend.user.image !== ""
+            ? {
+                name: returnedFriend.user.name,
+                type: "file" as const,
+                usageType: "player" as const,
+                url: returnedFriend.user.image,
+              }
+            : null,
         sharedWith,
         sharedTo,
         settings: returnedFriend.friendSetting,
@@ -927,7 +868,7 @@ export const friendsRouter = createTRPCRouter({
       };
     }),
   getFriendMetaData: protectedUserProcedure
-    .input(z.object({ friendId: z.number() }))
+    .input(z.object({ friendId: z.string() }))
     .query(async ({ ctx, input }) => {
       const returnedFriend = await ctx.db.query.friend.findFirst({
         where: {
@@ -941,27 +882,16 @@ export const friendsRouter = createTRPCRouter({
       if (!returnedFriend) {
         return null;
       }
-      const client = await clerkClient();
-
-      const clerkUser = await client.users
-        .getUser(returnedFriend.friend.clerkUserId)
-        .catch((error) => {
-          console.error(error);
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Friend not found",
-          });
-        });
       return {
         id: returnedFriend.friend.id,
-        name: getFullName(clerkUser),
-        userName: clerkUser.username,
-        email: clerkUser.emailAddresses[0]?.emailAddress,
+        name: returnedFriend.friend.name,
+        userName: returnedFriend.friend.username,
+        email: returnedFriend.friend.email,
         image:
-          clerkUser.imageUrl !== ""
+          returnedFriend.friend.image !== ""
             ? {
-                name: getFullName(clerkUser),
-                url: clerkUser.imageUrl,
+                name: returnedFriend.friend.name,
+                url: returnedFriend.friend.image,
                 type: "file",
                 usageType: "player",
               }
@@ -971,7 +901,7 @@ export const friendsRouter = createTRPCRouter({
   updateFriendSettings: protectedUserProcedure
     .input(
       z.object({
-        friendId: z.number(),
+        friendId: z.string(),
         settings: z.object({
           autoShareMatches: z.boolean(),
           sharePlayersWithMatch: z.boolean(),
@@ -995,7 +925,7 @@ export const friendsRouter = createTRPCRouter({
       const returnedFriend = await ctx.db.query.friend.findFirst({
         where: {
           userId: ctx.userId,
-          id: input.friendId,
+          friendId: input.friendId,
         },
         with: {
           friendSetting: true,
@@ -1007,7 +937,7 @@ export const friendsRouter = createTRPCRouter({
       if (!returnedFriend.friendSetting) {
         await ctx.db.insert(friendSetting).values({
           createdById: ctx.userId,
-          friendId: input.friendId,
+          friendId: returnedFriend.id,
           ...input.settings,
         });
       } else {
@@ -1017,4 +947,4 @@ export const friendsRouter = createTRPCRouter({
           .where(eq(friendSetting.id, returnedFriend.friendSetting.id));
       }
     }),
-});
+} satisfies TRPCRouterRecord;

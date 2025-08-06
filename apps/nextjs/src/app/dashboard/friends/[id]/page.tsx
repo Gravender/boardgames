@@ -14,9 +14,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // read route params
   const id = (await params).id;
 
-  if (isNaN(Number(id))) redirect("/dashboard/friends");
   const friend = await caller.friend.getFriendMetaData({
-    friendId: Number(id),
+    friendId: id,
   });
   if (!friend) redirect("/dashboard/friends");
 
@@ -33,12 +32,12 @@ export default async function Page({ params }: Props) {
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/friends");
-  void prefetch(trpc.friend.getFriend.queryOptions({ friendId: Number(id) }));
+  void prefetch(trpc.friend.getFriend.queryOptions({ friendId: id }));
   return (
     <HydrateClient>
       <div className="max-auto container px-4 py-2">
         <Suspense fallback={<FriendProfileSkeleton />}>
-          <FriendProfilePage friendId={Number(id)} />
+          <FriendProfilePage friendId={id} />
         </Suspense>
       </div>
     </HydrateClient>

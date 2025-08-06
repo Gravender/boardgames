@@ -2,22 +2,26 @@ import { useState } from "react";
 import { Alert, Image } from "react-native";
 import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
-import { useAuth } from "@clerk/clerk-expo";
 
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
+import { authClient } from "~/utils/auth";
 import { useUploadThing } from "~/utils/uploadthing";
 
 export default function ImageUploadButton() {
   const [image, setImage] = useState<string | null>(null);
-  const { getToken } = useAuth();
   const { startUpload } = useUploadThing("imageUploader", {
     /**
-     * Set clerk headers for authentication
+     * Set Better Auth headers for authentication
      */
-    headers: async () => {
-      const authToken = await getToken();
-      return { Authorization: authToken ?? undefined };
+    headers: () => {
+      const headers = new Map<string, string>();
+      headers.set("x-uploadthing-source", "expo-react");
+      const cookies = authClient.getCookie();
+      if (cookies) {
+        headers.set("Cookie", cookies);
+      }
+      return headers;
     },
     onClientUploadComplete: () => Alert.alert("Upload Completed"),
     onUploadError: (error) => {

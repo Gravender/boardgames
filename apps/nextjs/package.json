@@ -16,11 +16,10 @@
   },
   "dependencies": {
     "@board-games/api": "workspace:*",
+    "@board-games/auth": "workspace:*",
     "@board-games/db": "workspace:*",
     "@board-games/shared": "workspace:*",
     "@board-games/ui": "workspace:*",
-    "@clerk/elements": "^0.23.32",
-    "@clerk/nextjs": "^6.21.0",
     "@sentry/nextjs": "^9.30.0",
     "@t3-oss/env-nextjs": "^0.13.6",
     "@tanstack/react-query": "catalog:",
@@ -40,6 +39,7 @@
     "server-only": "^0.0.1",
     "superjson": "2.2.2",
     "svix": "^1.61.4",
+    "ua-parser-js": "^2.0.4",
     "uploadthing": "^7.4.1",
     "zod": "catalog:",
     "zustand": "^5.0.2"

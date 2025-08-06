@@ -4,6 +4,7 @@ import {
   index,
   integer,
   serial,
+  text,
   timestamp,
   unique,
   uniqueIndex,
@@ -19,9 +20,9 @@ const players = createTable(
   "player",
   {
     id: serial("id").primaryKey(),
-    createdBy: integer("created_by")
-      .references(() => user.id)
-      .notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
     isUser: boolean("is_user").default(false).notNull(),
     friendId: integer("friend_id").references(() => friend.id),
     name: varchar("name", { length: 256 }).notNull(),

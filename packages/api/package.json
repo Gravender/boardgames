@@ -11,6 +11,10 @@
     "./uploadthing": {
       "types": "./dist/uploadthing.d.ts",
       "default": "./src/uploadthing.ts"
+    },
+    "./auth": {
+      "types": "./dist/auth.d.ts",
+      "default": "./src/auth.ts"
     }
   },
   "license": "MIT",
@@ -23,6 +27,7 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
+    "@board-games/auth": "workspace:*",
     "@board-games/db": "workspace:*",
     "@board-games/shared": "workspace:*",
     "@trpc/server": "catalog:",

@@ -34,7 +34,7 @@ export async function addPlayersToMatch(
     rounds: z.infer<typeof selectRoundPlayerSchema>[];
   }[],
   rounds: z.infer<typeof selectRoundSchema>[],
-  userId: number,
+  userId: string,
 ) {
   const insertedMatchPlayers: {
     id: number;

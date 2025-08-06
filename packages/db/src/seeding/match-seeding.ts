@@ -53,7 +53,7 @@ export async function seedMatches(d3Seed: number) {
   for (const returnedGame of games) {
     const matchCount = Math.max(3, Math.round(normalMatches() + 5));
     const userLocations = locations.filter(
-      (l) => l.createdBy === returnedGame.userId,
+      (l) => l.createdBy === returnedGame.createdBy,
     );
 
     for (let i = 0; i < matchCount; i++) {
@@ -76,7 +76,7 @@ export async function seedMatches(d3Seed: number) {
           parentId: returnedScoresheet.id,
           name: `${matchName} Scoresheet`,
           gameId: returnedScoresheet.gameId,
-          userId: returnedScoresheet.userId,
+          createdBy: returnedScoresheet.createdBy,
           isCoop: returnedScoresheet.isCoop,
           winCondition: returnedScoresheet.winCondition,
           targetScore: returnedScoresheet.targetScore,
@@ -109,7 +109,7 @@ export async function seedMatches(d3Seed: number) {
       const matchDate = endOfMonth(subbedDate);
       matchData.push({
         name: matchName,
-        userId: returnedGame.userId,
+        createdBy: returnedGame.createdBy,
         gameId: returnedGame.id,
         scoresheetId: newScoreSheet.id,
         locationId:
@@ -170,7 +170,7 @@ export async function seedMatches(d3Seed: number) {
   }
   for (const returnedMatch of returnedMatches) {
     const userPlayers = players.filter(
-      (p) => p.createdBy === returnedMatch.userId,
+      (p) => p.createdBy === returnedMatch.createdBy,
     );
     if (userPlayers.length < 2) continue;
     const minPlayers = returnedMatch.game.playersMin ?? 2;

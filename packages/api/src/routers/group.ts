@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod/v4";
@@ -9,9 +10,9 @@ import {
   selectGroupSchema,
 } from "@board-games/db/zodSchema";
 
-import { createTRPCRouter, protectedUserProcedure } from "../trpc";
+import { protectedUserProcedure } from "../trpc";
 
-export const groupRouter = createTRPCRouter({
+export const groupRouter = {
   getGroups: protectedUserProcedure.query(async ({ ctx }) => {
     return ctx.db.query.group.findMany({
       where: {
@@ -122,4 +123,4 @@ export const groupRouter = createTRPCRouter({
         .delete(group)
         .where(and(eq(group.id, input.id), eq(group.createdBy, ctx.userId)));
     }),
-});
+} satisfies TRPCRouterRecord;

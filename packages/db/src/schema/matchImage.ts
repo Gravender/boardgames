@@ -15,7 +15,9 @@ const matchImage = createTable("match_image", {
   imageId: integer("image_id")
     .notNull()
     .references(() => image.id),
-  createdBy: integer("user_id").references(() => user.id),
+  createdBy: text("created_by")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
   caption: text("caption"),
   duration: integer("duration"),
   createdAt: timestamp("created_at", { withTimezone: true })

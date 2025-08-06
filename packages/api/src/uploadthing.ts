@@ -1,12 +1,12 @@
 import type { FileRouter } from "uploadthing/next";
-import { getAuth } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
 import { createUploadthing } from "uploadthing/next";
 import { UploadThingError, UTApi } from "uploadthing/server";
 import z from "zod/v4";
 
 import { db } from "@board-games/db/client";
-import { image, matchImage, user } from "@board-games/db/schema";
+import { image, matchImage } from "@board-games/db/schema";
+
+import { getSession } from "./auth";
 
 const f = createUploadthing();
 
@@ -37,19 +37,11 @@ export const uploadRouter = {
         }),
       ]),
     )
-    .middleware(async ({ req, input }) => {
-      const authUser = getAuth(req);
+    .middleware(async ({ input }) => {
+      const session = await getSession();
       // eslint-disable-next-line @typescript-eslint/only-throw-error
-      if (!authUser.userId) throw new UploadThingError("Unauthorized");
-      const [returnedUser] = await db
-        .selectDistinct()
-        .from(user)
-        .where(eq(user.clerkUserId, authUser.userId));
-      if (!returnedUser) {
-        // eslint-disable-next-line @typescript-eslint/only-throw-error
-        throw new UploadThingError("Could not find user");
-      }
-      return { userId: returnedUser.id, usageType: input.usageType, input };
+      if (!session) throw new UploadThingError("Unauthorized");
+      return { userId: session.user.id, usageType: input.usageType, input };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       const [returnedImage] = await db
@@ -57,7 +49,7 @@ export const uploadRouter = {
         .values({
           name: file.name,
           url: file.url,
-          userId: metadata.userId,
+          createdBy: metadata.userId,
           type: "file",
           fileId: file.key,
           fileSize: file.size,
@@ -72,7 +64,7 @@ export const uploadRouter = {
         const returnedMatch = await db.query.match.findFirst({
           where: {
             id: metadata.input.matchId,
-            userId: metadata.userId,
+            createdBy: metadata.userId,
           },
         });
         if (!returnedMatch) {

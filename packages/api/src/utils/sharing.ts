@@ -29,9 +29,9 @@ export interface FriendSharingSettings {
  */
 export async function handleLocationSharing(
   transaction: TransactionType,
-  ownerId: number,
+  ownerId: string,
   locationId: number,
-  friendId: number,
+  friendId: string,
   locationPermission: "view" | "edit",
   autoAcceptLocation: boolean,
   parentShareId: number,
@@ -139,7 +139,7 @@ export type SharedEntry = {
         permission: "view" | "edit";
         name: string;
         gameId: number;
-        userId: number | null;
+        createdBy: string | null;
         createdAt: Date;
         updatedAt: Date | null;
         deletedAt: Date | null;
@@ -173,8 +173,8 @@ export function collectShares(
     };
     sharedMatches: {
       id: number;
-      ownerId: number;
-      sharedWithId: number;
+      ownerId: string;
+      sharedWithId: string;
       matchId: number;
       sharedGameId: number;
       sharedLocationId: number | null;
@@ -192,8 +192,8 @@ export function collectShares(
     }[];
     sharedScoresheets: {
       id: number;
-      ownerId: number;
-      sharedWithId: number;
+      ownerId: string;
+      sharedWithId: string;
       scoresheetId: number;
       sharedGameId: number;
       permission: "view" | "edit";
@@ -203,7 +203,7 @@ export function collectShares(
         id: number;
         name: string;
         gameId: number;
-        userId: number | null;
+        createdBy: string | null;
         createdAt: Date;
         updatedAt: Date | null;
         deletedAt: Date | null;
@@ -231,8 +231,8 @@ export function collectShares(
   }[],
   locationOwner: {
     id: number;
-    ownerId: number;
-    sharedWithId: number;
+    ownerId: string;
+    sharedWithId: string;
     locationId: number;
     linkedLocationId: number | null;
     isDefault: boolean;

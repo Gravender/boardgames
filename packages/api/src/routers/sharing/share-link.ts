@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod/v4";
@@ -10,9 +11,9 @@ import type {
 } from "@board-games/db/zodSchema";
 import { game, scoresheet } from "@board-games/db/schema";
 
-import { createTRPCRouter, publicProcedure } from "../../trpc";
+import { publicProcedure } from "../../trpc";
 
-export const shareLinkRouter = createTRPCRouter({
+export const shareLinkRouter = {
   getSharedItemByToken: publicProcedure
     .input(
       z.object({
@@ -100,7 +101,7 @@ export const shareLinkRouter = createTRPCRouter({
               .where(
                 and(
                   eq(game.id, childShareRequest.itemId),
-                  eq(game.userId, childShareRequest.ownerId),
+                  eq(game.createdBy, childShareRequest.ownerId),
                 ),
               );
             if (!returnGame) {
@@ -119,7 +120,7 @@ export const shareLinkRouter = createTRPCRouter({
             const returnedMatch = await ctx.db.query.match.findFirst({
               where: {
                 id: childShareRequest.itemId,
-                userId: sharedItem.ownerId,
+                createdBy: sharedItem.ownerId,
               },
               with: {
                 location: true,
@@ -144,7 +145,7 @@ export const shareLinkRouter = createTRPCRouter({
               .where(
                 and(
                   eq(scoresheet.id, childShareRequest.itemId),
-                  eq(scoresheet.userId, sharedItem.ownerId),
+                  eq(scoresheet.createdBy, sharedItem.ownerId),
                 ),
               );
             if (!returnedScoresheet) {
@@ -170,4 +171,4 @@ export const shareLinkRouter = createTRPCRouter({
         permission: sharedItem.permission,
       };
     }),
-});
+} satisfies TRPCRouterRecord;

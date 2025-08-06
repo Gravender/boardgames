@@ -15,10 +15,11 @@ test.describe("Players Page", () => {
   }
   async function deletePlayers(browserName: string) {
     const clerkUserId = getClerkUserId();
+    //TODO - fix this
     const [returnedUser] = await db
       .select()
       .from(user)
-      .where(eq(user.clerkUserId, clerkUserId));
+      .where(eq(user.id, clerkUserId));
     if (returnedUser) {
       const browserPlayerName = browserName + "_" + PLAYER_NAME;
       const editedBrowserPlayerName = browserName + "_" + EDITED_PLAYER_NAME;

@@ -60,7 +60,7 @@ export async function seedGames(d3Seed: number) {
           .insert(image)
           .values({
             url: faker.image.urlPicsumPhotos(),
-            userId: user.id,
+            createdBy: user.id,
             name: faker.commerce.productName(),
             type: "file",
             usageType: "game",
@@ -82,7 +82,7 @@ export async function seedGames(d3Seed: number) {
       }
       gameData.push({
         name: gameName,
-        userId: user.id,
+        createdBy: user.id,
         imageId: imageId,
         playersMin: fakePlayerMin,
         playersMax: fakePlayerMax,
