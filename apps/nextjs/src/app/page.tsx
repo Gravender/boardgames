@@ -76,7 +76,7 @@ export default async function Home() {
           </nav>
           <div className="flex items-center gap-4">
             <ModeToggle />
-            <Link href="/sign-in">
+            <Link href="/login">
               <Button variant="outline" size="sm">
                 Log In
               </Button>
