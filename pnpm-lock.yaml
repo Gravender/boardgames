@@ -440,6 +440,9 @@ importers:
       '@trpc/server':
         specifier: 'catalog:'
         version: 11.4.2(typescript@5.9.0-dev.20250717)
+      luxon:
+        specifier: ^3.7.1
+        version: 3.7.1
       posthog-node:
         specifier: ^5.1.0
         version: 5.1.0
@@ -448,7 +451,7 @@ importers:
         version: 2.2.2
       uploadthing:
         specifier: ^7.4.1
-        version: 7.4.4(express@5.1.0)(next@15.3.3(@babel/core@7.27.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.15.29)(typescript@5.9.0-dev.20250717)))
+        version: 7.4.4(express@5.1.0)(next@15.3.3(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.15.29)(typescript@5.9.0-dev.20250717)))
       zod:
         specifier: 'catalog:'
         version: 3.25.49
@@ -462,6 +465,9 @@ importers:
       '@board-games/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@types/luxon':
+        specifier: ^3.4.2
+        version: 3.7.1
       eslint:
         specifier: 'catalog:'
         version: 9.28.0(jiti@2.4.2)
@@ -4723,6 +4729,9 @@ packages:
   '@types/lodash@4.17.14':
     resolution: {integrity: sha512-jsxagdikDiDBeIRaPYtArcT8my4tN1og7MtMRquFT3XNA6axxyHDRUemqDz/taRDdOUn0GnGHRCuff4q48sW9A==}
 
+  '@types/luxon@3.7.1':
+    resolution: {integrity: sha512-H3iskjFIAn5SlJU7OuxUmTEpebK6TKB8rxZShDslBMZJ5u9S//KM1sbdAisiSrqwLQncVjnpi2OK2J51h+4lsg==}
+
   '@types/minimatch@5.1.2':
     resolution: {integrity: sha512-K0VQKziLUWkVKiRVrx4a40iPaxTUefQmjtkQofBkYRcoaaL/8rhwDWww9qWbrgicNOgnpIsMxyNIUM4+n6dUIA==}
 
@@ -7728,6 +7737,10 @@ packages:
     resolution: {integrity: sha512-CJZKq2g8Y8yN4Aq002GahSXbG2JpFv9kXwyiOAMvUBv7pxeOFHUWKB0mO7MiY4ZVFCV4aNjv2BJFq/z3DgKPQg==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  luxon@3.7.1:
+    resolution: {integrity: sha512-RkRWjA926cTvz5rAb1BqyWkKbbjzCGchDUIKMCUvNi17j6f6j8uHGDV82Aqcqtzd+icoYpELmG3ksgGiFNNcNg==}
+    engines: {node: '>=12'}
 
   magic-string@0.30.17:
     resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
@@ -14572,6 +14585,8 @@ snapshots:
 
   '@types/lodash@4.17.14': {}
 
+  '@types/luxon@3.7.1': {}
+
   '@types/minimatch@5.1.2': {}
 
   '@types/mysql@2.15.26':
@@ -17958,6 +17973,8 @@ snapshots:
   lucide-react@0.513.0(react@19.0.0):
     dependencies:
       react: 19.0.0
+
+  luxon@3.7.1: {}
 
   magic-string@0.30.17:
     dependencies:
