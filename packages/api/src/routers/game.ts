@@ -275,7 +275,12 @@ export const gameRouter = {
           },
         },
       });
-      if (!result) return null;
+      if (!result) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Game not found",
+        });
+      }
       const linkedMatches = result.sharedGameMatches.map((mMatch) => {
         const mSharedLocation = mMatch.sharedLocation;
         const linkedLocation = mSharedLocation?.linkedLocation;

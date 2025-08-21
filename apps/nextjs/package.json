@@ -36,6 +36,7 @@
     "react": "catalog:react19",
     "react-day-picker": "9.8.0",
     "react-dom": "catalog:react19",
+    "react-error-boundary": "^6.0.0",
     "server-only": "^0.0.1",
     "superjson": "2.2.2",
     "svix": "^1.61.4",

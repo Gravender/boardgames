@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { ErrorBoundary } from "react-error-boundary";
 
+import { GameNotFound } from "~/components/game/not-found";
 import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { GamePageSkeleton } from "../_components/game-page-skeleton";
 import GameDetails from "./_components/game-detail";
@@ -16,7 +18,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
   const game = await caller.game.getGameMetaData({ id: Number(id) });
-  if (!game) redirect("/dashboard/games");
+  if (!game)
+    return {
+      title: "Game Not Found",
+    };
   if (!game.image?.url)
     return { title: game.name, description: `${game.name} Match Tracker` };
   return {
@@ -55,9 +60,11 @@ export default async function Page({ params }: Props) {
   return (
     <HydrateClient>
       <div className="container px-3 py-1 md:px-6 md:py-2">
-        <Suspense fallback={<GamePageSkeleton />}>
-          <GameDetails gameId={Number(id)} />
-        </Suspense>
+        <ErrorBoundary fallback={<GameNotFound />}>
+          <Suspense fallback={<GamePageSkeleton />}>
+            <GameDetails gameId={Number(id)} />
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </HydrateClient>
   );

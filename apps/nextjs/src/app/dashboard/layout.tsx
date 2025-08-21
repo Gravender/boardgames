@@ -1,6 +1,7 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { Separator } from "@board-games/ui/separator";
 import {
@@ -9,6 +10,7 @@ import {
   SidebarTrigger,
 } from "@board-games/ui/sidebar";
 
+import { auth } from "~/auth/server";
 import { AppSidebar } from "~/components/app-sidebar";
 import { BreadCrumbs } from "~/components/breadcrumbs";
 import { ModeToggle } from "~/components/theme-toggle";
@@ -16,6 +18,14 @@ import { ModeToggle } from "~/components/theme-toggle";
 async function SidebarLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    redirect("/");
+    return null;
+  }
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
