@@ -4,6 +4,7 @@ import {
   friend,
   friendRequest,
   game,
+  gameRole,
   group,
   groupPlayer,
   image,
@@ -103,3 +104,6 @@ export const selectSharedMatchPlayerSchema =
 
 export const insertSharedLocationSchema = createInsertSchema(sharedLocation);
 export const selectSharedLocationSchema = createSelectSchema(sharedLocation);
+
+export const insertGameRoleSchema = createInsertSchema(gameRole);
+export const selectGameRoleSchema = createSelectSchema(gameRole);

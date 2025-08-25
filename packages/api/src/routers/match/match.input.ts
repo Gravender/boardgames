@@ -3,6 +3,7 @@ import { z } from "zod/v4";
 import {
   insertMatchSchema,
   insertPlayerSchema,
+  selectMatchSchema,
 } from "@board-games/db/zodSchema";
 
 export const createMatchInput = insertMatchSchema
@@ -46,3 +47,35 @@ export const createMatchInput = insertMatchSchema
       .nullable(),
   });
 export type CreateMatchInputType = z.infer<typeof createMatchInput>;
+
+export const getMatchInput = selectMatchSchema
+  .pick({
+    id: true,
+  })
+  .extend({
+    type: z.literal("original").or(z.literal("shared")),
+  });
+export type GetMatchInputType = z.infer<typeof getMatchInput>;
+
+export const getMatchScoresheetInput = selectMatchSchema
+  .pick({
+    id: true,
+  })
+  .extend({
+    type: z.literal("original").or(z.literal("shared")),
+  });
+
+export type GetMatchScoresheetInputType = z.infer<
+  typeof getMatchScoresheetInput
+>;
+
+export const getMatchPlayersAndTeamsInput = selectMatchSchema
+  .pick({
+    id: true,
+  })
+  .extend({
+    type: z.literal("original").or(z.literal("shared")),
+  });
+export type GetMatchPlayersAndTeamsInputType = z.infer<
+  typeof getMatchPlayersAndTeamsInput
+>;

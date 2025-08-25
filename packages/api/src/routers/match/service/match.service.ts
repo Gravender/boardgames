@@ -1,8 +1,22 @@
-import type { CreateMatchOutputType } from "../match.output";
-import type { CreateMatchArgs } from "./match.service.types";
+import { TRPCError } from "@trpc/server";
+
+import type {
+  CreateMatchOutputType,
+  GetMatchOutputType,
+  GetMatchPlayersAndTeamsOutputType,
+  GetMatchScoresheetOutputType,
+} from "../match.output";
+import type {
+  CreateMatchArgs,
+  GetMatchArgs,
+  GetMatchPlayersAndTeamsArgs,
+  GetMatchScoresheetArgs,
+} from "./match.service.types";
+import { Logger } from "~/common/logger";
 import { matchRepository } from "../repository/match.repository";
 
 class MatchService {
+  private readonly logger = new Logger(MatchService.name);
   public async createMatch(
     args: CreateMatchArgs,
   ): Promise<CreateMatchOutputType> {
@@ -10,6 +24,177 @@ class MatchService {
       input: args.input,
       createdBy: args.ctx.userId,
     });
+  }
+  public async getMatch(args: GetMatchArgs): Promise<GetMatchOutputType> {
+    return matchRepository.getMatch({
+      input: args.input,
+      userId: args.ctx.userId,
+    });
+  }
+  public async getMatchScoresheet(
+    args: GetMatchScoresheetArgs,
+  ): Promise<GetMatchScoresheetOutputType> {
+    return matchRepository.getMatchScoresheet({
+      input: args.input,
+      userId: args.ctx.userId,
+    });
+  }
+  public async getMatchPlayersAndTeams(
+    args: GetMatchPlayersAndTeamsArgs,
+  ): Promise<GetMatchPlayersAndTeamsOutputType> {
+    const response = await matchRepository.getMatchPlayersAndTeams({
+      input: args.input,
+      userId: args.ctx.userId,
+    });
+    if (response.type === "original") {
+      const refinedPlayers = response.players.map((matchPlayer) => {
+        return {
+          name: matchPlayer.player.name,
+          rounds: response.scoresheet.rounds.map((scoresheetRound) => {
+            const matchPlayerRound = matchPlayer.playerRounds.find(
+              (roundPlayer) => roundPlayer.roundId === scoresheetRound.id,
+            );
+            if (!matchPlayerRound) {
+              const message = `Match Player Round not found with roundId: ${scoresheetRound.id} and matchPlayerId: ${matchPlayer.id}`;
+              this.logger.error(message);
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: message,
+              });
+            }
+            return matchPlayerRound;
+          }),
+          score: matchPlayer.score,
+          id: matchPlayer.id,
+          type: "original" as const,
+          playerType: "original" as const,
+          permissions: "edit" as const,
+          playerId: matchPlayer.player.id,
+          image:
+            matchPlayer.player.image?.usageType === "player"
+              ? {
+                  name: matchPlayer.player.image.name,
+                  url: matchPlayer.player.image.url,
+                  type: matchPlayer.player.image.type,
+                  usageType: "player" as const,
+                }
+              : null,
+          details: matchPlayer.details,
+          teamId: matchPlayer.teamId,
+          isUser: matchPlayer.player.isUser,
+          order: matchPlayer.order,
+          roles: matchPlayer.roles,
+        };
+      });
+      refinedPlayers.sort((a, b) => {
+        if (a.order === b.order) {
+          return a.name.localeCompare(b.name);
+        }
+        if (a.order === null || b.order === null)
+          return a.name.localeCompare(b.name);
+        return a.order - b.order;
+      });
+      return {
+        teams: response.teams,
+        players: refinedPlayers,
+      };
+    } else {
+      const refinedPlayers = response.players.map((sharedMatchPlayer) => {
+        const playerRounds = response.scoresheet.rounds.map(
+          (scoresheetRound) => {
+            const sharedMatchPlayerRound =
+              sharedMatchPlayer.matchPlayer.playerRounds.find(
+                (round) => round.roundId === scoresheetRound.id,
+              );
+            if (!sharedMatchPlayerRound) {
+              const message = `Shared Match Player Round not found with roundId: ${scoresheetRound.id} and matchPlayerId: ${sharedMatchPlayer.matchPlayerId}`;
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: message,
+              });
+            }
+            return sharedMatchPlayerRound;
+          },
+        );
+        const matchPlayer = {
+          type: "shared" as const,
+          permissions: sharedMatchPlayer.permission,
+          score: sharedMatchPlayer.matchPlayer.score,
+          id: sharedMatchPlayer.id,
+          matchPlayerId: sharedMatchPlayer.matchPlayer.id,
+          details: sharedMatchPlayer.matchPlayer.details,
+          teamId: sharedMatchPlayer.matchPlayer.teamId,
+          order: sharedMatchPlayer.matchPlayer.order,
+          rounds: playerRounds,
+          roles: sharedMatchPlayer.matchPlayer.roles,
+          isUser: false,
+        };
+        const sharedPlayer = sharedMatchPlayer.sharedPlayer;
+        if (sharedPlayer === null) {
+          return {
+            ...matchPlayer,
+            playerType: "not-shared" as const,
+            name: sharedMatchPlayer.matchPlayer.player.name,
+            playerId: sharedMatchPlayer.matchPlayer.player.id,
+            image:
+              sharedMatchPlayer.matchPlayer.player.image?.usageType === "player"
+                ? {
+                    name: sharedMatchPlayer.matchPlayer.player.image.name,
+                    url: sharedMatchPlayer.matchPlayer.player.image.url,
+                    type: sharedMatchPlayer.matchPlayer.player.image.type,
+                    usageType: "player" as const,
+                  }
+                : null,
+          };
+        }
+        const linkedPlayer = sharedPlayer.linkedPlayer;
+        if (linkedPlayer === null) {
+          return {
+            ...matchPlayer,
+            playerType: "shared" as const,
+            name: sharedPlayer.player.name,
+            playerId: sharedPlayer.player.id,
+            image:
+              sharedPlayer.player.image?.usageType === "player"
+                ? {
+                    name: sharedPlayer.player.image.name,
+                    url: sharedPlayer.player.image.url,
+                    type: sharedPlayer.player.image.type,
+                    usageType: "player" as const,
+                  }
+                : null,
+          };
+        }
+        return {
+          ...matchPlayer,
+          playerType: "original" as const,
+          name: linkedPlayer.name,
+          playerId: linkedPlayer.id,
+          image:
+            linkedPlayer.image?.usageType === "player"
+              ? {
+                  name: linkedPlayer.image.name,
+                  url: linkedPlayer.image.url,
+                  type: linkedPlayer.image.type,
+                  usageType: "player" as const,
+                }
+              : null,
+          isUser: linkedPlayer.isUser,
+        };
+      });
+      refinedPlayers.sort((a, b) => {
+        if (a.order === b.order) {
+          return a.name.localeCompare(b.name);
+        }
+        if (a.order === null || b.order === null)
+          return a.name.localeCompare(b.name);
+        return a.order - b.order;
+      });
+      return {
+        teams: response.teams,
+        players: refinedPlayers,
+      };
+    }
   }
 }
 export const matchService = new MatchService();

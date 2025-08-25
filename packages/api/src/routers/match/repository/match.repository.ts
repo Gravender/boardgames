@@ -3,8 +3,17 @@ import { TRPCError } from "@trpc/server";
 import { db } from "@board-games/db/client";
 import { match } from "@board-games/db/schema";
 
-import type { CreateMatchOutputType } from "~/routers/match/match.output";
-import type { CreateMatchArgs } from "~/routers/match/repository/match.repository.types";
+import type {
+  CreateMatchOutputType,
+  GetMatchOutputType,
+  GetMatchScoresheetOutputType,
+} from "~/routers/match/match.output";
+import type {
+  CreateMatchArgs,
+  GetMatchArgs,
+  GetMatchPlayersAndTeamsArgs,
+  GetMatchScoresheetArgs,
+} from "~/routers/match/repository/match.repository.types";
 import analyticsServerClient from "~/analytics";
 import { Logger } from "~/common/logger";
 import {
@@ -210,6 +219,312 @@ class MatchRepository {
       };
     });
     return response;
+  }
+  public async getMatch(args: GetMatchArgs): Promise<GetMatchOutputType> {
+    const { input } = args;
+    if (input.type === "original") {
+      const returnedMatch = await db.query.match.findFirst({
+        where: {
+          id: input.id,
+          createdBy: args.userId,
+          deletedAt: {
+            isNull: true,
+          },
+        },
+        with: {
+          location: true,
+        },
+      });
+      if (!returnedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Match not found.",
+        });
+      }
+      return {
+        type: "original" as const,
+        id: returnedMatch.id,
+        date: returnedMatch.date,
+        name: returnedMatch.name,
+        game: {
+          id: returnedMatch.gameId,
+          type: "original" as const,
+        },
+        comment: returnedMatch.comment,
+        finished: returnedMatch.finished,
+        running: returnedMatch.running,
+        startTime: returnedMatch.startTime,
+        location: returnedMatch.location
+          ? {
+              id: returnedMatch.location.id,
+              name: returnedMatch.location.name,
+            }
+          : null,
+      };
+    } else {
+      const returnedSharedMatch = await db.query.sharedMatch.findFirst({
+        where: {
+          id: input.id,
+          sharedWithId: args.userId,
+        },
+        with: {
+          match: true,
+          sharedGame: true,
+          sharedLocation: {
+            with: {
+              location: true,
+              linkedLocation: true,
+            },
+          },
+        },
+      });
+      if (!returnedSharedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared match not found.",
+        });
+      }
+      return {
+        type: "shared" as const,
+        id: returnedSharedMatch.match.id,
+        date: returnedSharedMatch.match.date,
+        name: returnedSharedMatch.match.name,
+        game: {
+          id: returnedSharedMatch.sharedGame.id,
+          type: "shared" as const,
+        },
+        comment: returnedSharedMatch.match.comment,
+        finished: returnedSharedMatch.match.finished,
+        running: returnedSharedMatch.match.running,
+        startTime: returnedSharedMatch.match.startTime,
+        location: returnedSharedMatch.sharedLocation
+          ? returnedSharedMatch.sharedLocation.linkedLocation
+            ? {
+                id: returnedSharedMatch.sharedLocation.linkedLocation.id,
+                name: returnedSharedMatch.sharedLocation.linkedLocation.name,
+              }
+            : {
+                id: returnedSharedMatch.sharedLocation.location.id,
+                name: returnedSharedMatch.sharedLocation.location.name,
+              }
+          : null,
+      };
+    }
+  }
+  public async getMatchScoresheet(
+    args: GetMatchScoresheetArgs,
+  ): Promise<GetMatchScoresheetOutputType> {
+    const { input } = args;
+    if (input.type === "original") {
+      const returnedMatch = await db.query.match.findFirst({
+        where: {
+          id: input.id,
+          createdBy: args.userId,
+          deletedAt: {
+            isNull: true,
+          },
+        },
+        with: {
+          scoresheet: {
+            columns: {
+              id: true,
+              winCondition: true,
+              targetScore: true,
+              roundsScore: true,
+              isCoop: true,
+            },
+            with: {
+              rounds: {
+                orderBy: {
+                  order: "asc",
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!returnedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Match not found.",
+        });
+      }
+      return {
+        id: returnedMatch.scoresheet.id,
+        winCondition: returnedMatch.scoresheet.winCondition,
+        targetScore: returnedMatch.scoresheet.targetScore,
+        roundsScore: returnedMatch.scoresheet.roundsScore,
+        isCoop: returnedMatch.scoresheet.isCoop,
+        rounds: returnedMatch.scoresheet.rounds.map((round) => ({
+          id: round.id,
+          order: round.order,
+          color: round.color,
+          type: round.type,
+          score: round.score,
+        })),
+      };
+    } else {
+      const returnedSharedMatch = await db.query.sharedMatch.findFirst({
+        where: {
+          id: input.id,
+          sharedWithId: args.userId,
+        },
+        with: {
+          match: {
+            with: {
+              scoresheet: {
+                with: {
+                  rounds: {
+                    orderBy: {
+                      order: "asc",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!returnedSharedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared match not found.",
+        });
+      }
+      return {
+        id: returnedSharedMatch.match.scoresheet.id,
+        winCondition: returnedSharedMatch.match.scoresheet.winCondition,
+        targetScore: returnedSharedMatch.match.scoresheet.targetScore,
+        roundsScore: returnedSharedMatch.match.scoresheet.roundsScore,
+        isCoop: returnedSharedMatch.match.scoresheet.isCoop,
+        rounds: returnedSharedMatch.match.scoresheet.rounds.map((round) => ({
+          id: round.id,
+          order: round.order,
+          color: round.color,
+          type: round.type,
+          score: round.score,
+        })),
+      };
+    }
+  }
+  public async getMatchPlayersAndTeams(args: GetMatchPlayersAndTeamsArgs) {
+    const { input } = args;
+    if (input.type === "original") {
+      const returnedMatch = await db.query.match.findFirst({
+        where: {
+          id: input.id,
+          createdBy: args.userId,
+          deletedAt: {
+            isNull: true,
+          },
+        },
+        with: {
+          matchPlayers: {
+            with: {
+              player: {
+                with: {
+                  image: true,
+                },
+              },
+              playerRounds: true,
+              roles: true,
+            },
+            orderBy: {
+              order: "asc",
+            },
+          },
+          teams: true,
+          scoresheet: {
+            with: {
+              rounds: {
+                orderBy: {
+                  order: "asc",
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!returnedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Match not found.",
+        });
+      }
+      return {
+        type: "original" as const,
+        teams: returnedMatch.teams,
+        players: returnedMatch.matchPlayers,
+        scoresheet: returnedMatch.scoresheet,
+      };
+    } else {
+      const returnedSharedMatch = await db.query.sharedMatch.findFirst({
+        where: {
+          id: input.id,
+          sharedWithId: args.userId,
+        },
+        with: {
+          match: {
+            with: {
+              teams: true,
+              scoresheet: {
+                with: {
+                  rounds: {
+                    orderBy: {
+                      order: "asc",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          sharedMatchPlayers: {
+            with: {
+              matchPlayer: {
+                with: {
+                  playerRounds: true,
+                  player: {
+                    with: {
+                      image: true,
+                    },
+                  },
+                  roles: true,
+                },
+              },
+              sharedPlayer: {
+                with: {
+                  linkedPlayer: {
+                    with: {
+                      image: true,
+                    },
+                  },
+                  player: {
+                    with: {
+                      image: true,
+                    },
+                  },
+                },
+                where: {
+                  sharedWithId: args.userId,
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!returnedSharedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared match not found.",
+        });
+      }
+      return {
+        type: "shared" as const,
+        teams: returnedSharedMatch.match.teams,
+        players: returnedSharedMatch.sharedMatchPlayers,
+        scoresheet: returnedSharedMatch.match.scoresheet,
+      };
+    }
   }
 }
 export const matchRepository = new MatchRepository();
