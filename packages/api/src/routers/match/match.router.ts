@@ -52,4 +52,13 @@ export const matchRouter = {
         input,
       });
     }),
+  getMatchSummary: protectedUserProcedure
+    .input(getMatchInput)
+    .output(getMatchSummaryOutput)
+    .query(async ({ ctx, input }) => {
+      return matchService.getMatchSummary({
+        ctx,
+        input,
+      });
+    }),
 } satisfies TRPCRouterRecord;

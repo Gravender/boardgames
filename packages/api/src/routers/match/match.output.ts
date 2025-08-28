@@ -12,7 +12,7 @@ import {
   selectScoreSheetSchema,
   selectTeamSchema,
 } from "@board-games/db/zodSchema";
-
+j
 export const createMatchOutput = selectMatchSchema
   .pick({
     id: true,
@@ -99,6 +99,8 @@ export const getMatchPlayersAndTeamsOutput = z.object({
         details: true,
         teamId: true,
         order: true,
+        placement: true,
+        winner: true,
       })
       .extend({
         name: z.string(),
@@ -144,3 +146,58 @@ export const getMatchPlayersAndTeamsOutput = z.object({
 export type GetMatchPlayersAndTeamsOutputType = z.infer<
   typeof getMatchPlayersAndTeamsOutput
 >;
+
+export const getMatchSummaryOutput = z.object({
+  playerStats: z.array(
+    selectMatchPlayerSchema
+      .pick({
+        id: true,
+        playerId: true,
+        score: true,
+        details: true,
+        teamId: true,
+        order: true,
+        placement: true,
+        winner: true,
+      })
+      .extend({
+        name: z.string(),
+        type: z.literal("original").or(z.literal("shared")),
+        playerType: z
+          .literal("original")
+          .or(z.literal("shared"))
+          .or(z.literal("not-shared")),
+        firstMatch: z.boolean(),
+        placements: z.record(z.number(), z.number()),
+        wins: z.number(),
+        plays: z.number(),
+        scores: z.array(z.number()),
+      }),
+  ),
+  previousMatches: z.array(
+    getMatchOutput.extend({
+      matchPlayers: z.array(
+        selectMatchPlayerSchema
+          .pick({
+            id: true,
+            playerId: true,
+            score: true,
+            teamId: true,
+            order: true,
+            placement: true,
+            winner: true,
+          })
+          .extend({
+            name: z.string(),
+            type: z.literal("original").or(z.literal("shared")),
+            playerType: z
+              .literal("original")
+              .or(z.literal("shared"))
+              .or(z.literal("not-shared")),
+          }),
+      ),
+    }),
+  ),
+});
+
+export type GetMatchSummaryOutputType = z.infer<typeof getMatchSummaryOutput>;

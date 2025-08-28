@@ -526,5 +526,112 @@ class MatchRepository {
       };
     }
   }
+  public async getMatchSummary(args: GetMatchArgs) {
+    const { input } = args;
+    if (input.type === "original") {
+      const returnedMatch = await db.query.match.findFirst({
+        where: {
+          id: input.id,
+          createdBy: args.userId,
+          deletedAt: {
+            isNull: true,
+          },
+        },
+        with: {
+          matchPlayers: true,
+        },
+      });
+      if (!returnedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Match not found.",
+        });
+      }
+      const originalMatches = await db.query.match.findMany({
+        where: {
+          createdBy: args.userId,
+          gameId: returnedMatch.gameId,
+        },
+        orderBy: {
+          date: "desc",
+        },
+        with: {
+          matchPlayers: true,
+        },
+      });
+      const sharedGames = await db.query.sharedGame.findMany({
+        columns: {
+          id: true,
+        },
+        where: {
+          sharedWithId: args.userId,
+          linkedGameId: returnedMatch.gameId,
+        },
+      });
+      const sharedMatches = await db.query.sharedMatch.findMany({
+        where: {
+          sharedWithId: args.userId,
+          sharedGameId: {
+            in: sharedGames.map((sg) => sg.id),
+          },
+        },
+        with: {
+          match: {
+            with: {
+              scoresheet: true,
+            },
+          },
+          sharedGame: true,
+          sharedLocation: {
+            with: {
+              location: true,
+              linkedLocation: true,
+            },
+          },
+          sharedMatchPlayers: {
+            with: {
+              matchPlayer: true,
+              sharedPlayer: {
+                where: {
+                  sharedWithId: args.userId,
+                },
+                with: {
+                  linkedPlayer: {
+                    with: {
+                      image: true,
+                    },
+                  },
+                  player: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    } else {
+      const returnedSharedMatch = await db.query.sharedMatch.findFirst({
+        where: {
+          id: input.id,
+          sharedWithId: args.userId,
+        },
+        with: {
+          match: true,
+          sharedGame: true,
+          sharedLocation: {
+            with: {
+              location: true,
+              linkedLocation: true,
+            },
+          },
+        },
+      });
+      if (!returnedSharedMatch) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared match not found.",
+        });
+      }
+    }
+  }
 }
 export const matchRepository = new MatchRepository();

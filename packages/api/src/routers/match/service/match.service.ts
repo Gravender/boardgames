@@ -84,6 +84,8 @@ class MatchService {
           isUser: matchPlayer.player.isUser,
           order: matchPlayer.order,
           roles: matchPlayer.roles,
+          winner: matchPlayer.winner,
+          placement: matchPlayer.placement,
         };
       });
       refinedPlayers.sort((a, b) => {
@@ -128,6 +130,8 @@ class MatchService {
           rounds: playerRounds,
           roles: sharedMatchPlayer.matchPlayer.roles,
           isUser: false,
+          placement: sharedMatchPlayer.matchPlayer.placement,
+          winner: sharedMatchPlayer.matchPlayer.winner,
         };
         const sharedPlayer = sharedMatchPlayer.sharedPlayer;
         if (sharedPlayer === null) {
@@ -196,5 +200,8 @@ class MatchService {
       };
     }
   }
+  public async getSummary(args: GetMatchArgs): GetMatchSummaryOutputType{
+
+				}
 }
 export const matchService = new MatchService();
