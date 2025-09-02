@@ -8,6 +8,11 @@ import {
   insertScoreSheetSchema,
 } from "@board-games/db/zodSchema";
 
+export const sharedOrOriginalSchema = z.union([
+  z.literal("shared"),
+  z.literal("original"),
+]);
+
 export const nonNullFileSchema = z
   .file()
   .max(4_000_000, {

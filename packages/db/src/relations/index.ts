@@ -509,6 +509,11 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.sharedGame.id,
       optional: false,
     }),
+    sharedScoresheet: r.one.sharedScoresheet({
+      from: r.sharedMatch.sharedScoresheetId,
+      to: r.sharedScoresheet.id,
+      optional: false,
+    }),
     sharedGamePassthrough: r.one.game({
       from: r.sharedMatch.sharedGameId.through(r.sharedGame.id),
       to: r.game.id.through(r.sharedGame.gameId),
@@ -597,6 +602,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.sharedScoresheet.scoresheetId,
       to: r.scoresheet.id,
       optional: false,
+    }),
+    linkedScoresheet: r.one.scoresheet({
+      from: r.sharedScoresheet.linkedScoresheetId,
+      to: r.scoresheet.id,
     }),
     sharedGame: r.one.sharedGame({
       from: r.sharedScoresheet.sharedGameId,

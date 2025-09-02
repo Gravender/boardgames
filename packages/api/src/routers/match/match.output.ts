@@ -12,7 +12,8 @@ import {
   selectScoreSheetSchema,
   selectTeamSchema,
 } from "@board-games/db/zodSchema";
-j
+import { sharedOrOriginalSchema } from "@board-games/shared";
+
 export const createMatchOutput = selectMatchSchema
   .pick({
     id: true,
@@ -47,13 +48,13 @@ export const getMatchOutput = selectMatchSchema
     comment: true,
   })
   .extend({
-    type: z.literal("original").or(z.literal("shared")),
+    type: sharedOrOriginalSchema,
     game: selectGameSchema
       .pick({
         id: true,
       })
       .extend({
-        type: z.literal("original").or(z.literal("shared")),
+        type: sharedOrOriginalSchema,
       }),
     location: selectLocationSchema
       .pick({
@@ -113,7 +114,7 @@ export const getMatchPlayersAndTeamsOutput = z.object({
           })
           .nullable(),
         isUser: z.boolean(),
-        type: z.literal("original").or(z.literal("shared")),
+        type: sharedOrOriginalSchema,
         playerType: z
           .literal("original")
           .or(z.literal("shared"))
@@ -153,16 +154,10 @@ export const getMatchSummaryOutput = z.object({
       .pick({
         id: true,
         playerId: true,
-        score: true,
-        details: true,
-        teamId: true,
-        order: true,
-        placement: true,
-        winner: true,
       })
       .extend({
         name: z.string(),
-        type: z.literal("original").or(z.literal("shared")),
+        type: sharedOrOriginalSchema,
         playerType: z
           .literal("original")
           .or(z.literal("shared"))
@@ -173,30 +168,6 @@ export const getMatchSummaryOutput = z.object({
         plays: z.number(),
         scores: z.array(z.number()),
       }),
-  ),
-  previousMatches: z.array(
-    getMatchOutput.extend({
-      matchPlayers: z.array(
-        selectMatchPlayerSchema
-          .pick({
-            id: true,
-            playerId: true,
-            score: true,
-            teamId: true,
-            order: true,
-            placement: true,
-            winner: true,
-          })
-          .extend({
-            name: z.string(),
-            type: z.literal("original").or(z.literal("shared")),
-            playerType: z
-              .literal("original")
-              .or(z.literal("shared"))
-              .or(z.literal("not-shared")),
-          }),
-      ),
-    }),
   ),
 });
 

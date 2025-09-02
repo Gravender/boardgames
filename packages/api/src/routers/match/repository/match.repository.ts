@@ -1,7 +1,12 @@
 import { TRPCError } from "@trpc/server";
+import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 
 import { db } from "@board-games/db/client";
-import { match } from "@board-games/db/schema";
+import { match, scoresheet } from "@board-games/db/schema";
+import {
+  vMatchCanonical,
+  vMatchPlayerCanonicalForUser,
+} from "@board-games/db/views";
 
 import type {
   CreateMatchOutputType,
@@ -264,7 +269,7 @@ class MatchRepository {
     } else {
       const returnedSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          id: input.id,
+          matchId: input.id,
           sharedWithId: args.userId,
         },
         with: {
@@ -286,7 +291,7 @@ class MatchRepository {
       }
       return {
         type: "shared" as const,
-        id: returnedSharedMatch.match.id,
+        id: returnedSharedMatch.id,
         date: returnedSharedMatch.match.date,
         name: returnedSharedMatch.match.name,
         game: {
@@ -366,7 +371,7 @@ class MatchRepository {
     } else {
       const returnedSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          id: input.id,
+          matchId: input.id,
           sharedWithId: args.userId,
         },
         with: {
@@ -460,7 +465,7 @@ class MatchRepository {
     } else {
       const returnedSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          id: input.id,
+          matchId: input.id,
           sharedWithId: args.userId,
         },
         with: {
@@ -538,7 +543,14 @@ class MatchRepository {
           },
         },
         with: {
-          matchPlayers: true,
+          location: true,
+          game: true,
+          scoresheet: true,
+          matchPlayers: {
+            with: {
+              player: true,
+            },
+          },
         },
       });
       if (!returnedMatch) {
@@ -547,91 +559,245 @@ class MatchRepository {
           message: "Match not found.",
         });
       }
-      const originalMatches = await db.query.match.findMany({
-        where: {
-          createdBy: args.userId,
-          gameId: returnedMatch.gameId,
-        },
-        orderBy: {
-          date: "desc",
-        },
-        with: {
-          matchPlayers: true,
-        },
-      });
-      const sharedGames = await db.query.sharedGame.findMany({
-        columns: {
-          id: true,
-        },
-        where: {
-          sharedWithId: args.userId,
-          linkedGameId: returnedMatch.gameId,
-        },
-      });
-      const sharedMatches = await db.query.sharedMatch.findMany({
-        where: {
-          sharedWithId: args.userId,
-          sharedGameId: {
-            in: sharedGames.map((sg) => sg.id),
-          },
-        },
-        with: {
-          match: {
-            with: {
-              scoresheet: true,
-            },
-          },
-          sharedGame: true,
-          sharedLocation: {
-            with: {
-              location: true,
-              linkedLocation: true,
-            },
-          },
-          sharedMatchPlayers: {
-            with: {
-              matchPlayer: true,
-              sharedPlayer: {
-                where: {
-                  sharedWithId: args.userId,
-                },
-                with: {
-                  linkedPlayer: {
-                    with: {
-                      image: true,
-                    },
-                  },
-                  player: true,
-                },
+      const matchesWithSameScoresheet = db
+        .$with("matches_with_same_scoresheet")
+        .as(
+          db
+            .select({ matchId: vMatchCanonical.matchId })
+            .from(vMatchCanonical)
+            .innerJoin(
+              scoresheet,
+              eq(vMatchCanonical.canonicalScoresheetId, scoresheet.id),
+            )
+            .where(
+              and(
+                eq(scoresheet.parentId, returnedMatch.scoresheet.parentId ?? 0),
+                eq(vMatchCanonical.finished, true),
+              ),
+            )
+            .groupBy(vMatchCanonical.matchId),
+        );
+      const firstMatchPerPlayer = db.$with("first_match_per_player").as(
+        db
+          .selectDistinctOn([vMatchPlayerCanonicalForUser.canonicalPlayerId], {
+            canonicalPlayerId: vMatchPlayerCanonicalForUser.canonicalPlayerId,
+            firstMatchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
+          })
+          .from(vMatchPlayerCanonicalForUser)
+          .innerJoin(
+            match,
+            eq(match.id, vMatchPlayerCanonicalForUser.canonicalMatchId),
+          )
+          .where(
+            or(
+              eq(vMatchPlayerCanonicalForUser.ownerId, args.userId),
+              eq(vMatchPlayerCanonicalForUser.sharedWithId, args.userId),
+            ),
+          )
+          // earliest by date, then by id for tie-breaking
+          .orderBy(
+            vMatchPlayerCanonicalForUser.canonicalPlayerId,
+            asc(match.date),
+            asc(vMatchPlayerCanonicalForUser.canonicalMatchId),
+          ),
+      );
+      const matchPlayersResults = await db
+        .with(matchesWithSameScoresheet)
+        .selectDistinctOn([vMatchPlayerCanonicalForUser.baseMatchPlayerId], {
+          id: vMatchPlayerCanonicalForUser.baseMatchPlayerId,
+          score: vMatchPlayerCanonicalForUser.score,
+          placement: vMatchPlayerCanonicalForUser.placement,
+          winner: vMatchPlayerCanonicalForUser.winner,
+          teamId: vMatchPlayerCanonicalForUser.teamId,
+          sourceType: vMatchPlayerCanonicalForUser.sourceType,
+          canonicalPlayerId: vMatchPlayerCanonicalForUser.canonicalPlayerId,
+          isFirstMatchForCurrent: sql<boolean>`${firstMatchPerPlayer.firstMatchId} = ${returnedMatch.id}`,
+        })
+        .from(vMatchPlayerCanonicalForUser)
+        .innerJoin(
+          matchesWithSameScoresheet,
+          eq(
+            vMatchPlayerCanonicalForUser.canonicalMatchId,
+            matchesWithSameScoresheet.matchId,
+          ),
+        )
+        .innerJoin(
+          firstMatchPerPlayer,
+          eq(
+            firstMatchPerPlayer.canonicalPlayerId,
+            vMatchPlayerCanonicalForUser.canonicalPlayerId,
+          ),
+        )
+        .where(
+          and(
+            or(
+              eq(vMatchPlayerCanonicalForUser.ownerId, args.userId),
+              eq(vMatchPlayerCanonicalForUser.sharedWithId, args.userId),
+            ),
+            inArray(
+              vMatchPlayerCanonicalForUser.canonicalPlayerId,
+              returnedMatch.matchPlayers.map((mp) => mp.playerId),
+            ),
+          ),
+        );
+      return {
+        scoresheet: returnedMatch.scoresheet,
+        players: returnedMatch.matchPlayers.map((mp) => ({
+          id: mp.id,
+          playerId: mp.playerId,
+          name: mp.player.name,
+          playerType: "original" as const,
+          type: "original" as const,
+        })),
+        matchPlayers: matchPlayersResults,
+      };
+    }
+
+    const returnedSharedMatch = await db.query.sharedMatch.findFirst({
+      where: {
+        matchId: input.id,
+        sharedWithId: args.userId,
+      },
+      with: {
+        sharedMatchPlayers: {
+          with: {
+            sharedPlayer: {
+              with: {
+                player: true,
+                linkedPlayer: true,
               },
             },
           },
         },
-      });
-    } else {
-      const returnedSharedMatch = await db.query.sharedMatch.findFirst({
-        where: {
-          id: input.id,
-          sharedWithId: args.userId,
-        },
-        with: {
-          match: true,
-          sharedGame: true,
-          sharedLocation: {
-            with: {
-              location: true,
-              linkedLocation: true,
-            },
+        sharedScoresheet: {
+          with: {
+            linkedScoresheet: true,
+            scoresheet: true,
           },
         },
+      },
+    });
+    if (!returnedSharedMatch) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Shared match not found.",
       });
-      if (!returnedSharedMatch) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Shared match not found.",
-        });
-      }
     }
+    const parentScoresheet =
+      returnedSharedMatch.sharedScoresheet.linkedScoresheet ??
+      returnedSharedMatch.sharedScoresheet.scoresheet;
+    const matchesWithSameScoresheet = db
+      .$with("matches_with_same_scoresheet")
+      .as(
+        db
+          .select({ matchId: vMatchCanonical.matchId })
+          .from(vMatchCanonical)
+          .innerJoin(
+            scoresheet,
+            eq(vMatchCanonical.canonicalScoresheetId, scoresheet.id),
+          )
+          .where(
+            and(
+              eq(scoresheet.parentId, parentScoresheet.parentId ?? 0),
+              eq(vMatchCanonical.finished, true),
+            ),
+          )
+          .groupBy(vMatchCanonical.matchId),
+      );
+    const firstMatchPerPlayer = db.$with("first_match_per_player").as(
+      db
+        .selectDistinctOn([vMatchPlayerCanonicalForUser.canonicalPlayerId], {
+          canonicalPlayerId: vMatchPlayerCanonicalForUser.canonicalPlayerId,
+          firstMatchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
+        })
+        .from(vMatchPlayerCanonicalForUser)
+        .innerJoin(
+          match,
+          eq(match.id, vMatchPlayerCanonicalForUser.canonicalMatchId),
+        )
+        .where(
+          or(
+            eq(vMatchPlayerCanonicalForUser.ownerId, args.userId),
+            eq(vMatchPlayerCanonicalForUser.sharedWithId, args.userId),
+          ),
+        )
+        // earliest by date, then by id for tie-breaking
+        .orderBy(
+          vMatchPlayerCanonicalForUser.canonicalPlayerId,
+          asc(match.date),
+          asc(vMatchPlayerCanonicalForUser.canonicalMatchId),
+        ),
+    );
+    const matchPlayersResults = await db
+      .with(matchesWithSameScoresheet, firstMatchPerPlayer)
+      .selectDistinctOn([vMatchPlayerCanonicalForUser.baseMatchPlayerId], {
+        id: vMatchPlayerCanonicalForUser.baseMatchPlayerId,
+        score: vMatchPlayerCanonicalForUser.score,
+        placement: vMatchPlayerCanonicalForUser.placement,
+        winner: vMatchPlayerCanonicalForUser.winner,
+        teamId: vMatchPlayerCanonicalForUser.teamId,
+        sourceType: vMatchPlayerCanonicalForUser.sourceType,
+        canonicalPlayerId: vMatchPlayerCanonicalForUser.canonicalPlayerId,
+        isFirstMatchForCurrent: sql<boolean>`${firstMatchPerPlayer.firstMatchId} = ${returnedSharedMatch.matchId}`,
+      })
+      .from(vMatchPlayerCanonicalForUser)
+      .innerJoin(
+        matchesWithSameScoresheet,
+        eq(
+          vMatchPlayerCanonicalForUser.canonicalMatchId,
+          matchesWithSameScoresheet.matchId,
+        ),
+      )
+      .innerJoin(
+        firstMatchPerPlayer,
+        eq(
+          firstMatchPerPlayer.canonicalPlayerId,
+          vMatchPlayerCanonicalForUser.canonicalPlayerId,
+        ),
+      )
+      .where(
+        and(
+          or(
+            eq(vMatchPlayerCanonicalForUser.ownerId, args.userId),
+            eq(vMatchPlayerCanonicalForUser.sharedWithId, args.userId),
+          ),
+          inArray(
+            vMatchPlayerCanonicalForUser.canonicalPlayerId,
+            returnedSharedMatch.sharedMatchPlayers.map(
+              (smp) =>
+                smp.sharedPlayer?.linkedPlayerId ??
+                smp.sharedPlayer?.playerId ??
+                0,
+            ),
+          ),
+        ),
+      );
+    return {
+      scoresheet: parentScoresheet,
+      players: returnedSharedMatch.sharedMatchPlayers
+        .map((smp) => {
+          const sharedPlayer = smp.sharedPlayer;
+          if (sharedPlayer === null) return null;
+          const linkedPlayer = sharedPlayer.linkedPlayer;
+          if (linkedPlayer)
+            return {
+              id: smp.matchPlayerId,
+              playerId: linkedPlayer.id,
+              name: linkedPlayer.name,
+              playerType: "original" as const,
+              type: "shared" as const,
+            };
+          return {
+            id: smp.matchPlayerId,
+            playerId: sharedPlayer.playerId,
+            name: sharedPlayer.player.name,
+            playerType: "shared" as const,
+            type: "shared" as const,
+          };
+        })
+        .filter((player) => player !== null),
+      matchPlayers: matchPlayersResults,
+    };
   }
 }
 export const matchRepository = new MatchRepository();

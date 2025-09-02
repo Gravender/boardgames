@@ -5,6 +5,7 @@ import type {
   GetMatchOutputType,
   GetMatchPlayersAndTeamsOutputType,
   GetMatchScoresheetOutputType,
+  GetMatchSummaryOutputType,
 } from "../match.output";
 import type {
   CreateMatchArgs,
@@ -200,8 +201,45 @@ class MatchService {
       };
     }
   }
-  public async getSummary(args: GetMatchArgs): GetMatchSummaryOutputType{
-
-				}
+  public async getMatchSummary(
+    args: GetMatchArgs,
+  ): Promise<GetMatchSummaryOutputType> {
+    const response = await matchRepository.getMatchSummary({
+      input: args.input,
+      userId: args.ctx.userId,
+    });
+    const playerStats: GetMatchSummaryOutputType["playerStats"] = [];
+    for (const player of response.players) {
+      const matchPlayersForPlayer = response.matchPlayers.filter(
+        (mp) => mp.id === player.id,
+      );
+      const playerPlacements = matchPlayersForPlayer.reduce(
+        (acc, mp) => {
+          if (mp.placement !== null) {
+            acc[mp.placement] = (acc[mp.placement] ?? 0) + 1;
+          }
+          return acc;
+        },
+        {} as Record<number, number>,
+      );
+      playerStats.push({
+        id: player.id,
+        playerId: player.playerId,
+        playerType: player.playerType,
+        type: player.type,
+        name: player.name,
+        scores: matchPlayersForPlayer
+          .map((mp) => mp.score)
+          .filter((score) => score !== null),
+        plays: matchPlayersForPlayer.length,
+        placements: playerPlacements,
+        wins: matchPlayersForPlayer.filter((mp) => mp.winner).length,
+        firstMatch: matchPlayersForPlayer[0]?.isFirstMatchForCurrent ?? false,
+      });
+    }
+    return {
+      playerStats,
+    };
+  }
 }
 export const matchService = new MatchService();

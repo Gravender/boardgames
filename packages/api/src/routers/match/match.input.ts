@@ -5,6 +5,7 @@ import {
   insertPlayerSchema,
   selectMatchSchema,
 } from "@board-games/db/zodSchema";
+import { sharedOrOriginalSchema } from "@board-games/shared";
 
 export const createMatchInput = insertMatchSchema
   .pick({
@@ -15,7 +16,7 @@ export const createMatchInput = insertMatchSchema
   .extend({
     game: z.object({
       id: z.number(),
-      type: z.literal("original").or(z.literal("shared")),
+      type: sharedOrOriginalSchema,
     }),
     teams: z
       .array(
@@ -27,7 +28,7 @@ export const createMatchInput = insertMatchSchema
                 .pick({ id: true })
                 .required({ id: true })
                 .extend({
-                  type: z.literal("original").or(z.literal("shared")),
+                  type: sharedOrOriginalSchema,
                   roles: z.array(z.number()),
                 }),
             )
@@ -37,12 +38,12 @@ export const createMatchInput = insertMatchSchema
       .min(1),
     scoresheet: z.object({
       id: z.number(),
-      scoresheetType: z.literal("original").or(z.literal("shared")),
+      scoresheetType: sharedOrOriginalSchema,
     }),
     location: z
       .object({
         id: z.number(),
-        type: z.literal("original").or(z.literal("shared")),
+        type: sharedOrOriginalSchema,
       })
       .nullable(),
   });
@@ -53,7 +54,7 @@ export const getMatchInput = selectMatchSchema
     id: true,
   })
   .extend({
-    type: z.literal("original").or(z.literal("shared")),
+    type: sharedOrOriginalSchema,
   });
 export type GetMatchInputType = z.infer<typeof getMatchInput>;
 
@@ -62,7 +63,7 @@ export const getMatchScoresheetInput = selectMatchSchema
     id: true,
   })
   .extend({
-    type: z.literal("original").or(z.literal("shared")),
+    type: sharedOrOriginalSchema,
   });
 
 export type GetMatchScoresheetInputType = z.infer<
@@ -74,7 +75,7 @@ export const getMatchPlayersAndTeamsInput = selectMatchSchema
     id: true,
   })
   .extend({
-    type: z.literal("original").or(z.literal("shared")),
+    type: sharedOrOriginalSchema,
   });
 export type GetMatchPlayersAndTeamsInputType = z.infer<
   typeof getMatchPlayersAndTeamsInput

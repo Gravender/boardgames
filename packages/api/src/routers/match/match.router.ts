@@ -11,6 +11,7 @@ import {
   getMatchOutput,
   getMatchPlayersAndTeamsOutput,
   getMatchScoresheetOutput,
+  getMatchSummaryOutput,
 } from "~/routers/match/match.output";
 import { matchService } from "~/routers/match/service/match.service";
 import { protectedUserProcedure } from "~/trpc";

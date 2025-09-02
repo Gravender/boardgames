@@ -23,6 +23,10 @@
     "./constants": {
       "types": "./dist/constants.d.ts",
       "default": "./src/constants/index.ts"
+    },
+    "./views": {
+      "types": "./dist/views.d.ts",
+      "default": "./src/views/index.ts"
     }
   },
   "license": "MIT",

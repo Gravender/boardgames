@@ -26,6 +26,9 @@ const sharedScoresheet = createTable(
     scoresheetId: integer("scoresheet_id")
       .references(() => scoresheet.id)
       .notNull(),
+    linkedScoresheetId: integer("linked_scoresheet_id").references(
+      () => scoresheet.id,
+    ),
     sharedGameId: integer("shared_game_id")
       .references(() => sharedGame.id)
       .notNull(),
