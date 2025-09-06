@@ -2,6 +2,7 @@ import type {
   MatchPauseArgs,
   MatchResetDurationArgs,
   MatchStartArgs,
+  UpdateMatchScoreArgs,
 } from "./update-match.service.types";
 import { updateMatchRepository } from "../repository/update-match.repository";
 
@@ -20,6 +21,12 @@ class UpdateMatchService {
   }
   public async matchResetDuration(args: MatchResetDurationArgs) {
     return updateMatchRepository.matchResetDuration({
+      input: args.input,
+      userId: args.ctx.userId,
+    });
+  }
+  public async updateMatchRoundScore(args: UpdateMatchScoreArgs) {
+    return updateMatchRepository.updateMatchRoundScore({
       input: args.input,
       userId: args.ctx.userId,
     });

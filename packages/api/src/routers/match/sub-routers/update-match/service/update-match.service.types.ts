@@ -1,3 +1,4 @@
+import type { UpdateMatchScoreInputType } from "../update-match.input";
 import type { GetMatchInputType } from "~/routers/match/match.input";
 
 export interface CtxUser {
@@ -10,3 +11,8 @@ export interface MatchStartArgs {
 }
 export type MatchPauseArgs = MatchStartArgs;
 export type MatchResetDurationArgs = MatchStartArgs;
+
+export interface UpdateMatchScoreArgs {
+  input: UpdateMatchScoreInputType;
+  ctx: CtxUser;
+}

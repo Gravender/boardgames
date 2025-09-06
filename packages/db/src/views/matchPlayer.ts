@@ -22,6 +22,8 @@ export const vMatchPlayerCanonicalForUser = pgView(
 
     // metadata/stats
     sourceType: text("source_type").$type<"original" | "shared">().notNull(), // 'original' | 'shared'
+
+    permission: text("permission").$type<"edit" | "view">().notNull(), // 'edit' | 'view'
     teamId: integer("team_id"),
     score: integer("score"),
     winner: boolean("winner"),
@@ -44,7 +46,7 @@ export const vMatchPlayerCanonicalForUser = pgView(
       m.created_by AS owner_id,
       NULL::text AS shared_with_id,
       'original'::text AS source_type,
-      3 AS priority,
+      edit::text AS permission,
       mp.team_id AS team_id,
       mp.score AS score,
       mp.winner::BOOLEAN AS winner,
@@ -69,10 +71,7 @@ export const vMatchPlayerCanonicalForUser = pgView(
       m.created_by AS owner_id,
       sm.shared_with_id AS shared_with_id,
       'shared'::text AS source_type,
-      CASE
-        WHEN sp.linked_player_id IS NOT NULL THEN 1
-        ELSE 2
-      END AS priority,
+      smp.permission AS permission,
       mp.team_id AS team_id,
       mp.score AS score,
       mp.winner::BOOLEAN AS winner,
@@ -113,6 +112,5 @@ FROM
   -- choose the best row per (matchplayer, viewer): linked > shared > original
 ORDER BY
   base_match_player_id,
-  COALESCE(shared_with_id, owner_id),
-  priority;
+  COALESCE(shared_with_id, owner_id);
 `);
