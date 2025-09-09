@@ -1,15 +1,19 @@
+import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { differenceInSeconds } from "date-fns";
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, inArray, notInArray, or, sql } from "drizzle-orm";
 
 import { db } from "@board-games/db/client";
-import { match, roundPlayer } from "@board-games/db/schema";
+import { match, matchPlayer, roundPlayer } from "@board-games/db/schema";
 import { vMatchPlayerCanonicalForUser } from "@board-games/db/views";
 
 import type {
   MatchPauseRepoArgs,
   MatchResetDurationRepoArgs,
   MatchStartRepoArgs,
+  UpdateMatchManualWinnerRepoArgs,
+  UpdateMatchPlacementsRepoArgs,
+  UpdateMatchPlayerScoreRepoArgs,
   UpdateMatchRoundScoreRepoArgs,
 } from "./update-match.repository.types";
 
@@ -278,6 +282,288 @@ class UpdateMatchRepository {
           ),
         );
     }
+  }
+  public async updateMatchPlayerScore(args: UpdateMatchPlayerScoreRepoArgs) {
+    const { input, userId } = args;
+
+    if (input.match.type === "original") {
+      const foundMatch = await db.query.match.findFirst({
+        where: {
+          id: input.match.id,
+          createdBy: userId,
+        },
+      });
+      if (!foundMatch)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
+    } else {
+      const foundSharedMatch = await db.query.sharedMatch.findFirst({
+        where: {
+          id: input.match.id,
+          sharedWithId: userId,
+        },
+      });
+      if (!foundSharedMatch)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared match not found.",
+        });
+    }
+    if (input.type === "player") {
+      const [foundMatchPlayer] = await db
+        .select()
+        .from(vMatchPlayerCanonicalForUser)
+        .where(
+          and(
+            eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.match.id),
+            eq(
+              vMatchPlayerCanonicalForUser.baseMatchPlayerId,
+              input.matchPlayerId,
+            ),
+            or(
+              eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
+              eq(vMatchPlayerCanonicalForUser.ownerId, userId),
+            ),
+          ),
+        );
+      if (!foundMatchPlayer)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Match player not found.",
+        });
+      if (foundMatchPlayer.permission !== "edit")
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Does not have permission to edit this match player.",
+        });
+      await db
+        .update(matchPlayer)
+        .set({ score: input.score })
+        .where(eq(matchPlayer.id, input.matchPlayerId));
+    } else {
+      const foundMatchPlayers = await db
+        .select()
+        .from(vMatchPlayerCanonicalForUser)
+        .where(
+          and(
+            eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.match.id),
+            eq(vMatchPlayerCanonicalForUser.teamId, input.teamId),
+            or(
+              eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
+              eq(vMatchPlayerCanonicalForUser.ownerId, userId),
+            ),
+          ),
+        );
+      if (foundMatchPlayers.length === 0)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Team players not found.",
+        });
+      const allEditPermissions = foundMatchPlayers.every(
+        (mp) => mp.permission === "edit",
+      );
+      if (!allEditPermissions)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Does not have permission to edit this match team.",
+        });
+      await db
+        .update(matchPlayer)
+        .set({ score: input.score })
+        .where(
+          and(
+            inArray(
+              matchPlayer.id,
+              foundMatchPlayers.map((mp) => mp.baseMatchPlayerId),
+            ),
+            inArray(
+              matchPlayer.matchId,
+              foundMatchPlayers.map((mp) => mp.canonicalMatchId),
+            ),
+          ),
+        );
+    }
+  }
+  public async updateMatchManualWinner(args: UpdateMatchManualWinnerRepoArgs) {
+    const { input, userId } = args;
+
+    if (input.match.type === "original") {
+      const foundMatch = await db.query.match.findFirst({
+        where: {
+          id: input.match.id,
+          createdBy: userId,
+        },
+      });
+      if (!foundMatch)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
+    } else {
+      const foundSharedMatch = await db.query.sharedMatch.findFirst({
+        where: {
+          id: input.match.id,
+          sharedWithId: userId,
+        },
+      });
+      if (!foundSharedMatch)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared match not found.",
+        });
+      if (foundSharedMatch.permission !== "edit")
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Does not have permission to edit this match.",
+        });
+    }
+    const foundMatchPlayers = await db
+      .select()
+      .from(vMatchPlayerCanonicalForUser)
+      .where(
+        and(
+          eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.match.id),
+          or(
+            eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
+            eq(vMatchPlayerCanonicalForUser.ownerId, userId),
+          ),
+        ),
+      );
+    if (foundMatchPlayers.length === 0)
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Match players not found.",
+      });
+    const allEditPermissions = foundMatchPlayers.every(
+      (mp) => mp.permission === "edit",
+    );
+    if (!allEditPermissions)
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Does not have permission to edit these match players.",
+      });
+    await db
+      .update(match)
+      .set({ finished: true })
+      .where(eq(match.id, input.match.id));
+    if (input.winners.length > 0) {
+      await db
+        .update(matchPlayer)
+        .set({ winner: false })
+        .where(
+          and(
+            eq(matchPlayer.matchId, input.match.id),
+            notInArray(
+              matchPlayer.id,
+              input.winners.map((winner) => winner.id),
+            ),
+          ),
+        );
+      await db
+        .update(matchPlayer)
+        .set({ winner: true })
+        .where(
+          and(
+            eq(matchPlayer.matchId, input.match.id),
+            inArray(
+              matchPlayer.id,
+              input.winners.map((winner) => winner.id),
+            ),
+          ),
+        );
+    } else {
+      await db
+        .update(matchPlayer)
+        .set({ winner: false })
+        .where(eq(matchPlayer.matchId, input.match.id));
+    }
+  }
+  public async updateMatchPlacements(args: UpdateMatchPlacementsRepoArgs) {
+    const { input, userId } = args;
+
+    if (input.match.type === "original") {
+      const foundMatch = await db.query.match.findFirst({
+        where: {
+          id: input.match.id,
+          createdBy: userId,
+        },
+      });
+      if (!foundMatch)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
+    } else {
+      const foundSharedMatch = await db.query.sharedMatch.findFirst({
+        where: {
+          id: input.match.id,
+          sharedWithId: userId,
+        },
+      });
+      if (!foundSharedMatch)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared match not found.",
+        });
+      if (foundSharedMatch.permission !== "edit")
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Does not have permission to edit this match.",
+        });
+    }
+    const foundMatchPlayers = await db
+      .select()
+      .from(vMatchPlayerCanonicalForUser)
+      .where(
+        and(
+          eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.match.id),
+          or(
+            eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
+            eq(vMatchPlayerCanonicalForUser.ownerId, userId),
+          ),
+        ),
+      );
+    if (foundMatchPlayers.length === 0)
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Match players not found.",
+      });
+    const allEditPermissions = foundMatchPlayers.every(
+      (mp) => mp.permission === "edit",
+    );
+    if (!allEditPermissions)
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Does not have permission to edit these match players.",
+      });
+    await db
+      .update(match)
+      .set({
+        finished: true,
+      })
+      .where(eq(match.id, input.match.id));
+    const ids = input.playersPlacement.map((p) => p.id);
+
+    const placementSqlChunks: SQL[] = [sql`(case`];
+    const winnerSqlChunks: SQL[] = [sql`(case`];
+
+    for (const player of input.playersPlacement) {
+      placementSqlChunks.push(
+        sql`when ${matchPlayer.id} = ${player.id} then ${sql`${player.placement}::integer`}`,
+      );
+      winnerSqlChunks.push(
+        sql`when ${matchPlayer.id} = ${player.id} then ${player.placement === 1}::boolean`,
+      );
+    }
+
+    placementSqlChunks.push(sql`end)`);
+    winnerSqlChunks.push(sql`end)`);
+
+    // Join each array of CASE chunks into a single SQL expression
+    const finalPlacementSql = sql.join(placementSqlChunks, sql.raw(" "));
+    const finalWinnerSql = sql.join(winnerSqlChunks, sql.raw(" "));
+
+    // Perform the bulk update
+    await db
+      .update(matchPlayer)
+      .set({
+        placement: finalPlacementSql,
+        winner: finalWinnerSql,
+      })
+      .where(inArray(matchPlayer.id, ids));
   }
 }
 

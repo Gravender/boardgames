@@ -3,7 +3,10 @@ import type { TRPCRouterRecord } from "@trpc/server";
 import { getMatchInput } from "~/routers/match/match.input";
 import { protectedUserProcedure } from "~/trpc";
 import { updateMatchService } from "./service/update-match.service";
-import { updateMatchScoreInput } from "./update-match.input";
+import {
+  updateMatchPlayerScoreInput,
+  updateMatchScoreInput,
+} from "./update-match.input";
 
 export const updateMatchRouter = {
   matchStart: protectedUserProcedure
@@ -25,5 +28,10 @@ export const updateMatchRouter = {
     .input(updateMatchScoreInput)
     .mutation(async ({ ctx, input }) => {
       await updateMatchService.updateMatchRoundScore({ ctx, input });
+    }),
+  updateMatchPlayerScore: protectedUserProcedure
+    .input(updateMatchPlayerScoreInput)
+    .mutation(async ({ ctx, input }) => {
+      await updateMatchService.updateMatchPlayerScore({ ctx, input });
     }),
 } satisfies TRPCRouterRecord;
