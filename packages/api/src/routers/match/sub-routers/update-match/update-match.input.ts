@@ -91,3 +91,40 @@ export const updateMatchPlacementsInput = z.object({
 export type UpdateMatchPlacementsInputType = z.infer<
   typeof updateMatchPlacementsInput
 >;
+
+export const updateMatchCommentInput = z.object({
+  match: z.object({
+    id: z.number(),
+    type: sharedOrOriginalSchema,
+  }),
+  comment: z.string().min(1),
+});
+
+export type UpdateMatchCommentInputType = z.infer<
+  typeof updateMatchCommentInput
+>;
+
+export const updateMatchDetailsInput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("player"),
+    id: z.number(),
+    match: z.object({
+      id: z.number(),
+      type: sharedOrOriginalSchema,
+    }),
+    details: z.string(),
+  }),
+  z.object({
+    type: z.literal("team"),
+    teamId: z.number(),
+    match: z.object({
+      id: z.number(),
+      type: sharedOrOriginalSchema,
+    }),
+    details: z.string(),
+  }),
+]);
+
+export type UpdateMatchDetailsInputType = z.infer<
+  typeof updateMatchDetailsInput
+>;

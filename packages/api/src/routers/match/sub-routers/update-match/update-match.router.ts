@@ -4,6 +4,10 @@ import { getMatchInput } from "~/routers/match/match.input";
 import { protectedUserProcedure } from "~/trpc";
 import { updateMatchService } from "./service/update-match.service";
 import {
+  updateMatchCommentInput,
+  updateMatchDetailsInput,
+  updateMatchManualWinnerInput,
+  updateMatchPlacementsInput,
   updateMatchPlayerScoreInput,
   updateMatchScoreInput,
 } from "./update-match.input";
@@ -33,5 +37,25 @@ export const updateMatchRouter = {
     .input(updateMatchPlayerScoreInput)
     .mutation(async ({ ctx, input }) => {
       await updateMatchService.updateMatchPlayerScore({ ctx, input });
+    }),
+  updateMatchManualWinner: protectedUserProcedure
+    .input(updateMatchManualWinnerInput)
+    .mutation(async ({ ctx, input }) => {
+      await updateMatchService.updateMatchManualWinner({ ctx, input });
+    }),
+  updateMatchPlacements: protectedUserProcedure
+    .input(updateMatchPlacementsInput)
+    .mutation(async ({ ctx, input }) => {
+      await updateMatchService.updateMatchPlacements({ ctx, input });
+    }),
+  updateMatchComment: protectedUserProcedure
+    .input(updateMatchCommentInput)
+    .mutation(async ({ ctx, input }) => {
+      await updateMatchService.updateMatchComment({ ctx, input });
+    }),
+  updateMatchDetails: protectedUserProcedure
+    .input(updateMatchDetailsInput)
+    .mutation(async ({ ctx, input }) => {
+      await updateMatchService.updateMatchDetails({ ctx, input });
     }),
 } satisfies TRPCRouterRecord;

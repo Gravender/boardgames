@@ -1,4 +1,6 @@
 import type {
+  UpdateMatchCommentInputType,
+  UpdateMatchDetailsInputType,
   UpdateMatchManualWinnerInputType,
   UpdateMatchPlacementsInputType,
   UpdateMatchPlayerScoreInputType,
@@ -33,5 +35,15 @@ export interface UpdateMatchManualWinnerArgs {
 
 export interface UpdateMatchPlacementsArgs {
   input: UpdateMatchPlacementsInputType;
+  ctx: CtxUser;
+}
+
+export interface UpdateMatchCommentArgs {
+  input: UpdateMatchCommentInputType;
+  ctx: CtxUser;
+}
+
+export interface UpdateMatchDetailsArgs {
+  input: UpdateMatchDetailsInputType;
   ctx: CtxUser;
 }

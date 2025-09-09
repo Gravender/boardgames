@@ -2,6 +2,8 @@ import type {
   MatchPauseArgs,
   MatchResetDurationArgs,
   MatchStartArgs,
+  UpdateMatchCommentArgs,
+  UpdateMatchDetailsArgs,
   UpdateMatchManualWinnerArgs,
   UpdateMatchPlacementsArgs,
   UpdateMatchPlayerScoreArgs,
@@ -48,6 +50,18 @@ class UpdateMatchService {
   }
   public async updateMatchPlacements(args: UpdateMatchPlacementsArgs) {
     return updateMatchRepository.updateMatchPlacements({
+      input: args.input,
+      userId: args.ctx.userId,
+    });
+  }
+  public async updateMatchComment(args: UpdateMatchCommentArgs) {
+    return updateMatchRepository.updateMatchComment({
+      input: args.input,
+      userId: args.ctx.userId,
+    });
+  }
+  public async updateMatchDetails(args: UpdateMatchDetailsArgs) {
+    return updateMatchRepository.updateMatchDetails({
       input: args.input,
       userId: args.ctx.userId,
     });

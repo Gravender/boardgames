@@ -1,4 +1,6 @@
 import type {
+  UpdateMatchCommentInputType,
+  UpdateMatchDetailsInputType,
   UpdateMatchManualWinnerInputType,
   UpdateMatchPlacementsInputType,
   UpdateMatchPlayerScoreInputType,
@@ -22,3 +24,7 @@ export type UpdateMatchManualWinnerRepoArgs =
   UserScopedArgs<UpdateMatchManualWinnerInputType>;
 export type UpdateMatchPlacementsRepoArgs =
   UserScopedArgs<UpdateMatchPlacementsInputType>;
+export type UpdateMatchCommentRepoArgs =
+  UserScopedArgs<UpdateMatchCommentInputType>;
+export type UpdateMatchDetailsRepoArgs =
+  UserScopedArgs<UpdateMatchDetailsInputType>;
