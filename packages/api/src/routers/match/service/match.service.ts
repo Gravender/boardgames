@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 
 import type {
   CreateMatchOutputType,
+  EditMatchOutputType,
   GetMatchOutputType,
   GetMatchPlayersAndTeamsOutputType,
   GetMatchScoresheetOutputType,
@@ -9,6 +10,8 @@ import type {
 } from "../match.output";
 import type {
   CreateMatchArgs,
+  DeleteMatchArgs,
+  EditMatchArgs,
   GetMatchArgs,
   GetMatchPlayersAndTeamsArgs,
   GetMatchScoresheetArgs,
@@ -240,6 +243,18 @@ class MatchService {
     return {
       playerStats,
     };
+  }
+  public async deleteMatch(args: DeleteMatchArgs) {
+    return matchRepository.deleteMatch({
+      input: args.input,
+      userId: args.ctx.userId,
+    });
+  }
+  public async editMatch(args: EditMatchArgs): Promise<EditMatchOutputType> {
+    return matchRepository.editMatch({
+      input: args.input,
+      userId: args.ctx.userId,
+    });
   }
 }
 export const matchService = new MatchService();

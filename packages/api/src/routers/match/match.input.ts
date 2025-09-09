@@ -80,3 +80,81 @@ export const getMatchPlayersAndTeamsInput = selectMatchSchema
 export type GetMatchPlayersAndTeamsInputType = z.infer<
   typeof getMatchPlayersAndTeamsInput
 >;
+
+export const deleteMatchInput = selectMatchSchema.pick({
+  id: true,
+});
+
+export type DeleteMatchInputType = z.infer<typeof deleteMatchInput>;
+
+export const editMatchInput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    match: insertMatchSchema
+      .pick({
+        id: true,
+        date: true,
+        name: true,
+      })
+      .required({ id: true })
+      .extend({
+        location: z
+          .object({
+            id: z.number(),
+            type: sharedOrOriginalSchema,
+          })
+          .nullable()
+          .optional(),
+      }),
+    addPlayers: z.array(
+      insertPlayerSchema
+        .pick({
+          id: true,
+        })
+        .required({ id: true })
+        .extend({
+          type: sharedOrOriginalSchema,
+          teamId: z.number().nullable(),
+          roles: z.array(z.number()),
+        }),
+    ),
+    removePlayers: z.array(
+      insertPlayerSchema
+        .pick({
+          id: true,
+        })
+        .required({ id: true }),
+    ),
+    updatedPlayers: z.array(
+      z.object({
+        id: z.number(),
+        teamId: z.number().nullable(),
+        roles: z.array(z.number()),
+      }),
+    ),
+    editedTeams: z.array(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+      }),
+    ),
+    addedTeams: z.array(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+      }),
+    ),
+  }),
+  z.object({
+    type: z.literal("shared"),
+    match: insertMatchSchema
+      .pick({
+        id: true,
+        date: true,
+        name: true,
+      })
+      .required({ id: true }),
+  }),
+]);
+
+export type EditMatchInputType = z.infer<typeof editMatchInput>;

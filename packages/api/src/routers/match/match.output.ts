@@ -172,3 +172,43 @@ export const getMatchSummaryOutput = z.object({
 });
 
 export type GetMatchSummaryOutputType = z.infer<typeof getMatchSummaryOutput>;
+
+export const editMatchOutput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    matchId: z.number(),
+    game: selectGameSchema.pick({
+      id: true,
+    }),
+    location: selectLocationSchema
+      .pick({
+        id: true,
+      })
+      .optional(),
+    date: z.date().optional(),
+    players: z.array(
+      selectPlayerSchema
+        .pick({
+          id: true,
+        })
+        .extend({
+          type: sharedOrOriginalSchema,
+        }),
+    ),
+    updatedScore: z.boolean(),
+  }),
+  z.object({
+    type: z.literal("shared"),
+    matchId: z.number(),
+    game: selectGameSchema
+      .pick({
+        id: true,
+      })
+      .extend({
+        type: sharedOrOriginalSchema,
+      }),
+    date: z.date().optional(),
+  }),
+]);
+
+export type EditMatchOutputType = z.infer<typeof editMatchOutput>;

@@ -1,20 +1,32 @@
+import type z from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 
+import type { selectRoundPlayerSchema } from "@board-games/db/zodSchema";
 import { db } from "@board-games/db/client";
-import { match, scoresheet } from "@board-games/db/schema";
+import {
+  match,
+  matchPlayer,
+  matchPlayerRole,
+  scoresheet,
+  team,
+} from "@board-games/db/schema";
 import {
   vMatchCanonical,
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
+import { calculatePlacement } from "@board-games/shared";
 
 import type {
   CreateMatchOutputType,
+  EditMatchOutputType,
   GetMatchOutputType,
   GetMatchScoresheetOutputType,
 } from "~/routers/match/match.output";
 import type {
   CreateMatchArgs,
+  DeleteMatchArgs,
+  EditMatchArgs,
   GetMatchArgs,
   GetMatchPlayersAndTeamsArgs,
   GetMatchScoresheetArgs,
@@ -27,6 +39,7 @@ import {
   getScoreSheetAndRounds,
   shareMatchWithFriends,
 } from "~/utils/addMatch";
+import { addPlayersToMatch } from "~/utils/editMatch";
 import { cloneSharedLocationForUser } from "~/utils/handleSharedLocation";
 
 class MatchRepository {
@@ -798,6 +811,380 @@ class MatchRepository {
         .filter((player) => player !== null),
       matchPlayers: matchPlayersResults,
     };
+  }
+  public async deleteMatch(args: DeleteMatchArgs) {
+    const { input } = args;
+
+    const returnedMatch = await db.query.match.findFirst({
+      where: {
+        id: input.id,
+        createdBy: args.userId,
+      },
+    });
+    if (!returnedMatch)
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Match not found.",
+      });
+    await db
+      .update(matchPlayer)
+      .set({ deletedAt: new Date() })
+      .where(eq(matchPlayer.matchId, returnedMatch.id));
+    await db
+      .update(match)
+      .set({ deletedAt: new Date() })
+      .where(eq(match.id, returnedMatch.id));
+    await db
+      .update(scoresheet)
+      .set({ deletedAt: new Date() })
+      .where(eq(scoresheet.id, returnedMatch.scoresheetId));
+  }
+  public async editMatch(args: EditMatchArgs): Promise<EditMatchOutputType> {
+    const { input, userId } = args;
+
+    if (input.type === "original") {
+      const result = await db.transaction(async (tx) => {
+        const returnedMatch = await tx.query.match.findFirst({
+          where: {
+            id: input.match.id,
+            createdBy: userId,
+            deletedAt: {
+              isNull: true,
+            },
+          },
+          with: {
+            scoresheet: {
+              with: {
+                rounds: true,
+              },
+            },
+            matchPlayers: {
+              with: {
+                playerRounds: true,
+                roles: true,
+              },
+            },
+            teams: true,
+          },
+        });
+        if (!returnedMatch)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Match not found.",
+          });
+        const outputMatch: EditMatchOutputType = {
+          type: "original" as const,
+          matchId: input.match.id,
+          game: {
+            id: returnedMatch.gameId,
+          },
+          date: input.match.date,
+          location: undefined,
+          players: [],
+          updatedScore: false,
+        };
+
+        if (input.match.name || input.match.date || input.match.location) {
+          let locationId: null | number | undefined;
+          if (input.match.location) {
+            if (input.match.location.type === "original") {
+              locationId = input.match.location.id;
+            } else {
+              locationId = await cloneSharedLocationForUser(
+                tx,
+                input.match.location.id,
+                userId,
+              );
+            }
+          }
+          await tx
+            .update(match)
+            .set({
+              name: input.match.name,
+              date: input.match.date,
+              locationId: locationId,
+            })
+            .where(eq(match.id, input.match.id));
+          const outputMatch = {
+            type: "original" as const,
+            matchId: input.match.id,
+            game: {
+              id: returnedMatch.gameId,
+            },
+            date: input.match.date,
+            location: locationId ? { id: locationId } : undefined,
+            players: [],
+          };
+
+          if (locationId) {
+            outputMatch.location = { id: locationId };
+          }
+        }
+        if (input.editedTeams.length > 0) {
+          for (const editedTeam of input.editedTeams) {
+            await tx
+              .update(team)
+              .set({ name: editedTeam.name })
+              .where(eq(team.id, editedTeam.id));
+          }
+        }
+        //Add Teams
+        const mappedAddedTeams: {
+          id: number;
+          teamId: number;
+          placement: number | null;
+          winner: boolean;
+          score: number | null;
+          rounds: z.infer<typeof selectRoundPlayerSchema>[];
+        }[] = [];
+        if (input.addedTeams.length > 0) {
+          for (const addedTeam of input.addedTeams) {
+            const [insertedTeam] = await tx
+              .insert(team)
+              .values({
+                name: addedTeam.name,
+                matchId: input.match.id,
+              })
+              .returning();
+            if (!insertedTeam) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Team not created",
+              });
+            }
+            mappedAddedTeams.push({
+              id: addedTeam.id,
+              teamId: insertedTeam.id,
+              placement: null,
+              winner: false,
+              score: null,
+              rounds: [],
+            });
+          }
+        }
+        const originalTeams = returnedMatch.teams.map((team) => {
+          const teamPlayer = returnedMatch.matchPlayers.find(
+            (mp) => mp.teamId === team.id,
+          );
+          return {
+            id: team.id,
+            teamId: team.id,
+            placement: teamPlayer?.placement ?? null,
+            winner: teamPlayer?.winner ?? false,
+            score: teamPlayer?.score ?? null,
+            rounds: teamPlayer?.playerRounds ?? [],
+          };
+        });
+        //Add players to match
+        if (input.addPlayers.length > 0) {
+          await addPlayersToMatch(
+            tx,
+            returnedMatch.id,
+            input.addPlayers,
+            [...originalTeams, ...mappedAddedTeams],
+            returnedMatch.scoresheet.rounds,
+            userId,
+          );
+        }
+        //Remove Players from Match
+        if (input.removePlayers.length > 0) {
+          const matchPlayers = await tx
+            .select({ id: matchPlayer.id })
+            .from(matchPlayer)
+            .where(
+              and(
+                eq(matchPlayer.matchId, input.match.id),
+                inArray(
+                  matchPlayer.playerId,
+                  input.removePlayers.map((player) => player.id),
+                ),
+              ),
+            );
+          await tx
+            .update(matchPlayer)
+            .set({ deletedAt: new Date() })
+            .where(
+              and(
+                eq(matchPlayer.matchId, input.match.id),
+                inArray(
+                  matchPlayer.id,
+                  matchPlayers.map(
+                    (returnedMatchPlayer) => returnedMatchPlayer.id,
+                  ),
+                ),
+              ),
+            );
+        }
+        if (input.updatedPlayers.length > 0) {
+          for (const updatedPlayer of input.updatedPlayers) {
+            let teamId: number | null = null;
+            const originalPlayer = returnedMatch.matchPlayers.find(
+              (mp) => mp.playerId === updatedPlayer.id,
+            );
+            if (!originalPlayer) continue;
+            if (originalPlayer.teamId !== updatedPlayer.teamId) {
+              if (updatedPlayer.teamId !== null) {
+                const foundTeam = returnedMatch.teams.find(
+                  (t) => t.id === updatedPlayer.teamId,
+                );
+                if (foundTeam) {
+                  teamId = foundTeam.id;
+                } else {
+                  const foundInsertedTeam = mappedAddedTeams.find(
+                    (t) => t.id === updatedPlayer.teamId,
+                  );
+                  if (foundInsertedTeam) {
+                    teamId = foundInsertedTeam.teamId;
+                  } else {
+                    throw new TRPCError({
+                      code: "NOT_FOUND",
+                      message: "Team not found.",
+                    });
+                  }
+                }
+              }
+              await tx
+                .update(matchPlayer)
+                .set({ teamId })
+                .where(
+                  and(
+                    eq(matchPlayer.playerId, updatedPlayer.id),
+                    eq(matchPlayer.matchId, input.match.id),
+                  ),
+                );
+            }
+
+            // Determine role changes
+            const currentRoleIds = originalPlayer.roles.map((r) => r.id);
+            const rolesToAdd = updatedPlayer.roles.filter(
+              (roleId) => !currentRoleIds.includes(roleId),
+            );
+            const rolesToRemove = currentRoleIds.filter(
+              (roleId) => !updatedPlayer.roles.includes(roleId),
+            );
+
+            // Add new roles
+            if (rolesToAdd.length > 0) {
+              await tx.insert(matchPlayerRole).values(
+                rolesToAdd.map((roleId) => ({
+                  matchPlayerId: originalPlayer.id, // use matchPlayerId
+                  roleId,
+                })),
+              );
+            }
+
+            // Remove old roles
+            if (rolesToRemove.length > 0) {
+              await tx
+                .delete(matchPlayerRole)
+                .where(
+                  and(
+                    eq(matchPlayerRole.matchPlayerId, originalPlayer.id),
+                    inArray(matchPlayerRole.roleId, rolesToRemove),
+                  ),
+                );
+            }
+          }
+        }
+        if (
+          returnedMatch.finished &&
+          (input.addPlayers.length > 0 ||
+            input.removePlayers.length > 0 ||
+            input.updatedPlayers.length > 0)
+        ) {
+          if (returnedMatch.scoresheet.winCondition !== "Manual") {
+            const newMatchPlayers = await tx.query.matchPlayer.findMany({
+              where: {
+                matchId: input.match.id,
+                deletedAt: {
+                  isNull: true,
+                },
+              },
+              with: {
+                rounds: true,
+              },
+            });
+            const finalPlacements = calculatePlacement(
+              newMatchPlayers,
+              returnedMatch.scoresheet,
+            );
+            for (const placement of finalPlacements) {
+              await tx
+                .update(matchPlayer)
+                .set({
+                  placement: placement.placement,
+                  score: placement.score,
+                  winner: placement.placement === 1,
+                })
+                .where(eq(matchPlayer.id, placement.id));
+            }
+          }
+          await tx
+            .update(match)
+            .set({ finished: false })
+            .where(eq(match.id, input.match.id));
+          outputMatch.updatedScore = true;
+          outputMatch.players = [
+            ...input.addPlayers.map((p) => ({
+              id: p.id,
+              type: "original" as const,
+            })),
+            ...input.updatedPlayers.map((p) => ({
+              id: p.id,
+              type: "original" as const,
+            })),
+            ...input.removePlayers.map((p) => ({
+              id: p.id,
+              type: "original" as const,
+            })),
+          ];
+        }
+
+        return outputMatch;
+      });
+      return result;
+    } else {
+      const returnedSharedMatch = await db.query.sharedMatch.findFirst({
+        where: {
+          matchId: input.match.id,
+          sharedWithId: userId,
+        },
+        with: {
+          sharedGame: true,
+        },
+      });
+      if (!returnedSharedMatch)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared match not found.",
+        });
+      if (returnedSharedMatch.permission !== "edit")
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Does not have permission to edit this match.",
+        });
+      await db
+        .update(match)
+        .set({
+          name: input.match.name,
+          date: input.match.date,
+        })
+        .where(eq(match.id, returnedSharedMatch.matchId));
+      return {
+        type: "shared" as const,
+        matchId: input.match.id,
+        game: returnedSharedMatch.sharedGame.linkedGameId
+          ? {
+              id: returnedSharedMatch.sharedGame.linkedGameId,
+              type: "original" as const,
+            }
+          : {
+              id: returnedSharedMatch.sharedGame.gameId,
+              type: "shared" as const,
+            },
+        date: input.match.date,
+      };
+    }
   }
 }
 export const matchRepository = new MatchRepository();

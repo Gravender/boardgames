@@ -2,12 +2,15 @@ import type { TRPCRouterRecord } from "@trpc/server";
 
 import {
   createMatchInput,
+  deleteMatchInput,
+  editMatchInput,
   getMatchInput,
   getMatchPlayersAndTeamsInput,
   getMatchScoresheetInput,
 } from "~/routers/match/match.input";
 import {
   createMatchOutput,
+  editMatchOutput,
   getMatchOutput,
   getMatchPlayersAndTeamsOutput,
   getMatchScoresheetOutput,
@@ -15,6 +18,7 @@ import {
 } from "~/routers/match/match.output";
 import { matchService } from "~/routers/match/service/match.service";
 import { protectedUserProcedure } from "~/trpc";
+import { updateMatchRouter } from "./sub-routers/update-match/update-match.router";
 
 export const matchRouter = {
   createMatch: protectedUserProcedure
@@ -62,4 +66,22 @@ export const matchRouter = {
         input,
       });
     }),
+  deleteMatch: protectedUserProcedure
+    .input(deleteMatchInput)
+    .mutation(async ({ ctx, input }) => {
+      await matchService.deleteMatch({
+        ctx,
+        input,
+      });
+    }),
+  editMatch: protectedUserProcedure
+    .input(editMatchInput)
+    .output(editMatchOutput)
+    .mutation(async ({ ctx, input }) => {
+      return matchService.editMatch({
+        ctx,
+        input,
+      });
+    }),
+  update: updateMatchRouter,
 } satisfies TRPCRouterRecord;
