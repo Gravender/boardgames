@@ -23,6 +23,7 @@ import {
   sharedMatch,
   sharedMatchPlayer,
   sharedPlayer,
+  sharedScoresheet,
   shareRequest,
   team,
 } from "@board-games/db/schema";
@@ -60,6 +61,10 @@ export async function shareMatchWithFriends(
         id: number;
       };
     }[];
+    scoresheet: {
+      id: number;
+      parentId: number | null;
+    };
   },
   shareFriends: ShareFriendConfig[],
 ) {
@@ -112,6 +117,23 @@ export async function shareMatchWithFriends(
       let returnedSharedMatch: z.infer<typeof selectSharedMatchSchema> | null =
         null;
       if (shareFriend.autoAcceptMatches && returnedSharedGame) {
+        const [returnedSharedScoresheet] = await tx
+          .insert(sharedScoresheet)
+          .values({
+            ownerId: userId,
+            sharedWithId: shareFriend.friendUserId,
+            scoresheetId: createdMatch.scoresheet.id,
+            permission: shareFriend.defaultPermissionForMatches,
+            sharedGameId: returnedSharedGame.id,
+            type: "match",
+          })
+          .returning();
+        if (!returnedSharedScoresheet) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to generate share.",
+          });
+        }
         returnedSharedMatch = await createSharedMatch(
           tx,
           userId,
@@ -119,6 +141,7 @@ export async function shareMatchWithFriends(
           shareFriend,
           returnedSharedGame.id,
           returnedSharedLocation?.id ?? undefined,
+          returnedSharedScoresheet.id,
         );
       }
       for (const matchPlayer of createdMatch.matchPlayers) {
@@ -189,6 +212,7 @@ async function createSharedMatch(
   shareFriend: ShareFriendConfig,
   sharedGameId: number,
   sharedLocationId: number | undefined,
+  sharedScoresheetId: number,
 ) {
   const [createdSharedMatch] = await transaction
     .insert(sharedMatch)
@@ -197,6 +221,7 @@ async function createSharedMatch(
       sharedWithId: shareFriend.friendUserId,
       sharedGameId: sharedGameId,
       matchId: matchId,
+      sharedScoresheetId: sharedScoresheetId,
       sharedLocationId: sharedLocationId,
       permission: shareFriend.defaultPermissionForMatches,
     })

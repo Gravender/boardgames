@@ -42,6 +42,7 @@ const sharedScoresheet = createTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
       () => new Date(),
     ),
+    type: text("type", { enum: ["game", "match"] }).notNull(),
   },
   (table) => [
     index("boardgames_shared_scoresheet_scoresheet_id_index").on(

@@ -459,6 +459,20 @@ export async function seedSharing(d3Seed: number) {
                         sharedLocationForMatch = existingSharedLocation;
                       }
                     }
+                    const [returnedSharedScoresheet] = await db
+                      .insert(sharedScoresheet)
+                      .values({
+                        ownerId: returnedUserShareRequest.ownerId,
+                        sharedWithId: returnedUserShareRequest.sharedWithId,
+                        scoresheetId: existingMatch.scoresheetId,
+                        permission: cShareRequest.permission,
+                        sharedGameId: returnedSharedGame.id,
+                        type: "match",
+                      })
+                      .returning();
+                    if (!returnedSharedScoresheet) {
+                      throw new Error("Shared Scoresheet not created");
+                    }
                     const [returnedSharedMatch] = await db
                       .insert(sharedMatch)
                       .values({
@@ -467,6 +481,7 @@ export async function seedSharing(d3Seed: number) {
                         matchId: cShareRequest.itemId,
                         sharedGameId: returnedSharedGame.id,
                         sharedLocationId: sharedLocationForMatch?.id ?? null,
+                        sharedScoresheetId: returnedSharedScoresheet.id,
                         permission: cShareRequest.permission,
                       })
                       .returning();
@@ -529,6 +544,7 @@ export async function seedSharing(d3Seed: number) {
                     scoresheetId: cShareRequest.itemId,
                     permission: cShareRequest.permission,
                     sharedGameId: returnedSharedGame.id,
+                    type: "game",
                   });
                 }
               }
@@ -757,6 +773,7 @@ export async function seedSharing(d3Seed: number) {
                       scoresheetId: cShareRequest.itemId,
                       permission: cShareRequest.permission,
                       sharedGameId: returnedSharedGame.id,
+                      type: "game",
                     });
                   }
                 }
@@ -794,6 +811,20 @@ export async function seedSharing(d3Seed: number) {
                       sharedLocationForMatch = existingSharedLocation;
                     }
                   }
+                  const [returnedSharedScoresheet] = await db
+                    .insert(sharedScoresheet)
+                    .values({
+                      ownerId: returnedUserShareRequest.ownerId,
+                      sharedWithId: returnedUserShareRequest.sharedWithId,
+                      scoresheetId: existingMatch.scoresheetId,
+                      permission: returnedUserShareRequest.permission,
+                      sharedGameId: returnedSharedGame.id,
+                      type: "match",
+                    })
+                    .returning();
+                  if (!returnedSharedScoresheet) {
+                    throw new Error("Shared Scoresheet not created");
+                  }
                   const [returnedSharedMatch] = await db
                     .insert(sharedMatch)
                     .values({
@@ -802,6 +833,7 @@ export async function seedSharing(d3Seed: number) {
                       matchId: returnedMatch.id,
                       sharedGameId: returnedSharedGame.id,
                       sharedLocationId: sharedLocationForMatch?.id ?? null,
+                      sharedScoresheetId: returnedSharedScoresheet.id,
                       permission: returnedUserShareRequest.permission,
                     })
                     .returning();
@@ -1159,6 +1191,7 @@ export async function seedSharing(d3Seed: number) {
                       scoresheetId: cShareRequest.itemId,
                       permission: cShareRequest.permission,
                       sharedGameId: returnedSharedGame.id,
+                      type: "game",
                     });
                   }
                 }
@@ -1216,6 +1249,20 @@ export async function seedSharing(d3Seed: number) {
                           sharedLocationForMatch = existingSharedLocation;
                         }
                       }
+                      const [returnedSharedScoresheet] = await db
+                        .insert(sharedScoresheet)
+                        .values({
+                          ownerId: returnedUserShareRequest.ownerId,
+                          sharedWithId: returnedUserShareRequest.sharedWithId,
+                          scoresheetId: existingMatch.scoresheetId,
+                          permission: returnedUserShareRequest.permission,
+                          sharedGameId: returnedSharedGame.id,
+                          type: "match",
+                        })
+                        .returning();
+                      if (!returnedSharedScoresheet) {
+                        throw new Error("Shared Scoresheet not created");
+                      }
                       const [returnedSharedMatch] = await db
                         .insert(sharedMatch)
                         .values({
@@ -1224,6 +1271,7 @@ export async function seedSharing(d3Seed: number) {
                           matchId: cShareRequest.itemId,
                           sharedGameId: returnedSharedGame.id,
                           sharedLocationId: sharedLocationForMatch?.id ?? null,
+                          sharedScoresheetId: returnedSharedScoresheet.id,
                           permission: cShareRequest.permission,
                         })
                         .returning();

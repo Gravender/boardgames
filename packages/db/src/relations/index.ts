@@ -276,10 +276,9 @@ export const relations = defineRelations(schema, (r) => ({
     sharedScoresheets: r.many.sharedScoresheet({
       from: r.sharedGame.id,
       to: r.sharedScoresheet.sharedGameId,
-    }),
-    scoresheets: r.many.scoresheet({
-      from: r.sharedGame.id.through(r.sharedScoresheet.sharedGameId),
-      to: r.scoresheet.id.through(r.sharedScoresheet.scoresheetId),
+      where: {
+        type: "game",
+      },
     }),
   },
   game: {

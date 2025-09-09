@@ -562,6 +562,7 @@ export const shareRequestRouter = {
                           sharedGameId: returnedShareGame.id,
                           permission:
                             friendSettings.defaultPermissionForMatches,
+                          type: "game",
                         })
                         .returning();
                       if (!createdSharedScoresheet) {
@@ -604,6 +605,7 @@ export const shareRequestRouter = {
                           sharedGameId: returnedShareGame.id,
                           permission:
                             friendSettings.defaultPermissionForMatches,
+                          type: "game",
                         })
                         .returning();
                       if (!createdSharedScoresheet) {
@@ -626,6 +628,18 @@ export const shareRequestRouter = {
                 typeof selectSharedMatchSchema
               > | null = null;
               if (returnedShareGame && friendSettings?.autoAcceptMatches) {
+                const returnedMatch = await tx2.query.match.findFirst({
+                  where: {
+                    id: input.matchId,
+                    createdBy: ctx.userId,
+                  },
+                });
+                if (!returnedMatch) {
+                  throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Match not found.",
+                  });
+                }
                 const existingSharedMatch =
                   await tx2.query.sharedMatch.findFirst({
                     where: {
@@ -635,6 +649,23 @@ export const shareRequestRouter = {
                     },
                   });
                 if (!existingSharedMatch) {
+                  const [createdSharedScoresheet] = await tx2
+                    .insert(sharedScoresheet)
+                    .values({
+                      ownerId: ctx.userId,
+                      sharedWithId: friendToShareTo.id,
+                      scoresheetId: returnedMatch.scoresheetId,
+                      permission: friendSettings.defaultPermissionForMatches,
+                      sharedGameId: returnedShareGame.id,
+                      type: "match",
+                    })
+                    .returning();
+                  if (!createdSharedScoresheet) {
+                    throw new TRPCError({
+                      code: "INTERNAL_SERVER_ERROR",
+                      message: "Failed to generate share.",
+                    });
+                  }
                   const [createdSharedMatch] = await tx2
                     .insert(sharedMatch)
                     .values({
@@ -642,6 +673,7 @@ export const shareRequestRouter = {
                       sharedWithId: friendToShareTo.id,
                       sharedGameId: returnedShareGame.id,
                       matchId: input.matchId,
+                      sharedScoresheetId: createdSharedScoresheet.id,
                       permission: friendSettings.defaultPermissionForMatches,
                       sharedLocationId: returnedSharedLocation?.id ?? undefined,
                     })
@@ -1290,6 +1322,7 @@ export const shareRequestRouter = {
                               sharedGameId: returnedSharedGame.id,
                               permission:
                                 friendSettings.defaultPermissionForMatches,
+                              type: "game",
                             })
                             .returning();
                           if (!createdSharedScoresheet) {
@@ -1347,6 +1380,7 @@ export const shareRequestRouter = {
                               sharedGameId: returnedSharedGame.id,
                               permission:
                                 friendSettings.defaultPermissionForMatches,
+                              type: "game",
                             })
                             .returning();
                           if (!createdSharedScoresheet) {
@@ -1918,6 +1952,23 @@ async function sharedMatchWithFriends(
       },
     });
     if (!existingSharedMatch && returnedSharedGame) {
+      const [createdSharedScoresheet] = await transaction
+        .insert(sharedScoresheet)
+        .values({
+          ownerId: userId,
+          sharedWithId: friendId,
+          scoresheetId: returnedMatch.scoresheetId,
+          permission: friendSettings.defaultPermissionForMatches,
+          sharedGameId: returnedSharedGame.id,
+          type: "match",
+        })
+        .returning();
+      if (!createdSharedScoresheet) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to generate share.",
+        });
+      }
       const [createdSharedMatch] = await transaction
         .insert(sharedMatch)
         .values({
@@ -1926,6 +1977,7 @@ async function sharedMatchWithFriends(
           sharedGameId: returnedSharedGame.id,
           matchId: matchToShare.matchId,
           sharedLocationId: returnedSharedLocation?.id ?? undefined,
+          sharedScoresheetId: createdSharedScoresheet.id,
           permission: friendSettings.defaultPermissionForMatches,
         })
         .returning();
@@ -2074,6 +2126,21 @@ async function handleMatchSharing(
     return null;
   }
 
+  //check for match
+  const returnedMatch = await transaction.query.match.findFirst({
+    where: {
+      id: matchId,
+      createdBy: ownerId,
+    },
+  });
+
+  if (!returnedMatch) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Match not found.",
+    });
+  }
+
   // Check for existing shared match
   const existingSharedMatch = await transaction.query.sharedMatch.findFirst({
     where: {
@@ -2107,6 +2174,26 @@ async function handleMatchSharing(
     sharedGameRef = foundSharedGame;
   }
 
+  // Create the shared scoresheet
+  const [createdSharedScoresheet] = await transaction
+    .insert(sharedScoresheet)
+    .values({
+      ownerId: ownerId,
+      sharedWithId: friendId,
+      scoresheetId: returnedMatch.scoresheetId,
+      permission: friendSettings.defaultPermissionForMatches,
+      sharedGameId: sharedGameRef.id,
+      type: "match",
+    })
+    .returning();
+
+  if (!createdSharedScoresheet) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Failed to generate share.",
+    });
+  }
+
   // Create the shared match
   const [createdSharedMatch] = await transaction
     .insert(sharedMatch)
@@ -2116,6 +2203,7 @@ async function handleMatchSharing(
       sharedGameId: sharedGameRef.id,
       matchId: matchId,
       sharedLocationId: sharedLocation?.id,
+      sharedScoresheetId: createdSharedScoresheet.id,
       permission: friendSettings.defaultPermissionForMatches,
     })
     .returning();
@@ -2181,6 +2269,7 @@ async function shareScoresheetsWithFriend(
             scoresheetId: scoresheetToShare.scoresheetId,
             sharedGameId: returnedSharedGame.id,
             permission: scoresheetToShare.permission,
+            type: "game",
           })
           .returning();
         if (!createdSharedScoresheet) {

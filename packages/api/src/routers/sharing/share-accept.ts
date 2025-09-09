@@ -163,6 +163,7 @@ export const shareAcceptanceRouter = {
                 permission: returnedScoresheetRequest.permission,
 
                 sharedGameId: sharedGameExists.id,
+                type: "game",
               });
             }
           }
@@ -282,6 +283,23 @@ export const shareAcceptanceRouter = {
                   sharedLocationForMatch = existingSharedLocation;
                 }
               }
+              const [returnedSharedScoresheet] = await tx
+                .insert(sharedScoresheet)
+                .values({
+                  ownerId: returnedMatchRequest.ownerId,
+                  sharedWithId: ctx.userId,
+                  scoresheetId: returnedMatch.scoresheetId,
+                  permission: returnedMatchRequest.permission,
+                  sharedGameId: sharedGameExists.id,
+                  type: "match",
+                })
+                .returning();
+              if (!returnedSharedScoresheet) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: "Shared Scoresheet not created successfully",
+                });
+              }
               const [returnedSharedMatch] = await tx
                 .insert(sharedMatch)
                 .values({
@@ -290,6 +308,7 @@ export const shareAcceptanceRouter = {
                   matchId: returnedMatchRequest.itemId,
                   sharedGameId: sharedGameExists.id,
                   sharedLocationId: sharedLocationForMatch?.id ?? null,
+                  sharedScoresheetId: returnedSharedScoresheet.id,
                   permission: returnedMatchRequest.permission,
                 })
                 .returning();
@@ -660,6 +679,23 @@ export const shareAcceptanceRouter = {
                 sharedLocationForMatch = existingSharedLocation;
               }
             }
+            const [returnedSharedScoresheet] = await tx
+              .insert(sharedScoresheet)
+              .values({
+                ownerId: existingRequest.ownerId,
+                sharedWithId: ctx.userId,
+                scoresheetId: returnedMatch.scoresheetId,
+                permission: existingRequest.permission,
+                sharedGameId: sharedGameExists.id,
+                type: "match",
+              })
+              .returning();
+            if (!returnedSharedScoresheet) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Shared Scoresheet not created successfully",
+              });
+            }
             const [returnedSharedMatch] = await tx
               .insert(sharedMatch)
               .values({
@@ -669,6 +705,7 @@ export const shareAcceptanceRouter = {
                 sharedGameId: sharedGameExists.id,
                 sharedLocationId: sharedLocationForMatch?.id ?? null,
                 permission: existingRequest.permission,
+                sharedScoresheetId: returnedSharedScoresheet.id,
               })
               .returning();
             if (!returnedSharedMatch) {
@@ -748,6 +785,7 @@ export const shareAcceptanceRouter = {
                     scoresheetId: returnedScoresheetRequest.itemId,
                     permission: returnedScoresheetRequest.permission,
                     sharedGameId: sharedGameExists.id,
+                    type: "game",
                   });
                 }
               }
@@ -795,6 +833,23 @@ export const shareAcceptanceRouter = {
                 sharedLocationForMatch = existingSharedLocation;
               }
             }
+            const [returnedSharedScoresheet] = await tx
+              .insert(sharedScoresheet)
+              .values({
+                ownerId: existingRequest.ownerId,
+                sharedWithId: ctx.userId,
+                scoresheetId: returnedMatch.scoresheetId,
+                permission: existingRequest.permission,
+                sharedGameId: returnedSharedGame.id,
+                type: "match",
+              })
+              .returning();
+            if (!returnedSharedScoresheet) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Shared Scoresheet not created successfully",
+              });
+            }
             const [returnedSharedMatch] = await tx
               .insert(sharedMatch)
               .values({
@@ -803,6 +858,7 @@ export const shareAcceptanceRouter = {
                 matchId: existingRequest.itemId,
                 sharedGameId: returnedSharedGame.id,
                 sharedLocationId: sharedLocationForMatch?.id ?? null,
+                sharedScoresheetId: returnedSharedScoresheet.id,
                 permission: existingRequest.permission,
               })
               .returning();
@@ -1341,6 +1397,23 @@ export const shareAcceptanceRouter = {
                         sharedLocationForMatch = existingSharedLocation;
                       }
                     }
+                    const [returnedSharedScoresheet] = await tx
+                      .insert(sharedScoresheet)
+                      .values({
+                        ownerId: matchShareRequest.ownerId,
+                        sharedWithId: ctx.userId,
+                        scoresheetId: returnedMatch.scoresheetId,
+                        permission: matchShareRequest.permission,
+                        sharedGameId: shareGameExists.id,
+                        type: "match",
+                      })
+                      .returning();
+                    if (!returnedSharedScoresheet) {
+                      throw new TRPCError({
+                        code: "INTERNAL_SERVER_ERROR",
+                        message: "Shared Scoresheet not created successfully",
+                      });
+                    }
                     const [returnedSharedMatch] = await tx
                       .insert(sharedMatch)
                       .values({
@@ -1349,6 +1422,7 @@ export const shareAcceptanceRouter = {
                         matchId: returnedMatch.id,
                         sharedGameId: shareGameExists.id,
                         sharedLocationId: sharedLocationForMatch?.id ?? null,
+                        sharedScoresheetId: returnedSharedScoresheet.id,
                         permission: matchShareRequest.permission,
                       })
                       .returning();
@@ -1440,6 +1514,7 @@ export const shareAcceptanceRouter = {
                       scoresheetId: returnedScoresheet.id,
                       permission: scoresheetShareRequest.permission,
                       sharedGameId: shareGameExists.id,
+                      type: "game",
                     });
                   }
                 }
@@ -1521,6 +1596,23 @@ export const shareAcceptanceRouter = {
                         sharedLocationForMatch = existingSharedLocation;
                       }
                     }
+                    const [returnedSharedScoresheet] = await tx
+                      .insert(sharedScoresheet)
+                      .values({
+                        ownerId: matchShareRequest.ownerId,
+                        sharedWithId: ctx.userId,
+                        scoresheetId: returnedMatch.scoresheetId,
+                        permission: matchShareRequest.permission,
+                        sharedGameId: returnedSharedGame.id,
+                        type: "match",
+                      })
+                      .returning();
+                    if (!returnedSharedScoresheet) {
+                      throw new TRPCError({
+                        code: "INTERNAL_SERVER_ERROR",
+                        message: "Shared Scoresheet not created successfully",
+                      });
+                    }
                     const [returnedSharedMatch] = await tx
                       .insert(sharedMatch)
                       .values({
@@ -1529,6 +1621,7 @@ export const shareAcceptanceRouter = {
                         matchId: returnedMatch.id,
                         sharedGameId: returnedSharedGame.id,
                         sharedLocationId: sharedLocationForMatch?.id ?? null,
+                        sharedScoresheetId: returnedSharedScoresheet.id,
                         permission: matchShareRequest.permission,
                       })
                       .returning();

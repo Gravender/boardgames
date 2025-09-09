@@ -1114,6 +1114,7 @@ export const shareGameRouter = {
                     sharedGameId: returnedSharedGame.id,
                     isDefault: inputScoresheet.scoresheet.isDefault,
                     permission: "edit",
+                    type: "game",
                   });
                 }
               }
