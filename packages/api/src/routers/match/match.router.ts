@@ -18,6 +18,7 @@ import {
 } from "~/routers/match/match.output";
 import { matchService } from "~/routers/match/service/match.service";
 import { protectedUserProcedure } from "~/trpc";
+import { dateMatchRouter } from "./sub-routers/date/date-match.router";
 import { updateMatchRouter } from "./sub-routers/update-match/update-match.router";
 
 export const matchRouter = {
@@ -84,4 +85,5 @@ export const matchRouter = {
       });
     }),
   update: updateMatchRouter,
+  date: dateMatchRouter,
 } satisfies TRPCRouterRecord;
