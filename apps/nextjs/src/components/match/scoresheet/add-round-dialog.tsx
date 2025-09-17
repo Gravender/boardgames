@@ -39,9 +39,17 @@ import { GradientPicker } from "~/components/color-picker";
 import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
+import { usePlayersAndTeams, useScoresheet } from "../hooks/scoresheet";
 
 type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
-export const AddRoundDialog = ({ match }: { match: Match }) => {
+export const AddRoundDialog = ({
+  match,
+}: {
+  match: {
+    id: number;
+    type: "original" | "shared";
+  };
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -70,19 +78,24 @@ const AddRoundDialogContent = ({
   match,
   setOpen,
 }: {
-  match: Match;
+  match: {
+    id: number;
+    type: "original" | "shared";
+  };
   setOpen: (isOpen: boolean) => void;
 }) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const router = useRouter();
   const posthog = usePostHog();
+  const { scoresheet } = useScoresheet(match.id, match.type);
+  const { players } = usePlayersAndTeams(match.id, match.type);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm({
     schema: RoundSchema,
     defaultValues: {
-      name: `Round ${match.scoresheet.rounds.length + 1}`,
+      name: `Round ${scoresheet.rounds.length + 1}`,
       type: "Numeric",
       color: "#cbd5e1",
       score: 0,
@@ -96,7 +109,6 @@ const AddRoundDialogContent = ({
           trpc.match.getMatch.queryOptions({ id: match.id }),
         );
         posthog.capture("round added to match", {
-          gameId: match.gameId,
           matchId: match.id,
         });
         router.refresh();
@@ -117,10 +129,10 @@ const AddRoundDialogContent = ({
     addRound.mutate({
       round: {
         ...values,
-        order: match.scoresheet.rounds.length + 1,
-        scoresheetId: match.scoresheet.id,
+        order: scoresheet.rounds.length + 1,
+        scoresheetId: scoresheet.id,
       },
-      players: match.players.map((player) => ({
+      players: players.map((player) => ({
         matchPlayerId: player.id,
       })),
     });

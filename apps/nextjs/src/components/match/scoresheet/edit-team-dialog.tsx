@@ -38,34 +38,46 @@ import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useTRPC } from "~/trpc/react";
+import { useMatch, usePlayersAndTeams } from "../hooks/scoresheet";
 
-type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
-type Player = Match["players"][number];
-type Team = Match["teams"][number];
+type Match = NonNullable<RouterOutputs["newMatch"]["getMatch"]>;
+type Player = NonNullable<
+  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+>["players"][number];
+type Team = NonNullable<
+  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+>["teams"][number];
 export default function TeamEditorDialog({
   team,
-  players,
-  gameId,
+  type,
+  matchId,
   onClose,
 }: {
   team: Team | null;
-  players: Player[];
-  gameId: number;
+  matchId: number;
+  type: "original" | "shared";
   onClose: () => void;
 }) {
   const trpc = useTRPC();
+  const { match } = useMatch(matchId, type);
+  const { players } = usePlayersAndTeams(matchId, type);
   const { data: roles } = useSuspenseQuery(
-    trpc.game.getGameRoles.queryOptions({ id: gameId, type: "original" }),
+    trpc.game.getGameRoles.queryOptions({
+      id: match.game.id,
+      type: match.game.type,
+    }),
   );
   return (
     <Dialog open={team !== null} onOpenChange={onClose}>
       <DialogContent className="gap-2 p-4 sm:max-w-[800px] sm:gap-4 sm:p-6">
         {team && (
           <Content
+            matchId={match.id}
+            type={match.type}
             team={team}
             players={players}
             roles={roles}
-            gameId={gameId}
+            gameId={match.game.id}
             onClose={onClose}
           />
         )}
@@ -74,12 +86,16 @@ export default function TeamEditorDialog({
   );
 }
 function Content({
+  matchId,
+  type,
   team,
   players,
   roles,
   gameId,
   onClose,
 }: {
+  matchId: number;
+  type: "original" | "shared";
   team: Team;
   players: Player[];
   roles: RouterOutputs["game"]["getGameRoles"];
@@ -96,7 +112,10 @@ function Content({
       onSuccess: async () => {
         await Promise.all([
           queryClient.invalidateQueries(
-            trpc.match.getMatch.queryOptions({ id: team.matchId }),
+            trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+              id: matchId,
+              type,
+            }),
           ),
           queryClient.invalidateQueries(
             trpc.game.getGame.queryOptions({ id: gameId }),
@@ -204,7 +223,7 @@ function Content({
       .filter((p) => p !== null);
     updateTeam.mutate({
       match: {
-        id: team.matchId,
+        id: matchId,
       },
       team: isSameTeamName
         ? {

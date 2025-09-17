@@ -44,28 +44,33 @@ import {
 import { Spinner } from "~/components/spinner";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useTRPC } from "~/trpc/react";
+import { useMatch, usePlayersAndTeams } from "../hooks/scoresheet";
 
-type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
-type Player = Match["players"][number];
-type Team = Match["teams"][number];
+type Player = NonNullable<
+  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+>["players"][number];
+type Team = NonNullable<
+  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+>["teams"][number];
 export default function PlayerEditorDialog({
-  teams,
-  players,
   player,
-  gameId,
   matchId,
+  type,
   onClose,
 }: {
-  teams: Team[];
-  players: Player[];
   player: Player | null;
-  gameId: number;
   matchId: number;
+  type: "original" | "shared";
   onClose: () => void;
 }) {
   const trpc = useTRPC();
+  const { match } = useMatch(matchId, type);
+  const { players, teams } = usePlayersAndTeams(matchId, type);
   const { data: roles } = useSuspenseQuery(
-    trpc.game.getGameRoles.queryOptions({ id: gameId, type: "original" }),
+    trpc.game.getGameRoles.queryOptions({
+      id: match.game.id,
+      type: match.game.type,
+    }),
   );
 
   return (
@@ -77,7 +82,7 @@ export default function PlayerEditorDialog({
             player={player}
             players={players}
             roles={roles}
-            gameId={gameId}
+            gameId={match.game.id}
             matchId={matchId}
             onClose={onClose}
           />

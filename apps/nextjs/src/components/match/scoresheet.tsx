@@ -43,13 +43,22 @@ import { TieBreakerDialog } from "~/components/match/scoresheet/TieBreakerDialog
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 import { FormattedDate } from "../formatted-date";
+import {
+  useMatch,
+  usePlayersAndTeams,
+  useScoresheet,
+} from "./hooks/scoresheet";
 import { DetailDialog } from "./scoresheet/DetailDialog";
 import PlayerEditorDialog from "./scoresheet/edit-player-dialog";
 import TeamEditorDialog from "./scoresheet/edit-team-dialog";
 
-type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
-type Player = Match["players"][number];
-type Team = Match["teams"][number];
+type Match = NonNullable<RouterOutputs["newMatch"]["getMatch"]>;
+type Player = NonNullable<
+  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+>["players"][number];
+type Team = NonNullable<
+  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+>["teams"][number];
 export function Scoresheet({ matchId }: { matchId: number }) {
   const trpc = useTRPC();
   const { data: match } = useSuspenseQuery(
@@ -58,9 +67,17 @@ export function Scoresheet({ matchId }: { matchId: number }) {
   if (match === null) {
     return notFound();
   }
-  return <ScoresheetContent match={match} />;
+  return <ScoresheetContent id={match.id} type={match.type} />;
 }
-function ScoresheetContent({ match }: { match: Match }) {
+function ScoresheetContent({
+  id,
+  type,
+}: {
+  id: number;
+  type: "original" | "shared";
+}) {
+  const { match } = useMatch(id, type);
+  const { scoresheet } = useScoresheet(id, type);
   return (
     <div className="flex w-full justify-center">
       <div className="flex w-full max-w-6xl flex-col gap-2 px-2 sm:gap-4 sm:px-4">
@@ -68,10 +85,8 @@ function ScoresheetContent({ match }: { match: Match }) {
           <CardHeader className="py-2 sm:py-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-2xl font-bold">{match.name}</CardTitle>
-              <Badge
-                variant={match.scoresheet.isCoop ? "secondary" : "default"}
-              >
-                {match.scoresheet.isCoop ? "Cooperative" : "Competitive"}
+              <Badge variant={scoresheet.isCoop ? "secondary" : "default"}>
+                {scoresheet.isCoop ? "Cooperative" : "Competitive"}
               </Badge>
             </div>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -85,11 +100,11 @@ function ScoresheetContent({ match }: { match: Match }) {
             </div>
           </CardHeader>
         </Card>
-        {match.scoresheet.winCondition === "Manual" &&
-        match.scoresheet.rounds.length === 0 ? (
+        {scoresheet.winCondition === "Manual" &&
+        scoresheet.rounds.length === 0 ? (
           <ManualScoreSheet match={match} />
         ) : (
-          <ScoreSheetTable match={match} />
+          <ScoreSheetTable id={match.id} type={match.type} />
         )}
         <ScoresheetFooter match={match} />
       </div>
@@ -98,17 +113,22 @@ function ScoresheetContent({ match }: { match: Match }) {
 }
 function ManualScoreSheet({ match }: { match: Match }) {
   const trpc = useTRPC();
+  const { match: matchData } = useMatch(match.id, match.type);
+  const { teams, players } = usePlayersAndTeams(match.id, match.type);
   const { data: roles } = useSuspenseQuery(
-    trpc.game.getGameRoles.queryOptions({ id: match.gameId, type: "original" }),
+    trpc.game.getGameRoles.queryOptions({
+      id: matchData.game.id,
+      type: "original",
+    }),
   );
 
   const [team, setTeam] = useState<Team | null>(null);
   const [player, setPlayer] = useState<Player | null>(null);
 
   const mappedTeams = useMemo(() => {
-    const mappedTeams = match.teams
+    const mappedTeams = teams
       .map((team) => {
-        const teamPlayers = match.players.filter(
+        const teamPlayers = players.filter(
           (player) => player.teamId === team.id,
         );
         if (teamPlayers.length === 0) return null;
@@ -133,7 +153,7 @@ function ManualScoreSheet({ match }: { match: Match }) {
     return mappedTeams;
   }, [match, roles]);
   const individualPlayers = useMemo(() => {
-    return match.players.filter((player) => player.teamId === null);
+    return players.filter((player) => player.teamId === null);
   }, [match]);
 
   return (
@@ -335,15 +355,13 @@ function ManualScoreSheet({ match }: { match: Match }) {
       </ScrollArea>
       <TeamEditorDialog
         team={team}
-        players={match.players}
-        gameId={match.gameId}
+        type={match.type}
+        matchId={match.id}
         onClose={() => setTeam(null)}
       />
       <PlayerEditorDialog
-        teams={match.teams}
         player={player}
-        players={match.players}
-        gameId={match.gameId}
+        type={match.type}
         matchId={match.id}
         onClose={() => setPlayer(null)}
       />
@@ -351,7 +369,10 @@ function ManualScoreSheet({ match }: { match: Match }) {
   );
 }
 function ScoresheetFooter({ match }: { match: Match }) {
-  const [duration, setDuration] = useState(match.duration);
+  const { match: matchData } = useMatch(match.id, match.type);
+  const { scoresheet } = useScoresheet(match.id, match.type);
+  const { teams, players } = usePlayersAndTeams(match.id, match.type);
+  const [duration, setDuration] = useState(matchData.duration);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [manualWinners, setManualWinners] = useState<
     z.infer<typeof ManualWinnerPlayerSchema>
@@ -372,12 +393,12 @@ function ScoresheetFooter({ match }: { match: Match }) {
           const now = new Date();
           const startTime = match.startTime;
           const elapsedTime = differenceInSeconds(now, startTime);
-          const totalDuration = match.duration + elapsedTime;
+          const totalDuration = matchData.duration + elapsedTime;
           setDuration(totalDuration);
         }
       }, 1000);
     } else {
-      setDuration(match.duration);
+      setDuration(matchData.duration);
     }
     return () => clearInterval(interval);
   }, [match]);
@@ -413,15 +434,17 @@ function ScoresheetFooter({ match }: { match: Match }) {
           trpc.match.getMatch.queryOptions({ id: match.id }),
         );
         await queryClient.invalidateQueries(
-          trpc.game.getGame.queryOptions({ id: match.gameId }),
+          trpc.game.getGame.queryOptions({ id: matchData.game.id }),
         );
         posthog.capture("match finished", {
-          gameId: match.gameId,
+          gameId: matchData.game.id,
           matchId: match.id,
           type: "standard",
         });
 
-        router.push(`/dashboard/games/${match.gameId}/${match.id}/summary`);
+        router.push(
+          `/dashboard/games/${matchData.game.id}/${match.id}/summary`,
+        );
         setIsSubmitting(false);
       },
       onError: (error) => {
@@ -454,7 +477,7 @@ function ScoresheetFooter({ match }: { match: Match }) {
 
   const onFinish = () => {
     posthog.capture("match finish begin", {
-      gameId: match.gameId,
+      gameId: matchData.game.id,
       matchId: match.id,
     });
     if (match.running) {
@@ -463,15 +486,15 @@ function ScoresheetFooter({ match }: { match: Match }) {
       });
     }
     setIsSubmitting(true);
-    const submittedPlayers = match.players.flatMap((player) =>
+    const submittedPlayers = players.flatMap((player) =>
       player.rounds.map((playerRound) => ({
         id: playerRound.id,
         score: playerRound.score,
       })),
     );
-    if (match.scoresheet.winCondition === "Manual") {
+    if (scoresheet.winCondition === "Manual") {
       setManualWinners(
-        match.players.map((player) => {
+        players.map((player) => {
           return {
             id: player.id,
             name: player.name,
@@ -480,7 +503,7 @@ function ScoresheetFooter({ match }: { match: Match }) {
               player.rounds.map((round) => ({
                 score: round.score,
               })),
-              match.scoresheet,
+              scoresheet,
             ),
             teamId: player.teamId,
           };
@@ -491,7 +514,7 @@ function ScoresheetFooter({ match }: { match: Match }) {
     }
 
     const playersPlacement = calculatePlacement(
-      match.players.map((player) => ({
+      players.map((player) => ({
         id: player.id,
         rounds: player.rounds.map((round) => ({
           score: round.score,
@@ -499,13 +522,13 @@ function ScoresheetFooter({ match }: { match: Match }) {
         teamId: player.teamId,
       })),
 
-      match.scoresheet,
+      scoresheet,
     );
     let isTieBreaker = false;
     const placements: Record<number, number> = {};
     const nonTeamPlayerPlacements = playersPlacement
       .filter((player) => {
-        const foundPlayer = match.players.find((p) => p.id === player.id);
+        const foundPlayer = players.find((p) => p.id === player.id);
         return foundPlayer?.teamId === null;
       })
       .map((player) => player.placement);
@@ -513,18 +536,18 @@ function ScoresheetFooter({ match }: { match: Match }) {
       new Set(
         playersPlacement
           .filter((player) => {
-            const foundPlayer = match.players.find((p) => p.id === player.id);
+            const foundPlayer = players.find((p) => p.id === player.id);
             return foundPlayer?.teamId !== null;
           })
           .map((player) => {
             {
-              const foundPlayer = match.players.find((p) => p.id === player.id);
+              const foundPlayer = players.find((p) => p.id === player.id);
               return foundPlayer?.teamId ?? null;
             }
           }),
       ),
     ).map((teamId) => {
-      const findFirstPlayer = match.players.find(
+      const findFirstPlayer = players.find(
         (player) => player.teamId === teamId,
       );
       const findPlayerPlacement = playersPlacement.find(
@@ -547,7 +570,7 @@ function ScoresheetFooter({ match }: { match: Match }) {
       setOpenTieBreakerDialog(true);
       setTieBreakers(
         playersPlacement.map((player) => {
-          const foundPlayer = match.players.find((p) => p.id === player.id);
+          const foundPlayer = players.find((p) => p.id === player.id);
           return {
             matchPlayerId: player.id,
             name: foundPlayer?.name ?? "",
@@ -617,19 +640,19 @@ function ScoresheetFooter({ match }: { match: Match }) {
       <ManualWinnerDialog
         isOpen={openManualWinnerDialog}
         setIsOpen={setOpenManualWinnerDialog}
-        gameId={match.gameId}
+        gameId={match.game.id}
         matchId={match.id}
         players={manualWinners}
-        teams={match.teams}
-        scoresheet={match.scoresheet}
+        teams={teams}
+        scoresheet={scoresheet}
       />
       <TieBreakerDialog
         isOpen={openTieBreakerDialog}
         setIsOpen={setOpenTieBreakerDialog}
-        gameId={match.gameId}
+        gameId={match.game.id}
         matchId={match.id}
         players={tieBreakers}
-        teams={match.teams}
+        teams={teams}
       />
     </>
   );

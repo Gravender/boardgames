@@ -24,6 +24,11 @@ import {
 import { cn } from "@board-games/ui/utils";
 
 import { DebouncedCheckbox } from "~/components/debounced-checkbox";
+import {
+  useMatch,
+  usePlayersAndTeams,
+  useScoresheet,
+} from "~/components/match/hooks/scoresheet";
 import { AddRoundDialog } from "~/components/match/scoresheet/add-round-dialog";
 import { DetailDialog } from "~/components/match/scoresheet/DetailDialog";
 import PlayerEditorDialog from "~/components/match/scoresheet/edit-player-dialog";
@@ -31,10 +36,21 @@ import TeamEditorDialog from "~/components/match/scoresheet/edit-team-dialog";
 import { NumberInput } from "~/components/number-input";
 import { useTRPC } from "~/trpc/react";
 
-type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
-type Player = Match["players"][number];
-type Team = Match["teams"][number];
-export function ScoreSheetTable({ match }: { match: Match }) {
+type Player = NonNullable<
+  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+>["players"][number];
+type Team = NonNullable<
+  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+>["teams"][number];
+export function ScoreSheetTable({
+  id,
+  type,
+}: {
+  id: number;
+  type: "original" | "shared";
+}) {
+  const { match } = useMatch(id, type);
+  const { scoresheet } = useScoresheet(id, type);
   const [team, setTeam] = useState<Team | null>(null);
   const [player, setPlayer] = useState<Player | null>(null);
   return (
@@ -45,7 +61,7 @@ export function ScoreSheetTable({ match }: { match: Match }) {
             <HeaderRow match={match} setTeam={setTeam} setPlayer={setPlayer} />
           </TableHeader>
           <TableBody>
-            {match.scoresheet.rounds.map((round) => (
+            {scoresheet.rounds.map((round) => (
               <BodyRow key={`round-${round.id}`} match={match} round={round} />
             ))}
           </TableBody>
@@ -57,15 +73,13 @@ export function ScoreSheetTable({ match }: { match: Match }) {
       </Card>
       <TeamEditorDialog
         team={team}
-        players={match.players}
-        gameId={match.gameId}
+        type={match.type}
+        matchId={match.id}
         onClose={() => setTeam(null)}
       />
       <PlayerEditorDialog
-        teams={match.teams}
         player={player}
-        players={match.players}
-        gameId={match.gameId}
+        type={match.type}
         matchId={match.id}
         onClose={() => setPlayer(null)}
       />
@@ -78,14 +92,18 @@ const HeaderRow = ({
   setTeam,
   setPlayer,
 }: {
-  match: Match;
+  match: {
+    id: number;
+    type: "original" | "shared";
+  };
   setTeam: Dispatch<SetStateAction<Team | null>>;
   setPlayer: Dispatch<SetStateAction<Player | null>>;
 }) => {
+  const { players, teams } = usePlayersAndTeams(match.id, match.type);
   const mappedTeams = useMemo(() => {
-    const mappedTeams = match.teams
+    const mappedTeams = teams
       .map((team) => {
-        const teamPlayers = match.players.filter(
+        const teamPlayers = players.filter(
           (player) => player.teamId === team.id,
         );
         if (teamPlayers.length === 0) return null;
@@ -145,7 +163,7 @@ const HeaderRow = ({
             </TableHead>
           );
         })}
-        {match.players
+        {players
           .filter((player) => player.teamId === null)
           .map((player) => (
             <TableHead
@@ -178,7 +196,7 @@ const HeaderRow = ({
           <AddRoundDialog match={match} />
         </div>
       </TableHead>
-      {match.players.map((player) => (
+      {players.map((player) => (
         <TableHead className="min-w-20 text-center" scope="col" key={player.id}>
           <Button
             variant="ghost"
@@ -199,11 +217,16 @@ const BodyRow = ({
   match,
   round,
 }: {
-  match: Match;
-  round: Match["scoresheet"]["rounds"][number];
+  match: {
+    id: number;
+    type: "original" | "shared";
+  };
+  round: RouterOutputs["newMatch"]["getMatchScoresheet"]["rounds"][number];
 }) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+
+  const { players, teams } = usePlayersAndTeams(match.id, match.type);
 
   const updateRoundScore = useMutation(
     trpc.match.updateMatchRoundScore.mutationOptions({
@@ -248,7 +271,7 @@ const BodyRow = ({
       },
     });
   };
-  if (match.teams.length > 0) {
+  if (teams.length > 0) {
     return (
       <TableRow>
         <TableHead
@@ -269,12 +292,10 @@ const BodyRow = ({
             {round.name}
           </span>
         </TableHead>
-        {match.teams
-          .filter((team) =>
-            match.players.find((player) => player.teamId === team.id),
-          )
+        {teams
+          .filter((team) => players.find((player) => player.teamId === team.id))
           .map((team) => {
-            const teamPlayer = match.players.filter(
+            const teamPlayer = players.filter(
               (player) => player.teamId === team.id,
             );
             const roundPlayers = teamPlayer
@@ -317,7 +338,7 @@ const BodyRow = ({
               </TableCell>
             );
           })}
-        {match.players
+        {players
           .filter((player) => player.teamId === null)
           .map((player) => {
             const roundPlayer = player.rounds.find(
@@ -379,7 +400,7 @@ const BodyRow = ({
           {round.name}
         </span>
       </TableHead>
-      {match.players.map((player) => {
+      {players.map((player) => {
         const roundPlayer = player.rounds.find(
           (roundPlayer) => roundPlayer.roundId === round.id,
         );
@@ -420,8 +441,16 @@ const BodyRow = ({
   );
 };
 
-const CommentsRow = ({ match }: { match: Match }) => {
-  if (match.teams.length > 0) {
+const CommentsRow = ({
+  match,
+}: {
+  match: {
+    id: number;
+    type: "original" | "shared";
+  };
+}) => {
+  const { players, teams } = usePlayersAndTeams(match.id, match.type);
+  if (teams.length > 0) {
     return (
       <TableRow>
         <TableHead
@@ -430,10 +459,8 @@ const CommentsRow = ({ match }: { match: Match }) => {
         >
           {"Details"}
         </TableHead>
-        {match.teams
-          .filter((team) =>
-            match.players.find((player) => player.teamId === team.id),
-          )
+        {teams
+          .filter((team) => players.find((player) => player.teamId === team.id))
           .map((team) => (
             <TableCell
               key={`${team.id}-details`}
@@ -450,7 +477,7 @@ const CommentsRow = ({ match }: { match: Match }) => {
               />
             </TableCell>
           ))}
-        {match.players
+        {players
           .filter((player) => player.teamId === null)
           .map((player) => {
             return (
@@ -482,7 +509,7 @@ const CommentsRow = ({ match }: { match: Match }) => {
         {"Details(optional)"}
       </TableHead>
 
-      {match.players.map((player) => {
+      {players.map((player) => {
         return (
           <TableCell
             key={`${player.id}-details`}
@@ -504,39 +531,53 @@ const CommentsRow = ({ match }: { match: Match }) => {
   );
 };
 
-const TotalRow = ({ match }: { match: Match }) => {
+const TotalRow = ({
+  match,
+}: {
+  match: {
+    id: number;
+    type: "original" | "shared";
+  };
+}) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const { players, teams } = usePlayersAndTeams(match.id, match.type);
+  const { scoresheet } = useScoresheet(match.id, match.type);
   const updateMatchPlayerScore = useMutation(
-    trpc.match.updateMatchPlayerScore.mutationOptions({
+    trpc.newMatch.update.updateMatchPlayerScore.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: match.id }),
+          trpc.newMatch.getMatch.queryOptions({
+            id: match.id,
+            type: match.type,
+          }),
         );
       },
     }),
   );
   const updateTeamScore = (teamId: number, value: number | null) => {
     updateMatchPlayerScore.mutate({
+      type: "team",
       match: {
         id: match.id,
+        type: match.type,
       },
-      type: "team",
       teamId: teamId,
       score: value,
     });
   };
   const updatePlayerScore = (playerId: number, value: number | null) => {
     updateMatchPlayerScore.mutate({
+      type: "player",
       match: {
         id: match.id,
+        type: match.type,
       },
-      type: "player",
       matchPlayerId: playerId,
       score: value,
     });
   };
-  if (match.teams.length > 0) {
+  if (teams.length > 0) {
     return (
       <TableRow>
         <TableHead
@@ -545,17 +586,15 @@ const TotalRow = ({ match }: { match: Match }) => {
         >
           Total
         </TableHead>
-        {match.teams
-          .filter((team) =>
-            match.players.find((player) => player.teamId === team.id),
-          )
+        {teams
+          .filter((team) => players.find((player) => player.teamId === team.id))
           .map((team) => {
-            const teamPlayer = match.players.filter(
+            const teamPlayer = players.filter(
               (player) => player.teamId === team.id,
             );
             const firstTeamPlayer = teamPlayer[0];
             if (firstTeamPlayer === undefined) return null;
-            if (match.scoresheet.roundsScore === "Manual") {
+            if (scoresheet.roundsScore === "Manual") {
               return (
                 <TableCell key={`${team.id}-total`}>
                   <NumberInput
@@ -573,7 +612,7 @@ const TotalRow = ({ match }: { match: Match }) => {
               firstTeamPlayer.rounds.map((round) => ({
                 score: round.score,
               })),
-              match.scoresheet,
+              scoresheet,
             );
             return (
               <TableCell key={`${team.id}-total`}>
@@ -585,10 +624,10 @@ const TotalRow = ({ match }: { match: Match }) => {
               </TableCell>
             );
           })}
-        {match.players
+        {players
           .filter((player) => player.teamId === null)
           .map((player) => {
-            if (match.scoresheet.roundsScore === "Manual") {
+            if (scoresheet.roundsScore === "Manual") {
               return (
                 <TableCell key={`${player.id}-total`}>
                   <NumberInput
@@ -605,7 +644,7 @@ const TotalRow = ({ match }: { match: Match }) => {
               player.rounds.map((round) => ({
                 score: round.score,
               })),
-              match.scoresheet,
+              scoresheet,
             );
             return (
               <TableCell key={`${player.id}-total`}>
@@ -628,8 +667,8 @@ const TotalRow = ({ match }: { match: Match }) => {
       >
         Total
       </TableHead>
-      {match.players.map((player) => {
-        if (match.scoresheet.roundsScore === "Manual") {
+      {players.map((player) => {
+        if (scoresheet.roundsScore === "Manual") {
           return (
             <TableCell key={`${player.id}-total`}>
               <NumberInput
@@ -646,7 +685,7 @@ const TotalRow = ({ match }: { match: Match }) => {
           player.rounds.map((round) => ({
             score: round.score,
           })),
-          match.scoresheet,
+          scoresheet,
         );
         return (
           <TableCell key={`${player.id}-total`}>

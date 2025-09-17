@@ -269,6 +269,7 @@ class MatchRepository {
           type: "original" as const,
         },
         comment: returnedMatch.comment,
+        duration: returnedMatch.duration,
         finished: returnedMatch.finished,
         running: returnedMatch.running,
         startTime: returnedMatch.startTime,
@@ -312,6 +313,7 @@ class MatchRepository {
           type: "shared" as const,
         },
         comment: returnedSharedMatch.match.comment,
+        duration: returnedSharedMatch.match.duration,
         finished: returnedSharedMatch.match.finished,
         running: returnedSharedMatch.match.running,
         startTime: returnedSharedMatch.match.startTime,
@@ -375,6 +377,7 @@ class MatchRepository {
         isCoop: returnedMatch.scoresheet.isCoop,
         rounds: returnedMatch.scoresheet.rounds.map((round) => ({
           id: round.id,
+          name: round.name,
           order: round.order,
           color: round.color,
           type: round.type,
@@ -417,6 +420,7 @@ class MatchRepository {
         isCoop: returnedSharedMatch.match.scoresheet.isCoop,
         rounds: returnedSharedMatch.match.scoresheet.rounds.map((round) => ({
           id: round.id,
+          name: round.name,
           order: round.order,
           color: round.color,
           type: round.type,

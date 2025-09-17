@@ -43,6 +43,7 @@ export const getMatchOutput = selectMatchSchema
     startTime: true,
     date: true,
     name: true,
+    duration: true,
     finished: true,
     running: true,
     comment: true,
@@ -78,6 +79,7 @@ export const getMatchScoresheetOutput = selectScoreSheetSchema
     rounds: z.array(
       selectRoundSchema.pick({
         id: true,
+        name: true,
         order: true,
         color: true,
         type: true,
