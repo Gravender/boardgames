@@ -1,13 +1,21 @@
 {
-  "extends": ["@board-games/tsconfig/base.json"],
+  "extends": [
+    "@board-games/tsconfig/base.json"
+  ],
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "~/*": ["./src/*"]
-    },
     "jsx": "react-native",
     "checkJs": false,
-    "moduleSuffixes": [".ios", ".android", ".native", ""]
+    "moduleSuffixes": [
+      ".ios",
+      ".android",
+      ".native",
+      ""
+    ],
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    }
   },
   "include": [
     "src",
@@ -18,5 +26,7 @@
     "expo-env.d.ts",
     "nativewind-env.d.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }
