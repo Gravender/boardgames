@@ -2,7 +2,7 @@
 
 import type { z } from "zod/v4";
 import { useEffect, useMemo, useState } from "react";
-import { notFound, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   useMutation,
   useQueryClient,
@@ -30,7 +30,6 @@ import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
-import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import type { ManualWinnerPlayerSchema } from "~/components/match/scoresheet/ManualWinnerDialog";
@@ -44,9 +43,12 @@ import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 import { FormattedDate } from "../formatted-date";
 import {
+  useDurationMutation,
   useMatch,
   usePlayersAndTeams,
   useScoresheet,
+  useUpdateFinalScores,
+  useUpdateFinish,
 } from "./hooks/scoresheet";
 import { DetailDialog } from "./scoresheet/DetailDialog";
 import PlayerEditorDialog from "./scoresheet/edit-player-dialog";
@@ -59,14 +61,17 @@ type Player = NonNullable<
 type Team = NonNullable<
   RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
 >["teams"][number];
-export function Scoresheet({ matchId }: { matchId: number }) {
+export function Scoresheet({
+  matchId,
+  type,
+}: {
+  matchId: number;
+  type: "original" | "shared";
+}) {
   const trpc = useTRPC();
   const { data: match } = useSuspenseQuery(
-    trpc.match.getMatch.queryOptions({ id: matchId }),
+    trpc.newMatch.getMatch.queryOptions({ id: matchId, type: type }),
   );
-  if (match === null) {
-    return notFound();
-  }
   return <ScoresheetContent id={match.id} type={match.type} />;
 }
 function ScoresheetContent({
@@ -151,10 +156,10 @@ function ManualScoreSheet({ match }: { match: Match }) {
       })
       .filter((team) => team !== null);
     return mappedTeams;
-  }, [match, roles]);
+  }, [teams, players, roles]);
   const individualPlayers = useMemo(() => {
     return players.filter((player) => player.teamId === null);
-  }, [match]);
+  }, [players]);
 
   return (
     <>
@@ -401,78 +406,29 @@ function ScoresheetFooter({ match }: { match: Match }) {
       setDuration(matchData.duration);
     }
     return () => clearInterval(interval);
-  }, [match]);
+  }, [match.running, match.startTime, matchData]);
 
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const router = useRouter();
   const posthog = usePostHog();
 
-  const invalidateMatch = async () =>
-    queryClient.invalidateQueries(
-      trpc.match.getMatch.queryOptions({ id: match.id }),
-    );
-  const startMatchDuration = useMutation(
-    trpc.match.matchStart.mutationOptions({
-      onSuccess: invalidateMatch,
-    }),
+  const { startMatch, pauseMatch, resetMatch } = useDurationMutation(
+    match.id,
+    match.type,
   );
-  const pauseMatchDuration = useMutation(
-    trpc.match.matchPause.mutationOptions({
-      onSuccess: invalidateMatch,
-    }),
-  );
-  const resetMatchDuration = useMutation(
-    trpc.match.matchResetDuration.mutationOptions({
-      onSuccess: invalidateMatch,
-    }),
-  );
-  const updateMatch = useMutation(
-    trpc.match.updateMatch.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: match.id }),
-        );
-        await queryClient.invalidateQueries(
-          trpc.game.getGame.queryOptions({ id: matchData.game.id }),
-        );
-        posthog.capture("match finished", {
-          gameId: matchData.game.id,
-          matchId: match.id,
-          type: "standard",
-        });
 
-        router.push(
-          `/dashboard/games/${matchData.game.id}/${match.id}/summary`,
-        );
-        setIsSubmitting(false);
-      },
-      onError: (error) => {
-        posthog.capture("match finished error", { error });
-        toast.error("Error", {
-          description: "There was a problem finishing your match.",
-        });
-      },
-    }),
-  );
+  const { updateFinishMutation } = useUpdateFinish(match.id, match.type);
+  const { updateFinalScores } = useUpdateFinalScores(match.id, match.type);
 
   const toggleClock = () => {
     if (match.running) {
-      pauseMatchDuration.mutate({
-        id: match.id,
-      });
+      pauseMatch();
     } else {
-      startMatchDuration.mutate({
-        id: match.id,
-      });
+      startMatch();
     }
   };
 
   const resetClock = () => {
-    resetMatchDuration.mutate({
-      id: match.id,
-    });
-    setDuration(0);
+    resetMatch();
   };
 
   const onFinish = () => {
@@ -481,17 +437,9 @@ function ScoresheetFooter({ match }: { match: Match }) {
       matchId: match.id,
     });
     if (match.running) {
-      pauseMatchDuration.mutate({
-        id: match.id,
-      });
+      pauseMatch();
     }
     setIsSubmitting(true);
-    const submittedPlayers = players.flatMap((player) =>
-      player.rounds.map((playerRound) => ({
-        id: playerRound.id,
-        score: playerRound.score,
-      })),
-    );
     if (scoresheet.winCondition === "Manual") {
       setManualWinners(
         players.map((player) => {
@@ -510,6 +458,7 @@ function ScoresheetFooter({ match }: { match: Match }) {
         }),
       );
       setOpenManualWinnerDialog(true);
+      updateFinalScores();
       return;
     }
 
@@ -581,17 +530,28 @@ function ScoresheetFooter({ match }: { match: Match }) {
           };
         }),
       );
+      updateFinalScores();
     } else {
-      updateMatch.mutate({
-        match: {
+      updateFinalScores();
+      updateFinishMutation.mutate(
+        {
           id: match.id,
-          duration: duration,
-          finished: true,
-          running: false,
+          type: match.type,
         },
-        roundPlayers: submittedPlayers,
-        playersPlacement: playersPlacement,
-      });
+        {
+          onSuccess: () => {
+            if (match.type === "original") {
+              router.push(
+                `/dashboard/games/${match.game.id}/${match.id}/summary`,
+              );
+            } else {
+              router.push(
+                `/dashboard/games/shared/${match.game.id}/${match.id}/summary`,
+              );
+            }
+          },
+        },
+      );
     }
   };
 

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { ErrorBoundary } from "react-error-boundary";
 
+import { MatchNotFound } from "~/components/match/MatchNotFound";
 import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
 import MatchSummarySkeleton from "../../../_components/match-summary-skeleton";
 import MatchSummary from "./_components/match-summary";
@@ -17,35 +19,54 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // fetch data
   if (isNaN(Number(matchId))) return { title: "Games" };
-  const summary = await caller.match.getSummary({
+  const match = await caller.newMatch.getMatch({
     id: Number(matchId),
+    type: "original",
   });
-  if (!summary) return { title: "Games" };
-  if (!summary.image)
-    return {
-      title: `${summary.name} Summary`,
-      description: `Summarizing the results of ${summary.name}`,
-    };
+
   return {
-    title: `${summary.name} Summary`,
-    description: `Summarizing the results of ${summary.name}`,
-    openGraph: {
-      images: [summary.image.url ?? ""],
-    },
+    title: `${match.name} Summary`,
+    description: `Summarizing the results of ${match.name}`,
   };
 }
 export default async function Page({ params }: Props) {
   const slugs = await params;
   const matchId = slugs.matchId;
   if (isNaN(Number(matchId))) redirect("/dashboard/games");
-  void prefetch(trpc.match.getSummary.queryOptions({ id: Number(matchId) }));
+  void prefetch(
+    trpc.newMatch.getMatch.queryOptions({
+      id: Number(matchId),
+      type: "original",
+    }),
+  );
+  void prefetch(
+    trpc.newMatch.getMatchScoresheet.queryOptions({
+      id: Number(matchId),
+      type: "original",
+    }),
+  );
+  void prefetch(
+    trpc.newMatch.getMatchSummary.queryOptions({
+      id: Number(matchId),
+      type: "original",
+    }),
+  );
+  void prefetch(
+    trpc.newGame.gameMatches.queryOptions({
+      id: Number(matchId),
+      type: "original",
+    }),
+  );
+
   return (
     <HydrateClient>
-      <div className="container flex w-full items-center justify-center p-2 sm:px-3 sm:py-4 md:px-6 md:py-8">
-        <Suspense fallback={<MatchSummarySkeleton />}>
-          <MatchSummary matchId={Number(matchId)} />
-        </Suspense>
-      </div>
+      <ErrorBoundary fallback={<MatchNotFound />}>
+        <div className="container flex w-full items-center justify-center p-2 sm:px-3 sm:py-4 md:px-6 md:py-8">
+          <Suspense fallback={<MatchSummarySkeleton />}>
+            <MatchSummary matchId={Number(matchId)} />
+          </Suspense>
+        </div>
+      </ErrorBoundary>
     </HydrateClient>
   );
 }

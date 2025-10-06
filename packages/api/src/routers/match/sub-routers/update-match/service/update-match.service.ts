@@ -42,6 +42,18 @@ class UpdateMatchService {
       userId: args.ctx.userId,
     });
   }
+  public async updateMatchFinish(args: MatchStartArgs) {
+    return updateMatchRepository.updateMatchFinish({
+      input: args.input,
+      userId: args.ctx.userId,
+    });
+  }
+  public async updateMatchFinalScores(args: MatchStartArgs) {
+    return updateMatchRepository.updateMatchFinalScores({
+      input: args.input,
+      userId: args.ctx.userId,
+    });
+  }
   public async updateMatchManualWinner(args: UpdateMatchManualWinnerArgs) {
     return updateMatchRepository.updateMatchManualWinner({
       input: args.input,

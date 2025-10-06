@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import { CalendarIcon, ClockIcon, MapPinIcon, Users } from "lucide-react";
@@ -19,12 +18,26 @@ import { useTRPC } from "~/trpc/react";
 export default function MatchSummary({ matchId }: { matchId: number }) {
   const trpc = useTRPC();
   const { data: match } = useSuspenseQuery(
-    trpc.match.getSummary.queryOptions({ id: matchId }),
+    trpc.newMatch.getMatch.queryOptions({ id: matchId, type: "original" }),
   );
-
-  if (!match) {
-    notFound();
-  }
+  const { data: summary } = useSuspenseQuery(
+    trpc.newMatch.getMatchSummary.queryOptions({
+      id: matchId,
+      type: "original",
+    }),
+  );
+  const { data: scoresheet } = useSuspenseQuery(
+    trpc.newMatch.getMatchScoresheet.queryOptions({
+      id: matchId,
+      type: "original",
+    }),
+  );
+  const { data: gameMatches } = useSuspenseQuery(
+    trpc.newGame.gameMatches.queryOptions({
+      id: match.game.id,
+      type: "original",
+    }),
+  );
 
   return (
     <div className="flex w-full items-center justify-center">
@@ -33,8 +46,8 @@ export default function MatchSummary({ matchId }: { matchId: number }) {
           <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center gap-6 md:flex-row">
               <GameImage
-                image={match.image}
-                alt={`${match.gameName} game image`}
+                image={match.game.image}
+                alt={`${match.game.name} game image`}
                 containerClassName="hidden h-28 w-28 rounded-lg md:flex"
               />
 
@@ -42,7 +55,7 @@ export default function MatchSummary({ matchId }: { matchId: number }) {
                 <div>
                   <h1 className="text-3xl font-bold">{match.name}</h1>
                   <div className="mt-1 flex items-center gap-2">
-                    <Badge variant="outline">{match.gameName}</Badge>
+                    <Badge variant="outline">{match.game.name}</Badge>
                   </div>
                 </div>
 
@@ -58,10 +71,10 @@ export default function MatchSummary({ matchId }: { matchId: number }) {
                     </span>
                   </div>
 
-                  {match.locationName && (
+                  {match.location && (
                     <div className="flex items-center gap-2">
                       <MapPinIcon className="h-4 w-4 text-muted-foreground" />
-                      <span>{match.locationName}</span>
+                      <span>{match.location.name}</span>
                     </div>
                   )}
 
@@ -94,11 +107,11 @@ export default function MatchSummary({ matchId }: { matchId: number }) {
             <div className="flex">
               <ScrollArea className="w-1 flex-1">
                 <div className="flex gap-2 p-1 sm:p-4">
-                  {match.previousMatches.map((match) => (
+                  {gameMatches.map((match) => (
                     <Link
                       key={`${match.id}-${match.type}`}
                       prefetch={true}
-                      href={`/dashboard/games${match.type === "shared" ? "/shared" : ""}/${match.gameId}/${match.id}${match.finished ? "/summary" : ""}`}
+                      href={`/dashboard/games${match.game.type === "shared" ? `/shared/${match.game.linkedGameId}` : `/${match.game.id}`}/${match.id}${match.finished ? "/summary" : ""}`}
                       className="block h-40 w-64 rounded-lg border p-4 transition-colors hover:bg-muted/50"
                     >
                       <h3 className="truncate font-medium">{match.name}</h3>
@@ -116,7 +129,7 @@ export default function MatchSummary({ matchId }: { matchId: number }) {
                       </div>
                       <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPinIcon className="h-4 w-4" />
-                        <span>{match.locationName}</span>
+                        <span>{match.location?.name}</span>
                       </div>
 
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -155,8 +168,8 @@ export default function MatchSummary({ matchId }: { matchId: number }) {
           </CardContent>
         </Card>
         <MatchSummaryPlayerStats
-          scoresheet={match.scoresheet}
-          playerStats={match.playerStats}
+          scoresheet={scoresheet}
+          playerStats={summary.playerStats}
         />
       </div>
     </div>

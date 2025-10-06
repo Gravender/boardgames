@@ -6,6 +6,7 @@ import { and, eq, inArray, notInArray, or, sql } from "drizzle-orm";
 import { db } from "@board-games/db/client";
 import { match, matchPlayer, roundPlayer, team } from "@board-games/db/schema";
 import { vMatchPlayerCanonicalForUser } from "@board-games/db/views";
+import { calculatePlacement } from "@board-games/shared";
 
 import type {
   MatchPauseRepoArgs,
@@ -13,13 +14,16 @@ import type {
   MatchStartRepoArgs,
   UpdateMatchCommentRepoArgs,
   UpdateMatchDetailsRepoArgs,
+  UpdateMatchFinishRepoArgs,
   UpdateMatchManualWinnerRepoArgs,
   UpdateMatchPlacementsRepoArgs,
   UpdateMatchPlayerScoreRepoArgs,
   UpdateMatchRoundScoreRepoArgs,
 } from "./update-match.repository.types";
+import { Logger } from "~/common/logger";
 
 class UpdateMatchRepository {
+  private readonly logger = new Logger(UpdateMatchRepository.name);
   public async matchStart(args: MatchStartRepoArgs) {
     const { input, userId } = args;
     if (input.type === "original") {
@@ -135,7 +139,7 @@ class UpdateMatchRepository {
         throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
       await db
         .update(match)
-        .set({ duration: 0, running: false, startTime: null })
+        .set({ duration: 0, running: false, startTime: null, endTime: null })
         .where(and(eq(match.id, input.id), eq(match.createdBy, userId)));
     } else {
       const returnedSharedMatch = await db.query.sharedMatch.findFirst({
@@ -153,7 +157,7 @@ class UpdateMatchRepository {
         });
       await db
         .update(match)
-        .set({ duration: 0, running: false, startTime: null })
+        .set({ duration: 0, running: false, startTime: null, endTime: null })
         .where(eq(match.id, input.id));
     }
   }
@@ -383,6 +387,202 @@ class UpdateMatchRepository {
             ),
           ),
         );
+    }
+  }
+  public async updateMatchFinalScores(args: UpdateMatchFinishRepoArgs) {
+    const { input, userId } = args;
+    let matchToUpdateId: number | null = null;
+    if (input.type === "original") {
+      const foundMatch = await db.query.match.findFirst({
+        where: {
+          id: input.id,
+          createdBy: userId,
+        },
+        with: {
+          scoresheet: true,
+          teams: true,
+          matchPlayers: {
+            with: {
+              playerRounds: true,
+            },
+          },
+        },
+      });
+      if (!foundMatch)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
+      matchToUpdateId = foundMatch.id;
+    } else {
+      const foundSharedMatch = await db.query.sharedMatch.findFirst({
+        where: {
+          id: input.id,
+          sharedWithId: userId,
+        },
+      });
+      if (!foundSharedMatch)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared match not found.",
+        });
+      if (foundSharedMatch.permission !== "edit")
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Does not have permission to finish this match.",
+        });
+      matchToUpdateId = foundSharedMatch.matchId;
+    }
+    const matchToUpdate = await db.query.match.findFirst({
+      where: {
+        id: matchToUpdateId,
+      },
+      with: {
+        scoresheet: true,
+        teams: true,
+        matchPlayers: {
+          with: {
+            playerRounds: true,
+          },
+        },
+      },
+    });
+    if (!matchToUpdate)
+      throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
+    const finalPlacements = calculatePlacement(
+      matchToUpdate.matchPlayers.map((mp) => ({
+        id: mp.id,
+        rounds: mp.playerRounds.map((pr) => ({ score: pr.score })),
+        teamId: mp.teamId,
+      })),
+      matchToUpdate.scoresheet,
+    );
+    if (finalPlacements.length > 0) {
+      const ids = finalPlacements.map((p) => p.id);
+      const scoreSqlChunks: SQL[] = [sql`(case`];
+      const placementSqlChunks: SQL[] = [sql`(case`];
+      const winnerSqlChunks: SQL[] = [sql`(case`];
+
+      for (const player of finalPlacements) {
+        scoreSqlChunks.push(
+          sql`when ${matchPlayer.id} = ${player.id} then ${sql`${player.score}::integer`}`,
+        );
+        placementSqlChunks.push(
+          sql`when ${matchPlayer.id} = ${player.id} then ${sql`${player.placement}::integer`}`,
+        );
+        winnerSqlChunks.push(
+          sql`when ${matchPlayer.id} = ${player.id} then ${player.placement === 1}::boolean`,
+        );
+      }
+
+      scoreSqlChunks.push(sql`end)`);
+      placementSqlChunks.push(sql`end)`);
+      winnerSqlChunks.push(sql`end)`);
+
+      // Join each array of CASE chunks into a single SQL expression
+      const finalScoreSql = sql.join(scoreSqlChunks, sql.raw(" "));
+      const finalPlacementSql = sql.join(placementSqlChunks, sql.raw(" "));
+      const finalWinnerSql = sql.join(winnerSqlChunks, sql.raw(" "));
+
+      // Perform the bulk update
+      await db
+        .update(matchPlayer)
+        .set({
+          score: finalScoreSql,
+          placement: finalPlacementSql,
+          winner: finalWinnerSql,
+        })
+        .where(inArray(matchPlayer.id, ids));
+    }
+  }
+  public async updateMatchFinish(args: UpdateMatchFinishRepoArgs) {
+    const { input, userId } = args;
+    let matchToUpdateId: number | null = null;
+    if (input.type === "original") {
+      const foundMatch = await db.query.match.findFirst({
+        where: {
+          id: input.id,
+          createdBy: userId,
+        },
+        with: {
+          scoresheet: true,
+          teams: true,
+          matchPlayers: {
+            with: {
+              playerRounds: true,
+            },
+          },
+        },
+      });
+      if (!foundMatch)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
+      matchToUpdateId = foundMatch.id;
+    } else {
+      const foundSharedMatch = await db.query.sharedMatch.findFirst({
+        where: {
+          id: input.id,
+          sharedWithId: userId,
+        },
+      });
+      if (!foundSharedMatch)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared match not found.",
+        });
+      if (foundSharedMatch.permission !== "edit")
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Does not have permission to finish this match.",
+        });
+      matchToUpdateId = foundSharedMatch.matchId;
+    }
+    const matchToUpdate = await db.query.match.findFirst({
+      where: {
+        id: matchToUpdateId,
+      },
+    });
+    if (!matchToUpdate)
+      throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
+    if (matchToUpdate.running) {
+      const currentTime = new Date();
+      if (!matchToUpdate.startTime) {
+        this.logger.error("Match start time is not set. Finishing match.", {
+          input,
+          userId,
+        });
+        await db
+          .update(match)
+          .set({
+            running: false,
+            startTime: null,
+            endTime: new Date(),
+            finished: true,
+          })
+          .where(eq(match.id, matchToUpdate.id));
+      } else {
+        const timeDelta = differenceInSeconds(
+          currentTime,
+          matchToUpdate.startTime,
+        );
+        const accumulatedDuration = matchToUpdate.duration + timeDelta;
+        await db
+          .update(match)
+          .set({
+            duration: accumulatedDuration,
+            running: false,
+            startTime: null,
+            endTime: new Date(),
+            finished: true,
+          })
+          .where(eq(match.id, matchToUpdate.id));
+      }
+    } else {
+      await db
+        .update(match)
+        .set({
+          running: false,
+          startTime: null,
+          endTime: new Date(),
+          finished: true,
+        })
+        .where(eq(match.id, matchToUpdate.id));
     }
   }
   public async updateMatchManualWinner(args: UpdateMatchManualWinnerRepoArgs) {

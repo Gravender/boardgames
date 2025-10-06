@@ -416,6 +416,7 @@ export const matchWithGameAndPlayersSchema = selectMatchSchema
         id: true,
       })
       .extend({
+        linkedGameId: z.number().nullable(),
         type: sharedOrOriginalSchema,
       }),
     location: selectLocationSchema

@@ -144,9 +144,11 @@ class GameRepository {
           finished: vMatchCanonical.finished,
           game: sql<{
             id: number;
+            linkedGameId: number | null;
             type: "original" | "shared";
           }>`json_build_object(
         'id', ${vMatchCanonical.canonicalGameId},
+        'linkedGameId', ${vMatchCanonical.linkedGameId},
         'type', ${vMatchCanonical.visibilitySource}
       )`.as("game"),
           location: sql<{ id: number; name: string }>`json_build_object(
@@ -211,9 +213,11 @@ class GameRepository {
           finished: vMatchCanonical.finished,
           game: sql<{
             id: number;
+            linkedGameId: number | null;
             type: "original" | "shared";
           }>`json_build_object(
         'id', ${vMatchCanonical.canonicalGameId},
+        'linkedGameId', ${vMatchCanonical.linkedGameId},
         'type', ${vMatchCanonical.visibilitySource}
       )`.as("game"),
           location: sql<{ id: number; name: string }>`json_build_object(

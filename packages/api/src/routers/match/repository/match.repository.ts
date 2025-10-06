@@ -251,6 +251,11 @@ class MatchRepository {
         },
         with: {
           location: true,
+          game: {
+            with: {
+              image: true,
+            },
+          },
         },
       });
       if (!returnedMatch) {
@@ -267,6 +272,8 @@ class MatchRepository {
         game: {
           id: returnedMatch.gameId,
           type: "original" as const,
+          image: returnedMatch.game.image,
+          name: returnedMatch.game.name,
         },
         comment: returnedMatch.comment,
         duration: returnedMatch.duration,
@@ -288,7 +295,16 @@ class MatchRepository {
         },
         with: {
           match: true,
-          sharedGame: true,
+          sharedGame: {
+            with: {
+              game: {
+                with: {
+                  image: true,
+                },
+              },
+              linkedGame: { with: { image: true } },
+            },
+          },
           sharedLocation: {
             with: {
               location: true,
@@ -308,10 +324,19 @@ class MatchRepository {
         id: returnedSharedMatch.id,
         date: returnedSharedMatch.match.date,
         name: returnedSharedMatch.match.name,
-        game: {
-          id: returnedSharedMatch.sharedGame.id,
-          type: "shared" as const,
-        },
+        game: returnedSharedMatch.sharedGame.linkedGame
+          ? {
+              id: returnedSharedMatch.sharedGame.linkedGame.id,
+              type: "original" as const,
+              image: returnedSharedMatch.sharedGame.linkedGame.image,
+              name: returnedSharedMatch.sharedGame.linkedGame.name,
+            }
+          : {
+              id: returnedSharedMatch.sharedGame.game.id,
+              type: "shared" as const,
+              image: returnedSharedMatch.sharedGame.game.image,
+              name: returnedSharedMatch.sharedGame.game.name,
+            },
         comment: returnedSharedMatch.match.comment,
         duration: returnedSharedMatch.match.duration,
         finished: returnedSharedMatch.match.finished,

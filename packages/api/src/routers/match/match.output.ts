@@ -12,7 +12,7 @@ import {
   selectScoreSheetSchema,
   selectTeamSchema,
 } from "@board-games/db/zodSchema";
-import { sharedOrOriginalSchema } from "@board-games/shared";
+import { imageSchema, sharedOrOriginalSchema } from "@board-games/shared";
 
 export const createMatchOutput = selectMatchSchema
   .pick({
@@ -53,9 +53,11 @@ export const getMatchOutput = selectMatchSchema
     game: selectGameSchema
       .pick({
         id: true,
+        name: true,
       })
       .extend({
         type: sharedOrOriginalSchema,
+        image: imageSchema.nullable(),
       }),
     location: selectLocationSchema
       .pick({

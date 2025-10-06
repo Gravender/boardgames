@@ -20,6 +20,7 @@ export type UpdateMatchRoundScoreRepoArgs =
   UserScopedArgs<UpdateMatchScoreInputType>;
 export type UpdateMatchPlayerScoreRepoArgs =
   UserScopedArgs<UpdateMatchPlayerScoreInputType>;
+export type UpdateMatchFinishRepoArgs = UserScopedArgs<GetMatchInputType>;
 export type UpdateMatchManualWinnerRepoArgs =
   UserScopedArgs<UpdateMatchManualWinnerInputType>;
 export type UpdateMatchPlacementsRepoArgs =

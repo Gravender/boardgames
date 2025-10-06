@@ -38,6 +38,16 @@ export const updateMatchRouter = {
     .mutation(async ({ ctx, input }) => {
       await updateMatchService.updateMatchPlayerScore({ ctx, input });
     }),
+  updateMatchFinish: protectedUserProcedure
+    .input(getMatchInput)
+    .mutation(async ({ ctx, input }) => {
+      await updateMatchService.updateMatchFinish({ ctx, input });
+    }),
+  updateMatchFinalScores: protectedUserProcedure
+    .input(getMatchInput)
+    .mutation(async ({ ctx, input }) => {
+      await updateMatchService.updateMatchFinalScores({ ctx, input });
+    }),
   updateMatchManualWinner: protectedUserProcedure
     .input(updateMatchManualWinnerInput)
     .mutation(async ({ ctx, input }) => {
