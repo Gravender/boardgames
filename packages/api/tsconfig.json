@@ -1,5 +1,5 @@
 {
-  "extends": "@board-games/tsconfig/internal-package.json",
+  "extends": "@board-games/tsconfig/compiled-package.json",
   "compilerOptions": {
     "lib": [
       "ES2023",

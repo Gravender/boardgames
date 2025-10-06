@@ -1,9 +1,18 @@
 {
   "compilerOptions": {
-    "lib": ["ES2023", "dom", "dom.iterable"],
+    "lib": [
+      "ES2023",
+      "dom",
+      "dom.iterable"
+    ],
     "jsx": "preserve"
   },
-  "extends": "@board-games/tsconfig/internal-package.json",
-  "include": ["*.ts", "src"],
-  "exclude": ["node_modules"]
+  "extends": "@board-games/tsconfig/compiled-package.json",
+  "include": [
+    "*.ts",
+    "src"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
