@@ -4,7 +4,11 @@ import type { Dispatch, SetStateAction } from "react";
 import type { z } from "zod/v4";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, X } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
@@ -49,12 +53,7 @@ import { toast } from "@board-games/ui/toast";
 import type { Player, Team } from "~/components/match/players/selector";
 import { AddPlayersDialogForm } from "~/components/match/players/selector";
 import { Spinner } from "~/components/spinner";
-import { useInvalidateGame, useInvalidateGames } from "~/hooks/invalidate/game";
 import { useInvalidateLocations } from "~/hooks/invalidate/location";
-import {
-  useInvalidatePlayer,
-  useInvalidatePlayers,
-} from "~/hooks/invalidate/player";
 import { useTRPC } from "~/trpc/react";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
@@ -238,28 +237,14 @@ const AddMatchForm = ({
   const [newLocation, setNewLocation] = useState("");
 
   const router = useRouter();
-  const invalidatePlayers = useInvalidatePlayers();
   const invalidateLocations = useInvalidateLocations();
-  const invalidateGames = useInvalidateGames();
-  const invalidateGame = useInvalidateGame();
-  const invalidatePlayer = useInvalidatePlayer();
   const posthog = usePostHog();
-
+  const queryClient = useQueryClient();
   const createMatch = useMutation(
-    trpc.match.createMatch.mutationOptions({
+    trpc.newMatch.createMatch.mutationOptions({
       onSuccess: async (response) => {
-        const playersToInvalidate = response.players.flatMap((p) => {
-          return invalidatePlayer(p.playerId);
-        });
-        await Promise.all([
-          ...invalidateGames(),
-          ...invalidateGame(response.match.gameId, "original"),
-          ...invalidatePlayers(),
-          ...playersToInvalidate,
-        ]);
-        router.push(
-          `/dashboard/games/${response.match.gameId}/${response.match.id}`,
-        );
+        await queryClient.invalidateQueries();
+        router.push(`/dashboard/games/${response.game.id}/${response.id}`);
         setIsSubmitting(false);
       },
       onError: (error) => {
@@ -276,6 +261,7 @@ const AddMatchForm = ({
   const createLocation = useMutation(
     trpc.location.create.mutationOptions({
       onSuccess: async (result) => {
+        // eslint-disable-next-line @typescript-eslint/await-thenable
         await Promise.all([invalidateLocations()]);
         setNewLocation("");
         setShowAddLocation(false);

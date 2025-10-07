@@ -225,3 +225,335 @@ export const useUpdateFinish = (id: number, type: "original" | "shared") => {
     updateFinishMutation,
   };
 };
+
+export const useUpdateMatchRoundScoreMutation = (
+  id: number,
+  type: "original" | "shared",
+) => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const updateMatchRoundScoreMutation = useMutation(
+    trpc.newMatch.update.updateMatchRoundScore.mutationOptions({
+      onMutate: async (newRoundScore) => {
+        await queryClient.cancelQueries(
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+            id: id,
+            type: type,
+          }),
+        );
+        const prevData = queryClient.getQueryData(
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+            id: id,
+            type: type,
+          }).queryKey,
+        );
+        if (prevData) {
+          const newData = {
+            ...prevData,
+            players: prevData.players.map((player) => {
+              if (
+                newRoundScore.type === "player" &&
+                player.id === newRoundScore.matchPlayerId
+              ) {
+                return {
+                  ...player,
+                  rounds: player.rounds.map((round) => {
+                    if (round.id === newRoundScore.round.id) {
+                      return {
+                        ...round,
+                        score: newRoundScore.round.score,
+                      };
+                    }
+                    return round;
+                  }),
+                };
+              } else if (newRoundScore.type === "team") {
+                if (player.teamId === newRoundScore.teamId) {
+                  return {
+                    ...player,
+                    rounds: player.rounds.map((round) => {
+                      if (round.id === newRoundScore.round.id) {
+                        return {
+                          ...round,
+                          score: newRoundScore.round.score,
+                        };
+                      }
+                      return round;
+                    }),
+                  };
+                }
+              }
+              return player;
+            }),
+          };
+          queryClient.setQueryData(
+            trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+              id: id,
+              type: type,
+            }).queryKey,
+            newData,
+          );
+        }
+        return { newRoundScore, previousData: prevData };
+      },
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+            id: id,
+            type: type,
+          }),
+        );
+      },
+      onError: (error, newRoundScore, context) => {
+        if (newRoundScore.type === "team") {
+          const team = context?.previousData?.teams.find(
+            (team) => team.id === newRoundScore.teamId,
+          );
+          if (team) {
+            console.error(
+              `Error updating round score for team ${team.name}:`,
+              error,
+            );
+            toast.error(`Error updating round score for team ${team.name}`, {
+              description: "There was a problem updating the round score.",
+            });
+          } else {
+            console.error(
+              "Error updating round score for unknown team:",
+              error,
+            );
+          }
+        } else {
+          const player = context?.previousData?.players.find(
+            (player) => player.id === newRoundScore.matchPlayerId,
+          );
+          if (player) {
+            console.error(
+              `Error updating round score for player ${player.name}:`,
+              error,
+            );
+            toast.error(
+              `Error updating round score for player ${player.name}`,
+              {
+                description: "There was a problem updating the round score.",
+              },
+            );
+          } else {
+            console.error(
+              "Error updating round score for unknown player:",
+              error,
+            );
+          }
+        }
+        if (context?.previousData) {
+          queryClient.setQueryData(
+            trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+              id: id,
+              type: type,
+            }).queryKey,
+            context.previousData,
+          );
+        }
+      },
+    }),
+  );
+  return {
+    updateMatchRoundScoreMutation,
+  };
+};
+
+export const useUpdateMatchCommentMutation = (
+  id: number,
+  type: "original" | "shared",
+) => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const updateMatchCommentMutation = useMutation(
+    trpc.newMatch.update.updateMatchComment.mutationOptions({
+      onMutate: async (newComment) => {
+        await queryClient.cancelQueries(
+          trpc.newMatch.getMatch.queryOptions({
+            id: id,
+            type: type,
+          }),
+        );
+        const prevData = queryClient.getQueryData(
+          trpc.newMatch.getMatch.queryOptions({
+            id: id,
+            type: type,
+          }).queryKey,
+        );
+        if (prevData) {
+          const newData = {
+            ...prevData,
+            comment: newComment.comment,
+          };
+          queryClient.setQueryData(
+            trpc.newMatch.getMatch.queryOptions({
+              id: id,
+              type: type,
+            }).queryKey,
+            newData,
+          );
+        }
+        return { newComment, previousData: prevData };
+      },
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.newMatch.getMatch.queryOptions({
+            id: id,
+            type: type,
+          }),
+        );
+      },
+      onError: (error, newComment, context) => {
+        console.error(
+          `Error updating comment for match ${context?.previousData?.name}:`,
+          error,
+        );
+        toast.error(
+          `Error updating comment for match ${context?.previousData?.name}`,
+          {
+            description: "There was a problem updating the comment.",
+          },
+        );
+        if (context?.previousData) {
+          queryClient.setQueryData(
+            trpc.newMatch.getMatch.queryOptions({
+              id: id,
+              type: type,
+            }).queryKey,
+            context.previousData,
+          );
+        }
+      },
+    }),
+  );
+  return {
+    updateMatchCommentMutation,
+  };
+};
+
+export const useUpdateMatchDetailsMutation = (
+  id: number,
+  type: "original" | "shared",
+) => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const updateMatchDetailsMutation = useMutation(
+    trpc.newMatch.update.updateMatchDetails.mutationOptions({
+      onMutate: async (newDetails) => {
+        await queryClient.cancelQueries(
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+            id: id,
+            type: type,
+          }),
+        );
+        const prevData = queryClient.getQueryData(
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+            id: id,
+            type: type,
+          }).queryKey,
+        );
+        if (prevData) {
+          if (newDetails.type === "player") {
+            const newData = {
+              ...prevData,
+              players: prevData.players.map((player) => {
+                if (player.id === newDetails.id) {
+                  return {
+                    ...player,
+                    details: newDetails.details,
+                  };
+                }
+                return player;
+              }),
+            };
+            queryClient.setQueryData(
+              trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+                id: id,
+                type: type,
+              }).queryKey,
+              newData,
+            );
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          } else if (newDetails.type === "team") {
+            const newData = {
+              ...prevData,
+              teams: prevData.teams.map((team) => {
+                if (team.id === newDetails.teamId) {
+                  return {
+                    ...team,
+                    details: newDetails.details,
+                  };
+                }
+                return team;
+              }),
+            };
+            queryClient.setQueryData(
+              trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+                id: id,
+                type: type,
+              }).queryKey,
+              newData,
+            );
+          }
+        }
+        return { newDetails, previousData: prevData };
+      },
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+            id: id,
+            type: type,
+          }),
+        );
+      },
+      onError: (error, newDetails, context) => {
+        if (newDetails.type === "team") {
+          const team = context?.previousData?.teams.find(
+            (team) => team.id === newDetails.teamId,
+          );
+          if (team) {
+            console.error(
+              `Error updating details for team ${team.name}:`,
+              error,
+            );
+            toast.error(`Error updating details for team ${team.name}`, {
+              description: "There was a problem updating the details.",
+            });
+          } else {
+            console.error("Error updating details for unknown team:", error);
+          }
+        } else {
+          const player = context?.previousData?.players.find(
+            (player) => player.id === newDetails.id,
+          );
+          if (player) {
+            console.error(
+              `Error updating details for player ${player.name}:`,
+              error,
+            );
+            toast.error(`Error updating details for player ${player.name}`, {
+              description: "There was a problem updating the details.",
+            });
+          } else {
+            console.error("Error updating details for unknown player:", error);
+          }
+        }
+        if (context?.previousData) {
+          queryClient.setQueryData(
+            trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+              id: id,
+              type: type,
+            }).queryKey,
+            context.previousData,
+          );
+        }
+      },
+    }),
+  );
+  return {
+    updateMatchDetailsMutation,
+  };
+};

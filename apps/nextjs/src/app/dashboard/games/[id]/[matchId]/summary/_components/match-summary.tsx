@@ -34,7 +34,7 @@ export default function MatchSummary({ matchId }: { matchId: number }) {
   );
   const { data: gameMatches } = useSuspenseQuery(
     trpc.newGame.gameMatches.queryOptions({
-      id: match.game.id,
+      id: matchId,
       type: "original",
     }),
   );

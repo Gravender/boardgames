@@ -5,7 +5,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ListPlus } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 
-import type { RouterOutputs } from "@board-games/api";
 import { roundTypes } from "@board-games/db/constants";
 import { insertRoundSchema } from "@board-games/db/zodSchema";
 import { Button } from "@board-games/ui/button";
@@ -41,7 +40,6 @@ import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 import { usePlayersAndTeams, useScoresheet } from "../hooks/scoresheet";
 
-type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
 export const AddRoundDialog = ({
   match,
 }: {
@@ -106,7 +104,10 @@ const AddRoundDialogContent = ({
     trpc.round.addRound.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: match.id }),
+          trpc.newMatch.getMatchScoresheet.queryOptions({
+            id: match.id,
+            type: match.type,
+          }),
         );
         posthog.capture("round added to match", {
           matchId: match.id,

@@ -3,11 +3,7 @@
 import type { z } from "zod/v4";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { differenceInSeconds } from "date-fns";
 import {
   Calendar,
@@ -68,10 +64,7 @@ export function Scoresheet({
   matchId: number;
   type: "original" | "shared";
 }) {
-  const trpc = useTRPC();
-  const { data: match } = useSuspenseQuery(
-    trpc.newMatch.getMatch.queryOptions({ id: matchId, type: type }),
-  );
+  const { match } = useMatch(matchId, type);
   return <ScoresheetContent id={match.id} type={match.type} />;
 }
 function ScoresheetContent({
@@ -214,12 +207,12 @@ function ManualScoreSheet({ match }: { match: Match }) {
                             Team Notes
                           </Label>
                           <DetailDialog
-                            matchId={match.id}
+                            match={{ id: match.id, type: match.type }}
                             data={{
                               id: team.id,
                               name: team.name,
                               details: team.details,
-                              type: "Team",
+                              type: "team",
                             }}
                             placeholder="No notes for this team"
                           />
@@ -268,12 +261,12 @@ function ManualScoreSheet({ match }: { match: Match }) {
                                       Player Notes
                                     </Label>
                                     <DetailDialog
-                                      matchId={match.id}
+                                      match={{ id: match.id, type: match.type }}
                                       data={{
                                         id: player.id,
                                         name: player.name,
                                         details: player.details,
-                                        type: "Player",
+                                        type: "player",
                                       }}
                                       placeholder="No notes for this player"
                                     />
@@ -339,12 +332,12 @@ function ManualScoreSheet({ match }: { match: Match }) {
                             Player Notes
                           </Label>
                           <DetailDialog
-                            matchId={match.id}
+                            match={{ id: match.id, type: match.type }}
                             data={{
                               id: player.id,
                               name: player.name,
                               details: player.details,
-                              type: "Player",
+                              type: "player",
                             }}
                             placeholder="No notes for this player"
                           />
@@ -592,7 +585,10 @@ function ScoresheetFooter({ match }: { match: Match }) {
             <CardTitle className="text-xl">Comment:</CardTitle>
           </CardHeader>
           <CardContent className="px-4">
-            <CommentDialog matchId={match.id} comment={match.comment} />
+            <CommentDialog
+              match={{ id: match.id, type: match.type }}
+              comment={match.comment}
+            />
           </CardContent>
         </Card>
         <MatchImages matchId={match.id} duration={duration} />

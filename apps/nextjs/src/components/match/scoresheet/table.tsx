@@ -28,6 +28,7 @@ import {
   useMatch,
   usePlayersAndTeams,
   useScoresheet,
+  useUpdateMatchRoundScoreMutation,
 } from "~/components/match/hooks/scoresheet";
 import { AddRoundDialog } from "~/components/match/scoresheet/add-round-dialog";
 import { DetailDialog } from "~/components/match/scoresheet/DetailDialog";
@@ -114,7 +115,7 @@ const HeaderRow = ({
       })
       .filter((team) => team !== null);
     return mappedTeams;
-  }, [match]);
+  }, [teams, players]);
   if (mappedTeams.length > 0) {
     return (
       <TableRow>
@@ -223,28 +224,21 @@ const BodyRow = ({
   };
   round: RouterOutputs["newMatch"]["getMatchScoresheet"]["rounds"][number];
 }) => {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-
   const { players, teams } = usePlayersAndTeams(match.id, match.type);
 
-  const updateRoundScore = useMutation(
-    trpc.match.updateMatchRoundScore.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: match.id }),
-        );
-      },
-    }),
+  const { updateMatchRoundScoreMutation } = useUpdateMatchRoundScoreMutation(
+    match.id,
+    match.type,
   );
   const updateTeamScore = (
     teamId: number,
     roundId: number,
     value: number | null,
   ) => {
-    updateRoundScore.mutate({
+    updateMatchRoundScoreMutation.mutate({
       match: {
         id: match.id,
+        type: match.type,
       },
       type: "team",
       teamId: teamId,
@@ -259,9 +253,10 @@ const BodyRow = ({
     roundId: number,
     value: number | null,
   ) => {
-    updateRoundScore.mutate({
+    updateMatchRoundScoreMutation.mutate({
       match: {
         id: match.id,
+        type: match.type,
       },
       type: "player",
       matchPlayerId: playerId,
@@ -467,12 +462,12 @@ const CommentsRow = ({
               className="border-b border-r p-2"
             >
               <DetailDialog
-                matchId={match.id}
+                match={{ id: match.id, type: match.type }}
                 data={{
                   id: team.id,
                   name: team.name,
                   details: team.details,
-                  type: "Team",
+                  type: "team",
                 }}
               />
             </TableCell>
@@ -486,12 +481,12 @@ const CommentsRow = ({
                 className="border-b border-r p-2"
               >
                 <DetailDialog
-                  matchId={match.id}
+                  match={{ id: match.id, type: match.type }}
                   data={{
                     id: player.id,
                     name: player.name,
                     details: player.details,
-                    type: "Player",
+                    type: "player",
                   }}
                 />
               </TableCell>
@@ -516,12 +511,12 @@ const CommentsRow = ({
             className="border-b border-r p-2"
           >
             <DetailDialog
-              matchId={match.id}
+              match={{ id: match.id, type: match.type }}
               data={{
                 id: player.id,
                 name: player.name,
                 details: player.details,
-                type: "Player",
+                type: "player",
               }}
             />
           </TableCell>

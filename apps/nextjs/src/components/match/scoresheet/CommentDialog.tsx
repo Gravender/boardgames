@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod/v4";
 
 import { Button } from "@board-games/ui/button";
@@ -23,13 +22,16 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Textarea } from "@board-games/ui/textarea";
 
-import { useTRPC } from "~/trpc/react";
+import { useUpdateMatchCommentMutation } from "~/components/match/hooks/scoresheet";
 
 export function CommentDialog({
-  matchId,
+  match,
   comment,
 }: {
-  matchId: number;
+  match: {
+    id: number;
+    type: "original" | "shared";
+  };
   comment: string | null;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -48,11 +50,7 @@ export function CommentDialog({
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <Content
-          setIsOpen={setIsOpen}
-          matchId={matchId}
-          comment={comment ?? ""}
-        />
+        <Content setIsOpen={setIsOpen} match={match} comment={comment ?? ""} />
       </DialogContent>
     </Dialog>
   );
@@ -61,34 +59,28 @@ const FormSchema = z.object({
   comment: z.string(),
 });
 function Content({
-  matchId,
+  match,
   comment,
   setIsOpen,
 }: {
-  matchId: number;
+  match: {
+    id: number;
+    type: "original" | "shared";
+  };
   setIsOpen: (isOpen: boolean) => void;
   comment: string;
 }) {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const updateComment = useMutation(
-    trpc.match.updateMatchComment.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: matchId }),
-        );
-
-        setIsOpen(false);
-      },
-    }),
+  const { updateMatchCommentMutation } = useUpdateMatchCommentMutation(
+    match.id,
+    match.type,
   );
   const form = useForm({
     schema: FormSchema,
     defaultValues: { comment },
   });
   function onSubmitForm(values: z.infer<typeof FormSchema>) {
-    updateComment.mutate({
-      match: { id: matchId },
+    updateMatchCommentMutation.mutate({
+      match: { id: match.id, type: match.type },
       comment: values.comment,
     });
   }
