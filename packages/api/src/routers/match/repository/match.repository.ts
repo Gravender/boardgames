@@ -324,19 +324,12 @@ class MatchRepository {
         id: returnedSharedMatch.id,
         date: returnedSharedMatch.match.date,
         name: returnedSharedMatch.match.name,
-        game: returnedSharedMatch.sharedGame.linkedGame
-          ? {
-              id: returnedSharedMatch.sharedGame.linkedGame.id,
-              type: "original" as const,
-              image: returnedSharedMatch.sharedGame.linkedGame.image,
-              name: returnedSharedMatch.sharedGame.linkedGame.name,
-            }
-          : {
-              id: returnedSharedMatch.sharedGame.game.id,
-              type: "shared" as const,
-              image: returnedSharedMatch.sharedGame.game.image,
-              name: returnedSharedMatch.sharedGame.game.name,
-            },
+        game: {
+          id: returnedSharedMatch.sharedGame.game.id,
+          type: "shared" as const,
+          image: returnedSharedMatch.sharedGame.game.image,
+          name: returnedSharedMatch.sharedGame.game.name,
+        },
         comment: returnedSharedMatch.match.comment,
         duration: returnedSharedMatch.match.duration,
         finished: returnedSharedMatch.match.finished,

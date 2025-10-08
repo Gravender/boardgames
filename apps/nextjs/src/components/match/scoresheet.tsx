@@ -596,8 +596,11 @@ function ScoresheetFooter({ match }: { match: Match }) {
       <ManualWinnerDialog
         isOpen={openManualWinnerDialog}
         setIsOpen={setOpenManualWinnerDialog}
-        gameId={match.game.id}
-        matchId={match.id}
+        game={{
+          id: match.game.id,
+          type: match.game.type,
+        }}
+        match={match}
         players={manualWinners}
         teams={teams}
         scoresheet={scoresheet}
@@ -605,8 +608,11 @@ function ScoresheetFooter({ match }: { match: Match }) {
       <TieBreakerDialog
         isOpen={openTieBreakerDialog}
         setIsOpen={setOpenTieBreakerDialog}
-        gameId={match.game.id}
-        matchId={match.id}
+        game={{
+          id: match.game.id,
+          type: match.game.type,
+        }}
+        match={match}
         players={tieBreakers}
         teams={teams}
       />

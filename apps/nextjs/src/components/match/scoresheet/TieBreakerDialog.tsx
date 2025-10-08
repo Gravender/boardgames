@@ -1,7 +1,5 @@
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Users } from "lucide-react";
-import { usePostHog } from "posthog-js/react";
 import { z } from "zod/v4";
 
 import { imageSchema } from "@board-games/shared";
@@ -32,12 +30,11 @@ import {
   PopoverTrigger,
 } from "@board-games/ui/popover";
 import { ScrollArea } from "@board-games/ui/scroll-area";
-import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
-import { useTRPC } from "~/trpc/react";
+import { useUpdateMatchPlacementsMutation } from "../hooks/scoresheet";
 
 export const TieBreakerPlayerSchema = z
   .array(
@@ -56,13 +53,19 @@ export function TieBreakerDialog({
   setIsOpen,
   players,
   teams,
-  gameId,
-  matchId,
+  game,
+  match,
 }: {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  gameId: number;
-  matchId: number;
+  game: {
+    id: number;
+    type: "original" | "shared";
+  };
+  match: {
+    id: number;
+    type: "original" | "shared";
+  };
 
   teams: { id: number; name: string }[];
   players: z.infer<typeof TieBreakerPlayerSchema>;
@@ -74,8 +77,8 @@ export function TieBreakerDialog({
           setIsOpen={setIsOpen}
           players={players}
           teams={teams}
-          matchId={matchId}
-          gameId={gameId}
+          match={match}
+          game={game}
         />
       </AlertDialogContent>
     </AlertDialog>
@@ -88,60 +91,49 @@ const FormSchema = z.object({
 function Content({
   players,
   teams,
-  gameId,
-  matchId,
+  game,
+  match,
 }: {
-  gameId: number;
-  matchId: number;
+  game: {
+    id: number;
+    type: "original" | "shared";
+  };
+  match: {
+    id: number;
+    type: "original" | "shared";
+  };
   setIsOpen: (isOpen: boolean) => void;
   teams: { id: number; name: string }[];
   players: z.infer<typeof TieBreakerPlayerSchema>;
 }) {
-  const trpc = useTRPC();
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const posthog = usePostHog();
 
-  const updateMatchPlacement = useMutation(
-    trpc.match.updateMatchPlacement.mutationOptions({
-      onSuccess: async () => {
-        await Promise.all([
-          queryClient.invalidateQueries(
-            trpc.match.getMatch.queryOptions({ id: matchId }),
-          ),
-          queryClient.invalidateQueries(
-            trpc.game.getGame.queryOptions({ id: gameId }),
-          ),
-        ]);
-        posthog.capture("match finished", {
-          gameId: gameId,
-          matchId: matchId,
-          type: "tiebreaker",
-        });
-
-        router.push(`/dashboard/games/${gameId}/${matchId}/summary`);
-      },
-      onError: (error) => {
-        posthog.capture("match placement update error", { error });
-        toast.error("Error", {
-          description: "There was a problem updating your Match placement.",
-        });
-      },
-    }),
+  const { updateMatchPlacementsMutation } = useUpdateMatchPlacementsMutation(
+    match.id,
+    match.type,
   );
+
   const form = useForm({
     schema: FormSchema,
     defaultValues: { players: players },
   });
   function onSubmitForm(values: z.infer<typeof FormSchema>) {
-    updateMatchPlacement.mutate({
-      match: { id: matchId },
-      playersPlacement: values.players.map((player) => ({
-        id: player.matchPlayerId,
-        placement: player.placement,
-        score: player.score,
-      })),
-    });
+    updateMatchPlacementsMutation.mutate(
+      {
+        match: match,
+        playersPlacement: values.players.map((player) => ({
+          id: player.matchPlayerId,
+          placement: player.placement,
+        })),
+      },
+      {
+        onSuccess: () => {
+          router.push(
+            `/dashboard/games/${game.type === "shared" ? "shared/" : ""}${game.id}/${match.id}/summary`,
+          );
+        },
+      },
+    );
   }
 
   const { fields, update } = useFieldArray({
@@ -369,8 +361,11 @@ function Content({
             )}
           />
           <AlertDialogFooter>
-            <Button type="submit" disabled={updateMatchPlacement.isPending}>
-              {updateMatchPlacement.isPending ? (
+            <Button
+              type="submit"
+              disabled={updateMatchPlacementsMutation.isPending}
+            >
+              {updateMatchPlacementsMutation.isPending ? (
                 <>
                   <Spinner />
                   <span>Finishing...</span>

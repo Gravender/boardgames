@@ -179,6 +179,7 @@ export const useUpdateFinalScores = (
 ) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const posthog = usePostHog();
   const updateFinalScoresMutation = useMutation(
     trpc.newMatch.update.updateMatchFinalScores.mutationOptions({
       onSuccess: async () => {
@@ -186,7 +187,8 @@ export const useUpdateFinalScores = (
           trpc.newMatch.getMatchPlayersAndTeams.queryOptions({ id, type }),
         );
       },
-      onError: () => {
+      onError: (error) => {
+        posthog.capture("final scores update error", { error });
         toast.error("Error", {
           description: "There was a problem updating final scores.",
         });
@@ -211,10 +213,11 @@ export const useUpdateFinish = (id: number, type: "original" | "shared") => {
         posthog.capture("match finished", {
           id: id,
           type: type,
+          finishedType: "normal",
         });
       },
-      onError: () => {
-        posthog.capture("match finished error");
+      onError: (error) => {
+        posthog.capture("match finished error", { error });
         toast.error("Error", {
           description: "There was a problem finishing the match.",
         });
@@ -223,6 +226,96 @@ export const useUpdateFinish = (id: number, type: "original" | "shared") => {
   );
   return {
     updateFinishMutation,
+  };
+};
+
+export const useUpdateMatchFinishManualMutation = (
+  id: number,
+  type: "original" | "shared",
+) => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const posthog = usePostHog();
+  const updateMatchFinishManualMutation = useMutation(
+    trpc.newMatch.update.updateMatchManualWinner.mutationOptions({
+      onMutate: async () => {
+        await queryClient.invalidateQueries();
+        posthog.capture("match finished", {
+          id: id,
+          type: type,
+          finishedType: "manual",
+        });
+      },
+      onError: (error) => {
+        posthog.capture("match finished error", { error });
+        toast.error("Error", {
+          description: "There was a problem finishing the match.",
+        });
+      },
+    }),
+  );
+  return {
+    updateFinishManualMutation: updateMatchFinishManualMutation,
+  };
+};
+
+export const useUpdateMatchManualWinnerMutation = (
+  id: number,
+  type: "original" | "shared",
+) => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const posthog = usePostHog();
+  const updateMatchManualWinnerMutation = useMutation(
+    trpc.newMatch.update.updateMatchManualWinner.mutationOptions({
+      onMutate: async () => {
+        await queryClient.invalidateQueries();
+        posthog.capture("match finished", {
+          id: id,
+          type: type,
+          finishedType: "manual",
+        });
+      },
+      onError: (error) => {
+        posthog.capture("manual winner update error", { error });
+        toast.error("Error", {
+          description: "There was a problem updating your Match winners.",
+        });
+      },
+    }),
+  );
+  return {
+    updateMatchManualWinnerMutation,
+  };
+};
+
+export const useUpdateMatchPlacementsMutation = (
+  id: number,
+  type: "original" | "shared",
+) => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const posthog = usePostHog();
+  const updateMatchPlacementsMutation = useMutation(
+    trpc.newMatch.update.updateMatchPlacements.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries();
+        posthog.capture("match finished", {
+          id: id,
+          type: type,
+          finishedType: "tie-breaker",
+        });
+      },
+      onError: (error) => {
+        posthog.capture("match finished error", { error });
+        toast.error("Error", {
+          description: "There was a problem updating your Match winners.",
+        });
+      },
+    }),
+  );
+  return {
+    updateMatchPlacementsMutation,
   };
 };
 

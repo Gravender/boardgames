@@ -1,7 +1,5 @@
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Users } from "lucide-react";
-import { usePostHog } from "posthog-js/react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -26,11 +24,10 @@ import {
   useForm,
 } from "@board-games/ui/form";
 import { ScrollArea } from "@board-games/ui/scroll-area";
-import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
 import { PlayerImage } from "~/components/player-image";
-import { useTRPC } from "~/trpc/react";
+import { useUpdateMatchManualWinnerMutation } from "../hooks/scoresheet";
 
 const playerSchema = z.object({
   id: z.number(),
@@ -40,21 +37,27 @@ const playerSchema = z.object({
   teamId: z.number().nullable(),
 });
 export const ManualWinnerPlayerSchema = z.array(playerSchema);
-type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
+
 type Scoresheet = RouterOutputs["newMatch"]["getMatchScoresheet"];
 export function ManualWinnerDialog({
   isOpen,
   setIsOpen,
-  gameId,
-  matchId,
+  game,
+  match,
   teams,
   players,
   scoresheet,
 }: {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  gameId: Match["gameId"];
-  matchId: Match["id"];
+  game: {
+    id: number;
+    type: "original" | "shared";
+  };
+  match: {
+    id: number;
+    type: "original" | "shared";
+  };
   teams: { id: number; name: string }[];
   players: z.infer<typeof ManualWinnerPlayerSchema>;
   scoresheet: Scoresheet;
@@ -65,8 +68,8 @@ export function ManualWinnerDialog({
         <Content
           setIsOpen={setIsOpen}
           players={players}
-          matchId={matchId}
-          gameId={gameId}
+          match={match}
+          game={game}
           teams={teams}
           scoresheet={scoresheet}
         />
@@ -77,51 +80,30 @@ export function ManualWinnerDialog({
 
 function Content({
   players,
-  gameId,
-  matchId,
+  game,
+  match,
   teams,
   scoresheet,
 }: {
-  gameId: Match["gameId"];
-  matchId: Match["id"];
+  game: {
+    id: number;
+    type: "original" | "shared";
+  };
+  match: {
+    id: number;
+    type: "original" | "shared";
+  };
   setIsOpen: (isOpen: boolean) => void;
 
   teams: { id: number; name: string }[];
   players: z.infer<typeof ManualWinnerPlayerSchema>;
   scoresheet: Scoresheet;
 }) {
-  const trpc = useTRPC();
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const posthog = usePostHog();
 
-  const updateWinner = useMutation(
-    trpc.match.updateMatchManualWinner.mutationOptions({
-      onSuccess: async () => {
-        await Promise.all([
-          queryClient.invalidateQueries(
-            trpc.match.getMatch.queryOptions({ id: matchId }),
-          ),
-          queryClient.invalidateQueries(
-            trpc.game.getGame.queryOptions({ id: gameId }),
-          ),
-        ]);
-        posthog.capture("match finished", {
-          gameId: gameId,
-          matchId: matchId,
-          type: "manual",
-        });
+  const { updateMatchManualWinnerMutation } =
+    useUpdateMatchManualWinnerMutation(match.id, match.type);
 
-        router.push(`/dashboard/games/${gameId}/${matchId}/summary`);
-      },
-      onError: (error) => {
-        posthog.capture("manual winner update error", { error });
-        toast.error("Error", {
-          description: "There was a problem updating your Match winners.",
-        });
-      },
-    }),
-  );
   const FormSchema = z.object({
     players: scoresheet.isCoop
       ? z.array(playerSchema)
@@ -132,10 +114,22 @@ function Content({
     defaultValues: { players: [] },
   });
   function onSubmitForm(values: z.infer<typeof FormSchema>) {
-    updateWinner.mutate({
-      matchId: matchId,
-      winners: values.players.map((player) => ({ id: player.id })),
-    });
+    updateMatchManualWinnerMutation.mutate(
+      {
+        match: {
+          id: match.id,
+          type: match.type,
+        },
+        winners: values.players.map((player) => ({ id: player.id })),
+      },
+      {
+        onSuccess: () => {
+          router.push(
+            `/dashboard/games/${game.type === "shared" ? "shared/" : ""}${game.id}/${match.id}/summary`,
+          );
+        },
+      },
+    );
   }
   return (
     <>
