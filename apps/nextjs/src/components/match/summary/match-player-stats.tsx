@@ -1,3 +1,5 @@
+"use client";
+
 import { getOrdinalSuffix } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
@@ -10,9 +12,9 @@ import {
   TableRow,
 } from "@board-games/ui/table";
 
-import { useMatchSummary, useScoresheet } from "../hooks/scoresheet";
+import { useMatchSummary, useScoresheet } from "../hooks/suspenseQueries";
 
-export default function MatchSummaryPlayerStats({
+export function MatchSummaryPlayerStats({
   id,
   type,
 }: {

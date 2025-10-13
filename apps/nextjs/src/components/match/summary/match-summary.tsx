@@ -1,14 +1,17 @@
 import { Suspense } from "react";
 
 import { prefetch, trpc } from "~/trpc/server";
-import GamePreviousMatches, {
+import {
+  GamePreviousMatches,
   GamePreviousMatchesSkeleton,
 } from "./game-previous-matches";
-import MatchCard, { MatchCardSkeleton } from "./match-card";
-import MatchSummaryPlayerStats, {
+import { MatchCard, MatchCardSkeleton } from "./match-card";
+import {
+  MatchSummaryPlayerStats,
   MatchSummaryPlayerStatsSkeleton,
 } from "./match-player-stats";
-import ShareMatchResults, {
+import {
+  ShareMatchResults,
   ShareMatchResultsSkeleton,
 } from "./share-match-results";
 
@@ -60,7 +63,7 @@ export default function MatchSummary({
         <Suspense fallback={<ShareMatchResultsSkeleton />}>
           <ShareMatchResults id={id} type={type} />
         </Suspense>
-        <Suspense fallback={<GamePreviousMatchesSkeleton />}>
+        <Suspense fallback={null}>
           <GamePreviousMatches id={gameId} type={type} />
         </Suspense>
         <Suspense fallback={<MatchSummaryPlayerStatsSkeleton />}>

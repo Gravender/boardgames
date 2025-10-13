@@ -23,12 +23,12 @@ import {
 import { cn } from "@board-games/ui/utils";
 
 import { DebouncedCheckbox } from "~/components/debounced-checkbox";
+import { useUpdateMatchRoundScoreMutation } from "~/components/match/hooks/scoresheet";
 import {
   useMatch,
   usePlayersAndTeams,
   useScoresheet,
-  useUpdateMatchRoundScoreMutation,
-} from "~/components/match/hooks/scoresheet";
+} from "~/components/match/hooks/suspenseQueries";
 import { AddRoundDialog } from "~/components/match/scoresheet/add-round-dialog";
 import { DetailDialog } from "~/components/match/scoresheet/DetailDialog";
 import PlayerEditorDialog from "~/components/match/scoresheet/edit-player-dialog";

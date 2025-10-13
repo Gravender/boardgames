@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { format } from "date-fns";
 import { CalendarIcon, MapPinIcon, Users } from "lucide-react";
@@ -9,7 +11,7 @@ import { Skeleton } from "@board-games/ui/skeleton";
 
 import { useGameMatches } from "~/components/game/hooks/matches";
 
-export default function GamePreviousMatches({
+export function GamePreviousMatches({
   id,
   type,
 }: {
@@ -17,6 +19,10 @@ export default function GamePreviousMatches({
   type: "original" | "shared";
 }) {
   const { gameMatches } = useGameMatches(id, type);
+
+  if (gameMatches.length === 0) {
+    return null;
+  }
   return (
     <Card className="w-full">
       <CardHeader>

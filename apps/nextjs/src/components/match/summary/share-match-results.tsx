@@ -1,3 +1,5 @@
+"use client";
+
 import { Award, Medal, Trophy, Users } from "lucide-react";
 
 import { getOrdinalSuffix } from "@board-games/shared";
@@ -13,9 +15,9 @@ import {
   useMatchSummary,
   usePlayersAndTeams,
   useScoresheet,
-} from "../hooks/scoresheet";
+} from "../hooks/suspenseQueries";
 
-export default function ShareMatchResults({
+export function ShareMatchResults({
   id,
   type,
 }: {

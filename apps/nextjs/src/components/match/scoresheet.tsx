@@ -30,6 +30,11 @@ import { cn } from "@board-games/ui/utils";
 
 import type { ManualWinnerPlayerSchema } from "~/components/match/scoresheet/ManualWinnerDialog";
 import type { TieBreakerPlayerSchema } from "~/components/match/scoresheet/TieBreakerDialog";
+import {
+  useMatch,
+  usePlayersAndTeams,
+  useScoresheet,
+} from "~/components/match/hooks/suspenseQueries";
 import { CommentDialog } from "~/components/match/scoresheet/CommentDialog";
 import { ManualWinnerDialog } from "~/components/match/scoresheet/ManualWinnerDialog";
 import { MatchImages } from "~/components/match/scoresheet/match-images";
@@ -40,9 +45,6 @@ import { useTRPC } from "~/trpc/react";
 import { FormattedDate } from "../formatted-date";
 import {
   useDurationMutation,
-  useMatch,
-  usePlayersAndTeams,
-  useScoresheet,
   useUpdateFinalScores,
   useUpdateFinish,
 } from "./hooks/scoresheet";

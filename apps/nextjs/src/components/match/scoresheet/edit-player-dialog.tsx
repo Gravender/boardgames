@@ -41,10 +41,13 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 
+import {
+  useMatch,
+  usePlayersAndTeams,
+} from "~/components/match/hooks/suspenseQueries";
 import { Spinner } from "~/components/spinner";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useTRPC } from "~/trpc/react";
-import { useMatch, usePlayersAndTeams } from "../hooks/scoresheet";
 
 type Player = NonNullable<
   RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]

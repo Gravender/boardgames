@@ -35,10 +35,13 @@ import {
 import { toast } from "@board-games/ui/toast";
 
 import { GradientPicker } from "~/components/color-picker";
+import {
+  usePlayersAndTeams,
+  useScoresheet,
+} from "~/components/match/hooks/suspenseQueries";
 import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
-import { usePlayersAndTeams, useScoresheet } from "../hooks/scoresheet";
 
 export const AddRoundDialog = ({
   match,

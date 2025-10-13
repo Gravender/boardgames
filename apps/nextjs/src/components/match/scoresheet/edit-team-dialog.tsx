@@ -34,11 +34,14 @@ import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 
+import {
+  useMatch,
+  usePlayersAndTeams,
+} from "~/components/match/hooks/suspenseQueries";
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useTRPC } from "~/trpc/react";
-import { useMatch, usePlayersAndTeams } from "../hooks/scoresheet";
 
 type Match = NonNullable<RouterOutputs["newMatch"]["getMatch"]>;
 type Player = NonNullable<

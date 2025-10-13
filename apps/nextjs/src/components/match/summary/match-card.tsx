@@ -1,3 +1,5 @@
+"use client";
+
 import { format, formatDistanceToNow } from "date-fns";
 import { CalendarIcon, ClockIcon, MapPinIcon } from "lucide-react";
 
@@ -7,9 +9,9 @@ import { Card, CardContent } from "@board-games/ui/card";
 import { Skeleton } from "@board-games/ui/skeleton";
 
 import { GameImage } from "~/components/game-image";
-import { useMatch } from "../hooks/scoresheet";
+import { useMatch } from "~/components/match/hooks/suspenseQueries";
 
-export default function MatchCard({
+export function MatchCard({
   id,
   type,
 }: {
@@ -85,9 +87,9 @@ export function MatchCardSkeleton() {
 
           <div className="flex-1 space-y-4">
             <div>
-              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-8 w-24" />
               <div className="mt-1 flex items-center gap-2">
-                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-4 w-8 rounded-sm" />
               </div>
             </div>
 
@@ -108,9 +110,7 @@ export function MatchCardSkeleton() {
               </div>
 
               <div className="flex min-h-6 min-w-6 items-center gap-2">
-                <p className="max-h-20 overflow-scroll">
-                  <Skeleton className="h-4 w-32" />
-                </p>
+                <Skeleton className="h-4 w-32" />
               </div>
             </div>
           </div>
