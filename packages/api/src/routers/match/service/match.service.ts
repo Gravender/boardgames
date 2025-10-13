@@ -87,7 +87,12 @@ class MatchService {
           teamId: matchPlayer.teamId,
           isUser: matchPlayer.player.isUser,
           order: matchPlayer.order,
-          roles: matchPlayer.roles,
+          roles: matchPlayer.roles.map((role) => ({
+            id: role.id,
+            name: role.name,
+            description: role.description,
+            type: "original" as const,
+          })),
           winner: matchPlayer.winner,
           placement: matchPlayer.placement,
         };
@@ -122,6 +127,26 @@ class MatchService {
             return sharedMatchPlayerRound;
           },
         );
+
+        const roles = sharedMatchPlayer.roles.map((role) => {
+          const sharedGameRole = role.sharedGameRole;
+          const linkedGameRole = sharedGameRole.linkedGameRole;
+          if (linkedGameRole === null) {
+            return {
+              id: sharedGameRole.gameRole.id,
+              name: sharedGameRole.gameRole.name,
+              description: sharedGameRole.gameRole.description,
+              type: "shared" as const,
+            };
+          }
+          return {
+            id: linkedGameRole.id,
+            name: linkedGameRole.name,
+            description: linkedGameRole.description,
+            type: "original" as const,
+          };
+        });
+
         const matchPlayer = {
           type: "shared" as const,
           permissions: sharedMatchPlayer.permission,
@@ -132,7 +157,7 @@ class MatchService {
           teamId: sharedMatchPlayer.matchPlayer.teamId,
           order: sharedMatchPlayer.matchPlayer.order,
           rounds: playerRounds,
-          roles: sharedMatchPlayer.matchPlayer.roles,
+          roles,
           isUser: false,
           placement: sharedMatchPlayer.matchPlayer.placement,
           winner: sharedMatchPlayer.matchPlayer.winner,

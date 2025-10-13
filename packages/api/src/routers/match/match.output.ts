@@ -132,11 +132,15 @@ export const getMatchPlayersAndTeamsOutput = z.object({
           }),
         ),
         roles: z.array(
-          selectGameRoleSchema.pick({
-            id: true,
-            name: true,
-            description: true,
-          }),
+          selectGameRoleSchema
+            .pick({
+              id: true,
+              name: true,
+              description: true,
+            })
+            .extend({
+              type: sharedOrOriginalSchema,
+            }),
         ),
       }),
   ),

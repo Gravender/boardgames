@@ -59,11 +59,9 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.sharedMatch.id,
       optional: false,
     }),
-    roles: r.many.sharedGameRole({
-      from: r.sharedMatchPlayer.id.through(
-        r.sharedMatchPlayerRole.sharedMatchPlayerId,
-      ),
-      to: r.sharedGameRole.id.through(r.sharedMatchPlayerRole.sharedGameRoleId),
+    roles: r.many.sharedMatchPlayerRole({
+      from: r.sharedMatchPlayer.id,
+      to: r.sharedMatchPlayerRole.sharedMatchPlayerId,
     }),
     match: r.one.match({
       from: r.sharedMatchPlayer.sharedMatchId.through(r.sharedMatch.id),

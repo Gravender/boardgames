@@ -520,6 +520,16 @@ class MatchRepository {
           },
           sharedMatchPlayers: {
             with: {
+              roles: {
+                with: {
+                  sharedGameRole: {
+                    with: {
+                      gameRole: true,
+                      linkedGameRole: true,
+                    },
+                  },
+                },
+              },
               matchPlayer: {
                 with: {
                   playerRounds: true,
