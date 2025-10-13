@@ -9,9 +9,9 @@ import { usePostHog } from "posthog-js/react";
 import { toast } from "@board-games/ui/toast";
 
 import { useTRPC } from "~/trpc/react";
-import { trpc } from "~/trpc/server";
 
 export const useMatch = (id: number, type: "original" | "shared") => {
+  const trpc = useTRPC();
   const { data: match } = useSuspenseQuery(
     trpc.newMatch.getMatch.queryOptions({ id, type }),
   );
@@ -20,6 +20,7 @@ export const useMatch = (id: number, type: "original" | "shared") => {
   };
 };
 export const useScoresheet = (id: number, type: "original" | "shared") => {
+  const trpc = useTRPC();
   const { data: scoresheet } = useSuspenseQuery(
     trpc.newMatch.getMatchScoresheet.queryOptions({ id, type }),
   );
@@ -28,12 +29,23 @@ export const useScoresheet = (id: number, type: "original" | "shared") => {
   };
 };
 export const usePlayersAndTeams = (id: number, type: "original" | "shared") => {
+  const trpc = useTRPC();
   const { data: playersAndTeams } = useSuspenseQuery(
     trpc.newMatch.getMatchPlayersAndTeams.queryOptions({ id, type }),
   );
   return {
     players: playersAndTeams.players,
     teams: playersAndTeams.teams,
+  };
+};
+
+export const useMatchSummary = (id: number, type: "original" | "shared") => {
+  const trpc = useTRPC();
+  const { data: summary } = useSuspenseQuery(
+    trpc.newMatch.getMatchSummary.queryOptions({ id, type }),
+  );
+  return {
+    summary,
   };
 };
 

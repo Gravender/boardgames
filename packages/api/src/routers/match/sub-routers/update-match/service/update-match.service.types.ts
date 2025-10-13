@@ -1,3 +1,4 @@
+import type { GetMatchInputType } from "../../../match.input";
 import type {
   UpdateMatchCommentInputType,
   UpdateMatchDetailsInputType,
@@ -6,7 +7,6 @@ import type {
   UpdateMatchPlayerScoreInputType,
   UpdateMatchScoreInputType,
 } from "../update-match.input";
-import type { GetMatchInputType } from "~/routers/match/match.input";
 
 export interface CtxUser {
   userId: string;

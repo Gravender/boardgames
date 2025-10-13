@@ -197,32 +197,32 @@ const baseEditScoresheetSchema = {
   isDefault: z.boolean().optional(),
   id: z.number(),
 };
-const originalEditScoresheetSchema = scoreSheetSchema.extend({
+const originalEditScoresheetSchema = scoreSheetSchema.safeExtend({
   scoresheetType: z.literal("original"),
   ...baseEditScoresheetSchema,
 });
-const sharedEditScoresheetSchema = scoreSheetSchema.extend({
+const sharedEditScoresheetSchema = scoreSheetSchema.safeExtend({
   scoresheetType: z.literal("shared"),
   ...baseEditScoresheetSchema,
 });
-const newEditScoresheetSchema = scoreSheetSchema.extend({
+const newEditScoresheetSchema = scoreSheetSchema.safeExtend({
   ...baseEditScoresheetSchema,
   id: z.null(),
 });
 export const editScoresheetSchemaForm = z
   .discriminatedUnion("scoresheetType", [
-    originalEditScoresheetSchema.extend({
+    originalEditScoresheetSchema.safeExtend({
       scoreSheetChanged: z.boolean(),
       roundChanged: z.boolean(),
       rounds: roundsSchema,
     }),
-    sharedEditScoresheetSchema.extend({
+    sharedEditScoresheetSchema.safeExtend({
       permission: z.literal("view").or(z.literal("edit")),
       scoreSheetChanged: z.boolean(),
       roundChanged: z.boolean(),
       rounds: roundsSchema,
     }),
-    newEditScoresheetSchema.extend({
+    newEditScoresheetSchema.safeExtend({
       scoresheetType: z.literal("new"),
       rounds: roundsSchema,
     }),
@@ -295,24 +295,16 @@ export const editScoresheetSchemaApiInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("Update Scoresheet"),
     scoresheet: z.discriminatedUnion("scoresheetType", [
-      originalEditScoresheetSchema.extend({
-        name: z.string().optional(),
-      }),
-      sharedEditScoresheetSchema.extend({
-        name: z.string().optional(),
-      }),
+      originalEditScoresheetSchema,
+      sharedEditScoresheetSchema,
     ]),
   }),
   z.object({
     type: z.literal("Update Scoresheet & Rounds"),
     scoresheet: z
       .discriminatedUnion("scoresheetType", [
-        originalEditScoresheetSchema.extend({
-          name: z.string().optional(),
-        }),
-        sharedEditScoresheetSchema.extend({
-          name: z.string().optional(),
-        }),
+        originalEditScoresheetSchema,
+        sharedEditScoresheetSchema,
       ])
       .or(
         z.object({

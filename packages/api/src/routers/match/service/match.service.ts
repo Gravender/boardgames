@@ -16,7 +16,7 @@ import type {
   GetMatchPlayersAndTeamsArgs,
   GetMatchScoresheetArgs,
 } from "./match.service.types";
-import { Logger } from "~/common/logger";
+import { Logger } from "../../../common/logger";
 import { matchRepository } from "../repository/match.repository";
 
 class MatchService {
@@ -223,7 +223,7 @@ class MatchService {
           }
           return acc;
         },
-        {} as Record<number, number>,
+        {} as Record<string, number>,
       );
       playerStats.push({
         id: player.id,
@@ -240,6 +240,7 @@ class MatchService {
         firstMatch: matchPlayersForPlayer[0]?.isFirstMatchForCurrent ?? false,
       });
     }
+    console.log(playerStats);
     return {
       playerStats,
     };

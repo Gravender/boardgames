@@ -20,7 +20,7 @@ import type {
   UpdateMatchPlayerScoreRepoArgs,
   UpdateMatchRoundScoreRepoArgs,
 } from "./update-match.repository.types";
-import { Logger } from "~/common/logger";
+import { Logger } from "../../../../../common/logger";
 
 class UpdateMatchRepository {
   private readonly logger = new Logger(UpdateMatchRepository.name);
@@ -71,22 +71,35 @@ class UpdateMatchRepository {
           code: "NOT_FOUND",
           message: "Match is not running.",
         });
-      if (!foundMatch.startTime)
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Match start time is not set.",
+      if (!foundMatch.startTime) {
+        this.logger.error("Match start time is not set. Pausing match.", {
+          input,
+          userId,
         });
-      const timeDelta = differenceInSeconds(currentTime, foundMatch.startTime);
-      const accumulatedDuration = foundMatch.duration + timeDelta;
-      await db
-        .update(match)
-        .set({
-          duration: accumulatedDuration,
-          running: false,
-          startTime: null,
-          endTime: new Date(),
-        })
-        .where(eq(match.id, input.id));
+        await db
+          .update(match)
+          .set({
+            running: false,
+            startTime: null,
+            endTime: new Date(),
+          })
+          .where(eq(match.id, input.id));
+      } else {
+        const timeDelta = differenceInSeconds(
+          currentTime,
+          foundMatch.startTime,
+        );
+        const accumulatedDuration = foundMatch.duration + timeDelta;
+        await db
+          .update(match)
+          .set({
+            duration: accumulatedDuration,
+            running: false,
+            startTime: null,
+            endTime: new Date(),
+          })
+          .where(eq(match.id, input.id));
+      }
     } else {
       const returnedSharedMatch = await db.query.sharedMatch.findFirst({
         where: { matchId: input.id, sharedWithId: userId },

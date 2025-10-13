@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 
-import pc from "~/common/pc";
-import { env } from "~/env";
+import { env } from "../env";
+import pc from "./pc";
 
 export class Logger {
   constructor(private readonly context: string) {

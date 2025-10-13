@@ -9,7 +9,6 @@ import type { RouterOutputs } from "@board-games/api";
 import { calculateFinalScore } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
-import { Card } from "@board-games/ui/card";
 import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import {
@@ -56,22 +55,20 @@ export function ScoreSheetTable({
   const [player, setPlayer] = useState<Player | null>(null);
   return (
     <>
-      <Card className="pb-0">
-        <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
-          <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
-            <HeaderRow match={match} setTeam={setTeam} setPlayer={setPlayer} />
-          </TableHeader>
-          <TableBody>
-            {scoresheet.rounds.map((round) => (
-              <BodyRow key={`round-${round.id}`} match={match} round={round} />
-            ))}
-          </TableBody>
-          <TableFooter>
-            <CommentsRow match={match} />
-            <TotalRow match={match} />
-          </TableFooter>
-        </Table>
-      </Card>
+      <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
+        <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
+          <HeaderRow match={match} setTeam={setTeam} setPlayer={setPlayer} />
+        </TableHeader>
+        <TableBody>
+          {scoresheet.rounds.map((round) => (
+            <BodyRow key={`round-${round.id}`} match={match} round={round} />
+          ))}
+        </TableBody>
+        <TableFooter>
+          <CommentsRow match={match} />
+          <TotalRow match={match} />
+        </TableFooter>
+      </Table>
       <TeamEditorDialog
         team={team}
         type={match.type}

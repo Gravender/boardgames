@@ -1,72 +1,64 @@
 import { Award, Medal, Trophy, Users } from "lucide-react";
 
-import type { RouterOutputs } from "@board-games/api";
 import { getOrdinalSuffix } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
+import { Skeleton } from "@board-games/ui/skeleton";
 import { cn } from "@board-games/ui/utils";
 
 import { PlayerImage } from "~/components/player-image";
-
-type SharedMatchStats =
-  | NonNullable<RouterOutputs["match"]["getSummary"]>
-  | NonNullable<RouterOutputs["sharing"]["getSharedMatchSummary"]>;
-
-type teamWithPlayers = SharedMatchStats["teams"][number] & {
-  teamType: "Team";
-  players: SharedMatchStats["players"];
-  placement: number;
-  score: number;
-  winner: boolean;
-};
-type playerWithoutTeams = SharedMatchStats["players"][number] & {
-  teamType: "Player";
-};
+import {
+  useMatchSummary,
+  usePlayersAndTeams,
+  useScoresheet,
+} from "../hooks/scoresheet";
 
 export default function ShareMatchResults({
-  match,
+  id,
+  type,
 }: {
-  match: SharedMatchStats;
+  id: number;
+  type: "original" | "shared";
 }) {
-  const calculatePerformance = (
-    player: NonNullable<
-      RouterOutputs["sharing"]["getSharedMatchSummary"]
-    >["players"][number],
-  ) => {
+  const { summary } = useMatchSummary(id, type);
+  const { players, teams } = usePlayersAndTeams(id, type);
+  const { scoresheet } = useScoresheet(id, type);
+
+  const calculatePerformance = (player: (typeof players)[number]) => {
     if (player.score === null) return undefined;
-    const foundPlayer = match.playerStats.find(
+    const foundPlayer = summary.playerStats.find(
       (p) => p.playerId === player.playerId,
     );
 
     if (!foundPlayer) return undefined;
 
-    if (foundPlayer.firstGame) return "First Game";
+    if (foundPlayer.firstMatch) return "First Game";
     const highestScore = Math.max(...foundPlayer.scores);
     const lowestScore = Math.min(...foundPlayer.scores);
-    if (match.scoresheet.winCondition === "Highest Score") {
+    if (scoresheet.winCondition === "Highest Score") {
       if (player.score >= highestScore) return "Best Game";
       if (player.score === lowestScore) return "Worst Game";
     }
-    if (match.scoresheet.winCondition === "Lowest Score") {
+    if (scoresheet.winCondition === "Lowest Score") {
       if (player.score <= lowestScore) return "Best Game";
       if (player.score === highestScore) return "Worst Game";
     }
-    if (match.scoresheet.winCondition === "Target Score") {
-      if (player.score === match.scoresheet.targetScore) return "Perfect Game";
+    if (scoresheet.winCondition === "Target Score") {
+      if (player.score === scoresheet.targetScore) return "Perfect Game";
       return "Worst Game";
     }
     return undefined;
   };
   const matchResults = () => {
-    const playersWithoutTeams = match.players
+    const playersWithoutTeams = players
       .filter((player) => player.teamId === null)
-      .map<playerWithoutTeams>((player) => ({ ...player, teamType: "Player" }));
+      .map((player) => ({ ...player, teamType: "Player" as const }));
 
-    const teamsWithTeams = match.teams
-      .map<teamWithPlayers>((team) => {
-        const teamPlayers = match.players.filter(
+    const teamsWithTeams = teams
+      .map((team) => {
+        const teamPlayers = players.filter(
           (player) => player.teamId === team.id,
         );
         const [firstTeamPlayer] = teamPlayers;
@@ -76,14 +68,20 @@ export default function ShareMatchResults({
           placement: firstTeamPlayer?.placement ?? 0,
           score: firstTeamPlayer?.score ?? 0,
           winner: firstTeamPlayer?.winner ?? false,
-          teamType: "Team",
+          teamType: "Team" as const,
         };
       })
       .filter((team) => team.players.length > 0);
-    const sortedPlayersAndTeams: (playerWithoutTeams | teamWithPlayers)[] = [
-      ...teamsWithTeams,
-      ...playersWithoutTeams,
-    ].toSorted((a, b) => {
+    const sortedPlayersAndTeams: (
+      | ((typeof players)[number] & { teamType: "Player" })
+      | ((typeof teams)[number] & {
+          teamType: "Team";
+          placement: number;
+          score: number;
+          winner: boolean;
+          players: typeof players;
+        })
+    )[] = [...teamsWithTeams, ...playersWithoutTeams].toSorted((a, b) => {
       if (a.placement === b.placement) {
         return a.name.localeCompare(b.name);
       } else {
@@ -94,7 +92,6 @@ export default function ShareMatchResults({
     });
     return sortedPlayersAndTeams;
   };
-
   return (
     <Card className="w-full">
       <CardHeader>
@@ -103,7 +100,7 @@ export default function ShareMatchResults({
       <CardContent className="flex flex-col gap-2 p-2 pt-0 sm:p-6">
         {matchResults().map((data) => {
           if (data.teamType === "Team") {
-            const roles = data.players.reduce<
+            const roles = players.reduce<
               { id: number; name: string; description: string | null }[]
             >((acc, player) => {
               if (player.roles.length > 0) {
@@ -122,7 +119,7 @@ export default function ShareMatchResults({
               return acc;
             }, []);
             const teamRoles = roles.filter((role) => {
-              return data.players.every((player) => {
+              return players.every((player) => {
                 if ("roles" in player) {
                   const foundRole = player.roles.find((r) => r.id === role.id);
                   return foundRole !== undefined;
@@ -167,7 +164,7 @@ export default function ShareMatchResults({
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-sm font-medium">{data.score} pts</div>
-                    {match.scoresheet.winCondition === "Manual" ? (
+                    {scoresheet.winCondition === "Manual" ? (
                       data.winner ? (
                         "✔️"
                       ) : (
@@ -196,7 +193,7 @@ export default function ShareMatchResults({
                 </div>
 
                 <ul className="flex max-h-28 flex-col flex-wrap gap-2 overflow-y-auto pl-2">
-                  {data.players.map((player) => {
+                  {players.map((player) => {
                     return (
                       <li key={player.id} className="flex items-center">
                         <PlayerImage
@@ -281,7 +278,7 @@ export default function ShareMatchResults({
                   {data.score !== null && (
                     <div className="text-sm font-medium">{data.score} pts</div>
                   )}
-                  {match.scoresheet.winCondition === "Manual" ? (
+                  {scoresheet.winCondition === "Manual" ? (
                     data.winner ? (
                       "✔️"
                     ) : (
@@ -311,6 +308,39 @@ export default function ShareMatchResults({
             );
           }
         })}
+      </CardContent>
+    </Card>
+  );
+}
+
+export function ShareMatchResultsSkeleton() {
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Match Results</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2 p-2 pt-0 sm:p-6">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div
+            key={i}
+            className={cn("flex items-center rounded-lg border p-3")}
+          >
+            <Skeleton className="mr-4 h-8 w-8" />
+
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <Skeleton className="h-4 w-32" />
+
+                <Badge
+                  variant="outline"
+                  className="w-4 animate-pulse rounded-md bg-accent text-sm font-medium text-foreground"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3" />
+          </div>
+        ))}
       </CardContent>
     </Card>
   );

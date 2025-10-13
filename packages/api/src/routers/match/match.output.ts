@@ -135,6 +135,7 @@ export const getMatchPlayersAndTeamsOutput = z.object({
           selectGameRoleSchema.pick({
             id: true,
             name: true,
+            description: true,
           }),
         ),
       }),
@@ -167,7 +168,7 @@ export const getMatchSummaryOutput = z.object({
           .or(z.literal("shared"))
           .or(z.literal("not-shared")),
         firstMatch: z.boolean(),
-        placements: z.record(z.number(), z.number()),
+        placements: z.record(z.string(), z.number()),
         wins: z.number(),
         plays: z.number(),
         scores: z.array(z.number()),

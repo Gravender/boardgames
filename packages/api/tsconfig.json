@@ -6,11 +6,6 @@
       "dom",
       "dom.iterable"
     ],
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
     "jsx": "preserve"
   },
   "include": [

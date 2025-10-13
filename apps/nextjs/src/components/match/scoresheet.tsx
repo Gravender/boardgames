@@ -367,10 +367,9 @@ function ManualScoreSheet({ match }: { match: Match }) {
   );
 }
 function ScoresheetFooter({ match }: { match: Match }) {
-  const { match: matchData } = useMatch(match.id, match.type);
   const { scoresheet } = useScoresheet(match.id, match.type);
   const { teams, players } = usePlayersAndTeams(match.id, match.type);
-  const [duration, setDuration] = useState(matchData.duration);
+  const [duration, setDuration] = useState(match.duration);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [manualWinners, setManualWinners] = useState<
     z.infer<typeof ManualWinnerPlayerSchema>
@@ -391,15 +390,15 @@ function ScoresheetFooter({ match }: { match: Match }) {
           const now = new Date();
           const startTime = match.startTime;
           const elapsedTime = differenceInSeconds(now, startTime);
-          const totalDuration = matchData.duration + elapsedTime;
+          const totalDuration = match.duration + elapsedTime;
           setDuration(totalDuration);
         }
       }, 1000);
     } else {
-      setDuration(matchData.duration);
+      setDuration(match.duration);
     }
     return () => clearInterval(interval);
-  }, [match.running, match.startTime, matchData]);
+  }, [match.running, match.startTime, match.duration]);
 
   const router = useRouter();
   const posthog = usePostHog();
@@ -415,6 +414,13 @@ function ScoresheetFooter({ match }: { match: Match }) {
   const toggleClock = () => {
     if (match.running) {
       pauseMatch();
+      if (match.startTime) {
+        const now = new Date();
+        const startTime = match.startTime;
+        const elapsedTime = differenceInSeconds(now, startTime);
+        const totalDuration = match.duration + elapsedTime;
+        setDuration(totalDuration);
+      }
     } else {
       startMatch();
     }
@@ -426,7 +432,7 @@ function ScoresheetFooter({ match }: { match: Match }) {
 
   const onFinish = () => {
     posthog.capture("match finish begin", {
-      gameId: matchData.game.id,
+      gameId: match.game.id,
       matchId: match.id,
     });
     if (match.running) {

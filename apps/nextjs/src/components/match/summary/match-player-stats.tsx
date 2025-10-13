@@ -1,4 +1,3 @@
-import type { RouterOutputs } from "@board-games/api";
 import { getOrdinalSuffix } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
@@ -11,20 +10,17 @@ import {
   TableRow,
 } from "@board-games/ui/table";
 
-type playerStats = NonNullable<
-  RouterOutputs["newMatch"]["getMatchSummary"]
->["playerStats"];
-type Scoresheet = NonNullable<RouterOutputs["newMatch"]["getMatchScoresheet"]>;
-export default function MatchSummaryPlayerStats({
-  playerStats,
-  scoresheet,
-}: {
-  scoresheet: Scoresheet;
-  playerStats: playerStats;
-}) {
-  // Sort players by number of wins (highest first)
-  const sortedStats = [...playerStats].sort((a, b) => b.wins - a.wins);
+import { useMatchSummary, useScoresheet } from "../hooks/scoresheet";
 
+export default function MatchSummaryPlayerStats({
+  id,
+  type,
+}: {
+  id: number;
+  type: "original" | "shared";
+}) {
+  const { summary } = useMatchSummary(id, type);
+  const { scoresheet } = useScoresheet(id, type);
   return (
     <Card className="w-full">
       <CardHeader>
@@ -58,7 +54,7 @@ export default function MatchSummaryPlayerStats({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedStats.map((player) => {
+            {summary.playerStats.map((player) => {
               // Calculate average score
               const avgScore =
                 player.scores.length > 0
@@ -147,6 +143,72 @@ export default function MatchSummaryPlayerStats({
                 </TableRow>
               );
             })}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+export function MatchSummaryPlayerStatsSkeleton() {
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Player Statistics</CardTitle>
+      </CardHeader>
+      <CardContent className="p-2 md:p-6">
+        <Table
+          className="min-w-full"
+          containerClassname="max-h-[65vh] h-fit w-full rounded-lg"
+        >
+          <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
+            <TableRow>
+              <TableHead className="bg-sidebar sticky left-0">Player</TableHead>
+              <TableHead className="text-center">Games</TableHead>
+              <TableHead className="text-center">Wins</TableHead>
+              <TableHead className="hidden text-center md:table-cell">
+                Win Rate
+              </TableHead>
+              <TableHead className="hidden text-center lg:table-cell">
+                Avg Score
+              </TableHead>
+              <TableHead className="hidden text-center lg:table-cell">
+                Top Placement
+              </TableHead>
+              <TableHead className="text-center">Best</TableHead>
+              <TableHead className="text-center">Worst</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <TableRow key={index} className="base:text-sm text-xs">
+                <TableCell className="sticky left-0 z-10 max-w-24 bg-card after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:max-w-32">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="mx-auto h-4 w-8 animate-pulse rounded bg-muted" />
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="mx-auto h-4 w-6 animate-pulse rounded bg-muted" />
+                </TableCell>
+                <TableCell className="hidden text-center md:table-cell">
+                  <div className="mx-auto h-4 w-12 animate-pulse rounded bg-muted" />
+                </TableCell>
+                <TableCell className="hidden text-center lg:table-cell">
+                  <div className="mx-auto h-4 w-12 animate-pulse rounded bg-muted" />
+                </TableCell>
+                <TableCell className="hidden text-center lg:table-cell">
+                  <div className="mx-auto h-4 w-10 animate-pulse rounded bg-muted" />
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="mx-auto h-4 w-8 animate-pulse rounded bg-muted" />
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="mx-auto h-4 w-8 animate-pulse rounded bg-muted" />
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </CardContent>

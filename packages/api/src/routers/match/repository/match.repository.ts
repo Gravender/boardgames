@@ -22,7 +22,7 @@ import type {
   EditMatchOutputType,
   GetMatchOutputType,
   GetMatchScoresheetOutputType,
-} from "~/routers/match/match.output";
+} from "../match.output";
 import type {
   CreateMatchArgs,
   DeleteMatchArgs,
@@ -30,17 +30,17 @@ import type {
   GetMatchArgs,
   GetMatchPlayersAndTeamsArgs,
   GetMatchScoresheetArgs,
-} from "~/routers/match/repository/match.repository.types";
-import analyticsServerClient from "~/analytics";
-import { Logger } from "~/common/logger";
+} from "./match.repository.types";
+import analyticsServerClient from "../../../analytics";
+import { Logger } from "../../../common/logger";
 import {
   getGame,
   getMatchPlayersAndTeams,
   getScoreSheetAndRounds,
   shareMatchWithFriends,
-} from "~/utils/addMatch";
-import { addPlayersToMatch } from "~/utils/editMatch";
-import { cloneSharedLocationForUser } from "~/utils/handleSharedLocation";
+} from "../../../utils/addMatch";
+import { addPlayersToMatch } from "../../../utils/editMatch";
+import { cloneSharedLocationForUser } from "../../../utils/handleSharedLocation";
 
 class MatchRepository {
   private readonly logger = new Logger(MatchRepository.name);
@@ -637,7 +637,7 @@ class MatchRepository {
           ),
       );
       const matchPlayersResults = await db
-        .with(matchesWithSameScoresheet)
+        .with(matchesWithSameScoresheet, firstMatchPerPlayer)
         .selectDistinctOn([vMatchPlayerCanonicalForUser.baseMatchPlayerId], {
           id: vMatchPlayerCanonicalForUser.baseMatchPlayerId,
           score: vMatchPlayerCanonicalForUser.score,

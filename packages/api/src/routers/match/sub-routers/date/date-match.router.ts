@@ -1,6 +1,6 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
-import { protectedUserProcedure } from "~/trpc";
+import { protectedUserProcedure } from "../../../../trpc";
 import { getMatchesByDateInput } from "./date-match.input";
 import {
   getMatchesByCalenderOutput,

@@ -21,12 +21,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       redirect(`/dashboard/games/${gameId}`);
     }
   }
-  const match = await caller.newMatch.getMatch({ id: Number(matchId) });
-  if (!match)
-    return {
-      title: `404 - Match Not Found`,
-      description: `Match for ${matchId} not found`,
-    };
+  const match = await caller.newMatch.getMatch({
+    id: Number(matchId),
+    type: "original",
+  });
   return {
     title: `${match.name} Scoresheet`,
     description: `Scoresheet Table for ${match.name}`,

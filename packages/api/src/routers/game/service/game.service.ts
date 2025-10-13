@@ -1,6 +1,6 @@
+import type { GetGameMatchesOutputType } from "../../../routers/game/game.output";
 import type { GetGameArgs } from "./game.service.types";
-import type { GetGameMatchesOutputType } from "~/routers/game/game.output";
-import { Logger } from "~/common/logger";
+import { Logger } from "../../../common/logger";
 import { gameRepository } from "../repository/game.repository";
 
 class GameService {

@@ -1,9 +1,9 @@
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { ErrorBoundary } from "react-error-boundary";
 
-import { HydrateClient, prefetch, trpc } from "~/trpc/server";
-import MatchSummarySkeleton from "../../../../_components/match-summary-skeleton";
-import SharedMatchSummary from "./_components/shared-match-summary";
+import { MatchNotFound } from "~/components/match/MatchNotFound";
+import MatchSummary from "~/components/match/summary/match-summary";
+import { HydrateClient } from "~/trpc/server";
 
 interface Props {
   params: Promise<{ matchId: string; id: string }>;
@@ -11,17 +11,24 @@ interface Props {
 export default async function Page({ params }: Props) {
   const slugs = await params;
   const matchId = slugs.matchId;
-  if (isNaN(Number(matchId))) redirect("/dashboard/games");
-  void prefetch(
-    trpc.sharing.getSharedMatchSummary.queryOptions({ id: Number(matchId) }),
-  );
+  const gameId = slugs.id;
+  if (isNaN(Number(matchId)) || isNaN(Number(gameId))) {
+    if (isNaN(Number(gameId))) redirect("/dashboard/games");
+    else {
+      redirect(`/dashboard/games/${gameId}`);
+    }
+  }
   return (
     <HydrateClient>
-      <div className="container flex w-full items-center justify-center p-2 sm:px-3 sm:py-4 md:px-6 md:py-8">
-        <Suspense fallback={<MatchSummarySkeleton />}>
-          <SharedMatchSummary matchId={Number(matchId)} />
-        </Suspense>
-      </div>
+      <ErrorBoundary fallback={<MatchNotFound />}>
+        <div className="container flex w-full items-center justify-center p-2 sm:px-3 sm:py-4 md:px-6 md:py-8">
+          <MatchSummary
+            id={Number(matchId)}
+            gameId={Number(gameId)}
+            type={"original"}
+          />
+        </div>
+      </ErrorBoundary>
     </HydrateClient>
   );
 }
