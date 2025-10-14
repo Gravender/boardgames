@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
+import { sharedOrOriginalSchema } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -20,7 +21,9 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 
-const roleSchema = z.array(z.number());
+const roleSchema = z.array(
+  z.object({ type: sharedOrOriginalSchema, id: z.number() }),
+);
 export const ManagePlayerRoles = ({
   player,
   teamRoles,
@@ -31,12 +34,12 @@ export const ManagePlayerRoles = ({
   player: {
     id: number;
     name: string;
-    roles: number[];
+    roles: { type: "original" | "shared"; id: number }[];
   };
-  teamRoles: number[];
-  roles: RouterOutputs["game"]["getGameRoles"];
+  teamRoles: { type: "original" | "shared"; id: number }[];
+  roles: RouterOutputs["newGame"]["gameRoles"];
   onClose: () => void;
-  onSave: (roles: number[]) => void;
+  onSave: (roles: { type: "original" | "shared"; id: number }[]) => void;
 }) => {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
   const formSchema = z.object({
@@ -91,32 +94,44 @@ export const ManagePlayerRoles = ({
                   ) : (
                     filteredRoles.map((role) => {
                       const isTeamRole =
-                        teamRoles.findIndex((r) => r === role.id) > -1;
+                        teamRoles.findIndex(
+                          (r) => r.id === role.id && r.type === role.type,
+                        ) > -1;
                       return (
                         <div
-                          key={role.id}
+                          key={`${role.type}-${role.id}`}
                           className="flex items-center space-x-3 rounded p-2"
                         >
                           <Checkbox
-                            id={`${role.id}`}
-                            checked={field.value.includes(role.id)}
+                            id={`${role.type}-${role.id}`}
+                            checked={
+                              field.value.find(
+                                (r) => r.id === role.id && r.type === role.type,
+                              ) !== undefined
+                            }
                             onCheckedChange={() => {
                               const foundRoleIndex = field.value.findIndex(
-                                (r) => r === role.id,
+                                (r) => r.id === role.id && r.type === role.type,
                               );
                               if (foundRoleIndex > -1) {
                                 const newRoles = [
-                                  ...field.value.filter((r) => r !== role.id),
+                                  ...field.value.filter(
+                                    (r) =>
+                                      r.id !== role.id && r.type !== role.type,
+                                  ),
                                 ];
                                 field.onChange(newRoles);
                               } else {
-                                field.onChange([...field.value, role.id]);
+                                field.onChange([
+                                  ...field.value,
+                                  { type: role.type, id: role.id },
+                                ]);
                               }
                             }}
                             disabled={isTeamRole}
                           />
                           <div className="flex-1 gap-2">
-                            <Label htmlFor={`${role.id}`}>
+                            <Label htmlFor={`${role.type}-${role.id}`}>
                               {role.name}
                               {isTeamRole ? " (Team)" : ""}
                             </Label>
@@ -138,17 +153,23 @@ export const ManagePlayerRoles = ({
                   <p className="text-xs text-foreground">Selected roles:</p>
                   <ScrollArea>
                     <div className="flex max-h-12 flex-wrap gap-2">
-                      {formRoles.map((roleId) => {
-                        const role = roles.find((r) => r.id === roleId);
+                      {formRoles.map((formRole) => {
+                        const foundRole = roles.find(
+                          (r) =>
+                            r.id === formRole.id && r.type === formRole.type,
+                        );
                         const isTeamRole =
-                          teamRoles.findIndex((r) => r === roleId) > -1;
-                        return role ? (
+                          teamRoles.findIndex(
+                            (r) =>
+                              r.id === formRole.id && r.type === formRole.type,
+                          ) > -1;
+                        return foundRole ? (
                           <Badge
-                            key={roleId}
+                            key={`${foundRole.type}-${foundRole.id}`}
                             variant="secondary"
                             className="w-28 truncate text-nowrap text-xs"
                           >
-                            {role.name}
+                            {foundRole.name}
                             {isTeamRole ? " (Team)" : ""}
                           </Badge>
                         ) : null;

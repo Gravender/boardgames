@@ -335,7 +335,12 @@ export const imageSchema = insertImageSchema
     usageType: true,
   })
   .required({ name: true, url: true });
-export const matchRoleSchema = z.array(z.number());
+export const matchRoleSchema = z.array(
+  z.object({
+    id: z.number(),
+    type: sharedOrOriginalSchema,
+  }),
+);
 export const matchLocationSchema = z
   .object({
     id: z.number(),

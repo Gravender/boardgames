@@ -1,10 +1,7 @@
 import { Suspense } from "react";
 
 import { prefetch, trpc } from "~/trpc/server";
-import {
-  GamePreviousMatches,
-  GamePreviousMatchesSkeleton,
-} from "./game-previous-matches";
+import { GamePreviousMatches } from "./game-previous-matches";
 import { MatchCard, MatchCardSkeleton } from "./match-card";
 import {
   MatchSummaryPlayerStats,

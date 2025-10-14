@@ -115,7 +115,9 @@ export const editMatchInput = z.discriminatedUnion("type", [
         .extend({
           type: sharedOrOriginalSchema,
           teamId: z.number().nullable(),
-          roles: z.array(z.number()),
+          roles: z.array(
+            z.object({ type: sharedOrOriginalSchema, id: z.number() }),
+          ),
         }),
     ),
     removePlayers: z.array(
@@ -129,7 +131,9 @@ export const editMatchInput = z.discriminatedUnion("type", [
       z.object({
         id: z.number(),
         teamId: z.number().nullable(),
-        roles: z.array(z.number()),
+        roles: z.array(
+          z.object({ type: sharedOrOriginalSchema, id: z.number() }),
+        ),
       }),
     ),
     editedTeams: z.array(

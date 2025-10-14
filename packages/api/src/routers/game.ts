@@ -38,6 +38,8 @@ import {
 import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 import analyticsServerClient from "../analytics";
+import { getGameRolesOutput } from "./game/game.output";
+import { gameService } from "./game/service/game.service";
 import { protectedUserProcedure } from "../trpc";
 import { utapi } from "../uploadthing";
 import {
@@ -607,55 +609,14 @@ export const gameRouter = {
         type: z.literal("original").or(z.literal("shared")),
       }),
     )
+    .output(getGameRolesOutput)
     .query(async ({ ctx, input }) => {
-      let gameId: number | undefined = undefined;
-      if (input.type === "original") {
-        const returnedGame = await ctx.db.query.game.findFirst({
-          where: {
-            id: input.id,
-            createdBy: ctx.userId,
-            deletedAt: {
-              isNull: true,
-            },
-          },
-        });
-        if (!returnedGame) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Game not found.",
-          });
-        }
-        gameId = input.id;
-      } else {
-        const returnedSharedGame = await ctx.db.query.sharedGame.findFirst({
-          where: {
-            id: input.id,
-            sharedWithId: ctx.userId,
-          },
-        });
-        if (!returnedSharedGame) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Shared game not found.",
-          });
-        }
-        gameId = returnedSharedGame.linkedGameId ?? returnedSharedGame.gameId;
-      }
-      const result = await ctx.db.query.gameRole.findMany({
-        where: {
-          gameId: gameId,
-          createdBy: ctx.userId,
-          deletedAt: {
-            isNull: true,
-          },
-        },
-        columns: {
-          id: true,
-          name: true,
-          description: true,
+      return gameService.getGameRoles({
+        input,
+        ctx: {
+          userId: ctx.userId,
         },
       });
-      return result;
     }),
   getEditGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))

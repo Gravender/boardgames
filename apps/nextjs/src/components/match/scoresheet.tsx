@@ -3,7 +3,6 @@
 import type { z } from "zod/v4";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { differenceInSeconds } from "date-fns";
 import {
   Calendar,
@@ -41,8 +40,8 @@ import { MatchImages } from "~/components/match/scoresheet/match-images";
 import { ScoreSheetTable } from "~/components/match/scoresheet/table";
 import { TieBreakerDialog } from "~/components/match/scoresheet/TieBreakerDialog";
 import { Spinner } from "~/components/spinner";
-import { useTRPC } from "~/trpc/react";
 import { FormattedDate } from "../formatted-date";
+import { useGameRoles } from "../game/hooks/roles";
 import {
   useDurationMutation,
   useUpdateFinalScores,
@@ -112,15 +111,9 @@ function ScoresheetContent({
   );
 }
 function ManualScoreSheet({ match }: { match: Match }) {
-  const trpc = useTRPC();
   const { match: matchData } = useMatch(match.id, match.type);
   const { teams, players } = usePlayersAndTeams(match.id, match.type);
-  const { data: roles } = useSuspenseQuery(
-    trpc.game.getGameRoles.queryOptions({
-      id: matchData.game.id,
-      type: "original",
-    }),
-  );
+  const { gameRoles } = useGameRoles(matchData.game.id, "original");
 
   const [team, setTeam] = useState<Team | null>(null);
   const [player, setPlayer] = useState<Player | null>(null);
@@ -132,9 +125,9 @@ function ManualScoreSheet({ match }: { match: Match }) {
           (player) => player.teamId === team.id,
         );
         if (teamPlayers.length === 0) return null;
-        const teamRoles = roles.filter((role) => {
+        const teamRoles = gameRoles.filter((role) => {
           const roleInEveryPlayer = teamPlayers.every((p) =>
-            p.roles.some((r) => r.id === role.id),
+            p.roles.some((r) => r.id === role.id && r.type === role.type),
           );
           return roleInEveryPlayer;
         });
@@ -143,7 +136,10 @@ function ManualScoreSheet({ match }: { match: Match }) {
           players: teamPlayers.map((player) => ({
             ...player,
             roles: player.roles.filter(
-              (role) => !teamRoles.some((r) => r.id === role.id),
+              (role) =>
+                !teamRoles.some(
+                  (r) => r.id === role.id && r.type === role.type,
+                ),
             ),
           })),
           roles: teamRoles,
@@ -151,7 +147,7 @@ function ManualScoreSheet({ match }: { match: Match }) {
       })
       .filter((team) => team !== null);
     return mappedTeams;
-  }, [teams, players, roles]);
+  }, [teams, players, gameRoles]);
   const individualPlayers = useMemo(() => {
     return players.filter((player) => player.teamId === null);
   }, [players]);
@@ -191,7 +187,7 @@ function ManualScoreSheet({ match }: { match: Match }) {
                             {team.roles.map((role) => {
                               return (
                                 <Badge
-                                  key={role.id}
+                                  key={`${role.type}-${role.id}`}
                                   variant="outline"
                                   className="text-nowrap"
                                 >
@@ -247,7 +243,7 @@ function ManualScoreSheet({ match }: { match: Match }) {
                                       {player.roles.map((role) => {
                                         return (
                                           <Badge
-                                            key={role.id}
+                                            key={`${role.type}-${role.id}`}
                                             variant="outline"
                                             className="text-nowrap"
                                           >
@@ -316,7 +312,7 @@ function ManualScoreSheet({ match }: { match: Match }) {
                             {player.roles.map((role) => {
                               return (
                                 <Badge
-                                  key={role.id}
+                                  key={`${role.type}-${role.id}`}
                                   variant="outline"
                                   className="text-nowrap"
                                 >

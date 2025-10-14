@@ -103,16 +103,24 @@ export function ShareMatchResults({
         {matchResults().map((data) => {
           if (data.teamType === "Team") {
             const roles = players.reduce<
-              { id: number; name: string; description: string | null }[]
+              {
+                id: number;
+                name: string;
+                description: string | null;
+                type: "original" | "shared";
+              }[]
             >((acc, player) => {
               if (player.roles.length > 0) {
                 player.roles.forEach((role) => {
-                  const foundRole = acc.find((r) => r.id === role.id);
+                  const foundRole = acc.find(
+                    (r) => r.id === role.id && r.type === role.type,
+                  );
                   if (!foundRole) {
                     acc.push({
                       id: role.id,
                       name: role.name,
                       description: role.description,
+                      type: role.type,
                     });
                   }
                 });
@@ -123,7 +131,9 @@ export function ShareMatchResults({
             const teamRoles = roles.filter((role) => {
               return players.every((player) => {
                 if ("roles" in player) {
-                  const foundRole = player.roles.find((r) => r.id === role.id);
+                  const foundRole = player.roles.find(
+                    (r) => r.id === role.id && r.type === role.type,
+                  );
                   return foundRole !== undefined;
                 }
                 return false;
@@ -152,7 +162,7 @@ export function ShareMatchResults({
                           <div className="flex max-w-[50vw] items-center gap-2">
                             {teamRoles.map((role) => (
                               <Badge
-                                key={role.id}
+                                key={`${role.type}-${role.id}`}
                                 variant="secondary"
                                 className="text-sm font-medium text-foreground"
                               >
@@ -222,13 +232,14 @@ export function ShareMatchResults({
                               {player.roles
                                 .filter((role) => {
                                   const foundRole = teamRoles.find(
-                                    (r) => r.id === role.id,
+                                    (r) =>
+                                      r.id === role.id && r.type === role.type,
                                   );
                                   return !foundRole;
                                 })
                                 .map((role) => (
                                   <Badge
-                                    key={role.id}
+                                    key={`${role.type}-${role.id}`}
                                     variant="outline"
                                     className="text-nowrap text-sm font-medium text-foreground"
                                   >

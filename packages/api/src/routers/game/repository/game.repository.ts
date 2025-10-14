@@ -1,14 +1,15 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, asc, eq, or, sql } from "drizzle-orm";
 
 import { db } from "@board-games/db/client";
 import { location, player, team } from "@board-games/db/schema";
 import {
+  vGameRoleCanonical,
   vMatchCanonical,
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
 
-import type { GetGameArgs } from "./game.repository.types";
+import type { GetGameArgs, GetGameRolesArgs } from "./game.repository.types";
 
 class GameRepository {
   public async getGameMatches(args: GetGameArgs) {
@@ -262,6 +263,102 @@ class GameRepository {
         matches: matches,
       };
     }
+  }
+
+  public async getGameRoles(args: GetGameRolesArgs) {
+    const { input } = args;
+    let canonicalGameId: number;
+
+    if (input.type === "original") {
+      const returnedGame = await db.query.game.findFirst({
+        where: {
+          id: input.id,
+          createdBy: args.userId,
+          deletedAt: {
+            isNull: true,
+          },
+        },
+        columns: {
+          id: true,
+        },
+      });
+      if (!returnedGame) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Game not found.",
+        });
+      }
+      canonicalGameId = returnedGame.id;
+    } else {
+      const returnedSharedGame = await db.query.sharedGame.findFirst({
+        where: {
+          id: input.id,
+          sharedWithId: args.userId,
+        },
+        columns: {
+          id: true,
+          linkedGameId: true,
+          gameId: true,
+        },
+      });
+      if (!returnedSharedGame) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared game not found.",
+        });
+      }
+      canonicalGameId =
+        returnedSharedGame.linkedGameId ?? returnedSharedGame.gameId;
+    }
+
+    const rows = await db
+      .select({
+        type: vGameRoleCanonical.sourceType,
+        roleId: vGameRoleCanonical.canonicalGameRoleId,
+        name: vGameRoleCanonical.name,
+        description: vGameRoleCanonical.description,
+        permission: vGameRoleCanonical.permission,
+      })
+      .from(vGameRoleCanonical)
+      .where(
+        and(
+          eq(vGameRoleCanonical.canonicalGameId, canonicalGameId),
+          eq(vGameRoleCanonical.visibleToUserId, args.userId),
+        ),
+      )
+      .orderBy(asc(vGameRoleCanonical.name));
+
+    const uniqueRoles = new Map<
+      number,
+      {
+        id: number;
+        name: string;
+        description: string | null;
+        type: "original" | "shared";
+        permission: "view" | "edit";
+      }
+    >();
+
+    for (const role of rows) {
+      const existing = uniqueRoles.get(role.roleId);
+      if (
+        existing &&
+        !(existing.type === "original" && role.type === "shared")
+      ) {
+        continue;
+      }
+      uniqueRoles.set(role.roleId, {
+        id: role.roleId,
+        name: role.name,
+        description: role.description,
+        type: role.type,
+        permission: role.permission,
+      });
+    }
+
+    return {
+      roles: Array.from(uniqueRoles.values()),
+    };
   }
 }
 export const gameRepository = new GameRepository();

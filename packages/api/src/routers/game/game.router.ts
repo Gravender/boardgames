@@ -1,9 +1,9 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
-import { getGameInput } from "../../routers/game/game.input";
-import { getGameMatchesOutput } from "../../routers/game/game.output";
-import { gameService } from "../../routers/game/service/game.service";
 import { protectedUserProcedure } from "../../trpc";
+import { getGameInput } from "./game.input";
+import { getGameMatchesOutput, getGameRolesOutput } from "./game.output";
+import { gameService } from "./service/game.service";
 
 export const gameRouter = {
   gameMatches: protectedUserProcedure
@@ -11,6 +11,15 @@ export const gameRouter = {
     .output(getGameMatchesOutput)
     .query(async ({ ctx, input }) => {
       return gameService.getGameMatches({
+        ctx,
+        input,
+      });
+    }),
+  gameRoles: protectedUserProcedure
+    .input(getGameInput)
+    .output(getGameRolesOutput)
+    .query(async ({ ctx, input }) => {
+      return gameService.getGameRoles({
         ctx,
         input,
       });

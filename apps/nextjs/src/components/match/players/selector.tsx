@@ -61,14 +61,14 @@ export interface Player {
   type: "original" | "shared";
   name: string;
   teamId: number | null;
-  roles: number[];
+  roles: { id: number; type: "original" | "shared" }[];
   imageUrl: string | null;
   matches: number;
 }
 export interface Team {
   id: number;
   name: string;
-  roles: number[];
+  roles: { id: number; type: "original" | "shared" }[];
 }
 export const AddPlayersDialogForm = ({
   game,
@@ -207,14 +207,23 @@ export const AddPlayersDialogForm = ({
         const foundTeam = teams.find((t) => t.id === player.teamId);
         const originalTeam = formTeams.find((t) => t.id === player.teamId);
         const rolesToRemove = originalTeam?.roles.filter(
-          (role) => !foundTeam?.roles.includes(role),
+          (role) =>
+            !foundTeam?.roles.find(
+              (r) => r.id === role.id && r.type === role.type,
+            ),
         );
         if (foundTeam) {
           const playerRoles = player.roles.filter(
-            (role) => !rolesToRemove?.includes(role),
+            (role) =>
+              !rolesToRemove?.find(
+                (r) => r.id === role.id && r.type === role.type,
+              ),
           );
           const rolesToAdd = foundTeam.roles.filter(
-            (role) => !playerRoles.includes(role),
+            (role) =>
+              !playerRoles.find(
+                (r) => r.id === role.id && r.type === role.type,
+              ),
           );
           return {
             ...player,
@@ -223,7 +232,10 @@ export const AddPlayersDialogForm = ({
           };
         } else if (originalTeam) {
           const filteredRoles = player.roles.filter(
-            (role) => !originalTeam.roles.includes(role),
+            (role) =>
+              !originalTeam.roles.find(
+                (r) => r.id === role.id && r.type === role.type,
+              ),
           );
           return {
             ...player,

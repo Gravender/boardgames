@@ -44,3 +44,62 @@ export const vGameMatchOverview = pgView("v_game_match_overview", {
   FROM ranked r
   WHERE r.rn = 1
 `);
+
+export const vGameRoleCanonical = pgView("v_game_role_canonical", {
+  canonicalGameId: integer("canonical_game_id").notNull(),
+  canonicalGameRoleId: integer("canonical_game_role_id").notNull(),
+  originalGameRoleId: integer("original_game_role_id").notNull(),
+  linkedGameRoleId: integer("linked_game_role_id"),
+  sharedGameRoleId: integer("shared_game_role_id"),
+  ownerId: text("owner_id").notNull(),
+  visibleToUserId: text("visible_to_user_id").notNull(),
+  sourceType: text("source_type")
+    .$type<"original" | "shared">()
+    .notNull(),
+  permission: text("permission").$type<"view" | "edit">().notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+}).as(sql`
+  -- Original roles visible to the owner
+  SELECT
+    g.id AS canonical_game_id,
+    gr.id AS canonical_game_role_id,
+    gr.id AS original_game_role_id,
+    NULL::INTEGER AS linked_game_role_id,
+    NULL::INTEGER AS shared_game_role_id,
+    g.created_by AS owner_id,
+    g.created_by AS visible_to_user_id,
+    'original'::text AS source_type,
+    'edit'::text AS permission,
+    gr.name AS name,
+    gr.description AS description
+  FROM
+    boardgames_game_role gr
+    JOIN boardgames_game g ON g.id = gr.game_id
+  WHERE
+    gr.deleted_at IS NULL
+    AND g.deleted_at IS NULL
+  UNION ALL
+  -- Shared roles visible to the recipient
+  SELECT
+    COALESCE(sg.linked_game_id, sg.game_id) AS canonical_game_id,
+    COALESCE(lgr.id, gr.id) AS canonical_game_role_id,
+    gr.id AS original_game_role_id,
+    lgr.id AS linked_game_role_id,
+    sgr.id AS shared_game_role_id,
+    sg.owner_id AS owner_id,
+    sg.shared_with_id AS visible_to_user_id,
+    'shared'::text AS source_type,
+    sgr.permission AS permission,
+    COALESCE(lgr.name, gr.name) AS name,
+    COALESCE(lgr.description, gr.description) AS description
+  FROM
+    boardgames_shared_game_role sgr
+    JOIN boardgames_shared_game sg ON sg.id = sgr.shared_game_id
+    LEFT JOIN boardgames_game_role gr ON gr.id = sgr.game_role_id
+    LEFT JOIN boardgames_game_role lgr ON lgr.id = sgr.linked_game_role_id
+  WHERE
+    sg.shared_with_id IS NOT NULL
+    AND COALESCE(lgr.deleted_at, gr.deleted_at) IS NULL
+    AND (gr.id IS NOT NULL OR lgr.id IS NOT NULL)
+`);

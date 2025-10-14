@@ -4,3 +4,8 @@ export interface GetGameArgs {
   input: GetGameInputType;
   userId: string;
 }
+
+export interface GetGameRolesArgs {
+  input: GetGameInputType;
+  userId: string;
+}
