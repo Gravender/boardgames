@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, or, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "@board-games/db/client";
 import { location, player, team } from "@board-games/db/schema";
@@ -324,6 +324,10 @@ class GameRepository {
         and(
           eq(vGameRoleCanonical.canonicalGameId, canonicalGameId),
           eq(vGameRoleCanonical.visibleToUserId, args.userId),
+          isNull(vGameRoleCanonical.linkedGameRoleId),
+          input.type === "shared"
+            ? eq(vGameRoleCanonical.sourceType, "shared")
+            : sql`true`,
         ),
       )
       .orderBy(asc(vGameRoleCanonical.name));

@@ -5,7 +5,9 @@ import type {
   UpdateMatchManualWinnerInputType,
   UpdateMatchPlacementsInputType,
   UpdateMatchPlayerScoreInputType,
+  UpdateMatchPlayerTeamAndRolesInputType,
   UpdateMatchScoreInputType,
+  UpdateMatchTeamInputType,
 } from "../update-match.input";
 
 export interface CtxUser {
@@ -45,5 +47,14 @@ export interface UpdateMatchCommentArgs {
 
 export interface UpdateMatchDetailsArgs {
   input: UpdateMatchDetailsInputType;
+  ctx: CtxUser;
+}
+
+export interface UpdateMatchPlayerTeamAndRolesArgs {
+  input: UpdateMatchPlayerTeamAndRolesInputType;
+  ctx: CtxUser;
+}
+export interface UpdateMatchTeamArgs {
+  input: UpdateMatchTeamInputType;
   ctx: CtxUser;
 }

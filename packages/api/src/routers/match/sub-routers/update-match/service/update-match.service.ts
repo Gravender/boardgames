@@ -7,7 +7,9 @@ import type {
   UpdateMatchManualWinnerArgs,
   UpdateMatchPlacementsArgs,
   UpdateMatchPlayerScoreArgs,
+  UpdateMatchPlayerTeamAndRolesArgs,
   UpdateMatchScoreArgs,
+  UpdateMatchTeamArgs,
 } from "./update-match.service.types";
 import { updateMatchRepository } from "../repository/update-match.repository";
 
@@ -74,6 +76,20 @@ class UpdateMatchService {
   }
   public async updateMatchDetails(args: UpdateMatchDetailsArgs) {
     return updateMatchRepository.updateMatchDetails({
+      input: args.input,
+      userId: args.ctx.userId,
+    });
+  }
+  public async updateMatchPlayerTeamAndRoles(
+    args: UpdateMatchPlayerTeamAndRolesArgs,
+  ) {
+    return updateMatchRepository.updateMatchPlayerTeamAndRoles({
+      input: args.input,
+      userId: args.ctx.userId,
+    });
+  }
+  public async updateMatchTeam(args: UpdateMatchTeamArgs) {
+    return updateMatchRepository.updateMatchTeam({
       input: args.input,
       userId: args.ctx.userId,
     });

@@ -9,7 +9,9 @@ import {
   updateMatchManualWinnerInput,
   updateMatchPlacementsInput,
   updateMatchPlayerScoreInput,
+  updateMatchPlayerTeamAndRolesInput,
   updateMatchScoreInput,
+  updateMatchTeamInput,
 } from "./update-match.input";
 
 export const updateMatchRouter = {
@@ -67,5 +69,15 @@ export const updateMatchRouter = {
     .input(updateMatchDetailsInput)
     .mutation(async ({ ctx, input }) => {
       await updateMatchService.updateMatchDetails({ ctx, input });
+    }),
+  updateMatchPlayerTeamAndRoles: protectedUserProcedure
+    .input(updateMatchPlayerTeamAndRolesInput)
+    .mutation(async ({ ctx, input }) => {
+      await updateMatchService.updateMatchPlayerTeamAndRoles({ ctx, input });
+    }),
+  updateMatchTeam: protectedUserProcedure
+    .input(updateMatchTeamInput)
+    .mutation(async ({ ctx, input }) => {
+      await updateMatchService.updateMatchTeam({ ctx, input });
     }),
 } satisfies TRPCRouterRecord;

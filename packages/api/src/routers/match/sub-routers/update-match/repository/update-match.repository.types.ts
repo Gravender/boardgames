@@ -5,7 +5,9 @@ import type {
   UpdateMatchManualWinnerInputType,
   UpdateMatchPlacementsInputType,
   UpdateMatchPlayerScoreInputType,
+  UpdateMatchPlayerTeamAndRolesInputType,
   UpdateMatchScoreInputType,
+  UpdateMatchTeamInputType,
 } from "../update-match.input";
 
 export interface UserScopedArgs<T> {
@@ -29,3 +31,6 @@ export type UpdateMatchCommentRepoArgs =
   UserScopedArgs<UpdateMatchCommentInputType>;
 export type UpdateMatchDetailsRepoArgs =
   UserScopedArgs<UpdateMatchDetailsInputType>;
+export type UpdateMatchPlayerTeamAndRolesRepoArgs =
+  UserScopedArgs<UpdateMatchPlayerTeamAndRolesInputType>;
+export type UpdateMatchTeamRepoArgs = UserScopedArgs<UpdateMatchTeamInputType>;

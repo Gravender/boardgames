@@ -619,3 +619,48 @@ export const useUpdateMatchDetailsMutation = (
     updateMatchDetailsMutation,
   };
 };
+
+export const useUpdateMatchPlayerTeamAndRolesMutation = (
+  id: number,
+  type: "original" | "shared",
+) => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const updateMatchPlayerTeamAndRolesMutation = useMutation(
+    trpc.newMatch.update.updateMatchPlayerTeamAndRoles.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries();
+      },
+      onError: () => {
+        toast.error("Error", {
+          description: "There was a problem updating your match player.",
+        });
+      },
+    }),
+  );
+  return {
+    updateMatchPlayerTeamAndRolesMutation,
+  };
+};
+export const useUpdateMatchTeamMutation = (
+  id: number,
+  type: "original" | "shared",
+) => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const updateMatchTeamMutation = useMutation(
+    trpc.newMatch.update.updateMatchTeam.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries();
+      },
+      onError: () => {
+        toast.error("Error", {
+          description: "There was a problem updating your match Team.",
+        });
+      },
+    }),
+  );
+  return {
+    updateMatchTeamMutation,
+  };
+};

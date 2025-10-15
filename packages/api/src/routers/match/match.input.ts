@@ -29,7 +29,9 @@ export const createMatchInput = insertMatchSchema
                 .required({ id: true })
                 .extend({
                   type: sharedOrOriginalSchema,
-                  roles: z.array(z.number()),
+                  roles: z.array(
+                    z.object({ id: z.number(), type: sharedOrOriginalSchema }),
+                  ),
                 }),
             )
             .min(1),

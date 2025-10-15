@@ -5,10 +5,12 @@ import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 import type { selectRoundPlayerSchema } from "@board-games/db/zodSchema";
 import { db } from "@board-games/db/client";
 import {
+  gameRole,
   match,
   matchPlayer,
   matchPlayerRole,
   scoresheet,
+  sharedGameRole,
   team,
 } from "@board-games/db/schema";
 import {
@@ -1089,20 +1091,81 @@ class MatchRepository {
             // Determine role changes
             const currentRoleIds = originalPlayer.roles.map((r) => r.id);
             const rolesToAdd = updatedPlayer.roles.filter(
-              (roleId) => !currentRoleIds.includes(roleId),
+              (playerRole) =>
+                !currentRoleIds.find(
+                  (r) => r === playerRole.id && playerRole.type === "original",
+                ),
             );
             const rolesToRemove = currentRoleIds.filter(
-              (roleId) => !updatedPlayer.roles.includes(roleId),
+              (roleId) =>
+                !updatedPlayer.roles.find(
+                  (r) => r.id === roleId && r.type === "original",
+                ),
             );
 
             // Add new roles
             if (rolesToAdd.length > 0) {
+              const originalRoles = rolesToAdd.filter(
+                (roleToAdd) => roleToAdd.type === "original",
+              );
+              const sharedRoles = rolesToAdd.filter(
+                (roleToAdd) => roleToAdd.type === "shared",
+              );
               await tx.insert(matchPlayerRole).values(
-                rolesToAdd.map((roleId) => ({
-                  matchPlayerId: originalPlayer.id, // use matchPlayerId
-                  roleId,
+                originalRoles.map((roleId) => ({
+                  matchPlayerId: originalPlayer.id,
+                  roleId: roleId.id,
                 })),
               );
+              for (const sharedRoleToAdd of sharedRoles) {
+                const returnedSharedRole =
+                  await tx.query.sharedGameRole.findFirst({
+                    where: {
+                      id: sharedRoleToAdd.id,
+                      sharedWithId: userId,
+                    },
+                    with: {
+                      gameRole: true,
+                    },
+                  });
+                if (!returnedSharedRole) {
+                  throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Shared role not found.",
+                  });
+                }
+                if (returnedSharedRole.linkedGameRoleId === null) {
+                  throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Shared role not found.",
+                  });
+                }
+                const [createdGameRole] = await tx
+                  .insert(gameRole)
+                  .values({
+                    gameId: returnedMatch.gameId,
+                    name: returnedSharedRole.gameRole.name,
+                    description: returnedSharedRole.gameRole.description,
+                    createdBy: userId,
+                  })
+                  .returning();
+                if (!createdGameRole) {
+                  throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Failed to create game role",
+                  });
+                }
+                await tx.insert(matchPlayerRole).values({
+                  matchPlayerId: originalPlayer.id,
+                  roleId: createdGameRole.id,
+                });
+                await tx
+                  .update(sharedGameRole)
+                  .set({
+                    linkedGameRoleId: createdGameRole.id,
+                  })
+                  .where(eq(sharedGameRole.id, returnedSharedRole.id));
+              }
             }
 
             // Remove old roles

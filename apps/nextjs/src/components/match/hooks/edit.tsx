@@ -39,3 +39,22 @@ export const useEditMatchMutation = (
     editMatchMutation,
   };
 };
+export const useMatchPlayerTeamAndRolesMutation = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const matchPlayerTeamAndRolesMutation = useMutation(
+    trpc.newMatch.update.updateMatchPlayerTeamAndRoles.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries();
+      },
+      onError: () => {
+        toast.error("Error", {
+          description: "There was a problem updating your match player.",
+        });
+      },
+    }),
+  );
+  return {
+    matchPlayerTeamAndRolesMutation,
+  };
+};
