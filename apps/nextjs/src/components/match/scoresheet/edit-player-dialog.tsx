@@ -77,8 +77,6 @@ export default function PlayerEditorDialog({
             player={player}
             players={players}
             roles={gameRoles}
-            matchId={matchId}
-            matchType={type}
             onClose={onClose}
           />
         )}
@@ -91,22 +89,18 @@ function Content({
   player,
   roles,
   players,
-  matchId,
-  matchType,
   onClose,
 }: {
   teams: Team[];
   player: Player;
   players: Player[];
   roles: RouterOutputs["game"]["getGameRoles"];
-  matchId: number;
-  matchType: "original" | "shared";
   onClose: () => void;
 }) {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
 
   const { updateMatchPlayerTeamAndRolesMutation } =
-    useUpdateMatchPlayerTeamAndRolesMutation(matchId, matchType);
+    useUpdateMatchPlayerTeamAndRolesMutation();
 
   const formSchema = z.object({
     team: z.number().nullable(),

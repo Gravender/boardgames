@@ -112,7 +112,7 @@ export function ChangePasswordCard() {
   const { isSubmitting } = form.formState;
 
   const credentialsLinked = accounts?.some(
-    (acc) => acc.provider === "credential",
+    (acc) => acc.providerId === "credential",
   );
   if (!isLoading && !credentialsLinked) {
     return (

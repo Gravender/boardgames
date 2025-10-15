@@ -17,7 +17,7 @@ export const ProviderCell = ({
   account,
   provider,
 }: {
-  account?: { accountId: string; provider: string } | null;
+  account?: { accountId: string; providerId: string } | null;
   provider: Provider;
 }) => {
   const [isLoading, setIsLoading] = useState(false);

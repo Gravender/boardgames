@@ -564,7 +564,7 @@ const GameForm = ({
                 scoresheet: {
                   id: foundScoresheet.id,
                   scoresheetType: scoresheet.scoresheetType,
-                  name: scoresheetName,
+                  name: scoresheet.name,
                   winCondition: scoresheetWinCondition,
                   isCoop: scoresheetIsCoop ?? foundScoresheet.isCoop,
                   isDefault: scoresheet.isDefault,

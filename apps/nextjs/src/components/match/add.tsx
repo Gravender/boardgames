@@ -288,7 +288,10 @@ const AddMatchForm = ({
           players: {
             type: "original" | "shared";
             id: number;
-            roles: number[];
+            roles: {
+              id: number;
+              type: "original" | "shared";
+            }[];
           }[];
         }
       >

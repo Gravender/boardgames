@@ -99,7 +99,7 @@ function Content({
 }) {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
 
-  const { updateMatchTeamMutation } = useUpdateMatchTeamMutation(matchId, type);
+  const { updateMatchTeamMutation } = useUpdateMatchTeamMutation();
 
   const originalTeamPlayers = players.filter(
     (player) => player.teamId === team.id,

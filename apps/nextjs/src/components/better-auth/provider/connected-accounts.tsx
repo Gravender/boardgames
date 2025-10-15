@@ -41,7 +41,7 @@ export function ProfileConnectedAccounts() {
                 <ProviderCell
                   key={provider.name}
                   account={accounts?.find(
-                    (acc) => acc.provider === provider.name,
+                    (acc) => acc.providerId === provider.name,
                   )}
                   provider={provider}
                 />

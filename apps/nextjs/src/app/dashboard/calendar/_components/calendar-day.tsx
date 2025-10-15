@@ -6,11 +6,11 @@ import { cn } from "@board-games/ui/utils";
 
 interface CalendarDayProps {
   day: Date;
-  matches: { matches: number[]; date: Date } | undefined;
+  matches: { matches: number; date: Date } | undefined;
 }
 
 export function CalendarDay({ day, matches }: CalendarDayProps) {
-  const hasMatches = matches && matches.matches.length > 0;
+  const hasMatches = matches && matches.matches > 0;
 
   if (hasMatches) {
     return (
@@ -21,9 +21,9 @@ export function CalendarDay({ day, matches }: CalendarDayProps) {
         <span>{day.getDate()}</span>
         <span
           className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground"
-          aria-label={`${matches.matches.length} match${matches.matches.length !== 1 ? "es" : ""}`}
+          aria-label={`${matches.matches} match${matches.matches !== 1 ? "es" : ""}`}
         >
-          {matches.matches.length}
+          {matches.matches}
         </span>
       </Link>
     );

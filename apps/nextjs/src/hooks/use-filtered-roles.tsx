@@ -2,10 +2,9 @@ import { useMemo } from "react";
 
 interface Role {
   id: number;
-  type: "original" | "shared";
+  type?: "original" | "shared";
   name: string;
   description?: string | null;
-  permission: "view" | "edit";
 }
 
 export function useFilteredRoles(roles: Role[], roleSearchTerm: string) {

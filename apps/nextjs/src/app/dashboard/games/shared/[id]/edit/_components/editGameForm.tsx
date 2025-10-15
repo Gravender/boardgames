@@ -454,7 +454,7 @@ const GameForm = ({
                   ? {
                       id: foundScoresheet.id,
                       scoresheetType: scoresheet.scoresheetType,
-                      name: scoresheetName,
+                      name: scoresheet.name,
                       winCondition: scoresheetWinCondition,
                       isCoop: scoresheetIsCoop ?? foundScoresheet.isCoop,
 
@@ -477,7 +477,7 @@ const GameForm = ({
                 type: "Update Scoresheet" as const,
                 scoresheet: {
                   id: foundScoresheet.id,
-                  name: scoresheetName,
+                  name: scoresheet.name,
                   winCondition: scoresheetWinCondition,
                   isCoop: scoresheetIsCoop ?? foundScoresheet.isCoop,
                   scoresheetType: scoresheet.scoresheetType,

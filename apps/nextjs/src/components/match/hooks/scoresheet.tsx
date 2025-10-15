@@ -620,10 +620,7 @@ export const useUpdateMatchDetailsMutation = (
   };
 };
 
-export const useUpdateMatchPlayerTeamAndRolesMutation = (
-  id: number,
-  type: "original" | "shared",
-) => {
+export const useUpdateMatchPlayerTeamAndRolesMutation = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const updateMatchPlayerTeamAndRolesMutation = useMutation(
@@ -642,10 +639,7 @@ export const useUpdateMatchPlayerTeamAndRolesMutation = (
     updateMatchPlayerTeamAndRolesMutation,
   };
 };
-export const useUpdateMatchTeamMutation = (
-  id: number,
-  type: "original" | "shared",
-) => {
+export const useUpdateMatchTeamMutation = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const updateMatchTeamMutation = useMutation(
