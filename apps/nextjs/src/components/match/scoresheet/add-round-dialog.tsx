@@ -106,12 +106,7 @@ const AddRoundDialogContent = ({
   const addRound = useMutation(
     trpc.round.addRound.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.newMatch.getMatchScoresheet.queryOptions({
-            id: match.id,
-            type: match.type,
-          }),
-        );
+        await queryClient.invalidateQueries();
         posthog.capture("round added to match", {
           matchId: match.id,
         });

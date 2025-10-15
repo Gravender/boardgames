@@ -200,7 +200,7 @@ class UpdateMatchRepository {
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          id: input.match.id,
+          matchId: input.match.id,
           sharedWithId: userId,
         },
       });
@@ -328,7 +328,7 @@ class UpdateMatchRepository {
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          id: input.match.id,
+          matchId: input.match.id,
           sharedWithId: userId,
         },
       });
@@ -438,7 +438,7 @@ class UpdateMatchRepository {
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          id: input.id,
+          matchId: input.id,
           sharedWithId: userId,
         },
       });
@@ -541,7 +541,7 @@ class UpdateMatchRepository {
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          id: input.id,
+          matchId: input.id,
           sharedWithId: userId,
         },
       });
@@ -624,7 +624,7 @@ class UpdateMatchRepository {
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          id: input.match.id,
+          matchId: input.match.id,
           sharedWithId: userId,
         },
       });
@@ -715,7 +715,7 @@ class UpdateMatchRepository {
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          id: input.match.id,
+          matchId: input.match.id,
           sharedWithId: userId,
         },
       });
@@ -806,7 +806,7 @@ class UpdateMatchRepository {
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          id: input.match.id,
+          matchId: input.match.id,
           sharedWithId: userId,
         },
       });
@@ -841,7 +841,7 @@ class UpdateMatchRepository {
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          id: input.match.id,
+          matchId: input.match.id,
           sharedWithId: userId,
         },
       });
@@ -1183,7 +1183,7 @@ class UpdateMatchRepository {
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          id: input.match.id,
+          matchId: input.match.id,
           sharedWithId: userId,
         },
       });
