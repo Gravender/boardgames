@@ -405,16 +405,21 @@ export const matchWithGameAndPlayersSchema = selectMatchSchema
     name: true,
     finished: true,
     comment: true,
+    duration: true,
   })
   .extend({
+    won: z.boolean(),
+    hasUser: z.boolean(),
     type: sharedOrOriginalSchema,
     game: selectGameSchema
       .pick({
         id: true,
+        name: true,
       })
       .extend({
         linkedGameId: z.number().nullable(),
         type: sharedOrOriginalSchema,
+        image: imageSchema.nullable(),
       }),
     location: selectLocationSchema
       .pick({
@@ -442,6 +447,7 @@ export const matchWithGameAndPlayersSchema = selectMatchSchema
           name: z.string(),
           type: sharedOrOriginalSchema,
           playerType: z.literal("original").or(z.literal("shared")),
+          image: imageSchema.nullable(),
         }),
     ),
   });

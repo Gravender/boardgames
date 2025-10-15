@@ -14,7 +14,7 @@ export default async function Page({
 }) {
   const date = (await params).date;
   if (!isValid(new Date(date))) redirect("/dashboard/calendar");
-  const matchesByDate = await caller.match.getMatchesByDate({
+  const matchesByDate = await caller.newMatch.date.getMatchesByDate({
     date: new Date(date),
   });
   if (matchesByDate.matches.length === 0) redirect("/dashboard/calendar");
@@ -25,7 +25,7 @@ export default async function Page({
         <Suspense>
           <MatchesTable
             data={matchesByDate.matches}
-            players={matchesByDate.players}
+            players={matchesByDate.playerStats}
             date={date}
           />
         </Suspense>

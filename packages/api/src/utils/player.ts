@@ -2,10 +2,8 @@ import type z from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
 
-import type {
-  selectScoreSheetSchema,
-  selectTeamSchema,
-} from "@board-games/db/zodSchema";
+import type { selectScoreSheetSchema } from "@board-games/db/zodSchema";
+import { selectTeamSchema } from "@board-games/db/zodSchema";
 
 //Get Player
 export interface Player {
@@ -24,12 +22,14 @@ export interface Player {
   teamId: number | null;
   placement: number | null;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const teamSchema = selectTeamSchema.pick({ id: true, name: true });
 export interface PlayerMatch {
   id: number;
   type: "shared" | "original";
   date: Date;
   name: string;
-  teams: z.infer<typeof selectTeamSchema>[];
+  teams: z.infer<typeof teamSchema>[];
   duration: number;
   finished: boolean;
   gameId: number;

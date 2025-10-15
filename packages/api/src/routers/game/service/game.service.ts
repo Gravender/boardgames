@@ -15,7 +15,16 @@ class GameService {
       input: args.input,
       userId: args.ctx.userId,
     });
-    return response.matches;
+    return response.matches.map((match) => {
+      const userMatchPlayer = match.matchPlayers.find(
+        (mp) => mp.playerId === response.userPlayer.id,
+      );
+      return {
+        ...match,
+        hasUser: userMatchPlayer !== undefined,
+        won: userMatchPlayer?.winner ?? false,
+      };
+    });
   }
 
   public async getGameRoles(

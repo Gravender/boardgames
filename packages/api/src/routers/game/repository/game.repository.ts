@@ -2,7 +2,14 @@ import { TRPCError } from "@trpc/server";
 import { and, asc, eq, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "@board-games/db/client";
-import { location, player, team } from "@board-games/db/schema";
+import {
+  game,
+  image,
+  location,
+  match,
+  player,
+  team,
+} from "@board-games/db/schema";
 import {
   vGameRoleCanonical,
   vMatchCanonical,
@@ -57,6 +64,11 @@ class GameRepository {
             winner: vMatchPlayerCanonicalForUser.winner,
             type: vMatchPlayerCanonicalForUser.sourceType,
             playerName: player.name,
+            playerImageId: image.id,
+            playerImageName: image.name,
+            playerImageUrl: image.url,
+            playerImageType: image.type,
+            playerImageUsageType: image.usageType,
             playerType: sql<"original" | "shared">`
             CASE
               WHEN ${vMatchPlayerCanonicalForUser.sharedPlayerId} IS NULL
@@ -78,6 +90,7 @@ class GameRepository {
           player,
           eq(player.id, vMatchPlayerCanonicalForUser.canonicalPlayerId),
         )
+        .leftJoin(image, eq(image.id, player.imageId))
         .orderBy(
           vMatchPlayerCanonicalForUser.canonicalMatchId,
           vMatchPlayerCanonicalForUser.baseMatchPlayerId,
@@ -99,6 +112,12 @@ class GameRepository {
               winner: boolean | null;
               type: "original" | "shared";
               playerType: "original" | "shared";
+              image: {
+                name: string;
+                url: string | null;
+                type: "file" | "svg";
+                usageType: "game" | "player" | "match";
+              } | null;
             }[]
           >`json_agg(json_build_object(
             'id', ${playersByMatch.baseMatchPlayerId},
@@ -109,12 +128,34 @@ class GameRepository {
             'placement', ${playersByMatch.placement},
             'winner', ${playersByMatch.winner},
             'type', ${playersByMatch.type},
-            'playerType',${playersByMatch.playerType}
+            'playerType',${playersByMatch.playerType},
+            'image',
+              CASE
+                WHEN ${playersByMatch.playerImageId} IS NULL THEN NULL
+                ELSE json_build_object(
+                  'name', ${playersByMatch.playerImageName},
+                  'url', ${playersByMatch.playerImageUrl},
+                  'type', ${playersByMatch.playerImageType},
+                  'usageType', ${playersByMatch.playerImageUsageType}
+                )
+              END
           ) ORDER BY ${playersByMatch.baseMatchPlayerId})`.as("match_players"),
         })
         .from(playersByMatch)
         .groupBy(playersByMatch.matchId),
     );
+    const userPlayer = await db.query.player.findFirst({
+      where: {
+        isUser: true,
+        createdBy: args.userId,
+      },
+    });
+    if (!userPlayer) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Current user not found.",
+      });
+    }
     if (input.type === "original") {
       const returnedGame = await db.query.game.findFirst({
         where: {
@@ -143,19 +184,41 @@ class GameRepository {
           comment: vMatchCanonical.comment,
           type: vMatchCanonical.visibilitySource,
           finished: vMatchCanonical.finished,
+          duration: match.duration,
           game: sql<{
             id: number;
             linkedGameId: number | null;
             type: "original" | "shared";
+            name: string;
+            image: {
+              name: string;
+              url: string | null;
+              type: "file" | "svg";
+              usageType: "game" | "player" | "match";
+            } | null;
           }>`json_build_object(
         'id', ${vMatchCanonical.canonicalGameId},
         'linkedGameId', ${vMatchCanonical.linkedGameId},
-        'type', ${vMatchCanonical.visibilitySource}
+        'type', ${vMatchCanonical.visibilitySource},
+        'name', ${game.name},
+        'image',
+          CASE
+            WHEN ${game.imageId} IS NULL THEN NULL
+            ELSE json_build_object(
+              'name', ${image.name},
+              'url', ${image.url},
+              'type', ${image.type},
+              'usageType', ${image.usageType}
+            )
+          END
       )`.as("game"),
-          location: sql<{ id: number; name: string }>`json_build_object(
-        'id', ${location.id},
-        'name', ${location.name}
-      )`.as("location"),
+          location: sql<{ id: number; name: string } | null>`CASE
+            WHEN ${location.id} IS NULL THEN NULL
+            ELSE json_build_object(
+              'id', ${location.id},
+              'name', ${location.name}
+            )
+          END`.as("location"),
           teams: sql<{ id: number; name: string }[]>`teams_agg.teams`.as(
             "teams",
           ),
@@ -170,6 +233,12 @@ class GameRepository {
               winner: boolean | null;
               type: "original" | "shared";
               playerType: "original" | "shared";
+              image: {
+                name: string;
+                url: string | null;
+                type: "file" | "svg";
+                usageType: "game" | "player" | "match";
+              } | null;
             }[]
           >`players_agg.match_players`.as("match_players"),
         })
@@ -180,7 +249,10 @@ class GameRepository {
             eq(vMatchCanonical.visibleToUserId, args.userId),
           ),
         )
-        .innerJoin(
+        .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
+        .innerJoin(game, eq(game.id, vMatchCanonical.canonicalGameId))
+        .leftJoin(image, eq(image.id, game.imageId))
+        .leftJoin(
           location,
           eq(location.id, vMatchCanonical.canonicalLocationId),
         )
@@ -189,6 +261,7 @@ class GameRepository {
         .orderBy(vMatchCanonical.matchDate);
       return {
         matches: matches,
+        userPlayer: userPlayer,
       };
     } else {
       const returnedSharedGame = await db.query.sharedGame.findFirst({
@@ -212,19 +285,41 @@ class GameRepository {
           comment: vMatchCanonical.comment,
           type: vMatchCanonical.visibilitySource,
           finished: vMatchCanonical.finished,
+          duration: match.duration,
           game: sql<{
             id: number;
             linkedGameId: number | null;
             type: "original" | "shared";
+            name: string;
+            image: {
+              name: string;
+              url: string | null;
+              type: "file" | "svg";
+              usageType: "game" | "player" | "match";
+            } | null;
           }>`json_build_object(
         'id', ${vMatchCanonical.canonicalGameId},
         'linkedGameId', ${vMatchCanonical.linkedGameId},
-        'type', ${vMatchCanonical.visibilitySource}
+        'type', ${vMatchCanonical.visibilitySource},
+        'name', ${game.name},
+        'image',
+          CASE
+            WHEN ${game.imageId} IS NULL THEN NULL
+            ELSE json_build_object(
+              'name', ${image.name},
+              'url', ${image.url},
+              'type', ${image.type},
+              'usageType', ${image.usageType}
+            )
+          END
       )`.as("game"),
-          location: sql<{ id: number; name: string }>`json_build_object(
-        'id', ${location.id},
-        'name', ${location.name}
-      )`.as("location"),
+          location: sql<{ id: number; name: string } | null>`CASE
+            WHEN ${location.id} IS NULL THEN NULL
+            ELSE json_build_object(
+              'id', ${location.id},
+              'name', ${location.name}
+            )
+          END`.as("location"),
           teams: sql<{ id: number; name: string }[]>`teams_agg.teams`.as(
             "teams",
           ),
@@ -239,6 +334,12 @@ class GameRepository {
               winner: boolean | null;
               type: "original" | "shared";
               playerType: "original" | "shared";
+              image: {
+                name: string;
+                url: string | null;
+                type: "file" | "svg";
+                usageType: "game" | "player" | "match";
+              } | null;
             }[]
           >`players_agg.match_players`.as("match_players"),
         })
@@ -252,7 +353,10 @@ class GameRepository {
             eq(vMatchCanonical.visibleToUserId, args.userId),
           ),
         )
-        .innerJoin(
+        .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
+        .innerJoin(game, eq(game.id, vMatchCanonical.canonicalGameId))
+        .leftJoin(image, eq(image.id, game.imageId))
+        .leftJoin(
           location,
           eq(location.id, vMatchCanonical.canonicalLocationId),
         )
@@ -261,6 +365,7 @@ class GameRepository {
         .orderBy(vMatchCanonical.matchDate);
       return {
         matches: matches,
+        userPlayer: userPlayer,
       };
     }
   }

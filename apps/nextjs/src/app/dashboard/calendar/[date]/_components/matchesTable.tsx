@@ -16,11 +16,11 @@ import { GameImage } from "~/components/game-image";
 import { PlayerStats } from "./player-stats";
 
 type Matches = NonNullable<
-  RouterOutputs["match"]["getMatchesByDate"]
+  RouterOutputs["newMatch"]["date"]["getMatchesByDate"]
 >["matches"];
 type Players = NonNullable<
-  RouterOutputs["match"]["getMatchesByDate"]
->["players"];
+  RouterOutputs["newMatch"]["date"]["getMatchesByDate"]
+>["playerStats"];
 export function MatchesTable({
   data,
   players,
@@ -62,12 +62,12 @@ export function MatchesTable({
               {matches.map((match) => (
                 <Card key={`${match.id}-${match.type}`} className="flex w-full">
                   <Link
-                    href={`/dashboard/games${match.type === "shared" ? "/shared" : ""}/${match.gameId}/${match.id}${match.finished ? "/summary" : ""}`}
+                    href={`/dashboard/games${match.type === "shared" ? "/shared" : ""}/${match.game.id}/${match.id}${match.finished ? "/summary" : ""}`}
                     className="flex w-full items-center gap-3 font-medium"
                   >
                     <GameImage
-                      image={match.image}
-                      alt={`${match.gameName} game image`}
+                      image={match.game.image}
+                      alt={`${match.game.name} game image`}
                       containerClassName="h-16 w-16"
                     />
                     <div className="flex w-full items-center justify-between">
@@ -90,10 +90,10 @@ export function MatchesTable({
                             <Clock className="h-3 w-3" />
                             {formatDuration(match.duration)}
                           </div>
-                          {match.locationName && (
+                          {match.location && (
                             <div className="flex items-center gap-1">
                               <MapPin className="h-3 w-3" />
-                              {match.locationName}
+                              {match.location.name}
                             </div>
                           )}
                         </div>
