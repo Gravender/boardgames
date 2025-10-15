@@ -49,8 +49,7 @@ class DateMatchRepository {
           name: team.name,
         })
         .from(team)
-        .orderBy(team.matchId, team.id)
-        .groupBy(team.matchId, team.id),
+        .orderBy(team.matchId, team.id),
     );
 
     // Now aggregate them into json
@@ -238,7 +237,9 @@ class DateMatchRepository {
                     'roundsScore', ${scoresheet.roundsScore},
                     'type', ${scoresheet.type}
                   )`.as("scoresheet"),
-        teams: sql<{ id: number; name: string }[]>`teams_agg.teams`.as("teams"),
+        teams: sql<
+          { id: number; name: string }[]
+        >`coalesce(teams_agg.teams, '[]'::json)`.as("teams"),
         matchPlayers: sql<
           {
             id: number;
@@ -257,7 +258,7 @@ class DateMatchRepository {
               usageType: "game" | "player" | "match";
             } | null;
           }[]
-        >`players_agg.match_players`.as("match_players"),
+        >`coalesce(players_agg.match_players, '[]'::json)`.as("match_players"),
       })
       .from(vMatchCanonical)
       .where(
@@ -351,7 +352,9 @@ class DateMatchRepository {
   ): Promise<GetMatchesByCalenderOutputType> {
     const matches = await db
       .select({
-        date: sql<Date>`date_trunc('day', ${vMatchCanonical.matchDate}) AS day`,
+        date: sql<Date>`date_trunc('day', ${vMatchCanonical.matchDate})`.as(
+          "date",
+        ),
         count: sql<number>`count(*)`.as("count"),
       })
       .from(vMatchCanonical)

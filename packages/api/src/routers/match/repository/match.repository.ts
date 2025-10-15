@@ -323,7 +323,7 @@ class MatchRepository {
       }
       return {
         type: "shared" as const,
-        id: returnedSharedMatch.id,
+        id: returnedSharedMatch.matchId,
         date: returnedSharedMatch.match.date,
         name: returnedSharedMatch.match.name,
         game: {
@@ -939,16 +939,11 @@ class MatchRepository {
               locationId: locationId,
             })
             .where(eq(match.id, input.match.id));
-          const outputMatch = {
-            type: "original" as const,
-            matchId: input.match.id,
-            game: {
-              id: returnedMatch.gameId,
-            },
-            date: input.match.date,
-            location: locationId ? { id: locationId } : undefined,
-            players: [],
-          };
+          outputMatch.date = input.match.date;
+          outputMatch.game = { id: returnedMatch.gameId };
+          if (typeof locationId !== "undefined") {
+            outputMatch.location = locationId ? { id: locationId } : undefined;
+          }
 
           if (locationId) {
             outputMatch.location = { id: locationId };

@@ -42,7 +42,7 @@ export const useDurationMutation = (
           ...prevMatch,
           duration:
             prevMatch.duration +
-            differenceInSeconds(prevMatch.startTime, endTime),
+            differenceInSeconds(endTime, prevMatch.startTime),
           running: false,
           startTime: null,
           endTime: endTime,
@@ -74,7 +74,7 @@ export const useDurationMutation = (
     );
   const startMatchDuration = useMutation(
     trpc.newMatch.update.matchStart.mutationOptions({
-      onMutate: async (_) => updateMatch({ action: "pause" }),
+      onMutate: async (_) => updateMatch({ action: "start" }),
       onSuccess: invalidateMatch,
       onError: (error, _, context) => {
         toast.error("Error", {

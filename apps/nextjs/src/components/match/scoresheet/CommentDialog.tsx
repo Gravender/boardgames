@@ -79,10 +79,17 @@ function Content({
     defaultValues: { comment },
   });
   function onSubmitForm(values: z.infer<typeof FormSchema>) {
-    updateMatchCommentMutation.mutate({
-      match: { id: match.id, type: match.type },
-      comment: values.comment,
-    });
+    updateMatchCommentMutation.mutate(
+      {
+        match: { id: match.id, type: match.type },
+        comment: values.comment,
+      },
+      {
+        onSuccess: () => {
+          setIsOpen(false);
+        },
+      },
+    );
   }
   return (
     <>

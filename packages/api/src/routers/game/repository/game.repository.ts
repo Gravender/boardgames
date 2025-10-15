@@ -29,8 +29,7 @@ class GameRepository {
           name: team.name,
         })
         .from(team)
-        .orderBy(team.matchId, team.id)
-        .groupBy(team.matchId, team.id),
+        .orderBy(team.matchId, team.id),
     );
 
     // Now aggregate them into json
@@ -240,7 +239,7 @@ class GameRepository {
                 usageType: "game" | "player" | "match";
               } | null;
             }[]
-          >`players_agg.match_players`.as("match_players"),
+          >`coalesce(players_agg.match_players, '[]'::json)`.as("matchPlayers"),
         })
         .from(vMatchCanonical)
         .where(
@@ -341,7 +340,7 @@ class GameRepository {
                 usageType: "game" | "player" | "match";
               } | null;
             }[]
-          >`players_agg.match_players`.as("match_players"),
+          >`coalesce(players_agg.match_players, '[]'::json)`.as("matchPlayers"),
         })
         .from(vMatchCanonical)
         .where(
