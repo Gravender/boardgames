@@ -44,7 +44,6 @@ import {
 } from "~/components/match/hooks/suspenseQueries";
 import { Spinner } from "~/components/spinner";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
-import { useTRPC } from "~/trpc/react";
 import { useUpdateMatchPlayerTeamAndRolesMutation } from "../hooks/scoresheet";
 
 type Player = NonNullable<

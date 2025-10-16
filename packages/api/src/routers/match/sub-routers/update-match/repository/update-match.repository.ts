@@ -959,7 +959,7 @@ class UpdateMatchRepository {
           for (const sharedRoleToAdd of sharedRoles) {
             const returnedSharedRole = await tx.query.sharedGameRole.findFirst({
               where: {
-                id: sharedRoleToAdd.id,
+                gameRoleId: sharedRoleToAdd.id,
                 sharedWithId: userId,
               },
               with: {
@@ -1021,7 +1021,7 @@ class UpdateMatchRepository {
           for (const sharedRoleToAdd of sharedRoles) {
             const returnedSharedRole = await tx.query.sharedGameRole.findFirst({
               where: {
-                id: sharedRoleToAdd.id,
+                gameRoleId: sharedRoleToAdd.id,
                 sharedWithId: userId,
               },
               with: {
@@ -1116,7 +1116,7 @@ class UpdateMatchRepository {
           for (const sharedRoleToRemove of sharedRoles) {
             const returnedSharedRole = await tx.query.sharedGameRole.findFirst({
               where: {
-                id: sharedRoleToRemove.id,
+                gameRoleId: sharedRoleToRemove.id,
                 sharedWithId: userId,
               },
               with: {
@@ -1171,10 +1171,10 @@ class UpdateMatchRepository {
         code: "NOT_FOUND",
         message: "Team not found.",
       });
-    if (input.match.type === "original") {
+    if (input.type === "original") {
       const foundMatch = await db.query.match.findFirst({
         where: {
-          id: input.match.id,
+          id: input.id,
           createdBy: userId,
           deletedAt: {
             isNull: true,
@@ -1186,7 +1186,7 @@ class UpdateMatchRepository {
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.match.id,
+          matchId: input.id,
           sharedWithId: userId,
         },
       });
@@ -1207,10 +1207,10 @@ class UpdateMatchRepository {
         .set({ name: input.team.name })
         .where(eq(team.id, input.team.id));
     }
-    if (input.match.type === "original") {
+    if (input.type === "original") {
       const foundMatch = await db.query.match.findFirst({
         where: {
-          id: input.match.id,
+          id: input.id,
           createdBy: userId,
           deletedAt: {
             isNull: true,
@@ -1228,7 +1228,7 @@ class UpdateMatchRepository {
             })
             .where(
               and(
-                eq(matchPlayer.matchId, input.match.id),
+                eq(matchPlayer.matchId, input.id),
                 inArray(
                   matchPlayer.id,
                   input.playersToAdd.map((p) => p.id),
@@ -1261,7 +1261,7 @@ class UpdateMatchRepository {
           for (const sharedRoleToAdd of sharedRoles) {
             const returnedSharedRole = await tx.query.sharedGameRole.findFirst({
               where: {
-                id: sharedRoleToAdd.roleId,
+                gameRoleId: sharedRoleToAdd.roleId,
                 sharedWithId: userId,
               },
               with: {
@@ -1319,7 +1319,7 @@ class UpdateMatchRepository {
             })
             .where(
               and(
-                eq(matchPlayer.matchId, input.match.id),
+                eq(matchPlayer.matchId, input.id),
                 inArray(
                   matchPlayer.id,
                   input.playersToRemove.map((p) => p.id),
@@ -1411,7 +1411,7 @@ class UpdateMatchRepository {
                 const returnedSharedRole =
                   await tx.query.sharedGameRole.findFirst({
                     where: {
-                      id: sharedRoleToAdd.role.id,
+                      gameRoleId: sharedRoleToAdd.role.id,
                       sharedWithId: userId,
                     },
                     with: {
@@ -1495,6 +1495,395 @@ class UpdateMatchRepository {
       });
     } else {
       //TODO: Implement updating match player roles and teams only supports adding and removing players from team if already in match
+      const foundSharedMatch = await db.query.sharedMatch.findFirst({
+        where: {
+          matchId: input.id,
+          sharedWithId: userId,
+        },
+      });
+      if (!foundSharedMatch)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared match not found.",
+        });
+      await db.transaction(async (tx) => {
+        const sharedGameRoles = await tx.query.sharedGameRole.findMany({
+          where: {
+            sharedGameId: foundSharedMatch.sharedGameId,
+            sharedWithId: userId,
+          },
+        });
+        if (input.playersToAdd.length > 0) {
+          const foundMatchPlayers = await db
+            .select()
+            .from(vMatchPlayerCanonicalForUser)
+            .where(
+              and(
+                eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.id),
+                inArray(
+                  vMatchPlayerCanonicalForUser.baseMatchPlayerId,
+                  input.playersToAdd.map((p) => p.id),
+                ),
+                or(
+                  eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
+                  eq(vMatchPlayerCanonicalForUser.ownerId, userId),
+                ),
+              ),
+            );
+          if (foundMatchPlayers.length === 0) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to find match players to update.",
+            });
+          }
+          const allEditPermissions = foundMatchPlayers.every(
+            (mp) => mp.permission === "edit",
+          );
+          if (!allEditPermissions)
+            throw new TRPCError({
+              code: "UNAUTHORIZED",
+              message: "Does not have permission to edit this match team.",
+            });
+          await tx
+            .update(matchPlayer)
+            .set({
+              teamId: input.team.id,
+            })
+            .where(
+              and(
+                eq(matchPlayer.matchId, input.id),
+                inArray(
+                  matchPlayer.id,
+                  input.playersToAdd.map((p) => p.id),
+                ),
+              ),
+            );
+          for (const matchPlayerToAdd of input.playersToAdd) {
+            const rolesToAdd = matchPlayerToAdd.roles.map((role) => ({
+              matchPlayerId: matchPlayerToAdd.id,
+              roleId: role.id,
+            }));
+            if (rolesToAdd.length > 0) {
+              const matchPlayerWithRoles =
+                await tx.query.sharedMatchPlayer.findFirst({
+                  where: {
+                    matchPlayerId: matchPlayerToAdd.id,
+                    sharedWithId: userId,
+                  },
+                  with: {
+                    roles: {
+                      with: {
+                        sharedGameRole: true,
+                      },
+                    },
+                  },
+                });
+              if (!matchPlayerWithRoles) {
+                throw new TRPCError({
+                  code: "NOT_FOUND",
+                  message: "Match player not found.",
+                });
+              }
+              if (matchPlayerWithRoles.permission !== "edit") {
+                throw new TRPCError({
+                  code: "UNAUTHORIZED",
+                  message:
+                    "Does not have permission to edit this match player.",
+                });
+              }
+
+              const filteredRoles = rolesToAdd
+                .filter((roleToAdd) =>
+                  matchPlayerWithRoles.roles.some(
+                    (r) =>
+                      r.sharedGameRole.gameRoleId === roleToAdd.roleId ||
+                      r.sharedGameRole.linkedGameRoleId === roleToAdd.roleId,
+                  ),
+                )
+                .map((roleToAdd) => {
+                  const foundSharedGameRole = sharedGameRoles.find(
+                    (r) =>
+                      r.gameRoleId === roleToAdd.roleId ||
+                      r.linkedGameRoleId === roleToAdd.roleId,
+                  );
+                  if (!foundSharedGameRole) {
+                    throw new TRPCError({
+                      code: "INTERNAL_SERVER_ERROR",
+                      message: "Failed to find shared game role.",
+                    });
+                  }
+                  return {
+                    matchPlayerId: matchPlayerWithRoles.id,
+                    gameRoleId: foundSharedGameRole.id,
+                    sharedMatchPlayerId: matchPlayerWithRoles.id,
+                    sharedGameRoleId: foundSharedGameRole.id,
+                  };
+                });
+              if (filteredRoles.length > 0) {
+                await tx.insert(matchPlayerRole).values(
+                  filteredRoles.map((mpr) => ({
+                    matchPlayerId: mpr.matchPlayerId,
+                    roleId: mpr.gameRoleId,
+                  })),
+                );
+
+                await tx.insert(sharedMatchPlayerRole).values(
+                  filteredRoles.map((mpr) => ({
+                    sharedMatchPlayerId: mpr.sharedMatchPlayerId,
+                    sharedGameRoleId: mpr.sharedGameRoleId,
+                  })),
+                );
+              }
+            }
+          }
+        }
+        if (input.playersToRemove.length > 0) {
+          const foundMatchPlayers = await db
+            .select()
+            .from(vMatchPlayerCanonicalForUser)
+            .where(
+              and(
+                eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.id),
+                inArray(
+                  vMatchPlayerCanonicalForUser.baseMatchPlayerId,
+                  input.playersToRemove.map((p) => p.id),
+                ),
+                or(
+                  eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
+                  eq(vMatchPlayerCanonicalForUser.ownerId, userId),
+                ),
+              ),
+            );
+          if (foundMatchPlayers.length === 0) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to find match players to update.",
+            });
+          }
+          const allEditPermissions = foundMatchPlayers.every(
+            (mp) => mp.permission === "edit",
+          );
+          if (!allEditPermissions)
+            throw new TRPCError({
+              code: "UNAUTHORIZED",
+              message: "Does not have permission to edit this match team.",
+            });
+          await tx
+            .update(matchPlayer)
+            .set({
+              teamId: null,
+            })
+            .where(
+              and(
+                eq(matchPlayer.matchId, input.id),
+                inArray(
+                  matchPlayer.id,
+                  input.playersToRemove.map((p) => p.id),
+                ),
+              ),
+            );
+          for (const matchPlayerToRemove of input.playersToRemove) {
+            const rolesToRemove = matchPlayerToRemove.roles.map((role) => ({
+              matchPlayerId: matchPlayerToRemove.id,
+              roleId: role.id,
+            }));
+            if (rolesToRemove.length > 0) {
+              const matchPlayerWithRoles =
+                await tx.query.sharedMatchPlayer.findFirst({
+                  where: {
+                    matchPlayerId: matchPlayerToRemove.id,
+                    sharedWithId: userId,
+                  },
+                  with: {
+                    roles: {
+                      with: {
+                        sharedGameRole: true,
+                      },
+                    },
+                  },
+                });
+              if (!matchPlayerWithRoles) {
+                throw new TRPCError({
+                  code: "NOT_FOUND",
+                  message: "Match player not found.",
+                });
+              }
+              if (matchPlayerWithRoles.permission !== "edit") {
+                throw new TRPCError({
+                  code: "UNAUTHORIZED",
+                  message:
+                    "Does not have permission to edit this match player.",
+                });
+              }
+              const mappedRolesToRemove = rolesToRemove.map((roleToRemove) => {
+                const foundSharedGameRole = matchPlayerWithRoles.roles.find(
+                  (r) =>
+                    r.sharedGameRole.gameRoleId === roleToRemove.roleId ||
+                    r.sharedGameRole.linkedGameRoleId === roleToRemove.roleId,
+                );
+                if (!foundSharedGameRole) {
+                  throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Failed to find shared game role.",
+                  });
+                }
+                return {
+                  sharedMatchPlayerId: matchPlayerWithRoles.id,
+                  sharedGameRoleId: foundSharedGameRole.sharedGameRole.id,
+                  gameRoleId: foundSharedGameRole.sharedGameRole.gameRoleId,
+                };
+              });
+              await tx.delete(sharedMatchPlayerRole).where(
+                and(
+                  eq(
+                    sharedMatchPlayerRole.sharedMatchPlayerId,
+                    matchPlayerWithRoles.id,
+                  ),
+                  inArray(
+                    sharedMatchPlayerRole.sharedGameRoleId,
+                    mappedRolesToRemove.map((r) => r.sharedGameRoleId),
+                  ),
+                ),
+              );
+              await tx.delete(matchPlayerRole).where(
+                and(
+                  eq(matchPlayerRole.matchPlayerId, matchPlayerToRemove.id),
+                  inArray(
+                    matchPlayerRole.roleId,
+                    mappedRolesToRemove.map((r) => r.gameRoleId),
+                  ),
+                ),
+              );
+            }
+          }
+        }
+        if (input.playersToUpdate.length > 0) {
+          for (const matchPlayerToUpdate of input.playersToUpdate) {
+            const matchPlayerWithRoles =
+              await tx.query.sharedMatchPlayer.findFirst({
+                where: {
+                  matchPlayerId: matchPlayerToUpdate.id,
+                  sharedWithId: userId,
+                },
+                with: {
+                  roles: {
+                    with: {
+                      sharedGameRole: true,
+                    },
+                  },
+                },
+              });
+            if (!matchPlayerWithRoles) {
+              throw new TRPCError({
+                code: "NOT_FOUND",
+                message: "Match player not found.",
+              });
+            }
+            if (matchPlayerWithRoles.permission !== "edit") {
+              throw new TRPCError({
+                code: "UNAUTHORIZED",
+                message: "Does not have permission to edit this match player.",
+              });
+            }
+            const rolesToAdd = matchPlayerToUpdate.rolesToAdd.map((role) => ({
+              matchPlayerId: matchPlayerToUpdate.id,
+              roleId: role.id,
+            }));
+            const rolesToRemove = matchPlayerToUpdate.rolesToRemove.map(
+              (role) => ({
+                matchPlayerId: matchPlayerToUpdate.id,
+                roleId: role.id,
+              }),
+            );
+            if (rolesToAdd.length > 0) {
+              const filteredRoles = rolesToAdd
+                .filter((roleToAdd) =>
+                  matchPlayerWithRoles.roles.some(
+                    (r) =>
+                      r.sharedGameRole.gameRoleId === roleToAdd.roleId ||
+                      r.sharedGameRole.linkedGameRoleId === roleToAdd.roleId,
+                  ),
+                )
+                .map((roleToAdd) => {
+                  const foundSharedGameRole = sharedGameRoles.find(
+                    (r) =>
+                      r.gameRoleId === roleToAdd.roleId ||
+                      r.linkedGameRoleId === roleToAdd.roleId,
+                  );
+                  if (!foundSharedGameRole) {
+                    throw new TRPCError({
+                      code: "INTERNAL_SERVER_ERROR",
+                      message: "Failed to find shared game role.",
+                    });
+                  }
+                  return {
+                    matchPlayerId: matchPlayerWithRoles.id,
+                    gameRoleId: foundSharedGameRole.id,
+                    sharedMatchPlayerId: matchPlayerWithRoles.id,
+                    sharedGameRoleId: foundSharedGameRole.id,
+                  };
+                });
+              if (filteredRoles.length > 0) {
+                await tx.insert(matchPlayerRole).values(
+                  filteredRoles.map((mpr) => ({
+                    matchPlayerId: mpr.matchPlayerId,
+                    roleId: mpr.gameRoleId,
+                  })),
+                );
+
+                await tx.insert(sharedMatchPlayerRole).values(
+                  filteredRoles.map((mpr) => ({
+                    sharedMatchPlayerId: mpr.sharedMatchPlayerId,
+                    sharedGameRoleId: mpr.sharedGameRoleId,
+                  })),
+                );
+              }
+            }
+            if (rolesToRemove.length > 0) {
+              const filteredRoles = rolesToRemove.map((roleToRemove) => {
+                const foundSharedGameRole = sharedGameRoles.find(
+                  (r) =>
+                    r.gameRoleId === roleToRemove.roleId ||
+                    r.linkedGameRoleId === roleToRemove.roleId,
+                );
+                if (!foundSharedGameRole) {
+                  throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Failed to find shared game role.",
+                  });
+                }
+                return {
+                  matchPlayerId: matchPlayerWithRoles.id,
+                  gameRoleId: foundSharedGameRole.id,
+                  sharedMatchPlayerId: matchPlayerWithRoles.id,
+                  sharedGameRoleId: foundSharedGameRole.id,
+                };
+              });
+              await tx.delete(sharedMatchPlayerRole).where(
+                and(
+                  eq(
+                    sharedMatchPlayerRole.sharedMatchPlayerId,
+                    matchPlayerWithRoles.id,
+                  ),
+                  inArray(
+                    sharedMatchPlayerRole.sharedGameRoleId,
+                    filteredRoles.map((r) => r.sharedGameRoleId),
+                  ),
+                ),
+              );
+              await tx.delete(matchPlayerRole).where(
+                and(
+                  eq(matchPlayerRole.matchPlayerId, matchPlayerToUpdate.id),
+                  inArray(
+                    matchPlayerRole.roleId,
+                    filteredRoles.map((r) => r.gameRoleId),
+                  ),
+                ),
+              );
+            }
+          }
+        }
+      });
     }
   }
 }

@@ -1128,7 +1128,7 @@ class MatchRepository {
                 const returnedSharedRole =
                   await tx.query.sharedGameRole.findFirst({
                     where: {
-                      id: sharedRoleToAdd.id,
+                      gameRoleId: sharedRoleToAdd.id,
                       sharedWithId: userId,
                     },
                     with: {

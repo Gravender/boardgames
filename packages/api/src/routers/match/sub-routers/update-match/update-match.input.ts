@@ -153,54 +153,100 @@ export type UpdateMatchPlayerTeamAndRolesInputType = z.infer<
   typeof updateMatchPlayerTeamAndRolesInput
 >;
 
-export const updateMatchTeamInput = z.object({
-  match: z.object({
-    id: z.number(),
-    type: sharedOrOriginalSchema,
-  }),
-  team: z.object({
-    id: z.number(),
-    name: z.string().optional(),
-  }),
-  playersToAdd: z.array(
-    z.object({
-      id: z.number(),
-      roles: z.array(
-        z.object({
-          id: z.number(),
-          type: sharedOrOriginalSchema,
-        }),
-      ),
-    }),
-  ),
-  playersToRemove: z.array(
-    z.object({
-      id: z.number(),
-      roles: z.array(
-        z.object({
-          id: z.number(),
-          type: sharedOrOriginalSchema,
-        }),
-      ),
-    }),
-  ),
-  playersToUpdate: z.array(
-    z.object({
-      id: z.number(),
-      rolesToAdd: z.array(
-        z.object({
-          id: z.number(),
-          type: sharedOrOriginalSchema,
-        }),
-      ),
-      rolesToRemove: z.array(
-        z.object({
-          id: z.number(),
-          type: sharedOrOriginalSchema,
-        }),
-      ),
-    }),
-  ),
+const teamSchema = z.object({
+  id: z.number(),
+  name: z.string().optional(),
 });
+
+export const updateMatchTeamInput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    id: z.number(),
+    team: teamSchema,
+    playersToAdd: z.array(
+      z.object({
+        id: z.number(),
+        roles: z.array(
+          z.object({
+            id: z.number(),
+            type: sharedOrOriginalSchema,
+          }),
+        ),
+      }),
+    ),
+    playersToRemove: z.array(
+      z.object({
+        id: z.number(),
+        roles: z.array(
+          z.object({
+            id: z.number(),
+            type: sharedOrOriginalSchema,
+          }),
+        ),
+      }),
+    ),
+    playersToUpdate: z.array(
+      z.object({
+        id: z.number(),
+        rolesToAdd: z.array(
+          z.object({
+            id: z.number(),
+            type: sharedOrOriginalSchema,
+          }),
+        ),
+        rolesToRemove: z.array(
+          z.object({
+            id: z.number(),
+            type: sharedOrOriginalSchema,
+          }),
+        ),
+      }),
+    ),
+  }),
+  z.object({
+    type: z.literal("shared"),
+    id: z.number(),
+    team: teamSchema,
+    playersToAdd: z.array(
+      z.object({
+        id: z.number(),
+        roles: z.array(
+          z.object({
+            id: z.number(),
+            type: z.literal("shared"),
+          }),
+        ),
+      }),
+    ),
+    playersToRemove: z.array(
+      z.object({
+        id: z.number(),
+        roles: z.array(
+          z.object({
+            id: z.number(),
+            type: z.literal("shared"),
+          }),
+        ),
+      }),
+    ),
+    playersToUpdate: z.array(
+      z.object({
+        id: z.number(),
+        rolesToAdd: z.array(
+          z.object({
+            id: z.number(),
+            type: z.literal("shared"),
+          }),
+        ),
+        rolesToRemove: z.array(
+          z.object({
+            id: z.number(),
+            type: z.literal("shared"),
+          }),
+        ),
+      }),
+    ),
+  }),
+]);
 
 export type UpdateMatchTeamInputType = z.infer<typeof updateMatchTeamInput>;

@@ -858,7 +858,7 @@ export async function getMatchPlayersAndTeams(
       const returnedSharedRole =
         await transaction.query.sharedGameRole.findFirst({
           where: {
-            id: uniqueRole.id,
+            gameRoleId: uniqueRole.id,
             sharedWithId: userId,
           },
           with: {
