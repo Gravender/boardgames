@@ -52,7 +52,7 @@
     "@board-games/tsconfig": "workspace:*",
     "@spotlightjs/spotlight": "^3.0.1",
     "@types/lodash.debounce": "^4.0.9",
-    "@types/node": "^22.18.1",
+    "@types/node": "^22.18.10",
     "@types/react": "catalog:react19",
     "@types/react-dom": "catalog:react19",
     "dotenv-cli": "^10.0.0",
