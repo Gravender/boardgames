@@ -62,12 +62,12 @@ export const getMatchesByDateOutput = z.object({
 });
 export type GetMatchesByDateOutputType = z.infer<typeof getMatchesByDateOutput>;
 
-export const getMatchesByCalenderOutput = z.array(
+export const getMatchesByCalendarOutput = z.array(
   z.object({
     date: z.date(),
     count: z.number(),
   }),
 );
-export type GetMatchesByCalenderOutputType = z.infer<
-  typeof getMatchesByCalenderOutput
+export type GetMatchesByCalendarOutputType = z.infer<
+  typeof getMatchesByCalendarOutput
 >;

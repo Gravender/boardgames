@@ -6,7 +6,7 @@ export interface GetMatchesByDateArgs {
     userId: string;
   };
 }
-export interface GetMatchesByCalenderArgs {
+export interface GetMatchesByCalendarArgs {
   ctx: {
     userId: string;
   };

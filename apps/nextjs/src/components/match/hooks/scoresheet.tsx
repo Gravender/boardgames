@@ -1,3 +1,5 @@
+"use client";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { differenceInSeconds } from "date-fns";
 import { usePostHog } from "posthog-js/react";
@@ -195,36 +197,6 @@ export const useUpdateFinish = (id: number, type: "original" | "shared") => {
   );
   return {
     updateFinishMutation,
-  };
-};
-
-export const useUpdateMatchFinishManualMutation = (
-  id: number,
-  type: "original" | "shared",
-) => {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const posthog = usePostHog();
-  const updateMatchFinishManualMutation = useMutation(
-    trpc.newMatch.update.updateMatchManualWinner.mutationOptions({
-      onMutate: async () => {
-        await queryClient.invalidateQueries();
-        posthog.capture("match finished", {
-          id: id,
-          type: type,
-          finishedType: "manual",
-        });
-      },
-      onError: (error) => {
-        posthog.capture("match finished error", { error });
-        toast.error("Error", {
-          description: "There was a problem finishing the match.",
-        });
-      },
-    }),
-  );
-  return {
-    updateFinishManualMutation: updateMatchFinishManualMutation,
   };
 };
 

@@ -4,6 +4,6 @@ export interface GetMatchesByDateArgs {
   input: GetMatchesByDateInputType;
   userId: string;
 }
-export interface GetMatchesByCalenderArgs {
+export interface GetMatchesByCalendarArgs {
   userId: string;
 }

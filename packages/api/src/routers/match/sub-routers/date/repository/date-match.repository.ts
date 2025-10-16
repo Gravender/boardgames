@@ -21,11 +21,11 @@ import {
 } from "@board-games/db/views";
 
 import type {
-  GetMatchesByCalenderOutputType,
+  GetMatchesByCalendarOutputType,
   GetMatchesByDateOutputType,
 } from "../date-match.output";
 import type {
-  GetMatchesByCalenderArgs,
+  GetMatchesByCalendarArgs,
   GetMatchesByDateArgs,
 } from "./date-match.repository.types";
 import { aggregatePlayerStats } from "../../../../../utils/player";
@@ -347,9 +347,9 @@ class DateMatchRepository {
       playerStats: aggregatePlayerStats(mappedMatches),
     };
   }
-  public async getMatchesByCalender(
-    args: GetMatchesByCalenderArgs,
-  ): Promise<GetMatchesByCalenderOutputType> {
+  public async getMatchesByCalendar(
+    args: GetMatchesByCalendarArgs,
+  ): Promise<GetMatchesByCalendarOutputType> {
     const matches = await db
       .select({
         date: sql<Date>`date_trunc('day', ${vMatchCanonical.matchDate})`.as(

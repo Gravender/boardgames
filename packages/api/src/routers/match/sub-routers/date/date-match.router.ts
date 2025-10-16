@@ -3,7 +3,7 @@ import type { TRPCRouterRecord } from "@trpc/server";
 import { protectedUserProcedure } from "../../../../trpc";
 import { getMatchesByDateInput } from "./date-match.input";
 import {
-  getMatchesByCalenderOutput,
+  getMatchesByCalendarOutput,
   getMatchesByDateOutput,
 } from "./date-match.output";
 import { dateMatchService } from "./service/date-match.service";
@@ -15,9 +15,9 @@ export const dateMatchRouter = {
     .mutation(async ({ ctx, input }) => {
       return dateMatchService.getMatchesByDate({ ctx, input });
     }),
-  getMatchesByCalender: protectedUserProcedure
-    .output(getMatchesByCalenderOutput)
+  getMatchesByCalendar: protectedUserProcedure
+    .output(getMatchesByCalendarOutput)
     .mutation(async ({ ctx }) => {
-      return dateMatchService.getMatchesByCalender({ ctx });
+      return dateMatchService.getMatchesByCalendar({ ctx });
     }),
 } satisfies TRPCRouterRecord;

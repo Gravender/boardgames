@@ -1,9 +1,9 @@
 import type {
-  GetMatchesByCalenderOutputType,
+  GetMatchesByCalendarOutputType,
   GetMatchesByDateOutputType,
 } from "../date-match.output";
 import type {
-  GetMatchesByCalenderArgs,
+  GetMatchesByCalendarArgs,
   GetMatchesByDateArgs,
 } from "./date-match.service.types";
 import { dateMatchRepository } from "../repository/date-match.repository";
@@ -17,10 +17,10 @@ class DateMatchService {
       userId: args.ctx.userId,
     });
   }
-  public async getMatchesByCalender(
-    args: GetMatchesByCalenderArgs,
-  ): Promise<GetMatchesByCalenderOutputType> {
-    return dateMatchRepository.getMatchesByCalender({
+  public async getMatchesByCalendar(
+    args: GetMatchesByCalendarArgs,
+  ): Promise<GetMatchesByCalendarOutputType> {
+    return dateMatchRepository.getMatchesByCalendar({
       userId: args.ctx.userId,
     });
   }

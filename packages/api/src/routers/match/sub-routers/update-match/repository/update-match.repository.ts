@@ -1176,6 +1176,9 @@ class UpdateMatchRepository {
         where: {
           id: input.match.id,
           createdBy: userId,
+          deletedAt: {
+            isNull: true,
+          },
         },
       });
       if (!foundMatch)
@@ -1209,6 +1212,9 @@ class UpdateMatchRepository {
         where: {
           id: input.match.id,
           createdBy: userId,
+          deletedAt: {
+            isNull: true,
+          },
         },
       });
       if (!foundMatch)

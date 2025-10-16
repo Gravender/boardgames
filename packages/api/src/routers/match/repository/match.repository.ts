@@ -73,7 +73,19 @@ class MatchRepository {
       let locationId: number | null = null;
       if (input.location) {
         if (input.location.type === "original") {
-          locationId = input.location.id;
+          const returnedLocation = await transaction.query.location.findFirst({
+            where: {
+              id: input.location.id,
+              createdBy: args.createdBy,
+            },
+          });
+          if (!returnedLocation) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Location not found.",
+            });
+          }
+          locationId = returnedLocation.id;
         } else {
           locationId = await cloneSharedLocationForUser(
             transaction,

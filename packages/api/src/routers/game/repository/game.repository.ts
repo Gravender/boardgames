@@ -218,9 +218,9 @@ class GameRepository {
               'name', ${location.name}
             )
           END`.as("location"),
-          teams: sql<{ id: number; name: string }[]>`teams_agg.teams`.as(
-            "teams",
-          ),
+          teams: sql<
+            { id: number; name: string }[]
+          >`coalesce(teams_agg.teams, '[]'::json)`.as("teams"),
           matchPlayers: sql<
             {
               id: number;
@@ -319,9 +319,9 @@ class GameRepository {
               'name', ${location.name}
             )
           END`.as("location"),
-          teams: sql<{ id: number; name: string }[]>`teams_agg.teams`.as(
-            "teams",
-          ),
+          teams: sql<
+            { id: number; name: string }[]
+          >`coalesce(teams_agg.teams, '[]'::json)`.as("teams"),
           matchPlayers: sql<
             {
               id: number;

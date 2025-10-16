@@ -6,7 +6,7 @@ import { caller, HydrateClient } from "~/trpc/server";
 import { ClientCalendar } from "./_components/client-calendar";
 
 export default async function Page() {
-  const dates = await caller.newMatch.date.getMatchesByCalender();
+  const dates = await caller.newMatch.date.getMatchesByCalendar();
   const matchDayMap = new Map(
     dates.map((md) => [
       format(md.date, "MM-dd-yy"),
