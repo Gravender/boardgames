@@ -71,8 +71,10 @@ export default function GameDetails({ gameId }: { gameId: number }) {
         <MatchesList matches={game.matches} />
         <div className="absolute bottom-4 right-6 z-10 sm:right-10">
           <AddMatchDialog
-            gameId={gameId}
-            gameType="original"
+            gameInput={{
+              type: "original",
+              id: gameId,
+            }}
             gameName={game.name}
             matches={game.matches.length}
           />

@@ -7,10 +7,10 @@ import { toast } from "@board-games/ui/toast";
 
 import { useTRPC } from "~/trpc/react";
 
-export const useEditMatchMutation = (
-  id: number,
-  type: "original" | "shared",
-) => {
+type MatchInput =
+  | { type: "shared"; sharedMatchId: number }
+  | { type: "original"; id: number };
+export const useEditMatchMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const posthog = usePostHog();
@@ -20,16 +20,14 @@ export const useEditMatchMutation = (
         await queryClient.invalidateQueries();
         toast.success("Match updated successfully.");
         posthog.capture("match edited successfully", {
+          input: input,
           result,
-          id: id,
-          type: type,
         });
       },
       onError: (error) => {
         posthog.capture("match edit error", {
+          input: input,
           error,
-          matchId: id,
-          type: type,
         });
         toast.error("Error", {
           description: "There was a problem adding your match.",

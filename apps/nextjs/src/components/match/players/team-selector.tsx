@@ -5,7 +5,7 @@ import { Plus, Search, SquarePen, Trash2 } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
-import { sharedOrOriginalSchema } from "@board-games/shared";
+import { sharedOrOriginalOrLinkedSchema } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent } from "@board-games/ui/card";
@@ -35,7 +35,7 @@ import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 const roleSchema = z.array(
   z.object({
     id: z.number(),
-    type: sharedOrOriginalSchema,
+    type: sharedOrOriginalOrLinkedSchema,
   }),
 );
 const formSchema = z.object({
@@ -55,7 +55,7 @@ export const ManageTeamContent = ({
 }: {
   teams: (Team & { players: number })[];
 
-  roles: RouterOutputs["game"]["getGameRoles"];
+  roles: RouterOutputs["newGame"]["gameRoles"];
   setTeams: (teams: Team[]) => void;
   cancel: () => void;
 }) => {
@@ -89,7 +89,10 @@ export const ManageTeamContent = ({
         setActiveTeamEdit(null);
       };
       const onSave = (
-        roles: { id: number; type: z.infer<typeof sharedOrOriginalSchema> }[],
+        roles: {
+          id: number;
+          type: z.infer<typeof sharedOrOriginalOrLinkedSchema>;
+        }[],
       ) => {
         const teamIndex = formTeams.findIndex((t) => t.id === activeTeamEdit);
         update(teamIndex, {
@@ -327,12 +330,18 @@ const ManageTeamRoles = ({
   team: {
     id: number;
     name: string;
-    roles: { id: number; type: z.infer<typeof sharedOrOriginalSchema> }[];
+    roles: {
+      id: number;
+      type: z.infer<typeof sharedOrOriginalOrLinkedSchema>;
+    }[];
   };
-  roles: RouterOutputs["game"]["getGameRoles"];
+  roles: RouterOutputs["newGame"]["gameRoles"];
   onClose: () => void;
   onSave: (
-    roles: { id: number; type: z.infer<typeof sharedOrOriginalSchema> }[],
+    roles: {
+      id: number;
+      type: z.infer<typeof sharedOrOriginalOrLinkedSchema>;
+    }[],
   ) => void;
 }) => {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");

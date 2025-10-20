@@ -43,9 +43,14 @@ export default async function Page({ params }: Props) {
       <ErrorBoundary fallback={<MatchNotFound />}>
         <div className="container flex w-full items-center justify-center p-2 sm:px-3 sm:py-4 md:px-6 md:py-8">
           <MatchSummary
-            id={Number(matchId)}
-            gameId={Number(gameId)}
-            type={"original"}
+            match={{
+              id: Number(matchId),
+              type: "original",
+            }}
+            game={{
+              id: Number(gameId),
+              type: "original",
+            }}
           />
         </div>
       </ErrorBoundary>

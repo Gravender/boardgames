@@ -55,17 +55,16 @@ import { AddPlayersDialogForm } from "~/components/match/players/selector";
 import { Spinner } from "~/components/spinner";
 import { useInvalidateLocations } from "~/hooks/invalidate/location";
 import { useTRPC } from "~/trpc/react";
+import { GameInput } from "./types/input";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 
 export function AddMatchDialog({
-  gameId,
-  gameType,
+  gameInput,
   gameName,
   matches,
 }: {
-  gameId: Game["id"];
-  gameType: "shared" | "original";
+  gameInput: GameInput;
   gameName: Game["name"];
   matches: number;
 }) {
@@ -75,20 +74,24 @@ export function AddMatchDialog({
     trpc.location.getLocations.queryOptions(),
   );
   const { data: scoreSheets } = useSuspenseQuery(
-    trpc.game.getGameScoresheets.queryOptions({
-      gameId: gameId,
-      type: gameType,
-    }),
+    trpc.game.getGameScoresheets.queryOptions(
+      gameInput.type === "original"
+        ? { gameId: gameInput.id, type: "original" }
+        : { gameId: gameInput.sharedGameId, type: "shared" },
+    ),
   );
   const { data: players } = useSuspenseQuery(
-    trpc.player.getPlayersByGame.queryOptions({ id: gameId, type: gameType }),
+    trpc.player.getPlayersByGame.queryOptions(
+      gameInput.type === "original"
+        ? { id: gameInput.id, type: "original" }
+        : { id: gameInput.sharedGameId, type: "shared" },
+    ),
   );
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="gap-2 p-4 sm:max-w-[800px] sm:gap-4 sm:p-6">
         <Content
-          gameId={gameId}
-          gameType={gameType}
+          gameInput={gameInput}
           gameName={gameName}
           matches={matches}
           locations={locations}
@@ -116,16 +119,14 @@ export function AddMatchDialog({
 
 function Content({
   matches,
-  gameId,
-  gameType,
+  gameInput,
   gameName,
   locations,
   scoresheets,
   gamePlayers,
   setIsOpen,
 }: {
-  gameId: Game["id"];
-  gameType: "original" | "shared";
+  gameInput: GameInput;
   gameName: Game["name"];
   matches: number;
   locations: RouterOutputs["location"]["getLocations"];
@@ -189,10 +190,7 @@ function Content({
     <>
       {isPlayers ? (
         <AddPlayersDialogForm
-          game={{
-            id: gameId,
-            type: gameType,
-          }}
+          game={gameInput}
           players={form.getValues("players")}
           teams={form.getValues("teams")}
           setPlayersAndTeams={setPlayersAndTeams}
@@ -200,8 +198,7 @@ function Content({
         />
       ) : (
         <AddMatchForm
-          gameId={gameId}
-          gameType={gameType}
+          gameInput={gameInput}
           form={form}
           locations={locations}
           scoresheets={scoresheets}
@@ -214,16 +211,14 @@ function Content({
 }
 
 const AddMatchForm = ({
-  gameId,
-  gameType,
+  gameInput,
   locations,
   scoresheets,
   form,
   setIsOpen,
   setIsPlayers,
 }: {
-  gameId: Game["id"];
-  gameType: "original" | "shared";
+  gameInput: GameInput;
   locations: RouterOutputs["location"]["getLocations"];
   scoresheets: RouterOutputs["game"]["getGameScoresheets"];
   form: UseFormReturn<z.infer<typeof addMatchSchema>>;
@@ -248,7 +243,7 @@ const AddMatchForm = ({
         setIsSubmitting(false);
       },
       onError: (error) => {
-        posthog.capture("match create error", { error, gameId, gameType });
+        posthog.capture("match create error", { error, input: gameInput });
         toast.error("Error", {
           description: "There was a problem adding your match.",
         });
@@ -278,7 +273,7 @@ const AddMatchForm = ({
   const onSubmit = (values: z.infer<typeof addMatchSchema>) => {
     setIsSubmitting(true);
     posthog.capture("add match begin", {
-      gameId: gameId,
+      input: gameInput,
     });
     const mappedTeams = values.players.reduce<
       Record<
@@ -286,11 +281,11 @@ const AddMatchForm = ({
         {
           name: string;
           players: {
-            type: "original" | "shared";
+            type: "original" | "shared" | "linked";
             id: number;
             roles: {
               id: number;
-              type: "original" | "shared";
+              type: "original" | "shared" | "linked";
             }[];
           }[];
         }
@@ -336,10 +331,7 @@ const AddMatchForm = ({
       return acc;
     }, {});
     createMatch.mutate({
-      game: {
-        id: gameId,
-        type: gameType,
-      },
+      game: gameInput,
       name: values.name,
       date: values.date,
       teams: Object.values(mappedTeams),

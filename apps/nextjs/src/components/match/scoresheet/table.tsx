@@ -2,7 +2,6 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { SquarePen } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -22,8 +21,12 @@ import {
 } from "@board-games/ui/table";
 import { cn } from "@board-games/ui/utils";
 
+import type { MatchInput } from "../types/input";
 import { DebouncedCheckbox } from "~/components/debounced-checkbox";
-import { useUpdateMatchRoundScoreMutation } from "~/components/match/hooks/scoresheet";
+import {
+  useUpdateMatchPlayerOrTeamScoreMutation,
+  useUpdateMatchRoundScoreMutation,
+} from "~/components/match/hooks/scoresheet";
 import {
   useMatch,
   usePlayersAndTeams,
@@ -34,7 +37,6 @@ import { DetailDialog } from "~/components/match/scoresheet/DetailDialog";
 import PlayerEditorDialog from "~/components/match/scoresheet/edit-player-dialog";
 import TeamEditorDialog from "~/components/match/scoresheet/edit-team-dialog";
 import { NumberInput } from "~/components/number-input";
-import { useTRPC } from "~/trpc/react";
 
 type Player = NonNullable<
   RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
@@ -42,22 +44,20 @@ type Player = NonNullable<
 type Team = NonNullable<
   RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
 >["teams"][number];
-export function ScoreSheetTable({
-  id,
-  type,
-}: {
-  id: number;
-  type: "original" | "shared";
-}) {
-  const { match } = useMatch(id, type);
-  const { scoresheet } = useScoresheet(id, type);
+export function ScoreSheetTable(input: { match: MatchInput }) {
+  const { match } = useMatch(input.match);
+  const { scoresheet } = useScoresheet(input.match);
   const [team, setTeam] = useState<Team | null>(null);
   const [player, setPlayer] = useState<Player | null>(null);
   return (
     <>
       <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
         <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
-          <HeaderRow match={match} setTeam={setTeam} setPlayer={setPlayer} />
+          <HeaderRow
+            match={input.match}
+            setTeam={setTeam}
+            setPlayer={setPlayer}
+          />
         </TableHeader>
         <TableBody>
           {scoresheet.rounds.map((round) => (
@@ -71,14 +71,12 @@ export function ScoreSheetTable({
       </Table>
       <TeamEditorDialog
         team={team}
-        type={match.type}
-        matchId={match.id}
+        matchInput={input.match}
         onClose={() => setTeam(null)}
       />
       <PlayerEditorDialog
         player={player}
-        type={match.type}
-        matchId={match.id}
+        matchInput={input.match}
         onClose={() => setPlayer(null)}
       />
     </>
@@ -90,14 +88,11 @@ const HeaderRow = ({
   setTeam,
   setPlayer,
 }: {
-  match: {
-    id: number;
-    type: "original" | "shared";
-  };
+  match: MatchInput;
   setTeam: Dispatch<SetStateAction<Team | null>>;
   setPlayer: Dispatch<SetStateAction<Player | null>>;
 }) => {
-  const { players, teams } = usePlayersAndTeams(match.id, match.type);
+  const { players, teams } = usePlayersAndTeams(match);
   const mappedTeams = useMemo(() => {
     const mappedTeams = teams
       .map((team) => {
@@ -215,28 +210,20 @@ const BodyRow = ({
   match,
   round,
 }: {
-  match: {
-    id: number;
-    type: "original" | "shared";
-  };
+  match: MatchInput;
   round: RouterOutputs["newMatch"]["getMatchScoresheet"]["rounds"][number];
 }) => {
-  const { players, teams } = usePlayersAndTeams(match.id, match.type);
+  const { players, teams } = usePlayersAndTeams(match);
 
-  const { updateMatchRoundScoreMutation } = useUpdateMatchRoundScoreMutation(
-    match.id,
-    match.type,
-  );
+  const { updateMatchRoundScoreMutation } =
+    useUpdateMatchRoundScoreMutation(match);
   const updateTeamScore = (
     teamId: number,
     roundId: number,
     value: number | null,
   ) => {
     updateMatchRoundScoreMutation.mutate({
-      match: {
-        id: match.id,
-        type: match.type,
-      },
+      match: match,
       type: "team",
       teamId: teamId,
       round: {
@@ -251,10 +238,7 @@ const BodyRow = ({
     value: number | null,
   ) => {
     updateMatchRoundScoreMutation.mutate({
-      match: {
-        id: match.id,
-        type: match.type,
-      },
+      match: match,
       type: "player",
       matchPlayerId: playerId,
       round: {
@@ -433,15 +417,8 @@ const BodyRow = ({
   );
 };
 
-const CommentsRow = ({
-  match,
-}: {
-  match: {
-    id: number;
-    type: "original" | "shared";
-  };
-}) => {
-  const { players, teams } = usePlayersAndTeams(match.id, match.type);
+const CommentsRow = ({ match }: { match: MatchInput }) => {
+  const { players, teams } = usePlayersAndTeams(match);
   if (teams.length > 0) {
     return (
       <TableRow>
@@ -459,7 +436,7 @@ const CommentsRow = ({
               className="border-b border-r p-2"
             >
               <DetailDialog
-                match={{ id: match.id, type: match.type }}
+                match={match}
                 data={{
                   id: team.id,
                   name: team.name,
@@ -478,7 +455,7 @@ const CommentsRow = ({
                 className="border-b border-r p-2"
               >
                 <DetailDialog
-                  match={{ id: match.id, type: match.type }}
+                  match={match}
                   data={{
                     id: player.id,
                     name: player.name,
@@ -508,7 +485,7 @@ const CommentsRow = ({
             className="border-b border-r p-2"
           >
             <DetailDialog
-              match={{ id: match.id, type: match.type }}
+              match={match}
               data={{
                 id: player.id,
                 name: player.name,
@@ -523,48 +500,23 @@ const CommentsRow = ({
   );
 };
 
-const TotalRow = ({
-  match,
-}: {
-  match: {
-    id: number;
-    type: "original" | "shared";
-  };
-}) => {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const { players, teams } = usePlayersAndTeams(match.id, match.type);
-  const { scoresheet } = useScoresheet(match.id, match.type);
-  const updateMatchPlayerScore = useMutation(
-    trpc.newMatch.update.updateMatchPlayerScore.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.newMatch.getMatch.queryOptions({
-            id: match.id,
-            type: match.type,
-          }),
-        );
-      },
-    }),
-  );
+const TotalRow = ({ match }: { match: MatchInput }) => {
+  const { players, teams } = usePlayersAndTeams(match);
+  const { scoresheet } = useScoresheet(match);
+  const { updateMatchPlayerOrTeamScoreMutation } =
+    useUpdateMatchPlayerOrTeamScoreMutation(match);
   const updateTeamScore = (teamId: number, value: number | null) => {
-    updateMatchPlayerScore.mutate({
+    updateMatchPlayerOrTeamScoreMutation.mutate({
       type: "team",
-      match: {
-        id: match.id,
-        type: match.type,
-      },
+      match: match,
       teamId: teamId,
       score: value,
     });
   };
   const updatePlayerScore = (playerId: number, value: number | null) => {
-    updateMatchPlayerScore.mutate({
+    updateMatchPlayerOrTeamScoreMutation.mutate({
       type: "player",
-      match: {
-        id: match.id,
-        type: match.type,
-      },
+      match: match,
       matchPlayerId: playerId,
       score: value,
     });

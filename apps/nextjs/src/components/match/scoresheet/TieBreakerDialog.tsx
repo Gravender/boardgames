@@ -32,8 +32,10 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
+import type { GameAndMatchInput } from "../types/input";
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
+import { formatMatchLink } from "~/utils/linkFormatting";
 import { useUpdateMatchPlacementsMutation } from "../hooks/scoresheet";
 
 export const TieBreakerPlayerSchema = z
@@ -53,19 +55,11 @@ export function TieBreakerDialog({
   setIsOpen,
   players,
   teams,
-  game,
-  match,
+  gameAndMatch,
 }: {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  game: {
-    id: number;
-    type: "original" | "shared";
-  };
-  match: {
-    id: number;
-    type: "original" | "shared";
-  };
+  gameAndMatch: GameAndMatchInput;
 
   teams: { id: number; name: string }[];
   players: z.infer<typeof TieBreakerPlayerSchema>;
@@ -77,8 +71,7 @@ export function TieBreakerDialog({
           setIsOpen={setIsOpen}
           players={players}
           teams={teams}
-          match={match}
-          game={game}
+          gameAndMatch={gameAndMatch}
         />
       </AlertDialogContent>
     </AlertDialog>
@@ -91,17 +84,9 @@ const FormSchema = z.object({
 function Content({
   players,
   teams,
-  game,
-  match,
+  gameAndMatch,
 }: {
-  game: {
-    id: number;
-    type: "original" | "shared";
-  };
-  match: {
-    id: number;
-    type: "original" | "shared";
-  };
+  gameAndMatch: GameAndMatchInput;
   setIsOpen: (isOpen: boolean) => void;
   teams: { id: number; name: string }[];
   players: z.infer<typeof TieBreakerPlayerSchema>;
@@ -109,8 +94,7 @@ function Content({
   const router = useRouter();
 
   const { updateMatchPlacementsMutation } = useUpdateMatchPlacementsMutation(
-    match.id,
-    match.type,
+    gameAndMatch.match,
   );
 
   const form = useForm({
@@ -120,7 +104,7 @@ function Content({
   function onSubmitForm(values: z.infer<typeof FormSchema>) {
     updateMatchPlacementsMutation.mutate(
       {
-        match: match,
+        match: gameAndMatch.match,
         playersPlacement: values.players.map((player) => ({
           id: player.matchPlayerId,
           placement: player.placement,
@@ -129,7 +113,22 @@ function Content({
       {
         onSuccess: () => {
           router.push(
-            `/dashboard/games/${game.type === "shared" ? "shared/" : ""}${game.id}/${match.id}/summary`,
+            formatMatchLink(
+              gameAndMatch.type === "shared"
+                ? {
+                    sharedMatchId: gameAndMatch.match.sharedMatchId,
+                    sharedGameId: gameAndMatch.game.sharedGameId,
+                    type: gameAndMatch.game.type,
+                    linkedGameId: gameAndMatch.game.linkedGameId,
+                    finished: true,
+                  }
+                : {
+                    matchId: gameAndMatch.match.id,
+                    gameId: gameAndMatch.game.id,
+                    type: gameAndMatch.game.type,
+                    finished: true,
+                  },
+            ),
           );
         },
       },

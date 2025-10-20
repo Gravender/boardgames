@@ -27,6 +27,7 @@ import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
+import type { MatchInput } from "./types/input";
 import type { ManualWinnerPlayerSchema } from "~/components/match/scoresheet/ManualWinnerDialog";
 import type { TieBreakerPlayerSchema } from "~/components/match/scoresheet/TieBreakerDialog";
 import {
@@ -58,23 +59,12 @@ type Player = NonNullable<
 type Team = NonNullable<
   RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
 >["teams"][number];
-export function Scoresheet({
-  matchId,
-  type,
-}: {
-  matchId: number;
-  type: "original" | "shared";
-}) {
-  return <ScoresheetContent id={matchId} type={type} />;
+
+export function Scoresheet(input: { match: MatchInput }) {
+  return <ScoresheetContent match={input.match} />;
 }
-function ScoresheetContent({
-  id,
-  type,
-}: {
-  id: number;
-  type: "original" | "shared";
-}) {
-  const { match } = useMatch(id, type);
+function ScoresheetContent(input: { match: MatchInput }) {
+  const { match } = useMatch(input.match);
   return (
     <div className="flex w-full justify-center">
       <div className="flex w-full max-w-6xl flex-col gap-2 px-2 sm:gap-4 sm:px-4">
@@ -83,7 +73,7 @@ function ScoresheetContent({
             <div className="flex items-center justify-between">
               <CardTitle className="text-2xl font-bold">{match.name}</CardTitle>
               <Suspense fallback={null}>
-                <ScoreSheetBadge id={id} type={type} />
+                <ScoreSheetBadge match={input.match} />
               </Suspense>
             </div>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -98,50 +88,32 @@ function ScoresheetContent({
           </CardHeader>
         </Card>
         <Suspense fallback={null}>
-          <ScoreSheetTableManualSelector id={id} type={type} />
+          <ScoreSheetTableManualSelector match={input.match} />
         </Suspense>
         <Suspense fallback={null}>
-          <ScoresheetFooter id={id} type={type} />
+          <ScoresheetFooter match={input.match} />
         </Suspense>
       </div>
     </div>
   );
 }
-function ScoreSheetBadge({
-  id,
-  type,
-}: {
-  id: number;
-  type: "original" | "shared";
-}) {
-  const { scoresheet } = useScoresheet(id, type);
+function ScoreSheetBadge(input: { match: MatchInput }) {
+  const { scoresheet } = useScoresheet(input.match);
   return (
     <Badge variant={scoresheet.isCoop ? "secondary" : "default"}>
       {scoresheet.isCoop ? "Cooperative" : "Competitive"}
     </Badge>
   );
 }
-function ScoreSheetTableManualSelector({
-  id,
-  type,
-}: {
-  id: number;
-  type: "original" | "shared";
-}) {
-  const { scoresheet } = useScoresheet(id, type);
+function ScoreSheetTableManualSelector(input: { match: MatchInput }) {
+  const { scoresheet } = useScoresheet(input.match);
   if (scoresheet.winCondition === "Manual" && scoresheet.rounds.length === 0)
-    return <ManualScoreSheet id={id} type={type} />;
-  return <ScoreSheetTable id={id} type={type} />;
+    return <ManualScoreSheet match={input.match} />;
+  return <ScoreSheetTable match={input.match} />;
 }
-function ManualScoreSheet({
-  id,
-  type,
-}: {
-  id: number;
-  type: "original" | "shared";
-}) {
-  const { match } = useMatch(id, type);
-  const { teams, players } = usePlayersAndTeams(id, type);
+function ManualScoreSheet(input: { match: MatchInput }) {
+  const { match } = useMatch(input.match);
+  const { teams, players } = usePlayersAndTeams(input.match);
   const { gameRoles } = useGameRoles(
     match.game.type === "original"
       ? {
@@ -244,7 +216,7 @@ function ManualScoreSheet({
                             Team Notes
                           </Label>
                           <DetailDialog
-                            match={{ id: id, type: type }}
+                            match={input.match}
                             data={{
                               id: team.id,
                               name: team.name,
@@ -303,7 +275,7 @@ function ManualScoreSheet({
                                       Player Notes
                                     </Label>
                                     <DetailDialog
-                                      match={{ id: match.id, type: match.type }}
+                                      match={match}
                                       data={{
                                         id: player.id,
                                         name: player.name,
@@ -374,7 +346,7 @@ function ManualScoreSheet({
                             Player Notes
                           </Label>
                           <DetailDialog
-                            match={{ id: match.id, type: match.type }}
+                            match={match}
                             data={{
                               id: player.id,
                               name: player.name,
@@ -395,29 +367,21 @@ function ManualScoreSheet({
       </ScrollArea>
       <TeamEditorDialog
         team={team}
-        type={match.type}
-        matchId={match.id}
+        matchInput={input.match}
         onClose={() => setTeam(null)}
       />
       <PlayerEditorDialog
         player={player}
-        type={match.type}
-        matchId={match.id}
+        matchInput={input.match}
         onClose={() => setPlayer(null)}
       />
     </>
   );
 }
-function ScoresheetFooter({
-  id,
-  type,
-}: {
-  id: number;
-  type: "original" | "shared";
-}) {
-  const { match } = useMatch(id, type);
-  const { scoresheet } = useScoresheet(id, type);
-  const { teams, players } = usePlayersAndTeams(id, type);
+function ScoresheetFooter(input: { match: MatchInput }) {
+  const { match } = useMatch(input.match);
+  const { scoresheet } = useScoresheet(input.match);
+  const { teams, players } = usePlayersAndTeams(input.match);
   const [duration, setDuration] = useState(match.duration);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [manualWinners, setManualWinners] = useState<
@@ -453,12 +417,11 @@ function ScoresheetFooter({
   const posthog = usePostHog();
 
   const { startMatch, pauseMatch, resetMatch } = useDurationMutation(
-    match.id,
-    match.type,
+    input.match,
   );
 
-  const { updateFinishMutation } = useUpdateFinish(match.id, match.type);
-  const { updateFinalScores } = useUpdateFinalScores(match.id, match.type);
+  const { updateFinishMutation } = useUpdateFinish(input.match);
+  const { updateFinalScores } = useUpdateFinalScores(input.match);
 
   const toggleClock = () => {
     if (match.running) {
@@ -581,36 +544,30 @@ function ScoresheetFooter({
       updateFinalScores();
     } else {
       updateFinalScores();
-      updateFinishMutation.mutate(
-        {
-          id: match.id,
-          type: match.type,
+      updateFinishMutation.mutate(input.match, {
+        onSuccess: () => {
+          if (match.type === "original") {
+            router.push(
+              formatMatchLink({
+                matchId: match.id,
+                gameId: match.game.id,
+                type: "original",
+                finished: true,
+              }),
+            );
+          } else {
+            router.push(
+              formatMatchLink({
+                sharedMatchId: match.sharedMatchId,
+                sharedGameId: match.game.sharedGameId,
+                linkedGameId: match.game.linkedGameId,
+                type: match.game.type,
+                finished: true,
+              }),
+            );
+          }
         },
-        {
-          onSuccess: () => {
-            if (match.type === "original") {
-              router.push(
-                formatMatchLink({
-                  matchId: match.id,
-                  gameId: match.game.id,
-                  type: "original",
-                  finished: true,
-                }),
-              );
-            } else {
-              router.push(
-                formatMatchLink({
-                  sharedMatchId: match.id,
-                  sharedGameId: match.game.sharedGameId,
-                  linkedGameId: match.game.linkedGameId,
-                  type: match.game.type,
-                  finished: true,
-                }),
-              );
-            }
-          },
-        },
-      );
+      });
     }
   };
 
@@ -651,10 +608,7 @@ function ScoresheetFooter({
             <CardTitle className="text-xl">Comment:</CardTitle>
           </CardHeader>
           <CardContent className="px-4">
-            <CommentDialog
-              match={{ id: match.id, type: match.type }}
-              comment={match.comment}
-            />
+            <CommentDialog match={match} comment={match.comment} />
           </CardContent>
         </Card>
         <MatchImages matchId={match.id} duration={duration} />
@@ -662,11 +616,11 @@ function ScoresheetFooter({
       <ManualWinnerDialog
         isOpen={openManualWinnerDialog}
         setIsOpen={setOpenManualWinnerDialog}
-        game={{
-          id: match.game.id,
-          type: match.game.type === "linked" ? "original" : match.game.type,
-        }}
-        match={match}
+        gameAndMatch={
+          match.type === "original"
+            ? { type: "original", game: match.game, match: match }
+            : { type: "shared", game: match.game, match: match }
+        }
         players={manualWinners}
         teams={teams}
         scoresheet={scoresheet}
@@ -674,11 +628,11 @@ function ScoresheetFooter({
       <TieBreakerDialog
         isOpen={openTieBreakerDialog}
         setIsOpen={setOpenTieBreakerDialog}
-        game={{
-          id: match.game.id,
-          type: match.game.type === "linked" ? "original" : match.game.type,
-        }}
-        match={match}
+        gameAndMatch={
+          match.type === "original"
+            ? { type: "original", game: match.game, match: match }
+            : { type: "shared", game: match.game, match: match }
+        }
         players={tieBreakers}
         teams={teams}
       />

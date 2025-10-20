@@ -72,7 +72,7 @@ export function EditSharedMatchForm({
     editMatch.mutate({
       type: "shared",
       match: {
-        id: match.id,
+        sharedMatchId: match.id,
         name: values.name === match.name ? undefined : values.name,
         date:
           values.date.getTime() === match.date.getTime()

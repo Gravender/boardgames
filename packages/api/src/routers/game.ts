@@ -38,8 +38,6 @@ import {
 import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 import analyticsServerClient from "../analytics";
-import { getGameRolesOutput } from "./game/game.output";
-import { gameService } from "./game/service/game.service";
 import { protectedUserProcedure } from "../trpc";
 import { utapi } from "../uploadthing";
 import {
@@ -601,22 +599,6 @@ export const gameRouter = {
       }
 
       return mappedScoresheets;
-    }),
-  getGameRoles: protectedUserProcedure
-    .input(
-      z.object({
-        id: z.number(),
-        type: z.literal("original").or(z.literal("shared")),
-      }),
-    )
-    .output(getGameRolesOutput)
-    .query(async ({ ctx, input }) => {
-      return gameService.getGameRoles({
-        input,
-        ctx: {
-          userId: ctx.userId,
-        },
-      });
     }),
   getEditGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))

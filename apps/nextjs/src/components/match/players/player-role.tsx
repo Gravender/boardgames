@@ -34,12 +34,14 @@ export const ManagePlayerRoles = ({
   player: {
     id: number;
     name: string;
-    roles: { type: "original" | "shared"; id: number }[];
+    roles: { type: "original" | "shared" | "linked"; id: number }[];
   };
-  teamRoles: { type: "original" | "shared"; id: number }[];
+  teamRoles: { type: "original" | "shared" | "linked"; id: number }[];
   roles: RouterOutputs["newGame"]["gameRoles"];
   onClose: () => void;
-  onSave: (roles: { type: "original" | "shared"; id: number }[]) => void;
+  onSave: (
+    roles: { type: "original" | "shared" | "linked"; id: number }[],
+  ) => void;
 }) => {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
   const formSchema = z.object({

@@ -26,7 +26,9 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
+import type { GameAndMatchInput } from "../types/input";
 import { PlayerImage } from "~/components/player-image";
+import { formatMatchLink } from "~/utils/linkFormatting";
 import { useUpdateMatchManualWinnerMutation } from "../hooks/scoresheet";
 
 const playerSchema = z.object({
@@ -42,22 +44,14 @@ type Scoresheet = RouterOutputs["newMatch"]["getMatchScoresheet"];
 export function ManualWinnerDialog({
   isOpen,
   setIsOpen,
-  game,
-  match,
+  gameAndMatch,
   teams,
   players,
   scoresheet,
 }: {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  game: {
-    id: number;
-    type: "original" | "shared";
-  };
-  match: {
-    id: number;
-    type: "original" | "shared";
-  };
+  gameAndMatch: GameAndMatchInput;
   teams: { id: number; name: string }[];
   players: z.infer<typeof ManualWinnerPlayerSchema>;
   scoresheet: Scoresheet;
@@ -68,8 +62,7 @@ export function ManualWinnerDialog({
         <Content
           setIsOpen={setIsOpen}
           players={players}
-          match={match}
-          game={game}
+          gameAndMatch={gameAndMatch}
           teams={teams}
           scoresheet={scoresheet}
         />
@@ -79,20 +72,13 @@ export function ManualWinnerDialog({
 }
 
 function Content({
+  setIsOpen,
   players,
-  game,
-  match,
+  gameAndMatch,
   teams,
   scoresheet,
 }: {
-  game: {
-    id: number;
-    type: "original" | "shared";
-  };
-  match: {
-    id: number;
-    type: "original" | "shared";
-  };
+  gameAndMatch: GameAndMatchInput;
   setIsOpen: (isOpen: boolean) => void;
 
   teams: { id: number; name: string }[];
@@ -102,7 +88,7 @@ function Content({
   const router = useRouter();
 
   const { updateMatchManualWinnerMutation } =
-    useUpdateMatchManualWinnerMutation(match.id, match.type);
+    useUpdateMatchManualWinnerMutation(gameAndMatch.match);
 
   const FormSchema = z.object({
     players: scoresheet.isCoop
@@ -116,16 +102,28 @@ function Content({
   function onSubmitForm(values: z.infer<typeof FormSchema>) {
     updateMatchManualWinnerMutation.mutate(
       {
-        match: {
-          id: match.id,
-          type: match.type,
-        },
+        match: gameAndMatch.match,
         winners: values.players.map((player) => ({ id: player.id })),
       },
       {
         onSuccess: () => {
           router.push(
-            `/dashboard/games/${game.type === "shared" ? "shared/" : ""}${game.id}/${match.id}/summary`,
+            formatMatchLink(
+              gameAndMatch.type === "shared"
+                ? {
+                    sharedMatchId: gameAndMatch.match.sharedMatchId,
+                    sharedGameId: gameAndMatch.game.sharedGameId,
+                    type: gameAndMatch.game.type,
+                    linkedGameId: gameAndMatch.game.linkedGameId,
+                    finished: true,
+                  }
+                : {
+                    matchId: gameAndMatch.match.id,
+                    gameId: gameAndMatch.game.id,
+                    type: gameAndMatch.game.type,
+                    finished: true,
+                  },
+            ),
           );
         },
       },
@@ -297,7 +295,10 @@ function Content({
               <Button
                 variant="secondary"
                 type="button"
-                onClick={() => form.reset()}
+                onClick={() => {
+                  form.reset();
+                  setIsOpen(false);
+                }}
               >
                 Clear
               </Button>

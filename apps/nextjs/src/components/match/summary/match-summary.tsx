@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import type { GameInput, MatchInput } from "../types/input";
 import { prefetch, trpc } from "~/trpc/server";
 import { GamePreviousMatches } from "./game-previous-matches";
 import { MatchCard, MatchCardSkeleton } from "./match-card";
@@ -12,59 +13,31 @@ import {
   ShareMatchResultsSkeleton,
 } from "./share-match-results";
 
-export default function MatchSummary({
-  id,
-  gameId,
-  type,
-}: {
-  id: number;
-  gameId: number;
-  type: "original" | "shared";
+export default function MatchSummary(input: {
+  game: GameInput;
+  match: MatchInput;
 }) {
+  void prefetch(trpc.newMatch.getMatch.queryOptions(input.match));
+  void prefetch(trpc.newMatch.getMatchScoresheet.queryOptions(input.match));
   void prefetch(
-    trpc.newMatch.getMatch.queryOptions({
-      id: id,
-      type: type,
-    }),
+    trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input.match),
   );
-  void prefetch(
-    trpc.newMatch.getMatchScoresheet.queryOptions({
-      id: id,
-      type: type,
-    }),
-  );
-  void prefetch(
-    trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
-      id: id,
-      type: type,
-    }),
-  );
-  void prefetch(
-    trpc.newMatch.getMatchSummary.queryOptions({
-      id: id,
-      type: type,
-    }),
-  );
-  void prefetch(
-    trpc.newGame.gameMatches.queryOptions({
-      id: gameId,
-      type: type,
-    }),
-  );
+  void prefetch(trpc.newMatch.getMatchSummary.queryOptions(input.match));
+  void prefetch(trpc.newGame.gameMatches.queryOptions(input.game));
   return (
     <div className="flex w-full items-center justify-center">
       <div className="flex max-w-6xl flex-1 flex-col items-center gap-4 pt-0 sm:p-4">
         <Suspense fallback={<MatchCardSkeleton />}>
-          <MatchCard id={id} type={type} />
+          <MatchCard match={input.match} />
         </Suspense>
         <Suspense fallback={<ShareMatchResultsSkeleton />}>
-          <ShareMatchResults id={id} type={type} />
+          <ShareMatchResults match={input.match} />
         </Suspense>
         <Suspense fallback={null}>
-          <GamePreviousMatches id={gameId} type={type} />
+          <GamePreviousMatches game={input.game} />
         </Suspense>
         <Suspense fallback={<MatchSummaryPlayerStatsSkeleton />}>
-          <MatchSummaryPlayerStats id={id} type={type} />
+          <MatchSummaryPlayerStats match={input.match} />
         </Suspense>
       </div>
     </div>

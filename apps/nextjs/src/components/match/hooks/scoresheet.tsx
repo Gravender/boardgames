@@ -8,10 +8,11 @@ import { toast } from "@board-games/ui/toast";
 
 import { useTRPC } from "~/trpc/react";
 
-export const useDurationMutation = (
-  id: number,
-  type: "original" | "shared",
-) => {
+type MatchInput =
+  | { type: "shared"; sharedMatchId: number }
+  | { type: "original"; id: number };
+
+export const useDurationMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const updateMatch = async ({
@@ -19,11 +20,9 @@ export const useDurationMutation = (
   }: {
     action: "start" | "pause" | "reset";
   }) => {
-    await queryClient.cancelQueries(
-      trpc.newMatch.getMatch.queryOptions({ id: id, type: type }),
-    );
+    await queryClient.cancelQueries(trpc.newMatch.getMatch.queryOptions(input));
     const prevMatch = queryClient.getQueryData(
-      trpc.newMatch.getMatch.queryOptions({ id: id, type: type }).queryKey,
+      trpc.newMatch.getMatch.queryOptions(input).queryKey,
     );
     if (prevMatch !== undefined) {
       if (action === "start") {
@@ -34,7 +33,7 @@ export const useDurationMutation = (
           finished: false,
         };
         queryClient.setQueryData(
-          trpc.newMatch.getMatch.queryOptions({ id: id, type: type }).queryKey,
+          trpc.newMatch.getMatch.queryOptions(input).queryKey,
           newData,
         );
       } else if (action === "pause") {
@@ -50,7 +49,7 @@ export const useDurationMutation = (
           endTime: endTime,
         };
         queryClient.setQueryData(
-          trpc.newMatch.getMatch.queryOptions({ id: id, type: type }).queryKey,
+          trpc.newMatch.getMatch.queryOptions(input).queryKey,
           newData,
         );
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -63,7 +62,7 @@ export const useDurationMutation = (
           endTime: null,
         };
         queryClient.setQueryData(
-          trpc.newMatch.getMatch.queryOptions({ id: id, type: type }).queryKey,
+          trpc.newMatch.getMatch.queryOptions(input).queryKey,
           newData,
         );
       }
@@ -71,9 +70,7 @@ export const useDurationMutation = (
     return { previousData: prevMatch };
   };
   const invalidateMatch = async () =>
-    queryClient.invalidateQueries(
-      trpc.newMatch.getMatch.queryOptions({ id: id, type: type }),
-    );
+    queryClient.invalidateQueries(trpc.newMatch.getMatch.queryOptions(input));
   const startMatchDuration = useMutation(
     trpc.newMatch.update.matchStart.mutationOptions({
       onMutate: async (_) => updateMatch({ action: "start" }),
@@ -84,10 +81,7 @@ export const useDurationMutation = (
         });
         if (context?.previousData) {
           queryClient.setQueryData(
-            trpc.newMatch.getMatch.queryOptions({
-              id: id,
-              type: type,
-            }).queryKey,
+            trpc.newMatch.getMatch.queryOptions(input).queryKey,
             context.previousData,
           );
         }
@@ -104,10 +98,7 @@ export const useDurationMutation = (
         });
         if (context?.previousData) {
           queryClient.setQueryData(
-            trpc.newMatch.getMatch.queryOptions({
-              id: id,
-              type: type,
-            }).queryKey,
+            trpc.newMatch.getMatch.queryOptions(input).queryKey,
             context.previousData,
           );
         }
@@ -124,19 +115,16 @@ export const useDurationMutation = (
         });
         if (context?.previousData) {
           queryClient.setQueryData(
-            trpc.newMatch.getMatch.queryOptions({
-              id: id,
-              type: type,
-            }).queryKey,
+            trpc.newMatch.getMatch.queryOptions(input).queryKey,
             context.previousData,
           );
         }
       },
     }),
   );
-  const startMatch = () => startMatchDuration.mutate({ id: id, type: type });
-  const pauseMatch = () => pauseMatchDuration.mutate({ id: id, type: type });
-  const resetMatch = () => resetMatchDuration.mutate({ id: id, type: type });
+  const startMatch = () => startMatchDuration.mutate(input);
+  const pauseMatch = () => pauseMatchDuration.mutate(input);
+  const resetMatch = () => resetMatchDuration.mutate(input);
   return {
     startMatch,
     pauseMatch,
@@ -144,10 +132,7 @@ export const useDurationMutation = (
   };
 };
 
-export const useUpdateFinalScores = (
-  id: number,
-  type: "original" | "shared",
-) => {
+export const useUpdateFinalScores = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const posthog = usePostHog();
@@ -155,7 +140,7 @@ export const useUpdateFinalScores = (
     trpc.newMatch.update.updateMatchFinalScores.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions({ id, type }),
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
         );
       },
       onError: (error) => {
@@ -166,14 +151,10 @@ export const useUpdateFinalScores = (
       },
     }),
   );
-  const updateFinalScores = () =>
-    updateFinalScoresMutation.mutate({
-      id: id,
-      type: type,
-    });
+  const updateFinalScores = () => updateFinalScoresMutation.mutate(input);
   return { updateFinalScores };
 };
-export const useUpdateFinish = (id: number, type: "original" | "shared") => {
+export const useUpdateFinish = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const posthog = usePostHog();
@@ -182,8 +163,7 @@ export const useUpdateFinish = (id: number, type: "original" | "shared") => {
       onSuccess: async () => {
         await queryClient.invalidateQueries();
         posthog.capture("match finished", {
-          id: id,
-          type: type,
+          input: input,
           finishedType: "normal",
         });
       },
@@ -200,10 +180,7 @@ export const useUpdateFinish = (id: number, type: "original" | "shared") => {
   };
 };
 
-export const useUpdateMatchManualWinnerMutation = (
-  id: number,
-  type: "original" | "shared",
-) => {
+export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const posthog = usePostHog();
@@ -212,8 +189,7 @@ export const useUpdateMatchManualWinnerMutation = (
       onMutate: async () => {
         await queryClient.invalidateQueries();
         posthog.capture("match finished", {
-          id: id,
-          type: type,
+          input: input,
           finishedType: "manual",
         });
       },
@@ -230,10 +206,7 @@ export const useUpdateMatchManualWinnerMutation = (
   };
 };
 
-export const useUpdateMatchPlacementsMutation = (
-  id: number,
-  type: "original" | "shared",
-) => {
+export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const posthog = usePostHog();
@@ -242,8 +215,7 @@ export const useUpdateMatchPlacementsMutation = (
       onSuccess: async () => {
         await queryClient.invalidateQueries();
         posthog.capture("match finished", {
-          id: id,
-          type: type,
+          input: input,
           finishedType: "tie-breaker",
         });
       },
@@ -260,26 +232,17 @@ export const useUpdateMatchPlacementsMutation = (
   };
 };
 
-export const useUpdateMatchRoundScoreMutation = (
-  id: number,
-  type: "original" | "shared",
-) => {
+export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const updateMatchRoundScoreMutation = useMutation(
     trpc.newMatch.update.updateMatchRoundScore.mutationOptions({
       onMutate: async (newRoundScore) => {
         await queryClient.cancelQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
-            id: id,
-            type: type,
-          }),
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
         );
         const prevData = queryClient.getQueryData(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
-            id: id,
-            type: type,
-          }).queryKey,
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
         );
         if (prevData) {
           const newData = {
@@ -321,10 +284,7 @@ export const useUpdateMatchRoundScoreMutation = (
             }),
           };
           queryClient.setQueryData(
-            trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
-              id: id,
-              type: type,
-            }).queryKey,
+            trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
             newData,
           );
         }
@@ -332,10 +292,7 @@ export const useUpdateMatchRoundScoreMutation = (
       },
       onSuccess: async () => {
         await queryClient.invalidateQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
-            id: id,
-            type: type,
-          }),
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
         );
       },
       onError: (error, newRoundScore, context) => {
@@ -381,10 +338,7 @@ export const useUpdateMatchRoundScoreMutation = (
         }
         if (context?.previousData) {
           queryClient.setQueryData(
-            trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
-              id: id,
-              type: type,
-            }).queryKey,
+            trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
             context.previousData,
           );
         }
@@ -395,27 +349,107 @@ export const useUpdateMatchRoundScoreMutation = (
     updateMatchRoundScoreMutation,
   };
 };
+export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const updateMatchPlayerOrTeamScoreMutation = useMutation(
+    trpc.newMatch.update.updateMatchPlayerScore.mutationOptions({
+      onMutate: async (newScore) => {
+        await queryClient.cancelQueries(
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
+        );
+        const prevData = queryClient.getQueryData(
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
+        );
+        if (prevData) {
+          const newData = {
+            ...prevData,
+            players: prevData.players.map((player) => {
+              if (
+                newScore.type === "player" &&
+                player.id === newScore.matchPlayerId
+              ) {
+                return {
+                  ...player,
+                  score: newScore.score,
+                };
+              } else if (newScore.type === "team") {
+                if (player.teamId === newScore.teamId) {
+                  return {
+                    ...player,
+                    score: newScore.score,
+                  };
+                }
+              }
+              return player;
+            }),
+          };
+          queryClient.setQueryData(
+            trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
+            newData,
+          );
+        }
+        return { newScore, previousData: prevData };
+      },
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
+        );
+      },
+      onError: (error, newScore, context) => {
+        if (newScore.type === "team") {
+          const team = context?.previousData?.teams.find(
+            (team) => team.id === newScore.teamId,
+          );
+          if (team) {
+            console.error(`Error updating score for team ${team.name}:`, error);
+            toast.error(`Error updating score for team ${team.name}`, {
+              description: "There was a problem updating the score.",
+            });
+          } else {
+            console.error("Error updating score for unknown team:", error);
+          }
+        } else {
+          const player = context?.previousData?.players.find(
+            (player) => player.id === newScore.matchPlayerId,
+          );
+          if (player) {
+            console.error(
+              `Error updating score for player ${player.name}:`,
+              error,
+            );
+            toast.error(`Error updating score for player ${player.name}`, {
+              description: "There was a problem updating the score.",
+            });
+          } else {
+            console.error("Error updating score for unknown player:", error);
+          }
+        }
+        if (context?.previousData) {
+          queryClient.setQueryData(
+            trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
+            context.previousData,
+          );
+        }
+      },
+    }),
+  );
+  return {
+    updateMatchPlayerOrTeamScoreMutation,
+  };
+};
 
-export const useUpdateMatchCommentMutation = (
-  id: number,
-  type: "original" | "shared",
-) => {
+export const useUpdateMatchCommentMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const updateMatchCommentMutation = useMutation(
     trpc.newMatch.update.updateMatchComment.mutationOptions({
       onMutate: async (newComment) => {
         await queryClient.cancelQueries(
-          trpc.newMatch.getMatch.queryOptions({
-            id: id,
-            type: type,
-          }),
+          trpc.newMatch.getMatch.queryOptions(input),
         );
         const prevData = queryClient.getQueryData(
-          trpc.newMatch.getMatch.queryOptions({
-            id: id,
-            type: type,
-          }).queryKey,
+          trpc.newMatch.getMatch.queryOptions(input).queryKey,
         );
         if (prevData) {
           const newData = {
@@ -423,10 +457,7 @@ export const useUpdateMatchCommentMutation = (
             comment: newComment.comment,
           };
           queryClient.setQueryData(
-            trpc.newMatch.getMatch.queryOptions({
-              id: id,
-              type: type,
-            }).queryKey,
+            trpc.newMatch.getMatch.queryOptions(input).queryKey,
             newData,
           );
         }
@@ -434,10 +465,7 @@ export const useUpdateMatchCommentMutation = (
       },
       onSuccess: async () => {
         await queryClient.invalidateQueries(
-          trpc.newMatch.getMatch.queryOptions({
-            id: id,
-            type: type,
-          }),
+          trpc.newMatch.getMatch.queryOptions(input),
         );
       },
       onError: (error, newComment, context) => {
@@ -453,10 +481,7 @@ export const useUpdateMatchCommentMutation = (
         );
         if (context?.previousData) {
           queryClient.setQueryData(
-            trpc.newMatch.getMatch.queryOptions({
-              id: id,
-              type: type,
-            }).queryKey,
+            trpc.newMatch.getMatch.queryOptions(input).queryKey,
             context.previousData,
           );
         }
@@ -468,26 +493,17 @@ export const useUpdateMatchCommentMutation = (
   };
 };
 
-export const useUpdateMatchDetailsMutation = (
-  id: number,
-  type: "original" | "shared",
-) => {
+export const useUpdateMatchDetailsMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const updateMatchDetailsMutation = useMutation(
     trpc.newMatch.update.updateMatchDetails.mutationOptions({
       onMutate: async (newDetails) => {
         await queryClient.cancelQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
-            id: id,
-            type: type,
-          }),
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
         );
         const prevData = queryClient.getQueryData(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
-            id: id,
-            type: type,
-          }).queryKey,
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
         );
         if (prevData) {
           if (newDetails.type === "player") {
@@ -504,10 +520,8 @@ export const useUpdateMatchDetailsMutation = (
               }),
             };
             queryClient.setQueryData(
-              trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
-                id: id,
-                type: type,
-              }).queryKey,
+              trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input)
+                .queryKey,
               newData,
             );
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -525,10 +539,8 @@ export const useUpdateMatchDetailsMutation = (
               }),
             };
             queryClient.setQueryData(
-              trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
-                id: id,
-                type: type,
-              }).queryKey,
+              trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input)
+                .queryKey,
               newData,
             );
           }
@@ -537,10 +549,7 @@ export const useUpdateMatchDetailsMutation = (
       },
       onSuccess: async () => {
         await queryClient.invalidateQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
-            id: id,
-            type: type,
-          }),
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
         );
       },
       onError: (error, newDetails, context) => {
@@ -577,10 +586,7 @@ export const useUpdateMatchDetailsMutation = (
         }
         if (context?.previousData) {
           queryClient.setQueryData(
-            trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
-              id: id,
-              type: type,
-            }).queryKey,
+            trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
             context.previousData,
           );
         }

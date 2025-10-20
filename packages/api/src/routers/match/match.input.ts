@@ -17,10 +17,16 @@ export const createMatchInput = insertMatchSchema
   })
   .required({ name: true })
   .extend({
-    game: z.object({
-      id: z.number(),
-      type: sharedOrOriginalSchema,
-    }),
+    game: z.discriminatedUnion("type", [
+      z.object({
+        type: z.literal("original"),
+        id: z.number(),
+      }),
+      z.object({
+        type: z.literal("shared"),
+        sharedGameId: z.number(),
+      }),
+    ]),
     teams: z
       .array(
         z.object({

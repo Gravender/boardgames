@@ -52,7 +52,7 @@ export default async function Page({ params }: Props) {
     }),
   );
   void prefetch(
-    trpc.game.getGameRoles.queryOptions({
+    trpc.newGame.gameRoles.queryOptions({
       id: Number(id),
       type: "original",
     }),

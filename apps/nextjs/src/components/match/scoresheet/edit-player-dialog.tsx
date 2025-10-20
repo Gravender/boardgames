@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 
+import type { MatchInput } from "../types/input";
 import { useGameRoles } from "~/components/game/hooks/roles";
 import {
   useMatch,
@@ -54,18 +55,26 @@ type Team = NonNullable<
 >["teams"][number];
 export default function PlayerEditorDialog({
   player,
-  matchId,
-  type,
+  matchInput,
   onClose,
 }: {
   player: Player | null;
-  matchId: number;
-  type: "original" | "shared";
+  matchInput: MatchInput;
   onClose: () => void;
 }) {
-  const { match } = useMatch(matchId, type);
-  const { players, teams } = usePlayersAndTeams(matchId, type);
-  const { gameRoles } = useGameRoles(match.game.id, match.game.type);
+  const { match } = useMatch(matchInput);
+  const { players, teams } = usePlayersAndTeams(matchInput);
+  const { gameRoles } = useGameRoles(
+    match.type === "original"
+      ? {
+          type: "original",
+          id: match.game.id,
+        }
+      : {
+          type: "shared",
+          sharedGameId: match.game.sharedGameId,
+        },
+  );
 
   return (
     <Dialog open={player !== null} onOpenChange={onClose}>
@@ -93,7 +102,7 @@ function Content({
   teams: Team[];
   player: Player;
   players: Player[];
-  roles: RouterOutputs["game"]["getGameRoles"];
+  roles: RouterOutputs["newGame"]["gameRoles"];
   onClose: () => void;
 }) {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
@@ -118,26 +127,25 @@ function Content({
   const getTeamRoles = (
     teamPlayers: Player[],
     allRoles: typeof roles,
-  ): { id: number; type: "original" | "shared" }[] => {
+  ): { id: number; type: "original" | "shared" | "linked" }[] => {
     if (teamPlayers.length === 0) return [];
-    return allRoles.reduce<{ id: number; type: "original" | "shared" }[]>(
-      (acc, role) => {
-        const roleInEveryPlayer = teamPlayers.every((p) =>
-          p.roles.some((r) => r.id === role.id && r.type === role.type),
-        );
-        if (
-          !acc.find((r) => r.id === role.id && r.type === role.type) &&
-          roleInEveryPlayer
-        ) {
-          acc.push({
-            id: role.id,
-            type: role.type,
-          });
-        }
-        return acc;
-      },
-      [],
-    );
+    return allRoles.reduce<
+      { id: number; type: "original" | "shared" | "linked" }[]
+    >((acc, role) => {
+      const roleInEveryPlayer = teamPlayers.every((p) =>
+        p.roles.some((r) => r.id === role.id && r.type === role.type),
+      );
+      if (
+        !acc.find((r) => r.id === role.id && r.type === role.type) &&
+        roleInEveryPlayer
+      ) {
+        acc.push({
+          id: role.id,
+          type: role.type,
+        });
+      }
+      return acc;
+    }, []);
   };
   const formTeam = form.watch("team");
   const formRoles = form.watch("roles");
@@ -220,7 +228,12 @@ function Content({
                           roles,
                         );
                         const customRoles = formRoles.filter(
-                          (roleId) => !teamRoles.includes(roleId),
+                          (formRole) =>
+                            !teamRoles.find(
+                              (r) =>
+                                r.id === formRole.id &&
+                                r.type === formRole.type,
+                            ),
                         );
                         const updatedRoles = [
                           ...customRoles,

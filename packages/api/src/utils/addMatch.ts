@@ -376,11 +376,14 @@ async function createSharedMatchPlayer(
 export async function processPlayer(
   transaction: TransactionType,
   matchId: number,
-  playerToProcess: { id: number; type: "original" | "shared" },
+  playerToProcess: { id: number; type: "original" | "shared" | "linked" },
   teamId: number | null,
   userId: string,
 ) {
-  if (playerToProcess.type === "original") {
+  if (
+    playerToProcess.type === "original" ||
+    playerToProcess.type === "linked"
+  ) {
     return {
       matchId,
       playerId: playerToProcess.id,
@@ -458,10 +461,15 @@ export async function processPlayer(
   };
 }
 export async function getGame(
-  input: {
-    id: number;
-    type: "original" | "shared";
-  },
+  input:
+    | {
+        id: number;
+        type: "original";
+      }
+    | {
+        sharedGameId: number;
+        type: "shared";
+      },
   transaction: TransactionType,
   userId: string,
 ) {
@@ -481,7 +489,7 @@ export async function getGame(
   } else {
     const returnedSharedGame = await transaction.query.sharedGame.findFirst({
       where: {
-        id: input.id,
+        id: input.sharedGameId,
         sharedWithId: userId,
       },
       with: {
@@ -640,10 +648,10 @@ export async function getMatchPlayersAndTeams(
     name: string;
     players: {
       id: number;
-      type: "original" | "shared";
+      type: "original" | "shared" | "linked";
       roles: {
         id: number;
-        type: "original" | "shared";
+        type: "original" | "shared" | "linked";
       }[];
     }[];
   }[],
@@ -658,7 +666,7 @@ export async function getMatchPlayersAndTeams(
     playerId: number;
     roles: {
       id: number;
-      type: "original" | "shared";
+      type: "original" | "shared" | "linked";
     }[];
   }[] = [];
   if (
@@ -671,7 +679,7 @@ export async function getMatchPlayersAndTeams(
       processedPlayer: z.infer<typeof insertMatchPlayerSchema>;
       roles: {
         id: number;
-        type: "original" | "shared";
+        type: "original" | "shared" | "linked";
       }[];
     }[] = await Promise.all(
       inputPlayers.map(async (p) => {
@@ -713,7 +721,7 @@ export async function getMatchPlayersAndTeams(
           processedPlayer: z.infer<typeof insertMatchPlayerSchema>;
           roles: {
             id: number;
-            type: "original" | "shared";
+            type: "original" | "shared" | "linked";
           }[];
         }[] = await Promise.all(
           inputTeam.players.map(async (p) => {
@@ -766,7 +774,7 @@ export async function getMatchPlayersAndTeams(
           processedPlayer: z.infer<typeof insertMatchPlayerSchema>;
           roles: {
             id: number;
-            type: "original" | "shared";
+            type: "original" | "shared" | "linked";
           }[];
         }[] = await Promise.all(
           inputTeam.players.map(async (p) => {
@@ -814,7 +822,8 @@ export async function getMatchPlayersAndTeams(
   );
   if (rolesToAdd.length > 0) {
     const originalRoles = rolesToAdd.filter(
-      (roleToAdd) => roleToAdd.type === "original",
+      (roleToAdd) =>
+        roleToAdd.type === "original" || roleToAdd.type === "linked",
     );
     const sharedRoles = rolesToAdd.filter(
       (roleToAdd) => roleToAdd.type === "shared",

@@ -12,17 +12,12 @@ import {
   TableRow,
 } from "@board-games/ui/table";
 
+import type { MatchInput } from "../types/input";
 import { useMatchSummary, useScoresheet } from "../hooks/suspenseQueries";
 
-export function MatchSummaryPlayerStats({
-  id,
-  type,
-}: {
-  id: number;
-  type: "original" | "shared";
-}) {
-  const { summary } = useMatchSummary(id, type);
-  const { scoresheet } = useScoresheet(id, type);
+export function MatchSummaryPlayerStats(input: { match: MatchInput }) {
+  const { summary } = useMatchSummary(input.match);
+  const { scoresheet } = useScoresheet(input.match);
   return (
     <Card className="w-full">
       <CardHeader>

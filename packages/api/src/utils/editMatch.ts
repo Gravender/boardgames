@@ -24,11 +24,11 @@ export async function addPlayersToMatch(
   matchId: number,
   playersToAdd: {
     id: number;
-    type: "original" | "shared";
+    type: "original" | "shared" | "linked";
     teamId: number | null;
     roles: {
       id: number;
-      type: "original" | "shared";
+      type: "original" | "shared" | "linked";
     }[];
   }[],
   teams: {
@@ -48,14 +48,14 @@ export async function addPlayersToMatch(
     playerId: number;
     roles: {
       id: number;
-      type: "original" | "shared";
+      type: "original" | "shared" | "linked";
     }[];
   }[] = [];
   const playersToInsert: {
     processedPlayer: z.infer<typeof insertMatchPlayerSchema>;
     roles: {
       id: number;
-      type: "original" | "shared";
+      type: "original" | "shared" | "linked";
     }[];
   }[] = await Promise.all(
     playersToAdd.map(async (p) => {
@@ -117,7 +117,8 @@ export async function addPlayersToMatch(
   );
   if (rolesToAdd.length > 0) {
     const originalRoles = rolesToAdd.filter(
-      (roleToAdd) => roleToAdd.type === "original",
+      (roleToAdd) =>
+        roleToAdd.type === "original" || roleToAdd.type === "linked",
     );
     const sharedRoles = rolesToAdd.filter(
       (roleToAdd) => roleToAdd.type === "shared",

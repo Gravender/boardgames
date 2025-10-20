@@ -34,6 +34,7 @@ import {
 } from "@board-games/ui/select";
 import { toast } from "@board-games/ui/toast";
 
+import type { MatchInput } from "../types/input";
 import { GradientPicker } from "~/components/color-picker";
 import {
   usePlayersAndTeams,
@@ -43,14 +44,7 @@ import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 
-export const AddRoundDialog = ({
-  match,
-}: {
-  match: {
-    id: number;
-    type: "original" | "shared";
-  };
-}) => {
+export const AddRoundDialog = ({ match }: { match: MatchInput }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -79,18 +73,15 @@ const AddRoundDialogContent = ({
   match,
   setOpen,
 }: {
-  match: {
-    id: number;
-    type: "original" | "shared";
-  };
+  match: MatchInput;
   setOpen: (isOpen: boolean) => void;
 }) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const router = useRouter();
   const posthog = usePostHog();
-  const { scoresheet } = useScoresheet(match.id, match.type);
-  const { players } = usePlayersAndTeams(match.id, match.type);
+  const { scoresheet } = useScoresheet(match);
+  const { players } = usePlayersAndTeams(match);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm({
@@ -108,7 +99,7 @@ const AddRoundDialogContent = ({
       onSuccess: async () => {
         await queryClient.invalidateQueries();
         posthog.capture("round added to match", {
-          matchId: match.id,
+          input: match,
         });
         router.refresh();
         setIsSubmitting(false);

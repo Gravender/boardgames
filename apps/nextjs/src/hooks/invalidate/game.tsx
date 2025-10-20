@@ -35,54 +35,9 @@ export function useInvalidateGame() {
     [queryClient, trpc],
   );
 }
-export function useInvalidateEditGame() {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const invalidateGame = useInvalidateGame();
-  return useCallback(
-    (gameId: number, type: "original" | "shared") => {
-      return [
-        ...invalidateGame(gameId, type),
-        queryClient.invalidateQueries(
-          trpc.game.getGameMetaData.queryOptions({
-            id: gameId,
-          }),
-        ),
-        queryClient.invalidateQueries(
-          trpc.game.getGameName.queryOptions({
-            id: gameId,
-          }),
-        ),
-        queryClient.invalidateQueries(
-          trpc.game.getGameScoresheets.queryOptions({
-            gameId: gameId,
-            type: type,
-          }),
-        ),
-        queryClient.invalidateQueries(
-          trpc.game.getGameRoles.queryOptions({
-            id: gameId,
-            type: type,
-          }),
-        ),
-        queryClient.invalidateQueries(
-          trpc.game.getEditGame.queryOptions({
-            id: gameId,
-          }),
-        ),
-      ];
-    },
-    [invalidateGame, queryClient, trpc],
-  );
-}
 export function useInvalidateGames() {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   return useCallback(() => {
-    return [
-      queryClient.invalidateQueries(trpc.game.getGames.pathFilter()),
-      queryClient.invalidateQueries(trpc.dashboard.getGames.pathFilter()),
-      queryClient.invalidateQueries(trpc.dashboard.getUniqueGames.pathFilter()),
-    ];
-  }, [queryClient, trpc]);
+    return [queryClient.invalidateQueries()];
+  }, [queryClient]);
 }

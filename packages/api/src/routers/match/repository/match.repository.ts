@@ -53,10 +53,7 @@ class MatchRepository {
     const { input } = args;
     const response = await db.transaction(async (transaction) => {
       const returnedGameId = await getGame(
-        {
-          id: input.game.id,
-          type: input.game.type,
-        },
+        input.game,
         transaction,
         args.createdBy,
       );

@@ -22,16 +22,14 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Textarea } from "@board-games/ui/textarea";
 
+import type { MatchInput } from "../types/input";
 import { useUpdateMatchCommentMutation } from "~/components/match/hooks/scoresheet";
 
 export function CommentDialog({
   match,
   comment,
 }: {
-  match: {
-    id: number;
-    type: "original" | "shared";
-  };
+  match: MatchInput;
   comment: string | null;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -63,17 +61,11 @@ function Content({
   comment,
   setIsOpen,
 }: {
-  match: {
-    id: number;
-    type: "original" | "shared";
-  };
+  match: MatchInput;
   setIsOpen: (isOpen: boolean) => void;
   comment: string;
 }) {
-  const { updateMatchCommentMutation } = useUpdateMatchCommentMutation(
-    match.id,
-    match.type,
-  );
+  const { updateMatchCommentMutation } = useUpdateMatchCommentMutation(match);
   const form = useForm({
     schema: FormSchema,
     defaultValues: { comment },
@@ -81,7 +73,7 @@ function Content({
   function onSubmitForm(values: z.infer<typeof FormSchema>) {
     updateMatchCommentMutation.mutate(
       {
-        match: { id: match.id, type: match.type },
+        match: match,
         comment: values.comment,
       },
       {

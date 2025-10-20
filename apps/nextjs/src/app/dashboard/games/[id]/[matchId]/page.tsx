@@ -63,7 +63,12 @@ export default async function Page({ params }: Props) {
     <HydrateClient>
       <ErrorBoundary fallback={<MatchNotFound />}>
         <Suspense>
-          <Scoresheet matchId={Number(matchId)} type="original" />
+          <Scoresheet
+            match={{
+              id: Number(matchId),
+              type: "original",
+            }}
+          />
         </Suspense>
       </ErrorBoundary>
     </HydrateClient>

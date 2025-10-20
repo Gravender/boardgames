@@ -4,28 +4,31 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { useTRPC } from "~/trpc/react";
 
-export const useMatch = (id: number, type: "original" | "shared") => {
+type MatchInput =
+  | { type: "shared"; sharedMatchId: number }
+  | { type: "original"; id: number };
+export const useMatch = (input: MatchInput) => {
   const trpc = useTRPC();
   const { data: match } = useSuspenseQuery(
-    trpc.newMatch.getMatch.queryOptions({ id, type }),
+    trpc.newMatch.getMatch.queryOptions(input),
   );
   return {
     match,
   };
 };
-export const useScoresheet = (id: number, type: "original" | "shared") => {
+export const useScoresheet = (input: MatchInput) => {
   const trpc = useTRPC();
   const { data: scoresheet } = useSuspenseQuery(
-    trpc.newMatch.getMatchScoresheet.queryOptions({ id, type }),
+    trpc.newMatch.getMatchScoresheet.queryOptions(input),
   );
   return {
     scoresheet,
   };
 };
-export const usePlayersAndTeams = (id: number, type: "original" | "shared") => {
+export const usePlayersAndTeams = (input: MatchInput) => {
   const trpc = useTRPC();
   const { data: playersAndTeams } = useSuspenseQuery(
-    trpc.newMatch.getMatchPlayersAndTeams.queryOptions({ id, type }),
+    trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
   );
   return {
     players: playersAndTeams.players,
@@ -33,10 +36,10 @@ export const usePlayersAndTeams = (id: number, type: "original" | "shared") => {
   };
 };
 
-export const useMatchSummary = (id: number, type: "original" | "shared") => {
+export const useMatchSummary = (input: MatchInput) => {
   const trpc = useTRPC();
   const { data: summary } = useSuspenseQuery(
-    trpc.newMatch.getMatchSummary.queryOptions({ id, type }),
+    trpc.newMatch.getMatchSummary.queryOptions(input),
   );
   return {
     summary,

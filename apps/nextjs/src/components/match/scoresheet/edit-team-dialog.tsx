@@ -10,7 +10,11 @@ import { Search } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
-import { sharedOrOriginalSchema } from "@board-games/shared";
+import {
+  sharedOrLinkedSchema,
+  sharedOrOriginalOrLinkedSchema,
+  sharedOrOriginalSchema,
+} from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -35,6 +39,7 @@ import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 
+import type { MatchInput } from "../types/input";
 import { useGameRoles } from "~/components/game/hooks/roles";
 import {
   useMatch,
@@ -53,25 +58,33 @@ type Team = NonNullable<
 >["teams"][number];
 export default function TeamEditorDialog({
   team,
-  type,
-  matchId,
+  matchInput,
   onClose,
 }: {
   team: Team | null;
-  matchId: number;
-  type: "original" | "shared";
+  matchInput: MatchInput;
   onClose: () => void;
 }) {
-  const { match } = useMatch(matchId, type);
-  const { players } = usePlayersAndTeams(matchId, type);
-  const { gameRoles } = useGameRoles(match.game.id, match.game.type);
+  const { match } = useMatch(matchInput);
+  const { players } = usePlayersAndTeams(matchInput);
+  const { gameRoles } = useGameRoles(
+    match.game.type === "original"
+      ? {
+          type: "original",
+          id: match.game.id,
+        }
+      : {
+          type: "shared",
+          sharedGameId: match.game.sharedGameId,
+        },
+  );
+
   return (
     <Dialog open={team !== null} onOpenChange={onClose}>
       <DialogContent className="gap-2 p-4 sm:max-w-[800px] sm:gap-4 sm:p-6">
         {team && (
           <Content
-            matchId={match.id}
-            type={match.type}
+            matchInput={matchInput}
             team={team}
             players={players}
             roles={gameRoles}
@@ -83,18 +96,16 @@ export default function TeamEditorDialog({
   );
 }
 function Content({
-  matchId,
-  type,
+  matchInput,
   team,
   players,
   roles,
   onClose,
 }: {
-  matchId: number;
-  type: "original" | "shared";
+  matchInput: MatchInput;
   team: Team;
   players: Player[];
-  roles: RouterOutputs["game"]["getGameRoles"];
+  roles: RouterOutputs["newGame"]["gameRoles"];
   onClose: () => void;
 }) {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
@@ -105,7 +116,7 @@ function Content({
     (player) => player.teamId === team.id,
   );
   const teamRoles = originalTeamPlayers.reduce<
-    { id: number; type: "original" | "shared" }[]
+    { id: number; type: "original" | "shared" | "linked" }[]
   >((acc, player) => {
     player.roles.forEach((role) => {
       const roleInEveryPlayer = originalTeamPlayers.every((p) =>
@@ -125,19 +136,40 @@ function Content({
     return acc;
   }, []);
 
-  const formSchema = z.object({
+  const originalMatchFormSchema = z.object({
     name: z.string(),
-    roles: z.array(z.object({ id: z.number(), type: sharedOrOriginalSchema })),
+    roles: z.array(z.object({ id: z.number(), type: sharedOrLinkedSchema })),
     players: z.array(
       z.object({
         id: z.number(),
         name: z.string(),
         roles: z.array(
-          z.object({ id: z.number(), type: sharedOrOriginalSchema }),
+          z.object({ id: z.number(), type: sharedOrLinkedSchema }),
         ),
       }),
     ),
   });
+
+  const sharedMatchFormSchema = z.object({
+    name: z.string(),
+    roles: z.array(
+      z.object({ id: z.number(), type: sharedOrOriginalOrLinkedSchema }),
+    ),
+    players: z.array(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+        roles: z.array(
+          z.object({ id: z.number(), type: sharedOrLinkedSchema }),
+        ),
+      }),
+    ),
+  });
+
+  const formSchema =
+    matchInput.type === "original"
+      ? originalMatchFormSchema
+      : sharedMatchFormSchema;
 
   const form = useForm({
     schema: formSchema,
@@ -227,19 +259,99 @@ function Content({
       })
       .filter((p) => p !== null);
     updateMatchTeamMutation.mutate(
-      {
-        match: {
-          id: matchId,
-          type: type,
-        },
-        team: {
-          id: team.id,
-          name: isSameTeamName ? undefined : data.name,
-        },
-        playersToAdd: playersToAdd,
-        playersToRemove: playersToRemove,
-        playersToUpdate: playersToUpdate,
-      },
+      matchInput.type === "original"
+        ? {
+            type: "original",
+            id: matchInput.id,
+            team: {
+              id: team.id,
+              name: isSameTeamName ? undefined : data.name,
+            },
+            playersToAdd: playersToAdd,
+            playersToRemove: playersToRemove,
+            playersToUpdate: playersToUpdate,
+          }
+        : {
+            type: "shared" as const,
+            sharedMatchId: matchInput.sharedMatchId,
+            team: {
+              id: team.id,
+              name: isSameTeamName ? undefined : data.name,
+            },
+            playersToAdd: playersToAdd.map((p) => ({
+              ...p,
+              roles: p.roles
+                .map((r) => {
+                  if (r.type === "original") return null;
+                  if (r.type === "linked") {
+                    return {
+                      id: r.id,
+                      type: "linked" as const,
+                    };
+                  } else {
+                    return {
+                      id: r.id,
+                      type: "shared" as const,
+                    };
+                  }
+                })
+                .filter((r) => r !== null),
+            })),
+            playersToRemove: playersToRemove.map((p) => ({
+              ...p,
+              roles: p.roles
+                .map((r) => {
+                  if (r.type === "original") return null;
+                  if (r.type === "linked") {
+                    return {
+                      id: r.id,
+                      type: "linked" as const,
+                    };
+                  } else {
+                    return {
+                      id: r.id,
+                      type: "shared" as const,
+                    };
+                  }
+                })
+                .filter((r) => r !== null),
+            })),
+            playersToUpdate: playersToUpdate.map((p) => ({
+              ...p,
+              rolesToAdd: p.rolesToAdd
+                .map((r) => {
+                  if (r.type === "original") return null;
+                  if (r.type === "linked") {
+                    return {
+                      id: r.id,
+                      type: "linked" as const,
+                    };
+                  } else {
+                    return {
+                      id: r.id,
+                      type: "shared" as const,
+                    };
+                  }
+                })
+                .filter((r) => r !== null),
+              rolesToRemove: p.rolesToRemove
+                .map((r) => {
+                  if (r.type === "original") return null;
+                  if (r.type === "linked") {
+                    return {
+                      id: r.id,
+                      type: "linked" as const,
+                    };
+                  } else {
+                    return {
+                      id: r.id,
+                      type: "shared" as const,
+                    };
+                  }
+                })
+                .filter((r) => r !== null),
+            })),
+          },
       {
         onSuccess: () => {
           onClose();

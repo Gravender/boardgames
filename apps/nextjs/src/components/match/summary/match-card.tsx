@@ -8,17 +8,12 @@ import { Badge } from "@board-games/ui/badge";
 import { Card, CardContent } from "@board-games/ui/card";
 import { Skeleton } from "@board-games/ui/skeleton";
 
+import type { MatchInput } from "../types/input";
 import { GameImage } from "~/components/game-image";
 import { useMatch } from "~/components/match/hooks/suspenseQueries";
 
-export function MatchCard({
-  id,
-  type,
-}: {
-  id: number;
-  type: "original" | "shared";
-}) {
-  const { match } = useMatch(id, type);
+export function MatchCard(input: { match: MatchInput }) {
+  const { match } = useMatch(input.match);
   return (
     <Card className="w-full">
       <CardContent className="pt-6">

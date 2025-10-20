@@ -10,6 +10,7 @@ import { Separator } from "@board-games/ui/separator";
 import { Skeleton } from "@board-games/ui/skeleton";
 import { cn } from "@board-games/ui/utils";
 
+import type { MatchInput } from "../types/input";
 import { PlayerImage } from "~/components/player-image";
 import {
   useMatchSummary,
@@ -17,16 +18,10 @@ import {
   useScoresheet,
 } from "../hooks/suspenseQueries";
 
-export function ShareMatchResults({
-  id,
-  type,
-}: {
-  id: number;
-  type: "original" | "shared";
-}) {
-  const { summary } = useMatchSummary(id, type);
-  const { players, teams } = usePlayersAndTeams(id, type);
-  const { scoresheet } = useScoresheet(id, type);
+export function ShareMatchResults(input: { match: MatchInput }) {
+  const { summary } = useMatchSummary(input.match);
+  const { players, teams } = usePlayersAndTeams(input.match);
+  const { scoresheet } = useScoresheet(input.match);
 
   const calculatePerformance = (player: (typeof players)[number]) => {
     if (player.score === null) return undefined;
@@ -107,7 +102,7 @@ export function ShareMatchResults({
                 id: number;
                 name: string;
                 description: string | null;
-                type: "original" | "shared";
+                type: "original" | "shared" | "linked";
               }[]
             >((acc, player) => {
               if (player.roles.length > 0) {

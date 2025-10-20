@@ -47,9 +47,14 @@ export default async function Page({
         <div className="flex w-full items-center justify-center">
           <Suspense fallback={<Loading />}>
             <EditMatchForm
-              id={Number(matchId)}
-              gameId={Number(gameId)}
-              type="original"
+              match={{
+                type: "original",
+                id: Number(matchId),
+              }}
+              game={{
+                type: "original",
+                id: Number(gameId),
+              }}
             />
           </Suspense>
         </div>

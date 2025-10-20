@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
   ChevronUp,
@@ -90,7 +90,6 @@ import { cn } from "@board-games/ui/utils";
 import { GradientPicker } from "~/components/color-picker";
 import { GameImage } from "~/components/game-image";
 import { Spinner } from "~/components/spinner";
-import { useInvalidateEditGame } from "~/hooks/invalidate/game";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
@@ -288,12 +287,12 @@ const GameForm = ({
   const [isUploading, setIsUploading] = useState(false);
   const { startUpload } = useUploadThing("imageUploader");
   const router = useRouter();
+  const queryClient = useQueryClient();
 
-  const invalidateEditGame = useInvalidateEditGame();
   const mutation = useMutation(
     trpc.game.updateGame.mutationOptions({
       onSuccess: async () => {
-        await Promise.all(invalidateEditGame(data.game.id, "original"));
+        await queryClient.invalidateQueries();
         toast("Game updated successfully!");
         form.reset();
         setImagePreview(null);

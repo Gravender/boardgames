@@ -46,6 +46,7 @@ import {
 } from "@board-games/ui/select";
 
 import type { Player, Team } from "~/components/match/players/selector";
+import type { GameInput, MatchInput } from "~/components/match/types/input";
 import { AddPlayersDialogForm } from "~/components/match/players/selector";
 import { Spinner } from "~/components/spinner";
 import { useInvalidateLocations } from "~/hooks/invalidate/location";
@@ -54,22 +55,18 @@ import { useGetPlayersByGame } from "../player/hooks/players";
 import { useEditMatchMutation } from "./hooks/edit";
 import { useMatch, usePlayersAndTeams } from "./hooks/suspenseQueries";
 
-export function EditMatchForm({
-  id,
-  gameId,
-  type,
-}: {
-  id: number;
-  gameId: number;
-  type: "original" | "shared";
-}) {
+export function EditMatchForm(input: { game: GameInput; match: MatchInput }) {
   const trpc = useTRPC();
   const { data: locations } = useSuspenseQuery(
     trpc.location.getLocations.queryOptions(),
   );
-  const { match } = useMatch(id, type);
-  const { gamePlayers } = useGetPlayersByGame(gameId, type);
-  const { players: matchPlayers, teams } = usePlayersAndTeams(id, type);
+  const { match } = useMatch(input.match);
+  //TODO update to use input.game
+  const { gamePlayers } = useGetPlayersByGame(
+    input.game.type === "original" ? input.game.id : input.game.sharedGameId,
+    input.game.type,
+  );
+  const { players: matchPlayers, teams } = usePlayersAndTeams(input.match);
 
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -96,7 +93,7 @@ export function EditMatchForm({
       teams: mapTeams(teams, matchPlayers),
     },
   });
-  const { editMatchMutation } = useEditMatchMutation(match.id, match.game.type);
+  const { editMatchMutation } = useEditMatchMutation(input.match);
   const createLocation = useMutation(
     trpc.location.create.mutationOptions({
       onSuccess: async (result) => {
@@ -455,7 +452,7 @@ export function EditMatchForm({
       </Card>
       <AddPlayersDialog
         form={form}
-        game={match.game}
+        game={input.game}
         isOpen={isOpen}
         setIsOpen={setIsOpen}
       />
@@ -470,10 +467,7 @@ const AddPlayersDialog = ({
   setIsOpen,
 }: {
   form: UseFormReturn<z.infer<typeof editMatchSchema>>;
-  game: {
-    id: number;
-    type: "original" | "shared";
-  };
+  game: GameInput;
   isOpen: boolean;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
 }) => {
@@ -523,7 +517,7 @@ const mapTeams = (
     const teamPlayers = players.filter((player) => player.teamId === team.id);
     const roleCounts: {
       id: number;
-      type: "original" | "shared";
+      type: "original" | "shared" | "linked";
       name: string;
       description: string | null;
       count: number;

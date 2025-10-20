@@ -22,6 +22,7 @@ import {
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Textarea } from "@board-games/ui/textarea";
 
+import type { MatchInput } from "../types/input";
 import { useUpdateMatchDetailsMutation } from "../hooks/scoresheet";
 
 export function DetailDialog({
@@ -29,10 +30,7 @@ export function DetailDialog({
   data,
   placeholder,
 }: {
-  match: {
-    id: number;
-    type: "original" | "shared";
-  };
+  match: MatchInput;
   data: {
     id: number;
     name: string;
@@ -77,10 +75,7 @@ function Content({
   data,
   setIsOpen,
 }: {
-  match: {
-    id: number;
-    type: "original" | "shared";
-  };
+  match: MatchInput;
   data: {
     id: number;
     name: string;
@@ -89,10 +84,7 @@ function Content({
   };
   setIsOpen: (isOpen: boolean) => void;
 }) {
-  const { updateMatchDetailsMutation } = useUpdateMatchDetailsMutation(
-    match.id,
-    match.type,
-  );
+  const { updateMatchDetailsMutation } = useUpdateMatchDetailsMutation(match);
   const form = useForm({
     schema: FormSchema,
     defaultValues: { detail: data.details ?? "" },
@@ -102,10 +94,7 @@ function Content({
       updateMatchDetailsMutation.mutate(
         {
           type: "player",
-          match: {
-            id: match.id,
-            type: match.type,
-          },
+          match: match,
           id: data.id,
           details: values.detail,
         },
@@ -119,10 +108,7 @@ function Content({
       updateMatchDetailsMutation.mutate(
         {
           type: "team",
-          match: {
-            id: match.id,
-            type: match.type,
-          },
+          match: match,
           teamId: data.id,
           details: values.detail,
         },

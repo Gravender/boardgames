@@ -9,20 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Skeleton } from "@board-games/ui/skeleton";
 
+import type { GameInput } from "../types/input";
 import { useGameMatches } from "~/components/game/hooks/matches";
 import { formatMatchLink } from "~/utils/linkFormatting";
 
-type GamePreviousMatchesType =
-  | {
-      id: number;
-      type: "original";
-    }
-  | {
-      sharedGameId: number;
-      type: "shared";
-    };
-export function GamePreviousMatches(input: GamePreviousMatchesType) {
-  const { gameMatches } = useGameMatches(input);
+export function GamePreviousMatches(input: { game: GameInput }) {
+  const { gameMatches } = useGameMatches(input.game);
 
   if (gameMatches.length === 0) {
     return null;
