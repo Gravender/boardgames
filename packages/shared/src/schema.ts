@@ -17,6 +17,12 @@ export const sharedOrOriginalSchema = z.union([
   z.literal("shared"),
   z.literal("original"),
 ]);
+export const sharedOrLinkedSchema = z.literal(["shared", "linked"]);
+export const sharedOrOriginalOrLinkedSchema = z.union([
+  z.literal("shared"),
+  z.literal("original"),
+  z.literal("linked"),
+]);
 
 export const nonNullFileSchema = z
   .file()
@@ -338,14 +344,14 @@ export const imageSchema = insertImageSchema
 export const matchRoleSchema = z.array(
   z.object({
     id: z.number(),
-    type: sharedOrOriginalSchema,
+    type: sharedOrOriginalOrLinkedSchema,
   }),
 );
 export const matchLocationSchema = z
   .object({
     id: z.number(),
     name: z.string(),
-    type: z.literal("original").or(z.literal("shared")),
+    type: sharedOrOriginalSchema,
     isDefault: z.boolean(),
   })
   .nullish();
@@ -355,7 +361,7 @@ export const addMatchPlayersSchema = z
       .pick({ name: true, id: true })
       .required({ name: true, id: true })
       .extend({
-        type: z.literal("original").or(z.literal("shared")),
+        type: sharedOrOriginalOrLinkedSchema,
         imageUrl: z.string().nullable(),
         matches: z.number(),
         teamId: z.number().nullable(),
@@ -397,6 +403,52 @@ export const editMatchSchema = matchSchema.extend({
     }),
   ),
 });
+
+export const baseLocationSchema = selectLocationSchema.pick({
+  id: true,
+  name: true,
+});
+export const baseMatchPlayerSchema = selectMatchPlayerSchema
+  .pick({
+    id: true,
+    playerId: true,
+    score: true,
+    teamId: true,
+    placement: true,
+    winner: true,
+  })
+  .extend({
+    name: z.string(),
+    image: imageSchema.nullable(),
+  });
+export const baseGameForMatchSchema = selectGameSchema
+  .pick({
+    id: true,
+    name: true,
+  })
+  .extend({
+    image: imageSchema.nullable(),
+  });
+export const baseMatchSchema = selectMatchSchema
+  .pick({
+    id: true,
+    date: true,
+    name: true,
+    finished: true,
+    comment: true,
+    duration: true,
+  })
+  .extend({
+    won: z.boolean(),
+    hasUser: z.boolean(),
+    type: sharedOrOriginalSchema,
+    teams: z.array(
+      selectTeamSchema.pick({
+        id: true,
+        name: true,
+      }),
+    ),
+  });
 
 export const matchWithGameAndPlayersSchema = selectMatchSchema
   .pick({

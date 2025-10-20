@@ -5,7 +5,10 @@ import {
   insertPlayerSchema,
   selectMatchSchema,
 } from "@board-games/db/zodSchema";
-import { sharedOrOriginalSchema } from "@board-games/shared";
+import {
+  sharedOrOriginalOrLinkedSchema,
+  sharedOrOriginalSchema,
+} from "@board-games/shared";
 
 export const createMatchInput = insertMatchSchema
   .pick({
@@ -28,9 +31,12 @@ export const createMatchInput = insertMatchSchema
                 .pick({ id: true })
                 .required({ id: true })
                 .extend({
-                  type: sharedOrOriginalSchema,
+                  type: sharedOrOriginalOrLinkedSchema,
                   roles: z.array(
-                    z.object({ id: z.number(), type: sharedOrOriginalSchema }),
+                    z.object({
+                      id: z.number(),
+                      type: sharedOrOriginalOrLinkedSchema,
+                    }),
                   ),
                 }),
             )
@@ -45,7 +51,7 @@ export const createMatchInput = insertMatchSchema
     location: z
       .object({
         id: z.number(),
-        type: sharedOrOriginalSchema,
+        type: sharedOrOriginalOrLinkedSchema,
       })
       .nullable(),
   });
@@ -103,7 +109,7 @@ export const editMatchInput = z.discriminatedUnion("type", [
         location: z
           .object({
             id: z.number(),
-            type: sharedOrOriginalSchema,
+            type: sharedOrOriginalOrLinkedSchema,
           })
           .nullable()
           .optional(),
@@ -115,10 +121,10 @@ export const editMatchInput = z.discriminatedUnion("type", [
         })
         .required({ id: true })
         .extend({
-          type: sharedOrOriginalSchema,
+          type: sharedOrOriginalOrLinkedSchema,
           teamId: z.number().nullable(),
           roles: z.array(
-            z.object({ type: sharedOrOriginalSchema, id: z.number() }),
+            z.object({ type: sharedOrOriginalOrLinkedSchema, id: z.number() }),
           ),
         }),
     ),
@@ -134,7 +140,7 @@ export const editMatchInput = z.discriminatedUnion("type", [
         id: z.number(),
         teamId: z.number().nullable(),
         roles: z.array(
-          z.object({ type: sharedOrOriginalSchema, id: z.number() }),
+          z.object({ type: sharedOrOriginalOrLinkedSchema, id: z.number() }),
         ),
       }),
     ),

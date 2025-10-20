@@ -68,14 +68,9 @@ class GameRepository {
             playerImageUrl: image.url,
             playerImageType: image.type,
             playerImageUsageType: image.usageType,
-            playerType: sql<"original" | "shared">`
-            CASE
-              WHEN ${vMatchPlayerCanonicalForUser.sharedPlayerId} IS NULL
-                   OR ${vMatchPlayerCanonicalForUser.linkedPlayerId} IS NOT NULL
-              THEN 'original'
-              ELSE 'shared'
-            END
-          `.as("player_type"),
+            playerType: vMatchPlayerCanonicalForUser.playerSourceType,
+            sharedPlayerId: vMatchPlayerCanonicalForUser.sharedPlayerId,
+            linkedPlayerId: vMatchPlayerCanonicalForUser.linkedPlayerId,
           },
         )
         .from(vMatchPlayerCanonicalForUser)
@@ -110,7 +105,9 @@ class GameRepository {
               placement: number | null;
               winner: boolean | null;
               type: "original" | "shared";
-              playerType: "original" | "shared";
+              playerType: "original" | "shared" | "linked" | "not-shared";
+              sharedPlayerId: number | null;
+              linkedPlayerId: number | null;
               image: {
                 name: string;
                 url: string | null;
@@ -128,6 +125,8 @@ class GameRepository {
             'winner', ${playersByMatch.winner},
             'type', ${playersByMatch.type},
             'playerType',${playersByMatch.playerType},
+            'sharedPlayerId', ${playersByMatch.sharedPlayerId},
+            'linkedPlayerId', ${playersByMatch.linkedPlayerId},
             'image',
               CASE
                 WHEN ${playersByMatch.playerImageId} IS NULL THEN NULL
@@ -178,6 +177,7 @@ class GameRepository {
         .with(teamsByMatch, teamsAgg, playersByMatch, playersAgg)
         .select({
           id: vMatchCanonical.matchId,
+          sharedMatchId: vMatchCanonical.sharedMatchId,
           name: vMatchCanonical.name,
           date: vMatchCanonical.matchDate,
           comment: vMatchCanonical.comment,
@@ -187,7 +187,8 @@ class GameRepository {
           game: sql<{
             id: number;
             linkedGameId: number | null;
-            type: "original" | "shared";
+            sharedGameId: number | null;
+            type: "original" | "shared" | "linked";
             name: string;
             image: {
               name: string;
@@ -198,7 +199,8 @@ class GameRepository {
           }>`json_build_object(
         'id', ${vMatchCanonical.canonicalGameId},
         'linkedGameId', ${vMatchCanonical.linkedGameId},
-        'type', ${vMatchCanonical.visibilitySource},
+        'sharedGameId', ${vMatchCanonical.sharedGameId},
+        'type', ${vMatchCanonical.gameVisibilitySource},
         'name', ${game.name},
         'image',
           CASE
@@ -211,7 +213,10 @@ class GameRepository {
             )
           END
       )`.as("game"),
-          location: sql<{ id: number; name: string } | null>`CASE
+          location: sql<{
+            id: number;
+            name: string;
+          } | null>`CASE
             WHEN ${location.id} IS NULL THEN NULL
             ELSE json_build_object(
               'id', ${location.id},
@@ -231,7 +236,9 @@ class GameRepository {
               placement: number | null;
               winner: boolean | null;
               type: "original" | "shared";
-              playerType: "original" | "shared";
+              playerType: "original" | "shared" | "linked" | "not-shared";
+              sharedPlayerId: number | null;
+              linkedPlayerId: number | null;
               image: {
                 name: string;
                 url: string | null;
@@ -265,7 +272,7 @@ class GameRepository {
     } else {
       const returnedSharedGame = await db.query.sharedGame.findFirst({
         where: {
-          id: input.id,
+          id: input.sharedGameId,
           sharedWithId: args.userId,
         },
       });
@@ -279,6 +286,7 @@ class GameRepository {
         .with(teamsByMatch, teamsAgg, playersByMatch, playersAgg)
         .select({
           id: vMatchCanonical.matchId,
+          sharedMatchId: vMatchCanonical.sharedMatchId,
           name: vMatchCanonical.name,
           date: vMatchCanonical.matchDate,
           comment: vMatchCanonical.comment,
@@ -288,7 +296,8 @@ class GameRepository {
           game: sql<{
             id: number;
             linkedGameId: number | null;
-            type: "original" | "shared";
+            sharedGameId: number;
+            type: "linked" | "shared";
             name: string;
             image: {
               name: string;
@@ -299,7 +308,8 @@ class GameRepository {
           }>`json_build_object(
         'id', ${vMatchCanonical.canonicalGameId},
         'linkedGameId', ${vMatchCanonical.linkedGameId},
-        'type', ${vMatchCanonical.visibilitySource},
+        'sharedGameId', ${vMatchCanonical.sharedGameId},
+        'type', ${vMatchCanonical.gameVisibilitySource},
         'name', ${game.name},
         'image',
           CASE
@@ -312,7 +322,10 @@ class GameRepository {
             )
           END
       )`.as("game"),
-          location: sql<{ id: number; name: string } | null>`CASE
+          location: sql<{
+            id: number;
+            name: string;
+          } | null>`CASE
             WHEN ${location.id} IS NULL THEN NULL
             ELSE json_build_object(
               'id', ${location.id},
@@ -331,8 +344,10 @@ class GameRepository {
               teamId: number | null;
               placement: number | null;
               winner: boolean | null;
-              type: "original" | "shared";
-              playerType: "original" | "shared";
+              type: "shared";
+              playerType: "linked" | "shared";
+              sharedPlayerId: number | null;
+              linkedPlayerId: number | null;
               image: {
                 name: string;
                 url: string | null;
@@ -345,10 +360,7 @@ class GameRepository {
         .from(vMatchCanonical)
         .where(
           and(
-            eq(
-              vMatchCanonical.canonicalGameId,
-              returnedSharedGame.linkedGameId ?? returnedSharedGame.gameId,
-            ),
+            eq(vMatchCanonical.sharedGameId, returnedSharedGame.id),
             eq(vMatchCanonical.visibleToUserId, args.userId),
           ),
         )
@@ -396,7 +408,7 @@ class GameRepository {
     } else {
       const returnedSharedGame = await db.query.sharedGame.findFirst({
         where: {
-          id: input.id,
+          id: input.sharedGameId,
           sharedWithId: args.userId,
         },
         columns: {
@@ -442,7 +454,7 @@ class GameRepository {
         id: number;
         name: string;
         description: string | null;
-        type: "original" | "shared";
+        type: "original" | "shared" | "linked";
         permission: "view" | "edit";
       }
     >();

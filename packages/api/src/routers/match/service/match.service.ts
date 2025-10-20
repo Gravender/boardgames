@@ -143,7 +143,7 @@ class MatchService {
             id: linkedGameRole.id,
             name: linkedGameRole.name,
             description: linkedGameRole.description,
-            type: "original" as const,
+            type: "linked" as const,
           };
         });
 
@@ -168,6 +168,8 @@ class MatchService {
             playerType: "not-shared" as const,
             name: sharedMatchPlayer.matchPlayer.player.name,
             playerId: sharedMatchPlayer.matchPlayer.player.id,
+            sharedPlayerId: null,
+            linkedPlayerId: null,
             image:
               sharedMatchPlayer.matchPlayer.player.image?.usageType === "player"
                 ? {
@@ -183,9 +185,11 @@ class MatchService {
         if (linkedPlayer === null) {
           return {
             ...matchPlayer,
-            playerType: "shared" as const,
+            playerType: "linked" as const,
             name: sharedPlayer.player.name,
             playerId: sharedPlayer.player.id,
+            sharedPlayerId: sharedPlayer.id,
+            linkedPlayerId: null,
             image:
               sharedPlayer.player.image?.usageType === "player"
                 ? {
@@ -199,9 +203,11 @@ class MatchService {
         }
         return {
           ...matchPlayer,
-          playerType: "original" as const,
+          playerType: "linked" as const,
           name: linkedPlayer.name,
           playerId: linkedPlayer.id,
+          sharedPlayerId: sharedPlayer.id,
+          linkedPlayerId: linkedPlayer.id,
           image:
             linkedPlayer.image?.usageType === "player"
               ? {

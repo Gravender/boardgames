@@ -2,13 +2,23 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { useTRPC } from "~/trpc/react";
 
-export const useGameRoles = (id: number, type: "original" | "shared") => {
+type useGameRolesInputType =
+  | {
+      type: "original";
+      id: number;
+    }
+  | {
+      type: "shared";
+      sharedGameId: number;
+    };
+export const useGameRoles = (input: useGameRolesInputType) => {
   const trpc = useTRPC();
   const { data: gameRoles } = useSuspenseQuery(
-    trpc.newGame.gameRoles.queryOptions({
-      id: id,
-      type: type,
-    }),
+    trpc.newGame.gameRoles.queryOptions(
+      input.type === "original"
+        ? { id: input.id, type: "original" }
+        : { sharedGameId: input.sharedGameId, type: "shared" },
+    ),
   );
   return {
     gameRoles,

@@ -10,15 +10,19 @@ import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Skeleton } from "@board-games/ui/skeleton";
 
 import { useGameMatches } from "~/components/game/hooks/matches";
+import { formatMatchLink } from "~/utils/linkFormatting";
 
-export function GamePreviousMatches({
-  id,
-  type,
-}: {
-  id: number;
-  type: "original" | "shared";
-}) {
-  const { gameMatches } = useGameMatches(id, type);
+type GamePreviousMatchesType =
+  | {
+      id: number;
+      type: "original";
+    }
+  | {
+      sharedGameId: number;
+      type: "shared";
+    };
+export function GamePreviousMatches(input: GamePreviousMatchesType) {
+  const { gameMatches } = useGameMatches(input);
 
   if (gameMatches.length === 0) {
     return null;
@@ -36,7 +40,22 @@ export function GamePreviousMatches({
                 <Link
                   key={`${match.id}-${match.type}`}
                   prefetch={true}
-                  href={`/dashboard/games${match.game.type === "shared" ? `/shared/${match.game.linkedGameId}` : `/${match.game.id}`}/${match.id}${match.finished ? "/summary" : ""}`}
+                  href={formatMatchLink(
+                    match.type === "original"
+                      ? {
+                          matchId: match.id,
+                          gameId: match.game.id,
+                          type: "original",
+                          finished: match.finished,
+                        }
+                      : {
+                          sharedMatchId: match.sharedMatchId,
+                          sharedGameId: match.game.id,
+                          type: match.game.type,
+                          linkedGameId: match.game.linkedGameId,
+                          finished: match.finished,
+                        },
+                  )}
                   className="block h-40 w-64 rounded-lg border p-4 transition-colors hover:bg-muted/50"
                 >
                   <h3 className="truncate font-medium">{match.name}</h3>

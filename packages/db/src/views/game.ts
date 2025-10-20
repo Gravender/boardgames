@@ -54,7 +54,7 @@ export const vGameRoleCanonical = pgView("v_game_role_canonical", {
   ownerId: text("owner_id").notNull(),
   visibleToUserId: text("visible_to_user_id").notNull(),
   sourceType: text("source_type")
-    .$type<"original" | "shared">()
+    .$type<"original" | "shared" | "linked">()
     .notNull(),
   permission: text("permission").$type<"view" | "edit">().notNull(),
   name: text("name").notNull(),
@@ -89,7 +89,7 @@ export const vGameRoleCanonical = pgView("v_game_role_canonical", {
     sgr.id AS shared_game_role_id,
     sg.owner_id AS owner_id,
     sg.shared_with_id AS visible_to_user_id,
-    'shared'::text AS source_type,
+    CASE WHEN lgr.id IS NULL THEN 'shared'::text ELSE 'linked'::text END AS source_type,
     sgr.permission AS permission,
     COALESCE(lgr.name, gr.name) AS name,
     COALESCE(lgr.description, gr.description) AS description

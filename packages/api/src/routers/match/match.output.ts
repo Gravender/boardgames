@@ -12,7 +12,11 @@ import {
   selectScoreSheetSchema,
   selectTeamSchema,
 } from "@board-games/db/zodSchema";
-import { imageSchema, sharedOrOriginalSchema } from "@board-games/shared";
+import {
+  imageSchema,
+  sharedOrLinkedSchema,
+  sharedOrOriginalSchema,
+} from "@board-games/shared";
 
 export const createMatchOutput = selectMatchSchema
   .pick({
@@ -37,26 +41,26 @@ export const createMatchOutput = selectMatchSchema
   });
 export type CreateMatchOutputType = z.infer<typeof createMatchOutput>;
 
-export const getMatchOutput = selectMatchSchema
-  .pick({
-    id: true,
-    startTime: true,
-    date: true,
-    name: true,
-    duration: true,
-    finished: true,
-    running: true,
-    comment: true,
-  })
-  .extend({
-    type: sharedOrOriginalSchema,
+const baseGetMatchOutput = selectMatchSchema.pick({
+  id: true,
+  startTime: true,
+  date: true,
+  name: true,
+  duration: true,
+  finished: true,
+  running: true,
+  comment: true,
+});
+export const getMatchOutput = z.discriminatedUnion("type", [
+  baseGetMatchOutput.extend({
+    type: z.literal("original"),
     game: selectGameSchema
       .pick({
         id: true,
         name: true,
       })
       .extend({
-        type: sharedOrOriginalSchema,
+        type: z.literal("original"),
         image: imageSchema.nullable(),
       }),
     location: selectLocationSchema
@@ -64,8 +68,35 @@ export const getMatchOutput = selectMatchSchema
         id: true,
         name: true,
       })
+      .extend({
+        type: z.literal("original"),
+      })
       .nullable(),
-  });
+  }),
+  baseGetMatchOutput.extend({
+    type: z.literal("shared"),
+    game: selectGameSchema
+      .pick({
+        id: true,
+        name: true,
+      })
+      .extend({
+        type: sharedOrLinkedSchema,
+        image: imageSchema.nullable(),
+        sharedGameId: z.number(),
+        linkedGameId: z.number().nullable(),
+      }),
+    location: selectLocationSchema
+      .pick({
+        id: true,
+        name: true,
+      })
+      .extend({
+        type: sharedOrLinkedSchema,
+      })
+      .nullable(),
+  }),
+]);
 
 export type GetMatchOutputType = z.infer<typeof getMatchOutput>;
 
@@ -94,56 +125,66 @@ export type GetMatchScoresheetOutputType = z.infer<
   typeof getMatchScoresheetOutput
 >;
 
-export const getMatchPlayersAndTeamsOutput = z.object({
-  players: z.array(
-    selectMatchPlayerSchema
-      .pick({
+const baseMatchPlayer = selectMatchPlayerSchema
+  .pick({
+    id: true,
+    playerId: true,
+    score: true,
+    details: true,
+    teamId: true,
+    order: true,
+    placement: true,
+    winner: true,
+  })
+  .extend({
+    name: z.string(),
+    image: imageSchema.nullable(),
+    isUser: z.boolean(),
+    permissions: z.literal("view").or(z.literal("edit")),
+    rounds: z.array(
+      selectRoundPlayerSchema.pick({
         id: true,
-        playerId: true,
         score: true,
-        details: true,
-        teamId: true,
-        order: true,
-        placement: true,
-        winner: true,
-      })
-      .extend({
-        name: z.string(),
-        image: z
-          .object({
-            name: z.string(),
-            url: z.string().nullable(),
-            type: z.literal("file").or(z.literal("svg")),
-            usageType: z.literal("player"),
-          })
-          .nullable(),
-        isUser: z.boolean(),
-        type: sharedOrOriginalSchema,
-        playerType: z
-          .literal("original")
-          .or(z.literal("shared"))
-          .or(z.literal("not-shared")),
-        permissions: z.literal("view").or(z.literal("edit")),
-        rounds: z.array(
-          selectRoundPlayerSchema.pick({
-            id: true,
-            score: true,
-            roundId: true,
-          }),
-        ),
-        roles: z.array(
-          selectGameRoleSchema
-            .pick({
-              id: true,
-              name: true,
-              description: true,
-            })
-            .extend({
-              type: sharedOrOriginalSchema,
-            }),
-        ),
+        roundId: true,
       }),
-  ),
+    ),
+  });
+const sharedAndOriginalMatchPlayer = z.discriminatedUnion("type", [
+  baseMatchPlayer.extend({
+    type: z.literal("original"),
+    playerType: z.literal("original"),
+    roles: z.array(
+      selectGameRoleSchema
+        .pick({
+          id: true,
+          name: true,
+          description: true,
+        })
+        .extend({
+          type: z.literal("original"),
+        }),
+    ),
+  }),
+  baseMatchPlayer.extend({
+    type: z.literal("shared"),
+    playerType: sharedOrLinkedSchema.or(z.literal("not-shared")),
+    sharedPlayerId: z.number().nullable(),
+    linkedPlayerId: z.number().nullable(),
+    roles: z.array(
+      selectGameRoleSchema
+        .pick({
+          id: true,
+          name: true,
+          description: true,
+        })
+        .extend({
+          type: sharedOrLinkedSchema,
+        }),
+    ),
+  }),
+]);
+export const getMatchPlayersAndTeamsOutput = z.object({
+  players: z.array(sharedAndOriginalMatchPlayer),
   teams: z.array(
     selectTeamSchema.pick({
       id: true,
@@ -170,7 +211,8 @@ export const getMatchSummaryOutput = z.object({
         playerType: z
           .literal("original")
           .or(z.literal("shared"))
-          .or(z.literal("not-shared")),
+          .or(z.literal("not-shared"))
+          .or(z.literal("linked")),
         firstMatch: z.boolean(),
         placements: z.record(z.string(), z.number()),
         wins: z.number(),

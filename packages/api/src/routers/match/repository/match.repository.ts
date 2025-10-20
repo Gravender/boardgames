@@ -298,6 +298,7 @@ class MatchRepository {
           ? {
               id: returnedMatch.location.id,
               name: returnedMatch.location.name,
+              type: "original" as const,
             }
           : null,
       };
@@ -338,12 +339,23 @@ class MatchRepository {
         id: returnedSharedMatch.matchId,
         date: returnedSharedMatch.match.date,
         name: returnedSharedMatch.match.name,
-        game: {
-          id: returnedSharedMatch.sharedGame.game.id,
-          type: "shared" as const,
-          image: returnedSharedMatch.sharedGame.game.image,
-          name: returnedSharedMatch.sharedGame.game.name,
-        },
+        game: returnedSharedMatch.sharedGame.linkedGame
+          ? {
+              id: returnedSharedMatch.sharedGame.linkedGame.id,
+              type: "linked" as const,
+              image: returnedSharedMatch.sharedGame.linkedGame.image,
+              name: returnedSharedMatch.sharedGame.linkedGame.name,
+              sharedGameId: returnedSharedMatch.sharedGame.id,
+              linkedGameId: returnedSharedMatch.sharedGame.linkedGameId,
+            }
+          : {
+              id: returnedSharedMatch.sharedGame.game.id,
+              type: "shared" as const,
+              image: returnedSharedMatch.sharedGame.game.image,
+              name: returnedSharedMatch.sharedGame.game.name,
+              sharedGameId: returnedSharedMatch.sharedGame.id,
+              linkedGameId: returnedSharedMatch.sharedGame.linkedGameId,
+            },
         comment: returnedSharedMatch.match.comment,
         duration: returnedSharedMatch.match.duration,
         finished: returnedSharedMatch.match.finished,
@@ -354,10 +366,12 @@ class MatchRepository {
             ? {
                 id: returnedSharedMatch.sharedLocation.linkedLocation.id,
                 name: returnedSharedMatch.sharedLocation.linkedLocation.name,
+                type: "linked" as const,
               }
             : {
                 id: returnedSharedMatch.sharedLocation.location.id,
                 name: returnedSharedMatch.sharedLocation.location.name,
+                type: "shared" as const,
               }
           : null,
       };

@@ -22,7 +22,9 @@ export const vMatchPlayerCanonicalForUser = pgView(
 
     // metadata/stats
     sourceType: text("source_type").$type<"original" | "shared">().notNull(), // 'original' | 'shared'
-
+    playerSourceType: text("player_source_type")
+      .$type<"original" | "shared" | "linked" | "not-shared">()
+      .notNull(), // 'original' | 'shared' | 'linked'
     permission: text("permission").$type<"edit" | "view">().notNull(), // 'edit' | 'view'
     teamId: integer("team_id"),
     score: integer("score"),
@@ -46,6 +48,7 @@ export const vMatchPlayerCanonicalForUser = pgView(
       m.created_by AS owner_id,
       NULL::text AS shared_with_id,
       'original'::text AS source_type,
+      'original'::text AS player_source_type,
       edit::text AS permission,
       mp.team_id AS team_id,
       mp.score AS score,
@@ -71,6 +74,11 @@ export const vMatchPlayerCanonicalForUser = pgView(
       m.created_by AS owner_id,
       sm.shared_with_id AS shared_with_id,
       'shared'::text AS source_type,
+      CASE
+        WHEN sp.linked_player_id IS NOT NULL THEN 'linked'::text
+        ELSEIF smp.shared_player_id IS NOT NULL THEN 'shared'::text
+        ELSE 'not-shared'::text
+      END AS player_source_type,
       smp.permission AS permission,
       mp.team_id AS team_id,
       mp.score AS score,

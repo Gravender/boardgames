@@ -1,13 +1,14 @@
-import type { z } from "zod/v4";
+import { z } from "zod/v4";
 
-import { selectGameSchema } from "@board-games/db/zodSchema";
-import { sharedOrOriginalSchema } from "@board-games/shared";
+export const getGameInput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    id: z.number(),
+  }),
+  z.object({
+    type: z.literal("shared"),
+    sharedGameId: z.number(),
+  }),
+]);
 
-export const getGameInput = selectGameSchema
-  .pick({
-    id: true,
-  })
-  .extend({
-    type: sharedOrOriginalSchema,
-  });
 export type GetGameInputType = z.infer<typeof getGameInput>;
