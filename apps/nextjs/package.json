@@ -1,6 +1,7 @@
 {
   "name": "@board-games/nextjs",
   "version": "0.1.0",
+  "packageManager": "pnpm@10.15.1",
   "private": true,
   "type": "module",
   "scripts": {
