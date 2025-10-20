@@ -270,7 +270,6 @@ class MatchService {
         firstMatch: matchPlayersForPlayer[0]?.isFirstMatchForCurrent ?? false,
       });
     }
-    console.log(playerStats);
     return {
       playerStats,
     };

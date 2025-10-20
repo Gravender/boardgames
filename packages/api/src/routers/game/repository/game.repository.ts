@@ -25,8 +25,8 @@ class GameRepository {
       db
         .selectDistinctOn([team.matchId, team.id], {
           matchId: team.matchId,
-          id: team.id,
-          name: team.name,
+          teamId: sql<number>`"boardgames_team"."id"`.as("team_id"),
+          teamName: sql<string>`"boardgames_team"."name"`.as("team_name"),
         })
         .from(team)
         .orderBy(team.matchId, team.id),
@@ -37,11 +37,15 @@ class GameRepository {
       db
         .select({
           matchId: teamsByMatch.matchId,
-          teams: sql<
-            { id: number; name: string }[]
-          >`json_agg(json_build_object('id', ${teamsByMatch.id}, 'name', ${teamsByMatch.name}) ORDER BY ${teamsByMatch.id})`.as(
-            "teams",
-          ),
+          teams: sql<{ id: number; name: string }[]>`
+        json_agg(
+          json_build_object(
+            'id', ${teamsByMatch.teamId},
+            'name', ${teamsByMatch.teamName}
+          )
+          ORDER BY ${teamsByMatch.teamId}
+        )
+      `.as("teams"),
         })
         .from(teamsByMatch)
         .groupBy(teamsByMatch.matchId),
@@ -62,12 +66,25 @@ class GameRepository {
             placement: vMatchPlayerCanonicalForUser.placement,
             winner: vMatchPlayerCanonicalForUser.winner,
             type: vMatchPlayerCanonicalForUser.sourceType,
-            playerName: player.name,
-            playerImageId: image.id,
-            playerImageName: image.name,
-            playerImageUrl: image.url,
-            playerImageType: image.type,
-            playerImageUsageType: image.usageType,
+            playerName: sql<string>`"boardgames_player"."name"`.as(
+              "player_name",
+            ),
+            playerImageId: sql<number>`"boardgames_image"."id"`.as(
+              "player_image_id",
+            ),
+            playerImageName: sql<string>`"boardgames_image"."name"`.as(
+              "player_image_name",
+            ),
+            playerImageUrl: sql<string>`"boardgames_image"."url"`.as(
+              "player_image_url",
+            ),
+            playerImageType: sql<string>`"boardgames_image"."type"`.as(
+              "player_image_type",
+            ),
+            playerImageUsageType:
+              sql<string>`"boardgames_image"."usage_type"`.as(
+                "player_image_usage_type",
+              ),
             playerType: vMatchPlayerCanonicalForUser.playerSourceType,
             sharedPlayerId: vMatchPlayerCanonicalForUser.sharedPlayerId,
             linkedPlayerId: vMatchPlayerCanonicalForUser.linkedPlayerId,
@@ -115,16 +132,18 @@ class GameRepository {
                 usageType: "game" | "player" | "match";
               } | null;
             }[]
-          >`json_agg(json_build_object(
+          >`
+        json_agg(
+          json_build_object(
             'id', ${playersByMatch.baseMatchPlayerId},
             'playerId', ${playersByMatch.playerId},
-            'name',      ${playersByMatch.playerName},
+            'name', ${playersByMatch.playerName},
             'score', ${playersByMatch.score},
             'teamId', ${playersByMatch.teamId},
             'placement', ${playersByMatch.placement},
             'winner', ${playersByMatch.winner},
             'type', ${playersByMatch.type},
-            'playerType',${playersByMatch.playerType},
+            'playerType', ${playersByMatch.playerType},
             'sharedPlayerId', ${playersByMatch.sharedPlayerId},
             'linkedPlayerId', ${playersByMatch.linkedPlayerId},
             'image',
@@ -137,7 +156,10 @@ class GameRepository {
                   'usageType', ${playersByMatch.playerImageUsageType}
                 )
               END
-          ) ORDER BY ${playersByMatch.baseMatchPlayerId})`.as("match_players"),
+          )
+          ORDER BY ${playersByMatch.baseMatchPlayerId}
+        )
+      `.as("match_players"),
         })
         .from(playersByMatch)
         .groupBy(playersByMatch.matchId),
@@ -265,6 +287,7 @@ class GameRepository {
         .leftJoin(teamsAgg, eq(teamsAgg.matchId, vMatchCanonical.matchId))
         .leftJoin(playersAgg, eq(playersAgg.matchId, vMatchCanonical.matchId))
         .orderBy(vMatchCanonical.matchDate);
+
       return {
         matches: matches,
         userPlayer: userPlayer,
