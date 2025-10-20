@@ -5,6 +5,7 @@ import { compareAsc } from "date-fns";
 import type { selectScoreSheetSchema } from "@board-games/db/zodSchema";
 import { selectTeamSchema } from "@board-games/db/zodSchema";
 
+//TODO update to new linked shared original matchPlayer paradigm
 //Get Player
 export interface Player {
   id: number;

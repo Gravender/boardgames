@@ -4,15 +4,26 @@ import {
   selectMatchPlayerSchema,
   selectRoundPlayerSchema,
 } from "@board-games/db/zodSchema";
-import { sharedOrOriginalSchema } from "@board-games/shared";
+import {
+  sharedOrLinkedSchema,
+  sharedOrOriginalOrLinkedSchema,
+  sharedOrOriginalSchema,
+} from "@board-games/shared";
 
+const matchInputSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    id: z.number(),
+  }),
+  z.object({
+    type: z.literal("shared"),
+    sharedMatchId: z.number(),
+  }),
+]);
 export const updateMatchScoreInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("player"),
-    match: z.object({
-      id: z.number(),
-      type: sharedOrOriginalSchema,
-    }),
+    match: matchInputSchema,
 
     matchPlayerId: z.number(),
     round: selectRoundPlayerSchema.pick({
@@ -22,10 +33,7 @@ export const updateMatchScoreInput = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("team"),
-    match: z.object({
-      id: z.number(),
-      type: sharedOrOriginalSchema,
-    }),
+    match: matchInputSchema,
     teamId: z.number(),
     round: selectRoundPlayerSchema.pick({
       id: true,
@@ -39,19 +47,13 @@ export type UpdateMatchScoreInputType = z.infer<typeof updateMatchScoreInput>;
 export const updateMatchPlayerScoreInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("player"),
-    match: z.object({
-      id: z.number(),
-      type: sharedOrOriginalSchema,
-    }),
+    match: matchInputSchema,
     matchPlayerId: z.number(),
     score: z.number().nullable(),
   }),
   z.object({
     type: z.literal("team"),
-    match: z.object({
-      id: z.number(),
-      type: sharedOrOriginalSchema,
-    }),
+    match: matchInputSchema,
     teamId: z.number(),
     score: z.number().nullable(),
   }),
@@ -62,10 +64,7 @@ export type UpdateMatchPlayerScoreInputType = z.infer<
 >;
 
 export const updateMatchManualWinnerInput = z.object({
-  match: z.object({
-    id: z.number(),
-    type: sharedOrOriginalSchema,
-  }),
+  match: matchInputSchema,
   winners: z.array(selectMatchPlayerSchema.pick({ id: true })),
 });
 
@@ -74,10 +73,7 @@ export type UpdateMatchManualWinnerInputType = z.infer<
 >;
 
 export const updateMatchPlacementsInput = z.object({
-  match: z.object({
-    id: z.number(),
-    type: sharedOrOriginalSchema,
-  }),
+  match: matchInputSchema,
   playersPlacement: z
     .array(
       selectMatchPlayerSchema.pick({
@@ -93,10 +89,7 @@ export type UpdateMatchPlacementsInputType = z.infer<
 >;
 
 export const updateMatchCommentInput = z.object({
-  match: z.object({
-    id: z.number(),
-    type: sharedOrOriginalSchema,
-  }),
+  match: matchInputSchema,
   comment: z.string().min(1),
 });
 
@@ -108,19 +101,13 @@ export const updateMatchDetailsInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("player"),
     id: z.number(),
-    match: z.object({
-      id: z.number(),
-      type: sharedOrOriginalSchema,
-    }),
+    match: matchInputSchema,
     details: z.string(),
   }),
   z.object({
     type: z.literal("team"),
     teamId: z.number(),
-    match: z.object({
-      id: z.number(),
-      type: sharedOrOriginalSchema,
-    }),
+    match: matchInputSchema,
     details: z.string(),
   }),
 ]);
@@ -138,13 +125,13 @@ export const updateMatchPlayerTeamAndRolesInput = z.object({
   rolesToAdd: z.array(
     z.object({
       id: z.number(),
-      type: sharedOrOriginalSchema,
+      type: sharedOrOriginalOrLinkedSchema,
     }),
   ),
   rolesToRemove: z.array(
     z.object({
       id: z.number(),
-      type: sharedOrOriginalSchema,
+      type: sharedOrOriginalOrLinkedSchema,
     }),
   ),
 });
@@ -169,7 +156,7 @@ export const updateMatchTeamInput = z.discriminatedUnion("type", [
         roles: z.array(
           z.object({
             id: z.number(),
-            type: sharedOrOriginalSchema,
+            type: sharedOrOriginalOrLinkedSchema,
           }),
         ),
       }),
@@ -180,7 +167,7 @@ export const updateMatchTeamInput = z.discriminatedUnion("type", [
         roles: z.array(
           z.object({
             id: z.number(),
-            type: sharedOrOriginalSchema,
+            type: sharedOrOriginalOrLinkedSchema,
           }),
         ),
       }),
@@ -191,13 +178,13 @@ export const updateMatchTeamInput = z.discriminatedUnion("type", [
         rolesToAdd: z.array(
           z.object({
             id: z.number(),
-            type: sharedOrOriginalSchema,
+            type: sharedOrOriginalOrLinkedSchema,
           }),
         ),
         rolesToRemove: z.array(
           z.object({
             id: z.number(),
-            type: sharedOrOriginalSchema,
+            type: sharedOrOriginalOrLinkedSchema,
           }),
         ),
       }),
@@ -205,7 +192,7 @@ export const updateMatchTeamInput = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("shared"),
-    id: z.number(),
+    sharedMatchId: z.number(),
     team: teamSchema,
     playersToAdd: z.array(
       z.object({
@@ -213,7 +200,7 @@ export const updateMatchTeamInput = z.discriminatedUnion("type", [
         roles: z.array(
           z.object({
             id: z.number(),
-            type: z.literal("shared"),
+            type: sharedOrLinkedSchema,
           }),
         ),
       }),
@@ -224,7 +211,7 @@ export const updateMatchTeamInput = z.discriminatedUnion("type", [
         roles: z.array(
           z.object({
             id: z.number(),
-            type: z.literal("shared"),
+            type: sharedOrLinkedSchema,
           }),
         ),
       }),
@@ -235,13 +222,13 @@ export const updateMatchTeamInput = z.discriminatedUnion("type", [
         rolesToAdd: z.array(
           z.object({
             id: z.number(),
-            type: z.literal("shared"),
+            type: sharedOrLinkedSchema,
           }),
         ),
         rolesToRemove: z.array(
           z.object({
             id: z.number(),
-            type: z.literal("shared"),
+            type: sharedOrLinkedSchema,
           }),
         ),
       }),

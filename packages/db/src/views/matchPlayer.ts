@@ -109,6 +109,7 @@ SELECT DISTINCT
   owner_id,
   shared_with_id,
   source_type,
+  player_source_type,
   team_id,
   score,
   winner, -- Now included in the final SELECT

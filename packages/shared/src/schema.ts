@@ -449,57 +449,38 @@ export const baseMatchSchema = selectMatchSchema
       }),
     ),
   });
-
-export const matchWithGameAndPlayersSchema = selectMatchSchema
-  .pick({
-    id: true,
-    date: true,
-    name: true,
-    finished: true,
-    comment: true,
-    duration: true,
-  })
-  .extend({
-    won: z.boolean(),
-    hasUser: z.boolean(),
-    type: sharedOrOriginalSchema,
-    game: selectGameSchema
-      .pick({
-        id: true,
-        name: true,
-      })
-      .extend({
-        linkedGameId: z.number().nullable(),
-        type: sharedOrOriginalSchema,
-        image: imageSchema.nullable(),
-      }),
-    location: selectLocationSchema
-      .pick({
-        id: true,
-        name: true,
-      })
-      .nullable(),
-    teams: z.array(
-      selectTeamSchema.pick({
-        id: true,
-        name: true,
-      }),
-    ),
-    matchPlayers: z.array(
-      selectMatchPlayerSchema
-        .pick({
-          id: true,
-          playerId: true,
-          score: true,
-          teamId: true,
-          placement: true,
-          winner: true,
-        })
-        .extend({
-          name: z.string(),
-          type: sharedOrOriginalSchema,
-          playerType: z.literal("original").or(z.literal("shared")),
-          image: imageSchema.nullable(),
-        }),
-    ),
-  });
+const sharedMatchWithGameAndPlayersSchema = baseMatchSchema.extend({
+  type: z.literal("shared"),
+  sharedMatchId: z.number(),
+  game: baseGameForMatchSchema.extend({
+    type: sharedOrLinkedSchema,
+    sharedGameId: z.number(),
+    linkedGameId: z.number().nullable(),
+  }),
+  location: baseLocationSchema.nullable(),
+  matchPlayers: z.array(
+    baseMatchPlayerSchema.extend({
+      type: z.literal("shared"),
+      playerType: z.literal(["linked", "shared", "not-shared"]),
+      sharedPlayerId: z.number().nullable(),
+      linkedPlayerId: z.number().nullable(),
+    }),
+  ),
+});
+const originalMatchWithGameAndPlayersSchema = baseMatchSchema.extend({
+  type: z.literal("original"),
+  game: baseGameForMatchSchema.extend({
+    type: z.literal("original"),
+  }),
+  location: baseLocationSchema.nullable(),
+  matchPlayers: z.array(
+    baseMatchPlayerSchema.extend({
+      type: z.literal("original"),
+      playerType: z.literal("original"),
+    }),
+  ),
+});
+export const matchWithGameAndPlayersSchema = z.discriminatedUnion("type", [
+  originalMatchWithGameAndPlayersSchema,
+  sharedMatchWithGameAndPlayersSchema,
+]);

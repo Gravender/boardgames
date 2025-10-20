@@ -57,34 +57,43 @@ export const createMatchInput = insertMatchSchema
   });
 export type CreateMatchInputType = z.infer<typeof createMatchInput>;
 
-export const getMatchInput = selectMatchSchema
-  .pick({
-    id: true,
-  })
-  .extend({
-    type: sharedOrOriginalSchema,
-  });
+export const getMatchInput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    id: z.number(),
+  }),
+  z.object({
+    type: z.literal("shared"),
+    sharedMatchId: z.number(),
+  }),
+]);
 export type GetMatchInputType = z.infer<typeof getMatchInput>;
 
-export const getMatchScoresheetInput = selectMatchSchema
-  .pick({
-    id: true,
-  })
-  .extend({
-    type: sharedOrOriginalSchema,
-  });
+export const getMatchScoresheetInput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    id: z.number(),
+  }),
+  z.object({
+    type: z.literal("shared"),
+    sharedMatchId: z.number(),
+  }),
+]);
 
 export type GetMatchScoresheetInputType = z.infer<
   typeof getMatchScoresheetInput
 >;
 
-export const getMatchPlayersAndTeamsInput = selectMatchSchema
-  .pick({
-    id: true,
-  })
-  .extend({
-    type: sharedOrOriginalSchema,
-  });
+export const getMatchPlayersAndTeamsInput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    id: z.number(),
+  }),
+  z.object({
+    type: z.literal("shared"),
+    sharedMatchId: z.number(),
+  }),
+]);
 export type GetMatchPlayersAndTeamsInputType = z.infer<
   typeof getMatchPlayersAndTeamsInput
 >;
@@ -161,11 +170,12 @@ export const editMatchInput = z.discriminatedUnion("type", [
     type: z.literal("shared"),
     match: insertMatchSchema
       .pick({
-        id: true,
         date: true,
         name: true,
       })
-      .required({ id: true }),
+      .extend({
+        sharedMatchId: z.number(),
+      }),
   }),
 ]);
 

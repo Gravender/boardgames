@@ -49,7 +49,7 @@ class UpdateMatchRepository {
         .where(and(eq(match.id, input.id), eq(match.createdBy, userId)));
     } else {
       const returnedSharedMatch = await db.query.sharedMatch.findFirst({
-        where: { matchId: input.id, sharedWithId: userId },
+        where: { id: input.sharedMatchId, sharedWithId: userId },
       });
       if (!returnedSharedMatch)
         throw new TRPCError({
@@ -65,7 +65,7 @@ class UpdateMatchRepository {
       await db
         .update(match)
         .set({ running: true, finished: false, startTime: new Date() })
-        .where(eq(match.id, input.id));
+        .where(eq(match.id, returnedSharedMatch.matchId));
     }
   }
   public async matchPause(args: MatchPauseRepoArgs) {
@@ -113,7 +113,10 @@ class UpdateMatchRepository {
       }
     } else {
       const returnedSharedMatch = await db.query.sharedMatch.findFirst({
-        where: { matchId: input.id, sharedWithId: userId },
+        where: { id: input.sharedMatchId, sharedWithId: userId },
+        with: {
+          match: true,
+        },
       });
       if (!returnedSharedMatch)
         throw new TRPCError({
@@ -125,23 +128,22 @@ class UpdateMatchRepository {
           code: "UNAUTHORIZED",
           message: "Does not have permission to pause this match.",
         });
-      const foundMatch = await db.query.match.findFirst({
-        where: { id: input.id },
-      });
-      if (!foundMatch)
-        throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
-      if (foundMatch.running === false)
+      if (returnedSharedMatch.match.running === false)
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Match is not running.",
         });
-      if (!foundMatch.startTime)
+      if (!returnedSharedMatch.match.startTime)
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Match start time is not set.",
         });
-      const timeDelta = differenceInSeconds(currentTime, foundMatch.startTime);
-      const accumulatedDuration = foundMatch.duration + timeDelta;
+      const timeDelta = differenceInSeconds(
+        currentTime,
+        returnedSharedMatch.match.startTime,
+      );
+      const accumulatedDuration =
+        returnedSharedMatch.match.duration + timeDelta;
       await db
         .update(match)
         .set({
@@ -150,7 +152,7 @@ class UpdateMatchRepository {
           startTime: null,
           endTime: new Date(),
         })
-        .where(eq(match.id, input.id));
+        .where(eq(match.id, returnedSharedMatch.matchId));
     }
   }
   public async matchResetDuration(args: MatchResetDurationRepoArgs) {
@@ -167,7 +169,7 @@ class UpdateMatchRepository {
         .where(and(eq(match.id, input.id), eq(match.createdBy, userId)));
     } else {
       const returnedSharedMatch = await db.query.sharedMatch.findFirst({
-        where: { matchId: input.id, sharedWithId: userId },
+        where: { id: input.sharedMatchId, sharedWithId: userId },
       });
       if (!returnedSharedMatch)
         throw new TRPCError({
@@ -182,12 +184,13 @@ class UpdateMatchRepository {
       await db
         .update(match)
         .set({ duration: 0, running: false, startTime: null, endTime: null })
-        .where(eq(match.id, input.id));
+        .where(eq(match.id, returnedSharedMatch.matchId));
     }
   }
   public async updateMatchRoundScore(args: UpdateMatchRoundScoreRepoArgs) {
     const { input, userId } = args;
 
+    let foundMatchId: number | null = null;
     if (input.match.type === "original") {
       const foundMatch = await db.query.match.findFirst({
         where: {
@@ -197,10 +200,11 @@ class UpdateMatchRepository {
       });
       if (!foundMatch)
         throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
+      foundMatchId = foundMatch.id;
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.match.id,
+          id: input.match.sharedMatchId,
           sharedWithId: userId,
         },
       });
@@ -209,6 +213,7 @@ class UpdateMatchRepository {
           code: "NOT_FOUND",
           message: "Shared match not found.",
         });
+      foundMatchId = foundSharedMatch.matchId;
     }
     if (input.type === "player") {
       const [foundMatchPlayer] = await db
@@ -216,7 +221,7 @@ class UpdateMatchRepository {
         .from(vMatchPlayerCanonicalForUser)
         .where(
           and(
-            eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.match.id),
+            eq(vMatchPlayerCanonicalForUser.canonicalMatchId, foundMatchId),
             eq(
               vMatchPlayerCanonicalForUser.baseMatchPlayerId,
               input.matchPlayerId,
@@ -260,7 +265,7 @@ class UpdateMatchRepository {
         .from(vMatchPlayerCanonicalForUser)
         .where(
           and(
-            eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.match.id),
+            eq(vMatchPlayerCanonicalForUser.canonicalMatchId, foundMatchId),
             eq(vMatchPlayerCanonicalForUser.teamId, input.teamId),
             or(
               eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
@@ -315,7 +320,7 @@ class UpdateMatchRepository {
   }
   public async updateMatchPlayerScore(args: UpdateMatchPlayerScoreRepoArgs) {
     const { input, userId } = args;
-
+    let foundMatchId: number | null = null;
     if (input.match.type === "original") {
       const foundMatch = await db.query.match.findFirst({
         where: {
@@ -325,10 +330,11 @@ class UpdateMatchRepository {
       });
       if (!foundMatch)
         throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
+      foundMatchId = foundMatch.id;
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.match.id,
+          id: input.match.sharedMatchId,
           sharedWithId: userId,
         },
       });
@@ -337,6 +343,7 @@ class UpdateMatchRepository {
           code: "NOT_FOUND",
           message: "Shared match not found.",
         });
+      foundMatchId = foundSharedMatch.matchId;
     }
     if (input.type === "player") {
       const [foundMatchPlayer] = await db
@@ -344,7 +351,7 @@ class UpdateMatchRepository {
         .from(vMatchPlayerCanonicalForUser)
         .where(
           and(
-            eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.match.id),
+            eq(vMatchPlayerCanonicalForUser.canonicalMatchId, foundMatchId),
             eq(
               vMatchPlayerCanonicalForUser.baseMatchPlayerId,
               input.matchPlayerId,
@@ -375,7 +382,7 @@ class UpdateMatchRepository {
         .from(vMatchPlayerCanonicalForUser)
         .where(
           and(
-            eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.match.id),
+            eq(vMatchPlayerCanonicalForUser.canonicalMatchId, foundMatchId),
             eq(vMatchPlayerCanonicalForUser.teamId, input.teamId),
             or(
               eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
@@ -438,7 +445,7 @@ class UpdateMatchRepository {
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.id,
+          id: input.sharedMatchId,
           sharedWithId: userId,
         },
       });
@@ -541,7 +548,7 @@ class UpdateMatchRepository {
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.id,
+          id: input.sharedMatchId,
           sharedWithId: userId,
         },
       });
@@ -611,7 +618,7 @@ class UpdateMatchRepository {
   }
   public async updateMatchManualWinner(args: UpdateMatchManualWinnerRepoArgs) {
     const { input, userId } = args;
-
+    let foundMatchId: number | null = null;
     if (input.match.type === "original") {
       const foundMatch = await db.query.match.findFirst({
         where: {
@@ -621,10 +628,11 @@ class UpdateMatchRepository {
       });
       if (!foundMatch)
         throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
+      foundMatchId = foundMatch.id;
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.match.id,
+          id: input.match.sharedMatchId,
           sharedWithId: userId,
         },
       });
@@ -638,13 +646,14 @@ class UpdateMatchRepository {
           code: "UNAUTHORIZED",
           message: "Does not have permission to edit this match.",
         });
+      foundMatchId = foundSharedMatch.matchId;
     }
     const foundMatchPlayers = await db
       .select()
       .from(vMatchPlayerCanonicalForUser)
       .where(
         and(
-          eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.match.id),
+          eq(vMatchPlayerCanonicalForUser.canonicalMatchId, foundMatchId),
           or(
             eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
             eq(vMatchPlayerCanonicalForUser.ownerId, userId),
@@ -667,14 +676,14 @@ class UpdateMatchRepository {
     await db
       .update(match)
       .set({ finished: true })
-      .where(eq(match.id, input.match.id));
+      .where(eq(match.id, foundMatchId));
     if (input.winners.length > 0) {
       await db
         .update(matchPlayer)
         .set({ winner: false })
         .where(
           and(
-            eq(matchPlayer.matchId, input.match.id),
+            eq(matchPlayer.matchId, foundMatchId),
             notInArray(
               matchPlayer.id,
               input.winners.map((winner) => winner.id),
@@ -686,7 +695,7 @@ class UpdateMatchRepository {
         .set({ winner: true })
         .where(
           and(
-            eq(matchPlayer.matchId, input.match.id),
+            eq(matchPlayer.matchId, foundMatchId),
             inArray(
               matchPlayer.id,
               input.winners.map((winner) => winner.id),
@@ -697,12 +706,12 @@ class UpdateMatchRepository {
       await db
         .update(matchPlayer)
         .set({ winner: false })
-        .where(eq(matchPlayer.matchId, input.match.id));
+        .where(eq(matchPlayer.matchId, foundMatchId));
     }
   }
   public async updateMatchPlacements(args: UpdateMatchPlacementsRepoArgs) {
     const { input, userId } = args;
-
+    let foundMatchId: number | null = null;
     if (input.match.type === "original") {
       const foundMatch = await db.query.match.findFirst({
         where: {
@@ -712,10 +721,11 @@ class UpdateMatchRepository {
       });
       if (!foundMatch)
         throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
+      foundMatchId = foundMatch.id;
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.match.id,
+          id: input.match.sharedMatchId,
           sharedWithId: userId,
         },
       });
@@ -729,13 +739,14 @@ class UpdateMatchRepository {
           code: "UNAUTHORIZED",
           message: "Does not have permission to edit this match.",
         });
+      foundMatchId = foundSharedMatch.matchId;
     }
     const foundMatchPlayers = await db
       .select()
       .from(vMatchPlayerCanonicalForUser)
       .where(
         and(
-          eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.match.id),
+          eq(vMatchPlayerCanonicalForUser.canonicalMatchId, foundMatchId),
           or(
             eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
             eq(vMatchPlayerCanonicalForUser.ownerId, userId),
@@ -760,7 +771,7 @@ class UpdateMatchRepository {
       .set({
         finished: true,
       })
-      .where(eq(match.id, input.match.id));
+      .where(eq(match.id, foundMatchId));
     const ids = input.playersPlacement.map((p) => p.id);
 
     const placementSqlChunks: SQL[] = [sql`(case`];
@@ -793,7 +804,7 @@ class UpdateMatchRepository {
   }
   public async updateMatchComment(args: UpdateMatchCommentRepoArgs) {
     const { input, userId } = args;
-
+    let foundMatchId: number | null = null;
     if (input.match.type === "original") {
       const foundMatch = await db.query.match.findFirst({
         where: {
@@ -803,10 +814,11 @@ class UpdateMatchRepository {
       });
       if (!foundMatch)
         throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
+      foundMatchId = foundMatch.id;
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.match.id,
+          id: input.match.sharedMatchId,
           sharedWithId: userId,
         },
       });
@@ -820,15 +832,16 @@ class UpdateMatchRepository {
           code: "UNAUTHORIZED",
           message: "Does not have permission to edit this match.",
         });
+      foundMatchId = foundSharedMatch.matchId;
     }
     await db
       .update(match)
       .set({ comment: input.comment })
-      .where(eq(match.id, input.match.id));
+      .where(eq(match.id, foundMatchId));
   }
   public async updateMatchDetails(args: UpdateMatchDetailsRepoArgs) {
     const { input, userId } = args;
-
+    let foundMatchId: number | null = null;
     if (input.match.type === "original") {
       const foundMatch = await db.query.match.findFirst({
         where: {
@@ -838,10 +851,11 @@ class UpdateMatchRepository {
       });
       if (!foundMatch)
         throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
+      foundMatchId = foundMatch.id;
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.match.id,
+          id: input.match.sharedMatchId,
           sharedWithId: userId,
         },
       });
@@ -855,6 +869,7 @@ class UpdateMatchRepository {
           code: "UNAUTHORIZED",
           message: "Does not have permission to edit this match.",
         });
+      foundMatchId = foundSharedMatch.matchId;
     }
     if (input.type === "player") {
       const [returnedMatchPlayer] = await db
@@ -862,7 +877,7 @@ class UpdateMatchRepository {
         .from(vMatchPlayerCanonicalForUser)
         .where(
           and(
-            eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.match.id),
+            eq(vMatchPlayerCanonicalForUser.canonicalMatchId, foundMatchId),
             eq(vMatchPlayerCanonicalForUser.baseMatchPlayerId, input.id),
             or(
               eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
@@ -1186,7 +1201,7 @@ class UpdateMatchRepository {
     } else {
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.id,
+          id: input.sharedMatchId,
           sharedWithId: userId,
         },
       });
@@ -1237,7 +1252,9 @@ class UpdateMatchRepository {
             );
           const originalRoles = input.playersToAdd.flatMap((p) =>
             p.roles
-              .filter((pRole) => pRole.type === "original")
+              .filter(
+                (pRole) => pRole.type === "original" || pRole.type === "linked",
+              )
               .map((role) => ({
                 matchPlayerId: p.id,
                 roleId: role.id,
@@ -1335,7 +1352,9 @@ class UpdateMatchRepository {
           }
           const originalRolesToRemove = input.playersToRemove.flatMap((p) =>
             p.roles
-              .filter((pRole) => pRole.type === "original")
+              .filter(
+                (pRole) => pRole.type === "original" || pRole.type === "linked",
+              )
               .map((role) => ({
                 matchPlayerId: p.id,
                 roleId: role.id,
@@ -1386,7 +1405,9 @@ class UpdateMatchRepository {
           );
           if (rolesToAdd.length > 0) {
             const originalRolesToAdd = rolesToAdd.filter(
-              (roleToAdd) => roleToAdd.role.type === "original",
+              (roleToAdd) =>
+                roleToAdd.role.type === "original" ||
+                roleToAdd.role.type === "linked",
             );
             const sharedRolesToAdd = rolesToAdd.filter(
               (roleToAdd) => roleToAdd.role.type === "shared",
@@ -1464,7 +1485,9 @@ class UpdateMatchRepository {
           }
           if (rolesToRemove.length > 0) {
             const originalRolesToRemove = rolesToRemove.filter(
-              (roleToRemove) => roleToRemove.role.type === "original",
+              (roleToRemove) =>
+                roleToRemove.role.type === "original" ||
+                roleToRemove.role.type === "linked",
             );
             const sharedRolesToRemove = rolesToRemove.filter(
               (roleToRemove) => roleToRemove.role.type === "shared",
@@ -1494,10 +1517,9 @@ class UpdateMatchRepository {
         }
       });
     } else {
-      //TODO: Implement updating match player roles and teams only supports adding and removing players from team if already in match
       const foundSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.id,
+          id: input.sharedMatchId,
           sharedWithId: userId,
         },
       });
@@ -1519,7 +1541,10 @@ class UpdateMatchRepository {
             .from(vMatchPlayerCanonicalForUser)
             .where(
               and(
-                eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.id),
+                eq(
+                  vMatchPlayerCanonicalForUser.canonicalMatchId,
+                  foundSharedMatch.matchId,
+                ),
                 inArray(
                   vMatchPlayerCanonicalForUser.baseMatchPlayerId,
                   input.playersToAdd.map((p) => p.id),
@@ -1551,7 +1576,7 @@ class UpdateMatchRepository {
             })
             .where(
               and(
-                eq(matchPlayer.matchId, input.id),
+                eq(matchPlayer.matchId, foundSharedMatch.matchId),
                 inArray(
                   matchPlayer.id,
                   input.playersToAdd.map((p) => p.id),
@@ -1562,6 +1587,7 @@ class UpdateMatchRepository {
             const rolesToAdd = matchPlayerToAdd.roles.map((role) => ({
               matchPlayerId: matchPlayerToAdd.id,
               roleId: role.id,
+              type: role.type,
             }));
             if (rolesToAdd.length > 0) {
               const matchPlayerWithRoles =
@@ -1594,17 +1620,17 @@ class UpdateMatchRepository {
 
               const filteredRoles = rolesToAdd
                 .filter((roleToAdd) =>
-                  matchPlayerWithRoles.roles.some(
-                    (r) =>
-                      r.sharedGameRole.gameRoleId === roleToAdd.roleId ||
-                      r.sharedGameRole.linkedGameRoleId === roleToAdd.roleId,
+                  matchPlayerWithRoles.roles.some((r) =>
+                    roleToAdd.type === "shared"
+                      ? r.sharedGameRole.gameRoleId === roleToAdd.roleId
+                      : r.sharedGameRole.linkedGameRoleId === roleToAdd.roleId,
                   ),
                 )
                 .map((roleToAdd) => {
-                  const foundSharedGameRole = sharedGameRoles.find(
-                    (r) =>
-                      r.gameRoleId === roleToAdd.roleId ||
-                      r.linkedGameRoleId === roleToAdd.roleId,
+                  const foundSharedGameRole = sharedGameRoles.find((r) =>
+                    roleToAdd.type === "shared"
+                      ? r.gameRoleId === roleToAdd.roleId
+                      : r.linkedGameRoleId === roleToAdd.roleId,
                   );
                   if (!foundSharedGameRole) {
                     throw new TRPCError({
@@ -1643,7 +1669,10 @@ class UpdateMatchRepository {
             .from(vMatchPlayerCanonicalForUser)
             .where(
               and(
-                eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.id),
+                eq(
+                  vMatchPlayerCanonicalForUser.canonicalMatchId,
+                  foundSharedMatch.matchId,
+                ),
                 inArray(
                   vMatchPlayerCanonicalForUser.baseMatchPlayerId,
                   input.playersToRemove.map((p) => p.id),
@@ -1675,7 +1704,7 @@ class UpdateMatchRepository {
             })
             .where(
               and(
-                eq(matchPlayer.matchId, input.id),
+                eq(matchPlayer.matchId, foundSharedMatch.matchId),
                 inArray(
                   matchPlayer.id,
                   input.playersToRemove.map((p) => p.id),
@@ -1686,6 +1715,7 @@ class UpdateMatchRepository {
             const rolesToRemove = matchPlayerToRemove.roles.map((role) => ({
               matchPlayerId: matchPlayerToRemove.id,
               roleId: role.id,
+              type: role.type,
             }));
             if (rolesToRemove.length > 0) {
               const matchPlayerWithRoles =
@@ -1718,8 +1748,10 @@ class UpdateMatchRepository {
               const mappedRolesToRemove = rolesToRemove.map((roleToRemove) => {
                 const foundSharedGameRole = matchPlayerWithRoles.roles.find(
                   (r) =>
-                    r.sharedGameRole.gameRoleId === roleToRemove.roleId ||
-                    r.sharedGameRole.linkedGameRoleId === roleToRemove.roleId,
+                    roleToRemove.type === "shared"
+                      ? r.sharedGameRole.gameRoleId === roleToRemove.roleId
+                      : r.sharedGameRole.linkedGameRoleId ===
+                        roleToRemove.roleId,
                 );
                 if (!foundSharedGameRole) {
                   throw new TRPCError({
@@ -1788,27 +1820,29 @@ class UpdateMatchRepository {
             const rolesToAdd = matchPlayerToUpdate.rolesToAdd.map((role) => ({
               matchPlayerId: matchPlayerToUpdate.id,
               roleId: role.id,
+              type: role.type,
             }));
             const rolesToRemove = matchPlayerToUpdate.rolesToRemove.map(
               (role) => ({
                 matchPlayerId: matchPlayerToUpdate.id,
                 roleId: role.id,
+                type: role.type,
               }),
             );
             if (rolesToAdd.length > 0) {
               const filteredRoles = rolesToAdd
                 .filter((roleToAdd) =>
-                  matchPlayerWithRoles.roles.some(
-                    (r) =>
-                      r.sharedGameRole.gameRoleId === roleToAdd.roleId ||
-                      r.sharedGameRole.linkedGameRoleId === roleToAdd.roleId,
+                  matchPlayerWithRoles.roles.some((r) =>
+                    roleToAdd.type === "shared"
+                      ? r.sharedGameRole.gameRoleId === roleToAdd.roleId
+                      : r.sharedGameRole.linkedGameRoleId === roleToAdd.roleId,
                   ),
                 )
                 .map((roleToAdd) => {
-                  const foundSharedGameRole = sharedGameRoles.find(
-                    (r) =>
-                      r.gameRoleId === roleToAdd.roleId ||
-                      r.linkedGameRoleId === roleToAdd.roleId,
+                  const foundSharedGameRole = sharedGameRoles.find((r) =>
+                    roleToAdd.type === "shared"
+                      ? r.gameRoleId === roleToAdd.roleId
+                      : r.linkedGameRoleId === roleToAdd.roleId,
                   );
                   if (!foundSharedGameRole) {
                     throw new TRPCError({
@@ -1841,10 +1875,10 @@ class UpdateMatchRepository {
             }
             if (rolesToRemove.length > 0) {
               const filteredRoles = rolesToRemove.map((roleToRemove) => {
-                const foundSharedGameRole = sharedGameRoles.find(
-                  (r) =>
-                    r.gameRoleId === roleToRemove.roleId ||
-                    r.linkedGameRoleId === roleToRemove.roleId,
+                const foundSharedGameRole = sharedGameRoles.find((r) =>
+                  roleToRemove.type === "shared"
+                    ? r.gameRoleId === roleToRemove.roleId
+                    : r.linkedGameRoleId === roleToRemove.roleId,
                 );
                 if (!foundSharedGameRole) {
                   throw new TRPCError({

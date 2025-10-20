@@ -20,20 +20,14 @@ import {
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
 
-import type {
-  GetMatchesByCalendarOutputType,
-  GetMatchesByDateOutputType,
-} from "../date-match.output";
+import type { GetMatchesByCalendarOutputType } from "../date-match.output";
 import type {
   GetMatchesByCalendarArgs,
   GetMatchesByDateArgs,
 } from "./date-match.repository.types";
-import { aggregatePlayerStats } from "../../../../../utils/player";
 
 class DateMatchRepository {
-  public async getMatchesByDate(
-    args: GetMatchesByDateArgs,
-  ): Promise<GetMatchesByDateOutputType> {
+  public async getMatchesByDate(args: GetMatchesByDateArgs) {
     const { input } = args;
     const year = input.date.getUTCFullYear();
     const month = input.date.getUTCMonth();
@@ -88,14 +82,9 @@ class DateMatchRepository {
             playerImageUrl: image.url,
             playerImageType: image.type,
             playerImageUsageType: image.usageType,
-            playerType: sql<"original" | "shared">`
-            CASE
-              WHEN ${vMatchPlayerCanonicalForUser.sharedPlayerId} IS NULL
-                   OR ${vMatchPlayerCanonicalForUser.linkedPlayerId} IS NOT NULL
-              THEN 'original'
-              ELSE 'shared'
-            END
-          `.as("player_type"),
+            playerType: vMatchPlayerCanonicalForUser.playerSourceType,
+            sharedPlayerId: vMatchPlayerCanonicalForUser.sharedPlayerId,
+            linkedPlayerId: vMatchPlayerCanonicalForUser.linkedPlayerId,
           },
         )
         .from(vMatchPlayerCanonicalForUser)
@@ -130,7 +119,9 @@ class DateMatchRepository {
               placement: number | null;
               winner: boolean | null;
               type: "original" | "shared";
-              playerType: "original" | "shared";
+              playerType: "original" | "shared" | "linked" | "not-shared";
+              sharedPlayerId: number | null;
+              linkedPlayerId: number | null;
               image: {
                 name: string;
                 url: string | null;
@@ -148,6 +139,8 @@ class DateMatchRepository {
             'winner', ${playersByMatch.winner},
             'type', ${playersByMatch.type},
             'playerType',${playersByMatch.playerType},
+            'sharedPlayerId', ${playersByMatch.sharedPlayerId},
+            'linkedPlayerId', ${playersByMatch.linkedPlayerId},
             'image',
               CASE
                 WHEN ${playersByMatch.playerImageId} IS NULL THEN NULL
@@ -168,6 +161,7 @@ class DateMatchRepository {
       .with(teamsByMatch, teamsAgg, playersByMatch, playersAgg)
       .select({
         id: vMatchCanonical.matchId,
+        sharedMatchId: vMatchCanonical.sharedMatchId,
         name: vMatchCanonical.name,
         date: vMatchCanonical.matchDate,
         duration: match.duration,
@@ -177,7 +171,8 @@ class DateMatchRepository {
         game: sql<{
           id: number;
           linkedGameId: number | null;
-          type: "original" | "shared";
+          sharedGameId: number | null;
+          type: "original" | "shared" | "linked";
           name: string;
           image: {
             name: string;
@@ -188,6 +183,7 @@ class DateMatchRepository {
         }>`json_build_object(
             'id', ${vMatchCanonical.canonicalGameId},
             'linkedGameId', ${vMatchCanonical.linkedGameId},
+            'sharedGameId', ${vMatchCanonical.sharedGameId},
             'type', ${vMatchCanonical.visibilitySource},
             'name', ${game.name},
             'image',
@@ -250,7 +246,9 @@ class DateMatchRepository {
             placement: number | null;
             winner: boolean | null;
             type: "original" | "shared";
-            playerType: "original" | "shared";
+            playerType: "original" | "shared" | "linked" | "not-shared";
+            sharedPlayerId: number | null;
+            linkedPlayerId: number | null;
             image: {
               name: string;
               url: string | null;
@@ -291,60 +289,10 @@ class DateMatchRepository {
         message: "Current user not found.",
       });
     }
-    const mappedMatches = matches.map((m) => {
-      return {
-        ...m,
-        duration: m.duration,
-        gameId: m.game.id,
-        gameImage: m.game.image,
-        gameName: m.game.name,
-        linkedGameId: m.game.linkedGameId ?? undefined,
-        locationName: m.location?.name,
-        outcome: {
-          score:
-            m.matchPlayers.find((mp) => mp.playerId === currentUserPlayer.id)
-              ?.score ?? 0,
-          isWinner:
-            m.matchPlayers.find((mp) => mp.playerId === currentUserPlayer.id)
-              ?.winner ?? false,
-          placement:
-            m.matchPlayers.find((mp) => mp.playerId === currentUserPlayer.id)
-              ?.placement ?? 0,
-        },
-        players: m.matchPlayers.map((mp) => ({
-          id: mp.playerId,
-          type: mp.playerType,
-          name: mp.name,
-          score: mp.score,
-          isWinner: mp.winner ?? false,
-          placement: mp.placement,
-          teamId: mp.teamId,
-          isUser: mp.playerId === currentUserPlayer.id,
-          image: mp.image
-            ? {
-                name: mp.image.name,
-                url: mp.image.url,
-                type: mp.image.type,
-                usageType: "player" as const,
-              }
-            : null,
-        })),
-        scoresheet: m.scoresheet,
-      };
-    });
     return {
       date: input.date,
-      matches: matches.map((match) => {
-        const userMatchPlayer = match.matchPlayers.find(
-          (mp) => mp.playerId === currentUserPlayer.id,
-        );
-        return {
-          ...match,
-          hasUser: userMatchPlayer !== undefined,
-          won: userMatchPlayer?.winner ?? false,
-        };
-      }),
-      playerStats: aggregatePlayerStats(mappedMatches),
+      matches: matches,
+      userPlayer: currentUserPlayer,
     };
   }
   public async getMatchesByCalendar(

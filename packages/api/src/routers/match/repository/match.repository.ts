@@ -305,7 +305,7 @@ class MatchRepository {
     } else {
       const returnedSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.id,
+          id: input.sharedMatchId,
           sharedWithId: args.userId,
         },
         with: {
@@ -337,6 +337,7 @@ class MatchRepository {
       return {
         type: "shared" as const,
         id: returnedSharedMatch.matchId,
+        sharedMatchId: returnedSharedMatch.id,
         date: returnedSharedMatch.match.date,
         name: returnedSharedMatch.match.name,
         game: returnedSharedMatch.sharedGame.linkedGame
@@ -433,7 +434,7 @@ class MatchRepository {
     } else {
       const returnedSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.id,
+          id: input.sharedMatchId,
           sharedWithId: args.userId,
         },
         with: {
@@ -528,7 +529,7 @@ class MatchRepository {
     } else {
       const returnedSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.id,
+          id: input.sharedMatchId,
           sharedWithId: args.userId,
         },
         with: {
@@ -728,7 +729,7 @@ class MatchRepository {
 
     const returnedSharedMatch = await db.query.sharedMatch.findFirst({
       where: {
-        matchId: input.id,
+        id: input.sharedMatchId,
         sharedWithId: args.userId,
       },
       with: {
@@ -1262,7 +1263,7 @@ class MatchRepository {
     } else {
       const returnedSharedMatch = await db.query.sharedMatch.findFirst({
         where: {
-          matchId: input.match.id,
+          id: input.match.sharedMatchId,
           sharedWithId: userId,
         },
         with: {
@@ -1288,7 +1289,7 @@ class MatchRepository {
         .where(eq(match.id, returnedSharedMatch.matchId));
       return {
         type: "shared" as const,
-        matchId: input.match.id,
+        matchId: returnedSharedMatch.matchId,
         game: returnedSharedMatch.sharedGame.linkedGameId
           ? {
               id: returnedSharedMatch.sharedGame.linkedGameId,
