@@ -186,7 +186,7 @@ class MatchService {
         if (linkedPlayer === null) {
           return {
             ...matchPlayer,
-            playerType: "linked" as const,
+            playerType: "shared" as const,
             name: sharedPlayer.player.name,
             playerId: sharedPlayer.player.id,
             sharedPlayerId: sharedPlayer.id,
