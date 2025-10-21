@@ -531,13 +531,21 @@ function ScoresheetFooter(input: { match: MatchInput }) {
       setTieBreakers(
         playersPlacement.map((player) => {
           const foundPlayer = players.find((p) => p.id === player.id);
+          if (!foundPlayer) {
+            throw new Error("Player not found");
+          }
           return {
             matchPlayerId: player.id,
-            name: foundPlayer?.name ?? "",
-            image: foundPlayer?.image ?? null,
+            name: foundPlayer.name,
+            image: foundPlayer.image,
             placement: player.placement,
-            score: foundPlayer !== undefined ? foundPlayer.score : player.score,
-            teamId: foundPlayer?.teamId ?? null,
+            score: calculateFinalScore(
+              foundPlayer.rounds.map((round) => ({
+                score: round.score,
+              })),
+              scoresheet,
+            ),
+            teamId: foundPlayer.teamId,
           };
         }),
       );

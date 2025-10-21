@@ -246,7 +246,7 @@ class MatchService {
     const playerStats: GetMatchSummaryOutputType["playerStats"] = [];
     for (const matchPlayer of response.players) {
       const matchPlayersForPlayer = response.matchPlayers.filter(
-        (mp) => mp.id === matchPlayer.id,
+        (mp) => mp.canonicalPlayerId === matchPlayer.playerId,
       );
       const playerPlacements = matchPlayersForPlayer.reduce(
         (acc, mp) => {
