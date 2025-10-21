@@ -78,11 +78,10 @@ export function MatchSummaryPlayerStats(input: { match: MatchInput }) {
                   (score) => score === scoresheet.targetScore,
                 );
                 Best = foundScore ? scoresheet.targetScore : null;
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const differenceHighest =
-                  highestScore! - scoresheet.targetScore;
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                const differenceLowest = lowestScore! - scoresheet.targetScore;
+                  (highestScore ?? 0) - scoresheet.targetScore;
+                const differenceLowest =
+                  (lowestScore ?? 0) - scoresheet.targetScore;
                 if (differenceLowest == 0 && differenceHighest == 0)
                   Worst = null;
                 else if (differenceLowest == 0) Worst = highestScore;
