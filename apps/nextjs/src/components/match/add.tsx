@@ -55,7 +55,7 @@ import { AddPlayersDialogForm } from "~/components/match/players/selector";
 import { Spinner } from "~/components/spinner";
 import { useInvalidateLocations } from "~/hooks/invalidate/location";
 import { useTRPC } from "~/trpc/react";
-import { GameInput } from "./types/input";
+import type { GameInput } from "./types/input";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 

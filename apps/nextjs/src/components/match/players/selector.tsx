@@ -252,7 +252,7 @@ export const AddPlayersDialogForm = ({
 
     return (
       <ManageTeamContent
-        roles={gameRoles ?? []}
+        roles={gameRoles}
         teams={mappedTeams}
         cancel={() => setShowTeamModal(false)}
         setTeams={manageTeamSave}
@@ -272,7 +272,7 @@ export const AddPlayersDialogForm = ({
         <ManagePlayerRoles
           player={foundPlayer}
           teamRoles={foundTeam?.roles ?? []}
-          roles={gameRoles ?? []}
+          roles={gameRoles}
           onClose={() => setShowRoleModal(null)}
           onSave={(roles) => {
             update(playerIndex, {

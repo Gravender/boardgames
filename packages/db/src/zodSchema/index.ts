@@ -113,7 +113,9 @@ export const selectGameRoleSchema = createSelectSchema(gameRole);
 export const insertSharedGameRoleSchema = createInsertSchema(sharedGameRole);
 export const selectSharedGameRoleSchema = createSelectSchema(sharedGameRole);
 
-export const insertSharedMatchPlayerRoleSchema =
-  createInsertSchema(sharedMatchPlayerRole);
-export const selectSharedMatchPlayerRoleSchema =
-  createSelectSchema(sharedMatchPlayerRole);
+export const insertSharedMatchPlayerRoleSchema = createInsertSchema(
+  sharedMatchPlayerRole,
+);
+export const selectSharedMatchPlayerRoleSchema = createSelectSchema(
+  sharedMatchPlayerRole,
+);

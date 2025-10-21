@@ -20,8 +20,8 @@ config.resolver.unstable_conditionNames = [
   "require",
   "react-native",
 ];
-(config.resolver.sourceExts = [...config.resolver.sourceExts, "mjs", "cjs"]),
-  (module.exports = config);
+((config.resolver.sourceExts = [...config.resolver.sourceExts, "mjs", "cjs"]),
+  (module.exports = config));
 
 /**
  * Move the Metro cache to the `.cache/metro` folder.

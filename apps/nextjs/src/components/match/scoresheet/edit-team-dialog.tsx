@@ -1,11 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { z } from "zod/v4";
 
@@ -13,7 +8,6 @@ import type { RouterOutputs } from "@board-games/api";
 import {
   sharedOrLinkedSchema,
   sharedOrOriginalOrLinkedSchema,
-  sharedOrOriginalSchema,
 } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
