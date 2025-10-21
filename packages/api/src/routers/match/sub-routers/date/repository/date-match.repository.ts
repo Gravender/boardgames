@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq, gte, lt, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import type {
   scoreSheetRoundsScore,
@@ -39,8 +40,8 @@ class DateMatchRepository {
       db
         .selectDistinctOn([team.matchId, team.id], {
           matchId: team.matchId,
-          id: team.id,
-          name: team.name,
+          teamId: sql<number>`"boardgames_team"."id"`.as("team_id"),
+          teamName: sql<string>`"boardgames_team"."name"`.as("team_name"),
         })
         .from(team)
         .orderBy(team.matchId, team.id),
@@ -53,13 +54,17 @@ class DateMatchRepository {
           matchId: teamsByMatch.matchId,
           teams: sql<
             { id: number; name: string }[]
-          >`json_agg(json_build_object('id', ${teamsByMatch.id}, 'name', ${teamsByMatch.name}) ORDER BY ${teamsByMatch.id})`.as(
+          >`json_agg(json_build_object('id', ${teamsByMatch.teamId}, 'name', ${teamsByMatch.teamName}) ORDER BY ${teamsByMatch.teamId})`.as(
             "teams",
           ),
         })
         .from(teamsByMatch)
         .groupBy(teamsByMatch.matchId),
     );
+
+    const gameImage = alias(image, "game_image");
+    const playerImage = alias(image, "player_image");
+
     const playersByMatch = db.$with("players_by_match").as(
       db
         .selectDistinctOn(
@@ -76,12 +81,24 @@ class DateMatchRepository {
             placement: vMatchPlayerCanonicalForUser.placement,
             winner: vMatchPlayerCanonicalForUser.winner,
             type: vMatchPlayerCanonicalForUser.sourceType,
-            playerName: player.name,
-            playerImageId: image.id,
-            playerImageName: image.name,
-            playerImageUrl: image.url,
-            playerImageType: image.type,
-            playerImageUsageType: image.usageType,
+            playerName: sql<string>`"boardgames_player"."name"`.as(
+              "player_name",
+            ),
+            playerImageId: sql<number>`"player_image"."id"`.as(
+              "player_image_id",
+            ),
+            playerImageName: sql<string>`"player_image"."name"`.as(
+              "player_image_name",
+            ),
+            playerImageUrl: sql<string>`"player_image"."url"`.as(
+              "player_image_url",
+            ),
+            playerImageType: sql<string>`"player_image"."type"`.as(
+              "player_image_type",
+            ),
+            playerImageUsageType: sql<string>`"player_image"."usage_type"`.as(
+              "player_image_usage_type",
+            ),
             playerType: vMatchPlayerCanonicalForUser.playerSourceType,
             sharedPlayerId: vMatchPlayerCanonicalForUser.sharedPlayerId,
             linkedPlayerId: vMatchPlayerCanonicalForUser.linkedPlayerId,
@@ -98,7 +115,7 @@ class DateMatchRepository {
           player,
           eq(player.id, vMatchPlayerCanonicalForUser.canonicalPlayerId),
         )
-        .leftJoin(image, eq(image.id, player.imageId))
+        .leftJoin(playerImage, eq(playerImage.id, player.imageId))
         .orderBy(
           vMatchPlayerCanonicalForUser.canonicalMatchId,
           vMatchPlayerCanonicalForUser.baseMatchPlayerId,
@@ -190,10 +207,10 @@ class DateMatchRepository {
               CASE
                 WHEN ${game.imageId} IS NULL THEN NULL
                 ELSE json_build_object(
-                  'name', ${image.name},
-                  'url', ${image.url},
-                  'type', ${image.type},
-                  'usageType', ${image.usageType}
+                  'name', ${gameImage.name},
+                  'url', ${gameImage.url},
+                  'type', ${gameImage.type},
+                  'usageType', ${gameImage.usageType}
                 )
               END
           )`.as("game"),
@@ -275,7 +292,7 @@ class DateMatchRepository {
       .leftJoin(playersAgg, eq(playersAgg.matchId, vMatchCanonical.matchId))
       .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
       .innerJoin(game, eq(game.id, vMatchCanonical.canonicalGameId))
-      .leftJoin(image, eq(image.id, game.imageId))
+      .leftJoin(gameImage, eq(gameImage.id, game.imageId))
       .orderBy(vMatchCanonical.matchDate);
     const currentUserPlayer = await db.query.player.findFirst({
       where: {
@@ -309,7 +326,10 @@ class DateMatchRepository {
       .where(eq(vMatchCanonical.visibleToUserId, args.userId))
       .groupBy(sql`date_trunc('day', ${vMatchCanonical.matchDate})`)
       .orderBy(sql`date_trunc('day', ${vMatchCanonical.matchDate})`);
-    return matches;
+    return matches.map((match) => ({
+      date: new Date(match.date),
+      count: Number(match.count),
+    }));
   }
 }
 export const dateMatchRepository = new DateMatchRepository();

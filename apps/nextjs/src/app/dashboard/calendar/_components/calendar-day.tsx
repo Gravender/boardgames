@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
 
 import { cn } from "@board-games/ui/utils";
 
@@ -11,11 +13,16 @@ interface CalendarDayProps {
 
 export function CalendarDay({ day, matches }: CalendarDayProps) {
   const hasMatches = matches && matches.matches > 0;
+  const router = useRouter();
 
   if (hasMatches) {
     return (
-      <Link
-        href={`/dashboard/calendar/${matches.date.toString().split(" ")[0]}`}
+      <td
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          router.push(`/dashboard/calendar/${format(day, "MM-dd-yyyy-XXXX")}`);
+        }}
         className="relative mx-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-secondary text-sm font-normal text-secondary-foreground hover:bg-secondary/80 aria-selected:opacity-100 sm:h-12 sm:w-12 sm:text-lg md:h-16 md:w-16 lg:h-20 lg:w-20"
       >
         <span>{day.getDate()}</span>
@@ -25,7 +32,7 @@ export function CalendarDay({ day, matches }: CalendarDayProps) {
         >
           {matches.matches}
         </span>
-      </Link>
+      </td>
     );
   }
   return (

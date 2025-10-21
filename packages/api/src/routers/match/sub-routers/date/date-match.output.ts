@@ -14,7 +14,7 @@ export const getMatchesByDateOutput = z.object({
       type: z.literal("original").or(z.literal("shared")),
       name: z.string(),
       image: imageSchema.nullable(),
-      placements: z.record(z.number(), z.number()),
+      placements: z.record(z.string(), z.number()),
       streaks: z.object({
         current: z.object({
           type: z.literal("win").or(z.literal("loss")),
