@@ -54,6 +54,7 @@ import type { GameInput, MatchInput } from "~/components/match/types/input";
 import { AddPlayersDialogForm } from "~/components/match/players/selector";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
+import { formatMatchLink } from "~/utils/linkFormatting";
 import { useGetPlayersByGame } from "../player/hooks/players";
 import { useEditMatchMutation } from "./hooks/edit";
 import { useMatch, usePlayersAndTeams } from "./hooks/suspenseQueries";
@@ -197,9 +198,13 @@ export function EditMatchForm(input: { game: GameInput; match: MatchInput }) {
         onSuccess: (result) => {
           if (result.type === "original") {
             if (result.updatedScore) {
-              router.push(
-                `/dashboard/games/${result.game.id}/${result.matchId}`,
-              );
+              const url = formatMatchLink({
+                matchId: result.matchId,
+                gameId: result.game.id,
+                type: "original",
+                finished: false,
+              });
+              router.push(url);
             } else {
               router.back();
             }

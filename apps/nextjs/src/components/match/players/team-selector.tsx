@@ -398,7 +398,7 @@ const ManageTeamRoles = ({
                   ) : (
                     filteredRoles.map((role) => (
                       <div
-                        key={`${role.type}-${role.id}`}
+                        key={`${role.id}-${role.type}`}
                         className="flex items-center space-x-3 rounded p-2"
                       >
                         <Checkbox
@@ -459,7 +459,7 @@ const ManageTeamRoles = ({
                         );
                         return role ? (
                           <Badge
-                            key={`${role.type}-${role.id}`}
+                            key={`${role.id}-${role.type}`}
                             variant="secondary"
                             className="w-28 truncate text-nowrap text-xs"
                           >

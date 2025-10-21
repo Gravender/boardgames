@@ -55,6 +55,7 @@ import type { Player, Team } from "~/components/match/players/selector";
 import { AddPlayersDialogForm } from "~/components/match/players/selector";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
+import { formatMatchLink } from "~/utils/linkFormatting";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 
@@ -237,7 +238,13 @@ const AddMatchForm = ({
     trpc.newMatch.createMatch.mutationOptions({
       onSuccess: async (response) => {
         await queryClient.invalidateQueries();
-        router.push(`/dashboard/games/${response.game.id}/${response.id}`);
+        const url = formatMatchLink({
+          matchId: response.id,
+          gameId: response.game.id,
+          type: "original",
+          finished: false,
+        });
+        router.push(url);
         setIsSubmitting(false);
       },
       onError: (error) => {

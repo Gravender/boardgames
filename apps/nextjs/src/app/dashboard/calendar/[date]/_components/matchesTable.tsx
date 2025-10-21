@@ -13,6 +13,7 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
 import { GameImage } from "~/components/game-image";
+import { formatMatchLink } from "~/utils/linkFormatting";
 import { PlayerStats } from "./player-stats";
 
 type Matches = NonNullable<
@@ -31,7 +32,6 @@ export function MatchesTable({
   date: string;
 }) {
   const [matches, setMatches] = useState(data);
-
   return (
     <div className="container relative mx-auto h-[90vh] max-w-4xl px-4">
       <CardHeader className="flex flex-row items-center gap-2">
@@ -62,7 +62,22 @@ export function MatchesTable({
               {matches.map((match) => (
                 <Card key={`${match.id}-${match.type}`} className="flex w-full">
                   <Link
-                    href={`/dashboard/games${match.type === "shared" ? "/shared" : ""}/${match.game.id}/${match.id}${match.finished ? "/summary" : ""}`}
+                    href={formatMatchLink(
+                      match.type === "shared"
+                        ? {
+                            sharedMatchId: match.id,
+                            sharedGameId: match.game.id,
+                            linkedGameId: match.game.linkedGameId,
+                            type: match.type,
+                            finished: match.finished,
+                          }
+                        : {
+                            matchId: match.id,
+                            gameId: match.game.id,
+                            type: match.type,
+                            finished: match.finished,
+                          },
+                    )}
                     className="flex w-full items-center gap-3 font-medium"
                   >
                     <GameImage
