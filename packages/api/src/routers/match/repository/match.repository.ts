@@ -644,6 +644,7 @@ class MatchRepository {
               and(
                 eq(scoresheet.parentId, returnedMatch.scoresheet.parentId ?? 0),
                 eq(vMatchCanonical.finished, true),
+                eq(vMatchCanonical.visibleToUserId, args.userId),
               ),
             )
             .groupBy(vMatchCanonical.matchId),
@@ -771,6 +772,7 @@ class MatchRepository {
             and(
               eq(scoresheet.parentId, parentScoresheet.parentId ?? 0),
               eq(vMatchCanonical.finished, true),
+              eq(vMatchCanonical.visibleToUserId, args.userId),
             ),
           )
           .groupBy(vMatchCanonical.matchId),
