@@ -2,6 +2,7 @@ import "~/styles/globals.css";
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 import { Toaster } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
@@ -63,7 +64,13 @@ export default function RootLayout({
           enableColorScheme
         >
           <CSPostHogProvider>
-            <TRPCReactProvider>{children}</TRPCReactProvider>
+            <TRPCReactProvider>
+              {children}
+              <ReactQueryDevtools
+                position="bottom"
+                buttonPosition="bottom-right"
+              />
+            </TRPCReactProvider>
             <Toaster />
             <SpeedInsights />
 
