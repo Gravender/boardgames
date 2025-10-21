@@ -20,7 +20,7 @@ export function CalendarDay({ day, matches }: CalendarDayProps) {
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          router.push(`/dashboard/calendar/${format(day, "MM-dd-yyyy-XXXX")}`);
+          router.push(`/dashboard/calendar/${format(day, "yyyy-MM-dd")}`);
         }}
         className="relative mx-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-secondary text-sm font-normal text-secondary-foreground hover:bg-secondary/80 aria-selected:opacity-100 sm:h-12 sm:w-12 sm:text-lg md:h-16 md:w-16 lg:h-20 lg:w-20"
       >
