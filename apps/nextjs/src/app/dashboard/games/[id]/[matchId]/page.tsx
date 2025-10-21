@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { TRPCError } from "@trpc/server";
+import { ErrorBoundary } from "react-error-boundary";
 
+import { MatchNotFound } from "~/components/match/MatchNotFound";
 import { Scoresheet } from "~/components/match/scoresheet";
 import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
 
@@ -19,16 +22,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       redirect(`/dashboard/games/${gameId}`);
     }
   }
-  const match = await caller.match.getMatch({ id: Number(matchId) });
-  if (!match)
+  try {
+    const match = await caller.newMatch.getMatch({
+      id: Number(matchId),
+      type: "original",
+    });
     return {
-      title: `404 - Match Not Found`,
-      description: `Match for ${matchId} not found`,
+      title: `${match.name} Scoresheet`,
+      description: `Scoresheet Table for ${match.name}`,
     };
-  return {
-    title: `${match.name} Scoresheet`,
-    description: `Scoresheet Table for ${match.name}`,
-  };
+  } catch (error) {
+    if (error instanceof TRPCError && error.code === "NOT_FOUND") {
+      return { title: "Match Not Found" };
+    }
+    return { title: "Games" };
+  }
 }
 export default async function Page({ params }: Props) {
   const slugs = await params;
@@ -40,12 +48,37 @@ export default async function Page({ params }: Props) {
       redirect(`/dashboard/games/${gameId}`);
     }
   }
-  void prefetch(trpc.match.getMatch.queryOptions({ id: Number(matchId) }));
+  void prefetch(
+    trpc.newMatch.getMatch.queryOptions({
+      id: Number(matchId),
+      type: "original",
+    }),
+  );
+  void prefetch(
+    trpc.newMatch.getMatchScoresheet.queryOptions({
+      id: Number(matchId),
+      type: "original",
+    }),
+  );
+  void prefetch(
+    trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+      id: Number(matchId),
+      type: "original",
+    }),
+  );
+
   return (
     <HydrateClient>
-      <Suspense>
-        <Scoresheet matchId={Number(matchId)} />
-      </Suspense>
+      <ErrorBoundary fallback={<MatchNotFound />}>
+        <Suspense>
+          <Scoresheet
+            match={{
+              id: Number(matchId),
+              type: "original",
+            }}
+          />
+        </Suspense>
+      </ErrorBoundary>
     </HydrateClient>
   );
 }

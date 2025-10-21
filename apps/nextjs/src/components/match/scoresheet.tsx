@@ -1,13 +1,8 @@
 "use client";
 
 import type { z } from "zod/v4";
-import { useEffect, useMemo, useState } from "react";
-import { notFound, useRouter } from "next/navigation";
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { differenceInSeconds } from "date-fns";
 import {
   Calendar,
@@ -30,37 +25,46 @@ import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
-import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
 
+import type { MatchInput } from "./types/input";
 import type { ManualWinnerPlayerSchema } from "~/components/match/scoresheet/ManualWinnerDialog";
 import type { TieBreakerPlayerSchema } from "~/components/match/scoresheet/TieBreakerDialog";
+import {
+  useMatch,
+  usePlayersAndTeams,
+  useScoresheet,
+} from "~/components/match/hooks/suspenseQueries";
 import { CommentDialog } from "~/components/match/scoresheet/CommentDialog";
 import { ManualWinnerDialog } from "~/components/match/scoresheet/ManualWinnerDialog";
 import { MatchImages } from "~/components/match/scoresheet/match-images";
 import { ScoreSheetTable } from "~/components/match/scoresheet/table";
 import { TieBreakerDialog } from "~/components/match/scoresheet/TieBreakerDialog";
 import { Spinner } from "~/components/spinner";
-import { useTRPC } from "~/trpc/react";
+import { formatMatchLink } from "~/utils/linkFormatting";
 import { FormattedDate } from "../formatted-date";
+import { useGameRoles } from "../game/hooks/roles";
+import {
+  useDurationMutation,
+  useUpdateFinalScores,
+  useUpdateFinish,
+} from "./hooks/scoresheet";
 import { DetailDialog } from "./scoresheet/DetailDialog";
 import PlayerEditorDialog from "./scoresheet/edit-player-dialog";
 import TeamEditorDialog from "./scoresheet/edit-team-dialog";
 
-type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
-type Player = Match["players"][number];
-type Team = Match["teams"][number];
-export function Scoresheet({ matchId }: { matchId: number }) {
-  const trpc = useTRPC();
-  const { data: match } = useSuspenseQuery(
-    trpc.match.getMatch.queryOptions({ id: matchId }),
-  );
-  if (match === null) {
-    return notFound();
-  }
-  return <ScoresheetContent match={match} />;
+type Player = NonNullable<
+  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+>["players"][number];
+type Team = NonNullable<
+  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+>["teams"][number];
+
+export function Scoresheet(input: { match: MatchInput }) {
+  return <ScoresheetContent match={input.match} />;
 }
-function ScoresheetContent({ match }: { match: Match }) {
+function ScoresheetContent(input: { match: MatchInput }) {
+  const { match } = useMatch(input.match);
   return (
     <div className="flex w-full justify-center">
       <div className="flex w-full max-w-6xl flex-col gap-2 px-2 sm:gap-4 sm:px-4">
@@ -68,11 +72,9 @@ function ScoresheetContent({ match }: { match: Match }) {
           <CardHeader className="py-2 sm:py-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-2xl font-bold">{match.name}</CardTitle>
-              <Badge
-                variant={match.scoresheet.isCoop ? "secondary" : "default"}
-              >
-                {match.scoresheet.isCoop ? "Cooperative" : "Competitive"}
-              </Badge>
+              <Suspense fallback={null}>
+                <ScoreSheetBadge match={input.match} />
+              </Suspense>
             </div>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <FormattedDate Icon={Calendar} date={match.date} />
@@ -85,36 +87,58 @@ function ScoresheetContent({ match }: { match: Match }) {
             </div>
           </CardHeader>
         </Card>
-        {match.scoresheet.winCondition === "Manual" &&
-        match.scoresheet.rounds.length === 0 ? (
-          <ManualScoreSheet match={match} />
-        ) : (
-          <ScoreSheetTable match={match} />
-        )}
-        <ScoresheetFooter match={match} />
+        <Suspense fallback={null}>
+          <ScoreSheetTableManualSelector match={input.match} />
+        </Suspense>
+        <Suspense fallback={null}>
+          <ScoresheetFooter match={input.match} />
+        </Suspense>
       </div>
     </div>
   );
 }
-function ManualScoreSheet({ match }: { match: Match }) {
-  const trpc = useTRPC();
-  const { data: roles } = useSuspenseQuery(
-    trpc.game.getGameRoles.queryOptions({ id: match.gameId, type: "original" }),
+function ScoreSheetBadge(input: { match: MatchInput }) {
+  const { scoresheet } = useScoresheet(input.match);
+  return (
+    <Badge variant={scoresheet.isCoop ? "secondary" : "default"}>
+      {scoresheet.isCoop ? "Cooperative" : "Competitive"}
+    </Badge>
+  );
+}
+function ScoreSheetTableManualSelector(input: { match: MatchInput }) {
+  const { scoresheet } = useScoresheet(input.match);
+  if (scoresheet.winCondition === "Manual" && scoresheet.rounds.length === 0)
+    return <ManualScoreSheet match={input.match} />;
+  return <ScoreSheetTable match={input.match} />;
+}
+function ManualScoreSheet(input: { match: MatchInput }) {
+  const { match } = useMatch(input.match);
+  const { teams, players } = usePlayersAndTeams(input.match);
+  const { gameRoles } = useGameRoles(
+    match.game.type === "original"
+      ? {
+          id: match.game.id,
+          type: "original",
+        }
+      : {
+          sharedGameId: match.game.sharedGameId,
+          type: "shared",
+        },
   );
 
   const [team, setTeam] = useState<Team | null>(null);
   const [player, setPlayer] = useState<Player | null>(null);
 
   const mappedTeams = useMemo(() => {
-    const mappedTeams = match.teams
+    const mappedTeams = teams
       .map((team) => {
-        const teamPlayers = match.players.filter(
+        const teamPlayers = players.filter(
           (player) => player.teamId === team.id,
         );
         if (teamPlayers.length === 0) return null;
-        const teamRoles = roles.filter((role) => {
+        const teamRoles = gameRoles.filter((role) => {
           const roleInEveryPlayer = teamPlayers.every((p) =>
-            p.roles.some((r) => r.id === role.id),
+            p.roles.some((r) => r.id === role.id && r.type === role.type),
           );
           return roleInEveryPlayer;
         });
@@ -123,7 +147,10 @@ function ManualScoreSheet({ match }: { match: Match }) {
           players: teamPlayers.map((player) => ({
             ...player,
             roles: player.roles.filter(
-              (role) => !teamRoles.some((r) => r.id === role.id),
+              (role) =>
+                !teamRoles.some(
+                  (r) => r.id === role.id && r.type === role.type,
+                ),
             ),
           })),
           roles: teamRoles,
@@ -131,10 +158,10 @@ function ManualScoreSheet({ match }: { match: Match }) {
       })
       .filter((team) => team !== null);
     return mappedTeams;
-  }, [match, roles]);
+  }, [teams, players, gameRoles]);
   const individualPlayers = useMemo(() => {
-    return match.players.filter((player) => player.teamId === null);
-  }, [match]);
+    return players.filter((player) => player.teamId === null);
+  }, [players]);
 
   return (
     <>
@@ -171,7 +198,7 @@ function ManualScoreSheet({ match }: { match: Match }) {
                             {team.roles.map((role) => {
                               return (
                                 <Badge
-                                  key={role.id}
+                                  key={`${role.type}-${role.id}`}
                                   variant="outline"
                                   className="text-nowrap"
                                 >
@@ -189,12 +216,12 @@ function ManualScoreSheet({ match }: { match: Match }) {
                             Team Notes
                           </Label>
                           <DetailDialog
-                            matchId={match.id}
+                            match={input.match}
                             data={{
                               id: team.id,
                               name: team.name,
                               details: team.details,
-                              type: "Team",
+                              type: "team",
                             }}
                             placeholder="No notes for this team"
                           />
@@ -202,6 +229,11 @@ function ManualScoreSheet({ match }: { match: Match }) {
                         <ScrollArea>
                           <div className="flex max-h-[20vh] flex-col gap-2">
                             {team.players.map((player) => {
+                              const foundPlayer = players.find(
+                                (p) =>
+                                  p.id === player.id && p.type === player.type,
+                              );
+                              if (!foundPlayer) return null;
                               return (
                                 <div
                                   key={`${player.id}-${player.playerId}`}
@@ -216,7 +248,7 @@ function ManualScoreSheet({ match }: { match: Match }) {
                                       type="button"
                                       size="icon"
                                       className="font-semibold"
-                                      onClick={() => setPlayer(player)}
+                                      onClick={() => setPlayer(foundPlayer)}
                                     >
                                       <SquarePen className="h-4 w-4" />
                                     </Button>
@@ -227,7 +259,7 @@ function ManualScoreSheet({ match }: { match: Match }) {
                                       {player.roles.map((role) => {
                                         return (
                                           <Badge
-                                            key={role.id}
+                                            key={`${role.type}-${role.id}`}
                                             variant="outline"
                                             className="text-nowrap"
                                           >
@@ -243,12 +275,12 @@ function ManualScoreSheet({ match }: { match: Match }) {
                                       Player Notes
                                     </Label>
                                     <DetailDialog
-                                      matchId={match.id}
+                                      match={match}
                                       data={{
                                         id: player.id,
                                         name: player.name,
                                         details: player.details,
-                                        type: "Player",
+                                        type: "player",
                                       }}
                                       placeholder="No notes for this player"
                                     />
@@ -296,7 +328,7 @@ function ManualScoreSheet({ match }: { match: Match }) {
                             {player.roles.map((role) => {
                               return (
                                 <Badge
-                                  key={role.id}
+                                  key={`${role.type}-${role.id}`}
                                   variant="outline"
                                   className="text-nowrap"
                                 >
@@ -314,12 +346,12 @@ function ManualScoreSheet({ match }: { match: Match }) {
                             Player Notes
                           </Label>
                           <DetailDialog
-                            matchId={match.id}
+                            match={match}
                             data={{
                               id: player.id,
                               name: player.name,
                               details: player.details,
-                              type: "Player",
+                              type: "player",
                             }}
                             placeholder="No notes for this player"
                           />
@@ -335,22 +367,21 @@ function ManualScoreSheet({ match }: { match: Match }) {
       </ScrollArea>
       <TeamEditorDialog
         team={team}
-        players={match.players}
-        gameId={match.gameId}
+        matchInput={input.match}
         onClose={() => setTeam(null)}
       />
       <PlayerEditorDialog
-        teams={match.teams}
         player={player}
-        players={match.players}
-        gameId={match.gameId}
-        matchId={match.id}
+        matchInput={input.match}
         onClose={() => setPlayer(null)}
       />
     </>
   );
 }
-function ScoresheetFooter({ match }: { match: Match }) {
+function ScoresheetFooter(input: { match: MatchInput }) {
+  const { match } = useMatch(input.match);
+  const { scoresheet } = useScoresheet(input.match);
+  const { teams, players } = usePlayersAndTeams(input.match);
   const [duration, setDuration] = useState(match.duration);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [manualWinners, setManualWinners] = useState<
@@ -380,98 +411,49 @@ function ScoresheetFooter({ match }: { match: Match }) {
       setDuration(match.duration);
     }
     return () => clearInterval(interval);
-  }, [match]);
+  }, [match.running, match.startTime, match.duration]);
 
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const router = useRouter();
   const posthog = usePostHog();
 
-  const invalidateMatch = async () =>
-    queryClient.invalidateQueries(
-      trpc.match.getMatch.queryOptions({ id: match.id }),
-    );
-  const startMatchDuration = useMutation(
-    trpc.match.matchStart.mutationOptions({
-      onSuccess: invalidateMatch,
-    }),
+  const { startMatch, pauseMatch, resetMatch } = useDurationMutation(
+    input.match,
   );
-  const pauseMatchDuration = useMutation(
-    trpc.match.matchPause.mutationOptions({
-      onSuccess: invalidateMatch,
-    }),
-  );
-  const resetMatchDuration = useMutation(
-    trpc.match.matchResetDuration.mutationOptions({
-      onSuccess: invalidateMatch,
-    }),
-  );
-  const updateMatch = useMutation(
-    trpc.match.updateMatch.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: match.id }),
-        );
-        await queryClient.invalidateQueries(
-          trpc.game.getGame.queryOptions({ id: match.gameId }),
-        );
-        posthog.capture("match finished", {
-          gameId: match.gameId,
-          matchId: match.id,
-          type: "standard",
-        });
 
-        router.push(`/dashboard/games/${match.gameId}/${match.id}/summary`);
-        setIsSubmitting(false);
-      },
-      onError: (error) => {
-        posthog.capture("match finished error", { error });
-        toast.error("Error", {
-          description: "There was a problem finishing your match.",
-        });
-      },
-    }),
-  );
+  const { updateFinishMutation } = useUpdateFinish(input.match);
+  const { updateFinalScores } = useUpdateFinalScores(input.match);
 
   const toggleClock = () => {
     if (match.running) {
-      pauseMatchDuration.mutate({
-        id: match.id,
-      });
+      pauseMatch();
+      if (match.startTime) {
+        const now = new Date();
+        const startTime = match.startTime;
+        const elapsedTime = differenceInSeconds(now, startTime);
+        const totalDuration = match.duration + elapsedTime;
+        setDuration(totalDuration);
+      }
     } else {
-      startMatchDuration.mutate({
-        id: match.id,
-      });
+      startMatch();
     }
   };
 
   const resetClock = () => {
-    resetMatchDuration.mutate({
-      id: match.id,
-    });
-    setDuration(0);
+    resetMatch();
   };
 
   const onFinish = () => {
     posthog.capture("match finish begin", {
-      gameId: match.gameId,
+      gameId: match.game.id,
       matchId: match.id,
     });
     if (match.running) {
-      pauseMatchDuration.mutate({
-        id: match.id,
-      });
+      pauseMatch();
     }
     setIsSubmitting(true);
-    const submittedPlayers = match.players.flatMap((player) =>
-      player.rounds.map((playerRound) => ({
-        id: playerRound.id,
-        score: playerRound.score,
-      })),
-    );
-    if (match.scoresheet.winCondition === "Manual") {
+    if (scoresheet.winCondition === "Manual") {
       setManualWinners(
-        match.players.map((player) => {
+        players.map((player) => {
           return {
             id: player.id,
             name: player.name,
@@ -480,18 +462,19 @@ function ScoresheetFooter({ match }: { match: Match }) {
               player.rounds.map((round) => ({
                 score: round.score,
               })),
-              match.scoresheet,
+              scoresheet,
             ),
             teamId: player.teamId,
           };
         }),
       );
       setOpenManualWinnerDialog(true);
+      updateFinalScores();
       return;
     }
 
     const playersPlacement = calculatePlacement(
-      match.players.map((player) => ({
+      players.map((player) => ({
         id: player.id,
         rounds: player.rounds.map((round) => ({
           score: round.score,
@@ -499,13 +482,13 @@ function ScoresheetFooter({ match }: { match: Match }) {
         teamId: player.teamId,
       })),
 
-      match.scoresheet,
+      scoresheet,
     );
     let isTieBreaker = false;
     const placements: Record<number, number> = {};
     const nonTeamPlayerPlacements = playersPlacement
       .filter((player) => {
-        const foundPlayer = match.players.find((p) => p.id === player.id);
+        const foundPlayer = players.find((p) => p.id === player.id);
         return foundPlayer?.teamId === null;
       })
       .map((player) => player.placement);
@@ -513,18 +496,18 @@ function ScoresheetFooter({ match }: { match: Match }) {
       new Set(
         playersPlacement
           .filter((player) => {
-            const foundPlayer = match.players.find((p) => p.id === player.id);
+            const foundPlayer = players.find((p) => p.id === player.id);
             return foundPlayer?.teamId !== null;
           })
           .map((player) => {
             {
-              const foundPlayer = match.players.find((p) => p.id === player.id);
+              const foundPlayer = players.find((p) => p.id === player.id);
               return foundPlayer?.teamId ?? null;
             }
           }),
       ),
     ).map((teamId) => {
-      const findFirstPlayer = match.players.find(
+      const findFirstPlayer = players.find(
         (player) => player.teamId === teamId,
       );
       const findPlayerPlacement = playersPlacement.find(
@@ -547,7 +530,7 @@ function ScoresheetFooter({ match }: { match: Match }) {
       setOpenTieBreakerDialog(true);
       setTieBreakers(
         playersPlacement.map((player) => {
-          const foundPlayer = match.players.find((p) => p.id === player.id);
+          const foundPlayer = players.find((p) => p.id === player.id);
           return {
             matchPlayerId: player.id,
             name: foundPlayer?.name ?? "",
@@ -558,16 +541,32 @@ function ScoresheetFooter({ match }: { match: Match }) {
           };
         }),
       );
+      updateFinalScores();
     } else {
-      updateMatch.mutate({
-        match: {
-          id: match.id,
-          duration: duration,
-          finished: true,
-          running: false,
+      updateFinalScores();
+      updateFinishMutation.mutate(input.match, {
+        onSuccess: () => {
+          if (match.type === "original") {
+            router.push(
+              formatMatchLink({
+                matchId: match.id,
+                gameId: match.game.id,
+                type: "original",
+                finished: true,
+              }),
+            );
+          } else {
+            router.push(
+              formatMatchLink({
+                sharedMatchId: match.sharedMatchId,
+                sharedGameId: match.game.sharedGameId,
+                linkedGameId: match.game.linkedGameId,
+                type: match.game.type,
+                finished: true,
+              }),
+            );
+          }
         },
-        roundPlayers: submittedPlayers,
-        playersPlacement: playersPlacement,
       });
     }
   };
@@ -609,7 +608,7 @@ function ScoresheetFooter({ match }: { match: Match }) {
             <CardTitle className="text-xl">Comment:</CardTitle>
           </CardHeader>
           <CardContent className="px-4">
-            <CommentDialog matchId={match.id} comment={match.comment} />
+            <CommentDialog match={match} comment={match.comment} />
           </CardContent>
         </Card>
         <MatchImages matchId={match.id} duration={duration} />
@@ -617,19 +616,25 @@ function ScoresheetFooter({ match }: { match: Match }) {
       <ManualWinnerDialog
         isOpen={openManualWinnerDialog}
         setIsOpen={setOpenManualWinnerDialog}
-        gameId={match.gameId}
-        matchId={match.id}
+        gameAndMatch={
+          match.type === "original"
+            ? { type: "original", game: match.game, match: match }
+            : { type: "shared", game: match.game, match: match }
+        }
         players={manualWinners}
-        teams={match.teams}
-        scoresheet={match.scoresheet}
+        teams={teams}
+        scoresheet={scoresheet}
       />
       <TieBreakerDialog
         isOpen={openTieBreakerDialog}
         setIsOpen={setOpenTieBreakerDialog}
-        gameId={match.gameId}
-        matchId={match.id}
+        gameAndMatch={
+          match.type === "original"
+            ? { type: "original", game: match.game, match: match }
+            : { type: "shared", game: match.game, match: match }
+        }
         players={tieBreakers}
-        teams={match.teams}
+        teams={teams}
       />
     </>
   );

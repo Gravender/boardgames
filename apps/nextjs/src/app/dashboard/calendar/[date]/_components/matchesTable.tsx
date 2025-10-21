@@ -13,14 +13,15 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
 import { GameImage } from "~/components/game-image";
+import { formatMatchLink } from "~/utils/linkFormatting";
 import { PlayerStats } from "./player-stats";
 
 type Matches = NonNullable<
-  RouterOutputs["match"]["getMatchesByDate"]
+  RouterOutputs["newMatch"]["date"]["getMatchesByDate"]
 >["matches"];
 type Players = NonNullable<
-  RouterOutputs["match"]["getMatchesByDate"]
->["players"];
+  RouterOutputs["newMatch"]["date"]["getMatchesByDate"]
+>["playerStats"];
 export function MatchesTable({
   data,
   players,
@@ -31,7 +32,6 @@ export function MatchesTable({
   date: string;
 }) {
   const [matches, setMatches] = useState(data);
-
   return (
     <div className="container relative mx-auto h-[90vh] max-w-4xl px-4">
       <CardHeader className="flex flex-row items-center gap-2">
@@ -62,12 +62,27 @@ export function MatchesTable({
               {matches.map((match) => (
                 <Card key={`${match.id}-${match.type}`} className="flex w-full">
                   <Link
-                    href={`/dashboard/games${match.type === "shared" ? "/shared" : ""}/${match.gameId}/${match.id}${match.finished ? "/summary" : ""}`}
+                    href={formatMatchLink(
+                      match.type === "shared"
+                        ? {
+                            sharedMatchId: match.id,
+                            sharedGameId: match.game.id,
+                            linkedGameId: match.game.linkedGameId,
+                            type: match.type,
+                            finished: match.finished,
+                          }
+                        : {
+                            matchId: match.id,
+                            gameId: match.game.id,
+                            type: match.type,
+                            finished: match.finished,
+                          },
+                    )}
                     className="flex w-full items-center gap-3 font-medium"
                   >
                     <GameImage
-                      image={match.image}
-                      alt={`${match.gameName} game image`}
+                      image={match.game.image}
+                      alt={`${match.game.name} game image`}
                       containerClassName="h-16 w-16"
                     />
                     <div className="flex w-full items-center justify-between">
@@ -90,10 +105,10 @@ export function MatchesTable({
                             <Clock className="h-3 w-3" />
                             {formatDuration(match.duration)}
                           </div>
-                          {match.locationName && (
+                          {match.location && (
                             <div className="flex items-center gap-1">
                               <MapPin className="h-3 w-3" />
-                              {match.locationName}
+                              {match.location.name}
                             </div>
                           )}
                         </div>

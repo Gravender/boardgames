@@ -27,4 +27,6 @@ export { default as gameTag } from "./gameTag";
 export { default as tag } from "./tag";
 export { default as gameRole } from "./gameRole";
 export { default as matchPlayerRole } from "./matchPlayerRole";
+export { default as sharedGameRole } from "./sharedGameRole";
+export { default as sharedMatchPlayerRole } from "./sharedMatchPlayerRole";
 export { session, account, verification } from "./auth";

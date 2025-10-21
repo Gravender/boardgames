@@ -6,7 +6,26 @@ import {
   insertPlayerSchema,
   insertRoundSchema,
   insertScoreSheetSchema,
+  selectGameSchema,
+  selectLocationSchema,
+  selectMatchPlayerSchema,
+  selectMatchSchema,
+  selectTeamSchema,
 } from "@board-games/db/zodSchema";
+
+export const sharedOrOriginalSchema = z.union([
+  z.literal("shared"),
+  z.literal("original"),
+]);
+export const sharedOrLinkedSchema = z.union([
+  z.literal("shared"),
+  z.literal("linked"),
+]);
+export const sharedOrOriginalOrLinkedSchema = z.union([
+  z.literal("shared"),
+  z.literal("original"),
+  z.literal("linked"),
+]);
 
 export const nonNullFileSchema = z
   .file()
@@ -187,32 +206,32 @@ const baseEditScoresheetSchema = {
   isDefault: z.boolean().optional(),
   id: z.number(),
 };
-const originalEditScoresheetSchema = scoreSheetSchema.extend({
+const originalEditScoresheetSchema = scoreSheetSchema.safeExtend({
   scoresheetType: z.literal("original"),
   ...baseEditScoresheetSchema,
 });
-const sharedEditScoresheetSchema = scoreSheetSchema.extend({
+const sharedEditScoresheetSchema = scoreSheetSchema.safeExtend({
   scoresheetType: z.literal("shared"),
   ...baseEditScoresheetSchema,
 });
-const newEditScoresheetSchema = scoreSheetSchema.extend({
+const newEditScoresheetSchema = scoreSheetSchema.safeExtend({
   ...baseEditScoresheetSchema,
   id: z.null(),
 });
 export const editScoresheetSchemaForm = z
   .discriminatedUnion("scoresheetType", [
-    originalEditScoresheetSchema.extend({
+    originalEditScoresheetSchema.safeExtend({
       scoreSheetChanged: z.boolean(),
       roundChanged: z.boolean(),
       rounds: roundsSchema,
     }),
-    sharedEditScoresheetSchema.extend({
+    sharedEditScoresheetSchema.safeExtend({
       permission: z.literal("view").or(z.literal("edit")),
       scoreSheetChanged: z.boolean(),
       roundChanged: z.boolean(),
       rounds: roundsSchema,
     }),
-    newEditScoresheetSchema.extend({
+    newEditScoresheetSchema.safeExtend({
       scoresheetType: z.literal("new"),
       rounds: roundsSchema,
     }),
@@ -285,24 +304,16 @@ export const editScoresheetSchemaApiInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("Update Scoresheet"),
     scoresheet: z.discriminatedUnion("scoresheetType", [
-      originalEditScoresheetSchema.extend({
-        name: z.string().optional(),
-      }),
-      sharedEditScoresheetSchema.extend({
-        name: z.string().optional(),
-      }),
+      originalEditScoresheetSchema,
+      sharedEditScoresheetSchema,
     ]),
   }),
   z.object({
     type: z.literal("Update Scoresheet & Rounds"),
     scoresheet: z
       .discriminatedUnion("scoresheetType", [
-        originalEditScoresheetSchema.extend({
-          name: z.string().optional(),
-        }),
-        sharedEditScoresheetSchema.extend({
-          name: z.string().optional(),
-        }),
+        originalEditScoresheetSchema,
+        sharedEditScoresheetSchema,
       ])
       .or(
         z.object({
@@ -333,12 +344,17 @@ export const imageSchema = insertImageSchema
     usageType: true,
   })
   .required({ name: true, url: true });
-export const matchRoleSchema = z.array(z.number());
+export const matchRoleSchema = z.array(
+  z.object({
+    id: z.number(),
+    type: sharedOrOriginalOrLinkedSchema,
+  }),
+);
 export const matchLocationSchema = z
   .object({
     id: z.number(),
     name: z.string(),
-    type: z.literal("original").or(z.literal("shared")),
+    type: sharedOrOriginalSchema,
     isDefault: z.boolean(),
   })
   .nullish();
@@ -348,7 +364,7 @@ export const addMatchPlayersSchema = z
       .pick({ name: true, id: true })
       .required({ name: true, id: true })
       .extend({
-        type: z.literal("original").or(z.literal("shared")),
+        type: sharedOrOriginalOrLinkedSchema,
         imageUrl: z.string().nullable(),
         matches: z.number(),
         teamId: z.number().nullable(),
@@ -390,3 +406,88 @@ export const editMatchSchema = matchSchema.extend({
     }),
   ),
 });
+
+export const baseLocationSchema = selectLocationSchema.pick({
+  id: true,
+  name: true,
+});
+export const baseMatchPlayerSchema = selectMatchPlayerSchema
+  .pick({
+    id: true,
+    playerId: true,
+    score: true,
+    teamId: true,
+    placement: true,
+    winner: true,
+  })
+  .extend({
+    name: z.string(),
+    image: imageSchema.nullable(),
+  });
+export const baseGameForMatchSchema = selectGameSchema
+  .pick({
+    id: true,
+    name: true,
+  })
+  .extend({
+    image: imageSchema.nullable(),
+  });
+export const baseMatchSchema = selectMatchSchema
+  .pick({
+    id: true,
+    date: true,
+    name: true,
+    finished: true,
+    comment: true,
+    duration: true,
+  })
+  .extend({
+    won: z.boolean(),
+    hasUser: z.boolean(),
+    type: sharedOrOriginalSchema,
+    teams: z.array(
+      selectTeamSchema.pick({
+        id: true,
+        name: true,
+      }),
+    ),
+  });
+const sharedMatchWithGameAndPlayersSchema = baseMatchSchema.extend({
+  type: z.literal("shared"),
+  sharedMatchId: z.number(),
+  game: baseGameForMatchSchema.extend({
+    type: sharedOrLinkedSchema,
+    sharedGameId: z.number(),
+    linkedGameId: z.number().nullable(),
+  }),
+  location: baseLocationSchema.nullable(),
+  matchPlayers: z.array(
+    baseMatchPlayerSchema.extend({
+      type: z.literal("shared"),
+      playerType: z.union([
+        z.literal("linked"),
+        z.literal("shared"),
+        z.literal("not-shared"),
+      ]),
+      sharedPlayerId: z.number().nullable(),
+      linkedPlayerId: z.number().nullable(),
+    }),
+  ),
+});
+const originalMatchWithGameAndPlayersSchema = baseMatchSchema.extend({
+  type: z.literal("original"),
+  game: baseGameForMatchSchema.extend({
+    type: z.literal("original"),
+  }),
+  location: baseLocationSchema.nullable(),
+  matchPlayers: z.array(
+    baseMatchPlayerSchema.extend({
+      type: z.literal("original"),
+      playerType: z.literal("original"),
+    }),
+  ),
+});
+export const matchWithGameAndPlayersSchema = z.discriminatedUnion("type", [
+  originalMatchWithGameAndPlayersSchema,
+  sharedMatchWithGameAndPlayersSchema,
+]);

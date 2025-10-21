@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { BarChart2 } from "lucide-react";
 
@@ -19,11 +18,6 @@ export default function GameDetails({ gameId }: { gameId: number }) {
   const { data: game } = useSuspenseQuery(
     trpc.game.getGame.queryOptions({ id: gameId }),
   );
-  const router = useRouter();
-  if (!game) {
-    router.back();
-    return <div>Not Found</div>;
-  }
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -77,8 +71,10 @@ export default function GameDetails({ gameId }: { gameId: number }) {
         <MatchesList matches={game.matches} />
         <div className="absolute bottom-4 right-6 z-10 sm:right-10">
           <AddMatchDialog
-            gameId={gameId}
-            gameType="original"
+            gameInput={{
+              type: "original",
+              id: gameId,
+            }}
             gameName={game.name}
             matches={game.matches.length}
           />

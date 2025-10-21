@@ -2,11 +2,10 @@ import type z from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
 
-import type {
-  selectScoreSheetSchema,
-  selectTeamSchema,
-} from "@board-games/db/zodSchema";
+import type { selectScoreSheetSchema } from "@board-games/db/zodSchema";
+import { selectTeamSchema } from "@board-games/db/zodSchema";
 
+//TODO update to new linked shared original matchPlayer paradigm
 //Get Player
 export interface Player {
   id: number;
@@ -24,12 +23,14 @@ export interface Player {
   teamId: number | null;
   placement: number | null;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const teamSchema = selectTeamSchema.pick({ id: true, name: true });
 export interface PlayerMatch {
   id: number;
   type: "shared" | "original";
   date: Date;
   name: string;
-  teams: z.infer<typeof selectTeamSchema>[];
+  teams: z.infer<typeof teamSchema>[];
   duration: number;
   finished: boolean;
   gameId: number;
@@ -50,6 +51,8 @@ export interface PlayerMatch {
   };
   linkedGameId: number | undefined;
 }
+const safeDivide = (num: number, denom: number): number =>
+  denom === 0 ? 0 : num / denom;
 
 export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
   const sortedMatches = playerMatches.sort((a, b) =>
@@ -141,12 +144,18 @@ export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
           if (match.scoresheet.isCoop) {
             accPlayer.coopPlays++;
             if (player.isWinner) accPlayer.coopWins++;
-            accPlayer.coopWinRate = accPlayer.coopWins / accPlayer.coopPlays;
+            accPlayer.coopWinRate = safeDivide(
+              accPlayer.coopWins,
+              accPlayer.coopPlays,
+            );
           } else {
             accPlayer.competitivePlays++;
             if (player.isWinner) accPlayer.competitiveWins++;
-            accPlayer.competitiveWinRate =
-              accPlayer.competitiveWins / accPlayer.competitivePlays;
+
+            accPlayer.competitiveWinRate = safeDivide(
+              accPlayer.competitiveWins,
+              accPlayer.competitivePlays,
+            );
           }
 
           const gameStats = accPlayer.gameStats[gameStatKey];
@@ -183,13 +192,18 @@ export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
             if (match.scoresheet.isCoop) {
               gameStats.coopPlays++;
               if (player.isWinner) gameStats.coopWins++;
-              gameStats.coopWinRate = gameStats.coopWins / gameStats.coopPlays;
+              gameStats.coopWinRate = safeDivide(
+                gameStats.coopWins,
+                gameStats.coopPlays,
+              );
             }
             if (!match.scoresheet.isCoop) {
               gameStats.competitivePlays++;
               if (player.isWinner) gameStats.competitiveWins++;
-              gameStats.competitiveWinRate =
-                gameStats.competitiveWins / gameStats.competitivePlays;
+              gameStats.competitiveWinRate = safeDivide(
+                gameStats.competitiveWins,
+                gameStats.competitivePlays,
+              );
             }
           } else {
             accPlayer.gameStats[gameStatKey] = createGameStats(match, player);
@@ -261,10 +275,12 @@ export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
       gameStats: Object.values(player.gameStats)
         .map((gameStats) => ({
           ...gameStats,
-          winRate: gameStats.wins / gameStats.plays,
-          coopWinRate: gameStats.coopWins / gameStats.coopPlays,
-          competitiveWinRate:
-            gameStats.competitiveWins / gameStats.competitivePlays,
+          winRate: safeDivide(gameStats.wins, gameStats.plays),
+          coopWinRate: safeDivide(gameStats.coopWins, gameStats.coopPlays),
+          competitiveWinRate: safeDivide(
+            gameStats.competitiveWins,
+            gameStats.competitivePlays,
+          ),
           averageScore:
             gameStats.scores.length > 0
               ? gameStats.scores.reduce((acc, cur) => acc + cur, 0) /

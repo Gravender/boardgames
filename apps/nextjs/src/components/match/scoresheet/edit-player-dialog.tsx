@@ -1,15 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
+import { sharedOrOriginalSchema } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -41,31 +37,43 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 
+import type { MatchInput } from "../types/input";
+import { useGameRoles } from "~/components/game/hooks/roles";
+import {
+  useMatch,
+  usePlayersAndTeams,
+} from "~/components/match/hooks/suspenseQueries";
 import { Spinner } from "~/components/spinner";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
-import { useTRPC } from "~/trpc/react";
+import { useUpdateMatchPlayerTeamAndRolesMutation } from "../hooks/scoresheet";
 
-type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
-type Player = Match["players"][number];
-type Team = Match["teams"][number];
+type Player = NonNullable<
+  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+>["players"][number];
+type Team = NonNullable<
+  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+>["teams"][number];
 export default function PlayerEditorDialog({
-  teams,
-  players,
   player,
-  gameId,
-  matchId,
+  matchInput,
   onClose,
 }: {
-  teams: Team[];
-  players: Player[];
   player: Player | null;
-  gameId: number;
-  matchId: number;
+  matchInput: MatchInput;
   onClose: () => void;
 }) {
-  const trpc = useTRPC();
-  const { data: roles } = useSuspenseQuery(
-    trpc.game.getGameRoles.queryOptions({ id: gameId, type: "original" }),
+  const { match } = useMatch(matchInput);
+  const { players, teams } = usePlayersAndTeams(matchInput);
+  const { gameRoles } = useGameRoles(
+    match.type === "original"
+      ? {
+          type: "original",
+          id: match.game.id,
+        }
+      : {
+          type: "shared",
+          sharedGameId: match.game.sharedGameId,
+        },
   );
 
   return (
@@ -76,9 +84,7 @@ export default function PlayerEditorDialog({
             teams={teams}
             player={player}
             players={players}
-            roles={roles}
-            gameId={gameId}
-            matchId={matchId}
+            roles={gameRoles}
             onClose={onClose}
           />
         )}
@@ -91,62 +97,52 @@ function Content({
   player,
   roles,
   players,
-  gameId,
-  matchId,
   onClose,
 }: {
   teams: Team[];
   player: Player;
   players: Player[];
-  roles: RouterOutputs["game"]["getGameRoles"];
-  gameId: number;
-  matchId: number;
+  roles: RouterOutputs["newGame"]["gameRoles"];
   onClose: () => void;
 }) {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
 
-  const queryClient = useQueryClient();
-  const trpc = useTRPC();
-
-  const updatePlayer = useMutation(
-    trpc.match.updateMatchPlayerTeamAndRoles.mutationOptions({
-      onSuccess: async () => {
-        await Promise.all([
-          queryClient.invalidateQueries(
-            trpc.match.getMatch.queryOptions({ id: matchId }),
-          ),
-          queryClient.invalidateQueries(
-            trpc.game.getGame.queryOptions({ id: gameId }),
-          ),
-        ]);
-        onClose();
-      },
-    }),
-  );
+  const { updateMatchPlayerTeamAndRolesMutation } =
+    useUpdateMatchPlayerTeamAndRolesMutation();
 
   const formSchema = z.object({
     team: z.number().nullable(),
-    roles: z.array(z.number()),
+    roles: z.array(z.object({ id: z.number(), type: sharedOrOriginalSchema })),
   });
 
   const form = useForm({
     schema: formSchema,
     defaultValues: {
       team: player.teamId ?? null,
-      roles: player.roles.map((role) => role.id),
+      roles: player.roles.map((role) => {
+        return { id: role.id, type: role.type };
+      }),
     },
   });
   const getTeamRoles = (
     teamPlayers: Player[],
     allRoles: typeof roles,
-  ): number[] => {
+  ): { id: number; type: "original" | "shared" | "linked" }[] => {
     if (teamPlayers.length === 0) return [];
-    return allRoles.reduce<number[]>((acc, role) => {
+    return allRoles.reduce<
+      { id: number; type: "original" | "shared" | "linked" }[]
+    >((acc, role) => {
       const roleInEveryPlayer = teamPlayers.every((p) =>
-        p.roles.some((r) => r.id === role.id),
+        p.roles.some((r) => r.id === role.id && r.type === role.type),
       );
-      if (!acc.includes(role.id) && roleInEveryPlayer) {
-        acc.push(role.id);
+      if (
+        !acc.find((r) => r.id === role.id && r.type === role.type) &&
+        roleInEveryPlayer
+      ) {
+        acc.push({
+          id: role.id,
+          type: role.type,
+        });
       }
       return acc;
     }, []);
@@ -160,26 +156,34 @@ function Content({
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     const isSameTeam = data.team === player.teamId;
     const rolesToAdd = data.roles.filter(
-      (role) => !player.roles.map((r) => r.id).includes(role),
+      (role) =>
+        !player.roles.find((r) => r.id === role.id && r.type === role.type),
     );
     const rolesToRemove = player.roles
-      .filter((role) => !data.roles.map((r) => r).includes(role.id))
-      .map((role) => role.id);
+      .filter(
+        (role) =>
+          !data.roles.find((r) => r.id === role.id && r.type === role.type),
+      )
+      .map((role) => {
+        return { id: role.id, type: role.type };
+      });
 
-    updatePlayer.mutate({
-      matchPlayer: isSameTeam
-        ? {
-            type: "original",
-            id: player.id,
-          }
-        : {
-            type: "update",
-            id: player.id,
-            teamId: data.team,
-          },
-      rolesToAdd: rolesToAdd,
-      rolesToRemove: rolesToRemove,
-    });
+    updateMatchPlayerTeamAndRolesMutation.mutate(
+      {
+        matchPlayer: {
+          id: player.id,
+          type: player.type,
+          teamId: isSameTeam ? undefined : data.team,
+        },
+        rolesToAdd: rolesToAdd,
+        rolesToRemove: rolesToRemove,
+      },
+      {
+        onSuccess: () => {
+          onClose();
+        },
+      },
+    );
   };
 
   const filteredRoles = useFilteredRoles(roles, roleSearchTerm);
@@ -224,7 +228,12 @@ function Content({
                           roles,
                         );
                         const customRoles = formRoles.filter(
-                          (roleId) => !teamRoles.includes(roleId),
+                          (formRole) =>
+                            !teamRoles.find(
+                              (r) =>
+                                r.id === formRole.id &&
+                                r.type === formRole.type,
+                            ),
                         );
                         const updatedRoles = [
                           ...customRoles,
@@ -270,12 +279,15 @@ function Content({
             <ScrollArea>
               <div className="flex max-h-[20vh] flex-col gap-2">
                 {filteredRoles.map((role) => {
-                  const roleIndex = formRoles.findIndex((r) => r === role.id);
+                  const roleIndex = formRoles.findIndex(
+                    (r) => r.id === role.id && r.type === role.type,
+                  );
                   const isTeamRole =
-                    teamRoles.includes(role.id) && formTeam !== null;
+                    teamRoles.findIndex((r) => r.id === role.id) > -1 &&
+                    formTeam !== null;
                   return (
                     <FormField
-                      key={role.id}
+                      key={`${role.type}-${role.id}`}
                       control={form.control}
                       name="roles"
                       render={({ field }) => (
@@ -285,10 +297,22 @@ function Content({
                               checked={roleIndex > -1}
                               onCheckedChange={(checked) => {
                                 if (checked) {
-                                  field.onChange([...formRoles, role.id]);
+                                  field.onChange([
+                                    ...formRoles,
+                                    {
+                                      id: role.id,
+                                      type: role.type,
+                                    },
+                                  ]);
                                 } else {
                                   field.onChange([
-                                    ...formRoles.filter((r) => r !== role.id),
+                                    ...formRoles.filter(
+                                      (r) =>
+                                        !(
+                                          r.id === role.id &&
+                                          r.type === role.type
+                                        ),
+                                    ),
                                   ]);
                                 }
                               }}
@@ -328,13 +352,17 @@ function Content({
               <ScrollArea>
                 <div className="flex max-w-60 items-center gap-2 sm:max-w-80">
                   {formRoles.map((roleId) => {
-                    const role = roles.find((r) => r.id === roleId);
+                    const role = roles.find(
+                      (r) => r.id === roleId.id && r.type === roleId.type,
+                    );
                     if (!role) return null;
                     const isTeamRole =
-                      teamRoles.includes(role.id) && formTeam !== null;
+                      teamRoles.find(
+                        (r) => r.id === roleId.id && r.type === roleId.type,
+                      ) && formTeam !== null;
                     return (
                       <Badge
-                        key={roleId}
+                        key={`${role.type}-${role.id}`}
                         variant={isTeamRole ? "outline" : "secondary"}
                         className="text-nowrap"
                       >
@@ -350,8 +378,11 @@ function Content({
           </div>
 
           <DialogFooter>
-            <Button type="submit" disabled={updatePlayer.isPending}>
-              {updatePlayer.isPending ? (
+            <Button
+              type="submit"
+              disabled={updateMatchPlayerTeamAndRolesMutation.isPending}
+            >
+              {updateMatchPlayerTeamAndRolesMutation.isPending ? (
                 <>
                   <Spinner />
                   <span>Saving...</span>

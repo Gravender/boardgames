@@ -48,42 +48,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@board-games/ui/select";
-import { toast } from "@board-games/ui/toast";
 
 import type { Player, Team } from "~/components/match/players/selector";
+import type { GameInput, MatchInput } from "~/components/match/types/input";
 import { AddPlayersDialogForm } from "~/components/match/players/selector";
 import { Spinner } from "~/components/spinner";
-import { useInvalidateGame, useInvalidateGames } from "~/hooks/invalidate/game";
-import { useInvalidateLocations } from "~/hooks/invalidate/location";
-import {
-  useInvalidatePlayer,
-  useInvalidatePlayers,
-} from "~/hooks/invalidate/player";
 import { useTRPC } from "~/trpc/react";
+import { formatMatchLink } from "~/utils/linkFormatting";
+import { useGetPlayersByGame } from "../player/hooks/players";
+import { useEditMatchMutation } from "./hooks/edit";
+import { useMatch, usePlayersAndTeams } from "./hooks/suspenseQueries";
 
-type getMatch = NonNullable<RouterOutputs["match"]["getMatch"]>;
-type getGamePlayers = RouterOutputs["player"]["getPlayersByGame"];
-export function EditMatchForm({
-  match,
-  players,
-}: {
-  match: getMatch;
-  players: getGamePlayers;
-}) {
+export function EditMatchForm(input: { game: GameInput; match: MatchInput }) {
   const trpc = useTRPC();
   const { data: locations } = useSuspenseQuery(
     trpc.location.getLocations.queryOptions(),
   );
+  const { match } = useMatch(input.match);
+  //TODO update to use input.game
+  const { gamePlayers } = useGetPlayersByGame(
+    input.game.type === "original" ? input.game.id : input.game.sharedGameId,
+    input.game.type,
+  );
+  const { players: matchPlayers, teams } = usePlayersAndTeams(input.match);
 
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const queryClient = useQueryClient();
+
   const router = useRouter();
-  const invalidatePlayers = useInvalidatePlayers();
-  const invalidateLocations = useInvalidateLocations();
-  const invalidateGames = useInvalidateGames();
-  const invalidateGame = useInvalidateGame();
-  const invalidatePlayer = useInvalidatePlayer();
+  const queryClient = useQueryClient();
   const posthog = usePostHog();
 
   const [showAddLocation, setShowAddLocation] = useState(false);
@@ -93,66 +86,22 @@ export function EditMatchForm({
     defaultValues: {
       name: match.name,
       date: match.date,
-      players: mapPlayers(match.players, players),
+      players: mapPlayers(matchPlayers, gamePlayers),
       location:
         locations.find(
           (location) =>
             location.id === match.location?.id && location.type === "original",
         ) ?? null,
-      teams: mapTeams(match.teams, match.players),
+      teams: mapTeams(teams, matchPlayers),
     },
   });
-  const editMatch = useMutation(
-    trpc.match.editMatch.mutationOptions({
-      onSuccess: async (result) => {
-        if (result !== null) {
-          toast.success("Match updated successfully.");
-
-          await Promise.all([
-            ...invalidateGames(),
-            ...invalidateGame(result.match.gameId, "original"),
-            ...invalidatePlayers(),
-            queryClient.invalidateQueries(
-              trpc.match.getMatch.queryOptions({ id: result.match.id }),
-            ),
-          ]);
-          if (result.players !== undefined && result.players.length > 0) {
-            const playersToInvalidate = result.players.flatMap((p) => {
-              return invalidatePlayer(p);
-            });
-            await Promise.all(playersToInvalidate);
-          }
-
-          // If the match is original and was updated, redirect to the updated match
-          if (result.match.updatedScore) {
-            router.push(
-              `/dashboard/games/${result.match.gameId}/${result.match.id}`,
-            );
-          } else {
-            router.back();
-          }
-        } else {
-          toast.error("There was an error updating the match.");
-        }
-      },
-      onError: (error) => {
-        posthog.capture("match edit error", {
-          error,
-          matchId: match.id,
-          game: match.game,
-        });
-        toast.error("Error", {
-          description: "There was a problem adding your match.",
-        });
-
-        throw new Error("There was a problem adding your match.");
-      },
-    }),
-  );
+  const { editMatchMutation } = useEditMatchMutation(input.match);
   const createLocation = useMutation(
     trpc.location.create.mutationOptions({
       onSuccess: async (result) => {
-        await Promise.all([invalidateLocations()]);
+        await queryClient.invalidateQueries(
+          trpc.location.getLocations.queryOptions(),
+        );
         setNewLocation("");
         setShowAddLocation(false);
         form.setValue("location", {
@@ -170,7 +119,7 @@ export function EditMatchForm({
       matchId: match.id,
       game: match.game,
     });
-    const playersToRemove = match.players.filter(
+    const playersToRemove = matchPlayers.filter(
       (player) =>
         values.players.findIndex(
           (p) => p.id === player.playerId && p.type === player.type,
@@ -178,27 +127,29 @@ export function EditMatchForm({
     );
     const playersToAdd = values.players.filter(
       (player) =>
-        match.players.findIndex(
+        matchPlayers.findIndex(
           (p) => p.playerId === player.id && p.type === player.type,
         ) === -1,
     );
     const updatedPlayers = values.players.filter((player) => {
-      const foundPlayer = match.players.find(
+      const foundPlayer = matchPlayers.find(
         (p) => p.playerId === player.id && p.type === player.type,
       );
       if (!foundPlayer) return false;
       const teamChanged = foundPlayer.teamId !== player.teamId;
-      const originalRoleIds = foundPlayer.roles.map((role) => role.id).sort();
+      const originalRoles = foundPlayer.roles;
       const updatedRoleIds = [...player.roles].sort();
       const rolesChanged =
-        originalRoleIds.length !== updatedRoleIds.length ||
-        !originalRoleIds.every((id, idx) => id === updatedRoleIds[idx]);
+        originalRoles.length !== updatedRoleIds.length ||
+        !originalRoles.every((role) =>
+          updatedRoleIds.find((r) => r.id === role.id && r.type === role.type),
+        );
 
       return teamChanged || rolesChanged;
     });
     const editedTeams = values.teams
       .map((team) => {
-        const foundTeam = match.teams.find((t) => t.id === team.id);
+        const foundTeam = teams.find((t) => t.id === team.id);
         if (foundTeam && foundTeam.name !== team.name) {
           return {
             id: team.id,
@@ -210,7 +161,7 @@ export function EditMatchForm({
       .filter((team) => team !== null);
     const addedTeams = values.teams
       .map((team) => {
-        if (!match.teams.find((t) => t.id === team.id)) {
+        if (!teams.find((t) => t.id === team.id)) {
           return {
             id: team.id,
             name: team.name,
@@ -219,30 +170,48 @@ export function EditMatchForm({
         return null;
       })
       .filter((team) => team !== null);
-    editMatch.mutate({
-      type: "original",
-      match: {
-        id: match.id,
-        scoresheetId: match.scoresheet.id,
-        name: values.name === match.name ? undefined : values.name,
-        date:
-          values.date.getTime() === match.date.getTime()
-            ? undefined
-            : values.date,
-        location:
-          values.location?.id === match.location?.id &&
-          values.location?.type === "original"
-            ? undefined
-            : values.location,
+    editMatchMutation.mutate(
+      {
+        type: "original",
+        match: {
+          id: match.id,
+          name: values.name === match.name ? undefined : values.name,
+          date:
+            values.date.getTime() === match.date.getTime()
+              ? undefined
+              : values.date,
+          location:
+            values.location?.id === match.location?.id &&
+            values.location?.type === "original"
+              ? undefined
+              : values.location,
+        },
+        addPlayers: playersToAdd,
+        removePlayers: playersToRemove.map((player) => ({
+          id: player.playerId,
+        })),
+        updatedPlayers: updatedPlayers,
+        addedTeams: addedTeams,
+        editedTeams: editedTeams,
       },
-      addPlayers: playersToAdd,
-      removePlayers: playersToRemove.map((player) => ({
-        id: player.playerId,
-      })),
-      updatedPlayers: updatedPlayers,
-      addedTeams: addedTeams,
-      editedTeams: editedTeams,
-    });
+      {
+        onSuccess: (result) => {
+          if (result.type === "original") {
+            if (result.updatedScore) {
+              const url = formatMatchLink({
+                matchId: result.matchId,
+                gameId: result.game.id,
+                type: "original",
+                finished: false,
+              });
+              router.push(url);
+            } else {
+              router.back();
+            }
+          }
+        },
+      },
+    );
   };
   return (
     <>
@@ -490,7 +459,7 @@ export function EditMatchForm({
       </Card>
       <AddPlayersDialog
         form={form}
-        game={match.game}
+        game={input.game}
         isOpen={isOpen}
         setIsOpen={setIsOpen}
       />
@@ -505,10 +474,7 @@ const AddPlayersDialog = ({
   setIsOpen,
 }: {
   form: UseFormReturn<z.infer<typeof editMatchSchema>>;
-  game: {
-    id: number;
-    type: "original" | "shared";
-  };
+  game: GameInput;
   isOpen: boolean;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
 }) => {
@@ -532,8 +498,8 @@ const AddPlayersDialog = ({
   );
 };
 const mapPlayers = (
-  players: getMatch["players"],
-  gamePlayers: getGamePlayers,
+  players: RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["players"],
+  gamePlayers: RouterOutputs["player"]["getPlayersByGame"],
 ) => {
   return players.map((player) => ({
     id: player.playerId,
@@ -545,36 +511,57 @@ const mapPlayers = (
     ),
     playerId: player.playerId,
     teamId: player.teamId,
-    roles: player.roles.map((role) => role.id),
+    roles: player.roles.map((role) => {
+      return { id: role.id, type: role.type };
+    }),
   }));
 };
-const mapTeams = (teams: getMatch["teams"], players: getMatch["players"]) => {
+const mapTeams = (
+  teams: RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["teams"],
+  players: RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["players"],
+) => {
   return teams.map((team) => {
     const teamPlayers = players.filter((player) => player.teamId === team.id);
-    const roleCounts: Record<number, number> = {};
+    const roleCounts: {
+      id: number;
+      type: "original" | "shared" | "linked";
+      name: string;
+      description: string | null;
+      count: number;
+    }[] = [];
     const totalPlayers = teamPlayers.length;
 
     for (const player of teamPlayers) {
       for (const role of player.roles) {
-        roleCounts[role.id] = (roleCounts[role.id] ?? 0) + 1;
+        const existingRole = roleCounts.find(
+          (r) => r.id === role.id && r.type === role.type,
+        );
+        if (existingRole) {
+          existingRole.count++;
+        } else {
+          roleCounts.push({
+            id: role.id,
+            type: role.type,
+            name: role.name,
+            description: role.description,
+            count: 1,
+          });
+        }
       }
     }
 
-    const sharedRoleIds = Object.entries(roleCounts)
-      .filter(([_, count]) => count === totalPlayers)
-      .map(([roleId]) => Number(roleId));
-
-    const allRoles = teamPlayers.flatMap((p) => p.roles);
-    const teamRoles = allRoles.filter(
-      (role, idx, arr) =>
-        sharedRoleIds.includes(role.id) &&
-        arr.findIndex((r) => r.id === role.id) === idx,
+    const sharedRoles = roleCounts.filter(
+      (roleCount) => roleCount.count === totalPlayers,
     );
+
     return {
       id: team.id,
       teamId: team.id,
       name: team.name,
-      roles: teamRoles.map((role) => role.id),
+      roles: sharedRoles.map((r) => ({
+        id: r.id,
+        type: r.type,
+      })),
     };
   });
 };

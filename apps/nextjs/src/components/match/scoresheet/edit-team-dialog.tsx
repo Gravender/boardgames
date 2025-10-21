@@ -1,15 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
+import {
+  sharedOrLinkedSchema,
+  sharedOrOriginalOrLinkedSchema,
+} from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -34,38 +33,55 @@ import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 
+import type { MatchInput } from "../types/input";
+import { useGameRoles } from "~/components/game/hooks/roles";
+import {
+  useMatch,
+  usePlayersAndTeams,
+} from "~/components/match/hooks/suspenseQueries";
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
-import { useTRPC } from "~/trpc/react";
+import { useUpdateMatchTeamMutation } from "../hooks/scoresheet";
 
-type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
-type Player = Match["players"][number];
-type Team = Match["teams"][number];
+type Player = NonNullable<
+  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+>["players"][number];
+type Team = NonNullable<
+  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+>["teams"][number];
 export default function TeamEditorDialog({
   team,
-  players,
-  gameId,
+  matchInput,
   onClose,
 }: {
   team: Team | null;
-  players: Player[];
-  gameId: number;
+  matchInput: MatchInput;
   onClose: () => void;
 }) {
-  const trpc = useTRPC();
-  const { data: roles } = useSuspenseQuery(
-    trpc.game.getGameRoles.queryOptions({ id: gameId, type: "original" }),
+  const { match } = useMatch(matchInput);
+  const { players } = usePlayersAndTeams(matchInput);
+  const { gameRoles } = useGameRoles(
+    match.game.type === "original"
+      ? {
+          type: "original",
+          id: match.game.id,
+        }
+      : {
+          type: "shared",
+          sharedGameId: match.game.sharedGameId,
+        },
   );
+
   return (
     <Dialog open={team !== null} onOpenChange={onClose}>
       <DialogContent className="gap-2 p-4 sm:max-w-[800px] sm:gap-4 sm:p-6">
         {team && (
           <Content
+            matchInput={matchInput}
             team={team}
             players={players}
-            roles={roles}
-            gameId={gameId}
+            roles={gameRoles}
             onClose={onClose}
           />
         )}
@@ -74,66 +90,80 @@ export default function TeamEditorDialog({
   );
 }
 function Content({
+  matchInput,
   team,
   players,
   roles,
-  gameId,
   onClose,
 }: {
+  matchInput: MatchInput;
   team: Team;
   players: Player[];
-  roles: RouterOutputs["game"]["getGameRoles"];
-  gameId: number;
+  roles: RouterOutputs["newGame"]["gameRoles"];
   onClose: () => void;
 }) {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
 
-  const queryClient = useQueryClient();
-  const trpc = useTRPC();
-
-  const updateTeam = useMutation(
-    trpc.match.updateMatchTeam.mutationOptions({
-      onSuccess: async () => {
-        await Promise.all([
-          queryClient.invalidateQueries(
-            trpc.match.getMatch.queryOptions({ id: team.matchId }),
-          ),
-          queryClient.invalidateQueries(
-            trpc.game.getGame.queryOptions({ id: gameId }),
-          ),
-        ]);
-        onClose();
-      },
-    }),
-  );
+  const { updateMatchTeamMutation } = useUpdateMatchTeamMutation();
 
   const originalTeamPlayers = players.filter(
     (player) => player.teamId === team.id,
   );
-  const teamRoles = originalTeamPlayers.reduce<number[]>((acc, player) => {
+  const teamRoles = originalTeamPlayers.reduce<
+    { id: number; type: "original" | "shared" | "linked" }[]
+  >((acc, player) => {
     player.roles.forEach((role) => {
       const roleInEveryPlayer = originalTeamPlayers.every((p) =>
-        p.roles.map((r) => r.id).includes(role.id),
+        p.roles.some((r) => r.id === role.id && r.type === role.type),
       );
-      if (!acc.includes(role.id) && roleInEveryPlayer) {
-        acc.push(role.id);
+      if (
+        !acc.find((r) => r.id === role.id && r.type === role.type) &&
+        roleInEveryPlayer
+      ) {
+        acc.push({
+          id: role.id,
+          type: role.type,
+        });
       }
       return acc;
     });
     return acc;
   }, []);
 
-  const formSchema = z.object({
+  const originalMatchFormSchema = z.object({
     name: z.string(),
-    roles: z.array(z.number()),
+    roles: z.array(z.object({ id: z.number(), type: sharedOrLinkedSchema })),
     players: z.array(
       z.object({
         id: z.number(),
         name: z.string(),
-        roles: z.array(z.number()),
+        roles: z.array(
+          z.object({ id: z.number(), type: sharedOrLinkedSchema }),
+        ),
       }),
     ),
   });
+
+  const sharedMatchFormSchema = z.object({
+    name: z.string(),
+    roles: z.array(
+      z.object({ id: z.number(), type: sharedOrOriginalOrLinkedSchema }),
+    ),
+    players: z.array(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+        roles: z.array(
+          z.object({ id: z.number(), type: sharedOrLinkedSchema }),
+        ),
+      }),
+    ),
+  });
+
+  const formSchema =
+    matchInput.type === "original"
+      ? originalMatchFormSchema
+      : sharedMatchFormSchema;
 
   const form = useForm({
     schema: formSchema,
@@ -145,7 +175,10 @@ function Content({
           return {
             id: player.id,
             name: player.name,
-            roles: player.roles.map((role) => role.id),
+            roles: player.roles.map((role) => ({
+              id: role.id,
+              type: role.type,
+            })),
           };
         }),
       roles: teamRoles,
@@ -159,7 +192,10 @@ function Content({
         const foundPlayer = players.find((player) => player.id === p.id);
         if (!foundPlayer) return null;
         const rolesToAdd = data.roles.filter(
-          (role) => !foundPlayer.roles.map((r) => r.id).includes(role),
+          (role) =>
+            !foundPlayer.roles.find(
+              (r) => r.id === role.id && r.type === role.type,
+            ),
         );
         return {
           id: p.id,
@@ -173,8 +209,13 @@ function Content({
         const foundPlayer = players.find((player) => player.id === p.id);
         if (!foundPlayer) return null;
         const rolesToRemove = foundPlayer.roles
-          .filter((role) => data.roles.map((r) => r).includes(role.id))
-          .map((role) => role.id);
+          .filter((role) =>
+            data.roles.find((r) => r.id === role.id && r.type === role.type),
+          )
+          .map((role) => ({
+            id: role.id,
+            type: role.type,
+          }));
         return {
           id: p.id,
           roles: rolesToRemove,
@@ -186,14 +227,23 @@ function Content({
         const foundPlayer = players.find((p) => p.id === player.id);
         if (!foundPlayer) return null;
         const rolesToAdd = data.roles.filter(
-          (role) => !foundPlayer.roles.map((r) => r.id).includes(role),
+          (role) =>
+            !foundPlayer.roles.find(
+              (r) => r.id === role.id && r.type === role.type,
+            ),
         );
         const rolesToRemove = foundPlayer.roles
           .filter(
             (role) =>
-              teamRoles.includes(role.id) && !data.roles.includes(role.id),
+              teamRoles.findIndex(
+                (r) => r.id === role.id && r.type === role.type,
+              ) > -1 &&
+              !data.roles.find((r) => r.id === role.id && r.type === role.type),
           )
-          .map((role) => role.id);
+          .map((role) => ({
+            id: role.id,
+            type: role.type,
+          }));
         if (rolesToAdd.length === 0 && rolesToRemove.length === 0) return null;
         return {
           id: foundPlayer.id,
@@ -202,24 +252,106 @@ function Content({
         };
       })
       .filter((p) => p !== null);
-    updateTeam.mutate({
-      match: {
-        id: team.matchId,
-      },
-      team: isSameTeamName
+    updateMatchTeamMutation.mutate(
+      matchInput.type === "original"
         ? {
             type: "original",
-            id: team.id,
+            id: matchInput.id,
+            team: {
+              id: team.id,
+              name: isSameTeamName ? undefined : data.name,
+            },
+            playersToAdd: playersToAdd,
+            playersToRemove: playersToRemove,
+            playersToUpdate: playersToUpdate,
           }
         : {
-            type: "update",
-            id: team.id,
-            name: data.name,
+            type: "shared" as const,
+            sharedMatchId: matchInput.sharedMatchId,
+            team: {
+              id: team.id,
+              name: isSameTeamName ? undefined : data.name,
+            },
+            playersToAdd: playersToAdd.map((p) => ({
+              ...p,
+              roles: p.roles
+                .map((r) => {
+                  if (r.type === "original") return null;
+                  if (r.type === "linked") {
+                    return {
+                      id: r.id,
+                      type: "linked" as const,
+                    };
+                  } else {
+                    return {
+                      id: r.id,
+                      type: "shared" as const,
+                    };
+                  }
+                })
+                .filter((r) => r !== null),
+            })),
+            playersToRemove: playersToRemove.map((p) => ({
+              ...p,
+              roles: p.roles
+                .map((r) => {
+                  if (r.type === "original") return null;
+                  if (r.type === "linked") {
+                    return {
+                      id: r.id,
+                      type: "linked" as const,
+                    };
+                  } else {
+                    return {
+                      id: r.id,
+                      type: "shared" as const,
+                    };
+                  }
+                })
+                .filter((r) => r !== null),
+            })),
+            playersToUpdate: playersToUpdate.map((p) => ({
+              ...p,
+              rolesToAdd: p.rolesToAdd
+                .map((r) => {
+                  if (r.type === "original") return null;
+                  if (r.type === "linked") {
+                    return {
+                      id: r.id,
+                      type: "linked" as const,
+                    };
+                  } else {
+                    return {
+                      id: r.id,
+                      type: "shared" as const,
+                    };
+                  }
+                })
+                .filter((r) => r !== null),
+              rolesToRemove: p.rolesToRemove
+                .map((r) => {
+                  if (r.type === "original") return null;
+                  if (r.type === "linked") {
+                    return {
+                      id: r.id,
+                      type: "linked" as const,
+                    };
+                  } else {
+                    return {
+                      id: r.id,
+                      type: "shared" as const,
+                    };
+                  }
+                })
+                .filter((r) => r !== null),
+            })),
           },
-      playersToAdd: playersToAdd,
-      playersToRemove: playersToRemove,
-      playersToUpdate: playersToUpdate,
-    });
+      {
+        onSuccess: () => {
+          onClose();
+        },
+      },
+    );
   };
 
   const formRoles = form.watch("roles");
@@ -274,10 +406,12 @@ function Content({
             <ScrollArea>
               <div className="flex max-h-[15vh] flex-col gap-2">
                 {filteredRoles.map((role) => {
-                  const roleIndex = formRoles.findIndex((r) => r === role.id);
+                  const roleIndex = formRoles.findIndex(
+                    (r) => r.id === role.id && r.type === role.type,
+                  );
                   return (
                     <FormField
-                      key={role.id}
+                      key={`${role.type}-${role.id}`}
                       control={form.control}
                       name="roles"
                       render={({ field }) => (
@@ -287,10 +421,22 @@ function Content({
                               checked={roleIndex > -1}
                               onCheckedChange={(checked) => {
                                 if (checked) {
-                                  field.onChange([...formRoles, role.id]);
+                                  field.onChange([
+                                    ...formRoles,
+                                    {
+                                      id: role.id,
+                                      type: role.type,
+                                    },
+                                  ]);
                                 } else {
                                   field.onChange([
-                                    ...formRoles.filter((r) => r !== role.id),
+                                    ...formRoles.filter(
+                                      (r) =>
+                                        !(
+                                          r.id === role.id &&
+                                          r.type === role.type
+                                        ),
+                                    ),
                                   ]);
                                 }
                               }}
@@ -314,12 +460,14 @@ function Content({
           {formRoles.length > 0 && (
             <ScrollArea className="hidden overflow-auto sm:relative">
               <div className="hidden items-center gap-2 overflow-visible sm:flex">
-                {formRoles.map((roleId) => {
-                  const role = roles.find((r) => r.id === roleId);
+                {formRoles.map((formRole) => {
+                  const role = roles.find(
+                    (r) => r.id === formRole.id && r.type === formRole.type,
+                  );
                   if (!role) return null;
                   return (
                     <Badge
-                      key={roleId}
+                      key={`${role.type}-${role.id}`}
                       variant="outline"
                       className="text-nowrap"
                     >
@@ -457,8 +605,8 @@ function Content({
             </div>
           </ScrollArea>
           <DialogFooter className="flex-row justify-end">
-            <Button type="submit" disabled={updateTeam.isPending}>
-              {updateTeam.isPending ? (
+            <Button type="submit" disabled={updateMatchTeamMutation.isPending}>
+              {updateMatchTeamMutation.isPending ? (
                 <>
                   <Spinner />
                   <span>Saving...</span>

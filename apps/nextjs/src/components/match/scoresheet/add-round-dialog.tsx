@@ -5,7 +5,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ListPlus } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 
-import type { RouterOutputs } from "@board-games/api";
 import { roundTypes } from "@board-games/db/constants";
 import { insertRoundSchema } from "@board-games/db/zodSchema";
 import { Button } from "@board-games/ui/button";
@@ -35,13 +34,17 @@ import {
 } from "@board-games/ui/select";
 import { toast } from "@board-games/ui/toast";
 
+import type { MatchInput } from "../types/input";
 import { GradientPicker } from "~/components/color-picker";
+import {
+  usePlayersAndTeams,
+  useScoresheet,
+} from "~/components/match/hooks/suspenseQueries";
 import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
 
-type Match = NonNullable<RouterOutputs["match"]["getMatch"]>;
-export const AddRoundDialog = ({ match }: { match: Match }) => {
+export const AddRoundDialog = ({ match }: { match: MatchInput }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -70,19 +73,21 @@ const AddRoundDialogContent = ({
   match,
   setOpen,
 }: {
-  match: Match;
+  match: MatchInput;
   setOpen: (isOpen: boolean) => void;
 }) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const router = useRouter();
   const posthog = usePostHog();
+  const { scoresheet } = useScoresheet(match);
+  const { players } = usePlayersAndTeams(match);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm({
     schema: RoundSchema,
     defaultValues: {
-      name: `Round ${match.scoresheet.rounds.length + 1}`,
+      name: `Round ${scoresheet.rounds.length + 1}`,
       type: "Numeric",
       color: "#cbd5e1",
       score: 0,
@@ -92,12 +97,9 @@ const AddRoundDialogContent = ({
   const addRound = useMutation(
     trpc.round.addRound.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: match.id }),
-        );
+        await queryClient.invalidateQueries();
         posthog.capture("round added to match", {
-          gameId: match.gameId,
-          matchId: match.id,
+          input: match,
         });
         router.refresh();
         setIsSubmitting(false);
@@ -117,10 +119,10 @@ const AddRoundDialogContent = ({
     addRound.mutate({
       round: {
         ...values,
-        order: match.scoresheet.rounds.length + 1,
-        scoresheetId: match.scoresheet.id,
+        order: scoresheet.rounds.length + 1,
+        scoresheetId: scoresheet.id,
       },
-      players: match.players.map((player) => ({
+      players: players.map((player) => ({
         matchPlayerId: player.id,
       })),
     });

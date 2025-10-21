@@ -2,6 +2,7 @@ import { useMemo } from "react";
 
 interface Role {
   id: number;
+  type?: "original" | "shared" | "linked";
   name: string;
   description?: string | null;
 }

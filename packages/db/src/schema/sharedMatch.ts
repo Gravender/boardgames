@@ -6,6 +6,7 @@ import { createTable } from "./baseTable";
 import match from "./match";
 import sharedGame from "./sharedGame";
 import sharedLocation from "./sharedLocation";
+import sharedScoresheet from "./sharedScoresheet";
 import user from "./user";
 
 const sharedMatch = createTable(
@@ -23,6 +24,9 @@ const sharedMatch = createTable(
       .notNull(),
     sharedGameId: integer("shared_game_id")
       .references(() => sharedGame.id)
+      .notNull(),
+    sharedScoresheetId: integer("shared_scoresheet_id")
+      .references(() => sharedScoresheet.id)
       .notNull(),
     sharedLocationId: integer("shared_location_id").references(
       () => sharedLocation.id,

@@ -38,7 +38,6 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import { useInvalidateGame, useInvalidateGames } from "~/hooks/invalidate/game";
 import { useTRPC } from "~/trpc/react";
 import { EditSharedMatchForm } from "./edit-shared-match-dialog-content";
 
@@ -49,20 +48,10 @@ export function MatchDropDown({ match }: { match: Game["matches"][number] }) {
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const invalidateGame = useInvalidateGame();
-  const invalidateGames = useInvalidateGames();
   const deleteMatch = useMutation(
-    trpc.match.deleteMatch.mutationOptions({
+    trpc.newMatch.deleteMatch.mutationOptions({
       onSuccess: async () => {
-        await Promise.all([
-          queryClient.invalidateQueries(trpc.player.pathFilter()),
-          queryClient.invalidateQueries(trpc.dashboard.pathFilter()),
-          queryClient.invalidateQueries(
-            trpc.game.getGame.queryOptions({ id: match.gameId }),
-          ),
-          ...invalidateGame(match.gameId, match.type),
-          ...invalidateGames(),
-        ]);
+        await queryClient.invalidateQueries();
         setIsDeleteDialogOpen(false);
       },
     }),

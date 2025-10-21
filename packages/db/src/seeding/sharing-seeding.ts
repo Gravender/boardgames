@@ -2,15 +2,19 @@ import type { z } from "zod/v4";
 import { faker } from "@faker-js/faker";
 
 import type {
+  insertSharedGameRoleSchema,
+  insertSharedMatchPlayerRoleSchema,
   insertSharedMatchPlayerSchema,
   selectSharedLocationSchema,
 } from "@board-games/db/zodSchema";
 import { db } from "@board-games/db/client";
 import {
   sharedGame,
+  sharedGameRole,
   sharedLocation,
   sharedMatch,
   sharedMatchPlayer,
+  sharedMatchPlayerRole,
   sharedPlayer,
   sharedScoresheet,
   shareRequest,
@@ -21,6 +25,8 @@ import { resetTable } from "./seed";
 
 export async function seedSharing(d3Seed: number) {
   faker.seed(d3Seed);
+  await resetTable(sharedMatchPlayerRole);
+  await resetTable(sharedGameRole);
   await resetTable(sharedGame);
   await resetTable(sharedLocation);
   await resetTable(sharedMatchPlayer);
@@ -459,6 +465,20 @@ export async function seedSharing(d3Seed: number) {
                         sharedLocationForMatch = existingSharedLocation;
                       }
                     }
+                    const [returnedSharedScoresheet] = await db
+                      .insert(sharedScoresheet)
+                      .values({
+                        ownerId: returnedUserShareRequest.ownerId,
+                        sharedWithId: returnedUserShareRequest.sharedWithId,
+                        scoresheetId: existingMatch.scoresheetId,
+                        permission: cShareRequest.permission,
+                        sharedGameId: returnedSharedGame.id,
+                        type: "match",
+                      })
+                      .returning();
+                    if (!returnedSharedScoresheet) {
+                      throw new Error("Shared Scoresheet not created");
+                    }
                     const [returnedSharedMatch] = await db
                       .insert(sharedMatch)
                       .values({
@@ -467,6 +487,7 @@ export async function seedSharing(d3Seed: number) {
                         matchId: cShareRequest.itemId,
                         sharedGameId: returnedSharedGame.id,
                         sharedLocationId: sharedLocationForMatch?.id ?? null,
+                        sharedScoresheetId: returnedSharedScoresheet.id,
                         permission: cShareRequest.permission,
                       })
                       .returning();
@@ -529,6 +550,7 @@ export async function seedSharing(d3Seed: number) {
                     scoresheetId: cShareRequest.itemId,
                     permission: cShareRequest.permission,
                     sharedGameId: returnedSharedGame.id,
+                    type: "game",
                   });
                 }
               }
@@ -757,6 +779,7 @@ export async function seedSharing(d3Seed: number) {
                       scoresheetId: cShareRequest.itemId,
                       permission: cShareRequest.permission,
                       sharedGameId: returnedSharedGame.id,
+                      type: "game",
                     });
                   }
                 }
@@ -794,6 +817,20 @@ export async function seedSharing(d3Seed: number) {
                       sharedLocationForMatch = existingSharedLocation;
                     }
                   }
+                  const [returnedSharedScoresheet] = await db
+                    .insert(sharedScoresheet)
+                    .values({
+                      ownerId: returnedUserShareRequest.ownerId,
+                      sharedWithId: returnedUserShareRequest.sharedWithId,
+                      scoresheetId: existingMatch.scoresheetId,
+                      permission: returnedUserShareRequest.permission,
+                      sharedGameId: returnedSharedGame.id,
+                      type: "match",
+                    })
+                    .returning();
+                  if (!returnedSharedScoresheet) {
+                    throw new Error("Shared Scoresheet not created");
+                  }
                   const [returnedSharedMatch] = await db
                     .insert(sharedMatch)
                     .values({
@@ -802,6 +839,7 @@ export async function seedSharing(d3Seed: number) {
                       matchId: returnedMatch.id,
                       sharedGameId: returnedSharedGame.id,
                       sharedLocationId: sharedLocationForMatch?.id ?? null,
+                      sharedScoresheetId: returnedSharedScoresheet.id,
                       permission: returnedUserShareRequest.permission,
                     })
                     .returning();
@@ -1159,6 +1197,7 @@ export async function seedSharing(d3Seed: number) {
                       scoresheetId: cShareRequest.itemId,
                       permission: cShareRequest.permission,
                       sharedGameId: returnedSharedGame.id,
+                      type: "game",
                     });
                   }
                 }
@@ -1216,6 +1255,20 @@ export async function seedSharing(d3Seed: number) {
                           sharedLocationForMatch = existingSharedLocation;
                         }
                       }
+                      const [returnedSharedScoresheet] = await db
+                        .insert(sharedScoresheet)
+                        .values({
+                          ownerId: returnedUserShareRequest.ownerId,
+                          sharedWithId: returnedUserShareRequest.sharedWithId,
+                          scoresheetId: existingMatch.scoresheetId,
+                          permission: returnedUserShareRequest.permission,
+                          sharedGameId: returnedSharedGame.id,
+                          type: "match",
+                        })
+                        .returning();
+                      if (!returnedSharedScoresheet) {
+                        throw new Error("Shared Scoresheet not created");
+                      }
                       const [returnedSharedMatch] = await db
                         .insert(sharedMatch)
                         .values({
@@ -1224,6 +1277,7 @@ export async function seedSharing(d3Seed: number) {
                           matchId: cShareRequest.itemId,
                           sharedGameId: returnedSharedGame.id,
                           sharedLocationId: sharedLocationForMatch?.id ?? null,
+                          sharedScoresheetId: returnedSharedScoresheet.id,
                           permission: cShareRequest.permission,
                         })
                         .returning();
@@ -1287,5 +1341,94 @@ export async function seedSharing(d3Seed: number) {
         }
       }
     }
+  }
+
+  const sharedGamesAfterSeeding = await db.query.sharedGame.findMany({
+    with: {
+      game: {
+        with: {
+          roles: true,
+        },
+      },
+    },
+  });
+
+  const sharedGameRolesToInsert: z.infer<typeof insertSharedGameRoleSchema>[] =
+    [];
+
+  for (const sharedGameRecord of sharedGamesAfterSeeding) {
+    if (sharedGameRecord.game.roles.length === 0) continue;
+    for (const role of sharedGameRecord.game.roles) {
+      sharedGameRolesToInsert.push({
+        sharedGameId: sharedGameRecord.id,
+        ownerId: sharedGameRecord.ownerId,
+        sharedWithId: sharedGameRecord.sharedWithId,
+        gameRoleId: role.id,
+        permission: sharedGameRecord.permission,
+      });
+    }
+  }
+
+  if (sharedGameRolesToInsert.length > 0) {
+    await db.insert(sharedGameRole).values(sharedGameRolesToInsert);
+  }
+
+  const sharedGameRoleRecords = await db.query.sharedGameRole.findMany();
+
+  const sharedGameRoleLookup = new Map<number, Map<number, number>>();
+  for (const role of sharedGameRoleRecords) {
+    let gameRoleMap = sharedGameRoleLookup.get(role.sharedGameId);
+    if (!gameRoleMap) {
+      gameRoleMap = new Map();
+      sharedGameRoleLookup.set(role.sharedGameId, gameRoleMap);
+    }
+    gameRoleMap.set(role.gameRoleId, role.id);
+  }
+
+  const sharedMatchPlayersAfterSeeding =
+    await db.query.sharedMatchPlayer.findMany({
+      with: {
+        matchPlayer: {
+          with: {
+            roles: true,
+          },
+        },
+        sharedMatch: {
+          columns: {
+            sharedGameId: true,
+          },
+        },
+      },
+    });
+
+  const sharedMatchPlayerRoleValues: z.infer<
+    typeof insertSharedMatchPlayerRoleSchema
+  >[] = [];
+  const seenPairs = new Set<string>();
+
+  for (const sharedMatchPlayerRecord of sharedMatchPlayersAfterSeeding) {
+    const sharedGameId = sharedMatchPlayerRecord.sharedMatch.sharedGameId;
+
+    const roleMap = sharedGameRoleLookup.get(sharedGameId);
+    if (!roleMap) continue;
+
+    const matchPlayerRoles = sharedMatchPlayerRecord.matchPlayer.roles;
+    if (matchPlayerRoles.length === 0) continue;
+
+    for (const role of matchPlayerRoles) {
+      const sharedGameRoleId = roleMap.get(role.id);
+      if (!sharedGameRoleId) continue;
+      const key = `${sharedMatchPlayerRecord.id}-${sharedGameRoleId}`;
+      if (seenPairs.has(key)) continue;
+      seenPairs.add(key);
+      sharedMatchPlayerRoleValues.push({
+        sharedMatchPlayerId: sharedMatchPlayerRecord.id,
+        sharedGameRoleId,
+      });
+    }
+  }
+
+  if (sharedMatchPlayerRoleValues.length > 0) {
+    await db.insert(sharedMatchPlayerRole).values(sharedMatchPlayerRoleValues);
   }
 }

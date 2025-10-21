@@ -1,12 +1,12 @@
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 
-import type { TransactionType } from "@board-games/db/client";
+import type { DatabaseType, TransactionType } from "@board-games/db/client";
 import { location, sharedLocation } from "@board-games/db/schema";
 
 // In ../utils/handleSharedLocation.ts
 export async function cloneSharedLocationForUser(
-  tx: TransactionType,
+  tx: TransactionType | DatabaseType,
   sharedLocationId: number,
   userId: string,
 ) {

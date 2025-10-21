@@ -1,7 +1,11 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { ErrorBoundary } from "react-error-boundary";
 
 import { EditMatchForm } from "~/components/match/edit";
-import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
+import { MatchNotFound } from "~/components/match/MatchNotFound";
+import { HydrateClient, prefetch, trpc } from "~/trpc/server";
+import Loading from "../../../loading";
 
 export default async function Page({
   params,
@@ -17,18 +21,44 @@ export default async function Page({
       redirect(`/dashboard/games/${gameId}`);
     }
   }
-  const match = await caller.match.getMatch({ id: Number(matchId) });
-  if (!match) redirect(`/dashboard/games/${gameId}`);
-  const players = await caller.player.getPlayersByGame({
-    id: match.gameId,
-    type: "original",
-  });
+
+  prefetch(
+    trpc.newMatch.getMatch.queryOptions({
+      id: Number(matchId),
+      type: "original",
+    }),
+  );
+  prefetch(
+    trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+      id: Number(matchId),
+      type: "original",
+    }),
+  );
+  prefetch(
+    trpc.player.getPlayersByGame.queryOptions({
+      id: Number(gameId),
+      type: "original",
+    }),
+  );
   prefetch(trpc.location.getLocations.queryOptions());
   return (
     <HydrateClient>
-      <div className="flex w-full items-center justify-center">
-        <EditMatchForm match={match} players={players} />
-      </div>
+      <ErrorBoundary fallback={<MatchNotFound />}>
+        <div className="flex w-full items-center justify-center">
+          <Suspense fallback={<Loading />}>
+            <EditMatchForm
+              match={{
+                type: "original",
+                id: Number(matchId),
+              }}
+              game={{
+                type: "original",
+                id: Number(gameId),
+              }}
+            />
+          </Suspense>
+        </div>
+      </ErrorBoundary>
     </HydrateClient>
   );
 }

@@ -38,6 +38,8 @@ import {
 import { Skeleton } from "@board-games/ui/skeleton";
 import { cn } from "@board-games/ui/utils";
 
+import type { GameInput } from "../types/input";
+import { useGameRoles } from "~/components/game/hooks/roles";
 import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 import { AddPlayerForm } from "./add-player";
@@ -58,17 +60,17 @@ const AddPlayersFormSchema = z.object({
 type addPlayersFormType = z.infer<typeof AddPlayersFormSchema>;
 export interface Player {
   id: number;
-  type: "original" | "shared";
+  type: "original" | "shared" | "linked";
   name: string;
   teamId: number | null;
-  roles: number[];
+  roles: { id: number; type: "original" | "shared" | "linked" }[];
   imageUrl: string | null;
   matches: number;
 }
 export interface Team {
   id: number;
   name: string;
-  roles: number[];
+  roles: { id: number; type: "original" | "shared" | "linked" }[];
 }
 export const AddPlayersDialogForm = ({
   game,
@@ -77,19 +79,14 @@ export const AddPlayersDialogForm = ({
   setPlayersAndTeams,
   cancel,
 }: {
-  game: {
-    id: number;
-    type: "original" | "shared";
-  };
+  game: GameInput;
   players: Player[];
   teams: Team[];
   setPlayersAndTeams: (players: Player[], teams: Team[]) => void;
   cancel: () => void;
 }) => {
   const trpc = useTRPC();
-  const { data: roles } = useQuery(
-    trpc.game.getGameRoles.queryOptions({ id: game.id, type: game.type }),
-  );
+  const { gameRoles } = useGameRoles(game);
   const [searchTerm, setSearchTerm] = useState("");
   const [showGroups, setShowGroups] = useState(false);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
@@ -97,12 +94,15 @@ export const AddPlayersDialogForm = ({
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState<{
     id: number;
-    type: "original" | "shared";
+    type: "original" | "shared" | "linked";
   } | null>(null);
 
   const { data: groups } = useQuery(trpc.group.getGroups.queryOptions());
   const { data: gamePlayers } = useQuery(
-    trpc.player.getPlayersByGame.queryOptions({ id: game.id, type: game.type }),
+    trpc.player.getPlayersByGame.queryOptions({
+      id: game.type === "original" ? game.id : game.sharedGameId,
+      type: game.type,
+    }),
   );
 
   const currentUser = gamePlayers?.find((player) => player.isUser);
@@ -207,14 +207,23 @@ export const AddPlayersDialogForm = ({
         const foundTeam = teams.find((t) => t.id === player.teamId);
         const originalTeam = formTeams.find((t) => t.id === player.teamId);
         const rolesToRemove = originalTeam?.roles.filter(
-          (role) => !foundTeam?.roles.includes(role),
+          (role) =>
+            !foundTeam?.roles.find(
+              (r) => r.id === role.id && r.type === role.type,
+            ),
         );
         if (foundTeam) {
           const playerRoles = player.roles.filter(
-            (role) => !rolesToRemove?.includes(role),
+            (role) =>
+              !rolesToRemove?.find(
+                (r) => r.id === role.id && r.type === role.type,
+              ),
           );
           const rolesToAdd = foundTeam.roles.filter(
-            (role) => !playerRoles.includes(role),
+            (role) =>
+              !playerRoles.find(
+                (r) => r.id === role.id && r.type === role.type,
+              ),
           );
           return {
             ...player,
@@ -223,7 +232,10 @@ export const AddPlayersDialogForm = ({
           };
         } else if (originalTeam) {
           const filteredRoles = player.roles.filter(
-            (role) => !originalTeam.roles.includes(role),
+            (role) =>
+              !originalTeam.roles.find(
+                (r) => r.id === role.id && r.type === role.type,
+              ),
           );
           return {
             ...player,
@@ -240,7 +252,7 @@ export const AddPlayersDialogForm = ({
 
     return (
       <ManageTeamContent
-        roles={roles ?? []}
+        roles={gameRoles}
         teams={mappedTeams}
         cancel={() => setShowTeamModal(false)}
         setTeams={manageTeamSave}
@@ -260,7 +272,7 @@ export const AddPlayersDialogForm = ({
         <ManagePlayerRoles
           player={foundPlayer}
           teamRoles={foundTeam?.roles ?? []}
-          roles={roles ?? []}
+          roles={gameRoles}
           onClose={() => setShowRoleModal(null)}
           onSave={(roles) => {
             update(playerIndex, {

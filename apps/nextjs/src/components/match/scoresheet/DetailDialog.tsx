@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod/v4";
 
 import { Button } from "@board-games/ui/button";
@@ -23,19 +22,20 @@ import {
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Textarea } from "@board-games/ui/textarea";
 
-import { useTRPC } from "~/trpc/react";
+import type { MatchInput } from "../types/input";
+import { useUpdateMatchDetailsMutation } from "../hooks/scoresheet";
 
 export function DetailDialog({
-  matchId,
+  match,
   data,
   placeholder,
 }: {
-  matchId: number;
+  match: MatchInput;
   data: {
     id: number;
     name: string;
     details: string | null;
-    type: "Player" | "Team";
+    type: "player" | "team";
   };
   placeholder?: string;
 }) {
@@ -62,7 +62,7 @@ export function DetailDialog({
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <Content setIsOpen={setIsOpen} matchId={matchId} data={data} />
+        <Content setIsOpen={setIsOpen} match={match} data={data} />
       </DialogContent>
     </Dialog>
   );
@@ -71,47 +71,60 @@ const FormSchema = z.object({
   detail: z.string(),
 });
 function Content({
-  matchId,
+  match,
   data,
   setIsOpen,
 }: {
-  matchId: number;
+  match: MatchInput;
   data: {
     id: number;
     name: string;
     details: string | null;
-    type: "Player" | "Team";
+    type: "player" | "team";
   };
   setIsOpen: (isOpen: boolean) => void;
 }) {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const updateDetails = useMutation(
-    trpc.match.updateMatchDetails.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions({ id: matchId }),
-        );
-        setIsOpen(false);
-      },
-    }),
-  );
+  const { updateMatchDetailsMutation } = useUpdateMatchDetailsMutation(match);
   const form = useForm({
     schema: FormSchema,
     defaultValues: { detail: data.details ?? "" },
   });
   function onSubmitForm(values: z.infer<typeof FormSchema>) {
-    updateDetails.mutate({
-      id: data.id,
-      type: data.type,
-      details: values.detail,
-    });
+    if (data.type === "player") {
+      updateMatchDetailsMutation.mutate(
+        {
+          type: "player",
+          match: match,
+          id: data.id,
+          details: values.detail,
+        },
+        {
+          onSuccess: () => {
+            setIsOpen(false);
+          },
+        },
+      );
+    } else {
+      updateMatchDetailsMutation.mutate(
+        {
+          type: "team",
+          match: match,
+          teamId: data.id,
+          details: values.detail,
+        },
+        {
+          onSuccess: () => {
+            setIsOpen(false);
+          },
+        },
+      );
+    }
   }
   return (
     <>
       <DialogHeader>
         <DialogTitle>
-          {data.type === "Team" ? `Team: ${data.name}` : data.name}
+          {data.type === "team" ? `Team: ${data.name}` : data.name}
         </DialogTitle>
       </DialogHeader>
       <Form {...form}>

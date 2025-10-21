@@ -3,7 +3,7 @@
     "lib": ["ES2023", "dom", "dom.iterable"],
     "jsx": "preserve"
   },
-  "extends": "@board-games/tsconfig/internal-package.json",
+  "extends": "@board-games/tsconfig/compiled-package.json",
   "include": ["*.ts", "src"],
   "exclude": ["node_modules"]
 }

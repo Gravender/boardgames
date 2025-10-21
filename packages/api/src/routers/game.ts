@@ -600,63 +600,6 @@ export const gameRouter = {
 
       return mappedScoresheets;
     }),
-  getGameRoles: protectedUserProcedure
-    .input(
-      z.object({
-        id: z.number(),
-        type: z.literal("original").or(z.literal("shared")),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      let gameId: number | undefined = undefined;
-      if (input.type === "original") {
-        const returnedGame = await ctx.db.query.game.findFirst({
-          where: {
-            id: input.id,
-            createdBy: ctx.userId,
-            deletedAt: {
-              isNull: true,
-            },
-          },
-        });
-        if (!returnedGame) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Game not found.",
-          });
-        }
-        gameId = input.id;
-      } else {
-        const returnedSharedGame = await ctx.db.query.sharedGame.findFirst({
-          where: {
-            id: input.id,
-            sharedWithId: ctx.userId,
-          },
-        });
-        if (!returnedSharedGame) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Shared game not found.",
-          });
-        }
-        gameId = returnedSharedGame.linkedGameId ?? returnedSharedGame.gameId;
-      }
-      const result = await ctx.db.query.gameRole.findMany({
-        where: {
-          gameId: gameId,
-          createdBy: ctx.userId,
-          deletedAt: {
-            isNull: true,
-          },
-        },
-        columns: {
-          id: true,
-          name: true,
-          description: true,
-        },
-      });
-      return result;
-    }),
   getEditGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {

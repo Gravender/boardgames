@@ -42,13 +42,7 @@ export function PlayerDropDown({
   const deletePlayer = useMutation(
     trpc.player.deletePlayer.mutationOptions({
       onSuccess: async () => {
-        await Promise.all([
-          queryClient.invalidateQueries(trpc.player.getPlayers.queryOptions()),
-          queryClient.invalidateQueries(trpc.dashboard.pathFilter()),
-          queryClient.invalidateQueries(trpc.game.pathFilter()),
-          queryClient.invalidateQueries(trpc.group.pathFilter()),
-          queryClient.invalidateQueries(trpc.match.pathFilter()),
-        ]);
+        return queryClient.invalidateQueries();
       },
     }),
   );

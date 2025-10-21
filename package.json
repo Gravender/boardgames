@@ -2,10 +2,10 @@
   "name": "board-games",
   "private": true,
   "engines": {
-    "node": ">=22.14.0",
-    "pnpm": ">=9.15.4"
+    "node": ">=22.20.0",
+    "pnpm": ">=10.15.1"
   },
-  "packageManager": "pnpm@10.11.1",
+  "packageManager": "pnpm@10.15.1",
   "scripts": {
     "build": "turbo run build",
     "clean": "git clean -xdf node_modules",
@@ -15,21 +15,21 @@
     "db:seed": "turbo -F @board-games/db seed",
     "dev": "turbo watch dev --continue",
     "dev:next": "turbo watch dev -F @board-games/nextjs...",
-    "format": "turbo run format --continue -- --cache --cache-location .cache/.prettiercache",
-    "format:fix": "turbo run format --continue -- --write --cache --cache-location .cache/.prettiercache",
-    "lint": "turbo run lint --continue -- --cache --cache-location .cache/.eslintcache",
-    "lint:fix": "turbo run lint --continue -- --fix --cache --cache-location .cache/.eslintcache",
+    "format": "turbo run format --continue --filter=!@board-games/expo -- --cache --cache-location .cache/.prettiercache",
+    "format:fix": "turbo run format --continue --filter=!@board-games/expo -- --write --cache --cache-location .cache/.prettiercache",
+    "lint": "turbo run lint --continue --filter=!@board-games/expo -- --cache --cache-location .cache/.eslintcache",
+    "lint:fix": "turbo run lint --continue --filter=!@board-games/expo -- --fix --cache --cache-location .cache/.eslintcache ",
     "lint:ws": "pnpm dlx sherif@latest",
     "postinstall": "pnpm lint:ws",
-    "typecheck": "turbo run typecheck",
+    "typecheck": "turbo run typecheck --filter=!@board-games/expo",
     "ui-add": "turbo run ui-add",
     "e2e": "turbo -F @board-games/playwright-web e2e"
   },
   "devDependencies": {
     "@board-games/prettier-config": "workspace:*",
-    "@turbo/gen": "^2.5.4",
+    "@turbo/gen": "^2.5.6",
     "prettier": "catalog:",
-    "turbo": "^2.5.4",
+    "turbo": "^2.5.6",
     "typescript": "catalog:"
   },
   "prettier": "@board-games/prettier-config"

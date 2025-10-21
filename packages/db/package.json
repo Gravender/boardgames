@@ -23,6 +23,10 @@
     "./constants": {
       "types": "./dist/constants.d.ts",
       "default": "./src/constants/index.ts"
+    },
+    "./views": {
+      "types": "./dist/views.d.ts",
+      "default": "./src/views/index.ts"
     }
   },
   "license": "MIT",
@@ -56,7 +60,7 @@
     "@types/d3": "^7.4.3",
     "d3": "^7.9.0",
     "date-fns": "^4.1.0",
-    "dotenv-cli": "^8.0.0",
+    "dotenv-cli": "^10.0.0",
     "drizzle-kit": "1.0.0-beta.1-5e64efc",
     "eslint": "catalog:",
     "prettier": "catalog:",

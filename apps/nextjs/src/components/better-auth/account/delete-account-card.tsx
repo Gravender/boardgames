@@ -76,7 +76,7 @@ function DeleteAccountDialog({
 }: {
   accounts: {
     id: string;
-    provider: string;
+    providerId: string;
     createdAt: Date;
     updatedAt: Date;
     accountId: string;
@@ -93,7 +93,7 @@ function DeleteAccountDialog({
     ? Date.now() - new Date(session.createdAt).getTime() < 60 * 60 * 24 * 1000
     : false;
   const credentialsLinked = accounts.some(
-    (acc) => acc.provider === "credential",
+    (acc) => acc.providerId === "credential",
   );
 
   const formSchema = z.object({

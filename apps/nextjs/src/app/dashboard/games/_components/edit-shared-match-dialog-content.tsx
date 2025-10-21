@@ -57,26 +57,10 @@ export function EditSharedMatchForm({
     },
   });
   const editMatch = useMutation(
-    trpc.match.editMatch.mutationOptions({
+    trpc.newMatch.editMatch.mutationOptions({
       onSuccess: async (result) => {
         console.log("result", result);
-        if (result !== null) {
-          if (result.match.type == "shared") {
-            await queryClient.invalidateQueries(
-              trpc.sharing.getSharedGame.queryOptions({
-                id: result.match.gameId,
-              }),
-            );
-            await queryClient.invalidateQueries(
-              trpc.sharing.getSharedMatch.queryOptions({ id: result.match.id }),
-            );
-          }
-          if (result.match.type == "linked") {
-            await queryClient.invalidateQueries(
-              trpc.game.getGame.queryOptions({ id: result.match.gameId }),
-            );
-          }
-        }
+        await queryClient.invalidateQueries();
         setIsOpen(false);
       },
     }),
@@ -88,7 +72,7 @@ export function EditSharedMatchForm({
     editMatch.mutate({
       type: "shared",
       match: {
-        id: match.id,
+        sharedMatchId: match.id,
         name: values.name === match.name ? undefined : values.name,
         date:
           values.date.getTime() === match.date.getTime()

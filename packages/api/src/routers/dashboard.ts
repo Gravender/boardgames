@@ -921,6 +921,22 @@ export const dashboardRouter = {
     }));
   }),
   getUserStats: protectedUserProcedure.query(async ({ ctx }) => {
+    const findUserPlayer = await ctx.db.query.player.findFirst({
+      where: {
+        isUser: true,
+        createdBy: ctx.userId,
+        deletedAt: {
+          isNull: true,
+        },
+      },
+    });
+    if (!findUserPlayer) {
+      await ctx.db.insert(player).values({
+        createdBy: ctx.userId,
+        name: ctx.session.user.name,
+        isUser: true,
+      });
+    }
     const returnedPlayer = await ctx.db.query.player.findFirst({
       where: {
         isUser: true,
