@@ -19,12 +19,3 @@ export function useInvalidateLocation() {
     [queryClient, trpc],
   );
 }
-export function useInvalidateLocations() {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  return useCallback(() => {
-    return [
-      queryClient.invalidateQueries(trpc.location.getLocations.queryOptions()),
-    ];
-  }, [queryClient, trpc]);
-}

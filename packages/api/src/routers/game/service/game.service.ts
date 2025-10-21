@@ -9,7 +9,6 @@ import { Logger } from "../../../common/logger";
 import { gameRepository } from "../repository/game.repository";
 
 class GameService {
-  private readonly logger = new Logger(GameService.name);
   public async getGameMatches(
     args: GetGameArgs,
   ): Promise<GetGameMatchesOutputType> {

@@ -17,7 +17,10 @@ export const sharedOrOriginalSchema = z.union([
   z.literal("shared"),
   z.literal("original"),
 ]);
-export const sharedOrLinkedSchema = z.literal(["shared", "linked"]);
+export const sharedOrLinkedSchema = z.union([
+  z.literal("shared"),
+  z.literal("linked"),
+]);
 export const sharedOrOriginalOrLinkedSchema = z.union([
   z.literal("shared"),
   z.literal("original"),
@@ -461,7 +464,11 @@ const sharedMatchWithGameAndPlayersSchema = baseMatchSchema.extend({
   matchPlayers: z.array(
     baseMatchPlayerSchema.extend({
       type: z.literal("shared"),
-      playerType: z.literal(["linked", "shared", "not-shared"]),
+      playerType: z.union([
+        z.literal("linked"),
+        z.literal("shared"),
+        z.literal("not-shared"),
+      ]),
       sharedPlayerId: z.number().nullable(),
       linkedPlayerId: z.number().nullable(),
     }),

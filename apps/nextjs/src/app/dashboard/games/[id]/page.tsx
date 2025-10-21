@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { TRPCError } from "@trpc/server";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { GameNotFound } from "~/components/game/not-found";
@@ -17,20 +18,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
-  const game = await caller.game.getGameMetaData({ id: Number(id) });
-  if (!game)
+  try {
+    const game = await caller.game.getGameMetaData({ id: Number(id) });
+    if (!game)
+      return {
+        title: "Game Not Found",
+      };
+    if (!game.image?.url)
+      return { title: game.name, description: `${game.name} Match Tracker` };
     return {
-      title: "Game Not Found",
+      title: game.name,
+      description: `${game.name} Match Tracker`,
+      openGraph: {
+        images: [game.image.url],
+      },
     };
-  if (!game.image?.url)
-    return { title: game.name, description: `${game.name} Match Tracker` };
-  return {
-    title: game.name,
-    description: `${game.name} Match Tracker`,
-    openGraph: {
-      images: [game.image.url],
-    },
-  };
+  } catch (error) {
+    if (error instanceof TRPCError && error.code === "NOT_FOUND") {
+      return { title: "Game Not Found" };
+    }
+    return { title: "Games" };
+  }
 }
 
 export default async function Page({ params }: Props) {

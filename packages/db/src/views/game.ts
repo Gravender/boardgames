@@ -4,7 +4,7 @@ import { integer, pgView, text, timestamp } from "drizzle-orm/pg-core";
 
 // Emits one row per (visible_to_user_id, canonical_game_id)
 export const vGameMatchOverview = pgView("v_game_match_overview", {
-  visibleToUserId: integer("visible_to_user_id").notNull(),
+  visibleToUserId: text("visible_to_user_id").notNull(),
   canonicalGameId: integer("canonical_game_id").notNull(),
   matchCount: integer("match_count").notNull(),
   latestMatchId: integer("latest_match_id").notNull(),

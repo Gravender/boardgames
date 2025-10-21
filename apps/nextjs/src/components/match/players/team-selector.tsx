@@ -416,7 +416,7 @@ const ManageTeamRoles = ({
                               const newRoles = [
                                 ...field.value.filter(
                                   (r) =>
-                                    r.id !== role.id && r.type !== role.type,
+                                    !(r.id === role.id && r.type === role.type),
                                 ),
                               ];
                               field.onChange(newRoles);
@@ -432,7 +432,7 @@ const ManageTeamRoles = ({
                           }}
                         />
                         <div className="flex-1 gap-2">
-                          <Label htmlFor={`${role.type}-${role.id}`}>
+                          <Label htmlFor={`${role.id}-${role.type}`}>
                             {role.name}
                           </Label>
 

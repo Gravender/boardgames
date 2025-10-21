@@ -50,12 +50,11 @@ import {
 } from "@board-games/ui/select";
 import { toast } from "@board-games/ui/toast";
 
+import type { GameInput } from "./types/input";
 import type { Player, Team } from "~/components/match/players/selector";
 import { AddPlayersDialogForm } from "~/components/match/players/selector";
 import { Spinner } from "~/components/spinner";
-import { useInvalidateLocations } from "~/hooks/invalidate/location";
 import { useTRPC } from "~/trpc/react";
-import type { GameInput } from "./types/input";
 
 type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
 
@@ -232,7 +231,6 @@ const AddMatchForm = ({
   const [newLocation, setNewLocation] = useState("");
 
   const router = useRouter();
-  const invalidateLocations = useInvalidateLocations();
   const posthog = usePostHog();
   const queryClient = useQueryClient();
   const createMatch = useMutation(
@@ -256,8 +254,9 @@ const AddMatchForm = ({
   const createLocation = useMutation(
     trpc.location.create.mutationOptions({
       onSuccess: async (result) => {
-        // eslint-disable-next-line @typescript-eslint/await-thenable
-        await Promise.all([invalidateLocations()]);
+        await queryClient.invalidateQueries(
+          trpc.location.getLocations.queryOptions(),
+        );
         setNewLocation("");
         setShowAddLocation(false);
         form.setValue("location", {

@@ -119,7 +119,7 @@ export const ManagePlayerRoles = ({
                                 const newRoles = [
                                   ...field.value.filter(
                                     (r) =>
-                                      r.id !== role.id && r.type !== role.type,
+                                      !(r.id == role.id && r.type == role.type),
                                   ),
                                 ];
                                 field.onChange(newRoles);

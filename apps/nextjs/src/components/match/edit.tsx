@@ -4,7 +4,11 @@ import type { Dispatch, SetStateAction } from "react";
 import type { z } from "zod/v4";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, Plus, X } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
@@ -49,7 +53,6 @@ import type { Player, Team } from "~/components/match/players/selector";
 import type { GameInput, MatchInput } from "~/components/match/types/input";
 import { AddPlayersDialogForm } from "~/components/match/players/selector";
 import { Spinner } from "~/components/spinner";
-import { useInvalidateLocations } from "~/hooks/invalidate/location";
 import { useTRPC } from "~/trpc/react";
 import { useGetPlayersByGame } from "../player/hooks/players";
 import { useEditMatchMutation } from "./hooks/edit";
@@ -72,9 +75,7 @@ export function EditMatchForm(input: { game: GameInput; match: MatchInput }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const router = useRouter();
-
-  const invalidateLocations = useInvalidateLocations();
-
+  const queryClient = useQueryClient();
   const posthog = usePostHog();
 
   const [showAddLocation, setShowAddLocation] = useState(false);
@@ -97,8 +98,9 @@ export function EditMatchForm(input: { game: GameInput; match: MatchInput }) {
   const createLocation = useMutation(
     trpc.location.create.mutationOptions({
       onSuccess: async (result) => {
-        // eslint-disable-next-line @typescript-eslint/await-thenable
-        await Promise.all([invalidateLocations()]);
+        await queryClient.invalidateQueries(
+          trpc.location.getLocations.queryOptions(),
+        );
         setNewLocation("");
         setShowAddLocation(false);
         form.setValue("location", {

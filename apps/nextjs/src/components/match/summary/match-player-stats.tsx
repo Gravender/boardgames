@@ -58,25 +58,29 @@ export function MatchSummaryPlayerStats(input: { match: MatchInput }) {
                   ? player.scores.reduce((sum, score) => sum + score, 0) /
                     player.scores.length
                   : 0;
-              const highestScore = Math.max(...player.scores);
-              const lowestScore = Math.min(...player.scores);
+              const hasScores = player.scores.length > 0;
+              const highestScore = hasScores
+                ? Math.max(...player.scores)
+                : null;
+              const lowestScore = hasScores ? Math.min(...player.scores) : null;
               let Best: number | null = null;
               let Worst: number | null = null;
-              if (scoresheet.winCondition === "Highest Score") {
+              if (scoresheet.winCondition === "Highest Score" && hasScores) {
                 Best = highestScore;
                 Worst = lowestScore;
               }
-              if (scoresheet.winCondition === "Lowest Score") {
+              if (scoresheet.winCondition === "Lowest Score" && hasScores) {
                 Best = lowestScore;
                 Worst = highestScore;
               }
-              if (scoresheet.winCondition === "Target Score") {
+              if (scoresheet.winCondition === "Target Score" && hasScores) {
                 const foundScore = player.scores.find(
                   (score) => score === scoresheet.targetScore,
                 );
                 Best = foundScore ? scoresheet.targetScore : null;
-                const differenceHighest = highestScore - scoresheet.targetScore;
-                const differenceLowest = lowestScore - scoresheet.targetScore;
+                const differenceHighest =
+                  highestScore! - scoresheet.targetScore;
+                const differenceLowest = lowestScore! - scoresheet.targetScore;
                 if (differenceLowest == 0 && differenceHighest == 0)
                   Worst = null;
                 else if (differenceLowest == 0) Worst = highestScore;
@@ -130,10 +134,10 @@ export function MatchSummaryPlayerStats(input: { match: MatchInput }) {
                           : "-"}
                       </TableCell>
                       <TableCell className="text-center">
-                        {Best ?? ""}
+                        {Best ?? "-"}
                       </TableCell>
                       <TableCell className="text-center">
-                        {Worst ?? ""}
+                        {Worst ?? "-"}
                       </TableCell>
                     </>
                   )}

@@ -62,7 +62,7 @@ class DateMatchService {
             return {
               id: mp.id,
               playerId: mp.playerId,
-              isUser: mp.id === userMatchPlayer?.id,
+              isUser: mp.playerId === userMatchPlayer?.playerId,
               type: "original" as const,
               name: mp.name,
               score: mp.score,
@@ -81,7 +81,7 @@ class DateMatchService {
             isWinner: mp.winner ?? false,
             placement: mp.placement,
             teamId: mp.teamId,
-            isUser: mp.playerId === userMatchPlayer?.id,
+            isUser: mp.playerId === userMatchPlayer?.playerId,
             image: mp.image
               ? {
                   name: mp.image.name,
@@ -154,7 +154,7 @@ class DateMatchService {
               teamId: mp.teamId,
               placement: mp.placement,
               winner: mp.winner,
-              isUser: mp.id === userMatchPlayer?.id,
+              isUser: mp.playerId === userMatchPlayer?.playerId,
               playerType:
                 mp.playerType === "linked"
                   ? ("linked" as const)
@@ -174,7 +174,7 @@ class DateMatchService {
             isWinner: mp.winner ?? false,
             placement: mp.placement,
             teamId: mp.teamId,
-            isUser: mp.playerId === userMatchPlayer?.id,
+            isUser: mp.playerId === userMatchPlayer?.playerId,
             image: mp.image
               ? {
                   name: mp.image.name,

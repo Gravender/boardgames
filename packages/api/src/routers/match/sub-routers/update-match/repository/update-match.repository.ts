@@ -73,7 +73,7 @@ class UpdateMatchRepository {
     const currentTime = new Date();
     if (input.type === "original") {
       const foundMatch = await db.query.match.findFirst({
-        where: { id: input.id, createdBy: userId },
+        where: { id: input.id, createdBy: userId, deletedAt: { isNull: true } },
       });
       if (!foundMatch)
         throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
@@ -159,7 +159,7 @@ class UpdateMatchRepository {
     const { input, userId } = args;
     if (input.type === "original") {
       const returnedMatch = await db.query.match.findFirst({
-        where: { id: input.id, createdBy: userId },
+        where: { id: input.id, createdBy: userId, deletedAt: { isNull: true } },
       });
       if (!returnedMatch)
         throw new TRPCError({ code: "NOT_FOUND", message: "Match not found." });
@@ -196,6 +196,7 @@ class UpdateMatchRepository {
         where: {
           id: input.match.id,
           createdBy: userId,
+          deletedAt: { isNull: true },
         },
       });
       if (!foundMatch)
@@ -212,6 +213,11 @@ class UpdateMatchRepository {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Shared match not found.",
+        });
+      if (foundSharedMatch.permission !== "edit")
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Does not have permission to edit this match.",
         });
       foundMatchId = foundSharedMatch.matchId;
     }
@@ -326,6 +332,7 @@ class UpdateMatchRepository {
         where: {
           id: input.match.id,
           createdBy: userId,
+          deletedAt: { isNull: true },
         },
       });
       if (!foundMatch)
@@ -342,6 +349,11 @@ class UpdateMatchRepository {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Shared match not found.",
+        });
+      if (foundSharedMatch.permission !== "edit")
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Does not have permission to edit this match.",
         });
       foundMatchId = foundSharedMatch.matchId;
     }
@@ -428,6 +440,7 @@ class UpdateMatchRepository {
         where: {
           id: input.id,
           createdBy: userId,
+          deletedAt: { isNull: true },
         },
         with: {
           scoresheet: true,
@@ -531,6 +544,7 @@ class UpdateMatchRepository {
         where: {
           id: input.id,
           createdBy: userId,
+          deletedAt: { isNull: true },
         },
         with: {
           scoresheet: true,
@@ -624,6 +638,7 @@ class UpdateMatchRepository {
         where: {
           id: input.match.id,
           createdBy: userId,
+          deletedAt: { isNull: true },
         },
       });
       if (!foundMatch)
@@ -717,6 +732,7 @@ class UpdateMatchRepository {
         where: {
           id: input.match.id,
           createdBy: userId,
+          deletedAt: { isNull: true },
         },
       });
       if (!foundMatch)
@@ -810,6 +826,7 @@ class UpdateMatchRepository {
         where: {
           id: input.match.id,
           createdBy: userId,
+          deletedAt: { isNull: true },
         },
       });
       if (!foundMatch)
@@ -847,6 +864,7 @@ class UpdateMatchRepository {
         where: {
           id: input.match.id,
           createdBy: userId,
+          deletedAt: { isNull: true },
         },
       });
       if (!foundMatch)
@@ -987,37 +1005,33 @@ class UpdateMatchRepository {
                 message: "Shared role not found.",
               });
             }
-            if (returnedSharedRole.linkedGameRoleId === null) {
-              throw new TRPCError({
-                code: "NOT_FOUND",
-                message: "Shared role not found.",
-              });
-            }
-            const [createdGameRole] = await tx
-              .insert(gameRole)
-              .values({
-                gameId: returnedMatch.gameId,
-                name: returnedSharedRole.gameRole.name,
-                description: returnedSharedRole.gameRole.description,
-                createdBy: userId,
-              })
-              .returning();
-            if (!createdGameRole) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Failed to create game role",
-              });
+            let linkedGameRoleId = returnedSharedRole.linkedGameRoleId;
+            if (!linkedGameRoleId) {
+              const [createdGameRole] = await tx
+                .insert(gameRole)
+                .values({
+                  gameId: returnedMatch.gameId,
+                  name: returnedSharedRole.gameRole.name,
+                  description: returnedSharedRole.gameRole.description,
+                  createdBy: userId,
+                })
+                .returning();
+              if (!createdGameRole) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: "Failed to create game role",
+                });
+              }
+              await tx
+                .update(sharedGameRole)
+                .set({ linkedGameRoleId: createdGameRole.id })
+                .where(eq(sharedGameRole.id, returnedSharedRole.id));
+              linkedGameRoleId = createdGameRole.id;
             }
             await tx.insert(matchPlayerRole).values({
               matchPlayerId: input.matchPlayer.id,
-              roleId: createdGameRole.id,
+              roleId: linkedGameRoleId,
             });
-            await tx
-              .update(sharedGameRole)
-              .set({
-                linkedGameRoleId: createdGameRole.id,
-              })
-              .where(eq(sharedGameRole.id, returnedSharedRole.id));
           }
         }
         if (input.matchPlayer.type === "shared") {

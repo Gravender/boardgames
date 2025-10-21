@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { TRPCError } from "@trpc/server";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { MatchNotFound } from "~/components/match/MatchNotFound";
@@ -21,14 +22,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       redirect(`/dashboard/games/${gameId}`);
     }
   }
-  const match = await caller.newMatch.getMatch({
-    id: Number(matchId),
-    type: "original",
-  });
-  return {
-    title: `${match.name} Scoresheet`,
-    description: `Scoresheet Table for ${match.name}`,
-  };
+  try {
+    const match = await caller.newMatch.getMatch({
+      id: Number(matchId),
+      type: "original",
+    });
+    return {
+      title: `${match.name} Scoresheet`,
+      description: `Scoresheet Table for ${match.name}`,
+    };
+  } catch (error) {
+    if (error instanceof TRPCError && error.code === "NOT_FOUND") {
+      return { title: "Match Not Found" };
+    }
+    return { title: "Games" };
+  }
 }
 export default async function Page({ params }: Props) {
   const slugs = await params;

@@ -98,12 +98,13 @@ class MatchService {
         };
       });
       refinedPlayers.sort((a, b) => {
-        if (a.order === b.order) {
+        if (a.order === null && b.order === null) {
           return a.name.localeCompare(b.name);
         }
-        if (a.order === null || b.order === null)
-          return a.name.localeCompare(b.name);
-        return a.order - b.order;
+        if (a.order === null) return 1; // nulls last
+        if (b.order === null) return -1; // nulls last
+        if (a.order !== b.order) return a.order - b.order;
+        return a.name.localeCompare(b.name);
       });
       return {
         teams: response.teams,
@@ -221,12 +222,13 @@ class MatchService {
         };
       });
       refinedPlayers.sort((a, b) => {
-        if (a.order === b.order) {
+        if (a.order === null && b.order === null) {
           return a.name.localeCompare(b.name);
         }
-        if (a.order === null || b.order === null)
-          return a.name.localeCompare(b.name);
-        return a.order - b.order;
+        if (a.order === null) return 1; // nulls last
+        if (b.order === null) return -1; // nulls last
+        if (a.order !== b.order) return a.order - b.order;
+        return a.name.localeCompare(b.name);
       });
       return {
         teams: response.teams,
@@ -242,9 +244,9 @@ class MatchService {
       userId: args.ctx.userId,
     });
     const playerStats: GetMatchSummaryOutputType["playerStats"] = [];
-    for (const player of response.players) {
+    for (const matchPlayer of response.players) {
       const matchPlayersForPlayer = response.matchPlayers.filter(
-        (mp) => mp.id === player.id,
+        (mp) => mp.id === matchPlayer.id,
       );
       const playerPlacements = matchPlayersForPlayer.reduce(
         (acc, mp) => {
@@ -256,11 +258,11 @@ class MatchService {
         {} as Record<string, number>,
       );
       playerStats.push({
-        id: player.id,
-        playerId: player.playerId,
-        playerType: player.playerType,
-        type: player.type,
-        name: player.name,
+        id: matchPlayer.id,
+        playerId: matchPlayer.playerId,
+        playerType: matchPlayer.playerType,
+        type: matchPlayer.type,
+        name: matchPlayer.name,
         scores: matchPlayersForPlayer
           .map((mp) => mp.score)
           .filter((score) => score !== null),

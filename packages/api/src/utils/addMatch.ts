@@ -880,36 +880,34 @@ export async function getMatchPlayersAndTeams(
           message: "Shared role not found.",
         });
       }
-      if (returnedSharedRole.linkedGameRoleId === null) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Shared role not found.",
-        });
+      let linkedGameRoleId = returnedSharedRole.linkedGameRoleId;
+      if (linkedGameRoleId === null) {
+        const [createdGameRole] = await transaction
+          .insert(gameRole)
+          .values({
+            gameId: returnedMatch.gameId,
+            name: returnedSharedRole.gameRole.name,
+            description: returnedSharedRole.gameRole.description,
+            createdBy: userId,
+          })
+          .returning();
+        if (!createdGameRole) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create game role",
+          });
+        }
+        await transaction
+          .update(sharedGameRole)
+          .set({
+            linkedGameRoleId: createdGameRole.id,
+          })
+          .where(eq(sharedGameRole.id, returnedSharedRole.id));
+        linkedGameRoleId = createdGameRole.id;
       }
-      const [createdGameRole] = await transaction
-        .insert(gameRole)
-        .values({
-          gameId: returnedMatch.gameId,
-          name: returnedSharedRole.gameRole.name,
-          description: returnedSharedRole.gameRole.description,
-          createdBy: userId,
-        })
-        .returning();
-      if (!createdGameRole) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create game role",
-        });
-      }
-      await transaction
-        .update(sharedGameRole)
-        .set({
-          linkedGameRoleId: createdGameRole.id,
-        })
-        .where(eq(sharedGameRole.id, returnedSharedRole.id));
       mappedSharedRoles.push({
         sharedRoleId: uniqueRole.id,
-        createRoleId: createdGameRole.id,
+        createRoleId: linkedGameRoleId,
       });
     }
     const mappedSharedRolesWithMatchPlayers: {
