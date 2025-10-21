@@ -5,7 +5,6 @@ import type {
   GetGameRolesOutputType,
 } from "../../../routers/game/game.output";
 import type { GetGameArgs, GetGameRolesArgs } from "./game.service.types";
-import { Logger } from "../../../common/logger";
 import { gameRepository } from "../repository/game.repository";
 
 class GameService {
