@@ -57,7 +57,6 @@
   "devDependencies": {
     "@board-games/eslint-config": "workspace:*",
     "@board-games/prettier-config": "workspace:*",
-    "@board-games/tailwind-config": "workspace:*",
     "@board-games/tsconfig": "workspace:*",
     "@types/react": "catalog:react19",
     "eslint": "catalog:",
