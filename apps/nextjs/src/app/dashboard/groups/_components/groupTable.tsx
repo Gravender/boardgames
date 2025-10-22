@@ -38,7 +38,7 @@ export function GroupTable() {
   }, [filteredGroups, setGroups]);
 
   return (
-    <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
+    <div className="relative container mx-auto h-[90vh] max-w-3xl px-4">
       <CardHeader className="justify-between">
         <CardTitle>Groups</CardTitle>
         <div className="flex w-full max-w-sm items-center gap-2">
@@ -80,7 +80,7 @@ export function GroupTable() {
           })}
         </div>
       </ScrollArea>
-      <div className="absolute bottom-4 right-4 z-10 sm:right-10">
+      <div className="absolute right-4 bottom-4 z-10 sm:right-10">
         <AddGroupDialog />
       </div>
     </div>
@@ -97,7 +97,7 @@ export function GroupSkeleton() {
             fallBackClassName="animate-pulse bg-card-foreground"
           />
           <div className="flex w-56 flex-col gap-2">
-            <div className="flex h-4 w-full animate-pulse items-center justify-between rounded-lg bg-card-foreground/50" />
+            <div className="bg-card-foreground/50 flex h-4 w-full animate-pulse items-center justify-between rounded-lg" />
           </div>
         </div>
 

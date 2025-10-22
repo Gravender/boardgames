@@ -35,7 +35,7 @@ export default async function Page() {
         <div className="grid max-w-7xl gap-4 px-4 sm:grid-cols-2 xl:grid-cols-4">
           <Suspense
             fallback={
-              <div className="h-96 w-full animate-pulse rounded-lg bg-card-foreground/50" />
+              <div className="bg-card-foreground/50 h-96 w-full animate-pulse rounded-lg" />
             }
           >
             <WinPercentageChart />
@@ -51,7 +51,7 @@ export default async function Page() {
             children={
               <Suspense
                 fallback={
-                  <div className="h-96 w-full animate-pulse rounded-lg bg-card-foreground/50" />
+                  <div className="bg-card-foreground/50 h-96 w-full animate-pulse rounded-lg" />
                 }
               >
                 <PlacementsChart />
@@ -65,7 +65,7 @@ export default async function Page() {
             children={
               <Suspense
                 fallback={
-                  <div className="h-96 w-full animate-pulse rounded-lg bg-card-foreground/50" />
+                  <div className="bg-card-foreground/50 h-96 w-full animate-pulse rounded-lg" />
                 }
               >
                 <DaysPlayedChart />
@@ -74,7 +74,7 @@ export default async function Page() {
           />
           <Suspense
             fallback={
-              <div className="h-96 w-full animate-pulse rounded-lg bg-card-foreground/50" />
+              <div className="bg-card-foreground/50 h-96 w-full animate-pulse rounded-lg" />
             }
           >
             <PlayersCard />
@@ -84,7 +84,7 @@ export default async function Page() {
           </Suspense>
           <Suspense
             fallback={
-              <div className="h-96 w-full animate-pulse rounded-lg bg-card-foreground/50" />
+              <div className="bg-card-foreground/50 h-96 w-full animate-pulse rounded-lg" />
             }
           >
             <PlayedChart />

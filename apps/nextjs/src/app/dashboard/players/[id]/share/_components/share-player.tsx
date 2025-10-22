@@ -412,7 +412,7 @@ export default function SharePlayerPage({ playerId }: { playerId: number }) {
                                             <div className="flex w-full items-center justify-between">
                                               <div>
                                                 <p>{friend.name}</p>
-                                                <p className="text-xs text-muted-foreground">
+                                                <p className="text-muted-foreground text-xs">
                                                   {friend.email}
                                                 </p>
                                               </div>
@@ -434,13 +434,13 @@ export default function SharePlayerPage({ playerId }: { playerId: number }) {
                                   {selectedFriends.map((friend) => (
                                     <div
                                       key={friend.id}
-                                      className="flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-sm"
+                                      className="bg-secondary flex items-center gap-1 rounded-full px-3 py-1 text-sm"
                                     >
                                       {friend.name}
                                       <button
                                         type="button"
                                         onClick={() => removeFriend(friend.id)}
-                                        className="ml-1 rounded-full p-1 hover:bg-secondary-foreground/20"
+                                        className="hover:bg-secondary-foreground/20 ml-1 rounded-full p-1"
                                       >
                                         <X className="h-3 w-3" />
                                       </button>
@@ -563,7 +563,7 @@ export default function SharePlayerPage({ playerId }: { playerId: number }) {
 
               <div className="space-y-4 pt-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Select matches to share along with this player
                   </p>
                   <div className="flex items-center space-x-2">
@@ -647,7 +647,7 @@ export default function SharePlayerPage({ playerId }: { playerId: number }) {
                                       >
                                         {match.name}
                                       </Label>
-                                      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                                      <div className="text-muted-foreground mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                                         <FormattedDate
                                           date={match.date}
                                           className="flex items-center gap-1"
@@ -701,7 +701,7 @@ export default function SharePlayerPage({ playerId }: { playerId: number }) {
                                             />
                                             <Label
                                               htmlFor={`include-players-${match.id}`}
-                                              className="whitespace-nowrap text-xs"
+                                              className="text-xs whitespace-nowrap"
                                             >
                                               Include Players
                                             </Label>
@@ -760,9 +760,9 @@ export default function SharePlayerPage({ playerId }: { playerId: number }) {
                                           return (
                                             <div
                                               key={p.id}
-                                              className="flex items-center gap-1 rounded bg-muted/50 p-1.5 text-xs"
+                                              className="bg-muted/50 flex items-center gap-1 rounded p-1.5 text-xs"
                                             >
-                                              <User className="h-3 w-3 text-muted-foreground" />
+                                              <User className="text-muted-foreground h-3 w-3" />
                                               <span>{p.name}</span>
                                               {p.team !== null && (
                                                 <span
@@ -785,7 +785,7 @@ export default function SharePlayerPage({ playerId }: { playerId: number }) {
                                                 </span>
                                               )}
                                               {p.score !== null && (
-                                                <span className="ml-auto text-muted-foreground">
+                                                <span className="text-muted-foreground ml-auto">
                                                   {p.score} pts
                                                 </span>
                                               )}

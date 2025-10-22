@@ -165,7 +165,7 @@ function Content({
                               <FormItem
                                 key={firstTeamPlayer.id}
                                 className={cn(
-                                  "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-2",
+                                  "flex flex-row items-center space-y-0 space-x-3 rounded-sm p-2",
                                   field.value.findIndex(
                                     (i) => i.id === firstTeamPlayer.id,
                                   ) > -1
@@ -232,7 +232,7 @@ function Content({
                               <FormItem
                                 key={player.id}
                                 className={cn(
-                                  "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-2",
+                                  "flex flex-row items-center space-y-0 space-x-3 rounded-sm p-2",
                                   field.value.findIndex(
                                     (i) => i.id === player.id,
                                   ) > -1

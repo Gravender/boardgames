@@ -124,7 +124,7 @@ export default function SelectPlayersForm({
                               <FormItem
                                 key={player.id}
                                 className={cn(
-                                  "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-2",
+                                  "flex flex-row items-center space-y-0 space-x-3 rounded-sm p-2",
                                   field.value.findIndex(
                                     (i) => i.id === player.id,
                                   ) > -1
@@ -165,7 +165,7 @@ export default function SelectPlayersForm({
                                     </span>
                                   </div>
 
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-background">
+                                  <div className="bg-background flex h-10 w-10 items-center justify-center rounded-sm">
                                     {player.matches}
                                   </div>
                                 </FormLabel>

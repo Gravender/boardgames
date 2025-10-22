@@ -46,10 +46,10 @@ export default function AdvancedTab({
           </CardHeader>
           {recentForm.length > 0 && (
             <CardContent>
-              <div className="text-2xl font-bold text-primary">
+              <div className="text-primary text-2xl font-bold">
                 {recentFormWins}/{recentForm.length}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {Math.round((recentFormWins / recentForm.length) * 100)}% win
                 rate
               </p>
@@ -216,10 +216,10 @@ export default function AdvancedTab({
                   >
                     {/* header */}
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-primary">
+                      <div className="text-primary text-2xl font-bold">
                         {playerCount}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-muted-foreground text-sm">
                         Players
                       </div>
                     </div>
@@ -261,7 +261,7 @@ export default function AdvancedTab({
                     </div>
                     {averagePlacement > 0 && (
                       <div className="border-t pt-2">
-                        <div className="mb-1 text-xs text-muted-foreground">
+                        <div className="text-muted-foreground mb-1 text-xs">
                           Placements:
                         </div>
                         <div className="flex flex-wrap gap-1">
@@ -349,7 +349,7 @@ export default function AdvancedTab({
                           <div className="font-medium">
                             {opponent.player.name}
                           </div>
-                          <div className="flex h-4 items-center gap-1 text-sm text-muted-foreground">
+                          <div className="text-muted-foreground flex h-4 items-center gap-1 text-sm">
                             <span>{totalGames} games</span>
                             <Separator orientation="vertical" />
                             <span>
@@ -365,7 +365,7 @@ export default function AdvancedTab({
                           {opponent.competitiveLosses} -{" "}
                           {opponent.competitiveTies}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                           Comp Record
                         </div>
                       </div>
@@ -387,7 +387,7 @@ export default function AdvancedTab({
                               {Math.round(overallWinRate * 100)}%
                             </span>
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-muted-foreground text-xs">
                             Overall
                           </div>
                         </div>
@@ -401,10 +401,10 @@ export default function AdvancedTab({
                                 {Math.round(competitiveWinRate * 100)}%
                               </span>
                             </div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-muted-foreground text-xs">
                               Competitive
                             </div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-muted-foreground text-xs">
                               {totalCompetitiveGames} games
                             </div>
                           </div>
@@ -418,10 +418,10 @@ export default function AdvancedTab({
                                 {Math.round(cooperativeSuccessRate * 100)}%
                               </span>
                             </div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-muted-foreground text-xs">
                               Co-op
                             </div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-muted-foreground text-xs">
                               {totalCooperativeGames} games
                             </div>
                           </div>
@@ -432,7 +432,7 @@ export default function AdvancedTab({
                           <div className="text-lg font-bold">
                             {opponent.teamWins}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-muted-foreground text-xs">
                             Team Victories
                           </div>
                         </div>
@@ -440,7 +440,7 @@ export default function AdvancedTab({
 
                       <div className="rounded-lg border p-3 text-center">
                         <div className="text-lg font-bold">{totalGames}</div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                           Total Games
                         </div>
                       </div>
@@ -448,7 +448,7 @@ export default function AdvancedTab({
 
                     {/* Performance Comparison */}
                     {totalCompetitiveGames > 0 && totalCooperativeGames > 0 ? (
-                      <div className="rounded-lg bg-muted/30 p-3">
+                      <div className="bg-muted/30 rounded-lg p-3">
                         <div className="text-sm font-medium">
                           Performance Comparison
                         </div>
@@ -478,7 +478,7 @@ export default function AdvancedTab({
                             />
                           </div>
                         </div>
-                        <div className="mt-2 text-xs text-muted-foreground">
+                        <div className="text-muted-foreground mt-2 text-xs">
                           {cooperativeSuccessRate > competitiveWinRate
                             ? `Better coop teammates than opponents (+${Math.round((cooperativeSuccessRate - competitiveWinRate) * 100)}%)`
                             : competitiveWinRate > cooperativeSuccessRate

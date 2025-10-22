@@ -41,7 +41,7 @@ export function CommentDialog({
           className="h-fit w-full items-start justify-start p-0"
         >
           <ScrollArea>
-            <p className="max-h-[5vh] w-full text-wrap text-start">
+            <p className="max-h-[5vh] w-full text-start text-wrap">
               {comment ?? "No comment"}
             </p>
           </ScrollArea>

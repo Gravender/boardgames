@@ -103,7 +103,7 @@ export function MatchImages({
   return (
     <>
       <Card className="w-full border-none">
-        <CardHeader className="hidden p-2 pb-2 pt-2">
+        <CardHeader className="hidden p-2 pt-2 pb-2">
           <CardTitle className="text-base">Match Images</CardTitle>
         </CardHeader>
 
@@ -119,7 +119,7 @@ export function MatchImages({
               {matchImages.map((image) => (
                 <CarouselItem
                   key={image.id}
-                  className="basis-1/4 pl-2 xs:basis-1/6"
+                  className="xs:basis-1/6 basis-1/4 pl-2"
                 >
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -139,7 +139,7 @@ export function MatchImages({
                               className="aspect-square size-full rounded-md object-cover"
                             />
                           ) : (
-                            <Dices className="size-full items-center justify-center rounded-md bg-muted p-2" />
+                            <Dices className="bg-muted size-full items-center justify-center rounded-md p-2" />
                           )}
                         </div>
                       </button>
@@ -148,7 +148,7 @@ export function MatchImages({
                       <div className="space-y-1">
                         <p className="text-sm font-medium">{image.caption}</p>
                         {image.duration && (
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <div className="text-muted-foreground flex items-center gap-2 text-xs">
                             <div className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
                               <span>
@@ -162,13 +162,13 @@ export function MatchImages({
                   </Tooltip>
                 </CarouselItem>
               ))}
-              <CarouselItem className="basis-1/4 pl-2 xs:basis-1/6">
+              <CarouselItem className="xs:basis-1/6 basis-1/4 pl-2">
                 <button
                   className="w-full"
                   onClick={() => setIsAddImageDialogOpen(true)}
                 >
                   <div className="relative flex aspect-square size-full shrink-0 overflow-hidden rounded-md border p-0">
-                    <Plus className="size-full items-center justify-center rounded-md bg-muted p-2" />
+                    <Plus className="bg-muted size-full items-center justify-center rounded-md p-2" />
                   </div>
                 </button>
               </CarouselItem>
@@ -190,12 +190,12 @@ export function MatchImages({
                 className="aspect-square size-full rounded-md object-cover"
               />
             ) : (
-              <Dices className="size-full items-center justify-center rounded-md bg-muted p-2" />
+              <Dices className="bg-muted size-full items-center justify-center rounded-md p-2" />
             )}
           </div>
           <DialogFooter className="flex-row gap-2">
             <div className="min-w-0 flex-1">
-              <h3 className="mb-2 break-words text-lg font-semibold md:text-xl">
+              <h3 className="mb-2 text-lg font-semibold break-words md:text-xl">
                 {selectedImage?.caption}
               </h3>
               {selectedImage?.duration && (
@@ -251,7 +251,7 @@ export function MatchImages({
                 className="aspect-square size-full rounded-md object-cover"
               />
             ) : (
-              <Dices className="size-full items-center justify-center rounded-md bg-muted p-2" />
+              <Dices className="bg-muted size-full items-center justify-center rounded-md p-2" />
             )}
           </div>
           <AlertDialogFooter>
@@ -372,7 +372,7 @@ function AddImageDialogContent({
                           className="aspect-square size-full rounded-md object-cover"
                         />
                       ) : (
-                        <Dices className="size-full items-center justify-center rounded-md bg-muted p-2" />
+                        <Dices className="bg-muted size-full items-center justify-center rounded-md p-2" />
                       )}
                     </div>
                     <Input

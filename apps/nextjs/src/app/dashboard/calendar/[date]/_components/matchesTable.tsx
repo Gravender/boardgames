@@ -33,7 +33,7 @@ export function MatchesTable({
 }) {
   const [matches, setMatches] = useState(data);
   return (
-    <div className="container relative mx-auto h-[90vh] max-w-4xl px-4">
+    <div className="relative container mx-auto h-[90vh] max-w-4xl px-4">
       <CardHeader className="flex flex-row items-center gap-2">
         <Calendar className="h-7 w-7" />
         <CardTitle suppressHydrationWarning>
@@ -100,7 +100,7 @@ export function MatchesTable({
                             </Badge>
                           )}
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="text-muted-foreground flex items-center gap-4 text-sm">
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {formatDuration(match.duration)}
@@ -117,19 +117,19 @@ export function MatchesTable({
                   </Link>
                   <div className="flex w-24 items-center justify-center">
                     {!match.finished ? (
-                      <div className="inline-flex w-12 items-center justify-center rounded-sm bg-yellow-500 p-2 font-semibold text-destructive-foreground dark:bg-yellow-900">
+                      <div className="text-destructive-foreground inline-flex w-12 items-center justify-center rounded-sm bg-yellow-500 p-2 font-semibold dark:bg-yellow-900">
                         {"-"}
                       </div>
                     ) : match.won ? (
-                      <div className="inline-flex w-12 items-center justify-center rounded-sm bg-green-500 p-2 font-medium text-destructive-foreground dark:bg-green-900">
+                      <div className="text-destructive-foreground inline-flex w-12 items-center justify-center rounded-sm bg-green-500 p-2 font-medium dark:bg-green-900">
                         {"Won"}
                       </div>
                     ) : !match.hasUser ? (
-                      <div className="dark:slate-900 inline-flex w-12 items-center justify-center rounded-sm bg-slate-500 p-2 font-medium text-destructive-foreground">
+                      <div className="dark:slate-900 text-destructive-foreground inline-flex w-12 items-center justify-center rounded-sm bg-slate-500 p-2 font-medium">
                         {"View"}
                       </div>
                     ) : (
-                      <div className="inline-flex w-12 items-center justify-center rounded-sm bg-destructive p-2 font-medium text-destructive-foreground">
+                      <div className="bg-destructive text-destructive-foreground inline-flex w-12 items-center justify-center rounded-sm p-2 font-medium">
                         {"Lost"}
                       </div>
                     )}

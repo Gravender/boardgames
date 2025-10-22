@@ -74,7 +74,7 @@ export function FriendRequestsTabs() {
                 ))}
               </div>
             ) : (
-              <p className="py-4 text-center text-muted-foreground">
+              <p className="text-muted-foreground py-4 text-center">
                 No pending friend requests
               </p>
             )}
@@ -100,7 +100,7 @@ export function FriendRequestsTabs() {
                 ))}
               </div>
             ) : (
-              <p className="py-4 text-center text-muted-foreground">
+              <p className="text-muted-foreground py-4 text-center">
                 No pending sent requests
               </p>
             )}

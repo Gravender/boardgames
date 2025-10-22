@@ -232,17 +232,17 @@ export default function UploadBGGdata() {
                     <div className="grid w-full gap-2">
                       <label
                         htmlFor="json-file"
-                        className="flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50"
+                        className="border-muted-foreground/25 hover:border-muted-foreground/50 flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed"
                       >
-                        <div className="flex flex-col items-center justify-center pb-6 pt-5">
-                          <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
-                          <p className="mb-1 text-sm text-muted-foreground">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <Upload className="text-muted-foreground mb-2 h-8 w-8" />
+                          <p className="text-muted-foreground mb-1 text-sm">
                             <span className="font-semibold">
                               Click to upload
                             </span>{" "}
                             or drag and drop
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-muted-foreground text-xs">
                             JSON files only
                           </p>
                         </div>
@@ -263,7 +263,7 @@ export default function UploadBGGdata() {
                       {
                         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                         value && (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground text-sm">
                             Selected file:{" "}
                             {value instanceof File ? value.name : ""}
                           </p>
@@ -284,7 +284,7 @@ export default function UploadBGGdata() {
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="text-xs text-muted-foreground">
+      <CardFooter className="text-muted-foreground text-xs">
         The JSON content will be logged to the browser console
       </CardFooter>
     </Card>

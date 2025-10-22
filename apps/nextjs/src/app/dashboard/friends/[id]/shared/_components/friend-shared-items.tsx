@@ -50,7 +50,7 @@ export function FriendSharedItems({
 
           <TabsContent value="with" className="mt-4">
             <div className="relative mb-4">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
               <Input
                 placeholder="Search shared items..."
                 className="pl-8"
@@ -65,7 +65,7 @@ export function FriendSharedItems({
 
           <TabsContent value="to" className="mt-4">
             <div className="relative mb-4">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
               <Input
                 placeholder="Search shared items..."
                 className="pl-8"
@@ -120,7 +120,7 @@ function SharedItemsList({
 
   if (filteredItems.length === 0) {
     return (
-      <p className="py-4 text-center text-muted-foreground">No items found</p>
+      <p className="text-muted-foreground py-4 text-center">No items found</p>
     );
   }
 
@@ -249,7 +249,7 @@ function GameItem({
     <div className="overflow-hidden rounded-md border">
       <div className="flex items-center gap-2 p-3">
         <div className="relative hidden h-12 w-12 overflow-hidden rounded-lg md:flex">
-          <Dices className="h-full w-full items-center justify-center rounded-md bg-muted p-2" />
+          <Dices className="bg-muted h-full w-full items-center justify-center rounded-md p-2" />
         </div>
         <div className="flex-grow">
           <div className="flex items-center">
@@ -261,7 +261,7 @@ function GameItem({
               Shared
             </Badge>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             {item.matches.length} matches, {item.scoresheets.length} scoresheets
           </p>
         </div>
@@ -309,7 +309,7 @@ function GameItem({
                         {match.permission}
                       </Badge>
                     </div>
-                    <div className="mt-1 flex items-center text-xs text-muted-foreground">
+                    <div className="text-muted-foreground mt-1 flex items-center text-xs">
                       <Calendar className="mr-1 h-3 w-3" />
                       {formatDate(match.date)}
                     </div>
@@ -341,7 +341,7 @@ function GameItem({
                         {scoresheet.permission}
                       </Badge>
                     </div>
-                    <div className="mt-1 flex items-center text-xs text-muted-foreground">
+                    <div className="text-muted-foreground mt-1 flex items-center text-xs">
                       <span>
                         {scoresheet.isCoop ? "Cooperative" : "Competitive"}
                       </span>
@@ -380,7 +380,7 @@ function SimpleItem({
               Shared
             </Badge>
           </div>
-          <p className="text-xs capitalize text-muted-foreground">
+          <p className="text-muted-foreground text-xs capitalize">
             {item.type}
           </p>
         </div>

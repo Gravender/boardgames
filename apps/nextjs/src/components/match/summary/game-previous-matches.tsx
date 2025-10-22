@@ -50,22 +50,22 @@ export function GamePreviousMatches(input: { game: GameInput }) {
                             finished: match.finished,
                           },
                     )}
-                    className="block h-40 w-64 rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                    className="hover:bg-muted/50 block h-40 w-64 rounded-lg border p-4 transition-colors"
                   >
                     <h3 className="truncate font-medium">{match.name}</h3>
 
-                    <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="text-muted-foreground mt-2 flex items-center gap-2 text-sm">
                       <CalendarIcon className="h-4 w-4" />
                       <span suppressHydrationWarning>
                         {format(new Date(match.date), "PP")}
                       </span>
                     </div>
 
-                    <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
                       <Users className="h-4 w-4" />
                       <span>{match.matchPlayers.length} players</span>
                     </div>
-                    <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
                       <MapPinIcon className="h-4 w-4" />
                       <span>{match.location?.name}</span>
                     </div>

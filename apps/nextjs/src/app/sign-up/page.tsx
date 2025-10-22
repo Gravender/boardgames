@@ -7,8 +7,8 @@ import { SignupForm } from "~/components/signup-form";
 
 export default function SignupPage() {
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
-      <Link href="/" className="absolute left-5 top-5">
+    <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+      <Link href="/" className="absolute top-5 left-5">
         <Button variant="ghost">
           <ChevronLeft />
           back

@@ -116,7 +116,7 @@ export function EditSharedMatchForm({
                     <FormControl>
                       <Button
                         variant={"outline"}
-                        className="w-[240px] pl-3 text-left font-normal text-muted-foreground"
+                        className="text-muted-foreground w-[240px] pl-3 text-left font-normal"
                         type="button"
                       >
                         {isSameDay(field.value, new Date()) ? (

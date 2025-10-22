@@ -18,13 +18,13 @@ export function EmptyDashboard() {
         <h1 className="text-3xl font-bold">Dashboard</h1>
       </div>
 
-      <div className="mb-12 rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+      <div className="bg-card text-card-foreground mb-12 rounded-lg border p-6 shadow-sm">
         <div className="flex flex-col items-center justify-center gap-4 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-            <Dices className="h-10 w-10 text-primary" />
+          <div className="bg-primary/10 flex h-20 w-20 items-center justify-center rounded-full">
+            <Dices className="text-primary h-10 w-10" />
           </div>
           <h2 className="text-2xl font-bold">Welcome to Board Game Tracker!</h2>
-          <p className="max-w-md text-muted-foreground">
+          <p className="text-muted-foreground max-w-md">
             Your dashboard is empty. Get started by adding your first game,
             creating players, or recording a match.
           </p>
@@ -40,7 +40,7 @@ export function EmptyDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2">
-              <GamepadIcon className="h-5 w-5 text-primary" />
+              <GamepadIcon className="text-primary h-5 w-5" />
               Add Your First Game
             </CardTitle>
             <CardDescription>
@@ -48,7 +48,7 @@ export function EmptyDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Add details like player count, play time, and more to keep track
               of your games.
             </p>
@@ -69,13 +69,13 @@ export function EmptyDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
+              <Users className="text-primary h-5 w-5" />
               Create Players
             </CardTitle>
             <CardDescription>Add the people you play with</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Track player statistics, win rates, and performance across
               different games.
             </p>

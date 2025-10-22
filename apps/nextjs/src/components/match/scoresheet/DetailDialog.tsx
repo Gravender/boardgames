@@ -50,7 +50,7 @@ export function DetailDialog({
           <ScrollArea>
             <div className="max-h-10 w-full">
               {data.details && data.details !== "" ? (
-                <p className="whitespace-normal text-wrap break-words text-start">
+                <p className="text-start text-wrap break-words whitespace-normal">
                   {data.details}
                 </p>
               ) : (

@@ -85,7 +85,7 @@ export function FriendCard({ friend }: FriendCardProps) {
 
             <div className="flex-grow">
               <p className="font-medium">{friend.name}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {friend.userName ? `@${friend.userName}` : friend.email}
               </p>
             </div>

@@ -72,7 +72,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
               <Button
                 size="icon"
                 variant="secondary"
-                className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
+                className="absolute -right-2 -bottom-2 h-8 w-8 rounded-full"
                 onClick={() => setIsEditPictureOpen(true)}
               >
                 <Camera className="h-4 w-4" />
@@ -82,7 +82,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
 
             <div className="space-y-1.5">
               <h1 className="text-2xl font-bold">{user.name}</h1>
-              <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:gap-6">
+              <div className="text-muted-foreground flex flex-col gap-2 text-sm sm:flex-row sm:gap-6">
                 {user.email && (
                   <div className="flex items-center gap-1">
                     <Mail className="h-4 w-4" />

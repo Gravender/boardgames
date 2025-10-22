@@ -810,7 +810,7 @@ const GameForm = ({
                             <div className="mb-2 flex w-full items-center gap-3 text-sm">
                               <div className="flex min-w-20 items-center gap-1">
                                 <span>Win Condition:</span>
-                                <span className="text-sm text-muted-foreground">
+                                <span className="text-muted-foreground text-sm">
                                   {scoreSheet.winCondition ?? "Highest Score"}
                                 </span>
                               </div>
@@ -820,7 +820,7 @@ const GameForm = ({
                               />
                               <div className="flex min-w-20 items-center gap-1">
                                 <span>Rounds:</span>
-                                <span className="text-sm text-muted-foreground">
+                                <span className="text-muted-foreground text-sm">
                                   {scoreSheet.rounds.length > 0
                                     ? scoreSheet.rounds.length
                                     : "1"}
@@ -976,7 +976,7 @@ const ScoresheetForm = ({
               scoresheet.permission === "view"
             }
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormItem className="flex flex-row items-start space-y-0 space-x-3">
                 <FormLabel>Is Co-op?</FormLabel>
                 <FormControl>
                   <Checkbox
@@ -993,7 +993,7 @@ const ScoresheetForm = ({
             control={form.control}
             name="isDefault"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormItem className="flex flex-row items-start space-y-0 space-x-3">
                 <FormLabel>Is Default?</FormLabel>
                 <FormControl>
                   <Checkbox

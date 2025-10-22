@@ -41,7 +41,7 @@ export function PlayerTeams({ player }: { player: Player }) {
                   <div className="text-3xl font-bold">
                     {player.teamStats.totalTeamGames}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Team Games
                   </div>
                 </div>
@@ -50,14 +50,14 @@ export function PlayerTeams({ player }: { player: Player }) {
                   <div className="text-3xl font-bold">
                     {player.teamStats.teamWins}
                   </div>
-                  <div className="text-sm text-muted-foreground">Team Wins</div>
+                  <div className="text-muted-foreground text-sm">Team Wins</div>
                 </div>
 
                 <div className="rounded-lg border p-4 text-center">
                   <div className="text-3xl font-bold">
                     {Math.round(player.teamStats.teamWinRate * 100)}%
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Team Win Rate
                   </div>
                 </div>
@@ -66,7 +66,7 @@ export function PlayerTeams({ player }: { player: Player }) {
                   <div className="text-3xl font-bold">
                     {player.teammateFrequency.length}
                   </div>
-                  <div className="text-sm text-muted-foreground">Teammates</div>
+                  <div className="text-muted-foreground text-sm">Teammates</div>
                 </div>
               </div>
               {teamMatches[0] && (
@@ -75,7 +75,7 @@ export function PlayerTeams({ player }: { player: Player }) {
                   <div className="flex items-center justify-between">
                     <div>
                       <span>{`Team: ${teamMatches[0].teamName}`}</span>
-                      <div className="mt-1 text-sm text-muted-foreground">
+                      <div className="text-muted-foreground mt-1 text-sm">
                         {`Game: ${teamMatches[0].match.gameName}`}
                       </div>
                     </div>
@@ -115,14 +115,14 @@ export function PlayerTeams({ player }: { player: Player }) {
                           {teammate.player.name}
                         </div>
                         {teammate.count > 0 && (
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-muted-foreground text-xs">
                             {Math.round((teammate.wins / teammate.count) * 100)}
                             % win rate
                           </div>
                         )}
                       </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-muted-foreground text-sm">
                       {teammate.wins} wins / {teammate.count} games
                     </div>
                   </div>
@@ -167,7 +167,7 @@ export function PlayerTeams({ player }: { player: Player }) {
                             <Trophy className="h-4 w-4 text-yellow-500" />
                           )}
                         </div>
-                        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                        <div className="text-muted-foreground mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                           <FormattedDate date={match.date} Icon={Calendar} />
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
@@ -180,7 +180,7 @@ export function PlayerTeams({ player }: { player: Player }) {
                             </span>
                           )}
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           {isCoop ? (
                             isWinner ? (
                               <span className="font-medium text-green-600">
@@ -225,10 +225,10 @@ export function PlayerTeams({ player }: { player: Player }) {
                             ))}
                           </div>
                           <div className="flex gap-2 sm:hidden">
-                            <span className="text-sm font-semibold text-muted-foreground">
+                            <span className="text-muted-foreground text-sm font-semibold">
                               Players:
                             </span>
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-muted-foreground text-sm">
                               {teamMatch.players
                                 .map((teammate) => teammate.name)
                                 .join(", ")}

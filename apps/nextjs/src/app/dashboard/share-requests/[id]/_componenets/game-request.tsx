@@ -266,7 +266,7 @@ export default function GameRequestPage({
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {childMatches.length} shared matches,{" "}
                       {childPlayers.length} shared players
                     </p>
@@ -280,7 +280,7 @@ export default function GameRequestPage({
               </Badge>
             </div>
             {game.item.description && (
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="text-muted-foreground mt-2 text-sm">
                 {game.item.description}
               </p>
             )}
@@ -315,7 +315,7 @@ export default function GameRequestPage({
                             <Label htmlFor="new-game" className="font-medium">
                               Create as a new game
                             </Label>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground text-sm">
                               Add {game.item.name} as a new game in your
                               collection{" "}
                               {foundGame ? "(Possible Duplicate Found)" : ""}
@@ -336,7 +336,7 @@ export default function GameRequestPage({
                             >
                               Link to an existing game
                             </Label>
-                            <p className="mb-2 text-sm text-muted-foreground">
+                            <p className="text-muted-foreground mb-2 text-sm">
                               Connect this shared game to a game you already
                               have in your collection
                             </p>
@@ -404,7 +404,7 @@ export default function GameRequestPage({
                                                         </p>
                                                         {(fGame.yearPublished ??
                                                           fGame.playersMin) && (
-                                                          <p className="text-xs text-muted-foreground">
+                                                          <p className="text-muted-foreground text-xs">
                                                             {
                                                               fGame.yearPublished
                                                             }
@@ -458,7 +458,7 @@ export default function GameRequestPage({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium">Scoresheets</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {form.getValues("scoresheets").reduce((acc, curr) => {
                         if (curr.accept) return acc + 1;
                         return acc;

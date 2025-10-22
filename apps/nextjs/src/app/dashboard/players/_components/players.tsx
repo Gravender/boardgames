@@ -28,7 +28,7 @@ export function PlayersTable({
   const [players, setPlayers] = useState(data);
 
   return (
-    <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
+    <div className="relative container mx-auto h-[90vh] max-w-3xl px-4">
       <CardHeader>
         <CardTitle>Players</CardTitle>
       </CardHeader>
@@ -50,7 +50,7 @@ export function PlayersTable({
             return (
               <li
                 data-slot="card"
-                className="rounded-lg border bg-card pb-2 text-card-foreground shadow-sm"
+                className="bg-card text-card-foreground rounded-lg border pb-2 shadow-sm"
                 key={`${player.id}-${player.type}`}
               >
                 <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">
@@ -112,7 +112,7 @@ export function PlayersTable({
           })}
         </ul>
       </ScrollArea>
-      <div className="absolute bottom-4 right-4 z-10 sm:right-10">
+      <div className="absolute right-4 bottom-4 z-10 sm:right-10">
         <AddPlayerDialog defaultIsOpen={defaultIsOpen} />
       </div>
     </div>

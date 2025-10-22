@@ -204,7 +204,7 @@ export default function ShareRequestsPage() {
         <TabsTrigger value="incoming">
           Incoming Requests
           {activeIncomingCount > 0 && (
-            <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+            <span className="bg-primary text-primary-foreground ml-2 rounded-full px-2 py-0.5 text-xs">
               {activeIncomingCount}
             </span>
           )}
@@ -212,7 +212,7 @@ export default function ShareRequestsPage() {
         <TabsTrigger value="outgoing">
           Outgoing Requests
           {activeOutgoingCount > 0 && (
-            <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+            <span className="bg-primary text-primary-foreground ml-2 rounded-full px-2 py-0.5 text-xs">
               {activeOutgoingCount}
             </span>
           )}
@@ -235,7 +235,7 @@ export default function ShareRequestsPage() {
               Show only active requests
             </Label>
           </div>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             {filterIncomingActive ? (
               <span>
                 Showing {filteredIncomingRequests.length} active of{" "}
@@ -250,9 +250,9 @@ export default function ShareRequestsPage() {
         {filteredIncomingRequests.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-10 text-center">
-              <GameController className="h-10 w-10 text-muted-foreground" />
+              <GameController className="text-muted-foreground h-10 w-10" />
               <h3 className="mt-4 text-lg font-medium">No incoming requests</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="text-muted-foreground mt-2 text-sm">
                 {filterIncomingActive
                   ? "You don't have any active incoming share requests at the moment"
                   : "You don't have any incoming share requests at the moment"}
@@ -290,7 +290,7 @@ export default function ShareRequestsPage() {
                             {formatDate(request.createdAt)}
                           </CardDescription>
                         </div>
-                        <div className="flex flex-col items-center gap-2 xs:flex-row">
+                        <div className="xs:flex-row flex flex-col items-center gap-2">
                           <Badge variant="secondary">
                             {request.permission === "view" ? "View" : "Edit"}
                           </Badge>
@@ -348,7 +348,7 @@ export default function ShareRequestsPage() {
                           </div>
                         )}
                         {request.hasChildren && (
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-muted-foreground text-sm">
                             <p>This share includes:</p>
                             <ul className="ml-5 list-disc">
                               {(request.game ?? 0) > 0 && <li>{`1 game`}</li>}
@@ -410,7 +410,7 @@ export default function ShareRequestsPage() {
                     )}
                     {expired && request.status === "pending" && (
                       <CardFooter>
-                        <p className="w-full text-center text-sm text-muted-foreground">
+                        <p className="text-muted-foreground w-full text-center text-sm">
                           This request has expired and can no longer be accepted
                         </p>
                       </CardFooter>
@@ -439,7 +439,7 @@ export default function ShareRequestsPage() {
               Show only active requests
             </Label>
           </div>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             {filterOutgoingActive ? (
               <span>
                 Showing {filteredOutgoingRequests.length} active of{" "}
@@ -454,9 +454,9 @@ export default function ShareRequestsPage() {
         {filteredOutgoingRequests.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-10 text-center">
-              <GameController className="h-10 w-10 text-muted-foreground" />
+              <GameController className="text-muted-foreground h-10 w-10" />
               <h3 className="mt-4 text-lg font-medium">No outgoing requests</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="text-muted-foreground mt-2 text-sm">
                 {filterOutgoingActive
                   ? "You don't have any active outgoing share requests at the moment"
                   : "You haven't shared any games with others yet"}
@@ -498,7 +498,7 @@ export default function ShareRequestsPage() {
                             </CardDescription>
                           )}
                         </div>
-                        <div className="flex flex-col items-center gap-2 xs:flex-row">
+                        <div className="xs:flex-row flex flex-col items-center gap-2">
                           <Badge variant="secondary">
                             {request.permission === "view" ? "View" : "Edit"}
                           </Badge>
@@ -539,13 +539,13 @@ export default function ShareRequestsPage() {
                             </>
                           ) : request.status === "pending" ? (
                             <>
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">
+                              <Clock className="text-muted-foreground h-4 w-4" />
+                              <span className="text-muted-foreground text-sm">
                                 Waiting for response
                               </span>
                               {request.expiredAt && (
                                 <span
-                                  className="text-sm text-muted-foreground"
+                                  className="text-muted-foreground text-sm"
                                   suppressHydrationWarning
                                 >
                                   {`(${formatExpiry(request.expiredAt)})`}
@@ -569,7 +569,7 @@ export default function ShareRequestsPage() {
                           )}
                         </div>
                         {request.hasChildren && (
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-muted-foreground text-sm">
                             <p>This share includes:</p>
                             <ul className="ml-5 list-disc">
                               {(request.game ?? 0) > 0 && <li>{`1 game`}</li>}

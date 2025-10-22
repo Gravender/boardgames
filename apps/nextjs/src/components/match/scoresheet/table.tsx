@@ -52,7 +52,7 @@ export function ScoreSheetTable(input: { match: MatchInput }) {
   return (
     <>
       <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
-        <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
+        <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20 shadow-lg">
           <HeaderRow
             match={input.match}
             setTeam={setTeam}
@@ -113,7 +113,7 @@ const HeaderRow = ({
       <TableRow>
         <TableHead
           scope="col"
-          className="bg-sidebar sticky left-0 top-0 z-10 w-20 sm:w-36"
+          className="bg-sidebar sticky top-0 left-0 z-10 w-20 sm:w-36"
         >
           <div>
             <AddRoundDialog match={match} />
@@ -183,7 +183,7 @@ const HeaderRow = ({
     <TableRow>
       <TableHead
         scope="col"
-        className="bg-sidebar sticky left-0 top-0 w-20 sm:w-36"
+        className="bg-sidebar sticky top-0 left-0 w-20 sm:w-36"
       >
         <div>
           <AddRoundDialog match={match} />
@@ -253,7 +253,7 @@ const BodyRow = ({
         <TableHead
           scope="row"
           className={cn(
-            "sticky left-0 z-10 max-w-[95vw] bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:max-w-[90vw] sm:text-lg",
+            "bg-card text-muted-foreground after:bg-border sticky left-0 z-10 max-w-[95vw] font-semibold after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:max-w-[90vw] sm:text-lg",
             round.color && "over:opacity-50 hover:dark:opacity-80",
           )}
           style={{
@@ -361,7 +361,7 @@ const BodyRow = ({
       <TableHead
         scope="row"
         className={cn(
-          "sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg",
+          "bg-card text-muted-foreground after:bg-border sticky left-0 z-10 font-semibold after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:text-lg",
           round.color && "hover:opacity-50 hover:dark:opacity-80",
         )}
         style={{
@@ -424,7 +424,7 @@ const CommentsRow = ({ match }: { match: MatchInput }) => {
       <TableRow>
         <TableHead
           scope="row"
-          className="sticky left-0 z-10 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+          className="bg-muted text-muted-foreground after:bg-border sticky left-0 z-10 font-semibold after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:text-lg"
         >
           {"Details"}
         </TableHead>
@@ -433,7 +433,7 @@ const CommentsRow = ({ match }: { match: MatchInput }) => {
           .map((team) => (
             <TableCell
               key={`${team.id}-details`}
-              className="border-b border-r p-2"
+              className="border-r border-b p-2"
             >
               <DetailDialog
                 match={match}
@@ -452,7 +452,7 @@ const CommentsRow = ({ match }: { match: MatchInput }) => {
             return (
               <TableCell
                 key={`${player.id}-details`}
-                className="border-b border-r p-2"
+                className="border-r border-b p-2"
               >
                 <DetailDialog
                   match={match}
@@ -473,7 +473,7 @@ const CommentsRow = ({ match }: { match: MatchInput }) => {
     <TableRow>
       <TableHead
         scope="row"
-        className="sticky left-0 z-10 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+        className="bg-muted text-muted-foreground after:bg-border sticky left-0 z-10 font-semibold after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:text-lg"
       >
         {"Details(optional)"}
       </TableHead>
@@ -482,7 +482,7 @@ const CommentsRow = ({ match }: { match: MatchInput }) => {
         return (
           <TableCell
             key={`${player.id}-details`}
-            className="border-b border-r p-2"
+            className="border-r border-b p-2"
           >
             <DetailDialog
               match={match}
@@ -526,7 +526,7 @@ const TotalRow = ({ match }: { match: MatchInput }) => {
       <TableRow>
         <TableHead
           scope="row"
-          className="sticky left-0 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+          className="bg-muted text-muted-foreground after:bg-border sticky left-0 font-semibold after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:text-lg"
         >
           Total
         </TableHead>
@@ -607,7 +607,7 @@ const TotalRow = ({ match }: { match: MatchInput }) => {
     <TableRow>
       <TableHead
         scope="row"
-        className="sticky left-0 bg-muted font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+        className="bg-muted text-muted-foreground after:bg-border sticky left-0 font-semibold after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:text-lg"
       >
         Total
       </TableHead>

@@ -31,7 +31,7 @@ export default function FriendProfilePage({ friendId }: { friendId: string }) {
           />
           <div className="flex-grow">
             <CardTitle>{friend.name}</CardTitle>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {friend.username && `@${friend.username}`}
             </p>
           </div>
@@ -52,7 +52,7 @@ export default function FriendProfilePage({ friendId }: { friendId: string }) {
               <Link href={`/dashboard/friends/${friendId}/shared`}>
                 <Share2 className="mb-2 h-8 w-8" />
                 <span className="text-lg font-medium">Shared Items</span>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="text-muted-foreground mt-1 text-sm">
                   View items shared between you and your friend
                 </p>
               </Link>
@@ -66,18 +66,18 @@ export default function FriendProfilePage({ friendId }: { friendId: string }) {
                 <Link href={`/dashboard/friends/${friendId}/stats`}>
                   <BarChart2 className="mb-2 h-8 w-8" />
                   <span className="text-lg font-medium">Player Stats</span>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className="text-muted-foreground mt-1 text-sm">
                     View game statistics for this player
                   </p>
                 </Link>
               </Button>
             ) : (
-              <div className="flex h-auto flex-col items-center justify-center rounded-md border bg-muted/50 py-6">
-                <UserX className="mb-2 h-8 w-8 text-muted-foreground" />
-                <span className="text-lg font-medium text-muted-foreground">
+              <div className="bg-muted/50 flex h-auto flex-col items-center justify-center rounded-md border py-6">
+                <UserX className="text-muted-foreground mb-2 h-8 w-8" />
+                <span className="text-muted-foreground text-lg font-medium">
                   No Player Stats
                 </span>
-                <p className="mt-1 px-4 text-center text-sm text-muted-foreground">
+                <p className="text-muted-foreground mt-1 px-4 text-center text-sm">
                   This friend doesn't have a linked player account yet
                 </p>
               </div>
@@ -95,8 +95,8 @@ export default function FriendProfilePage({ friendId }: { friendId: string }) {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
               <div className="flex flex-col items-center justify-center rounded-lg border p-4">
                 <p className="text-2xl font-bold">{friend.linkedPlayer.wins}</p>
-                <p className="text-sm text-muted-foreground">Wins</p>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-sm">Wins</p>
+                <p className="text-muted-foreground mt-1 text-xs">
                   Win Rate: {Math.round(friend.linkedPlayer.winRate * 100)}%
                 </p>
               </div>
@@ -105,22 +105,22 @@ export default function FriendProfilePage({ friendId }: { friendId: string }) {
                 <p className="text-2xl font-bold">
                   {friend.linkedPlayer.matches.length}
                 </p>
-                <p className="text-sm text-muted-foreground">Matches Played</p>
+                <p className="text-muted-foreground text-sm">Matches Played</p>
               </div>
 
               <div className="flex flex-col items-center justify-center rounded-lg border p-4">
                 <p className="text-2xl font-bold">
                   {friend.linkedPlayer.friendGames.length}
                 </p>
-                <p className="text-sm text-muted-foreground">Games Played</p>
+                <p className="text-muted-foreground text-sm">Games Played</p>
               </div>
 
               <div className="flex flex-col items-center justify-center rounded-lg border p-4">
                 <p className="text-2xl font-bold">
                   {calculateHIndex(friend.linkedPlayer.friendGames)}
                 </p>
-                <p className="text-sm text-muted-foreground">H-Index</p>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-sm">H-Index</p>
+                <p className="text-muted-foreground mt-1 text-xs">
                   Played h games at least h times
                 </p>
               </div>
@@ -129,14 +129,14 @@ export default function FriendProfilePage({ friendId }: { friendId: string }) {
                 <p className="text-2xl font-bold">
                   {friend.linkedPlayer.players}
                 </p>
-                <p className="text-sm text-muted-foreground">Players</p>
+                <p className="text-muted-foreground text-sm">Players</p>
               </div>
 
               <div className="flex flex-col items-center justify-center rounded-lg border p-4">
                 <p className="text-2xl font-bold">
                   {formatDuration(friend.linkedPlayer.duration)}
                 </p>
-                <p className="text-sm text-muted-foreground">Play Time</p>
+                <p className="text-muted-foreground text-sm">Play Time</p>
               </div>
             </div>
           </CardContent>

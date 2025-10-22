@@ -35,7 +35,7 @@ export default async function Page({ params }: Props) {
       <div className="flex w-full items-center justify-center">
         <Suspense
           fallback={
-            <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
+            <div className="relative container mx-auto h-[90vh] max-w-3xl px-4">
               <Table className="flex flex-col gap-2">
                 <TableBody>
                   {Array.from({ length: 5 }).map((_, i) => (

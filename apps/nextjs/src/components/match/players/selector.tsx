@@ -290,18 +290,18 @@ export const AddPlayersDialogForm = ({
     <>
       <DialogHeader>
         <DialogTitle>Select Players</DialogTitle>
-        <DialogDescription className="sr-only xs:not-sr-only">
+        <DialogDescription className="xs:not-sr-only sr-only">
           Add players to your match
         </DialogDescription>
       </DialogHeader>
-      <div className="flex flex-col items-center gap-2 xs:flex-row">
+      <div className="xs:flex-row flex flex-col items-center gap-2">
         <Input
           placeholder="Search players..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-grow"
         />
-        <div className="flex w-full items-center justify-between gap-2 xs:w-auto xs:justify-start">
+        <div className="xs:w-auto xs:justify-start flex w-full items-center justify-between gap-2">
           <Button variant="outline" onClick={() => setShowGroups(!showGroups)}>
             <Users className="h-4 w-4" />
             Groups
@@ -397,7 +397,7 @@ export const AddPlayersDialogForm = ({
                                         <FormItem
                                           key={`${player.id}-${player.type}`}
                                           className={cn(
-                                            "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-1 sm:p-2",
+                                            "flex flex-row items-center space-y-0 space-x-3 rounded-sm p-1 sm:p-2",
                                             foundPlayer
                                               ? "bg-violet-400/50"
                                               : "bg-border",
@@ -459,13 +459,13 @@ export const AddPlayersDialogForm = ({
                                                   )}
                                                 </div>
 
-                                                <div className="text-xs text-muted-foreground">
+                                                <div className="text-muted-foreground text-xs">
                                                   {player.matches} matches
                                                 </div>
                                               </div>
                                             </div>
                                           </FormLabel>
-                                          <div className="flex flex-col items-center gap-2 xs:flex-row">
+                                          <div className="xs:flex-row flex flex-col items-center gap-2">
                                             {foundPlayer && (
                                               <Button
                                                 variant="outline"
@@ -477,7 +477,7 @@ export const AddPlayersDialogForm = ({
                                                     type: foundPlayer.type,
                                                   });
                                                 }}
-                                                className="w-full xs:w-auto"
+                                                className="xs:w-auto w-full"
                                               >
                                                 Roles (
                                                 {foundPlayer.roles.length})
@@ -572,14 +572,14 @@ export const AddPlayersDialogForm = ({
                           : Array.from({ length: 6 }).map((_, i) => (
                               <div
                                 key={i}
-                                className="flex h-12 flex-row items-center space-x-3 space-y-0 rounded-sm bg-border p-1 sm:p-2"
+                                className="bg-border flex h-12 flex-row items-center space-y-0 space-x-3 rounded-sm p-1 sm:p-2"
                               >
                                 <div className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2">
                                   <div className="flex items-center gap-1 sm:gap-2">
-                                    <Skeleton className="size-10 rounded-full bg-card" />
+                                    <Skeleton className="bg-card size-10 rounded-full" />
                                     <div className="flex flex-col gap-2">
-                                      <Skeleton className="h-5 w-36 bg-card" />
-                                      <Skeleton className="h-3 w-24 bg-card" />
+                                      <Skeleton className="bg-card h-5 w-36" />
+                                      <Skeleton className="bg-card h-3 w-24" />
                                     </div>
                                   </div>
                                 </div>

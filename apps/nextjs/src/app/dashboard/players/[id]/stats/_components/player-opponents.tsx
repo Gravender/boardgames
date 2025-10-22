@@ -125,7 +125,7 @@ export function PlayerOpponents({
                             <div className="font-medium">
                               {opponent.player.name}
                             </div>
-                            <div className="flex h-4 items-center gap-1 text-sm text-muted-foreground">
+                            <div className="text-muted-foreground flex h-4 items-center gap-1 text-sm">
                               <span>{totalGames} games together</span>
                               <Separator orientation="vertical" />
                               <span>
@@ -142,7 +142,7 @@ export function PlayerOpponents({
                             {opponent.competitiveLosses} -{" "}
                             {opponent.competitiveTies}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-muted-foreground text-xs">
                             Competitive Record
                           </div>
                         </div>
@@ -157,10 +157,10 @@ export function PlayerOpponents({
                               {Math.round(competitiveWinRate * 100)}%
                             </span>
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-muted-foreground text-xs">
                             Competitive Win Rate
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-muted-foreground text-xs">
                             {totalCompetitiveGames} games
                           </div>
                         </div>
@@ -172,10 +172,10 @@ export function PlayerOpponents({
                               {Math.round(cooperativeSuccessRate * 100)}%
                             </span>
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-muted-foreground text-xs">
                             Co-op Success Rate
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-muted-foreground text-xs">
                             {totalCooperativeGames} games
                           </div>
                         </div>
@@ -184,14 +184,14 @@ export function PlayerOpponents({
                           <div className="text-lg font-bold">
                             {opponent.teamWins}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-muted-foreground text-xs">
                             Team Victories
                           </div>
                         </div>
 
                         <div className="rounded-lg border p-3 text-center">
                           <div className="text-lg font-bold">{totalGames}</div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-muted-foreground text-xs">
                             Total Games
                           </div>
                         </div>
@@ -200,7 +200,7 @@ export function PlayerOpponents({
                       {/* Performance Comparison */}
                       {totalCompetitiveGames > 0 &&
                       totalCooperativeGames > 0 ? (
-                        <div className="rounded-lg bg-muted/30 p-3">
+                        <div className="bg-muted/30 rounded-lg p-3">
                           <div className="text-sm font-medium">
                             Performance Comparison
                           </div>
@@ -232,7 +232,7 @@ export function PlayerOpponents({
                               />
                             </div>
                           </div>
-                          <div className="mt-2 text-xs text-muted-foreground">
+                          <div className="text-muted-foreground mt-2 text-xs">
                             {cooperativeSuccessRate > competitiveWinRate
                               ? `Better coop teammates than opponents (+${Math.round((cooperativeSuccessRate - competitiveWinRate) * 100)}%)`
                               : competitiveWinRate > cooperativeSuccessRate
@@ -319,7 +319,7 @@ export function PlayerOpponents({
                                       <div className="truncate font-medium">
                                         {game.name}
                                       </div>
-                                      <div className="text-xs text-muted-foreground">
+                                      <div className="text-muted-foreground text-xs">
                                         {game.plays} matches •{" "}
                                         {formatDuration(game.playtime)}
                                       </div>
@@ -329,7 +329,7 @@ export function PlayerOpponents({
                                       <div className="text-sm font-bold">
                                         {game.wins}-{game.losses}-{game.ties}
                                       </div>
-                                      <div className="text-xs text-muted-foreground">
+                                      <div className="text-muted-foreground text-xs">
                                         {Math.round(gameWinRate * 100)}% win
                                         rate
                                       </div>

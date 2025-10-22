@@ -68,7 +68,7 @@ export function PlayerTabs({ player }: { player: Player }) {
                 )}
               </div>
 
-              <p className="mb-4 text-sm text-muted-foreground md:text-base">
+              <p className="text-muted-foreground mb-4 text-sm md:text-base">
                 Joined {formatDate(player.createdAt, "MMMM d, yyyy")}
               </p>
 
@@ -80,7 +80,7 @@ export function PlayerTabs({ player }: { player: Player }) {
                       {Math.round(player.stats.winRate * 100)}%
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Win Rate</p>
+                  <p className="text-muted-foreground text-xs">Win Rate</p>
                 </div>
 
                 <div className="flex flex-col items-center md:items-start">
@@ -90,7 +90,7 @@ export function PlayerTabs({ player }: { player: Player }) {
                       {player.stats.plays}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Games Played</p>
+                  <p className="text-muted-foreground text-xs">Games Played</p>
                 </div>
 
                 <div className="flex flex-col items-center md:items-start">
@@ -100,7 +100,7 @@ export function PlayerTabs({ player }: { player: Player }) {
                       {player.stats.wins}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Victories</p>
+                  <p className="text-muted-foreground text-xs">Victories</p>
                 </div>
 
                 <div className="flex flex-col items-center md:items-start">
@@ -110,7 +110,7 @@ export function PlayerTabs({ player }: { player: Player }) {
                       {formatDuration(player.stats.playtime)}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     Total Play Time
                   </p>
                 </div>

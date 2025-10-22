@@ -3,7 +3,7 @@ import { Skeleton } from "@board-games/ui/skeleton";
 export function GamesListSkeleton() {
   return (
     <>
-      <div className="rounded-lg border bg-card shadow-sm">
+      <div className="bg-card rounded-lg border shadow-sm">
         <div className="border-b p-4">
           <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
             <div>

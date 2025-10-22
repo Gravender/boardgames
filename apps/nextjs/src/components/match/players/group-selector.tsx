@@ -34,7 +34,7 @@ export function PlayerGroupSelector({
             .map((group) => (
               <Card
                 key={group.id}
-                className="cursor-pointer hover:bg-accent/50"
+                className="hover:bg-accent/50 cursor-pointer"
                 onClick={() => handleAddGroup(group)}
               >
                 <CardHeader className="p-3">

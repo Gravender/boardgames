@@ -50,7 +50,7 @@ export function FriendStatsPage({ friendId }: { friendId: string }) {
         <CardHeader>
           <CardTitle>Summary</CardTitle>
           <CardDescription>
-            <div className="flex w-full flex-col items-center justify-center gap-2 text-secondary-foreground">
+            <div className="text-secondary-foreground flex w-full flex-col items-center justify-center gap-2">
               <PlayerImage
                 image={friend.image}
                 alt={friend.name}
@@ -65,19 +65,19 @@ export function FriendStatsPage({ friendId }: { friendId: string }) {
             <div className="flex w-full items-center justify-center gap-4 text-sm">
               <div className="flex w-24 flex-col items-center gap-2">
                 <h4 className="font-medium">Plays:</h4>
-                <div className="flex justify-between text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between">
                   <span>{friend.linkedPlayer.matches.length}</span>
                 </div>
               </div>
               <div className="flex w-24 flex-col items-center gap-2">
                 <h4 className="font-medium">Duration:</h4>
-                <div className="flex justify-between text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between">
                   <span>{formatDuration(friend.linkedPlayer.duration)}</span>
                 </div>
               </div>
               <div className="flex w-24 flex-col items-center gap-2">
                 <h4 className="font-medium">Players:</h4>
-                <div className="flex justify-between text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between">
                   <span>{friend.linkedPlayer.players}</span>
                 </div>
               </div>
@@ -85,19 +85,19 @@ export function FriendStatsPage({ friendId }: { friendId: string }) {
             <div className="flex w-full items-center justify-center gap-4 text-sm">
               <div className="flex w-24 flex-col items-center gap-2">
                 <h4 className="font-medium">Games:</h4>
-                <div className="flex justify-between text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between">
                   <span>{friend.linkedPlayer.friendGames.length}</span>
                 </div>
               </div>
               <div className="flex w-24 flex-col items-center gap-2">
                 <h4 className="font-medium">WinRate:</h4>
-                <div className="flex justify-between text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between">
                   <span>{(friend.linkedPlayer.winRate * 100).toFixed(2)}%</span>
                 </div>
               </div>
               <div className="flex w-24 flex-col items-center gap-2">
                 <h4 className="font-medium">Wins:</h4>
-                <div className="flex justify-between text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between">
                   <span>{friend.linkedPlayer.wins}</span>
                 </div>
               </div>
@@ -136,7 +136,7 @@ export function FriendStatsPage({ friendId }: { friendId: string }) {
               )}
             </CardTitle>
             <CardDescription>
-              <div className="flex w-full items-center gap-2 text-secondary-foreground">
+              <div className="text-secondary-foreground flex w-full items-center gap-2">
                 <GameImage
                   image={lastPlayed.image}
                   alt={`${lastPlayed.gameName} game image`}
@@ -157,7 +157,7 @@ export function FriendStatsPage({ friendId }: { friendId: string }) {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="flex flex-col gap-2 text-muted-foreground">
+                    <div className="text-muted-foreground flex flex-col gap-2">
                       <div className="flex items-center gap-1">
                         <FormattedDate date={lastPlayed.date} Icon={Calendar} />
                         <span className="flex items-center gap-1">
@@ -186,13 +186,13 @@ export function FriendStatsPage({ friendId }: { friendId: string }) {
             <div className="flex w-2/5 flex-col gap-2 text-sm">
               <div className="flex items-center gap-2">
                 <h4 className="font-medium">Players:</h4>
-                <div className="flex justify-between text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between">
                   <span>{lastPlayed.players.length}</span>
                 </div>
               </div>
               <div className="flex gap-2">
                 <h4 className="font-medium">Winner:</h4>
-                <div className="flex flex-wrap text-muted-foreground">
+                <div className="text-muted-foreground flex flex-wrap">
                   {lastPlayed.players
                     .filter((player) => player.isWinner)
                     .map((player) => (
@@ -207,7 +207,7 @@ export function FriendStatsPage({ friendId }: { friendId: string }) {
               </div>
               <div className="flex gap-2 text-wrap">
                 <h4 className="shrink-0 font-medium">Participants:</h4>
-                <div className="flex flex-wrap text-muted-foreground">
+                <div className="text-muted-foreground flex flex-wrap">
                   {lastPlayed.players.map((player) => (
                     <span
                       key={player.playerId}
@@ -223,7 +223,7 @@ export function FriendStatsPage({ friendId }: { friendId: string }) {
             <div className="flex w-2/5 flex-col gap-2 text-sm">
               <div className="flex items-center gap-2">
                 <h4 className="font-medium">Score:</h4>
-                <div className="flex justify-between text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between">
                   <span>{lastPlayed.outcome.score}</span>
                 </div>
               </div>
@@ -244,22 +244,22 @@ export function FriendStatsPage({ friendId }: { friendId: string }) {
                     key={`${match.id}-${match.type}`}
                     prefetch={true}
                     href={`/dashboard/games${match.type === "Shared" ? "/shared" : ""}/${match.gameId}/${match.id}${match.finished ? "/summary" : ""}`}
-                    className="block h-40 w-64 rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                    className="hover:bg-muted/50 block h-40 w-64 rounded-lg border p-4 transition-colors"
                   >
                     <h3 className="truncate font-medium">{match.name}</h3>
 
                     <FormattedDate
-                      className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"
+                      className="text-muted-foreground mt-2 flex items-center gap-2 text-sm"
                       date={match.date}
                       Icon={Calendar}
                     />
 
-                    <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
                       <Users className="h-4 w-4" />
                       <span>{match.players.length} players</span>
                     </div>
 
-                    <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
                       <MapPinIcon className="h-4 w-4" />
                       <span>{match.locationName ?? "N/A"}</span>
                     </div>

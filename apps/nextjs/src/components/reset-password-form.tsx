@@ -137,7 +137,7 @@ export function ResetPasswordForm({
           </Form>
         </CardContent>
       </Card>
-      <div className="*:[a]:hover:text-primary *:[a]:underline *:[a]:underline-offset-4 text-balance text-center text-xs text-muted-foreground">
+      <div className="*:[a]:hover:text-primary text-muted-foreground text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
         By clicking continue, you agree to our{" "}
         <Link href="#">Terms of Service</Link> and{" "}
         <Link href="#">Privacy Policy</Link>.

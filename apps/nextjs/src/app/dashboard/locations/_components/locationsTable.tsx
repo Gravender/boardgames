@@ -36,7 +36,7 @@ export function LocationsTable() {
   }, [filteredLocations, setLocations]);
 
   return (
-    <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
+    <div className="relative container mx-auto h-[90vh] max-w-3xl px-4">
       <CardHeader className="justify-between">
         <CardTitle>Locations</CardTitle>
         <div className="flex w-full max-w-sm items-center gap-2">
@@ -70,7 +70,7 @@ export function LocationsTable() {
                     className="flex items-center gap-2"
                   >
                     <div className="relative flex h-14 w-14 shrink-0 overflow-hidden rounded-full shadow">
-                      <div className="flex h-full w-full items-center justify-center rounded-full bg-muted">
+                      <div className="bg-muted flex h-full w-full items-center justify-center rounded-full">
                         <MapPin />
                       </div>
                     </div>
@@ -99,7 +99,7 @@ export function LocationsTable() {
           })}
         </div>
       </ScrollArea>
-      <div className="absolute bottom-4 right-4 z-10 sm:right-10">
+      <div className="absolute right-4 bottom-4 z-10 sm:right-10">
         <AddLocationDialog />
       </div>
     </div>

@@ -785,7 +785,7 @@ const GameForm = ({
                                   "h-12 w-12 p-2",
                                   imagePreview?.type === "svg" &&
                                     imagePreview.name === option.name &&
-                                    "ring-2 ring-primary",
+                                    "ring-primary ring-2",
                                 )}
                                 onClick={() => {
                                   field.onChange({
@@ -860,7 +860,7 @@ const GameForm = ({
               control={form.control}
               name="ownedBy"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormItem className="flex flex-row items-start space-y-0 space-x-3">
                   <FormLabel>Owned by</FormLabel>
                   <FormControl>
                     <Checkbox
@@ -1121,7 +1121,7 @@ const GameForm = ({
                             <div className="mb-2 flex w-full items-center gap-3 text-sm">
                               <div className="flex min-w-20 items-center gap-1">
                                 <span>Win Condition:</span>
-                                <span className="text-sm text-muted-foreground">
+                                <span className="text-muted-foreground text-sm">
                                   {scoreSheet.winCondition ?? "Highest Score"}
                                 </span>
                               </div>
@@ -1131,7 +1131,7 @@ const GameForm = ({
                               />
                               <div className="flex min-w-20 items-center gap-1">
                                 <span>Rounds:</span>
-                                <span className="text-sm text-muted-foreground">
+                                <span className="text-muted-foreground text-sm">
                                   {scoreSheet.rounds.length > 0
                                     ? scoreSheet.rounds.length
                                     : "1"}
@@ -1260,7 +1260,7 @@ const RolesForm = ({
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <CardContent className="space-y-8 px-2 sm:px-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
             <Input
               placeholder="Search roles..."
               value={roleSearchTerm}
@@ -1417,7 +1417,7 @@ const RolesForm = ({
                         <div className="max-w-[90vw]">
                           <h4 className="text-sm font-medium">{role.name}</h4>
                           {role.description && (
-                            <p className="max-w-xs truncate text-wrap text-xs text-muted-foreground">
+                            <p className="text-muted-foreground max-w-xs truncate text-xs text-wrap">
                               {role.description}
                             </p>
                           )}
@@ -1438,7 +1438,7 @@ const RolesForm = ({
                           variant="ghost"
                           size="icon"
                           onClick={() => removeRole(roleIndex)}
-                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          className="text-destructive hover:text-destructive h-8 w-8"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -1549,7 +1549,7 @@ const ScoresheetForm = ({
               scoresheet.permission === "view"
             }
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormItem className="flex flex-row items-start space-y-0 space-x-3">
                 <FormLabel>Is Co-op?</FormLabel>
                 <FormControl>
                   <Checkbox
@@ -1566,7 +1566,7 @@ const ScoresheetForm = ({
             control={form.control}
             name="isDefault"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormItem className="flex flex-row items-start space-y-0 space-x-3">
                 <FormLabel>Is Default?</FormLabel>
                 <FormControl>
                   <Checkbox

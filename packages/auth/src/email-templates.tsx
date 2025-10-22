@@ -109,7 +109,7 @@ export const EmailTemplate = ({
             <Text className={"text-[14px] leading-[24px]"}>{content}</Text>
 
             {action && url && (
-              <Section className="mb-[32px] mt-[32px] text-center">
+              <Section className="mt-[32px] mb-[32px] text-center">
                 <Button
                   className="action-button rounded px-5 py-3 text-center text-[12px] font-semibold no-underline"
                   href={url}

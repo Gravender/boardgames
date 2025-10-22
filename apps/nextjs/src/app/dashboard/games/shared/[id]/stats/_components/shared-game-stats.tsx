@@ -109,7 +109,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
 
       {/* Game image and overview cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-        <Card className="row-span-2 hidden xs:block">
+        <Card className="xs:block row-span-2 hidden">
           <CardContent className="flex items-center justify-center p-0">
             <GameImage
               image={gameStats.image}
@@ -123,12 +123,12 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
           <CardContent className="p-2 pt-2">
             <div className="flex items-center justify-between px-2">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-muted-foreground text-sm font-medium">
                   Total Matches
                 </p>
                 <p className="text-2xl font-bold">{totalMatches}</p>
               </div>
-              <Activity className="h-8 w-8 text-muted-foreground opacity-50" />
+              <Activity className="text-muted-foreground h-8 w-8 opacity-50" />
             </div>
           </CardContent>
         </Card>
@@ -137,14 +137,14 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
           <CardContent className="p-2 pt-2">
             <div className="flex items-center justify-between px-2">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-muted-foreground text-sm font-medium">
                   Win Rate
                 </p>
                 <p className="text-2xl font-bold">
                   {gameStats.winRate.toFixed(2)}%
                 </p>
               </div>
-              <Trophy className="h-8 w-8 text-muted-foreground opacity-50" />
+              <Trophy className="text-muted-foreground h-8 w-8 opacity-50" />
             </div>
           </CardContent>
         </Card>
@@ -153,12 +153,12 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
           <CardContent className="p-2 pt-2">
             <div className="flex items-center justify-between px-2">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-muted-foreground text-sm font-medium">
                   Avg. Duration
                 </p>
                 <p className="text-2xl font-bold">{averageDuration} min</p>
               </div>
-              <Clock className="h-8 w-8 text-muted-foreground opacity-50" />
+              <Clock className="text-muted-foreground h-8 w-8 opacity-50" />
             </div>
           </CardContent>
         </Card>
@@ -167,12 +167,12 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
           <CardContent className="p-2 pt-2">
             <div className="flex items-center justify-between px-2">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-muted-foreground text-sm font-medium">
                   Players
                 </p>
                 <p className="text-2xl font-bold">{totalPlayers}</p>
               </div>
-              <Users className="h-8 w-8 text-muted-foreground opacity-50" />
+              <Users className="text-muted-foreground h-8 w-8 opacity-50" />
             </div>
           </CardContent>
         </Card>
@@ -186,7 +186,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
             <CardDescription>
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl font-semibold text-secondary-foreground">
+                  <span className="text-secondary-foreground text-xl font-semibold">
                     Team: {lastMatch.name}
                   </span>
                   <Badge variant={lastMatch.won ? "default" : "destructive"}>
@@ -218,7 +218,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
               <div className="flex-1">
                 <div className="space-y-4">
                   <div>
-                    <h4 className="mb-2 text-base font-semibold text-secondary-foreground">
+                    <h4 className="text-secondary-foreground mb-2 text-base font-semibold">
                       Players
                     </h4>
                     {/* Group players by team */}
@@ -259,7 +259,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                                   >
                                     <div className="flex items-center justify-between gap-2 pb-4">
                                       <div className="flex items-center gap-2">
-                                        <Users className="h-5 w-5 text-muted-foreground" />
+                                        <Users className="text-muted-foreground h-5 w-5" />
                                         <h3 className="font-semibold">
                                           {`Team: ${team?.name}`}
                                         </h3>
@@ -302,7 +302,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                                         )}
                                       </div>
                                     </div>
-                                    <div className="grid grid-cols-1 gap-3 border-l-2 border-muted-foreground/20 pl-2 sm:grid-cols-2">
+                                    <div className="border-muted-foreground/20 grid grid-cols-1 gap-3 border-l-2 pl-2 sm:grid-cols-2">
                                       {teamPlayers.map((player) => (
                                         <li
                                           key={player.id}
@@ -403,7 +403,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
 
                   {lastMatch.winners.length > 0 && (
                     <div>
-                      <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                      <h4 className="text-muted-foreground mb-2 text-sm font-medium">
                         Winners
                       </h4>
                       <div className="flex flex-wrap gap-2">
@@ -437,7 +437,7 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                   {gameStats.matches.map((match) => {
                     return (
                       <div
-                        className="flex shrink-0 flex-col items-center gap-2 text-sm text-secondary-foreground"
+                        className="text-secondary-foreground flex shrink-0 flex-col items-center gap-2 text-sm"
                         key={match.id}
                       >
                         <span className="max-w-24 truncate font-semibold sm:max-w-28">
@@ -505,16 +505,16 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
-                      <div className="rounded-lg bg-muted/30 p-4">
-                        <h3 className="text-sm font-medium text-muted-foreground">
+                      <div className="bg-muted/30 rounded-lg p-4">
+                        <h3 className="text-muted-foreground text-sm font-medium">
                           Matches Played
                         </h3>
                         <p className="mt-1 text-2xl font-bold">
                           {currentPlayer.scoresheets[0]?.plays}
                         </p>
                       </div>
-                      <div className="rounded-lg bg-muted/30 p-4">
-                        <h3 className="text-sm font-medium text-muted-foreground">
+                      <div className="bg-muted/30 rounded-lg p-4">
+                        <h3 className="text-muted-foreground text-sm font-medium">
                           Win Rate
                         </h3>
                         <p className="mt-1 text-2xl font-bold">
@@ -524,16 +524,16 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
                           %
                         </p>
                       </div>
-                      <div className="rounded-lg bg-muted/30 p-4">
-                        <h3 className="text-sm font-medium text-muted-foreground">
+                      <div className="bg-muted/30 rounded-lg p-4">
+                        <h3 className="text-muted-foreground text-sm font-medium">
                           Best Score
                         </h3>
                         <p className="mt-1 text-2xl font-bold">
                           {currentPlayer.scoresheets[0]?.bestScore ?? "N/A"}
                         </p>
                       </div>
-                      <div className="rounded-lg bg-muted/30 p-4">
-                        <h3 className="text-sm font-medium text-muted-foreground">
+                      <div className="bg-muted/30 rounded-lg p-4">
+                        <h3 className="text-muted-foreground text-sm font-medium">
                           Worst Score
                         </h3>
                         <p className="mt-1 text-2xl font-bold">

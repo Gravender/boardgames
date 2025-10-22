@@ -228,7 +228,7 @@ function Content({
                         <div
                           key={player.id}
                           className={cn(
-                            "flex flex-row items-center space-x-3 space-y-0 rounded-sm p-2",
+                            "flex flex-row items-center space-y-0 space-x-3 rounded-sm p-2",
                             numberPlacements > 1
                               ? "bg-destructive/50"
                               : "bg-border",
@@ -238,7 +238,7 @@ function Content({
                             <PopoverTrigger asChild>
                               <button className="flex w-full items-center justify-between gap-2 text-sm font-normal">
                                 <div className="flex items-center gap-2">
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                                  <div className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-10 w-10 items-center justify-center rounded-md text-sm font-medium">
                                     {player.placement}
                                   </div>
                                   {player.teamId === null ? (

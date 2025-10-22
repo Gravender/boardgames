@@ -131,7 +131,7 @@ export function MatchDropDown({ match }: { match: Game["matches"][number] }) {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="flex items-center gap-2 text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
+                className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground flex items-center gap-2"
                 onClick={() => setIsDeleteDialogOpen(true)}
               >
                 <Trash2Icon className="mr-2 h-4 w-4" />

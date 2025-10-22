@@ -26,7 +26,7 @@ export function FriendSharedItemsPage({ friendId }: { friendId: string }) {
           />
           <div>
             <CardTitle>{friend.name}</CardTitle>
-            <p className="text-sm text-muted-foreground">Shared Items</p>
+            <p className="text-muted-foreground text-sm">Shared Items</p>
           </div>
         </CardHeader>
       </Card>

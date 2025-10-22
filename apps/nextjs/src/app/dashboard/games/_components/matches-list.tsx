@@ -200,7 +200,7 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
 
   if (matches.length === 0) {
     return (
-      <div className="rounded-lg bg-muted/30 py-8 text-center">
+      <div className="bg-muted/30 rounded-lg py-8 text-center">
         <p className="text-muted-foreground">No matches played yet</p>
       </div>
     );
@@ -211,7 +211,7 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
       {/* Search bar and filter toggle */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-grow">
-          <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
+          <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
           <Input
             placeholder="Search matches..."
             className="pl-9"
@@ -249,7 +249,7 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
 
       {/* Collapsible filters */}
       <div
-        className={`${isFilterOpen ? "block" : "hidden"} space-y-3 rounded-md bg-muted/50 p-4`}
+        className={`${isFilterOpen ? "block" : "hidden"} bg-muted/50 space-y-3 rounded-md p-4`}
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
           {/* Sort */}
@@ -410,12 +410,12 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
       </div>
 
       {/* Results count */}
-      <div className="text-sm text-muted-foreground">
+      <div className="text-muted-foreground text-sm">
         Showing {filteredMatches.length} of {matches.length} matches
       </div>
 
       {/* Matches list */}
-      <ScrollArea className="h-[50vh] xs:h-[60vh] sm:h-[65vh]">
+      <ScrollArea className="xs:h-[60vh] h-[50vh] sm:h-[65vh]">
         <div className="grid gap-2 pb-20">
           {filteredMatches.length > 0 ? (
             filteredMatches.map((match) => (
@@ -468,13 +468,13 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
                               : `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}`
                           }
                         >
-                          <h3 className="text-base font-medium xs:text-lg">
+                          <h3 className="xs:text-lg text-base font-medium">
                             {match.name}
                           </h3>
                         </Link>
 
                         {/* Dropdown menu */}
-                        <div className="absolute right-4 top-4">
+                        <div className="absolute top-4 right-4">
                           <MatchDropDown match={match} />
                         </div>
                       </div>
@@ -498,7 +498,7 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
                       </div>
 
                       {/* Match details row */}
-                      <div className="flex flex-row gap-4 text-sm text-muted-foreground">
+                      <div className="text-muted-foreground flex flex-row gap-4 text-sm">
                         <FormattedDate
                           date={match.date}
                           className="flex items-center gap-1 text-sm sm:text-base"
@@ -533,7 +533,7 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
               </Card>
             ))
           ) : (
-            <div className="rounded-lg bg-muted/30 py-8 text-center">
+            <div className="bg-muted/30 rounded-lg py-8 text-center">
               <p className="text-muted-foreground">
                 No matches found matching your criteria
               </p>

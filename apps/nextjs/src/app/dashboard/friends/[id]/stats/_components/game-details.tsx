@@ -62,7 +62,7 @@ export function GameDetails({ data }: { data: Games }) {
         containerClassname="rounded-lg h-72 md:h-[30rem] w-full"
         className="w-full"
       >
-        <TableHeader className="sticky top-0 z-20 bg-card text-card-foreground">
+        <TableHeader className="bg-card text-card-foreground sticky top-0 z-20">
           <TableRow>
             <TableHead className="w-16 px-1 sm:w-full sm:px-4">
               <button

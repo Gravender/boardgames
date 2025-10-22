@@ -231,7 +231,7 @@ export function PlayerOverview({ player }: { player: Player }) {
             </ChartContainer>
           </CardContent>
           <CardFooter>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               {gameChartMode === "competitive"
                 ? `${player.name} has won ${player.stats.competitiveWins} out of ${player.stats.competitivePlays} competitive games.`
                 : gameChartMode === "cooperative"
@@ -268,7 +268,7 @@ export function PlayerOverview({ player }: { player: Player }) {
             </ChartContainer>
           </CardContent>
           <CardFooter>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               Most common placement: #
               {
                 Object.entries(player.stats.placements).sort(
@@ -330,7 +330,7 @@ export function PlayerOverview({ player }: { player: Player }) {
                                 <Trophy className="h-4 w-4 text-yellow-500" />
                               )}
                             </div>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                            <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
                               <FormattedDate
                                 date={match.date}
                                 Icon={Calendar}
@@ -346,7 +346,7 @@ export function PlayerOverview({ player }: { player: Player }) {
                                 </span>
                               )}
                             </div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-muted-foreground text-sm">
                               {isCoop ? (
                                 isWinner ? (
                                   <span className="font-medium text-green-600">
@@ -385,7 +385,7 @@ export function PlayerOverview({ player }: { player: Player }) {
                               {isWinner ? "Victory" : "Defeat"}
                             </Badge>
                             {playerInMatchTeam && (
-                              <div className="mt-1 text-xs text-muted-foreground">
+                              <div className="text-muted-foreground mt-1 text-xs">
                                 {playerInMatchTeam.name}
                               </div>
                             )}
@@ -439,7 +439,7 @@ export function PlayerOverview({ player }: { player: Player }) {
 
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{game.name}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-muted-foreground text-xs">
                       {game.wins} wins / {game.plays} plays
                     </div>
                   </div>
@@ -448,7 +448,7 @@ export function PlayerOverview({ player }: { player: Player }) {
                     <div className="text-lg font-bold">
                       {Math.round((game.wins / game.plays) * 100)}%
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-muted-foreground text-xs">
                       Win Rate
                     </div>
                   </div>
@@ -479,7 +479,7 @@ export function PlayerOverview({ player }: { player: Player }) {
 
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{teammate.name}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-muted-foreground text-xs">
                       {wins} wins together / {count} games
                     </div>
                   </div>
@@ -488,7 +488,7 @@ export function PlayerOverview({ player }: { player: Player }) {
                     <div className="text-lg font-bold">
                       {Math.round((wins / count) * 100)}%
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-muted-foreground text-xs">
                       Win Rate
                     </div>
                   </div>

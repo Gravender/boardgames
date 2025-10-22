@@ -52,7 +52,7 @@ export function GameCard({ game }: GameCardProps) {
   return (
     <li
       data-slot="card"
-      className="relative flex h-full flex-col overflow-hidden rounded-lg border bg-card p-1 pb-2 text-card-foreground shadow-sm transition-shadow hover:shadow-md"
+      className="bg-card text-card-foreground relative flex h-full flex-col overflow-hidden rounded-lg border p-1 pb-2 shadow-sm transition-shadow hover:shadow-md"
     >
       <div className="flex flex-row items-center">
         <Link
@@ -73,13 +73,13 @@ export function GameCard({ game }: GameCardProps) {
               <>
                 <Badge
                   variant="outline"
-                  className="absolute left-1 top-1 bg-blue-600 px-1 text-xs text-white xs:hidden"
+                  className="xs:hidden absolute top-1 left-1 bg-blue-600 px-1 text-xs text-white"
                 >
                   S
                 </Badge>
                 <Badge
                   variant="outline"
-                  className="absolute left-1 top-1 hidden bg-blue-600 text-xs text-white xs:inline-flex"
+                  className="xs:inline-flex absolute top-1 left-1 hidden bg-blue-600 text-xs text-white"
                 >
                   Shared
                 </Badge>
@@ -92,14 +92,14 @@ export function GameCard({ game }: GameCardProps) {
             <div className="flex items-center gap-2">
               <h3 className="line-clamp-1 text-sm font-medium">{game.name}</h3>
               {game.yearPublished && (
-                <span className="mr-auto flex-shrink-0 text-xs text-muted-foreground">
+                <span className="text-muted-foreground mr-auto flex-shrink-0 text-xs">
                   ({game.yearPublished})
                 </span>
               )}
             </div>
             <GamesDropDown data={game} />
           </div>
-          <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-1 flex items-center justify-between text-xs">
             <div className="flex flex-wrap gap-x-3 gap-y-1">
               <div className="flex flex-shrink-0 items-center gap-1">
                 <Users className="h-3 w-3" />
@@ -121,7 +121,7 @@ export function GameCard({ game }: GameCardProps) {
               )}
             </div>
           </div>
-          <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-1 flex items-center justify-between text-xs">
             <div className="flex items-center gap-1">
               <GamepadIcon className="h-3 w-3 flex-shrink-0" />
               <span>

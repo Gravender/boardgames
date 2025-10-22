@@ -15,7 +15,7 @@ export default async function Page() {
   );
   return (
     <HydrateClient>
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background">
+      <div className="bg-background flex min-h-screen flex-col items-center justify-center">
         <h1 className="mb-8 text-3xl font-bold">Plays Calendar</h1>
         <div className="h-40 w-full max-w-3xl flex-1">
           <ClientCalendar matchDayMap={matchDayMap} />

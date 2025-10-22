@@ -83,7 +83,7 @@ export default function ChildMatchesRequest({
               ` (${possibleMatches} possible ${possibleMatches === 1 ? "match" : "matches"})`}
           </span>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {matches.reduce((acc, curr) => {
             if (curr.accept) return acc + 1;
             return acc;
@@ -194,7 +194,7 @@ export default function ChildMatchesRequest({
                                     >
                                       <div>
                                         <p>{potentialMatch.name}</p>
-                                        <ul className="text-xs text-muted-foreground">
+                                        <ul className="text-muted-foreground text-xs">
                                           <li>
                                             Date:{" "}
                                             {new Date(
@@ -226,7 +226,7 @@ export default function ChildMatchesRequest({
                               )}
                             </div>
                           ) : (
-                            <p className="text-sm italic text-muted-foreground">
+                            <p className="text-muted-foreground text-sm italic">
                               No matches found on{" "}
                               {new Date(
                                 matchItem.item.date,
@@ -236,14 +236,14 @@ export default function ChildMatchesRequest({
                           )}
 
                           {gameMatches.length === 0 && (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground text-sm">
                               This match will be added as a new match to your
                               collection.
                             </p>
                           )}
                         </div>
                       ) : (
-                        <div className="py-2 text-center text-sm text-muted-foreground">
+                        <div className="text-muted-foreground py-2 text-center text-sm">
                           This match will not be added to your collection.
                         </div>
                       )}
