@@ -4,18 +4,15 @@
   "rsc": true,
   "tsx": true,
   "tailwind": {
-    "config": "../../tooling/tailwind/web.ts",
-    "css": "unused.css",
+    "config": "../../tooling/tailwind/theme.css",
+    "css": "../../tooling/tailwind/theme.css",
     "baseColor": "zinc",
-    "cssVariables": true,
-    "prefix": ""
+    "cssVariables": true
   },
   "aliases": {
     "components": "src/",
     "utils": "@board-games/ui/utils",
-    "ui": "src/",
-    "lib": "/lib",
-    "hooks": "@board-games/ui/hooks"
+    "ui": "src/"
   },
   "iconLibrary": "lucide"
 }
