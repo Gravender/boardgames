@@ -21,31 +21,31 @@ export default function DaysPlayedChart() {
   const chartConfig = {
     Sunday: {
       label: "Sunday",
-      color: "hsl(var(--chart-1))",
+      color: "var(--chart-1)",
     },
     Monday: {
       label: "Monday",
-      color: "hsl(var(--chart-2))",
+      color: "var(--chart-2)",
     },
     Tuesday: {
       label: "Tuesday",
-      color: "hsl(var(--chart-3))",
+      color: "var(--chart-3)",
     },
     Wednesday: {
       label: "Wednesday",
-      color: "hsl(var(--chart-4))",
+      color: "var(--chart-4)",
     },
     Thursday: {
       label: "Thursday",
-      color: "hsl(var(--chart-5))",
+      color: "var(--chart-5)",
     },
     Friday: {
       label: "Friday",
-      color: "hsl(var(--muted-foreground))",
+      color: "var(--muted-foreground)",
     },
     Saturday: {
       label: "Saturday",
-      color: "hsl(var(--primary))",
+      color: "var(--primary)",
     },
   };
   const COLORS = [
@@ -65,7 +65,7 @@ export default function DaysPlayedChart() {
   return (
     <ChartContainer
       config={chartConfig}
-      className="mx-auto aspect-square max-h-[500px] min-h-[150px] [&_.recharts-text]:fill-background"
+      className="[&_.recharts-text]:fill-background mx-auto aspect-square max-h-[500px] min-h-[150px]"
     >
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>

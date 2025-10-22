@@ -258,7 +258,7 @@ export function ScoreSheetsStats({
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="text-center text-muted-foreground">
+          <div className="text-muted-foreground text-center">
             No scoresheets available for analysis.
           </div>
         </CardContent>
@@ -325,10 +325,10 @@ export function ScoreSheetsStats({
                           >
                             {scoresheet.isCoop ? "Co-op" : "Competitive"}
                           </Badge>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-muted-foreground text-xs">
                             ({scoresheet.rounds.length} rounds)
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-muted-foreground text-xs">
                             {scoresheet.plays} plays
                           </span>
                         </div>
@@ -379,10 +379,10 @@ export function ScoreSheetsStats({
             </div>
             {currentScoresheet.winCondition === "Target Score" && (
               <div className="border-t pt-2">
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   Target Score:
                 </span>
-                <div className="text-lg font-bold text-primary">
+                <div className="text-primary text-lg font-bold">
                   {currentScoresheet.targetScore}
                 </div>
               </div>
@@ -424,7 +424,7 @@ export function ScoreSheetsStats({
                 currentScoresheet.winCondition === "Lowest Score") && (
                 <div className="border-t pt-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       Score Range:
                     </span>
                     <div className="flex items-center gap-2">
@@ -466,7 +466,7 @@ export function ScoreSheetsStats({
         <CardContent className="p-2">
           <div className="flex">
             <Table containerClassname=" overflow-scroll max-h-[35vh] rounded-lg">
-              <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground">
+              <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20">
                 <TableRow>
                   <TableHead className="w-16 px-2 sm:w-full sm:px-4">
                     <button
@@ -621,7 +621,7 @@ export function ScoreSheetsStats({
                   config={{
                     score: {
                       label: "Score",
-                      color: "hsl(var(--chart-1))",
+                      color: "var(--chart-1)",
                     },
                   }}
                   className="max-h-64 w-full"
@@ -664,7 +664,7 @@ export function ScoreSheetsStats({
                 config={{
                   winRate: {
                     label: "Win Rate (%)",
-                    color: "hsl(var(--chart-2))",
+                    color: "var(--chart-2)",
                   },
                 }}
                 className="max-h-64 w-full"
@@ -702,7 +702,7 @@ export function ScoreSheetsStats({
               Round-by-Round Performance
             </CardTitle>
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 text-sm">
               <FileText className="h-4 w-4" />
               Scoresheet: {currentScoresheet.name} (
               {currentScoresheet.isCoop ? "Co-op" : "Competitive"})
@@ -711,7 +711,7 @@ export function ScoreSheetsStats({
           <CardContent className="p-2">
             <div className="flex">
               <Table containerClassname=" overflow-scroll max-h-[35vh] rounded-lg">
-                <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground">
+                <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20">
                   <TableRow>
                     <TableHead className="w-16 px-2 sm:w-full sm:px-4">
                       Player
@@ -757,7 +757,7 @@ export function ScoreSheetsStats({
                               <span className="font-medium sm:font-semibold">
                                 {player.name}
                               </span>
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-muted-foreground text-xs">
                                 {`(${player.plays} games)`}
                               </div>
                             </div>
@@ -804,7 +804,7 @@ export function ScoreSheetsStats({
                                           {playerRound.worstScore ?? "N/A"}
                                         </span>
                                       </div>
-                                      <div className="text-xs text-muted-foreground">
+                                      <div className="text-muted-foreground text-xs">
                                         {`${
                                           playerRound.scores.filter(
                                             (s) => s.score !== null,
@@ -833,7 +833,7 @@ export function ScoreSheetsStats({
               </Table>
             </div>
 
-            <div className="mt-4 text-sm text-muted-foreground">
+            <div className="text-muted-foreground mt-4 text-sm">
               <p>
                 Shows average scores per round based on the selected scoresheet.
                 Round data is linked to specific scoresheets.

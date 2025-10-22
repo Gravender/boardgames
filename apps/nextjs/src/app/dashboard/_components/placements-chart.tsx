@@ -19,23 +19,23 @@ export default function PlacementsChart() {
   const chartConfig = {
     first: {
       label: "1st Place",
-      color: "hsl(var(--chart-1))",
+      color: "var(--chart-1)",
     },
     second: {
       label: "2nd Place",
-      color: "hsl(var(--chart-2))",
+      color: "var(--chart-2)",
     },
     third: {
       label: "3rd Place",
-      color: "hsl(var(--chart-3))",
+      color: "var(--chart-3)",
     },
     fourth: {
       label: "4th Place",
-      color: "hsl(var(--chart-4))",
+      color: "var(--chart-4)",
     },
     other: {
       label: "5th+ Place",
-      color: "hsl(var(--chart-5))",
+      color: "var(--chart-5)",
     },
   };
   const COLORS = [
@@ -53,7 +53,7 @@ export default function PlacementsChart() {
   return (
     <ChartContainer
       config={chartConfig}
-      className="mx-auto aspect-square max-h-[500px] min-h-[150px] [&_.recharts-text]:fill-background"
+      className="[&_.recharts-text]:fill-background mx-auto aspect-square max-h-[500px] min-h-[150px]"
     >
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>

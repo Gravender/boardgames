@@ -81,11 +81,11 @@ export function PlayerTrends({ player }: { player: Player }) {
   const performanceChartConfig = {
     winRate: {
       label: "Win Rate (%)",
-      color: "hsl(var(--chart-1))",
+      color: "var(--chart-1)",
     },
     gamesPlayed: {
       label: "Matches Played",
-      color: "hsl(var(--chart-2))",
+      color: "var(--chart-2)",
     },
   } satisfies ChartConfig;
   const pieChartData = useMemo(() => {
@@ -107,7 +107,7 @@ export function PlayerTrends({ player }: { player: Player }) {
                 : game.name,
             value: game.playtime,
             fullName: game.name,
-            fill: index > 5 ? "#3b82f6" : `hsl(var(--chart-${index + 1}))`,
+            fill: index > 5 ? "#3b82f6" : `var(--chart-${index + 1}))`,
           });
         } else {
           otherPlaytime += game.playtime;
@@ -186,7 +186,7 @@ export function PlayerTrends({ player }: { player: Player }) {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-lg border p-4">
-                  <div className="mb-1 text-sm text-muted-foreground">
+                  <div className="text-muted-foreground mb-1 text-sm">
                     Current Streak
                   </div>
                   <div className="flex items-center gap-2">
@@ -208,7 +208,7 @@ export function PlayerTrends({ player }: { player: Player }) {
                 </div>
 
                 <div className="rounded-lg border p-4">
-                  <div className="mb-1 text-sm text-muted-foreground">
+                  <div className="text-muted-foreground mb-1 text-sm">
                     Longest Win Streak
                   </div>
                   <div className="flex items-center gap-2">
@@ -283,7 +283,7 @@ export function PlayerTrends({ player }: { player: Player }) {
             </ChartContainer>
           </CardContent>
           <CardFooter>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               Total play time: {formatDuration(player.stats.playtime)}
             </div>
           </CardFooter>
