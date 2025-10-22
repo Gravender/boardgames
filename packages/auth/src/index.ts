@@ -1,4 +1,5 @@
 import type { BetterAuthOptions } from "better-auth";
+import type { BetterAuthPlugin } from "better-auth/plugins";
 import React from "react";
 import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
@@ -80,7 +81,7 @@ export function initAuth(options: {
          */
         currentURL: options.baseUrl,
         productionURL: options.productionUrl,
-      }),
+      }) as BetterAuthPlugin,
       expo(),
       username(),
       admin(),
