@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 "use client";
 
 import type { UseEmblaCarouselType } from "embla-carousel-react";
