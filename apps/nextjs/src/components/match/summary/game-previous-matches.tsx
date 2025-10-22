@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { format } from "date-fns";
+import { compareDesc, format } from "date-fns";
 import { CalendarIcon, MapPinIcon, Users } from "lucide-react";
 
 import { Badge } from "@board-games/ui/badge";
@@ -28,75 +28,77 @@ export function GamePreviousMatches(input: { game: GameInput }) {
         <div className="flex">
           <ScrollArea className="w-1 flex-1">
             <div className="flex gap-2 p-1 sm:p-4">
-              {gameMatches.map((match) => (
-                <Link
-                  key={`${match.id}-${match.type}`}
-                  prefetch={true}
-                  href={formatMatchLink(
-                    match.type === "original"
-                      ? {
-                          matchId: match.id,
-                          gameId: match.game.id,
-                          type: "original",
-                          finished: match.finished,
-                        }
-                      : {
-                          sharedMatchId: match.sharedMatchId,
-                          sharedGameId: match.game.id,
-                          type: match.game.type,
-                          linkedGameId: match.game.linkedGameId,
-                          finished: match.finished,
-                        },
-                  )}
-                  className="block h-40 w-64 rounded-lg border p-4 transition-colors hover:bg-muted/50"
-                >
-                  <h3 className="truncate font-medium">{match.name}</h3>
-
-                  <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                    <CalendarIcon className="h-4 w-4" />
-                    <span suppressHydrationWarning>
-                      {format(new Date(match.date), "PP")}
-                    </span>
-                  </div>
-
-                  <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    <span>{match.matchPlayers.length} players</span>
-                  </div>
-                  <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPinIcon className="h-4 w-4" />
-                    <span>{match.location?.name}</span>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {match.type === "original" && (
-                      <Badge variant="outline" className="text-xs">
-                        Original
-                      </Badge>
+              {gameMatches
+                .sort((a, b) => compareDesc(a.date, b.date))
+                .map((match) => (
+                  <Link
+                    key={`${match.id}-${match.type}`}
+                    prefetch={true}
+                    href={formatMatchLink(
+                      match.type === "original"
+                        ? {
+                            matchId: match.id,
+                            gameId: match.game.id,
+                            type: "original",
+                            finished: match.finished,
+                          }
+                        : {
+                            sharedMatchId: match.sharedMatchId,
+                            sharedGameId: match.game.id,
+                            type: match.game.type,
+                            linkedGameId: match.game.linkedGameId,
+                            finished: match.finished,
+                          },
                     )}
-                    {match.type === "shared" && (
-                      <Badge
-                        variant="outline"
-                        className="bg-blue-600 text-xs text-white"
-                      >
-                        Shared
-                      </Badge>
-                    )}
-                    {match.finished ? (
-                      <Badge variant="secondary" className="text-xs">
-                        Completed
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className="bg-yellow-600 text-xs text-white"
-                      >
-                        In Progress
-                      </Badge>
-                    )}
-                  </div>
-                </Link>
-              ))}
+                    className="block h-40 w-64 rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                  >
+                    <h3 className="truncate font-medium">{match.name}</h3>
+
+                    <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                      <CalendarIcon className="h-4 w-4" />
+                      <span suppressHydrationWarning>
+                        {format(new Date(match.date), "PP")}
+                      </span>
+                    </div>
+
+                    <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                      <Users className="h-4 w-4" />
+                      <span>{match.matchPlayers.length} players</span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                      <MapPinIcon className="h-4 w-4" />
+                      <span>{match.location?.name}</span>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {match.type === "original" && (
+                        <Badge variant="outline" className="text-xs">
+                          Original
+                        </Badge>
+                      )}
+                      {match.type === "shared" && (
+                        <Badge
+                          variant="outline"
+                          className="bg-blue-600 text-xs text-white"
+                        >
+                          Shared
+                        </Badge>
+                      )}
+                      {match.finished ? (
+                        <Badge variant="secondary" className="text-xs">
+                          Completed
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="bg-yellow-600 text-xs text-white"
+                        >
+                          In Progress
+                        </Badge>
+                      )}
+                    </div>
+                  </Link>
+                ))}
             </div>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
