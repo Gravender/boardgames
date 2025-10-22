@@ -170,7 +170,6 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                     )}
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="text-sm font-medium">{data.score} pts</div>
                     {scoresheet.winCondition === "Manual" ? (
                       data.winner ? (
                         "✔️"
@@ -179,6 +178,9 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                       )
                     ) : (
                       <>
+                        <div className="text-sm font-medium">
+                          {data.score} pts
+                        </div>
                         {data.placement === 1 && (
                           <Trophy className="ml-auto h-5 w-5 text-yellow-500" />
                         )}
@@ -200,7 +202,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                 </div>
 
                 <ul className="flex max-h-28 flex-col flex-wrap gap-2 overflow-y-auto pl-2">
-                  {players.map((player) => {
+                  {data.players.map((player) => {
                     return (
                       <li key={player.id} className="flex items-center">
                         <PlayerImage
