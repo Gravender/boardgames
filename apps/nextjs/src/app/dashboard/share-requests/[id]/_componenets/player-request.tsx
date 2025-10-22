@@ -342,7 +342,7 @@ export default function PlayerRequestPage({
                   </CardTitle>
                   <CardDescription>
                     Shared by {player.item.createdBy.name}
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {player.games.length} games, {player.players.length} other
                       players
                     </p>
@@ -386,7 +386,7 @@ export default function PlayerRequestPage({
                             <Label htmlFor="new-player" className="font-medium">
                               Create as a new player
                             </Label>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground text-sm">
                               Add {player.item.name} as a new player in your
                               collection
                               {foundPlayer ? "(Possible Duplicate Found)" : ""}
@@ -407,7 +407,7 @@ export default function PlayerRequestPage({
                             >
                               Link to an existing player
                             </Label>
-                            <p className="mb-2 text-sm text-muted-foreground">
+                            <p className="text-muted-foreground mb-2 text-sm">
                               Connect this shared player to a player you already
                               have in your collection
                             </p>
@@ -654,7 +654,7 @@ function ChildGamesRequest({
             </span>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {gameDecisions.reduce((acc, curr) => {
             if (curr.type === "request" && curr.accept) {
               return acc + 1;
@@ -853,7 +853,7 @@ function RequestShareGame({
                     >
                       Link to an existing game
                     </Label>
-                    <p className="mb-2 text-sm text-muted-foreground">
+                    <p className="text-muted-foreground mb-2 text-sm">
                       Connect this shared game to a game you already have.
                     </p>
 
@@ -922,7 +922,7 @@ function RequestShareGame({
                                         </div>
                                         {(existingGame.yearPublished ??
                                           existingGame.playersMin) && (
-                                          <p className="text-xs text-muted-foreground">
+                                          <p className="text-muted-foreground text-xs">
                                             {existingGame.yearPublished}
                                             {existingGame.playersMin &&
                                               existingGame.playersMax && (
@@ -980,7 +980,7 @@ function RequestShareGame({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium">Scoresheets</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {scoresheets.reduce((acc, curr) => {
                         if (curr.accept) return acc + 1;
                         return acc;
@@ -1079,7 +1079,7 @@ function RequestShareGame({
             )}
           </div>
         ) : (
-          <div className="py-4 text-center text-sm text-muted-foreground">
+          <div className="text-muted-foreground py-4 text-center text-sm">
             This game will not be added to your collection.
           </div>
         )}
@@ -1133,7 +1133,7 @@ function SharedGameWithMatches({
               </span>
             )}
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {game.matches.length} shared matches,{" "}
           </p>
         </AccordionTrigger>
@@ -1226,7 +1226,7 @@ function MatchRequests({
             </span>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {matches.reduce((acc, curr) => {
             if (curr.accept) return acc + 1;
             return acc;
@@ -1267,7 +1267,7 @@ function MatchRequests({
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="text-muted-foreground flex items-center gap-2 text-xs">
                           <FormattedDate
                             date={matchItem.item.date}
                             className="flex items-center gap-1"
@@ -1351,7 +1351,7 @@ function MatchRequests({
                                   >
                                     <div>
                                       <p>{potentialMatch.name}</p>
-                                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <div className="text-muted-foreground flex items-center gap-2 text-xs">
                                         <FormattedDate
                                           date={potentialMatch.date}
                                           Icon={Calendar}
@@ -1389,7 +1389,7 @@ function MatchRequests({
                             )}
                           </div>
                         ) : (
-                          <p className="text-sm italic text-muted-foreground">
+                          <p className="text-muted-foreground text-sm italic">
                             No matches found on{" "}
                             {new Date(matchItem.item.date).toLocaleDateString()}{" "}
                             for the selected game
@@ -1397,14 +1397,14 @@ function MatchRequests({
                         )}
 
                         {gameMatches.length === 0 && (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground text-sm">
                             This match will be added as a new match to your
                             collection.
                           </p>
                         )}
                       </div>
                     ) : (
-                      <div className="py-2 text-center text-sm text-muted-foreground">
+                      <div className="text-muted-foreground py-2 text-center text-sm">
                         This match will not be added to your collection.
                       </div>
                     )}

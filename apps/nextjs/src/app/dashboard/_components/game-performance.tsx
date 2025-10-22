@@ -29,7 +29,7 @@ export function GamePerformance() {
             {data.map((game) => (
               <div
                 key={`${game.id}-${game.type}`}
-                className="flex items-center justify-between rounded-lg border bg-card/50 p-3"
+                className="bg-card/50 flex items-center justify-between rounded-lg border p-3"
               >
                 <div className="flex items-center gap-3">
                   <GameImage
@@ -39,7 +39,7 @@ export function GamePerformance() {
                   />
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium">{game.name}</span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground flex items-center gap-2 text-xs">
                       <span>{game.plays} plays</span>
 
                       <span>

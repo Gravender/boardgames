@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 "use client";
 
 import type { UseEmblaCarouselType } from "embla-carousel-react";
@@ -99,7 +100,7 @@ function Carousel({
     api.on("select", onSelect);
 
     return () => {
-      api.off("select", onSelect);
+      api?.off("select", onSelect);
     };
   }, [api, onSelect]);
 
@@ -110,7 +111,6 @@ function Carousel({
         api: api,
         opts,
         orientation:
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
         scrollPrev,
         scrollNext,
@@ -187,7 +187,7 @@ function CarouselPrevious({
       className={cn(
         "absolute size-8 rounded-full",
         orientation === "horizontal"
-          ? "-left-12 top-1/2 -translate-y-1/2"
+          ? "top-1/2 -left-12 -translate-y-1/2"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
         className,
       )}
@@ -217,7 +217,7 @@ function CarouselNext({
       className={cn(
         "absolute size-8 rounded-full",
         orientation === "horizontal"
-          ? "-right-12 top-1/2 -translate-y-1/2"
+          ? "top-1/2 -right-12 -translate-y-1/2"
           : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
         className,
       )}

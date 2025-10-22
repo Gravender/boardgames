@@ -67,7 +67,7 @@ export const SessionCell = ({ session }: { session: Session }) => {
           {isCurrentSession ? "Current Session" : session.ipAddress}
         </span>
 
-        <span className="text-xs text-muted-foreground">
+        <span className="text-muted-foreground text-xs">
           {parser.os.name}, {parser.browser.name}
         </span>
       </div>

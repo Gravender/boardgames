@@ -66,7 +66,7 @@ export function GameDetails({ data }: { data: Games }) {
   return (
     <ScrollArea className="h-72 w-1 flex-1 md:h-[30rem]">
       <Table>
-        <TableHeader className="sticky text-card-foreground">
+        <TableHeader className="text-card-foreground sticky">
           <TableRow>
             <TableHead className="w-10 px-1 sm:w-full sm:px-4">
               <button
@@ -113,7 +113,7 @@ export function GameDetails({ data }: { data: Games }) {
                 <SortIcon field="wins" />
               </button>
             </TableHead>
-            <TableHead className="hidden w-16 px-1 xs:table-cell sm:px-4">
+            <TableHead className="xs:table-cell hidden w-16 px-1 sm:px-4">
               <button
                 onClick={() => toggleSort("winRate")}
                 className="flex items-center font-bold"
@@ -136,7 +136,7 @@ export function GameDetails({ data }: { data: Games }) {
                       containerClassName="h-7 w-7 sm:h-10 sm:w-10 hidden sm:block"
                     />
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-wrap text-xs font-medium sm:text-sm sm:font-semibold">
+                      <span className="text-xs font-medium text-wrap sm:text-sm sm:font-semibold">
                         {game.name}
                       </span>
                       {game.type === "shared" && (
@@ -149,7 +149,7 @@ export function GameDetails({ data }: { data: Games }) {
                 <TableCell>{game.bestScore ?? "-"}</TableCell>
                 <TableCell>{game.worstScore ?? "-"}</TableCell>
                 <TableCell>{game.wins}</TableCell>
-                <TableCell className="hidden xs:table-cell">
+                <TableCell className="xs:table-cell hidden">
                   {(game.winRate * 100).toFixed(2)}%
                 </TableCell>
               </TableRow>

@@ -68,7 +68,7 @@ export default async function Page({ params }: Props) {
                     </h1>
                   </div>
 
-                  <p className="mb-4 text-sm text-muted-foreground md:text-base">
+                  <p className="text-muted-foreground mb-4 text-sm md:text-base">
                     Joined {format(player.createdAt, "MMMM d, yyyy")}
                   </p>
 
@@ -80,7 +80,7 @@ export default async function Page({ params }: Props) {
                           {Math.round(player.stats.winRate * 100)}%
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">Win Rate</p>
+                      <p className="text-muted-foreground text-xs">Win Rate</p>
                     </div>
 
                     <div className="flex flex-col items-center md:items-start">
@@ -90,7 +90,7 @@ export default async function Page({ params }: Props) {
                           {player.stats.plays}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-muted-foreground text-xs">
                         Games Played
                       </p>
                     </div>
@@ -102,7 +102,7 @@ export default async function Page({ params }: Props) {
                           {player.stats.wins}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">Victories</p>
+                      <p className="text-muted-foreground text-xs">Victories</p>
                     </div>
 
                     <div className="flex flex-col items-center md:items-start">
@@ -112,7 +112,7 @@ export default async function Page({ params }: Props) {
                           {formatDuration(player.stats.playtime)}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-muted-foreground text-xs">
                         Total Play Time
                       </p>
                     </div>

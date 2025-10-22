@@ -375,7 +375,7 @@ const ManageTeamRoles = ({
             <div className="flex flex-col gap-2 py-2 pt-4">
               {/* Search Roles */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
                 <Input
                   placeholder="Search roles..."
                   value={roleSearchTerm}
@@ -390,7 +390,7 @@ const ManageTeamRoles = ({
               <ScrollArea className="h-[30vh]">
                 <div className="flex flex-col gap-2">
                   {filteredRoles.length === 0 ? (
-                    <p className="py-4 text-center text-sm text-muted-foreground">
+                    <p className="text-muted-foreground py-4 text-center text-sm">
                       {roleSearchTerm
                         ? "No roles found matching your search"
                         : "No roles available"}
@@ -436,7 +436,7 @@ const ManageTeamRoles = ({
                             {role.name}
                           </Label>
 
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-muted-foreground text-xs">
                             {role.description}
                           </p>
                         </div>
@@ -449,7 +449,7 @@ const ManageTeamRoles = ({
               {/* Selected Roles Summary */}
               {formRoles.length > 0 && (
                 <div className="border-foreground-secondary flex flex-col gap-2 border-t pt-2">
-                  <p className="text-xs text-foreground">Selected roles:</p>
+                  <p className="text-foreground text-xs">Selected roles:</p>
                   <ScrollArea>
                     <div className="flex max-h-12 flex-wrap gap-2">
                       {formRoles.map((formRole) => {
@@ -461,7 +461,7 @@ const ManageTeamRoles = ({
                           <Badge
                             key={`${role.id}-${role.type}`}
                             variant="secondary"
-                            className="w-28 truncate text-nowrap text-xs"
+                            className="w-28 truncate text-xs text-nowrap"
                           >
                             {role.name}
                           </Badge>

@@ -71,7 +71,7 @@ export function UserView({
             src={user?.image ?? user?.avatar ?? user?.avatarUrl ?? ""}
           />
 
-          <AvatarFallback className={"uppercase text-foreground"}>
+          <AvatarFallback className={"text-foreground uppercase"}>
             <UserRoundIcon className="size-[50%]" />
           </AvatarFallback>
         </Avatar>

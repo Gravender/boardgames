@@ -12,7 +12,7 @@ export function MatchNotFound() {
         {/* Game Controller Icon */}
         <div className="flex justify-center">
           <div className="relative">
-            <Gamepad2 className="h-24 w-24 text-primary" />
+            <Gamepad2 className="text-primary h-24 w-24" />
           </div>
         </div>
 

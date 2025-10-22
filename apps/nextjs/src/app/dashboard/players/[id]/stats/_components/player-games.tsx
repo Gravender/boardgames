@@ -64,19 +64,19 @@ export function PlayerGames({ player }: { player: Player }) {
   const chartConfig = {
     plays: {
       label: "Plays",
-      color: "hsl(var(--chart-1))",
+      color: "var(--chart-1)",
     },
     overall: {
       label: "Overall Win Rate",
-      color: "hsl(var(--chart-2))",
+      color: "var(--chart-2)",
     },
     competitive: {
       label: "Competitive Win Rate",
-      color: "hsl(var(--chart-3))",
+      color: "var(--chart-3)",
     },
     cooperative: {
       label: "Co-op Win Rate",
-      color: "hsl(var(--chart-4))",
+      color: "var(--chart-4)",
     },
   } satisfies ChartConfig;
 

@@ -165,7 +165,7 @@ const Content = ({
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Mail className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                        <Mail className="text-muted-foreground absolute top-3 left-2 h-4 w-4" />
                         <Input
                           placeholder="email@example.com"
                           className="pl-8"
@@ -217,7 +217,7 @@ const Content = ({
                     <FormLabel>Username</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <AtSign className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                        <AtSign className="text-muted-foreground absolute top-3 left-2 h-4 w-4" />
                         <Input
                           placeholder="username"
                           className="pl-8"

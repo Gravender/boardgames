@@ -45,24 +45,24 @@ export function GameDetails({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-muted-foreground" />
+          <Users className="text-muted-foreground h-5 w-5" />
           <span>{playerCount()}</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <Clock className="h-5 w-5 text-muted-foreground" />
+          <Clock className="text-muted-foreground h-5 w-5" />
           <span>{playtimeText()}</span>
         </div>
 
         {yearPublished && (
           <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-muted-foreground" />
+            <Calendar className="text-muted-foreground h-5 w-5" />
             <span>Published in {yearPublished}</span>
           </div>
         )}
 
         <div className="flex items-center gap-2">
-          <GamepadIcon className="h-5 w-5 text-muted-foreground" />
+          <GamepadIcon className="text-muted-foreground h-5 w-5" />
           <span>
             {matchesCount} {matchesCount === 1 ? "match" : "matches"} played
           </span>

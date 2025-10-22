@@ -154,7 +154,7 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
         <CardDescription>Detailed stats for all players</CardDescription>
         {hasCompetitive && hasCoop && (
           <CardAction>
-            <span className="text-sm text-muted-foreground">Show:</span>
+            <span className="text-muted-foreground text-sm">Show:</span>
             <ToggleGroup
               type="single"
               value={coopOrCompetitive}
@@ -184,7 +184,7 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
       <CardContent className="p-2">
         <div className="flex">
           <Table containerClassname=" overflow-y-scroll max-h-[60vh] rounded-lg">
-            <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground">
+            <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20">
               <TableRow>
                 <TableHead className="w-16 px-2 sm:w-full sm:px-4">
                   <button
@@ -247,13 +247,13 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
                           <>
                             <Badge
                               variant="outline"
-                              className="bg-blue-600 px-1 text-xs text-white xs:hidden"
+                              className="xs:hidden bg-blue-600 px-1 text-xs text-white"
                             >
                               S
                             </Badge>
                             <Badge
                               variant="outline"
-                              className="hidden bg-blue-600 text-xs text-white xs:inline-flex"
+                              className="xs:inline-flex hidden bg-blue-600 text-xs text-white"
                             >
                               Shared
                             </Badge>

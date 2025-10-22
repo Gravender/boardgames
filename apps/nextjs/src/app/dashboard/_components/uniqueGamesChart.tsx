@@ -38,14 +38,14 @@ export function GamesChart() {
                   />
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium">{game.name}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {game.matches} plays
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <Clock className="h-3 w-3 text-muted-foreground" />
-                  <span className="w-20 text-xs text-muted-foreground">
+                  <Clock className="text-muted-foreground h-3 w-3" />
+                  <span className="text-muted-foreground w-20 text-xs">
                     {formatDuration(Number(game.duration))}
                   </span>
                 </div>

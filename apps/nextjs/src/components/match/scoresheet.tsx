@@ -76,7 +76,7 @@ function ScoresheetContent(input: { match: MatchInput }) {
                 <ScoreSheetBadge match={input.match} />
               </Suspense>
             </div>
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex flex-wrap gap-4 text-sm">
               <FormattedDate Icon={Calendar} date={match.date} />
               {match.location && (
                 <div className="flex items-center gap-1">
@@ -180,7 +180,7 @@ function ManualScoreSheet(input: { match: MatchInput }) {
                 {mappedTeams.map((team) => {
                   return (
                     <Card key={team.id}>
-                      <CardHeader className="pb-0 pt-2 sm:pt-4">
+                      <CardHeader className="pt-2 pb-0 sm:pt-4">
                         <CardTitle className="flex items-center justify-between gap-2 text-xl">
                           {team.name}
                           <Button
@@ -310,7 +310,7 @@ function ManualScoreSheet(input: { match: MatchInput }) {
                 {individualPlayers.map((player) => {
                   return (
                     <Card key={`${player.id}-${player.playerId}`}>
-                      <CardHeader className="pb-0 pt-2 sm:pt-4">
+                      <CardHeader className="pt-2 pb-0 sm:pt-4">
                         <CardTitle className="flex items-center justify-between gap-2 text-xl">
                           {player.name}
                           <Button
@@ -612,7 +612,7 @@ function ScoresheetFooter(input: { match: MatchInput }) {
         </div>
 
         <Card className="pb-2">
-          <CardHeader className="pb-0 pt-2 sm:pt-4">
+          <CardHeader className="pt-2 pb-0 sm:pt-4">
             <CardTitle className="text-xl">Comment:</CardTitle>
           </CardHeader>
           <CardContent className="px-4">

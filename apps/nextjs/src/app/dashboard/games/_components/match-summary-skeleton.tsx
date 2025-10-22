@@ -43,7 +43,7 @@ export default function MatchSummarySkeleton() {
             ))}
 
           {/* Solo player skeletons */}
-          <Skeleton className="mb-2 mt-6 h-5 w-36" />
+          <Skeleton className="mt-6 mb-2 h-5 w-36" />
           {Array(2)
             .fill(0)
             .map((_, i) => (
@@ -78,8 +78,8 @@ export default function MatchSummarySkeleton() {
         <div className="rounded-md border">
           <div className="relative" style={{ height: "400px" }}>
             {/* Simulating the fixed header */}
-            <div className="sticky top-0 z-20 flex w-full border-b bg-background p-3">
-              <div className="sticky left-0 z-30 w-[200px] min-w-[200px] bg-background">
+            <div className="bg-background sticky top-0 z-20 flex w-full border-b p-3">
+              <div className="bg-background sticky left-0 z-30 w-[200px] min-w-[200px]">
                 <Skeleton className="h-6 w-24" />
               </div>
               <div className="flex gap-4 pl-4">

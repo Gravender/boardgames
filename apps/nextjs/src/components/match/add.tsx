@@ -382,7 +382,7 @@ const AddMatchForm = ({
                       <FormControl>
                         <Button
                           variant={"outline"}
-                          className="w-full pl-3 text-left font-normal text-muted-foreground"
+                          className="text-muted-foreground w-full pl-3 text-left font-normal"
                           type="button"
                         >
                           {isSameDay(field.value, new Date()) ? (

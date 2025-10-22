@@ -35,7 +35,7 @@ export default function MatchSummaryPlayerStats({
           className="min-w-full"
           containerClassname="max-h-[65vh] h-fit w-full rounded-lg"
         >
-          <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
+          <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20 shadow-lg">
             <TableRow>
               <TableHead className="bg-sidebar sticky left-0">Player</TableHead>
               <TableHead className="text-center">Games</TableHead>
@@ -107,7 +107,7 @@ export default function MatchSummaryPlayerStats({
 
               return (
                 <TableRow key={player.id} className="base:text-sm text-xs">
-                  <TableCell className="sticky left-0 z-10 max-w-24 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:max-w-32">
+                  <TableCell className="bg-card text-muted-foreground after:bg-border sticky left-0 z-10 max-w-24 font-semibold after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:max-w-32">
                     <div className="flex items-center gap-2">
                       {player.name}
                       {player.type === "shared" && (

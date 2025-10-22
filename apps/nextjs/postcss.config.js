@@ -1,5 +1,1 @@
-export default {
-  plugins: {
-    tailwindcss: {},
-  },
-};
+export { default } from "@board-games/tailwind-config/postcss-config";

@@ -189,20 +189,20 @@ function GamesList({ games }: GamesListProps) {
   };
 
   return (
-    <div className="w-full rounded-lg border bg-card shadow-sm">
+    <div className="bg-card w-full rounded-lg border shadow-sm">
       <div className="border-b p-4">
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
             <h2 className="text-xl font-semibold">Game Collection</h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {filteredGames.length} games found
             </p>
           </div>
 
-          <div className="flex w-full flex-col gap-2 xs:flex-row md:w-auto">
+          <div className="xs:flex-row flex w-full flex-col gap-2 md:w-auto">
             <div className="flex w-auto gap-2">
               <div className="relative flex-grow">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
                 <Input
                   placeholder="Search games..."
                   className="pl-8"

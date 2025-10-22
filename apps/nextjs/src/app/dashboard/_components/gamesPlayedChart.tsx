@@ -25,11 +25,11 @@ import { useTRPC } from "~/trpc/react";
 const chartConfig = {
   thisYear: {
     label: "This Years Games: ",
-    color: "hsl(var(--chart-1))",
+    color: "var(--chart-1)",
   },
   lastYear: {
     label: "Last Years Games: ",
-    color: "hsl(var(--chart-2))",
+    color: "var(--chart-2)",
   },
 } satisfies ChartConfig;
 
@@ -93,7 +93,7 @@ export function PlayedChart() {
         </ChartContainer>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 text-sm">
-        <div className="flex gap-2 font-medium leading-none">
+        <div className="flex gap-2 leading-none font-medium">
           {trend > 0 ? (
             <>
               {`Trending up by ${trend.toFixed(2)}% this month`}
@@ -106,7 +106,7 @@ export function PlayedChart() {
             </>
           )}
         </div>
-        <div className="leading-none text-muted-foreground">
+        <div className="text-muted-foreground leading-none">
           Showing total matches played for the last 12 months
         </div>
       </CardFooter>

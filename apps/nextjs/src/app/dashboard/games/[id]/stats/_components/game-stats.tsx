@@ -41,8 +41,8 @@ export default function GameStats({ gameId }: { gameId: number }) {
       <Card>
         <CardContent className="p-4 md:p-6">
           <div className="flex flex-col items-center gap-4">
-            <div className="flex w-full flex-col gap-2 xs:flex-row md:gap-6">
-              <div className="hidden h-24 w-24 xs:block md:h-32 md:w-32">
+            <div className="xs:flex-row flex w-full flex-col gap-2 md:gap-6">
+              <div className="xs:block hidden h-24 w-24 md:h-32 md:w-32">
                 <GameImage
                   image={gameStats.image}
                   alt={`${gameStats.name} game image`}
@@ -53,12 +53,12 @@ export default function GameStats({ gameId }: { gameId: number }) {
               <div className="flex min-w-0 flex-1 flex-row items-center justify-between gap-2">
                 <div className="flex flex-col gap-1">
                   <div className="flex flex-col gap-2 md:flex-row md:items-center">
-                    <h1 className="truncate text-wrap text-2xl font-bold md:text-3xl">
+                    <h1 className="truncate text-2xl font-bold text-wrap md:text-3xl">
                       {gameStats.name}
                     </h1>
                   </div>
                   {gameStats.yearPublished && (
-                    <p className="text-sm text-muted-foreground md:text-base">
+                    <p className="text-muted-foreground text-sm md:text-base">
                       Published in {gameStats.yearPublished}
                     </p>
                   )}
@@ -85,7 +85,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                         {(userStats.competitiveWinRate * 100).toFixed(2)}%
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       Competitive Win Rate
                     </p>
                   </div>
@@ -96,7 +96,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                         {(userStats.coopWinRate * 100).toFixed(2)}%
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       Cooperative Win Rate
                     </p>
                   </div>
@@ -110,7 +110,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                         {gameStats.winRate.toFixed(2)}%
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">Win Rate</p>
+                    <p className="text-muted-foreground text-xs">Win Rate</p>
                   </div>
                   <div className="flex flex-col items-center md:items-start">
                     <div className="flex items-center gap-1">
@@ -129,7 +129,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                         )}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       Avg Play Time
                     </p>
                   </div>
@@ -141,7 +141,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                   <Gamepad2 className="h-4 w-4 text-blue-500" />
                   <span className="text-xl font-bold">{totalMatches}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">Games Played</p>
+                <p className="text-muted-foreground text-xs">Games Played</p>
               </div>
 
               <div className="flex flex-col items-center md:items-start">
@@ -151,7 +151,7 @@ export default function GameStats({ gameId }: { gameId: number }) {
                     {formatDuration(gameStats.duration)}
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground">Total Play Time</p>
+                <p className="text-muted-foreground text-xs">Total Play Time</p>
               </div>
             </div>
           </div>

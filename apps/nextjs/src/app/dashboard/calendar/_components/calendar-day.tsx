@@ -22,11 +22,11 @@ export function CalendarDay({ day, matches }: CalendarDayProps) {
           e.stopPropagation();
           router.push(`/dashboard/calendar/${format(day, "yyyy-MM-dd")}`);
         }}
-        className="relative mx-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-secondary text-sm font-normal text-secondary-foreground hover:bg-secondary/80 aria-selected:opacity-100 sm:h-12 sm:w-12 sm:text-lg md:h-16 md:w-16 lg:h-20 lg:w-20"
+        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 relative mx-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-sm font-normal aria-selected:opacity-100 sm:h-12 sm:w-12 sm:text-lg md:h-16 md:w-16 lg:h-20 lg:w-20"
       >
         <span>{day.getDate()}</span>
         <span
-          className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground"
+          className="bg-primary text-primary-foreground absolute right-0 bottom-0 flex h-4 w-4 items-center justify-center rounded-full text-xs"
           aria-label={`${matches.matches} match${matches.matches !== 1 ? "es" : ""}`}
         >
           {matches.matches}

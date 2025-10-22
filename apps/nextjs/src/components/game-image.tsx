@@ -113,7 +113,7 @@ function GameImageIcon({
   return (
     <Icon
       className={cn(
-        "h-full w-full items-center justify-center rounded-md bg-muted p-2",
+        "bg-muted h-full w-full items-center justify-center rounded-md p-2",
         className,
       )}
     />

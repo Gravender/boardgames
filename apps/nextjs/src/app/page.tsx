@@ -30,46 +30,46 @@ export default async function Home() {
   }
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <Dices className="flex h-8 w-8 items-center justify-center rounded-md bg-primary p-1 text-primary-foreground" />
+            <Dices className="bg-primary text-primary-foreground flex h-8 w-8 items-center justify-center rounded-md p-1" />
             <span className="text-xl font-bold">BoardGame Tracker</span>
           </div>
           <nav className="hidden items-center gap-6 md:flex">
             <Link
               href="#features"
-              className="text-sm font-medium hover:text-primary"
+              className="hover:text-primary text-sm font-medium"
             >
               Features
             </Link>
             <Link
               href="#dashboard"
-              className="text-sm font-medium hover:text-primary"
+              className="hover:text-primary text-sm font-medium"
             >
               Dashboard
             </Link>
             <Link
               href="#collection"
-              className="text-sm font-medium hover:text-primary"
+              className="hover:text-primary text-sm font-medium"
             >
               Collection
             </Link>
             <Link
               href="#matches"
-              className="text-sm font-medium hover:text-primary"
+              className="hover:text-primary text-sm font-medium"
             >
               Matches
             </Link>
             <Link
               href="#sharing"
-              className="text-sm font-medium hover:text-primary"
+              className="hover:text-primary text-sm font-medium"
             >
               Sharing
             </Link>
             <Link
               href="#stats"
-              className="text-sm font-medium hover:text-primary"
+              className="hover:text-primary text-sm font-medium"
             >
               Stats
             </Link>
@@ -89,7 +89,7 @@ export default async function Home() {
       </header>
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="w-full bg-gradient-to-b from-background to-muted py-12 md:py-24 lg:py-32">
+        <section className="from-background to-muted w-full bg-linear-to-b py-12 md:py-24 lg:py-32">
           <div className="container flex flex-col items-center gap-6 px-4 md:flex-row md:px-6">
             <div className="flex flex-col gap-4 md:w-1/2">
               <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
@@ -131,13 +131,13 @@ export default async function Home() {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">
+                <div className="bg-primary text-primary-foreground inline-block rounded-lg px-3 py-1 text-sm">
                   Features
                 </div>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                   Everything You Need to Track Your Games
                 </h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <p className="text-muted-foreground max-w-[900px] md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Our comprehensive platform offers all the tools you need to
                   track your board game collection and matches.
                 </p>
@@ -145,51 +145,51 @@ export default async function Home() {
             </div>
             <div className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               <div className="flex flex-col items-center space-y-4 rounded-lg border p-6">
-                <div className="rounded-full bg-primary/10 p-3">
-                  <BarChart2 className="h-6 w-6 text-primary" />
+                <div className="bg-primary/10 rounded-full p-3">
+                  <BarChart2 className="text-primary h-6 w-6" />
                 </div>
                 <h3 className="text-xl font-bold">Game & Match Stats</h3>
-                <p className="text-center text-muted-foreground">
+                <p className="text-muted-foreground text-center">
                   Track win/loss ratios, player performance, and match trends
                   with interactive charts.
                 </p>
               </div>
               <div className="flex flex-col items-center space-y-4 rounded-lg border p-6">
-                <div className="rounded-full bg-primary/10 p-3">
-                  <Share2 className="h-6 w-6 text-primary" />
+                <div className="bg-primary/10 rounded-full p-3">
+                  <Share2 className="text-primary h-6 w-6" />
                 </div>
                 <h3 className="text-xl font-bold">Sharing System</h3>
-                <p className="text-center text-muted-foreground">
+                <p className="text-muted-foreground text-center">
                   Share games, matches, and stats with friends with configurable
                   permissions.
                 </p>
               </div>
               <div className="flex flex-col items-center space-y-4 rounded-lg border p-6">
-                <div className="rounded-full bg-primary/10 p-3">
-                  <Users className="h-6 w-6 text-primary" />
+                <div className="bg-primary/10 rounded-full p-3">
+                  <Users className="text-primary h-6 w-6" />
                 </div>
                 <h3 className="text-xl font-bold">Players & Teams</h3>
-                <p className="text-center text-muted-foreground">
+                <p className="text-muted-foreground text-center">
                   Manage players, track detailed statistics, and organize teams
                   for matches.
                 </p>
               </div>
               <div className="flex flex-col items-center space-y-4 rounded-lg border p-6">
-                <div className="rounded-full bg-primary/10 p-3">
-                  <Globe className="h-6 w-6 text-primary" />
+                <div className="bg-primary/10 rounded-full p-3">
+                  <Globe className="text-primary h-6 w-6" />
                 </div>
                 <h3 className="text-xl font-bold">Locations & Groups</h3>
-                <p className="text-center text-muted-foreground">
+                <p className="text-muted-foreground text-center">
                   Associate matches with locations and group data for better
                   organization.
                 </p>
               </div>
               <div className="flex flex-col items-center space-y-4 rounded-lg border p-6">
-                <div className="rounded-full bg-primary/10 p-3">
-                  <Clock className="h-6 w-6 text-primary" />
+                <div className="bg-primary/10 rounded-full p-3">
+                  <Clock className="text-primary h-6 w-6" />
                 </div>
                 <h3 className="text-xl font-bold">Scoresheets & Rounds</h3>
-                <p className="text-center text-muted-foreground">
+                <p className="text-muted-foreground text-center">
                   Flexible scoring models with support for multiple scoresheets
                   per game.
                 </p>
@@ -201,25 +201,25 @@ export default async function Home() {
         {/* Dashboard Section */}
         <section
           id="dashboard"
-          className="w-full bg-muted py-12 md:py-24 lg:py-32"
+          className="bg-muted w-full py-12 md:py-24 lg:py-32"
         >
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">
+                <div className="bg-primary text-primary-foreground inline-block rounded-lg px-3 py-1 text-sm">
                   Dashboard
                 </div>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                   Your Gaming Stats at a Glance
                 </h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <p className="text-muted-foreground max-w-[900px] md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Get a comprehensive overview of your gaming activity with our
                   intuitive dashboard.
                 </p>
               </div>
             </div>
             <div className="mx-auto mt-12 max-w-5xl">
-              <div className="rounded-lg border bg-background p-6 shadow-lg">
+              <div className="bg-background rounded-lg border p-6 shadow-lg">
                 <Image
                   src="https://ji5jeyxujf.ufs.sh/f/FArKeeZnAmUSeEP4QKDfGgC2lmMUbKTNOYxsphucD7yAaQd9"
                   alt="Board Game Tracker Dashboard Light Mode"
@@ -267,13 +267,13 @@ export default async function Home() {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">
+                <div className="bg-primary text-primary-foreground inline-block rounded-lg px-3 py-1 text-sm">
                   Game Collection
                 </div>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                   Manage Your Board Game Library
                 </h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <p className="text-muted-foreground max-w-[900px] md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Keep track of all your games, including shared games from
                   friends, with detailed information.
                 </p>
@@ -318,7 +318,7 @@ export default async function Home() {
                   </div>
                 </div>
                 <div className="overflow-hidden rounded-lg border shadow-lg">
-                  <div className="flex items-center justify-between border-b bg-background p-4">
+                  <div className="bg-background flex items-center justify-between border-b p-4">
                     <div className="text-lg font-bold">Game Collection</div>
                   </div>
                   <div className="bg-background">
@@ -346,18 +346,18 @@ export default async function Home() {
         {/* Sharing System Section */}
         <section
           id="sharing"
-          className="w-full bg-muted py-12 md:py-24 lg:py-32"
+          className="bg-muted w-full py-12 md:py-24 lg:py-32"
         >
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">
+                <div className="bg-primary text-primary-foreground inline-block rounded-lg px-3 py-1 text-sm">
                   Sharing System
                 </div>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                   Share Your Gaming Experience
                 </h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <p className="text-muted-foreground max-w-[900px] md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Easily share games, players, and matches with friends and
                   gaming groups with granular permission controls.
                 </p>
@@ -402,19 +402,19 @@ export default async function Home() {
                         "Revoke access at any time with a single click",
                       ]}
                     >
-                      <div className="mt-4 rounded-md bg-muted p-4">
+                      <div className="bg-muted mt-4 rounded-md p-4">
                         <p className="mb-2 text-sm font-medium">
                           Sharing Methods:
                         </p>
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-2">
-                            <UserPlus className="h-4 w-4 text-primary" />
+                            <UserPlus className="text-primary h-4 w-4" />
                             <span className="text-sm">
                               Direct sharing with friends
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <LinkIcon className="h-4 w-4 text-primary" />
+                            <LinkIcon className="text-primary h-4 w-4" />
                             <span className="text-sm">
                               Shareable links with expiration options
                             </span>
@@ -426,7 +426,7 @@ export default async function Home() {
                 </div>
                 <div className="grid grid-cols-1 gap-4">
                   <div className="overflow-hidden rounded-lg border shadow-lg">
-                    <div className="border-b bg-background p-4">
+                    <div className="bg-background border-b p-4">
                       <h3 className="text-lg font-bold">Share Player</h3>
                     </div>
                     <div className="bg-background">
@@ -447,7 +447,7 @@ export default async function Home() {
                     </div>
                   </div>
                   <div className="overflow-hidden rounded-lg border shadow-lg">
-                    <div className="border-b bg-background p-4">
+                    <div className="bg-background border-b p-4">
                       <h3 className="text-lg font-bold">Share Game</h3>
                     </div>
                     <div className="bg-background">
@@ -478,13 +478,13 @@ export default async function Home() {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">
+                <div className="bg-primary text-primary-foreground inline-block rounded-lg px-3 py-1 text-sm">
                   Match Tracking
                 </div>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                   Track Every Round and Score
                 </h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <p className="text-muted-foreground max-w-[900px] md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Record detailed match information with our flexible scoresheet
                   system.
                 </p>
@@ -493,7 +493,7 @@ export default async function Home() {
             <div className="mx-auto mt-12 max-w-5xl">
               <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2">
                 <div className="overflow-hidden rounded-lg border shadow-lg">
-                  <div className="border-b bg-background p-4">
+                  <div className="bg-background border-b p-4">
                     <h3 className="text-lg font-bold">
                       Match Scoresheet Example
                     </h3>
@@ -565,13 +565,13 @@ export default async function Home() {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">
+                <div className="bg-primary text-primary-foreground inline-block rounded-lg px-3 py-1 text-sm">
                   Game Statistics
                 </div>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                   Detailed Game Performance Analytics
                 </h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <p className="text-muted-foreground max-w-[900px] md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Dive deep into your game statistics with comprehensive
                   analytics for each game.
                 </p>
@@ -619,7 +619,7 @@ export default async function Home() {
                   </div>
                 </div>
                 <div className="overflow-hidden rounded-lg border shadow-lg">
-                  <div className="border-b bg-background p-4">
+                  <div className="bg-background border-b p-4">
                     <h3 className="text-lg font-bold">
                       Fresh Marble Salad Statistics
                     </h3>
@@ -647,17 +647,17 @@ export default async function Home() {
         </section>
 
         {/* Game Page Section */}
-        <section className="w-full bg-muted py-12 md:py-24 lg:py-32">
+        <section className="bg-muted w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">
+                <div className="bg-primary text-primary-foreground inline-block rounded-lg px-3 py-1 text-sm">
                   Game Details
                 </div>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                   Complete Game Information
                 </h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <p className="text-muted-foreground max-w-[900px] md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Access all information about your games in one convenient
                   place.
                 </p>
@@ -666,7 +666,7 @@ export default async function Home() {
             <div className="mx-auto mt-12 max-w-5xl">
               <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2">
                 <div className="overflow-hidden rounded-lg border shadow-lg">
-                  <div className="border-b bg-background p-4">
+                  <div className="bg-background border-b p-4">
                     <h3 className="text-lg font-bold">Fresh Marble Salad</h3>
                   </div>
                   <div className="bg-background">
@@ -730,7 +730,7 @@ export default async function Home() {
         </section>
 
         {/* CTA Section */}
-        <section className="w-full bg-primary py-12 text-primary-foreground md:py-24 lg:py-32">
+        <section className="bg-primary text-primary-foreground w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -752,7 +752,7 @@ export default async function Home() {
       <footer className="w-full border-t py-6 md:py-0">
         <div className="container flex flex-col items-center justify-between gap-4 px-4 md:h-24 md:flex-row md:px-6">
           <div className="flex items-center gap-2">
-            <Dices className="flex h-8 w-8 items-center justify-center rounded-md bg-primary p-1 text-primary-foreground" />
+            <Dices className="bg-primary text-primary-foreground flex h-8 w-8 items-center justify-center rounded-md p-1" />
             <span className="text-lg font-bold">BoardGame Tracker</span>
           </div>
         </div>

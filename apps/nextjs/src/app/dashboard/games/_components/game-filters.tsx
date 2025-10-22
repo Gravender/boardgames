@@ -134,7 +134,7 @@ export function GameFilters({
               <div>
                 <div className="mb-2 flex justify-between">
                   <h3 className="font-medium">Player Count</h3>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     {filters.minPlayers} - {filters.maxPlayers} players
                   </span>
                 </div>
@@ -158,7 +158,7 @@ export function GameFilters({
               <div>
                 <div className="mb-2 flex justify-between">
                   <h3 className="font-medium">Playtime</h3>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     {filters.minPlaytime} - {filters.maxPlaytime} minutes
                   </span>
                 </div>
@@ -188,7 +188,7 @@ export function GameFilters({
       ) : (
         /* Desktop Filters */
         <div
-          className={`mt-4 space-y-6 rounded-md bg-muted/50 p-4 ${isOpen ? "block" : "hidden"}`}
+          className={`bg-muted/50 mt-4 space-y-6 rounded-md p-4 ${isOpen ? "block" : "hidden"}`}
         >
           <div className="grid gap-6 md:grid-cols-2">
             <div className="col-span-1">
@@ -218,7 +218,7 @@ export function GameFilters({
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="font-medium">Player Count</h3>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     {filters.minPlayers} - {filters.maxPlayers} players
                   </span>
                 </div>
@@ -242,7 +242,7 @@ export function GameFilters({
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="font-medium">Playtime</h3>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     {filters.minPlaytime} - {filters.maxPlaytime} minutes
                   </span>
                 </div>

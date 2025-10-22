@@ -34,7 +34,7 @@ export function MatchCard(input: { match: MatchInput }) {
 
             <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
               <div className="flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                <CalendarIcon className="text-muted-foreground h-4 w-4" />
                 <span suppressHydrationWarning>
                   {format(new Date(match.date), "PPP")} (
                   {formatDistanceToNow(new Date(match.date), {
@@ -46,13 +46,13 @@ export function MatchCard(input: { match: MatchInput }) {
 
               {match.location && (
                 <div className="flex items-center gap-2">
-                  <MapPinIcon className="h-4 w-4 text-muted-foreground" />
+                  <MapPinIcon className="text-muted-foreground h-4 w-4" />
                   <span>{match.location.name}</span>
                 </div>
               )}
 
               <div className="flex items-center gap-2">
-                <ClockIcon className="h-4 w-4 text-muted-foreground" />
+                <ClockIcon className="text-muted-foreground h-4 w-4" />
                 <span>{formatDuration(match.duration)}</span>
               </div>
 
@@ -90,17 +90,17 @@ export function MatchCardSkeleton() {
 
             <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
               <div className="flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                <CalendarIcon className="text-muted-foreground h-4 w-4" />
                 <Skeleton className="h-4 w-32" />
               </div>
 
               <div className="flex items-center gap-2">
-                <MapPinIcon className="h-4 w-4 text-muted-foreground" />
+                <MapPinIcon className="text-muted-foreground h-4 w-4" />
                 <Skeleton className="h-4 w-32" />
               </div>
 
               <div className="flex items-center gap-2">
-                <ClockIcon className="h-4 w-4 text-muted-foreground" />
+                <ClockIcon className="text-muted-foreground h-4 w-4" />
                 <Skeleton className="h-4 w-32" />
               </div>
 

@@ -198,7 +198,7 @@ export default function RolesTab({
                         role.name,
                         {
                           label: role.name,
-                          color: `hsl(var(--chart-${(index % 5) + 1}))`,
+                          color: `var(--chart-${(index % 5) + 1})`,
                         },
                       ]),
                     )}
@@ -230,7 +230,7 @@ export default function RolesTab({
                         />
                         <Bar
                           dataKey="winRate"
-                          fill="hsl(var(--chart-1))"
+                          fill="var(--chart-1)"
                           name="Win Rate"
                         />
                       </BarChart>
@@ -250,7 +250,7 @@ export default function RolesTab({
                         role.name,
                         {
                           label: role.name,
-                          color: `hsl(var(--chart-${index + 1}))`,
+                          color: `var(--chart-${index + 1})`,
                         },
                       ]),
                     )}
@@ -267,13 +267,13 @@ export default function RolesTab({
                             `${name} (${matchCount})`
                           }
                           outerRadius={80}
-                          fill="#hsl(var(--chart-1))"
+                          fill="var(--chart-1)"
                           dataKey="matchCount"
                         >
                           {roleStats.map((entry, index) => (
                             <Cell
                               key={`cell-${index}`}
-                              fill={`hsl(var(--chart-${index + 1}))`}
+                              fill={`var(--chart-${index + 1})`}
                             />
                           ))}
                         </Pie>
@@ -319,7 +319,7 @@ export default function RolesTab({
                         </div>
 
                         {role.description && (
-                          <p className="mb-2 text-xs text-muted-foreground">
+                          <p className="text-muted-foreground mb-2 text-xs">
                             {role.description}
                           </p>
                         )}
@@ -411,14 +411,14 @@ export default function RolesTab({
                                   {role.name}
                                 </Badge>
                                 {roleIndex < combo.roles.length - 1 && (
-                                  <span className="text-xs text-muted-foreground">
+                                  <span className="text-muted-foreground text-xs">
                                     +
                                   </span>
                                 )}
                               </div>
                             ))}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-muted-foreground text-sm">
                             {combo.matchCount} games
                           </div>
                         </div>
@@ -426,7 +426,7 @@ export default function RolesTab({
                           <div className="font-semibold">
                             {Math.round(combo.winRate * 100)}%
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-muted-foreground text-xs">
                             Avg place:{" "}
                             {formatPlacementDistribution(combo.placements)}
                           </div>
@@ -553,17 +553,17 @@ export default function RolesTab({
                             ? {
                                 winRate: {
                                   label: "Win Rate",
-                                  color: "hsl(var(--chart-1))",
+                                  color: "var(--chart-1)",
                                 },
                               }
                             : {
                                 winRate: {
                                   label: "Win Rate",
-                                  color: "hsl(var(--chart-1))",
+                                  color: "var(--chart-1)",
                                 },
                                 placement: {
                                   label: "Placement",
-                                  color: "hsl(var(--chart-3))",
+                                  color: "var(--chart-3)",
                                 },
                               }
                         }
@@ -659,7 +659,7 @@ export default function RolesTab({
                                   </span>
                                   {role.description && (
                                     <ScrollArea>
-                                      <div className="max-w-[20vw] text-xs text-muted-foreground">
+                                      <div className="text-muted-foreground max-w-[20vw] text-xs">
                                         {role.description}
                                       </div>
                                       <ScrollBar orientation="horizontal" />
@@ -741,14 +741,14 @@ export default function RolesTab({
                                           {role.name}
                                         </Badge>
                                         {roleIndex < combo.roles.length - 1 && (
-                                          <span className="text-xs text-muted-foreground">
+                                          <span className="text-muted-foreground text-xs">
                                             +
                                           </span>
                                         )}
                                       </div>
                                     ))}
                                   </div>
-                                  <div className="text-sm text-muted-foreground">
+                                  <div className="text-muted-foreground text-sm">
                                     {combo.matchCount} games
                                   </div>
                                 </div>
@@ -757,7 +757,7 @@ export default function RolesTab({
                                     {Math.round(combo.winRate * 100)}%
                                   </div>
                                   {selectedPlayerAvgPlacement !== null && (
-                                    <div className="text-xs text-muted-foreground">
+                                    <div className="text-muted-foreground text-xs">
                                       Avg place:{" "}
                                       {formatPlacementDistribution(
                                         combo.placements,
@@ -777,7 +777,7 @@ export default function RolesTab({
 
             {selectedPlayer && selectedPlayer.roles.length === 0 && (
               <Card>
-                <CardContent className="p-6 text-center text-muted-foreground">
+                <CardContent className="text-muted-foreground p-6 text-center">
                   No role performance data available for {selectedPlayer.name}.
                 </CardContent>
               </Card>
@@ -806,7 +806,7 @@ export default function RolesTab({
                         <div className="flex items-center gap-2">
                           <span>{selectedRole.name}</span>
                           {selectedRole.description && (
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-muted-foreground text-sm">
                               - {selectedRole.description}
                             </span>
                           )}
@@ -851,7 +851,7 @@ export default function RolesTab({
                                 <div className="flex items-center gap-2">
                                   <span>{role.name}</span>
                                   {role.description && (
-                                    <span className="text-sm text-muted-foreground">
+                                    <span className="text-muted-foreground text-sm">
                                       - {role.description}
                                     </span>
                                   )}
@@ -876,7 +876,7 @@ export default function RolesTab({
                       {selectedRole.name} - Role Analysis
                     </CardTitle>
                     {selectedRole.description && (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {selectedRole.description}
                       </p>
                     )}
@@ -891,10 +891,10 @@ export default function RolesTab({
                       )}
                     >
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-primary">
+                        <div className="text-primary text-2xl font-bold">
                           {selectedRole.matchCount}
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           Total Games
                         </div>
                       </div>
@@ -902,7 +902,7 @@ export default function RolesTab({
                         <div className="text-2xl font-bold text-green-600">
                           {Math.round(selectedRole.winRate * 100)}%
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           Win Rate
                         </div>
                       </div>
@@ -910,7 +910,7 @@ export default function RolesTab({
                         <div className="text-2xl font-bold text-blue-600">
                           {selectedRole.playerCount}
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           Players
                         </div>
                       </div>
@@ -919,7 +919,7 @@ export default function RolesTab({
                           <div className="text-2xl font-bold text-purple-600">
                             {selectedRoleAvgPlacement}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-muted-foreground text-sm">
                             Avg Placement
                           </div>
                         </div>
@@ -962,7 +962,7 @@ export default function RolesTab({
                                 className="flex items-center justify-between rounded-lg border p-4"
                               >
                                 <div className="flex items-center gap-3">
-                                  <div className="text-lg font-bold text-muted-foreground">
+                                  <div className="text-muted-foreground text-lg font-bold">
                                     #{index + 1}
                                   </div>
                                   <div className="flex items-center gap-2">
@@ -983,7 +983,7 @@ export default function RolesTab({
                                           </Badge>
                                         )}
                                       </div>
-                                      <div className="text-sm text-muted-foreground">
+                                      <div className="text-muted-foreground text-sm">
                                         {player.matchCount} games played
                                       </div>
                                     </div>
@@ -1048,7 +1048,7 @@ export default function RolesTab({
                           <div key={index} className="rounded-lg border p-4">
                             <div className="mb-3 flex items-center justify-between">
                               <div className="flex items-center gap-3">
-                                <div className="text-lg font-bold text-muted-foreground">
+                                <div className="text-muted-foreground text-lg font-bold">
                                   #{index + 1}
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
@@ -1139,7 +1139,7 @@ export default function RolesTab({
                             {/* Show role descriptions if available */}
                             {combo.roles.some((role) => role.description) && (
                               <div className="mt-3 border-t pt-3">
-                                <div className="space-y-1 text-xs text-muted-foreground">
+                                <div className="text-muted-foreground space-y-1 text-xs">
                                   {combo.roles
                                     .filter((role) => role.description)
                                     .map((role) => (

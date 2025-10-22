@@ -114,7 +114,7 @@ export default function ChildPlayersRequest({
               ` (${possibleMatches} possible ${possibleMatches === 1 ? "match" : "matches"})`}
           </span>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {players.reduce((acc, curr) => {
             if (curr.accept) return acc + 1;
             return acc;
@@ -263,7 +263,7 @@ function PlayerRequest({
         </div>
         <AccordionContent>
           {isAccepted ? (
-            <div className="space-y-4 pb-4 pt-2">
+            <div className="space-y-4 pt-2 pb-4">
               <div className="space-y-3">
                 <Label>Link to existing player</Label>
 
@@ -301,7 +301,7 @@ function PlayerRequest({
                       >
                         Link to an existing player
                       </Label>
-                      <p className="mb-2 text-sm text-muted-foreground">
+                      <p className="text-muted-foreground mb-2 text-sm">
                         Connect this shared player to a player you already have.
                       </p>
 
@@ -385,7 +385,7 @@ function PlayerRequest({
               </div>
             </div>
           ) : (
-            <div className="py-4 text-center text-sm text-muted-foreground">
+            <div className="text-muted-foreground py-4 text-center text-sm">
               This player will not be added to your collection.
             </div>
           )}

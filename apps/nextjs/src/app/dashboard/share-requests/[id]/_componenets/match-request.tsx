@@ -319,7 +319,7 @@ export default function MatchRequestPage({
             {match.item.comment && (
               <div className="mt-2">
                 <span className="text-sm font-semibold">Comment:</span>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {match.item.comment}
                 </p>
               </div>
@@ -327,7 +327,7 @@ export default function MatchRequestPage({
             {match.item.matchPlayers.length > 0 && (
               <div>
                 <span className="text-sm font-semibold">Players:</span>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {match.item.matchPlayers
                     .map((player) => player.player.name)
                     .join(", ")}
@@ -362,7 +362,7 @@ export default function MatchRequestPage({
                             >
                               <div>
                                 <p>{potentialMatch.match.name}</p>
-                                <ul className="text-xs text-muted-foreground">
+                                <ul className="text-muted-foreground text-xs">
                                   <li className="flex flex-row gap-2">
                                     <span className="font-semibold">Date:</span>
                                     <FormattedDate date={match.item.date} />
@@ -422,7 +422,7 @@ export default function MatchRequestPage({
                             >
                               <div>
                                 <p>{potentialMatch.name}</p>
-                                <ul className="text-xs text-muted-foreground">
+                                <ul className="text-muted-foreground text-xs">
                                   <li className="flex flex-row gap-2">
                                     <span className="font-semibold">Date:</span>
                                     <FormattedDate date={match.item.date} />
@@ -603,7 +603,7 @@ export default function MatchRequestPage({
                 {match.item.comment && (
                   <div className="mt-2">
                     <span className="text-sm font-semibold">Comment:</span>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {match.item.comment}
                     </p>
                   </div>
@@ -611,7 +611,7 @@ export default function MatchRequestPage({
                 {match.item.matchPlayers.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm">Winners:</span>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {match.item.matchPlayers
                         .filter((mPlayer) => mPlayer.winner)
                         .map((player) => player.player.name)
@@ -699,7 +699,7 @@ export default function MatchRequestPage({
                                   >
                                     Create as a new game
                                   </Label>
-                                  <p className="text-sm text-muted-foreground">
+                                  <p className="text-muted-foreground text-sm">
                                     Add {match.item.game.name} as a new game in
                                     your collection{" "}
                                     {foundGame && (
@@ -724,7 +724,7 @@ export default function MatchRequestPage({
                                   >
                                     Link to an existing game
                                   </Label>
-                                  <p className="mb-2 text-sm text-muted-foreground">
+                                  <p className="text-muted-foreground mb-2 text-sm">
                                     Connect this shared game to a game you
                                     already have in your collection
                                   </p>
@@ -803,7 +803,7 @@ export default function MatchRequestPage({
                                                               </p>
                                                               {(fGame.yearPublished ??
                                                                 fGame.playersMin) && (
-                                                                <p className="text-xs text-muted-foreground">
+                                                                <p className="text-muted-foreground text-xs">
                                                                   {
                                                                     fGame.yearPublished
                                                                   }
@@ -873,7 +873,7 @@ export default function MatchRequestPage({
                               >
                                 <div>
                                   <p>{potentialMatch.name}</p>
-                                  <ul className="text-xs text-muted-foreground">
+                                  <ul className="text-muted-foreground text-xs">
                                     <li className="flex flex-row gap-2">
                                       <span className="font-semibold">
                                         Date:
@@ -939,7 +939,7 @@ export default function MatchRequestPage({
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-medium">Scoresheets</h3>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           {form.getValues("scoresheets").reduce((acc, curr) => {
                             if (curr.accept) return acc + 1;
                             return acc;

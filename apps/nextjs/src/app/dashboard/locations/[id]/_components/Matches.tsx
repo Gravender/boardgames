@@ -29,7 +29,7 @@ export function Matches({ locationId }: { locationId: number }) {
   if (location === null) return null;
 
   return (
-    <div className="container relative mx-auto h-[90vh] max-w-3xl px-4">
+    <div className="relative container mx-auto h-[90vh] max-w-3xl px-4">
       <CardHeader>
         <CardTitle
           suppressHydrationWarning
@@ -50,7 +50,7 @@ export function Matches({ locationId }: { locationId: number }) {
             {matches.map((match) => (
               <TableRow
                 key={match.id}
-                className="flex w-full rounded-lg border bg-card text-card-foreground shadow-sm"
+                className="bg-card text-card-foreground flex w-full rounded-lg border shadow-sm"
               >
                 <TableCell className="flex w-full items-center font-medium">
                   <Link
@@ -91,15 +91,15 @@ export function Matches({ locationId }: { locationId: number }) {
                 </TableCell>
                 <TableCell className="flex w-24 items-center justify-center">
                   {!match.finished ? (
-                    <div className="inline-flex w-12 items-center justify-center rounded-sm bg-yellow-500 p-2 font-semibold text-destructive-foreground dark:bg-green-900">
+                    <div className="text-destructive-foreground inline-flex w-12 items-center justify-center rounded-sm bg-yellow-500 p-2 font-semibold dark:bg-green-900">
                       {"-"}
                     </div>
                   ) : match.won ? (
-                    <div className="inline-flex w-12 items-center justify-center rounded-sm bg-green-500 p-2 font-medium text-destructive-foreground dark:bg-green-900">
+                    <div className="text-destructive-foreground inline-flex w-12 items-center justify-center rounded-sm bg-green-500 p-2 font-medium dark:bg-green-900">
                       {"Won"}
                     </div>
                   ) : (
-                    <div className="inline-flex w-12 items-center justify-center rounded-sm bg-destructive p-2 font-medium text-destructive-foreground">
+                    <div className="bg-destructive text-destructive-foreground inline-flex w-12 items-center justify-center rounded-sm p-2 font-medium">
                       {"Lost"}
                     </div>
                   )}
@@ -114,20 +114,20 @@ export function Matches({ locationId }: { locationId: number }) {
 }
 export function MatchSkeleton() {
   return (
-    <TableRow className="flex w-full rounded-lg border bg-card text-card-foreground shadow-sm">
+    <TableRow className="bg-card text-card-foreground flex w-full rounded-lg border shadow-sm">
       <TableCell className="flex w-full items-center font-medium">
         <div className="flex w-full items-center gap-3 font-medium">
-          <div className="relative flex h-12 w-12 shrink-0 animate-pulse overflow-hidden rounded bg-card-foreground" />
+          <div className="bg-card-foreground relative flex h-12 w-12 shrink-0 animate-pulse overflow-hidden rounded" />
           <div className="flex w-full items-center justify-between">
             <div className="flex flex-col items-start gap-2">
-              <h2 className="text-md h-3 w-36 animate-pulse rounded-lg bg-card-foreground text-left font-semibold" />
-              <div className="flex h-2 min-w-20 animate-pulse items-center gap-1 rounded-lg bg-card-foreground/50"></div>
+              <h2 className="text-md bg-card-foreground h-3 w-36 animate-pulse rounded-lg text-left font-semibold" />
+              <div className="bg-card-foreground/50 flex h-2 min-w-20 animate-pulse items-center gap-1 rounded-lg"></div>
             </div>
           </div>
         </div>
       </TableCell>
       <TableCell className="flex w-24 items-center justify-center">
-        <div className="inline-flex h-12 w-12 animate-pulse items-center justify-center rounded-sm bg-card-foreground/50 p-2 font-semibold text-destructive-foreground" />
+        <div className="bg-card-foreground/50 text-destructive-foreground inline-flex h-12 w-12 animate-pulse items-center justify-center rounded-sm p-2 font-semibold" />
       </TableCell>
       <TableCell className="flex w-24 items-center justify-center"></TableCell>
     </TableRow>

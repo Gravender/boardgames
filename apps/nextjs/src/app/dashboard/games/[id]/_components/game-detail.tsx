@@ -24,7 +24,7 @@ export default function GameDetails({ gameId }: { gameId: number }) {
       {/* Game details section */}
       <div className="flex flex-row gap-2 sm:gap-4 md:gap-6">
         {/* Game image - smaller on mobile */}
-        <div className="mx-auto hidden xs:block xs:w-1/3 sm:w-1/4 md:mx-0 md:w-1/5 lg:w-1/6">
+        <div className="xs:block xs:w-1/3 mx-auto hidden sm:w-1/4 md:mx-0 md:w-1/5 lg:w-1/6">
           <GameImage
             image={game.image}
             alt={`${game.name} game image`}
@@ -69,7 +69,7 @@ export default function GameDetails({ gameId }: { gameId: number }) {
           <h2 className="text-xl font-semibold md:text-2xl">Match History</h2>
         </div>
         <MatchesList matches={game.matches} />
-        <div className="absolute bottom-4 right-6 z-10 sm:right-10">
+        <div className="absolute right-6 bottom-4 z-10 sm:right-10">
           <AddMatchDialog
             gameInput={{
               type: "original",

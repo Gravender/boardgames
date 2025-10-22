@@ -43,12 +43,12 @@ export function PlayersCard() {
                       {player.isUser && <Badge variant="secondary">You</Badge>}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {player.plays} matches
                       </span>
                       <div className="flex items-center gap-2 text-xs">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        <span className="w-20 text-xs text-muted-foreground">
+                        <Clock className="text-muted-foreground h-3 w-3" />
+                        <span className="text-muted-foreground w-20 text-xs">
                           {formatDuration(player.playtime)}
                         </span>
                       </div>
@@ -65,7 +65,7 @@ export function PlayersCard() {
                         ) : (
                           <TrendingDown className="h-3 w-3 text-red-500" />
                         )}
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-muted-foreground text-xs">
                           {player.streaks.current.count}
                         </span>
                       </div>

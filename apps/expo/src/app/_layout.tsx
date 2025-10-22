@@ -1,4 +1,5 @@
 import type { Theme } from "@react-navigation/native";
+import { useColorScheme } from "react-native";
 import { Drawer } from "expo-router/drawer";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -10,7 +11,6 @@ import { PortalHost } from "@rn-primitives/portal";
 
 import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
 import { NAV_THEME } from "~/lib/constants";
-import { useColorScheme } from "~/lib/useColorScheme";
 import { queryClient } from "~/utils/api";
 
 import "../styles.css";
@@ -39,13 +39,13 @@ export {
 
 export default function RootLayout() {
   const hasMounted = useRef(false);
-  const { colorScheme, isDarkColorScheme } = useColorScheme();
+  const colorScheme = useColorScheme();
   const [isColorSchemeLoaded, setIsColorSchemeLoaded] = useState(false);
   useLayoutEffect(() => {
     if (hasMounted.current) {
       return;
     }
-    void setAndroidNavigationBar(colorScheme);
+    void setAndroidNavigationBar(colorScheme == "dark" ? "dark" : "light");
     setIsColorSchemeLoaded(true);
     hasMounted.current = true;
   }, [colorScheme]);
@@ -56,20 +56,21 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-        <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
+      <ThemeProvider value={colorScheme == "dark" ? DARK_THEME : LIGHT_THEME}>
+        <StatusBar style={colorScheme == "dark" ? "dark" : "light"} />
         <GestureHandlerRootView style={{ flex: 1 }}>
           <Drawer
             screenOptions={{
               drawerStyle: {
-                backgroundColor: isDarkColorScheme
+                backgroundColor: colorScheme
                   ? "hsl(240, 5.9%, 10%)"
                   : "hsl(0, 0%, 98%)",
               },
               drawerLabelStyle: {
-                color: isDarkColorScheme
-                  ? "hsl(240, 4.8%, 95.9%)"
-                  : "hsl(240, 5.9%, 10%)",
+                color:
+                  colorScheme == "dark"
+                    ? "hsl(240, 4.8%, 95.9%)"
+                    : "hsl(240, 5.9%, 10%)",
               },
               headerTitle(props) {
                 return (

@@ -182,7 +182,7 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
                           fill
                         />
                       ) : (
-                        <User className="h-full w-full items-center justify-center rounded-full bg-muted p-2" />
+                        <User className="bg-muted h-full w-full items-center justify-center rounded-full p-2" />
                       )}
                     </div>
                     <Input

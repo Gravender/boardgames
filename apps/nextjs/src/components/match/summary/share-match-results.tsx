@@ -146,7 +146,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
               >
                 <div className="flex items-center justify-between gap-2 pb-4">
                   <div className="flex min-h-5 items-center gap-2">
-                    <Users className="h-5 w-5 text-muted-foreground" />
+                    <Users className="text-muted-foreground h-5 w-5" />
                     <h3 className="font-semibold"> {`Team: ${data.name}`}</h3>
                     <Separator orientation="vertical" />
 
@@ -159,7 +159,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                               <Badge
                                 key={`${role.type}-${role.id}`}
                                 variant="secondary"
-                                className="text-sm font-medium text-foreground"
+                                className="text-foreground text-sm font-medium"
                               >
                                 {role.name}
                               </Badge>
@@ -218,7 +218,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                             {calculatePerformance(player) && (
                               <Badge
                                 variant="outline"
-                                className="text-sm font-medium text-foreground"
+                                className="text-foreground text-sm font-medium"
                               >
                                 {calculatePerformance(player)}
                               </Badge>
@@ -236,7 +236,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                                   <Badge
                                     key={`${role.type}-${role.id}`}
                                     variant="outline"
-                                    className="text-nowrap text-sm font-medium text-foreground"
+                                    className="text-foreground text-sm font-medium text-nowrap"
                                   >
                                     {role.name}
                                   </Badge>
@@ -274,7 +274,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                     {calculatePerformance(data) && (
                       <Badge
                         variant="outline"
-                        className="text-sm font-medium text-foreground"
+                        className="text-foreground text-sm font-medium"
                       >
                         {calculatePerformance(data)}
                       </Badge>
@@ -341,7 +341,7 @@ export function ShareMatchResultsSkeleton() {
 
                 <Badge
                   variant="outline"
-                  className="w-4 animate-pulse rounded-md bg-accent text-sm font-medium text-foreground"
+                  className="bg-accent text-foreground w-4 animate-pulse rounded-md text-sm font-medium"
                 />
               </div>
             </div>

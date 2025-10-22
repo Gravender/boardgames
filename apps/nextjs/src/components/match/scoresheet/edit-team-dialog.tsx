@@ -393,7 +393,7 @@ function Content({
           <div className="flex flex-col gap-2">
             <Label>Team roles (applied to all members)</Label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
               <Input
                 placeholder="Search roles..."
                 value={roleSearchTerm}
@@ -444,7 +444,7 @@ function Content({
                           </FormControl>
                           <FormLabel className="flex w-full flex-col gap-2">
                             <span>{role.name}</span>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-muted-foreground text-xs">
                               {role.description}
                             </p>
                           </FormLabel>

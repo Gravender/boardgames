@@ -38,7 +38,7 @@ export default function WinPercentageChart() {
   const chartConfig = {
     winPercentage: {
       label: "Win Percentage",
-      color: "hsl(var(--chart-1))",
+      color: "var(--chart-1)",
     },
   };
 

@@ -1,6 +1,6 @@
 import "~/styles/globals.css";
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
@@ -30,6 +30,14 @@ export const metadata: Metadata = {
     siteName: "Board Games Tracker",
   },
 };
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "white" },
+    { media: "(prefers-color-scheme: dark)", color: "black" },
+  ],
+};
+
 const geistSans = Geist({
   subsets: ["latin"],
 
@@ -49,20 +57,14 @@ export default function RootLayout({
       <body
         suppressHydrationWarning
         className={cn(
-          "min-h-screen bg-background font-sans text-foreground antialiased",
+          "bg-background text-foreground min-h-screen font-sans antialiased",
 
           geistSans.variable,
 
           geistMono.variable,
         )}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-          enableColorScheme
-        >
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <CSPostHogProvider>
             <TRPCReactProvider>
               {children}

@@ -47,7 +47,7 @@ export function FeatureInfoModal({
             <ul className="space-y-2">
               {features.map((feature, index) => (
                 <li key={index} className="flex items-start gap-2">
-                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <Check className="text-primary mt-0.5 h-5 w-5 shrink-0" />
                   <span>{feature}</span>
                 </li>
               ))}

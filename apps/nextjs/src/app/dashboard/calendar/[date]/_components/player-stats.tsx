@@ -46,7 +46,7 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
   );
   return (
     <Card
-      className={`transition-all duration-200 ${expanded ? "ring-2 ring-primary/20" : ""}`}
+      className={`transition-all duration-200 ${expanded ? "ring-primary/20 ring-2" : ""}`}
     >
       <CardContent className="p-4">
         <div className="space-y-3">
@@ -55,7 +55,7 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <PlayerImage image={player.image} alt={player.name} />
-                <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border bg-background">
+                <div className="bg-background absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border">
                   {getRankBadge(rank)}
                 </div>
               </div>
@@ -68,7 +68,7 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <span>{player.plays} plays</span>
                   <span>•</span>
                   <span>{player.gameStats.length} games</span>
@@ -98,7 +98,7 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
                   {Math.round(player.winRate * 100)}%
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">Win Rate</p>
+              <p className="text-muted-foreground text-xs">Win Rate</p>
             </div>
 
             <div className="text-center">
@@ -108,7 +108,7 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
                   {formatDuration(player.playtime)}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">Play Time</p>
+              <p className="text-muted-foreground text-xs">Play Time</p>
             </div>
 
             <div className="text-center">
@@ -118,7 +118,7 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
                   {player.streaks.current.count}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {player.streaks.current.type === "win" ? "Win" : "Loss"} Streak
               </p>
             </div>
@@ -164,7 +164,7 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
                               <div className="text-sm font-medium">
                                 {game.name}
                               </div>
-                              <div className="flex gap-1 text-xs text-muted-foreground">
+                              <div className="text-muted-foreground flex gap-1 text-xs">
                                 <span>
                                   {game.plays} play{game.plays !== 1 ? "s" : ""}
                                 </span>
@@ -176,7 +176,7 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
                               <div className="text-sm font-bold">
                                 {Math.round(game.winRate * 100)}%
                               </div>
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-muted-foreground text-xs">
                                 {game.wins}/{game.plays} wins
                               </div>
                             </div>
@@ -297,6 +297,6 @@ const getRankBadge = (rank: number) => {
   if (rank === 2) return <Medal className="h-4 w-4 text-gray-400" />;
   if (rank === 3) return <Medal className="h-4 w-4 text-amber-600" />;
   return (
-    <span className="text-sm font-medium text-muted-foreground">#{rank}</span>
+    <span className="text-muted-foreground text-sm font-medium">#{rank}</span>
   );
 };

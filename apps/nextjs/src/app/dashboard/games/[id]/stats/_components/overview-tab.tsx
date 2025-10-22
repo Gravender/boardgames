@@ -44,7 +44,7 @@ export default function OverviewTab({ matches }: { matches: Matches }) {
             <CardDescription>
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl font-semibold text-secondary-foreground">
+                  <span className="text-secondary-foreground text-xl font-semibold">
                     {lastMatch.name}
                   </span>
                   <Badge variant={lastMatch.won ? "default" : "destructive"}>
@@ -90,7 +90,7 @@ export default function OverviewTab({ matches }: { matches: Matches }) {
               <div className="flex-1">
                 <div className="space-y-4">
                   <div>
-                    <h4 className="mb-2 text-base font-semibold text-secondary-foreground">
+                    <h4 className="text-secondary-foreground mb-2 text-base font-semibold">
                       Players
                     </h4>
                     {/* Group players by team */}
@@ -102,7 +102,7 @@ export default function OverviewTab({ matches }: { matches: Matches }) {
 
                   {lastMatch.winners.length > 0 && (
                     <div>
-                      <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                      <h4 className="text-muted-foreground mb-2 text-sm font-medium">
                         Winners
                       </h4>
                       <div className="flex flex-wrap gap-2">
@@ -176,7 +176,7 @@ export default function OverviewTab({ matches }: { matches: Matches }) {
                           </div>
                         </div>
                         <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                          <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
                             <FormattedDate date={match.date} Icon={Calendar} />
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
@@ -188,7 +188,7 @@ export default function OverviewTab({ matches }: { matches: Matches }) {
                                 {match.location.name}
                               </span>
                             )}
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-muted-foreground text-sm">
                               {isCoop ? (
                                 isWinner ? (
                                   <span className="font-medium text-green-600">
@@ -205,7 +205,7 @@ export default function OverviewTab({ matches }: { matches: Matches }) {
                                 )
                               ) : (
                                 <div className="flex items-center gap-2">
-                                  <Users className="h-4 w-4 text-muted-foreground" />
+                                  <Users className="text-muted-foreground h-4 w-4" />
                                   <span className="text-sm">
                                     {match.players.length} players
                                   </span>
@@ -220,7 +220,7 @@ export default function OverviewTab({ matches }: { matches: Matches }) {
                             ) : (
                               match.score && (
                                 <div className="flex items-center gap-2">
-                                  <Trophy className="h-4 w-4 text-muted-foreground" />
+                                  <Trophy className="text-muted-foreground h-4 w-4" />
                                   <span className="font-semibold">
                                     Score: {match.score}
                                   </span>
@@ -235,7 +235,7 @@ export default function OverviewTab({ matches }: { matches: Matches }) {
                         </div>
                       </div>
                       {match.comment && (
-                        <p className="max-h-10 overflow-scroll text-wrap text-sm text-muted-foreground">
+                        <p className="text-muted-foreground max-h-10 overflow-scroll text-sm text-wrap">
                           <b className="font-semibold">{"Comment: "}</b>
                           {match.comment}
                         </p>
@@ -365,7 +365,7 @@ function TeamGroups({
           >
             <div className="flex items-center justify-between gap-2 pb-4">
               <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-muted-foreground" />
+                <Users className="text-muted-foreground h-5 w-5" />
                 <h3 className="font-semibold">{`Team: ${team?.name}`}</h3>
               </div>
               <div className="flex items-center gap-3">
@@ -379,7 +379,7 @@ function TeamGroups({
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 gap-3 border-l-2 border-muted-foreground/20 pl-2 sm:grid-cols-2">
+            <div className="border-muted-foreground/20 grid grid-cols-1 gap-3 border-l-2 pl-2 sm:grid-cols-2">
               {teamPlayers.map((player) => (
                 <li key={player.id} className="flex items-center">
                   <PlayerImage

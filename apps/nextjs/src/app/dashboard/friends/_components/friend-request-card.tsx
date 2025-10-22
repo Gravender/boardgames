@@ -132,7 +132,7 @@ export function FriendRequestCard({
 
           <div className="flex-grow">
             <p className="font-medium">{friendRequest.name}</p>
-            <p className="flex items-center text-xs text-muted-foreground">
+            <p className="text-muted-foreground flex items-center text-xs">
               <Clock className="mr-1 h-3 w-3" />
               {formatDate(friendRequest.createdAt, "P")}
             </p>

@@ -48,7 +48,7 @@ export function DeleteAccountCard() {
             is not reversible, so please continue with caution.
           </CardDescription>
         </CardHeader>
-        <CardFooter className="flex flex-col justify-between gap-4 rounded-b-xl border-destructive/30 bg-destructive/15 md:flex-row">
+        <CardFooter className="border-destructive/30 bg-destructive/15 flex flex-col justify-between gap-4 rounded-b-xl md:flex-row">
           <CardAction>
             <Button
               onClick={() => setShowDialog(true)}

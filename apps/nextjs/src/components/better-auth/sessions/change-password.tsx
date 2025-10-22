@@ -224,7 +224,7 @@ export function ChangePasswordCard() {
             )}
           </CardContent>
           <CardFooter className="bg-sidebar flex flex-col justify-between gap-4 rounded-b-xl md:flex-row">
-            <CardDescription className="text-center text-xs text-muted-foreground md:text-start md:text-sm">
+            <CardDescription className="text-muted-foreground text-center text-xs md:text-start md:text-sm">
               Please use 8 characters at a minimum.
             </CardDescription>
             <Button
@@ -266,7 +266,7 @@ function PasswordInput({
       {enableToggle && (
         <>
           <Button
-            className="absolute right-0 top-0 !bg-transparent"
+            className="absolute top-0 right-0 !bg-transparent"
             disabled={disabled}
             size="icon"
             type="button"

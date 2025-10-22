@@ -19,7 +19,7 @@ export default async function Page({
           <Suspense fallback={<GamesListSkeleton />}>
             <GamesData />
           </Suspense>
-          <div className="absolute bottom-4 right-6 z-10 sm:right-10">
+          <div className="absolute right-6 bottom-4 z-10 sm:right-10">
             <AddGameDialog defaultIsOpen={addGame} />
           </div>
         </div>

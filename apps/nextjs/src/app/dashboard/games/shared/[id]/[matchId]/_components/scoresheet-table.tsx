@@ -459,7 +459,7 @@ export function ScoreSheetTable({ matchId }: { matchId: number }) {
         <Card>
           <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
             <>
-              <TableHeader className="bg-sidebar sticky top-0 z-20 text-card-foreground shadow-lg">
+              <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20 shadow-lg">
                 <HeaderRow match={match} players={players} />
               </TableHeader>
               <TableBody>
@@ -559,7 +559,7 @@ const HeaderRow = ({ match, players }: { match: Match; players: Player[] }) => {
       <TableRow>
         <TableHead
           scope="col"
-          className="bg-sidebar sticky left-0 top-0 w-20 sm:w-36"
+          className="bg-sidebar sticky top-0 left-0 w-20 sm:w-36"
         >
           <div></div>
         </TableHead>
@@ -602,7 +602,7 @@ const HeaderRow = ({ match, players }: { match: Match; players: Player[] }) => {
     <TableRow>
       <TableHead
         scope="col"
-        className="bg-sidebar sticky left-0 top-0 w-20 sm:w-36"
+        className="bg-sidebar sticky top-0 left-0 w-20 sm:w-36"
       >
         <div></div>
       </TableHead>
@@ -642,7 +642,7 @@ const BodyRow = ({
         <TableHead
           scope="row"
           className={cn(
-            "sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg",
+            "bg-card text-muted-foreground after:bg-border sticky left-0 z-10 font-semibold after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:text-lg",
             round.color &&
               "over:opacity-50 text-slate-600 hover:dark:opacity-80",
           )}
@@ -749,7 +749,7 @@ const BodyRow = ({
       <TableHead
         scope="row"
         className={cn(
-          "sticky left-0 z-10 bg-card font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg",
+          "bg-card text-muted-foreground after:bg-border sticky left-0 z-10 font-semibold after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:text-lg",
           round.color &&
             "text-slate-600 hover:opacity-50 hover:dark:opacity-80",
         )}
@@ -808,7 +808,7 @@ const CommentsRow = ({ match }: { match: Match }) => {
       <TableRow>
         <TableHead
           scope="row"
-          className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+          className="bg-muted/50 text-muted-foreground after:bg-border sticky left-0 font-semibold after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:text-lg"
         >
           {"Details(optional)"}
         </TableHead>
@@ -819,7 +819,7 @@ const CommentsRow = ({ match }: { match: Match }) => {
           .map((team) => (
             <TableCell
               key={`${team.id}-details`}
-              className="border-b border-r p-2"
+              className="border-r border-b p-2"
             >
               <DetailDialog
                 matchId={match.id}
@@ -839,7 +839,7 @@ const CommentsRow = ({ match }: { match: Match }) => {
             return (
               <TableCell
                 key={`${player.id}-details`}
-                className="border-b border-r p-2"
+                className="border-r border-b p-2"
               >
                 <DetailDialog
                   matchId={match.id}
@@ -862,7 +862,7 @@ const CommentsRow = ({ match }: { match: Match }) => {
     <TableRow>
       <TableHead
         scope="row"
-        className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+        className="bg-muted/50 text-muted-foreground after:bg-border sticky left-0 font-semibold after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:text-lg"
       >
         {"Details(optional)"}
       </TableHead>
@@ -871,7 +871,7 @@ const CommentsRow = ({ match }: { match: Match }) => {
         return (
           <TableCell
             key={`${player.id}-details`}
-            className="border-b border-r p-2"
+            className="border-r border-b p-2"
           >
             <DetailDialog
               matchId={match.id}
@@ -904,7 +904,7 @@ const TotalRow = ({
       <TableRow>
         <TableHead
           scope="row"
-          className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+          className="bg-muted/50 text-muted-foreground after:bg-border sticky left-0 font-semibold after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:text-lg"
         >
           Total
         </TableHead>
@@ -1002,7 +1002,7 @@ const TotalRow = ({
     <TableRow>
       <TableHead
         scope="row"
-        className="sticky left-0 bg-muted/50 font-semibold text-muted-foreground after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border sm:text-lg"
+        className="bg-muted/50 text-muted-foreground after:bg-border sticky left-0 font-semibold after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:text-lg"
       >
         Total
       </TableHead>
@@ -1069,7 +1069,7 @@ function DetailDialog({
           className="h-full w-full min-w-20 items-start justify-start p-0"
           disabled={data.permission === "view"}
         >
-          <span className="max-h-10 min-h-6 overflow-scroll text-wrap text-start text-base text-primary">
+          <span className="text-primary max-h-10 min-h-6 overflow-scroll text-start text-base text-wrap">
             {data.details ?? ""}
           </span>
         </Button>
@@ -1174,8 +1174,8 @@ function CommentDialog({
           variant="ghost"
           className="h-fit min-w-[50%] items-start justify-start"
         >
-          <span className="text-lg font-semibold text-primary">Comment:</span>
-          <span className="text-wrap text-start text-base text-primary">
+          <span className="text-primary text-lg font-semibold">Comment:</span>
+          <span className="text-primary text-start text-base text-wrap">
             {comment ?? "No comment"}
           </span>
         </Button>
