@@ -22,7 +22,6 @@
     "@board-games/prettier-config": "workspace:*",
     "@board-games/tsconfig": "workspace:*",
     "@playwright/test": "^1.53.1",
-    "dotenv-cli": "^10.0.0",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
