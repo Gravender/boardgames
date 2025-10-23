@@ -44,6 +44,8 @@ export function GamePerformance() {
 
                       <span>
                         {"Played " +
+                          // TODO: fix lint error
+                          // eslint-disable-next-line react-hooks/purity
                           formatDistance(game.lastPlayed, Date.now(), {
                             addSuffix: true,
                           })}

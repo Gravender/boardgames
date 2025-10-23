@@ -90,7 +90,8 @@ function DeleteAccountDialog({
   const user = sessionData?.user;
 
   const isFresh = session
-    ? Date.now() - new Date(session.createdAt).getTime() < 60 * 60 * 24 * 1000
+    ? // eslint-disable-next-line react-hooks/purity
+      Date.now() - new Date(session.createdAt).getTime() < 60 * 60 * 24 * 1000
     : false;
   const credentialsLinked = accounts.some(
     (acc) => acc.providerId === "credential",

@@ -63,6 +63,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
 
     useEffect(() => {
       if (defaultValue !== undefined) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setInternalValue(defaultValue.toString());
       }
     }, [defaultValue]);

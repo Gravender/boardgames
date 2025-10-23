@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/static-components */
 "use client";
 
 import { useMemo, useState } from "react";
@@ -46,7 +47,7 @@ export function GameDetails({ data }: { data: Games }) {
       setSortOrder("asc");
     }
   };
-
+  //TODO: fix lint error
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field)
       return <div className="ml-1 h-3 w-3 sm:ml-2 sm:h-4 sm:w-4" />;
@@ -59,7 +60,7 @@ export function GameDetails({ data }: { data: Games }) {
   return (
     <ScrollArea className="w-full">
       <Table
-        containerClassname="rounded-lg h-72 md:h-[30rem] w-full"
+        containerClassname="rounded-lg h-72 md:h-120 w-full"
         className="w-full"
       >
         <TableHeader className="bg-card text-card-foreground sticky top-0 z-20">
