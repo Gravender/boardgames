@@ -1,5 +1,4 @@
-import type { BetterAuthOptions } from "better-auth";
-import type { BetterAuthPlugin } from "better-auth/plugins";
+import type { BetterAuthOptions, BetterAuthPlugin } from "better-auth";
 import React from "react";
 import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
@@ -76,10 +75,6 @@ export function initAuth(options: {
     secret: options.secret,
     plugins: [
       oAuthProxy({
-        /**
-         * Auto-inference blocked by https://github.com/better-auth/better-auth/pull/2891
-         */
-        currentURL: options.baseUrl,
         productionURL: options.productionUrl,
       }) as BetterAuthPlugin,
       expo(),
@@ -99,6 +94,11 @@ export function initAuth(options: {
       },
     },
     trustedOrigins: ["expo://"],
+    onAPIError: {
+      onError(error, ctx) {
+        console.error("BETTER AUTH API ERROR", error, ctx);
+      },
+    },
   } satisfies BetterAuthOptions;
 
   return betterAuth(config);
