@@ -23,6 +23,7 @@
     "@board-games/ui": "workspace:*",
     "@sentry/nextjs": "^9.30.0",
     "@t3-oss/env-nextjs": "^0.13.8",
+    "@tanstack/react-form": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
