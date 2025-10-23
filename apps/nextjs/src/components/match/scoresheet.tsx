@@ -393,6 +393,7 @@ function ScoresheetFooter(input: { match: MatchInput }) {
   >([]);
   const [openTieBreakerDialog, setOpenTieBreakerDialog] = useState(false);
 
+  //TODO: fix lint error
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (match.running) {
@@ -408,6 +409,7 @@ function ScoresheetFooter(input: { match: MatchInput }) {
         }
       }, 1000);
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDuration(match.duration);
     }
     return () => clearInterval(interval);

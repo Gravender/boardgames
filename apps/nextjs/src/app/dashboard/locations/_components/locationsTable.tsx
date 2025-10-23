@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { MapPin, Search } from "lucide-react";
@@ -18,7 +18,6 @@ import { LocationDropDown } from "./locationDropDown";
 export function LocationsTable() {
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(trpc.location.getLocations.queryOptions());
-  const [locations, setLocations] = useState(data);
   const [search, setSearch] = useState("");
   const filteredLocations = useMemo(() => {
     let filtered = [...data];
@@ -31,9 +30,6 @@ export function LocationsTable() {
 
     return filtered;
   }, [data, search]);
-  useEffect(() => {
-    setLocations(filteredLocations);
-  }, [filteredLocations, setLocations]);
 
   return (
     <div className="relative container mx-auto h-[90vh] max-w-3xl px-4">
@@ -51,7 +47,7 @@ export function LocationsTable() {
       </CardHeader>
       <ScrollArea className="h-[65vh] sm:h-[75vh]">
         <div className="flex flex-col gap-2">
-          {locations.map((location) => {
+          {filteredLocations.map((location) => {
             return (
               <Card
                 key={`${location.id}-${location.type}`}

@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 
-import type { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { Input } from "@board-games/ui/input";
@@ -18,8 +17,6 @@ import { GroupDropDown } from "./groupDropDown";
 export function GroupTable() {
   const trpc = useTRPC();
   const { data: data } = useSuspenseQuery(trpc.group.getGroups.queryOptions());
-  const [groups, setGroups] =
-    useState<RouterOutputs["group"]["getGroups"]>(data);
 
   const [search, setSearch] = useState("");
   const filteredGroups = useMemo(() => {
@@ -33,9 +30,6 @@ export function GroupTable() {
 
     return filtered;
   }, [data, search]);
-  useEffect(() => {
-    setGroups(filteredGroups);
-  }, [filteredGroups, setGroups]);
 
   return (
     <div className="relative container mx-auto h-[90vh] max-w-3xl px-4">
@@ -53,7 +47,7 @@ export function GroupTable() {
       </CardHeader>
       <ScrollArea className="h-[65vh] sm:h-[75vh]">
         <div className="flex flex-col gap-2">
-          {groups.map((group) => {
+          {filteredGroups.map((group) => {
             return (
               <Card key={group.id}>
                 <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">

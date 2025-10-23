@@ -1,4 +1,4 @@
-import * as React from "react";
+import type * as React from "react";
 import Link from "next/link";
 import { Calendar1, Dices, MapPin, User, UsersRound } from "lucide-react";
 

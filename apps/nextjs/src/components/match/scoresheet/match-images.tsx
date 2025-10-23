@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -195,7 +194,7 @@ export function MatchImages({
           </div>
           <DialogFooter className="flex-row gap-2">
             <div className="min-w-0 flex-1">
-              <h3 className="mb-2 text-lg font-semibold break-words md:text-xl">
+              <h3 className="mb-2 text-lg font-semibold wrap-break-word md:text-xl">
                 {selectedImage?.caption}
               </h3>
               {selectedImage?.duration && (

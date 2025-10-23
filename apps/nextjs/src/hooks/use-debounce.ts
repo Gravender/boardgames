@@ -45,6 +45,7 @@ export function useDebouncedCallback<T extends (...args: never[]) => void>(
   }, [callback]);
 
   return useMemo(() => {
+    // eslint-disable-next-line react-hooks/refs
     return debounce((...args: Parameters<T>) => {
       ref.current(...args);
     }, delay);

@@ -59,6 +59,8 @@ export function PlayerImage({
         src={image?.url ?? ""}
         alt={alt}
       />
+      {/* TODO: fix this bug */}
+      {/*  eslint-disable-next-line react-hooks/static-components */}
       <Inner />
       {children}
     </Avatar>

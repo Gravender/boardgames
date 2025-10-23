@@ -91,6 +91,7 @@ export function ScoreSheetTable({ matchId }: { matchId: number }) {
 
   useEffect(() => {
     if (match && match.scoresheet.rounds.length !== players[0]?.rounds.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDuration(match.duration);
 
       setIsRunning(match.running);

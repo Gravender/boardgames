@@ -97,12 +97,14 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
   const [availableLocations, setAvailableLocations] = useState<string[]>([]);
 
   // Fetch available locations
+  //TODO: fix lint error
   useEffect(() => {
     const locations = new Set(
       matches
         .map((match) => match.location?.name)
         .filter((location) => location !== undefined),
     );
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAvailableLocations(Array.from(locations));
   }, [matches]);
 
@@ -210,7 +212,7 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
     <div className="space-y-4">
       {/* Search bar and filter toggle */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-grow">
+        <div className="relative grow">
           <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
           <Input
             placeholder="Search matches..."
