@@ -1,0 +1,13 @@
+import { defineConfig } from "eslint/config";
+
+import { baseConfig, restrictEnvAccess } from "@board-games/eslint-config/base";
+import { reactConfig } from "@board-games/eslint-config/react";
+
+export default defineConfig(
+  {
+    ignores: ["script/**"],
+  },
+  baseConfig,
+  restrictEnvAccess,
+  reactConfig,
+);
