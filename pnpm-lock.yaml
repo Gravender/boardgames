@@ -18,10 +18,19 @@ catalogs:
     '@tailwindcss/postcss':
       specifier: ^4.1.14
       version: 4.1.15
+    '@tanstack/react-devtools':
+      specifier: ^0.7.7
+      version: 0.7.7
     '@tanstack/react-form':
       specifier: ^1.23.7
       version: 1.23.8
+    '@tanstack/react-form-devtools':
+      specifier: ^0.1.8
+      version: 0.1.8
     '@tanstack/react-query':
+      specifier: ^5.90.2
+      version: 5.90.2
+    '@tanstack/react-query-devtools':
       specifier: ^5.90.2
       version: 5.90.2
     '@trpc/client':
@@ -161,7 +170,7 @@ importers:
         version: 7.1.5(expo-constants@18.0.10)(expo-document-picker@13.0.3(expo@54.0.18))(expo-image-picker@16.0.6(expo@54.0.18))(next@15.5.4(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1))(react@19.1.1)(uploadthing@7.4.4(express@5.1.0)(next@15.5.4(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(tailwindcss@4.1.15))
       better-auth:
         specifier: 'catalog:'
-        version: 1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        version: 1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.1
@@ -351,7 +360,7 @@ importers:
         version: 1.1.0(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react@19.1.1)
       better-auth:
         specifier: 'catalog:'
-        version: 1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        version: 1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -416,8 +425,14 @@ importers:
       '@spotlightjs/spotlight':
         specifier: ^3.0.1
         version: 3.0.1
+      '@tanstack/react-devtools':
+        specifier: 'catalog:'
+        version: 0.7.7(@types/react-dom@19.2.0(@types/react@19.2.0))(@types/react@19.2.0)(bufferutil@4.0.9)(csstype@3.1.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)(utf-8-validate@6.0.5)
+      '@tanstack/react-form-devtools':
+        specifier: 'catalog:'
+        version: 0.1.8(csstype@3.1.3)(react@19.1.1)(solid-js@1.9.9)
       '@tanstack/react-query-devtools':
-        specifier: ^5.90.2
+        specifier: 'catalog:'
         version: 5.90.2(@tanstack/react-query@5.90.2(react@19.1.1))(react@19.1.1)
       '@types/lodash.debounce':
         specifier: ^4.0.9
@@ -518,7 +533,7 @@ importers:
         version: 0.13.8(typescript@5.9.3)(zod@4.1.12)
       better-auth:
         specifier: 'catalog:'
-        version: 1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        version: 1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       next:
         specifier: ^15.5.4
         version: 15.5.4(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -4170,6 +4185,36 @@ packages:
   '@sinonjs/fake-timers@10.3.0':
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
 
+  '@solid-primitives/event-listener@2.4.3':
+    resolution: {integrity: sha512-h4VqkYFv6Gf+L7SQj+Y6puigL/5DIi7x5q07VZET7AWcS+9/G3WfIE9WheniHWJs51OEkRB43w6lDys5YeFceg==}
+    peerDependencies:
+      solid-js: ^1.6.12
+
+  '@solid-primitives/keyboard@1.3.3':
+    resolution: {integrity: sha512-9dQHTTgLBqyAI7aavtO+HnpTVJgWQA1ghBSrmLtMu1SMxLPDuLfuNr+Tk5udb4AL4Ojg7h9JrKOGEEDqsJXWJA==}
+    peerDependencies:
+      solid-js: ^1.6.12
+
+  '@solid-primitives/resize-observer@2.1.3':
+    resolution: {integrity: sha512-zBLje5E06TgOg93S7rGPldmhDnouNGhvfZVKOp+oG2XU8snA+GoCSSCz1M+jpNAg5Ek2EakU5UVQqL152WmdXQ==}
+    peerDependencies:
+      solid-js: ^1.6.12
+
+  '@solid-primitives/rootless@1.5.2':
+    resolution: {integrity: sha512-9HULb0QAzL2r47CCad0M+NKFtQ+LrGGNHZfteX/ThdGvKIg2o2GYhBooZubTCd/RTu2l2+Nw4s+dEfiDGvdrrQ==}
+    peerDependencies:
+      solid-js: ^1.6.12
+
+  '@solid-primitives/static-store@0.1.2':
+    resolution: {integrity: sha512-ReK+5O38lJ7fT+L6mUFvUr6igFwHBESZF+2Ug842s7fvlVeBdIVEdTCErygff6w7uR6+jrr7J8jQo+cYrEq4Iw==}
+    peerDependencies:
+      solid-js: ^1.6.12
+
+  '@solid-primitives/utils@6.3.2':
+    resolution: {integrity: sha512-hZ/M/qr25QOCcwDPOHtGjxTD8w2mNyVAYvcfgwzBHq2RwNqHNdDNsMZYap20+ruRwW4A3Cdkczyoz0TSxLCAPQ==}
+    peerDependencies:
+      solid-js: ^1.6.12
+
   '@spotlightjs/overlay@3.1.0':
     resolution: {integrity: sha512-FOT5bE0G1k9DOTEMYYnVLXptlfVOlRq3ESC1UIsS88oL3enuUOIP70X86zE7vpUmUFrNnSGIsZBZOclwI5fa2Q==}
 
@@ -4317,12 +4362,37 @@ packages:
   '@tailwindcss/postcss@4.1.15':
     resolution: {integrity: sha512-IZh8IT76KujRz6d15wZw4eoeViT4TqmzVWNNfpuNCTKiaZUwgr5vtPqO4HjuYDyx3MgGR5qgPt1HMzTeLJyA3g==}
 
+  '@tanstack/devtools-client@0.0.3':
+    resolution: {integrity: sha512-kl0r6N5iIL3t9gGDRAv55VRM3UIyMKVH83esRGq7xBjYsRLe/BeCIN2HqrlJkObUXQMKhy7i8ejuGOn+bDqDBw==}
+    engines: {node: '>=18'}
+
+  '@tanstack/devtools-event-bus@0.3.2':
+    resolution: {integrity: sha512-yJT2As/drc+Epu0nsqCsJaKaLcaNGufiNxSlp/+/oeTD0jsBxF9/PJBfh66XVpYXkKr97b8689mSu7QMef0Rrw==}
+    engines: {node: '>=18'}
+
   '@tanstack/devtools-event-client@0.3.3':
     resolution: {integrity: sha512-RfV+OPV/M3CGryYqTue684u10jUt55PEqeBOnOtCe6tAmHI9Iqyc8nHeDhWPEV9715gShuauFVaMc9RiUVNdwg==}
     engines: {node: '>=18'}
 
+  '@tanstack/devtools-ui@0.4.3':
+    resolution: {integrity: sha512-7QshnQIHifURyMwl/qmYm4KDpsf8UJrJ8BUu+YvPx35RJBe2EO5qHPsefzWh6MlG/dUdVMBxP9nPqchESyuNFg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      solid-js: '>=1.9.7'
+
+  '@tanstack/devtools@0.6.21':
+    resolution: {integrity: sha512-j8cCmrOz7wu4G4jJ2ZZCo3fIGGDMygSQVPZDtyFylKtKC5i88Hnu6YioODP6I+0mbn9Qvr4eWgPHEONXAViXeA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      solid-js: '>=1.9.7'
+
   '@tanstack/form-core@1.24.4':
     resolution: {integrity: sha512-+eIR7DiDamit1zvTVgaHxuIRA02YFgJaXMUGxsLRJoBpUjGl/g/nhUocQoNkRyfXqOlh8OCMTanjwDprWSRq6w==}
+
+  '@tanstack/form-devtools@0.1.8':
+    resolution: {integrity: sha512-r34PPx1f5QlkWMqFh8Vyw6ats+ValLrTJMhFTx66m1i0YZJ1D5vZ/1ZF62JWMUxsep0yJqDbXznr1629Qmrt8w==}
+    peerDependencies:
+      solid-js: '>=1.9.9'
 
   '@tanstack/pacer@0.15.4':
     resolution: {integrity: sha512-vGY+CWsFZeac3dELgB6UZ4c7OacwsLb8hvL2gLS6hTgy8Fl0Bm/aLokHaeDIP+q9F9HUZTnp360z9uv78eg8pg==}
@@ -4333,6 +4403,20 @@ packages:
 
   '@tanstack/query-devtools@5.90.1':
     resolution: {integrity: sha512-GtINOPjPUH0OegJExZ70UahT9ykmAhmtNVcmtdnOZbxLwT7R5OmRztR5Ahe3/Cu7LArEmR6/588tAycuaWb1xQ==}
+
+  '@tanstack/react-devtools@0.7.7':
+    resolution: {integrity: sha512-mJ7Ixa+AadGF1b13tLkC8lX0JrM7CrH/SJMOqcCWot9l80KZCWeFnDF1+Ww25QosVbZ1db611LNcgsGz8pv3Zg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/react': '>=16.8'
+      '@types/react-dom': '>=16.8'
+      react: '>=16.8'
+      react-dom: '>=16.8'
+
+  '@tanstack/react-form-devtools@0.1.8':
+    resolution: {integrity: sha512-FwXYLzLIGpqhHcg3sv81ioBBP+3+d2DPS8F+srXBZHuaJAHh6yhwDPAjhe5FlCK8X8+RlVtEbbD+4JXyWao8EQ==}
+    peerDependencies:
+      react: ^17.0.0 || ^18.0.0 || ^19.0.0
 
   '@tanstack/react-form@1.23.8':
     resolution: {integrity: sha512-ivfkiOHAI3aIWkCY4FnPWVAL6SkQWGWNVjtwIZpaoJE4ulukZWZ1KB8TQKs8f4STl+egjTsMHrWJuf2fv3Xh1w==}
@@ -5716,6 +5800,9 @@ packages:
   date-fns@4.1.0:
     resolution: {integrity: sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg==}
 
+  dayjs@1.11.18:
+    resolution: {integrity: sha512-zFBQ7WFRvVRhKcWoUh+ZA1g2HVgUbsZm9sbddh8EC5iv93sui8DVVz1Npvz+r6meo9VKfa8NyLWBsQK1VvIKPA==}
+
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
     peerDependencies:
@@ -6914,6 +7001,11 @@ packages:
   globby@10.0.2:
     resolution: {integrity: sha512-7dUi7RvCoT/xast/o/dLN53oqND4yk0nsHkhRgn9w65C4PofCLOoJ39iSOg+qVDdWQPIEj+eszMHQ+aLVwwQSg==}
     engines: {node: '>=8'}
+
+  goober@2.1.18:
+    resolution: {integrity: sha512-2vFqsaDVIT9Gz7N6kAL++pLpp41l3PfDuusHcjnGLfR6+huZkl6ziX+zgVC3ZxpqWhzH6pyDdGrCeDhMIvwaxw==}
+    peerDependencies:
+      csstype: ^3.0.10
 
   gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
@@ -9057,6 +9149,16 @@ packages:
   serialize-javascript@6.0.2:
     resolution: {integrity: sha512-Saa1xPByTTq2gdeFZYLLo+RFE35NHZkAbqZeWNd3BpzppeVisAqpDjcp8dyf6uIvEqJRd46jemmyA4iFIeVk8g==}
 
+  seroval-plugins@1.3.3:
+    resolution: {integrity: sha512-16OL3NnUBw8JG1jBLUoZJsLnQq0n5Ua6aHalhJK4fMQkz1lqR7Osz1sA30trBtd9VUDc2NgkuRCn8+/pBwqZ+w==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      seroval: ^1.0
+
+  seroval@1.3.2:
+    resolution: {integrity: sha512-RbcPH1n5cfwKrru7v7+zrZvjLurgHhGyso3HTyGtRivGWgYjbOmGuivCQaORNELjNONoK35nj28EoWul9sb1zQ==}
+    engines: {node: '>=10'}
+
   serve-static@1.16.2:
     resolution: {integrity: sha512-VqpjJZKadQB/PEbEwvFdO43Ax5dFBZ2UECszz8bQ7pi7wt//PWe1P6MN7eCnjsatYtBT6EuiClbjSWP2WrIoTw==}
     engines: {node: '>= 0.8.0'}
@@ -9179,6 +9281,9 @@ packages:
   socks@2.8.7:
     resolution: {integrity: sha512-HLpt+uLy/pxB+bum/9DzAgiKS8CX1EvbWxI4zlmgGCExImLdiad2iCwXT5Z4c9c3Eq8rP2318mPW2c+QbtjK8A==}
     engines: {node: '>= 10.0.0', npm: '>= 3.0.0'}
+
+  solid-js@1.9.9:
+    resolution: {integrity: sha512-A0ZBPJQldAeGCTW0YRYJmt7RCeh5rbFfPZ2aOttgYnctHE7HgKeHCBB/PVc2P7eOfmNXqMFFFoYYdm3S4dcbkA==}
 
   sonner@2.0.7:
     resolution: {integrity: sha512-W6ZN4p58k8aDKA4XPcx2hpIQXBRAgyiWVkYhT7CvK6D3iAu7xjvVyhQHg2/iaKJZ1XVJ4r7XuwGL+WGEK37i9w==}
@@ -10840,7 +10945,7 @@ snapshots:
       '@prisma/client': 5.22.0(prisma@5.22.0)
       '@types/better-sqlite3': 7.6.13
       '@types/prompts': 2.4.9
-      better-auth: 1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      better-auth: 1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       better-sqlite3: 12.4.1
       c12: 3.3.0
       chalk: 5.6.2
@@ -10906,7 +11011,7 @@ snapshots:
   '@better-auth/expo@1.4.0-beta.9(better-auth@1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(expo-constants@18.0.10)(expo-crypto@14.0.2(expo@54.0.18))(expo-linking@8.0.8)(expo-secure-store@15.0.7(expo@54.0.18))(expo-web-browser@15.0.8(expo@54.0.18)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)(utf-8-validate@6.0.5)))':
     dependencies:
       '@better-fetch/fetch': 1.1.18
-      better-auth: 1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      better-auth: 1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       expo-constants: 18.0.10(expo@54.0.18)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)(utf-8-validate@6.0.5))
       expo-crypto: 14.0.2(expo@54.0.18)
       expo-linking: 8.0.8(expo@54.0.18)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)(utf-8-validate@6.0.5))(react@19.1.1)
@@ -10917,7 +11022,7 @@ snapshots:
   '@better-auth/expo@1.4.0-beta.9(better-auth@1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(expo-constants@18.0.10)(expo-crypto@14.0.2(expo@54.0.18))(expo-linking@8.0.8)(expo-secure-store@15.0.7(expo@54.0.18))(expo-web-browser@15.0.8(expo@54.0.18)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)))':
     dependencies:
       '@better-fetch/fetch': 1.1.18
-      better-auth: 1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      better-auth: 1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       expo-constants: 18.0.10(expo@54.0.18)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1))
       expo-crypto: 14.0.2(expo@54.0.18)
       expo-linking: 8.0.8(expo@54.0.18)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1))(react@19.1.1)
@@ -11674,7 +11779,7 @@ snapshots:
       '@expo/json-file': 10.0.7
       '@react-native/normalize-colors': 0.81.5
       debug: 4.4.1
-      expo: 54.0.18(@babel/core@7.28.4)(@expo/metro-runtime@5.0.4(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(expo-router@6.0.13)(graphql@15.8.0)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)(utf-8-validate@6.0.5))(react@19.1.1)(utf-8-validate@6.0.5)
+      expo: 54.0.18(@babel/core@7.28.4)(@expo/metro-runtime@5.0.4(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)))(bufferutil@4.0.9)(expo-router@6.0.13)(graphql@15.8.0)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1))(react@19.1.1)
       resolve-from: 5.0.0
       semver: 7.7.2
       xml2js: 0.6.0
@@ -14098,6 +14203,40 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
+  '@solid-primitives/event-listener@2.4.3(solid-js@1.9.9)':
+    dependencies:
+      '@solid-primitives/utils': 6.3.2(solid-js@1.9.9)
+      solid-js: 1.9.9
+
+  '@solid-primitives/keyboard@1.3.3(solid-js@1.9.9)':
+    dependencies:
+      '@solid-primitives/event-listener': 2.4.3(solid-js@1.9.9)
+      '@solid-primitives/rootless': 1.5.2(solid-js@1.9.9)
+      '@solid-primitives/utils': 6.3.2(solid-js@1.9.9)
+      solid-js: 1.9.9
+
+  '@solid-primitives/resize-observer@2.1.3(solid-js@1.9.9)':
+    dependencies:
+      '@solid-primitives/event-listener': 2.4.3(solid-js@1.9.9)
+      '@solid-primitives/rootless': 1.5.2(solid-js@1.9.9)
+      '@solid-primitives/static-store': 0.1.2(solid-js@1.9.9)
+      '@solid-primitives/utils': 6.3.2(solid-js@1.9.9)
+      solid-js: 1.9.9
+
+  '@solid-primitives/rootless@1.5.2(solid-js@1.9.9)':
+    dependencies:
+      '@solid-primitives/utils': 6.3.2(solid-js@1.9.9)
+      solid-js: 1.9.9
+
+  '@solid-primitives/static-store@0.1.2(solid-js@1.9.9)':
+    dependencies:
+      '@solid-primitives/utils': 6.3.2(solid-js@1.9.9)
+      solid-js: 1.9.9
+
+  '@solid-primitives/utils@6.3.2(solid-js@1.9.9)':
+    dependencies:
+      solid-js: 1.9.9
+
   '@spotlightjs/overlay@3.1.0': {}
 
   '@spotlightjs/sidecar@1.11.4':
@@ -14209,13 +14348,59 @@ snapshots:
       postcss: 8.5.6
       tailwindcss: 4.1.15
 
+  '@tanstack/devtools-client@0.0.3':
+    dependencies:
+      '@tanstack/devtools-event-client': 0.3.3
+
+  '@tanstack/devtools-event-bus@0.3.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)':
+    dependencies:
+      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
   '@tanstack/devtools-event-client@0.3.3': {}
+
+  '@tanstack/devtools-ui@0.4.3(csstype@3.1.3)(solid-js@1.9.9)':
+    dependencies:
+      clsx: 2.1.1
+      goober: 2.1.18(csstype@3.1.3)
+      solid-js: 1.9.9
+    transitivePeerDependencies:
+      - csstype
+
+  '@tanstack/devtools@0.6.21(bufferutil@4.0.9)(csstype@3.1.3)(solid-js@1.9.9)(utf-8-validate@6.0.5)':
+    dependencies:
+      '@solid-primitives/event-listener': 2.4.3(solid-js@1.9.9)
+      '@solid-primitives/keyboard': 1.3.3(solid-js@1.9.9)
+      '@solid-primitives/resize-observer': 2.1.3(solid-js@1.9.9)
+      '@tanstack/devtools-client': 0.0.3
+      '@tanstack/devtools-event-bus': 0.3.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      '@tanstack/devtools-ui': 0.4.3(csstype@3.1.3)(solid-js@1.9.9)
+      clsx: 2.1.1
+      goober: 2.1.18(csstype@3.1.3)
+      solid-js: 1.9.9
+    transitivePeerDependencies:
+      - bufferutil
+      - csstype
+      - utf-8-validate
 
   '@tanstack/form-core@1.24.4':
     dependencies:
       '@tanstack/devtools-event-client': 0.3.3
       '@tanstack/pacer': 0.15.4
       '@tanstack/store': 0.7.7
+
+  '@tanstack/form-devtools@0.1.8(csstype@3.1.3)(solid-js@1.9.9)':
+    dependencies:
+      '@tanstack/devtools-ui': 0.4.3(csstype@3.1.3)(solid-js@1.9.9)
+      '@tanstack/form-core': 1.24.4
+      clsx: 2.1.1
+      dayjs: 1.11.18
+      goober: 2.1.18(csstype@3.1.3)
+      solid-js: 1.9.9
+    transitivePeerDependencies:
+      - csstype
 
   '@tanstack/pacer@0.15.4':
     dependencies:
@@ -14225,6 +14410,27 @@ snapshots:
   '@tanstack/query-core@5.90.2': {}
 
   '@tanstack/query-devtools@5.90.1': {}
+
+  '@tanstack/react-devtools@0.7.7(@types/react-dom@19.2.0(@types/react@19.2.0))(@types/react@19.2.0)(bufferutil@4.0.9)(csstype@3.1.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)(utf-8-validate@6.0.5)':
+    dependencies:
+      '@tanstack/devtools': 0.6.21(bufferutil@4.0.9)(csstype@3.1.3)(solid-js@1.9.9)(utf-8-validate@6.0.5)
+      '@types/react': 19.2.0
+      '@types/react-dom': 19.2.0(@types/react@19.2.0)
+      react: 19.1.1
+      react-dom: 19.1.1(react@19.1.1)
+    transitivePeerDependencies:
+      - bufferutil
+      - csstype
+      - solid-js
+      - utf-8-validate
+
+  '@tanstack/react-form-devtools@0.1.8(csstype@3.1.3)(react@19.1.1)(solid-js@1.9.9)':
+    dependencies:
+      '@tanstack/form-devtools': 0.1.8(csstype@3.1.3)(solid-js@1.9.9)
+      react: 19.1.1
+    transitivePeerDependencies:
+      - csstype
+      - solid-js
 
   '@tanstack/react-form@1.23.8(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
@@ -15225,7 +15431,7 @@ snapshots:
       resolve-from: 5.0.0
     optionalDependencies:
       '@babel/runtime': 7.27.4
-      expo: 54.0.18(@babel/core@7.28.4)(@expo/metro-runtime@5.0.4(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(expo-router@6.0.13)(graphql@15.8.0)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)(utf-8-validate@6.0.5))(react@19.1.1)(utf-8-validate@6.0.5)
+      expo: 54.0.18(@babel/core@7.28.4)(@expo/metro-runtime@5.0.4(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)))(bufferutil@4.0.9)(expo-router@6.0.13)(graphql@15.8.0)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1))(react@19.1.1)
     transitivePeerDependencies:
       - '@babel/core'
       - supports-color
@@ -15244,7 +15450,7 @@ snapshots:
 
   basic-ftp@5.0.5: {}
 
-  better-auth@1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
+  better-auth@1.4.0-beta.9(better-sqlite3@12.4.1)(next@15.5.4(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9):
     dependencies:
       '@better-auth/core': 1.4.0-beta.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.18)(better-call@1.0.19)(better-sqlite3@12.4.1)(jose@6.1.0)(kysely@0.28.7)(nanostores@1.0.1)
       '@better-auth/telemetry': 1.4.0-beta.9(@better-auth/core@1.4.0-beta.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.18)(better-call@1.0.19)(better-sqlite3@12.4.1)(jose@6.1.0)(kysely@0.28.7)(nanostores@1.0.1))
@@ -15264,6 +15470,7 @@ snapshots:
       next: 15.5.4(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
+      solid-js: 1.9.9
     transitivePeerDependencies:
       - better-sqlite3
 
@@ -15911,6 +16118,8 @@ snapshots:
   date-fns-jalali@4.1.0-0: {}
 
   date-fns@4.1.0: {}
+
+  dayjs@1.11.18: {}
 
   debug@2.6.9:
     dependencies:
@@ -16703,7 +16912,7 @@ snapshots:
   expo-crypto@14.0.2(expo@54.0.18):
     dependencies:
       base64-js: 1.5.1
-      expo: 54.0.18(@babel/core@7.28.4)(@expo/metro-runtime@5.0.4(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(expo-router@6.0.13)(graphql@15.8.0)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)(utf-8-validate@6.0.5))(react@19.1.1)(utf-8-validate@6.0.5)
+      expo: 54.0.18(@babel/core@7.28.4)(@expo/metro-runtime@5.0.4(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)))(bufferutil@4.0.9)(expo-router@6.0.13)(graphql@15.8.0)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1))(react@19.1.1)
 
   expo-dev-client@6.0.16(expo@54.0.18):
     dependencies:
@@ -16780,7 +16989,7 @@ snapshots:
 
   expo-keep-awake@15.0.7(expo@54.0.18)(react@19.1.1):
     dependencies:
-      expo: 54.0.18(@babel/core@7.28.4)(@expo/metro-runtime@5.0.4(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(expo-router@6.0.13)(graphql@15.8.0)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)(utf-8-validate@6.0.5))(react@19.1.1)(utf-8-validate@6.0.5)
+      expo: 54.0.18(@babel/core@7.28.4)(@expo/metro-runtime@5.0.4(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)))(bufferutil@4.0.9)(expo-router@6.0.13)(graphql@15.8.0)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1))(react@19.1.1)
       react: 19.1.1
 
   expo-linking@8.0.8(expo@54.0.18)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)(utf-8-validate@6.0.5))(react@19.1.1):
@@ -16930,7 +17139,7 @@ snapshots:
 
   expo-secure-store@15.0.7(expo@54.0.18):
     dependencies:
-      expo: 54.0.18(@babel/core@7.28.4)(@expo/metro-runtime@5.0.4(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)(utf-8-validate@6.0.5)))(bufferutil@4.0.9)(expo-router@6.0.13)(graphql@15.8.0)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)(utf-8-validate@6.0.5))(react@19.1.1)(utf-8-validate@6.0.5)
+      expo: 54.0.18(@babel/core@7.28.4)(@expo/metro-runtime@5.0.4(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1)))(bufferutil@4.0.9)(expo-router@6.0.13)(graphql@15.8.0)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.2.0)(bufferutil@4.0.9)(react@19.1.1))(react@19.1.1)
 
   expo-server@1.0.2: {}
 
@@ -17414,6 +17623,10 @@ snapshots:
       ignore: 5.3.2
       merge2: 1.4.1
       slash: 3.0.0
+
+  goober@2.1.18(csstype@3.1.3):
+    dependencies:
+      csstype: 3.1.3
 
   gopd@1.2.0: {}
 
@@ -20114,6 +20327,12 @@ snapshots:
     dependencies:
       randombytes: 2.1.0
 
+  seroval-plugins@1.3.3(seroval@1.3.2):
+    dependencies:
+      seroval: 1.3.2
+
+  seroval@1.3.2: {}
+
   serve-static@1.16.2:
     dependencies:
       encodeurl: 2.0.0
@@ -20283,6 +20502,12 @@ snapshots:
     dependencies:
       ip-address: 10.0.1
       smart-buffer: 4.2.0
+
+  solid-js@1.9.9:
+    dependencies:
+      csstype: 3.1.3
+      seroval: 1.3.2
+      seroval-plugins: 1.3.3(seroval@1.3.2)
 
   sonner@2.0.7(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
     dependencies:
