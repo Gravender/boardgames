@@ -2,12 +2,27 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { useForm } from "@tanstack/react-form";
-import { ChevronLeft, Search, Users } from "lucide-react";
+import {
+  ChevronLeft,
+  Plus,
+  Search,
+  Shield,
+  Trash2,
+  User,
+  Users,
+  Users2,
+  X,
+} from "lucide-react";
 import z from "zod/v4";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@board-games/ui/collapsible";
 import {
   DialogContent,
   DialogDescription,
@@ -17,13 +32,30 @@ import {
 } from "@board-games/ui/dialog";
 import {
   Field,
-  FieldContent,
   FieldError,
   FieldGroup,
   FieldLabel,
 } from "@board-games/ui/field";
 import { Input } from "@board-games/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@board-games/ui/input-group";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemFooter,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@board-games/ui/item";
+import { ScrollArea } from "@board-games/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { toast } from "@board-games/ui/toast";
+import { cn } from "@board-games/ui/utils";
 
 export interface MatchConfig {
   name: string;
@@ -61,6 +93,7 @@ export function PlayerSelector({
       <div className="grid gap-4 md:grid-cols-2">
         {/* Quick Match */}
         <button
+          type="button"
           onClick={() => {
             setMode("quick");
           }}
@@ -90,6 +123,7 @@ export function PlayerSelector({
 
         {/* Custom Match */}
         <button
+          type="button"
           onClick={() => {
             setMode("custom");
           }}
@@ -119,6 +153,7 @@ export function PlayerSelector({
       </div>
       <DialogFooter>
         <Button
+          type="button"
           variant="secondary"
           onClick={() => {
             setMode("match");
@@ -308,79 +343,83 @@ export function QuickMatchSelection({
                       );
                       return (
                         <Field data-invalid={isInvalid}>
-                          <FieldContent>
-                            <FieldLabel
-                              htmlFor={field.name}
-                              className="sr-only"
-                            >
-                              Players
-                            </FieldLabel>
-                          </FieldContent>
-                          <div className="grid max-h-[500px] gap-3 overflow-y-auto pr-2">
-                            {filteredPlayers.map((player) => {
-                              const selected = selectedPlayers.find(
-                                (p) =>
-                                  (p.type === "original" &&
-                                    player.type === "original" &&
-                                    p.id === player.id) ||
-                                  (p.type === "shared" &&
-                                    player.type === "shared" &&
-                                    p.sharedId === player.sharedId),
-                              );
-                              return (
-                                <button
-                                  key={`${player.type}-${player.type === "original" ? player.id : player.sharedId}`}
-                                  type="button"
-                                  onClick={() => togglePlayer(player)}
-                                  className={`flex items-center gap-4 rounded-lg border-2 p-4 text-left transition-all ${
-                                    selected
-                                      ? "border-primary bg-primary/5"
-                                      : "border-border hover:border-primary/50 hover:bg-accent"
-                                  }`}
-                                >
-                                  <Avatar className="h-12 w-12">
-                                    <AvatarImage
-                                      src={`/generic-placeholder-icon.png?height=48&width=48`}
-                                    />
-                                    <AvatarFallback>
-                                      {player.name.slice(0, 2).toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex-1">
-                                    <div className="font-semibold">
-                                      {player.name}
-                                    </div>
-                                    <div className="text-muted-foreground text-sm">
-                                      {player.matches} matches played
-                                    </div>
-                                  </div>
-                                  <div
-                                    className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
-                                      selected
-                                        ? "border-primary bg-primary"
-                                        : "border-muted-foreground"
-                                    }`}
+                          <FieldLabel htmlFor={field.name} className="sr-only">
+                            Players
+                          </FieldLabel>
+                          <ScrollArea>
+                            <ItemGroup className="max-h-[500px] gap-4">
+                              {filteredPlayers.map((player) => {
+                                const selected = selectedPlayers.find(
+                                  (p) =>
+                                    (p.type === "original" &&
+                                      player.type === "original" &&
+                                      p.id === player.id) ||
+                                    (p.type === "shared" &&
+                                      player.type === "shared" &&
+                                      p.sharedId === player.sharedId),
+                                );
+                                return (
+                                  <Item
+                                    key={`${player.type}-${player.type === "original" ? player.id : player.sharedId}`}
+                                    variant="outline"
+                                    asChild
+                                    role="listitem"
                                   >
-                                    {selected && (
-                                      <svg
-                                        className="text-primary-foreground h-4 w-4"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
+                                    <button
+                                      type="button"
+                                      onClick={() => togglePlayer(player)}
+                                      className={cn(
+                                        selected &&
+                                          "border-primary bg-primary/5",
+                                      )}
+                                    >
+                                      <ItemMedia>
+                                        <Avatar>
+                                          <AvatarImage
+                                            src={
+                                              "/generic-placeholder-icon.png?height=48&width=48"
+                                            }
+                                          />
+                                          <AvatarFallback>
+                                            {player.name.charAt(0)}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                      </ItemMedia>
+                                      <ItemContent>
+                                        <ItemTitle>{player.name}</ItemTitle>
+                                        <ItemDescription className="text-left">
+                                          {`${player.matches} matches played`}
+                                        </ItemDescription>
+                                      </ItemContent>
+                                      <div
+                                        className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
+                                          selected
+                                            ? "border-primary bg-primary"
+                                            : "border-muted-foreground"
+                                        }`}
                                       >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={3}
-                                          d="M5 13l4 4L19 7"
-                                        />
-                                      </svg>
-                                    )}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
+                                        {selected && (
+                                          <svg
+                                            className="text-primary-foreground h-4 w-4"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={3}
+                                              d="M5 13l4 4L19 7"
+                                            />
+                                          </svg>
+                                        )}
+                                      </div>
+                                    </button>
+                                  </Item>
+                                );
+                              })}
+                            </ItemGroup>
+                          </ScrollArea>
                           {isInvalid && (
                             <FieldError errors={field.state.meta.errors} />
                           )}
@@ -393,6 +432,730 @@ export function QuickMatchSelection({
                       );
                     }}
                   />
+                </FieldGroup>
+                <DialogFooter className="sm:justify-between">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setMode("select");
+                    }}
+                  >
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Back
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={onCancel}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={selectedPlayers.length < 1}>
+                      Start Match
+                    </Button>
+                  </div>
+                </DialogFooter>
+              </>
+            );
+          }}
+        </form.Subscribe>
+      </form>
+    </DialogContent>
+  );
+}
+// Mock roles data
+const AVAILABLE_ROLES = [
+  {
+    id: "artist",
+    name: "Artist",
+    description:
+      "Once per game, during the day, privately ask the Storyteller any yes/no question.",
+  },
+  {
+    id: "assassin",
+    name: "Assassin",
+    description:
+      "Once per game, at night*, choose a player: they die, even if for some reason they could not.",
+  },
+  {
+    id: "barber",
+    name: "Barber",
+    description:
+      "If you died today or tonight, the Demon may choose 2 players (not another Demon) to swap characters.",
+  },
+  {
+    id: "baron",
+    name: "Baron",
+    description: "There are extra Outsiders in play. [+2 Outsiders]",
+  },
+  {
+    id: "boomdandy",
+    name: "Boomdandy",
+    description:
+      "If you are executed, all but 3 players die. After a 10 to 1 countdown, the player with the most players pointing at them, dies.",
+  },
+  {
+    id: "drunk",
+    name: "Drunk",
+    description:
+      "You do not know you are the Drunk. You think you are a Townsfolk character, but you are not.",
+  },
+  {
+    id: "fortune-teller",
+    name: "Fortune Teller",
+    description:
+      "Each night, choose 2 players: you learn if either is a Demon. There is a Good player that registers as a Demon to you.",
+  },
+];
+export function CustomMatchSelection({
+  onCancel,
+  setMode,
+}: MatchCreationFlowProps) {
+  const roleSchema = z.discriminatedUnion("type", [
+    z.object({
+      type: z.literal("original"),
+      name: z.string(),
+      id: z.number(),
+      teamId: z.number().optional(),
+    }),
+    z.object({
+      type: z.literal("shared"),
+      shareType: z.literal("link").or(z.literal("shared")),
+      name: z.string(),
+      sharedId: z.number(),
+      linkedPlayerId: z.number().nullable(),
+      teamId: z.number().optional(),
+    }),
+  ]);
+  const teamsSchema = z.object({
+    id: z.number(),
+    name: z.string(),
+  });
+  const playerSchema = z.discriminatedUnion("type", [
+    z.object({
+      type: z.literal("original"),
+      name: z.string(),
+      id: z.number(),
+      roles: z.array(roleSchema),
+      teamId: z.number().optional(),
+    }),
+    z.object({
+      type: z.literal("shared"),
+      shareType: z.literal("link").or(z.literal("shared")),
+      name: z.string(),
+      sharedId: z.number(),
+      linkedPlayerId: z.number().nullable(),
+      roles: z.array(roleSchema),
+      teamId: z.number().optional(),
+    }),
+  ]);
+  const playersSchema = z.object({
+    players: z.array(playerSchema).min(1, {
+      message: "You must select at least one player",
+    }),
+    teams: z.array(teamsSchema),
+    searchQuery: z.string(),
+    activeTab: z.literal("players").or(z.literal("teams")),
+  });
+
+  const players: (z.infer<typeof playerSchema> & { matches: number })[] = [
+    {
+      id: 1,
+      type: "original",
+      name: "Player 1",
+      matches: 0,
+      roles: [],
+    },
+    {
+      id: 2,
+      type: "original",
+      name: "Player 2",
+      matches: 0,
+      roles: [],
+    },
+    {
+      id: 3,
+      type: "original",
+      name: "Player 3",
+      matches: 0,
+      roles: [],
+    },
+    {
+      sharedId: 1,
+      type: "shared",
+      name: "Player 4",
+      shareType: "shared",
+      linkedPlayerId: null,
+      matches: 0,
+      roles: [],
+    },
+    {
+      sharedId: 2,
+      type: "shared",
+      name: "Player 4",
+      shareType: "link",
+      linkedPlayerId: 8,
+      matches: 0,
+      roles: [],
+    },
+  ];
+
+  const form = useForm({
+    formId: "custom-match-selection",
+    defaultValues: {
+      teams: [] as z.infer<typeof teamsSchema>[],
+      players: [] as z.infer<typeof playersSchema>["players"],
+      searchQuery: "",
+      activeTab: "players",
+    },
+    validators: {
+      onSubmit: playersSchema,
+    },
+    onSubmit: ({ value }) => {
+      toast("You submitted the following values:", {
+        description: (
+          <pre className="bg-code text-code-foreground mt-2 w-[320px] overflow-x-auto rounded-md p-4">
+            <code>{JSON.stringify(value, null, 2)}</code>
+          </pre>
+        ),
+        position: "bottom-right",
+        classNames: {
+          content: "flex flex-col gap-2",
+        },
+        style: {
+          "--border-radius": "calc(var(--radius)  + 4px)",
+        } as React.CSSProperties,
+      });
+      onCancel();
+    },
+  });
+  const togglePlayer = (player: z.infer<typeof playerSchema>) => {
+    const currentPlayers = form.state.values.players;
+    const isSelected = currentPlayers.some(
+      (p) =>
+        (p.type === "original" &&
+          player.type === "original" &&
+          p.id === player.id) ||
+        (p.type === "shared" &&
+          player.type === "shared" &&
+          p.sharedId === player.sharedId),
+    );
+    if (isSelected) {
+      form.setFieldValue(
+        "players",
+        currentPlayers.filter(
+          (p) =>
+            !(
+              p.type === "original" &&
+              player.type === "original" &&
+              p.id === player.id
+            ) &&
+            !(
+              p.type === "shared" &&
+              player.type === "shared" &&
+              p.sharedId === player.sharedId
+            ),
+        ),
+      );
+    } else {
+      form.setFieldValue("players", [...currentPlayers, { ...player }]);
+    }
+  };
+  const assignPlayerToTeam = (
+    teamId: number | undefined,
+    player: z.infer<typeof playerSchema>,
+  ) => {
+    const currentPlayers = form.state.values.players;
+    const tempPlayers = currentPlayers.map((p) => {
+      if (
+        (p.type === "original" &&
+          player.type === "original" &&
+          p.id === player.id) ||
+        (p.type === "shared" &&
+          player.type === "shared" &&
+          p.sharedId === player.sharedId)
+      ) {
+        return { ...p, teamId };
+      }
+      return p;
+    });
+    form.setFieldValue("players", tempPlayers);
+  };
+  return (
+    <DialogContent className="max-w-4xl">
+      <form
+        className="w-full space-y-6"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void form.handleSubmit();
+        }}
+      >
+        <form.Subscribe
+          selector={(state) => ({
+            selectedPlayers: state.values.players,
+            teams: state.values.teams,
+            searchQuery: state.values.searchQuery,
+          })}
+        >
+          {({ selectedPlayers, searchQuery, teams }) => {
+            const filteredPlayers = players.filter((player) =>
+              player.name.toLowerCase().includes(searchQuery.toLowerCase()),
+            );
+            const individualPlayers = selectedPlayers.filter((p) => !p.teamId);
+            return (
+              <>
+                <DialogHeader className="mt-4 flex flex-row items-center justify-between">
+                  <div>
+                    <DialogTitle>Temp Match Name</DialogTitle>
+                    <DialogDescription>10/23/2023</DialogDescription>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className="rounded px-4 py-2 text-base"
+                  >
+                    <Users className="mr-2 h-4 w-4" />
+                    {selectedPlayers.length} selected
+                  </Badge>
+                </DialogHeader>
+                <FieldGroup>
+                  <form.Field name="activeTab">
+                    {(field) => (
+                      <Tabs
+                        value={field.state.value}
+                        onValueChange={(value) => field.handleChange(value)}
+                        className="w-full"
+                      >
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="players">
+                            Select Players
+                          </TabsTrigger>
+                          <TabsTrigger value="teams">Teams & Roles</TabsTrigger>
+                        </TabsList>
+                        {/* Player Selection Tab */}
+                        <TabsContent value="players" className="mt-6 space-y-4">
+                          <form.Field name="searchQuery">
+                            {(field) => (
+                              <InputGroup>
+                                <InputGroupInput
+                                  placeholder="Search players..."
+                                  value={field.state.value}
+                                  onChange={(e) =>
+                                    field.handleChange(e.target.value)
+                                  }
+                                />
+                                <InputGroupAddon>
+                                  <Search />
+                                </InputGroupAddon>
+                                {searchQuery !== "" && (
+                                  <InputGroupAddon align="inline-end">
+                                    {filteredPlayers.length} results
+                                  </InputGroupAddon>
+                                )}
+                              </InputGroup>
+                            )}
+                          </form.Field>
+                          <form.Field
+                            name="players"
+                            children={(field) => {
+                              const isInvalid =
+                                field.state.meta.isTouched &&
+                                !field.state.meta.isValid;
+
+                              return (
+                                <Field data-invalid={isInvalid}>
+                                  <FieldLabel
+                                    htmlFor={field.name}
+                                    className="sr-only"
+                                  >
+                                    Players
+                                  </FieldLabel>
+                                  <ScrollArea>
+                                    <ItemGroup className="max-h-[500px] gap-4">
+                                      {filteredPlayers.map((player) => {
+                                        const selected = selectedPlayers.find(
+                                          (p) =>
+                                            (p.type === "original" &&
+                                              player.type === "original" &&
+                                              p.id === player.id) ||
+                                            (p.type === "shared" &&
+                                              player.type === "shared" &&
+                                              p.sharedId === player.sharedId),
+                                        );
+                                        return (
+                                          <Item
+                                            key={`${player.type}-${player.type === "original" ? player.id : player.sharedId}`}
+                                            variant="outline"
+                                            asChild
+                                            role="listitem"
+                                          >
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                togglePlayer(player)
+                                              }
+                                              className={cn(
+                                                selected &&
+                                                  "border-primary bg-primary/5",
+                                              )}
+                                            >
+                                              <ItemMedia>
+                                                <Avatar>
+                                                  <AvatarImage
+                                                    src={
+                                                      "/generic-placeholder-icon.png?height=48&width=48"
+                                                    }
+                                                  />
+                                                  <AvatarFallback>
+                                                    {player.name.charAt(0)}
+                                                  </AvatarFallback>
+                                                </Avatar>
+                                              </ItemMedia>
+                                              <ItemContent>
+                                                <ItemTitle>
+                                                  {player.name}
+                                                </ItemTitle>
+                                                <ItemDescription className="text-left">
+                                                  {`${player.matches} matches played`}
+                                                </ItemDescription>
+                                              </ItemContent>
+                                              <div
+                                                className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
+                                                  selected
+                                                    ? "border-primary bg-primary"
+                                                    : "border-muted-foreground"
+                                                }`}
+                                              >
+                                                {selected && (
+                                                  <svg
+                                                    className="text-primary-foreground h-4 w-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                  >
+                                                    <path
+                                                      strokeLinecap="round"
+                                                      strokeLinejoin="round"
+                                                      strokeWidth={3}
+                                                      d="M5 13l4 4L19 7"
+                                                    />
+                                                  </svg>
+                                                )}
+                                              </div>
+                                            </button>
+                                          </Item>
+                                        );
+                                      })}
+                                    </ItemGroup>
+                                  </ScrollArea>
+
+                                  {isInvalid && (
+                                    <FieldError
+                                      errors={field.state.meta.errors}
+                                    />
+                                  )}
+                                  {selectedPlayers.length < 1 && (
+                                    <div className="text-muted-foreground bg-muted/50 rounded-lg py-4 text-center text-sm">
+                                      Select at least 1 players to start the
+                                      match
+                                    </div>
+                                  )}
+                                </Field>
+                              );
+                            }}
+                          />
+                          {/* Continue Button */}
+                          {selectedPlayers.length > 0 && (
+                            <div className="flex justify-end pt-4">
+                              <Button
+                                type="button"
+                                onClick={() => field.handleChange("teams")}
+                              >
+                                Continue to Teams & Roles
+                                <ChevronLeft className="ml-2 h-4 w-4 rotate-180" />
+                              </Button>
+                            </div>
+                          )}
+                        </TabsContent>
+                        {/* Teams & Roles Tab */}
+                        <TabsContent value="teams" className="mt-6">
+                          <form.Field name="teams" mode="array">
+                            {(field) => {
+                              const minTeamId =
+                                teams.length > 0
+                                  ? Math.min(...teams.map((team) => team.id))
+                                  : 0;
+
+                              return (
+                                <div className="space-y-4">
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-muted-foreground text-sm">
+                                      Organize players into teams and assign
+                                      roles (optional)
+                                    </p>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() =>
+                                        field.pushValue({
+                                          id: minTeamId - 1,
+                                          name: `Team ${teams.length + 1}`,
+                                        })
+                                      }
+                                    >
+                                      <Plus className="mr-1 h-4 w-4" />
+                                      Add Team
+                                    </Button>
+                                  </div>
+                                  <ScrollArea>
+                                    <ItemGroup className="max-h-[500px] gap-4">
+                                      {teams.map((team, i) => {
+                                        const teamPlayers =
+                                          selectedPlayers.filter(
+                                            (p) => p.teamId === team.id,
+                                          );
+                                        return (
+                                          <Item key={i} variant="outline">
+                                            <ItemMedia variant="icon">
+                                              <Users2 />
+                                            </ItemMedia>
+                                            <ItemContent>
+                                              <form.Field
+                                                key={i}
+                                                name={`teams[${i}].name`}
+                                              >
+                                                {(subField) => {
+                                                  return (
+                                                    <Input
+                                                      value={team.name}
+                                                      onChange={(e) =>
+                                                        subField.handleChange(
+                                                          e.target.value,
+                                                        )
+                                                      }
+                                                    />
+                                                  );
+                                                }}
+                                              </form.Field>
+                                            </ItemContent>
+                                            <ItemActions>
+                                              <Button
+                                                type="button"
+                                                size="icon"
+                                                variant="ghost"
+                                              >
+                                                <Shield className="h-4 w-4" />
+                                              </Button>
+                                              <Button
+                                                type="button"
+                                                size="icon"
+                                                variant="ghost"
+                                                onClick={() => {
+                                                  form.setFieldValue(
+                                                    "players",
+                                                    selectedPlayers.map((p) =>
+                                                      p.teamId === team.id
+                                                        ? {
+                                                            ...p,
+                                                            teamId: undefined,
+                                                          }
+                                                        : p,
+                                                    ),
+                                                  );
+                                                  field.removeValue(i);
+                                                }}
+                                              >
+                                                <Trash2 className="h-4 w-4" />
+                                              </Button>
+                                            </ItemActions>
+                                            <ItemFooter className="flex w-full flex-col gap-2">
+                                              <ItemGroup className="w-full gap-2">
+                                                {teamPlayers.map((player) => {
+                                                  return (
+                                                    <Item
+                                                      key={`${player.type}-${player.type === "original" ? player.id : player.sharedId}`}
+                                                      size="sm"
+                                                      className="w-full py-1"
+                                                      variant="muted"
+                                                    >
+                                                      <ItemMedia>
+                                                        <Avatar className="h-5 w-5">
+                                                          <AvatarImage
+                                                            src={
+                                                              "/generic-placeholder-icon.png?height=48&width=48"
+                                                            }
+                                                          />
+                                                          <AvatarFallback>
+                                                            {player.name.charAt(
+                                                              0,
+                                                            )}
+                                                          </AvatarFallback>
+                                                        </Avatar>
+                                                      </ItemMedia>
+                                                      <ItemContent>
+                                                        <ItemTitle>
+                                                          {player.name}
+                                                        </ItemTitle>
+                                                      </ItemContent>
+                                                      <ItemActions>
+                                                        <Button
+                                                          type="button"
+                                                          size="icon"
+                                                          variant="ghost"
+                                                        >
+                                                          <Shield className="h-3 w-3" />
+                                                        </Button>
+                                                        <Button
+                                                          type="button"
+                                                          size="icon"
+                                                          variant="ghost"
+                                                          onClick={() =>
+                                                            assignPlayerToTeam(
+                                                              undefined,
+                                                              player,
+                                                            )
+                                                          }
+                                                        >
+                                                          <X className="h-3 w-3" />
+                                                        </Button>
+                                                      </ItemActions>
+                                                    </Item>
+                                                  );
+                                                })}
+                                              </ItemGroup>
+                                              {individualPlayers.length > 0 && (
+                                                <Collapsible className="w-full">
+                                                  <CollapsibleTrigger className="text-muted-foreground hover:text-foreground w-full cursor-pointer text-left text-xs">
+                                                    + Assign players to this
+                                                    team
+                                                  </CollapsibleTrigger>
+                                                  <CollapsibleContent>
+                                                    <ItemGroup className="gap-2">
+                                                      {individualPlayers.map(
+                                                        (player) => {
+                                                          return (
+                                                            <Item
+                                                              key={`${player.type}-${player.type === "original" ? player.id : player.sharedId}`}
+                                                              size="sm"
+                                                              role="listitem"
+                                                              className="hover:bg-accent py-1"
+                                                              asChild
+                                                            >
+                                                              <button
+                                                                type="button"
+                                                                onClick={(
+                                                                  e,
+                                                                ) => {
+                                                                  e.stopPropagation();
+
+                                                                  assignPlayerToTeam(
+                                                                    team.id,
+                                                                    player,
+                                                                  );
+                                                                }}
+                                                              >
+                                                                <ItemMedia>
+                                                                  <Avatar className="h-5 w-5">
+                                                                    <AvatarImage
+                                                                      src={
+                                                                        "/generic-placeholder-icon.png?height=48&width=48"
+                                                                      }
+                                                                    />
+                                                                    <AvatarFallback>
+                                                                      {player.name.charAt(
+                                                                        0,
+                                                                      )}
+                                                                    </AvatarFallback>
+                                                                  </Avatar>
+                                                                </ItemMedia>
+                                                                <ItemContent>
+                                                                  <ItemTitle>
+                                                                    {
+                                                                      player.name
+                                                                    }
+                                                                  </ItemTitle>
+                                                                </ItemContent>
+                                                              </button>
+                                                            </Item>
+                                                          );
+                                                        },
+                                                      )}
+                                                    </ItemGroup>
+                                                  </CollapsibleContent>
+                                                </Collapsible>
+                                              )}
+                                            </ItemFooter>
+                                          </Item>
+                                        );
+                                      })}
+                                      {individualPlayers.length > 0 && (
+                                        <Item variant="outline">
+                                          <ItemMedia variant="icon">
+                                            <User />
+                                          </ItemMedia>
+                                          <ItemContent>
+                                            <ItemTitle>
+                                              Individual Players
+                                            </ItemTitle>
+                                          </ItemContent>
+                                          <ItemFooter className="w-full">
+                                            <ItemGroup className="w-full gap-3">
+                                              {individualPlayers.map(
+                                                (player) => {
+                                                  return (
+                                                    <Item
+                                                      key={`${player.type}-${player.type === "original" ? player.id : player.sharedId}`}
+                                                      variant="muted"
+                                                      className="hover:bg-accent w-full py-2"
+                                                    >
+                                                      <ItemMedia>
+                                                        <Avatar className="h-6 w-6">
+                                                          <AvatarImage
+                                                            src={
+                                                              "/generic-placeholder-icon.png?height=48&width=48"
+                                                            }
+                                                          />
+                                                          <AvatarFallback>
+                                                            {player.name.charAt(
+                                                              0,
+                                                            )}
+                                                          </AvatarFallback>
+                                                        </Avatar>
+                                                      </ItemMedia>
+                                                      <ItemContent>
+                                                        <ItemTitle>
+                                                          {player.name}
+                                                        </ItemTitle>
+                                                      </ItemContent>
+                                                      <ItemActions>
+                                                        <Button
+                                                          type="button"
+                                                          size="icon"
+                                                          variant="ghost"
+                                                        >
+                                                          <Shield className="h-3 w-3" />
+                                                        </Button>
+                                                      </ItemActions>
+                                                    </Item>
+                                                  );
+                                                },
+                                              )}
+                                            </ItemGroup>
+                                          </ItemFooter>
+                                        </Item>
+                                      )}
+                                    </ItemGroup>
+                                  </ScrollArea>
+                                </div>
+                              );
+                            }}
+                          </form.Field>
+                        </TabsContent>
+                      </Tabs>
+                    )}
+                  </form.Field>
                 </FieldGroup>
                 <DialogFooter className="sm:justify-between">
                   <Button

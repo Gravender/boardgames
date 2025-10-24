@@ -6,6 +6,7 @@ import { Button } from "@board-games/ui/button";
 import { Dialog } from "@board-games/ui/dialog";
 
 import {
+  CustomMatchSelection,
   PlayerSelector,
   QuickMatchSelection,
 } from "~/components/match/add/player-selector";
@@ -28,6 +29,14 @@ export default function TestPage() {
       )}
       {mode === "quick" && (
         <QuickMatchSelection
+          playerCount={0}
+          onCancel={() => setShowDialog(false)}
+          setMode={setMode}
+          setShowDialog={setShowDialog}
+        />
+      )}
+      {mode === "custom" && (
+        <CustomMatchSelection
           playerCount={0}
           onCancel={() => setShowDialog(false)}
           setMode={setMode}
