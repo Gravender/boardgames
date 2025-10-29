@@ -1,6 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
+import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import {
   ChevronLeft,
@@ -18,12 +19,14 @@ import z from "zod/v4";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
+import { Checkbox } from "@board-games/ui/checkbox";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@board-games/ui/collapsible";
 import {
+  Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -468,70 +471,101 @@ export function QuickMatchSelection({
 // Mock roles data
 const AVAILABLE_ROLES = [
   {
-    id: "artist",
+    id: 1,
+    type: "original" as const,
     name: "Artist",
     description:
       "Once per game, during the day, privately ask the Storyteller any yes/no question.",
   },
   {
-    id: "assassin",
+    id: 2,
+    type: "original" as const,
     name: "Assassin",
     description:
       "Once per game, at night*, choose a player: they die, even if for some reason they could not.",
   },
   {
-    id: "barber",
+    id: 3,
+    type: "original" as const,
     name: "Barber",
     description:
       "If you died today or tonight, the Demon may choose 2 players (not another Demon) to swap characters.",
   },
   {
-    id: "baron",
+    id: 4,
+    type: "original" as const,
     name: "Baron",
     description: "There are extra Outsiders in play. [+2 Outsiders]",
   },
   {
-    id: "boomdandy",
+    id: 5,
+    type: "original" as const,
     name: "Boomdandy",
     description:
       "If you are executed, all but 3 players die. After a 10 to 1 countdown, the player with the most players pointing at them, dies.",
   },
   {
-    id: "drunk",
+    id: 6,
+    type: "original" as const,
     name: "Drunk",
     description:
       "You do not know you are the Drunk. You think you are a Townsfolk character, but you are not.",
   },
   {
-    id: "fortune-teller",
+    id: 7,
+    type: "original" as const,
     name: "Fortune Teller",
     description:
       "Each night, choose 2 players: you learn if either is a Demon. There is a Good player that registers as a Demon to you.",
+  },
+  {
+    sharedId: 1,
+    type: "shared" as const,
+    shareType: "shared" as const,
+    name: "Role 7",
+    description: "Role 7 description",
   },
 ];
 export function CustomMatchSelection({
   onCancel,
   setMode,
 }: MatchCreationFlowProps) {
+  const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [roleSearchQuery, setRoleSearchQuery] = useState("");
+  const [roleTarget, setRoleTarget] = useState<
+    | {
+        type: "player";
+        id: number;
+        shareType: "shared" | "original";
+        name: string;
+        index: number;
+        teamId?: number;
+      }
+    | {
+        type: "team";
+        id: number;
+        name: string;
+        index: number;
+      }
+    | null
+  >(null);
   const roleSchema = z.discriminatedUnion("type", [
     z.object({
       type: z.literal("original"),
       name: z.string(),
       id: z.number(),
-      teamId: z.number().optional(),
     }),
     z.object({
       type: z.literal("shared"),
       shareType: z.literal("link").or(z.literal("shared")),
       name: z.string(),
       sharedId: z.number(),
-      linkedPlayerId: z.number().nullable(),
-      teamId: z.number().optional(),
     }),
   ]);
   const teamsSchema = z.object({
     id: z.number(),
     name: z.string(),
+    roles: z.array(roleSchema),
   });
   const playerSchema = z.discriminatedUnion("type", [
     z.object({
@@ -682,6 +716,75 @@ export function CustomMatchSelection({
       return p;
     });
     form.setFieldValue("players", tempPlayers);
+  };
+  const openRoleDialog = (
+    input:
+      | { type: "team"; id: number; index: number }
+      | {
+          type: "player";
+          id: number;
+          shareType: "original" | "shared";
+          index: number;
+        },
+  ) => {
+    if (input.type === "player") {
+      const currentPlayers = form.state.values.players;
+      if (input.shareType === "original") {
+        const foundPlayer = currentPlayers.find(
+          (p) => p.type === "original" && p.id === input.id,
+        );
+        if (foundPlayer) {
+          setRoleTarget({
+            index: input.index,
+            type: input.type,
+            id: input.id,
+            shareType: input.shareType,
+            name: foundPlayer.name,
+            teamId: foundPlayer.teamId,
+          });
+          setShowRoleDialog(true);
+          setRoleSearchQuery("");
+        } else {
+          toast.error("Opening role dialog for player failed");
+          throw new Error("Player not found");
+        }
+      } else {
+        const foundPlayer = currentPlayers.find(
+          (p) => p.type === "shared" && p.sharedId === input.id,
+        );
+        if (foundPlayer) {
+          setRoleTarget({
+            index: input.index,
+            type: input.type,
+            id: input.id,
+            shareType: input.shareType,
+            name: foundPlayer.name,
+            teamId: foundPlayer.teamId,
+          });
+          setShowRoleDialog(true);
+          setRoleSearchQuery("");
+        } else {
+          toast.error("Opening role dialog for player failed");
+          throw new Error("Player not found");
+        }
+      }
+    } else {
+      const currentTeams = form.state.values.teams;
+      const foundTeam = currentTeams.find((t) => t.id === input.id);
+      if (foundTeam) {
+        setRoleTarget({
+          index: input.index,
+          type: input.type,
+          id: input.id,
+          name: foundTeam.name,
+        });
+        setShowRoleDialog(true);
+        setRoleSearchQuery("");
+      } else {
+        toast.error("Opening role dialog for team failed");
+        throw new Error("Team not found");
+      }
+    }
   };
   return (
     <DialogContent className="max-w-4xl">
@@ -902,6 +1005,7 @@ export function CustomMatchSelection({
                                         field.pushValue({
                                           id: minTeamId - 1,
                                           name: `Team ${teams.length + 1}`,
+                                          roles: [],
                                         })
                                       }
                                     >
@@ -939,12 +1043,44 @@ export function CustomMatchSelection({
                                                   );
                                                 }}
                                               </form.Field>
+                                              <div className="mb-2 flex flex-wrap gap-1">
+                                                {teamPlayers.length > 0 && (
+                                                  <Badge
+                                                    variant="secondary"
+                                                    className="text-xs"
+                                                  >
+                                                    {teamPlayers.length} player
+                                                    {teamPlayers.length !== 1
+                                                      ? "s"
+                                                      : ""}
+                                                  </Badge>
+                                                )}
+                                                {team.roles.length > 0 && (
+                                                  <Badge
+                                                    variant="secondary"
+                                                    className="text-xs"
+                                                  >
+                                                    {team.roles.length} team
+                                                    role
+                                                    {team.roles.length !== 1
+                                                      ? "s"
+                                                      : ""}
+                                                  </Badge>
+                                                )}
+                                              </div>
                                             </ItemContent>
                                             <ItemActions>
                                               <Button
                                                 type="button"
                                                 size="icon"
                                                 variant="ghost"
+                                                onClick={() =>
+                                                  openRoleDialog({
+                                                    type: "team",
+                                                    id: team.id,
+                                                    index: i,
+                                                  })
+                                                }
                                               >
                                                 <Shield className="h-4 w-4" />
                                               </Button>
@@ -973,6 +1109,30 @@ export function CustomMatchSelection({
                                             <ItemFooter className="flex w-full flex-col gap-2">
                                               <ItemGroup className="w-full gap-2">
                                                 {teamPlayers.map((player) => {
+                                                  const playerIndex =
+                                                    selectedPlayers.findIndex(
+                                                      (p) => {
+                                                        if (
+                                                          p.type === "original"
+                                                        ) {
+                                                          return (
+                                                            p.type ===
+                                                              player.type &&
+                                                            p.id === player.id
+                                                          );
+                                                        } else {
+                                                          return (
+                                                            p.type ===
+                                                              player.type &&
+                                                            p.sharedId ===
+                                                              player.sharedId
+                                                          );
+                                                        }
+                                                      },
+                                                    );
+                                                  if (playerIndex === -1) {
+                                                    return null;
+                                                  }
                                                   return (
                                                     <Item
                                                       key={`${player.type}-${player.type === "original" ? player.id : player.sharedId}`}
@@ -998,12 +1158,45 @@ export function CustomMatchSelection({
                                                         <ItemTitle>
                                                           {player.name}
                                                         </ItemTitle>
+                                                        <ItemDescription>
+                                                          {player.roles.length >
+                                                            0 && (
+                                                            <Badge
+                                                              variant="outline"
+                                                              className="text-xs"
+                                                            >
+                                                              {
+                                                                player.roles
+                                                                  .length
+                                                              }{" "}
+                                                              role
+                                                              {player.roles
+                                                                .length !== 1
+                                                                ? "s"
+                                                                : ""}
+                                                            </Badge>
+                                                          )}
+                                                        </ItemDescription>
                                                       </ItemContent>
                                                       <ItemActions>
                                                         <Button
                                                           type="button"
                                                           size="icon"
                                                           variant="ghost"
+                                                          onClick={() =>
+                                                            openRoleDialog({
+                                                              type: "player",
+                                                              id:
+                                                                player.type ===
+                                                                "original"
+                                                                  ? player.id
+                                                                  : player.sharedId,
+                                                              shareType:
+                                                                player.type,
+                                                              index:
+                                                                playerIndex,
+                                                            })
+                                                          }
                                                         >
                                                           <Shield className="h-3 w-3" />
                                                         </Button>
@@ -1104,6 +1297,30 @@ export function CustomMatchSelection({
                                             <ItemGroup className="w-full gap-3">
                                               {individualPlayers.map(
                                                 (player) => {
+                                                  const playerIndex =
+                                                    selectedPlayers.findIndex(
+                                                      (p) => {
+                                                        if (
+                                                          p.type === "original"
+                                                        ) {
+                                                          return (
+                                                            p.type ===
+                                                              player.type &&
+                                                            p.id === player.id
+                                                          );
+                                                        } else {
+                                                          return (
+                                                            p.type ===
+                                                              player.type &&
+                                                            p.sharedId ===
+                                                              player.sharedId
+                                                          );
+                                                        }
+                                                      },
+                                                    );
+                                                  if (playerIndex === -1) {
+                                                    return null;
+                                                  }
                                                   return (
                                                     <Item
                                                       key={`${player.type}-${player.type === "original" ? player.id : player.sharedId}`}
@@ -1128,12 +1345,45 @@ export function CustomMatchSelection({
                                                         <ItemTitle>
                                                           {player.name}
                                                         </ItemTitle>
+                                                        <ItemDescription>
+                                                          {player.roles.length >
+                                                            0 && (
+                                                            <Badge
+                                                              variant="outline"
+                                                              className="text-xs"
+                                                            >
+                                                              {
+                                                                player.roles
+                                                                  .length
+                                                              }{" "}
+                                                              role
+                                                              {player.roles
+                                                                .length !== 1
+                                                                ? "s"
+                                                                : ""}
+                                                            </Badge>
+                                                          )}
+                                                        </ItemDescription>
                                                       </ItemContent>
                                                       <ItemActions>
                                                         <Button
                                                           type="button"
                                                           size="icon"
                                                           variant="ghost"
+                                                          onClick={() =>
+                                                            openRoleDialog({
+                                                              type: "player",
+                                                              id:
+                                                                player.type ===
+                                                                "original"
+                                                                  ? player.id
+                                                                  : player.sharedId,
+                                                              shareType:
+                                                                player.type,
+                                                              index:
+                                                                playerIndex,
+                                                            })
+                                                          }
                                                         >
                                                           <Shield className="h-3 w-3" />
                                                         </Button>
@@ -1181,6 +1431,158 @@ export function CustomMatchSelection({
                     </Button>
                   </div>
                 </DialogFooter>
+                <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
+                  {roleTarget !== null && (
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{`Assign Roles to ${roleTarget.name}`}</DialogTitle>
+                      </DialogHeader>
+                      <form.Field
+                        name={
+                          roleTarget.type === "player"
+                            ? `players[${roleTarget.index}].roles`
+                            : `teams[${roleTarget.index}].roles`
+                        }
+                        mode="array"
+                      >
+                        {(field) => {
+                          const filteredRoles = AVAILABLE_ROLES.filter(
+                            (role) =>
+                              role.name
+                                .toLowerCase()
+                                .includes(roleSearchQuery.toLowerCase()) ||
+                              role.description
+                                .toLowerCase()
+                                .includes(roleSearchQuery.toLowerCase()),
+                          );
+                          return (
+                            <>
+                              <InputGroup>
+                                <InputGroupInput
+                                  placeholder="Search Roles..."
+                                  value={roleSearchQuery}
+                                  onChange={(e) =>
+                                    setRoleSearchQuery(e.target.value)
+                                  }
+                                />
+                                <InputGroupAddon>
+                                  <Search />
+                                </InputGroupAddon>
+                                {searchQuery !== "" && (
+                                  <InputGroupAddon align="inline-end">
+                                    {filteredPlayers.length} results
+                                  </InputGroupAddon>
+                                )}
+                              </InputGroup>
+                              <ScrollArea>
+                                <ItemGroup className="max-h-[500px] gap-4">
+                                  {filteredRoles.map((role) => {
+                                    const selected =
+                                      field.state.value.findIndex((r) => {
+                                        if (r.type == "original") {
+                                          return (
+                                            r.type === role.type &&
+                                            r.id === role.id
+                                          );
+                                        }
+                                        return (
+                                          r.type === role.type &&
+                                          r.sharedId === role.sharedId
+                                        );
+                                      });
+                                    const isRoleFromTeam = () => {
+                                      if (roleTarget.type === "team") {
+                                        return false;
+                                      } else {
+                                        const team = teams.find(
+                                          (t) => t.id === roleTarget.teamId,
+                                        );
+                                        const foundRole = team?.roles.find(
+                                          (r) => {
+                                            if (r.type == "original") {
+                                              return (
+                                                r.type === role.type &&
+                                                r.id === role.id
+                                              );
+                                            }
+                                            return (
+                                              r.type === role.type &&
+                                              r.sharedId === role.sharedId
+                                            );
+                                          },
+                                        );
+                                        if (foundRole) {
+                                          return true;
+                                        } else {
+                                          return false;
+                                        }
+                                      }
+                                    };
+                                    const fromTeam = isRoleFromTeam();
+                                    const toggleRole = () => {
+                                      if (selected > -1) {
+                                        field.removeValue(selected);
+                                      } else {
+                                        field.pushValue(role);
+                                      }
+                                    };
+                                    return (
+                                      <Field
+                                        key={`${role.id}-${role.type}`}
+                                        orientation="horizontal"
+                                        className={cn(
+                                          "border-border focus-visible:border-ring focus-visible:ring-ring/50 flex flex-row gap-4 rounded-md border p-4",
+                                          selected > -1 &&
+                                            "border-primary bg-primary/5",
+                                        )}
+                                      >
+                                        <Checkbox
+                                          id={`${role.id}-${role.type}`}
+                                          checked={selected > -1}
+                                          onCheckedChange={() => toggleRole()}
+                                        />
+                                        <label
+                                          htmlFor={`${role.id}-${role.type}`}
+                                          className="flex-1 gap-2"
+                                        >
+                                          <ItemTitle>
+                                            {role.name}
+                                            {fromTeam && (
+                                              <Badge
+                                                variant="secondary"
+                                                className="text-xs"
+                                              >
+                                                Team Role
+                                              </Badge>
+                                            )}
+                                          </ItemTitle>
+                                          <ItemDescription>
+                                            {role.description}
+                                          </ItemDescription>
+                                        </label>
+                                      </Field>
+                                    );
+                                  })}
+                                </ItemGroup>
+                              </ScrollArea>
+                            </>
+                          );
+                        }}
+                      </form.Field>
+                      <DialogFooter>
+                        <Button
+                          type="button"
+                          variant="default"
+                          onClick={() => {
+                            setShowRoleDialog(false);
+                          }}
+                        >
+                          Save
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  )}
+                </Dialog>
               </>
             );
           }}
