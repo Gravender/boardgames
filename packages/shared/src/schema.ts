@@ -6,6 +6,7 @@ import {
   insertPlayerSchema,
   insertRoundSchema,
   insertScoreSheetSchema,
+  selectGameRoleSchema,
   selectGameSchema,
   selectLocationSchema,
   selectMatchPlayerSchema,
@@ -98,6 +99,18 @@ export const baseGameSchema = z
       });
     }
   });
+export const baseRoleSchema = selectGameRoleSchema.pick({
+  name: true,
+  description: true,
+});
+export const originalRoleSchema = baseRoleSchema.extend({
+  type: z.literal("original"),
+  id: z.number(),
+});
+export const sharedRoleSchema = baseRoleSchema.extend({
+  type: sharedOrLinkedSchema,
+  sharedId: z.number(),
+});
 export const editRoleSchema = z.object({
   id: z.number(),
   name: z.string().min(1, {

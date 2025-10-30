@@ -39,10 +39,16 @@ export const createMatchInput = insertMatchSchema
                 .extend({
                   type: sharedOrOriginalOrLinkedSchema,
                   roles: z.array(
-                    z.object({
-                      id: z.number(),
-                      type: sharedOrOriginalOrLinkedSchema,
-                    }),
+                    z.discriminatedUnion("type", [
+                      z.object({
+                        type: z.literal("original"),
+                        id: z.number(),
+                      }),
+                      z.object({
+                        type: z.literal("shared"),
+                        sharedId: z.number(),
+                      }),
+                    ]),
                   ),
                 }),
             )

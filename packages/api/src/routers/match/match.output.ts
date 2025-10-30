@@ -1,7 +1,6 @@
 import z from "zod/v4";
 
 import {
-  selectGameRoleSchema,
   selectGameSchema,
   selectLocationSchema,
   selectMatchPlayerSchema,
@@ -14,8 +13,10 @@ import {
 } from "@board-games/db/zodSchema";
 import {
   imageSchema,
+  originalRoleSchema,
   sharedOrLinkedSchema,
   sharedOrOriginalSchema,
+  sharedRoleSchema,
 } from "@board-games/shared";
 
 export const createMatchOutput = selectMatchSchema
@@ -150,38 +151,19 @@ const baseMatchPlayer = selectMatchPlayerSchema
       }),
     ),
   });
+
 const sharedAndOriginalMatchPlayer = z.discriminatedUnion("type", [
   baseMatchPlayer.extend({
     type: z.literal("original"),
     playerType: z.literal("original"),
-    roles: z.array(
-      selectGameRoleSchema
-        .pick({
-          id: true,
-          name: true,
-          description: true,
-        })
-        .extend({
-          type: z.literal("original"),
-        }),
-    ),
+    roles: z.array(originalRoleSchema),
   }),
   baseMatchPlayer.extend({
     type: z.literal("shared"),
     playerType: sharedOrLinkedSchema.or(z.literal("not-shared")),
     sharedPlayerId: z.number().nullable(),
     linkedPlayerId: z.number().nullable(),
-    roles: z.array(
-      selectGameRoleSchema
-        .pick({
-          id: true,
-          name: true,
-          description: true,
-        })
-        .extend({
-          type: sharedOrLinkedSchema,
-        }),
-    ),
+    roles: z.array(sharedRoleSchema),
   }),
 ]);
 export const getMatchPlayersAndTeamsOutput = z.object({

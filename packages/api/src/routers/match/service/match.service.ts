@@ -134,14 +134,14 @@ class MatchService {
           const linkedGameRole = sharedGameRole.linkedGameRole;
           if (linkedGameRole === null) {
             return {
-              id: sharedGameRole.gameRole.id,
+              sharedId: sharedGameRole.id,
               name: sharedGameRole.gameRole.name,
               description: sharedGameRole.gameRole.description,
               type: "shared" as const,
             };
           }
           return {
-            id: linkedGameRole.id,
+            sharedId: sharedGameRole.id,
             name: linkedGameRole.name,
             description: linkedGameRole.description,
             type: "linked" as const,

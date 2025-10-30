@@ -208,7 +208,55 @@ class GameService {
       input: args.input,
       userId: args.ctx.userId,
     });
-    return response.roles;
+    const uniqueRoles = new Map<
+      string,
+      | {
+          id: number;
+          name: string;
+          description: string | null;
+          type: "original";
+          permission: "edit";
+        }
+      | {
+          name: string;
+          description: string | null;
+          type: "shared";
+          sharedId: number;
+          permission: "view" | "edit";
+        }
+    >();
+    for (const role of response.rows) {
+      if (role.type === "original" || role.type === "shared") {
+        const existing = uniqueRoles.get(`${role.type}-${role.roleId}`);
+        if (existing) {
+          continue;
+        }
+        if (role.type === "original") {
+          uniqueRoles.set(`${role.type}-${role.roleId}`, {
+            type: "original",
+            id: role.roleId,
+            name: role.name,
+            description: role.description,
+            permission: "edit",
+          });
+        } else {
+          if (role.sharedRoleId === null) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Shared role not found.",
+            });
+          }
+          uniqueRoles.set(`${role.type}-${role.roleId}`, {
+            type: "shared",
+            sharedId: role.sharedRoleId,
+            name: role.name,
+            description: role.description,
+            permission: role.permission,
+          });
+        }
+      }
+    }
+    return Array.from(uniqueRoles.values());
   }
 }
 export const gameService = new GameService();

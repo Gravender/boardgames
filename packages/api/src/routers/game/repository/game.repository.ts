@@ -454,6 +454,7 @@ class GameRepository {
       .select({
         type: vGameRoleCanonical.sourceType,
         roleId: vGameRoleCanonical.canonicalGameRoleId,
+        sharedRoleId: vGameRoleCanonical.sharedGameRoleId,
         name: vGameRoleCanonical.name,
         description: vGameRoleCanonical.description,
         permission: vGameRoleCanonical.permission,
@@ -471,36 +472,8 @@ class GameRepository {
       )
       .orderBy(asc(vGameRoleCanonical.name));
 
-    const uniqueRoles = new Map<
-      number,
-      {
-        id: number;
-        name: string;
-        description: string | null;
-        type: "original" | "shared" | "linked";
-        permission: "view" | "edit";
-      }
-    >();
-
-    for (const role of rows) {
-      const existing = uniqueRoles.get(role.roleId);
-      if (
-        existing &&
-        !(existing.type === "original" && role.type === "shared")
-      ) {
-        continue;
-      }
-      uniqueRoles.set(role.roleId, {
-        id: role.roleId,
-        name: role.name,
-        description: role.description,
-        type: role.type,
-        permission: role.permission,
-      });
-    }
-
     return {
-      roles: Array.from(uniqueRoles.values()),
+      rows,
     };
   }
 }
