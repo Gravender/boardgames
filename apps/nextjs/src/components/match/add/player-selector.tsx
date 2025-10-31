@@ -14,8 +14,11 @@ import {
 } from "lucide-react";
 import z from "zod/v4";
 
-import { sharedOrLinkedSchema } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
+import {
+  imageSchema,
+  isSamePlayer,
+  sharedOrLinkedSchema,
+} from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import {
@@ -48,6 +51,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { toast } from "@board-games/ui/toast";
 
 import { useGameRoles } from "~/components/game/hooks/roles";
+import { PlayerImage } from "~/components/player-image";
 import { useAppForm } from "~/hooks/form";
 import { PlayerSelectorField } from "./player-selection-form";
 import { PlayerRoleSelectorField, TeamRoleSelectorField } from "./role-form";
@@ -184,24 +188,36 @@ export function QuickMatchSelection({
     }),
   });
 
-  const players: (z.infer<typeof playerSchema> & { matches: number })[] = [
+  const players: (z.infer<typeof playerSchema> & {
+    matches: number;
+    image: {
+      name: string;
+      url: string | null;
+      type: "file" | "svg";
+      usageType: "player" | "match" | "game";
+    } | null;
+  })[] = [
     {
       id: 1,
       type: "original",
       name: "Player 1",
       matches: 0,
+      image: null,
     },
     {
       id: 2,
       type: "original",
       name: "Player 2",
       matches: 0,
+
+      image: null,
     },
     {
       id: 3,
       type: "original",
       name: "Player 3",
       matches: 0,
+      image: null,
     },
     {
       sharedId: 1,
@@ -210,6 +226,7 @@ export function QuickMatchSelection({
       shareType: "shared",
       linkedPlayerId: null,
       matches: 0,
+      image: null,
     },
     {
       sharedId: 2,
@@ -218,6 +235,7 @@ export function QuickMatchSelection({
       shareType: "link",
       linkedPlayerId: 8,
       matches: 0,
+      image: null,
     },
   ];
 
@@ -371,6 +389,7 @@ export function CustomMatchSelection({
       id: z.number(),
       roles: z.array(roleSchema),
       teamId: z.number().optional(),
+      image: imageSchema.nullable(),
     }),
     z.object({
       type: z.literal("shared"),
@@ -380,6 +399,7 @@ export function CustomMatchSelection({
       linkedPlayerId: z.number().nullable(),
       roles: z.array(roleSchema),
       teamId: z.number().optional(),
+      image: imageSchema.nullable(),
     }),
   ]);
   const playersSchema = z.object({
@@ -390,13 +410,22 @@ export function CustomMatchSelection({
     activeTab: z.literal("players").or(z.literal("teams")),
   });
 
-  const players: (z.infer<typeof playerSchema> & { matches: number })[] = [
+  const players: (z.infer<typeof playerSchema> & {
+    matches: number;
+    image: {
+      name: string;
+      url: string | null;
+      type: "file" | "svg";
+      usageType: "player" | "match" | "game";
+    } | null;
+  })[] = [
     {
       id: 1,
       type: "original",
       name: "Player 1",
       matches: 0,
       roles: [],
+      image: null,
     },
     {
       id: 2,
@@ -404,6 +433,7 @@ export function CustomMatchSelection({
       name: "Player 2",
       matches: 0,
       roles: [],
+      image: null,
     },
     {
       id: 3,
@@ -411,6 +441,7 @@ export function CustomMatchSelection({
       name: "Player 3",
       matches: 0,
       roles: [],
+      image: null,
     },
     {
       sharedId: 1,
@@ -420,6 +451,7 @@ export function CustomMatchSelection({
       linkedPlayerId: null,
       matches: 0,
       roles: [],
+      image: null,
     },
     {
       sharedId: 2,
@@ -429,6 +461,7 @@ export function CustomMatchSelection({
       linkedPlayerId: 8,
       matches: 0,
       roles: [],
+      image: null,
     },
   ];
 
@@ -572,7 +605,7 @@ export function CustomMatchSelection({
                   </div>
                   <Badge
                     variant="secondary"
-                    className="rounded px-4 py-2 text-base"
+                    className="rounded-lg px-4 py-2 text-base"
                   >
                     <Users className="mr-2 h-4 w-4" />
                     {selectedPlayers.length} selected
@@ -676,7 +709,7 @@ export function CustomMatchSelection({
                                                   );
                                                 }}
                                               </form.Field>
-                                              <div className="mb-2 flex flex-wrap gap-1">
+                                              <ItemDescription>
                                                 {teamPlayers.length > 0 && (
                                                   <Badge
                                                     variant="secondary"
@@ -700,7 +733,7 @@ export function CustomMatchSelection({
                                                       : ""}
                                                   </Badge>
                                                 )}
-                                              </div>
+                                              </ItemDescription>
                                             </ItemContent>
                                             <ItemActions>
                                               <Button
@@ -774,18 +807,11 @@ export function CustomMatchSelection({
                                                       variant="muted"
                                                     >
                                                       <ItemMedia>
-                                                        <Avatar className="h-5 w-5">
-                                                          <AvatarImage
-                                                            src={
-                                                              "/generic-placeholder-icon.png?height=48&width=48"
-                                                            }
-                                                          />
-                                                          <AvatarFallback>
-                                                            {player.name.charAt(
-                                                              0,
-                                                            )}
-                                                          </AvatarFallback>
-                                                        </Avatar>
+                                                        <PlayerImage
+                                                          className="size-8"
+                                                          image={player.image}
+                                                          alt={player.name}
+                                                        />
                                                       </ItemMedia>
                                                       <ItemContent>
                                                         <ItemTitle>
@@ -883,18 +909,15 @@ export function CustomMatchSelection({
                                                                 }}
                                                               >
                                                                 <ItemMedia>
-                                                                  <Avatar className="h-5 w-5">
-                                                                    <AvatarImage
-                                                                      src={
-                                                                        "/generic-placeholder-icon.png?height=48&width=48"
-                                                                      }
-                                                                    />
-                                                                    <AvatarFallback>
-                                                                      {player.name.charAt(
-                                                                        0,
-                                                                      )}
-                                                                    </AvatarFallback>
-                                                                  </Avatar>
+                                                                  <PlayerImage
+                                                                    className="size-5"
+                                                                    image={
+                                                                      player.image
+                                                                    }
+                                                                    alt={
+                                                                      player.name
+                                                                    }
+                                                                  />
                                                                 </ItemMedia>
                                                                 <ItemContent>
                                                                   <ItemTitle>
@@ -932,24 +955,8 @@ export function CustomMatchSelection({
                                                 (player) => {
                                                   const playerIndex =
                                                     selectedPlayers.findIndex(
-                                                      (p) => {
-                                                        if (
-                                                          p.type === "original"
-                                                        ) {
-                                                          return (
-                                                            p.type ===
-                                                              player.type &&
-                                                            p.id === player.id
-                                                          );
-                                                        } else {
-                                                          return (
-                                                            p.type ===
-                                                              player.type &&
-                                                            p.sharedId ===
-                                                              player.sharedId
-                                                          );
-                                                        }
-                                                      },
+                                                      (p) =>
+                                                        isSamePlayer(p, player),
                                                     );
                                                   if (playerIndex === -1) {
                                                     return null;
@@ -961,18 +968,11 @@ export function CustomMatchSelection({
                                                       className="hover:bg-accent w-full py-2"
                                                     >
                                                       <ItemMedia>
-                                                        <Avatar className="h-6 w-6">
-                                                          <AvatarImage
-                                                            src={
-                                                              "/generic-placeholder-icon.png?height=48&width=48"
-                                                            }
-                                                          />
-                                                          <AvatarFallback>
-                                                            {player.name.charAt(
-                                                              0,
-                                                            )}
-                                                          </AvatarFallback>
-                                                        </Avatar>
+                                                        <PlayerImage
+                                                          className="size-6"
+                                                          image={player.image}
+                                                          alt={player.name}
+                                                        />
                                                       </ItemMedia>
                                                       <ItemContent>
                                                         <ItemTitle>

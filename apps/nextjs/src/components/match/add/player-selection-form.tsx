@@ -21,6 +21,7 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
+import { PlayerImage } from "~/components/player-image";
 import { withFieldGroup } from "~/hooks/form";
 
 export const playerSchema = z.discriminatedUnion("type", [
@@ -45,7 +46,15 @@ const defaultValues: {
 export const PlayerSelectorField = withFieldGroup({
   defaultValues,
   props: {
-    originalPlayers: [] as (Player & { matches: number })[],
+    originalPlayers: [] as (Player & {
+      matches: number;
+      image: {
+        name: string;
+        url: string | null;
+        type: "file" | "svg";
+        usageType: "player" | "match" | "game";
+      } | null;
+    })[],
   },
   render: function Render({ group, originalPlayers }) {
     const [searchQuery, setSearchQuery] = useState("");
@@ -105,16 +114,11 @@ export const PlayerSelectorField = withFieldGroup({
                             )}
                           >
                             <ItemMedia>
-                              <Avatar>
-                                <AvatarImage
-                                  src={
-                                    "/generic-placeholder-icon.png?height=48&width=48"
-                                  }
-                                />
-                                <AvatarFallback>
-                                  {player.name.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
+                              <PlayerImage
+                                className="size-8"
+                                image={player.image}
+                                alt={player.name}
+                              />
                             </ItemMedia>
                             <ItemContent>
                               <ItemTitle>{player.name}</ItemTitle>
