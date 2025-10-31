@@ -69,6 +69,7 @@ class MatchService {
             return matchPlayerRound;
           }),
           score: matchPlayer.score,
+          baseMatchPlayerId: matchPlayer.id,
           id: matchPlayer.id,
           type: "original" as const,
           playerType: "original" as const,
@@ -149,10 +150,11 @@ class MatchService {
         });
 
         const matchPlayer = {
+          baseMatchPlayerId: sharedMatchPlayer.matchPlayer.id,
+          sharedMatchPlayerId: sharedMatchPlayer.id,
           type: "shared" as const,
           permissions: sharedMatchPlayer.permission,
           score: sharedMatchPlayer.matchPlayer.score,
-          id: sharedMatchPlayer.matchPlayer.id,
           details: sharedMatchPlayer.matchPlayer.details,
           teamId: sharedMatchPlayer.matchPlayer.teamId,
           order: sharedMatchPlayer.matchPlayer.order,

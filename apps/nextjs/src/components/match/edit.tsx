@@ -14,8 +14,9 @@ import { CalendarIcon, Plus, X } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 
 import type { RouterOutputs } from "@board-games/api";
+import type { originalRoleSchema, sharedRoleSchema } from "@board-games/shared";
 import type { UseFormReturn } from "@board-games/ui/form";
-import { editMatchSchema } from "@board-games/shared";
+import { editMatchSchema, isSameRole } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
 import { Calendar } from "@board-games/ui/calendar";
 import {
@@ -142,7 +143,7 @@ export function EditMatchForm(input: { game: GameInput; match: MatchInput }) {
       const rolesChanged =
         originalRoles.length !== updatedRoleIds.length ||
         !originalRoles.every((role) =>
-          updatedRoleIds.find((r) => r.id === role.id && r.type === role.type),
+          updatedRoleIds.find((r) => isSameRole(role, r)),
         );
 
       return teamChanged || rolesChanged;
@@ -247,7 +248,7 @@ export function EditMatchForm(input: { game: GameInput; match: MatchInput }) {
                           <FormControl>
                             <Button
                               variant={"outline"}
-                              className="text-muted-foreground w-[240px] pl-3 text-left font-normal"
+                              className="text-muted-foreground w-60 pl-3 text-left font-normal"
                               type="button"
                             >
                               {isSameDay(field.value, new Date()) ? (
@@ -511,9 +512,7 @@ const mapPlayers = (
     ),
     playerId: player.playerId,
     teamId: player.teamId,
-    roles: player.roles.map((role) => {
-      return { id: role.id, type: role.type };
-    }),
+    roles: player.roles,
   }));
 };
 const mapTeams = (
@@ -522,28 +521,20 @@ const mapTeams = (
 ) => {
   return teams.map((team) => {
     const teamPlayers = players.filter((player) => player.teamId === team.id);
-    const roleCounts: {
-      id: number;
-      type: "original" | "shared" | "linked";
-      name: string;
-      description: string | null;
-      count: number;
-    }[] = [];
+    const roleCounts: (
+      | (z.infer<typeof originalRoleSchema> & { count: number })
+      | (z.infer<typeof sharedRoleSchema> & { count: number })
+    )[] = [];
     const totalPlayers = teamPlayers.length;
 
     for (const player of teamPlayers) {
       for (const role of player.roles) {
-        const existingRole = roleCounts.find(
-          (r) => r.id === role.id && r.type === role.type,
-        );
+        const existingRole = roleCounts.find((r) => isSameRole(r, role));
         if (existingRole) {
           existingRole.count++;
         } else {
           roleCounts.push({
-            id: role.id,
-            type: role.type,
-            name: role.name,
-            description: role.description,
+            ...role,
             count: 1,
           });
         }
@@ -558,10 +549,7 @@ const mapTeams = (
       id: team.id,
       teamId: team.id,
       name: team.name,
-      roles: sharedRoles.map((r) => ({
-        id: r.id,
-        type: r.type,
-      })),
+      roles: sharedRoles,
     };
   });
 };

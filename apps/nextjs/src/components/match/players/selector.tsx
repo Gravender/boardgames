@@ -6,7 +6,12 @@ import { Plus, Users } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
-import { addMatchPlayersSchema, matchRoleSchema } from "@board-games/shared";
+import {
+  addMatchPlayersSchema,
+  isSameRole,
+  originalRoleSchema,
+  sharedRoleSchema,
+} from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -53,7 +58,9 @@ const AddPlayersFormSchema = z.object({
     z.object({
       id: z.number(),
       name: z.string(),
-      roles: matchRoleSchema,
+      roles: z.array(
+        z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
+      ),
     }),
   ),
 });
@@ -63,14 +70,20 @@ export interface Player {
   type: "original" | "shared" | "linked";
   name: string;
   teamId: number | null;
-  roles: { id: number; type: "original" | "shared" | "linked" }[];
+  roles: (
+    | z.infer<typeof originalRoleSchema>
+    | z.infer<typeof sharedRoleSchema>
+  )[];
   imageUrl: string | null;
   matches: number;
 }
 export interface Team {
   id: number;
   name: string;
-  roles: { id: number; type: "original" | "shared" | "linked" }[];
+  roles: (
+    | z.infer<typeof originalRoleSchema>
+    | z.infer<typeof sharedRoleSchema>
+  )[];
 }
 export const AddPlayersDialogForm = ({
   game,
@@ -207,23 +220,14 @@ export const AddPlayersDialogForm = ({
         const foundTeam = teams.find((t) => t.id === player.teamId);
         const originalTeam = formTeams.find((t) => t.id === player.teamId);
         const rolesToRemove = originalTeam?.roles.filter(
-          (role) =>
-            !foundTeam?.roles.find(
-              (r) => r.id === role.id && r.type === role.type,
-            ),
+          (role) => !foundTeam?.roles.find((r) => isSameRole(r, role)),
         );
         if (foundTeam) {
           const playerRoles = player.roles.filter(
-            (role) =>
-              !rolesToRemove?.find(
-                (r) => r.id === role.id && r.type === role.type,
-              ),
+            (role) => !rolesToRemove?.find((r) => isSameRole(r, role)),
           );
           const rolesToAdd = foundTeam.roles.filter(
-            (role) =>
-              !playerRoles.find(
-                (r) => r.id === role.id && r.type === role.type,
-              ),
+            (role) => !playerRoles.find((r) => isSameRole(r, role)),
           );
           return {
             ...player,
@@ -232,10 +236,7 @@ export const AddPlayersDialogForm = ({
           };
         } else if (originalTeam) {
           const filteredRoles = player.roles.filter(
-            (role) =>
-              !originalTeam.roles.find(
-                (r) => r.id === role.id && r.type === role.type,
-              ),
+            (role) => !originalTeam.roles.find((r) => isSameRole(r, role)),
           );
           return {
             ...player,

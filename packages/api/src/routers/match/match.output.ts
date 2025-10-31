@@ -154,11 +154,14 @@ const baseMatchPlayer = selectMatchPlayerSchema
 
 const sharedAndOriginalMatchPlayer = z.discriminatedUnion("type", [
   baseMatchPlayer.extend({
+    baseMatchPlayerId: z.number(),
     type: z.literal("original"),
     playerType: z.literal("original"),
     roles: z.array(originalRoleSchema),
   }),
-  baseMatchPlayer.extend({
+  baseMatchPlayer.omit({ id: true }).extend({
+    baseMatchPlayerId: z.number(),
+    sharedMatchPlayerId: z.number(),
     type: z.literal("shared"),
     playerType: sharedOrLinkedSchema.or(z.literal("not-shared")),
     sharedPlayerId: z.number().nullable(),

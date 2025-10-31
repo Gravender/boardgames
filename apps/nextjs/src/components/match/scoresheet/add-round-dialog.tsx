@@ -123,7 +123,7 @@ const AddRoundDialogContent = ({
         scoresheetId: scoresheet.id,
       },
       players: players.map((player) => ({
-        matchPlayerId: player.id,
+        matchPlayerId: player.baseMatchPlayerId,
       })),
     });
   }
@@ -157,7 +157,7 @@ const AddRoundDialogContent = ({
               control={form.control}
               name="name"
               render={({ field }) => (
-                <FormItem className="flex flex-grow space-y-0">
+                <FormItem className="flex grow space-y-0">
                   <FormLabel className="hidden">Round Name</FormLabel>
                   <FormControl>
                     <Input placeholder="Round name" {...field} />

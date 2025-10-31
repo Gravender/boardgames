@@ -1114,13 +1114,13 @@ class MatchRepository {
             const rolesToAdd = updatedPlayer.roles.filter(
               (playerRole) =>
                 !currentRoleIds.find(
-                  (r) => r === playerRole.id && playerRole.type === "original",
+                  (r) => playerRole.type === "original" && r === playerRole.id,
                 ),
             );
             const rolesToRemove = currentRoleIds.filter(
               (roleId) =>
                 !updatedPlayer.roles.find(
-                  (r) => r.id === roleId && r.type === "original",
+                  (r) => r.type === "original" && r.id === roleId,
                 ),
             );
 
@@ -1130,7 +1130,7 @@ class MatchRepository {
                 (roleToAdd) => roleToAdd.type === "original",
               );
               const sharedRoles = rolesToAdd.filter(
-                (roleToAdd) => roleToAdd.type === "shared",
+                (roleToAdd) => roleToAdd.type !== "original",
               );
               await tx.insert(matchPlayerRole).values(
                 originalRoles.map((roleId) => ({
@@ -1142,7 +1142,7 @@ class MatchRepository {
                 const returnedSharedRole =
                   await tx.query.sharedGameRole.findFirst({
                     where: {
-                      gameRoleId: sharedRoleToAdd.id,
+                      gameRoleId: sharedRoleToAdd.sharedId,
                       sharedWithId: userId,
                     },
                     with: {

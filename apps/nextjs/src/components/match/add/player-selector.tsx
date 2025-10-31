@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import z from "zod/v4";
 
+import { sharedOrLinkedSchema } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
@@ -59,6 +60,8 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { toast } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
+
+import { useGameRoles } from "~/components/game/hooks/roles";
 
 export interface MatchConfig {
   name: string;
@@ -468,64 +471,7 @@ export function QuickMatchSelection({
     </DialogContent>
   );
 }
-// Mock roles data
-const AVAILABLE_ROLES = [
-  {
-    id: 1,
-    type: "original" as const,
-    name: "Artist",
-    description:
-      "Once per game, during the day, privately ask the Storyteller any yes/no question.",
-  },
-  {
-    id: 2,
-    type: "original" as const,
-    name: "Assassin",
-    description:
-      "Once per game, at night*, choose a player: they die, even if for some reason they could not.",
-  },
-  {
-    id: 3,
-    type: "original" as const,
-    name: "Barber",
-    description:
-      "If you died today or tonight, the Demon may choose 2 players (not another Demon) to swap characters.",
-  },
-  {
-    id: 4,
-    type: "original" as const,
-    name: "Baron",
-    description: "There are extra Outsiders in play. [+2 Outsiders]",
-  },
-  {
-    id: 5,
-    type: "original" as const,
-    name: "Boomdandy",
-    description:
-      "If you are executed, all but 3 players die. After a 10 to 1 countdown, the player with the most players pointing at them, dies.",
-  },
-  {
-    id: 6,
-    type: "original" as const,
-    name: "Drunk",
-    description:
-      "You do not know you are the Drunk. You think you are a Townsfolk character, but you are not.",
-  },
-  {
-    id: 7,
-    type: "original" as const,
-    name: "Fortune Teller",
-    description:
-      "Each night, choose 2 players: you learn if either is a Demon. There is a Good player that registers as a Demon to you.",
-  },
-  {
-    sharedId: 1,
-    type: "shared" as const,
-    shareType: "shared" as const,
-    name: "Role 7",
-    description: "Role 7 description",
-  },
-];
+
 export function CustomMatchSelection({
   onCancel,
   setMode,
@@ -549,6 +495,10 @@ export function CustomMatchSelection({
       }
     | null
   >(null);
+  const { gameRoles } = useGameRoles({
+    type: "original",
+    id: 1,
+  });
   const roleSchema = z.discriminatedUnion("type", [
     z.object({
       type: z.literal("original"),
@@ -557,7 +507,7 @@ export function CustomMatchSelection({
     }),
     z.object({
       type: z.literal("shared"),
-      shareType: z.literal("link").or(z.literal("shared")),
+      shareType: sharedOrLinkedSchema,
       name: z.string(),
       sharedId: z.number(),
     }),
@@ -1446,13 +1396,13 @@ export function CustomMatchSelection({
                         mode="array"
                       >
                         {(field) => {
-                          const filteredRoles = AVAILABLE_ROLES.filter(
+                          const filteredRoles = gameRoles.filter(
                             (role) =>
                               role.name
                                 .toLowerCase()
                                 .includes(roleSearchQuery.toLowerCase()) ||
                               role.description
-                                .toLowerCase()
+                                ?.toLowerCase()
                                 .includes(roleSearchQuery.toLowerCase()),
                           );
                           return (
@@ -1468,9 +1418,9 @@ export function CustomMatchSelection({
                                 <InputGroupAddon>
                                   <Search />
                                 </InputGroupAddon>
-                                {searchQuery !== "" && (
+                                {roleSearchQuery !== "" && (
                                   <InputGroupAddon align="inline-end">
-                                    {filteredPlayers.length} results
+                                    {filteredRoles.length} results
                                   </InputGroupAddon>
                                 )}
                               </InputGroup>
@@ -1523,12 +1473,21 @@ export function CustomMatchSelection({
                                       if (selected > -1) {
                                         field.removeValue(selected);
                                       } else {
-                                        field.pushValue(role);
+                                        if (role.type === "original") {
+                                          field.pushValue(role);
+                                        } else {
+                                          field.pushValue({
+                                            type: "shared",
+                                            sharedId: role.sharedId,
+                                            name: role.name,
+                                            shareType: role.type,
+                                          });
+                                        }
                                       }
                                     };
                                     return (
                                       <Field
-                                        key={`${role.id}-${role.type}`}
+                                        key={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                                         orientation="horizontal"
                                         className={cn(
                                           "border-border focus-visible:border-ring focus-visible:ring-ring/50 flex flex-row gap-4 rounded-md border p-4",
@@ -1537,12 +1496,12 @@ export function CustomMatchSelection({
                                         )}
                                       >
                                         <Checkbox
-                                          id={`${role.id}-${role.type}`}
+                                          id={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                                           checked={selected > -1}
                                           onCheckedChange={() => toggleRole()}
                                         />
                                         <label
-                                          htmlFor={`${role.id}-${role.type}`}
+                                          htmlFor={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                                           className="flex-1 gap-2"
                                         >
                                           <ItemTitle>
