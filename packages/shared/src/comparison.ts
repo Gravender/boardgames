@@ -27,3 +27,19 @@ export const isSameMatchPlayer = (a: MatchPlayer, b: MatchPlayer) => {
   }
   return b.type === a.type && a.sharedMatchPlayerId === b.sharedMatchPlayerId;
 };
+
+type Player =
+  | {
+      id: number;
+      type: "original";
+    }
+  | {
+      sharedId: number;
+      type: "shared";
+    };
+export const isSamePlayer = (a: Player, b: Player) => {
+  if (a.type === "original") {
+    return b.type === "original" && a.id === b.id;
+  }
+  return b.type === a.type && a.sharedId === b.sharedId;
+};

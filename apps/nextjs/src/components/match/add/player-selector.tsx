@@ -2,11 +2,9 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
-import { useForm } from "@tanstack/react-form";
 import {
   ChevronLeft,
   Plus,
-  Search,
   Shield,
   Trash2,
   User,
@@ -20,7 +18,6 @@ import { sharedOrLinkedSchema } from "@board-games/shared";
 import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
-import { Checkbox } from "@board-games/ui/checkbox";
 import {
   Collapsible,
   CollapsibleContent,
@@ -34,18 +31,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@board-games/ui/dialog";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@board-games/ui/field";
+import { FieldGroup } from "@board-games/ui/field";
 import { Input } from "@board-games/ui/input";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@board-games/ui/input-group";
 import {
   Item,
   ItemActions,
@@ -59,9 +46,11 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { toast } from "@board-games/ui/toast";
-import { cn } from "@board-games/ui/utils";
 
 import { useGameRoles } from "~/components/game/hooks/roles";
+import { useAppForm } from "~/hooks/form";
+import { PlayerSelectorField } from "./player-selection-form";
+import { PlayerRoleSelectorField, TeamRoleSelectorField } from "./role-form";
 
 export interface MatchConfig {
   name: string;
@@ -193,7 +182,6 @@ export function QuickMatchSelection({
     players: z.array(playerSchema).min(1, {
       message: "You must select at least one player",
     }),
-    searchQuery: z.string(),
   });
 
   const players: (z.infer<typeof playerSchema> & { matches: number })[] = [
@@ -233,11 +221,10 @@ export function QuickMatchSelection({
     },
   ];
 
-  const form = useForm({
+  const form = useAppForm({
     formId: "quick-match-selection",
     defaultValues: {
       players: [] as z.infer<typeof playersSchema>["players"],
-      searchQuery: "",
     },
     validators: {
       onSubmit: playersSchema,
@@ -260,38 +247,6 @@ export function QuickMatchSelection({
       onCancel();
     },
   });
-  const togglePlayer = (player: z.infer<typeof playerSchema>) => {
-    const currentPlayers = form.state.values.players;
-    const isSelected = currentPlayers.some(
-      (p) =>
-        (p.type === "original" &&
-          player.type === "original" &&
-          p.id === player.id) ||
-        (p.type === "shared" &&
-          player.type === "shared" &&
-          p.sharedId === player.sharedId),
-    );
-    if (isSelected) {
-      form.setFieldValue(
-        "players",
-        currentPlayers.filter(
-          (p) =>
-            !(
-              p.type === "original" &&
-              player.type === "original" &&
-              p.id === player.id
-            ) &&
-            !(
-              p.type === "shared" &&
-              player.type === "shared" &&
-              p.sharedId === player.sharedId
-            ),
-        ),
-      );
-    } else {
-      form.setFieldValue("players", [...currentPlayers, { ...player }]);
-    }
-  };
   return (
     <DialogContent className="max-w-4xl">
       <form
@@ -304,10 +259,9 @@ export function QuickMatchSelection({
         <form.Subscribe
           selector={(state) => ({
             selectedPlayers: state.values.players,
-            searchQuery: state.values.searchQuery,
           })}
         >
-          {({ selectedPlayers, searchQuery }) => {
+          {({ selectedPlayers }) => {
             return (
               <>
                 <DialogHeader className="mt-4 flex flex-row items-center justify-between">
@@ -323,122 +277,14 @@ export function QuickMatchSelection({
                     {selectedPlayers.length} selected
                   </Badge>
                 </DialogHeader>
-                <FieldGroup>
-                  <form.Field name="searchQuery">
-                    {(field) => (
-                      <div className="relative">
-                        <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                        <Input
-                          placeholder="Search players..."
-                          value={field.state.value}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                    )}
-                  </form.Field>
-                  <form.Field
-                    name="players"
-                    children={(field) => {
-                      const isInvalid =
-                        field.state.meta.isTouched && !field.state.meta.isValid;
-                      const filteredPlayers = players.filter((player) =>
-                        player.name
-                          .toLowerCase()
-                          .includes(searchQuery.toLowerCase()),
-                      );
-                      return (
-                        <Field data-invalid={isInvalid}>
-                          <FieldLabel htmlFor={field.name} className="sr-only">
-                            Players
-                          </FieldLabel>
-                          <ScrollArea>
-                            <ItemGroup className="max-h-[500px] gap-4">
-                              {filteredPlayers.map((player) => {
-                                const selected = selectedPlayers.find(
-                                  (p) =>
-                                    (p.type === "original" &&
-                                      player.type === "original" &&
-                                      p.id === player.id) ||
-                                    (p.type === "shared" &&
-                                      player.type === "shared" &&
-                                      p.sharedId === player.sharedId),
-                                );
-                                return (
-                                  <Item
-                                    key={`${player.type}-${player.type === "original" ? player.id : player.sharedId}`}
-                                    variant="outline"
-                                    asChild
-                                    role="listitem"
-                                  >
-                                    <button
-                                      type="button"
-                                      onClick={() => togglePlayer(player)}
-                                      className={cn(
-                                        selected &&
-                                          "border-primary bg-primary/5",
-                                      )}
-                                    >
-                                      <ItemMedia>
-                                        <Avatar>
-                                          <AvatarImage
-                                            src={
-                                              "/generic-placeholder-icon.png?height=48&width=48"
-                                            }
-                                          />
-                                          <AvatarFallback>
-                                            {player.name.charAt(0)}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                      </ItemMedia>
-                                      <ItemContent>
-                                        <ItemTitle>{player.name}</ItemTitle>
-                                        <ItemDescription className="text-left">
-                                          {`${player.matches} matches played`}
-                                        </ItemDescription>
-                                      </ItemContent>
-                                      <div
-                                        className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
-                                          selected
-                                            ? "border-primary bg-primary"
-                                            : "border-muted-foreground"
-                                        }`}
-                                      >
-                                        {selected && (
-                                          <svg
-                                            className="text-primary-foreground h-4 w-4"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={3}
-                                              d="M5 13l4 4L19 7"
-                                            />
-                                          </svg>
-                                        )}
-                                      </div>
-                                    </button>
-                                  </Item>
-                                );
-                              })}
-                            </ItemGroup>
-                          </ScrollArea>
-                          {isInvalid && (
-                            <FieldError errors={field.state.meta.errors} />
-                          )}
-                          {selectedPlayers.length < 1 && (
-                            <div className="text-muted-foreground bg-muted/50 rounded-lg py-4 text-center text-sm">
-                              Select at least 1 players to start the match
-                            </div>
-                          )}
-                        </Field>
-                      );
-                    }}
-                  />
-                </FieldGroup>
+                <PlayerSelectorField
+                  form={form}
+                  fields={{
+                    players: "players",
+                  }}
+                  originalPlayers={players}
+                />
+
                 <DialogFooter className="sm:justify-between">
                   <Button
                     type="button"
@@ -477,7 +323,6 @@ export function CustomMatchSelection({
   setMode,
 }: MatchCreationFlowProps) {
   const [showRoleDialog, setShowRoleDialog] = useState(false);
-  const [roleSearchQuery, setRoleSearchQuery] = useState("");
   const [roleTarget, setRoleTarget] = useState<
     | {
         type: "player";
@@ -497,19 +342,21 @@ export function CustomMatchSelection({
   >(null);
   const { gameRoles } = useGameRoles({
     type: "original",
-    id: 1,
+    id: 120,
   });
   const roleSchema = z.discriminatedUnion("type", [
     z.object({
       type: z.literal("original"),
       name: z.string(),
       id: z.number(),
+      description: z.string().nullable(),
     }),
     z.object({
       type: z.literal("shared"),
       shareType: sharedOrLinkedSchema,
       name: z.string(),
       sharedId: z.number(),
+      description: z.string().nullable(),
     }),
   ]);
   const teamsSchema = z.object({
@@ -540,7 +387,6 @@ export function CustomMatchSelection({
       message: "You must select at least one player",
     }),
     teams: z.array(teamsSchema),
-    searchQuery: z.string(),
     activeTab: z.literal("players").or(z.literal("teams")),
   });
 
@@ -586,12 +432,11 @@ export function CustomMatchSelection({
     },
   ];
 
-  const form = useForm({
+  const form = useAppForm({
     formId: "custom-match-selection",
     defaultValues: {
       teams: [] as z.infer<typeof teamsSchema>[],
       players: [] as z.infer<typeof playersSchema>["players"],
-      searchQuery: "",
       activeTab: "players",
     },
     validators: {
@@ -615,38 +460,6 @@ export function CustomMatchSelection({
       onCancel();
     },
   });
-  const togglePlayer = (player: z.infer<typeof playerSchema>) => {
-    const currentPlayers = form.state.values.players;
-    const isSelected = currentPlayers.some(
-      (p) =>
-        (p.type === "original" &&
-          player.type === "original" &&
-          p.id === player.id) ||
-        (p.type === "shared" &&
-          player.type === "shared" &&
-          p.sharedId === player.sharedId),
-    );
-    if (isSelected) {
-      form.setFieldValue(
-        "players",
-        currentPlayers.filter(
-          (p) =>
-            !(
-              p.type === "original" &&
-              player.type === "original" &&
-              p.id === player.id
-            ) &&
-            !(
-              p.type === "shared" &&
-              player.type === "shared" &&
-              p.sharedId === player.sharedId
-            ),
-        ),
-      );
-    } else {
-      form.setFieldValue("players", [...currentPlayers, { ...player }]);
-    }
-  };
   const assignPlayerToTeam = (
     teamId: number | undefined,
     player: z.infer<typeof playerSchema>,
@@ -693,7 +506,6 @@ export function CustomMatchSelection({
             teamId: foundPlayer.teamId,
           });
           setShowRoleDialog(true);
-          setRoleSearchQuery("");
         } else {
           toast.error("Opening role dialog for player failed");
           throw new Error("Player not found");
@@ -712,7 +524,6 @@ export function CustomMatchSelection({
             teamId: foundPlayer.teamId,
           });
           setShowRoleDialog(true);
-          setRoleSearchQuery("");
         } else {
           toast.error("Opening role dialog for player failed");
           throw new Error("Player not found");
@@ -729,7 +540,6 @@ export function CustomMatchSelection({
           name: foundTeam.name,
         });
         setShowRoleDialog(true);
-        setRoleSearchQuery("");
       } else {
         toast.error("Opening role dialog for team failed");
         throw new Error("Team not found");
@@ -749,13 +559,9 @@ export function CustomMatchSelection({
           selector={(state) => ({
             selectedPlayers: state.values.players,
             teams: state.values.teams,
-            searchQuery: state.values.searchQuery,
           })}
         >
-          {({ selectedPlayers, searchQuery, teams }) => {
-            const filteredPlayers = players.filter((player) =>
-              player.name.toLowerCase().includes(searchQuery.toLowerCase()),
-            );
+          {({ selectedPlayers, teams }) => {
             const individualPlayers = selectedPlayers.filter((p) => !p.teamId);
             return (
               <>
@@ -788,135 +594,12 @@ export function CustomMatchSelection({
                         </TabsList>
                         {/* Player Selection Tab */}
                         <TabsContent value="players" className="mt-6 space-y-4">
-                          <form.Field name="searchQuery">
-                            {(field) => (
-                              <InputGroup>
-                                <InputGroupInput
-                                  placeholder="Search players..."
-                                  value={field.state.value}
-                                  onChange={(e) =>
-                                    field.handleChange(e.target.value)
-                                  }
-                                />
-                                <InputGroupAddon>
-                                  <Search />
-                                </InputGroupAddon>
-                                {searchQuery !== "" && (
-                                  <InputGroupAddon align="inline-end">
-                                    {filteredPlayers.length} results
-                                  </InputGroupAddon>
-                                )}
-                              </InputGroup>
-                            )}
-                          </form.Field>
-                          <form.Field
-                            name="players"
-                            children={(field) => {
-                              const isInvalid =
-                                field.state.meta.isTouched &&
-                                !field.state.meta.isValid;
-
-                              return (
-                                <Field data-invalid={isInvalid}>
-                                  <FieldLabel
-                                    htmlFor={field.name}
-                                    className="sr-only"
-                                  >
-                                    Players
-                                  </FieldLabel>
-                                  <ScrollArea>
-                                    <ItemGroup className="max-h-[500px] gap-4">
-                                      {filteredPlayers.map((player) => {
-                                        const selected = selectedPlayers.find(
-                                          (p) =>
-                                            (p.type === "original" &&
-                                              player.type === "original" &&
-                                              p.id === player.id) ||
-                                            (p.type === "shared" &&
-                                              player.type === "shared" &&
-                                              p.sharedId === player.sharedId),
-                                        );
-                                        return (
-                                          <Item
-                                            key={`${player.type}-${player.type === "original" ? player.id : player.sharedId}`}
-                                            variant="outline"
-                                            asChild
-                                            role="listitem"
-                                          >
-                                            <button
-                                              type="button"
-                                              onClick={() =>
-                                                togglePlayer(player)
-                                              }
-                                              className={cn(
-                                                selected &&
-                                                  "border-primary bg-primary/5",
-                                              )}
-                                            >
-                                              <ItemMedia>
-                                                <Avatar>
-                                                  <AvatarImage
-                                                    src={
-                                                      "/generic-placeholder-icon.png?height=48&width=48"
-                                                    }
-                                                  />
-                                                  <AvatarFallback>
-                                                    {player.name.charAt(0)}
-                                                  </AvatarFallback>
-                                                </Avatar>
-                                              </ItemMedia>
-                                              <ItemContent>
-                                                <ItemTitle>
-                                                  {player.name}
-                                                </ItemTitle>
-                                                <ItemDescription className="text-left">
-                                                  {`${player.matches} matches played`}
-                                                </ItemDescription>
-                                              </ItemContent>
-                                              <div
-                                                className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
-                                                  selected
-                                                    ? "border-primary bg-primary"
-                                                    : "border-muted-foreground"
-                                                }`}
-                                              >
-                                                {selected && (
-                                                  <svg
-                                                    className="text-primary-foreground h-4 w-4"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                  >
-                                                    <path
-                                                      strokeLinecap="round"
-                                                      strokeLinejoin="round"
-                                                      strokeWidth={3}
-                                                      d="M5 13l4 4L19 7"
-                                                    />
-                                                  </svg>
-                                                )}
-                                              </div>
-                                            </button>
-                                          </Item>
-                                        );
-                                      })}
-                                    </ItemGroup>
-                                  </ScrollArea>
-
-                                  {isInvalid && (
-                                    <FieldError
-                                      errors={field.state.meta.errors}
-                                    />
-                                  )}
-                                  {selectedPlayers.length < 1 && (
-                                    <div className="text-muted-foreground bg-muted/50 rounded-lg py-4 text-center text-sm">
-                                      Select at least 1 players to start the
-                                      match
-                                    </div>
-                                  )}
-                                </Field>
-                              );
+                          <PlayerSelectorField
+                            form={form}
+                            fields={{
+                              players: "players",
                             }}
+                            originalPlayers={players}
                           />
                           {/* Continue Button */}
                           {selectedPlayers.length > 0 && (
@@ -1384,150 +1067,24 @@ export function CustomMatchSelection({
                 <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
                   {roleTarget !== null && (
                     <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{`Assign Roles to ${roleTarget.name}`}</DialogTitle>
-                      </DialogHeader>
-                      <form.Field
-                        name={
-                          roleTarget.type === "player"
-                            ? `players[${roleTarget.index}].roles`
-                            : `teams[${roleTarget.index}].roles`
-                        }
-                        mode="array"
-                      >
-                        {(field) => {
-                          const filteredRoles = gameRoles.filter(
-                            (role) =>
-                              role.name
-                                .toLowerCase()
-                                .includes(roleSearchQuery.toLowerCase()) ||
-                              role.description
-                                ?.toLowerCase()
-                                .includes(roleSearchQuery.toLowerCase()),
-                          );
-                          return (
-                            <>
-                              <InputGroup>
-                                <InputGroupInput
-                                  placeholder="Search Roles..."
-                                  value={roleSearchQuery}
-                                  onChange={(e) =>
-                                    setRoleSearchQuery(e.target.value)
-                                  }
-                                />
-                                <InputGroupAddon>
-                                  <Search />
-                                </InputGroupAddon>
-                                {roleSearchQuery !== "" && (
-                                  <InputGroupAddon align="inline-end">
-                                    {filteredRoles.length} results
-                                  </InputGroupAddon>
-                                )}
-                              </InputGroup>
-                              <ScrollArea>
-                                <ItemGroup className="max-h-[500px] gap-4">
-                                  {filteredRoles.map((role) => {
-                                    const selected =
-                                      field.state.value.findIndex((r) => {
-                                        if (r.type == "original") {
-                                          return (
-                                            r.type === role.type &&
-                                            r.id === role.id
-                                          );
-                                        }
-                                        return (
-                                          r.type === role.type &&
-                                          r.sharedId === role.sharedId
-                                        );
-                                      });
-                                    const isRoleFromTeam = () => {
-                                      if (roleTarget.type === "team") {
-                                        return false;
-                                      } else {
-                                        const team = teams.find(
-                                          (t) => t.id === roleTarget.teamId,
-                                        );
-                                        const foundRole = team?.roles.find(
-                                          (r) => {
-                                            if (r.type == "original") {
-                                              return (
-                                                r.type === role.type &&
-                                                r.id === role.id
-                                              );
-                                            }
-                                            return (
-                                              r.type === role.type &&
-                                              r.sharedId === role.sharedId
-                                            );
-                                          },
-                                        );
-                                        if (foundRole) {
-                                          return true;
-                                        } else {
-                                          return false;
-                                        }
-                                      }
-                                    };
-                                    const fromTeam = isRoleFromTeam();
-                                    const toggleRole = () => {
-                                      if (selected > -1) {
-                                        field.removeValue(selected);
-                                      } else {
-                                        if (role.type === "original") {
-                                          field.pushValue(role);
-                                        } else {
-                                          field.pushValue({
-                                            type: "shared",
-                                            sharedId: role.sharedId,
-                                            name: role.name,
-                                            shareType: role.type,
-                                          });
-                                        }
-                                      }
-                                    };
-                                    return (
-                                      <Field
-                                        key={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
-                                        orientation="horizontal"
-                                        className={cn(
-                                          "border-border focus-visible:border-ring focus-visible:ring-ring/50 flex flex-row gap-4 rounded-md border p-4",
-                                          selected > -1 &&
-                                            "border-primary bg-primary/5",
-                                        )}
-                                      >
-                                        <Checkbox
-                                          id={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
-                                          checked={selected > -1}
-                                          onCheckedChange={() => toggleRole()}
-                                        />
-                                        <label
-                                          htmlFor={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
-                                          className="flex-1 gap-2"
-                                        >
-                                          <ItemTitle>
-                                            {role.name}
-                                            {fromTeam && (
-                                              <Badge
-                                                variant="secondary"
-                                                className="text-xs"
-                                              >
-                                                Team Role
-                                              </Badge>
-                                            )}
-                                          </ItemTitle>
-                                          <ItemDescription>
-                                            {role.description}
-                                          </ItemDescription>
-                                        </label>
-                                      </Field>
-                                    );
-                                  })}
-                                </ItemGroup>
-                              </ScrollArea>
-                            </>
-                          );
-                        }}
-                      </form.Field>
+                      {roleTarget.type === "player" ? (
+                        <PlayerRoleSelectorField
+                          form={form}
+                          fields={{
+                            roles: `players[${roleTarget.index}].roles`,
+                          }}
+                          title={roleTarget.name}
+                          gameRoles={gameRoles}
+                          team={teams.find((t) => t.id === roleTarget.teamId)}
+                        />
+                      ) : (
+                        <TeamRoleSelectorField
+                          title={roleTarget.name}
+                          gameRoles={gameRoles}
+                          form={form}
+                          fields={{ roles: `teams[${roleTarget.index}].roles` }}
+                        />
+                      )}
                       <DialogFooter>
                         <Button
                           type="button"
