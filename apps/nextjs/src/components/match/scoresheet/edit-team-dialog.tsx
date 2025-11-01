@@ -5,9 +5,13 @@ import { Search } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
+import type { OriginalRole, SharedRole } from "@board-games/shared";
 import {
-  sharedOrLinkedSchema,
-  sharedOrOriginalOrLinkedSchema,
+  isOriginalRoleGuard,
+  isSameRole,
+  isSharedRoleGuard,
+  originalRoleSchema,
+  sharedRoleSchema,
 } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
@@ -50,6 +54,9 @@ type Player = NonNullable<
 type Team = NonNullable<
   RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
 >["teams"][number];
+
+type TeamRole = OriginalRole | SharedRole;
+
 export default function TeamEditorDialog({
   team,
   matchInput,
@@ -110,20 +117,14 @@ function Content({
     (player) => player.teamId === team.id,
   );
   const teamRoles = originalTeamPlayers.reduce<
-    { id: number; type: "original" | "shared" | "linked" }[]
+    (z.infer<typeof originalRoleSchema> | z.infer<typeof sharedRoleSchema>)[]
   >((acc, player) => {
     player.roles.forEach((role) => {
       const roleInEveryPlayer = originalTeamPlayers.every((p) =>
-        p.roles.some((r) => r.id === role.id && r.type === role.type),
+        p.roles.some((r) => isSameRole(r, role)),
       );
-      if (
-        !acc.find((r) => r.id === role.id && r.type === role.type) &&
-        roleInEveryPlayer
-      ) {
-        acc.push({
-          id: role.id,
-          type: role.type,
-        });
+      if (!acc.find((r) => isSameRole(r, role)) && roleInEveryPlayer) {
+        acc.push(role);
       }
       return acc;
     });
@@ -132,13 +133,15 @@ function Content({
 
   const originalMatchFormSchema = z.object({
     name: z.string(),
-    roles: z.array(z.object({ id: z.number(), type: sharedOrLinkedSchema })),
+    roles: z.array(
+      z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
+    ),
     players: z.array(
       z.object({
         id: z.number(),
         name: z.string(),
         roles: z.array(
-          z.object({ id: z.number(), type: sharedOrLinkedSchema }),
+          z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
         ),
       }),
     ),
@@ -146,16 +149,12 @@ function Content({
 
   const sharedMatchFormSchema = z.object({
     name: z.string(),
-    roles: z.array(
-      z.object({ id: z.number(), type: sharedOrOriginalOrLinkedSchema }),
-    ),
+    roles: z.array(sharedRoleSchema),
     players: z.array(
       z.object({
         id: z.number(),
         name: z.string(),
-        roles: z.array(
-          z.object({ id: z.number(), type: sharedOrLinkedSchema }),
-        ),
+        roles: z.array(sharedRoleSchema),
       }),
     ),
   });
@@ -173,12 +172,9 @@ function Content({
         .filter((player) => player.teamId === team.id)
         .map((player) => {
           return {
-            id: player.id,
+            id: player.baseMatchPlayerId,
             name: player.name,
-            roles: player.roles.map((role) => ({
-              id: role.id,
-              type: role.type,
-            })),
+            roles: player.roles,
           };
         }),
       roles: teamRoles,
@@ -187,71 +183,87 @@ function Content({
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     const isSameTeamName = data.name === team.name;
     const playersToAdd = data.players
-      .filter((player) => !originalTeamPlayers.find((p) => p.id === player.id))
+      .filter(
+        (player) =>
+          !originalTeamPlayers.find((p) => p.baseMatchPlayerId === player.id),
+      )
       .map((p) => {
-        const foundPlayer = players.find((player) => player.id === p.id);
+        const foundPlayer = players.find(
+          (player) => player.baseMatchPlayerId === p.id,
+        );
         if (!foundPlayer) return null;
         const rolesToAdd = data.roles.filter(
-          (role) =>
-            !foundPlayer.roles.find(
-              (r) => r.id === role.id && r.type === role.type,
-            ),
+          (role) => !foundPlayer.roles.find((r) => isSameRole(r, role)),
         );
         return {
           id: p.id,
           roles: rolesToAdd,
         };
       })
-      .filter((p) => p !== null);
+      .filter(
+        (
+          p,
+        ): p is {
+          id: number;
+          roles: TeamRole[];
+        } => p !== null,
+      );
     const playersToRemove = originalTeamPlayers
-      .filter((player) => !data.players.find((p) => p.id === player.id))
+      .filter(
+        (player) =>
+          !data.players.find((p) => p.id === player.baseMatchPlayerId),
+      )
       .map((p) => {
-        const foundPlayer = players.find((player) => player.id === p.id);
+        const foundPlayer = players.find(
+          (player) => player.baseMatchPlayerId === p.baseMatchPlayerId,
+        );
         if (!foundPlayer) return null;
-        const rolesToRemove = foundPlayer.roles
-          .filter((role) =>
-            data.roles.find((r) => r.id === role.id && r.type === role.type),
-          )
-          .map((role) => ({
-            id: role.id,
-            type: role.type,
-          }));
+        const rolesToRemove = foundPlayer.roles.filter((role) =>
+          data.roles.find((r) => isSameRole(r, role)),
+        );
         return {
-          id: p.id,
+          id: p.baseMatchPlayerId,
           roles: rolesToRemove,
         };
       })
-      .filter((p) => p !== null);
+      .filter(
+        (
+          p,
+        ): p is {
+          id: number;
+          roles: TeamRole[];
+        } => p !== null,
+      );
     const playersToUpdate = data.players
       .map((player) => {
-        const foundPlayer = players.find((p) => p.id === player.id);
+        const foundPlayer = players.find(
+          (p) => p.baseMatchPlayerId === player.id,
+        );
         if (!foundPlayer) return null;
         const rolesToAdd = data.roles.filter(
-          (role) =>
-            !foundPlayer.roles.find(
-              (r) => r.id === role.id && r.type === role.type,
-            ),
+          (role) => !foundPlayer.roles.find((r) => isSameRole(r, role)),
         );
-        const rolesToRemove = foundPlayer.roles
-          .filter(
-            (role) =>
-              teamRoles.findIndex(
-                (r) => r.id === role.id && r.type === role.type,
-              ) > -1 &&
-              !data.roles.find((r) => r.id === role.id && r.type === role.type),
-          )
-          .map((role) => ({
-            id: role.id,
-            type: role.type,
-          }));
+        const rolesToRemove = foundPlayer.roles.filter(
+          (role) =>
+            teamRoles.findIndex((r) => isSameRole(r, role)) > -1 &&
+            !data.roles.find((r) => isSameRole(r, role)),
+        );
         if (rolesToAdd.length === 0 && rolesToRemove.length === 0) return null;
         return {
-          id: foundPlayer.id,
+          id: foundPlayer.baseMatchPlayerId,
           rolesToAdd: rolesToAdd,
           rolesToRemove: rolesToRemove,
         };
       })
-      .filter((p) => p !== null);
+      .filter(
+        (
+          p,
+        ): p is {
+          id: number;
+          rolesToAdd: TeamRole[];
+          rolesToRemove: TeamRole[];
+        } => p !== null,
+      );
     updateMatchTeamMutation.mutate(
       matchInput.type === "original"
         ? {
@@ -262,8 +274,16 @@ function Content({
               name: isSameTeamName ? undefined : data.name,
             },
             playersToAdd: playersToAdd,
-            playersToRemove: playersToRemove,
-            playersToUpdate: playersToUpdate,
+            playersToRemove: playersToRemove.map((p) => {
+              return {
+                ...p,
+                roles: p.roles.filter(isOriginalRoleGuard),
+              };
+            }),
+            playersToUpdate: playersToUpdate.map((p) => ({
+              ...p,
+              rolesToRemove: p.rolesToRemove.filter(isOriginalRoleGuard),
+            })),
           }
         : {
             type: "shared" as const,
@@ -273,77 +293,17 @@ function Content({
               name: isSameTeamName ? undefined : data.name,
             },
             playersToAdd: playersToAdd.map((p) => ({
-              ...p,
-              roles: p.roles
-                .map((r) => {
-                  if (r.type === "original") return null;
-                  if (r.type === "linked") {
-                    return {
-                      id: r.id,
-                      type: "linked" as const,
-                    };
-                  } else {
-                    return {
-                      id: r.id,
-                      type: "shared" as const,
-                    };
-                  }
-                })
-                .filter((r) => r !== null),
+              sharedMatchPlayerId: p.id,
+              roles: p.roles.filter(isSharedRoleGuard),
             })),
             playersToRemove: playersToRemove.map((p) => ({
-              ...p,
-              roles: p.roles
-                .map((r) => {
-                  if (r.type === "original") return null;
-                  if (r.type === "linked") {
-                    return {
-                      id: r.id,
-                      type: "linked" as const,
-                    };
-                  } else {
-                    return {
-                      id: r.id,
-                      type: "shared" as const,
-                    };
-                  }
-                })
-                .filter((r) => r !== null),
+              sharedMatchPlayerId: p.id,
+              roles: p.roles.filter(isSharedRoleGuard),
             })),
             playersToUpdate: playersToUpdate.map((p) => ({
-              ...p,
-              rolesToAdd: p.rolesToAdd
-                .map((r) => {
-                  if (r.type === "original") return null;
-                  if (r.type === "linked") {
-                    return {
-                      id: r.id,
-                      type: "linked" as const,
-                    };
-                  } else {
-                    return {
-                      id: r.id,
-                      type: "shared" as const,
-                    };
-                  }
-                })
-                .filter((r) => r !== null),
-              rolesToRemove: p.rolesToRemove
-                .map((r) => {
-                  if (r.type === "original") return null;
-                  if (r.type === "linked") {
-                    return {
-                      id: r.id,
-                      type: "linked" as const,
-                    };
-                  } else {
-                    return {
-                      id: r.id,
-                      type: "shared" as const,
-                    };
-                  }
-                })
-                .filter((r) => r !== null),
+              sharedMatchPlayerId: p.id,
+              rolesToAdd: p.rolesToAdd.filter(isSharedRoleGuard),
+              rolesToRemove: p.rolesToRemove.filter(isSharedRoleGuard),
             })),
           },
       {
@@ -358,7 +318,7 @@ function Content({
   const formPlayers = form.watch("players");
   const availablePlayers = useMemo(() => {
     return players.filter(
-      (player) => !formPlayers.find((p) => p.id === player.id),
+      (player) => !formPlayers.find((p) => p.id === player.baseMatchPlayerId),
     );
   }, [players, formPlayers]);
 
@@ -406,12 +366,12 @@ function Content({
             <ScrollArea>
               <div className="flex max-h-[15vh] flex-col gap-2">
                 {filteredRoles.map((role) => {
-                  const roleIndex = formRoles.findIndex(
-                    (r) => r.id === role.id && r.type === role.type,
+                  const roleIndex = formRoles.findIndex((r) =>
+                    isSameRole(r, role),
                   );
                   return (
                     <FormField
-                      key={`${role.type}-${role.id}`}
+                      key={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                       control={form.control}
                       name="roles"
                       render={({ field }) => (
@@ -424,18 +384,13 @@ function Content({
                                   field.onChange([
                                     ...formRoles,
                                     {
-                                      id: role.id,
-                                      type: role.type,
+                                      ...role,
                                     },
                                   ]);
                                 } else {
                                   field.onChange([
                                     ...formRoles.filter(
-                                      (r) =>
-                                        !(
-                                          r.id === role.id &&
-                                          r.type === role.type
-                                        ),
+                                      (r) => !isSameRole(r, role),
                                     ),
                                   ]);
                                 }
@@ -461,13 +416,11 @@ function Content({
             <ScrollArea className="hidden overflow-auto sm:relative">
               <div className="hidden items-center gap-2 overflow-visible sm:flex">
                 {formRoles.map((formRole) => {
-                  const role = roles.find(
-                    (r) => r.id === formRole.id && r.type === formRole.type,
-                  );
+                  const role = roles.find((r) => isSameRole(r, formRole));
                   if (!role) return null;
                   return (
                     <Badge
-                      key={`${role.type}-${role.id}`}
+                      key={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                       variant="outline"
                       className="text-nowrap"
                     >
@@ -492,7 +445,7 @@ function Content({
                         <div className="flex max-h-[15vh] flex-col gap-2">
                           {playerField.value.map((player, index) => {
                             const foundPlayer = players.find(
-                              (p) => p.id === player.id,
+                              (p) => p.baseMatchPlayerId === player.id,
                             );
                             if (!foundPlayer) return null;
                             return (
@@ -555,12 +508,12 @@ function Content({
                   <div className="flex max-h-[15vh] flex-col gap-2">
                     {availablePlayers.map((player) => {
                       const foundPlayer = players.find(
-                        (p) => p.id === player.id,
+                        (p) => p.baseMatchPlayerId === player.baseMatchPlayerId,
                       );
                       if (!foundPlayer) return null;
                       return (
                         <div
-                          key={player.id}
+                          key={player.baseMatchPlayerId}
                           className="flex w-full items-center justify-between gap-2"
                         >
                           <div className="flex w-full items-center gap-1 text-sm font-normal sm:gap-2">
@@ -587,7 +540,7 @@ function Content({
                               form.setValue("players", [
                                 ...formPlayers,
                                 {
-                                  id: player.id,
+                                  id: player.baseMatchPlayerId,
                                   name: foundPlayer.name,
                                   roles: form.getValues("roles"),
                                 },

@@ -14,6 +14,7 @@ import { CalendarIcon, Plus, X } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 
 import type { RouterOutputs } from "@board-games/api";
+import type { originalRoleSchema, sharedRoleSchema } from "@board-games/shared";
 import type { UseFormReturn } from "@board-games/ui/form";
 import { addMatchSchema } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
@@ -289,10 +290,10 @@ const AddMatchForm = ({
           players: {
             type: "original" | "shared" | "linked";
             id: number;
-            roles: {
-              id: number;
-              type: "original" | "shared" | "linked";
-            }[];
+            roles: (
+              | z.infer<typeof originalRoleSchema>
+              | z.infer<typeof sharedRoleSchema>
+            )[];
           }[];
         }
       >

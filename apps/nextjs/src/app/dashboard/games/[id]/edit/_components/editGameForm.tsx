@@ -1098,7 +1098,7 @@ const GameForm = ({
                         >
                           <Table />
                           <button
-                            className="flex flex-grow flex-col items-start justify-start"
+                            className="flex grow flex-col items-start justify-start"
                             onClick={() => {
                               setGame(form.getValues());
                               setIsScoresheet(true);
@@ -1254,7 +1254,10 @@ const RolesForm = ({
     name: "roles",
   });
 
-  const filteredRoles = useFilteredRoles(roles, roleSearchTerm);
+  const filteredRoles = useFilteredRoles(
+    roles.map((role) => ({ ...role, type: "original" })),
+    roleSearchTerm,
+  );
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

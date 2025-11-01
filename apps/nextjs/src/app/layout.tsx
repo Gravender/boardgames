@@ -2,7 +2,6 @@ import "~/styles/globals.css";
 
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 import { Toaster } from "@board-games/ui/toast";
 import { cn } from "@board-games/ui/utils";
@@ -10,6 +9,7 @@ import { cn } from "@board-games/ui/utils";
 import { CSPostHogProvider } from "~/components/analytics";
 import PostHogPageView from "~/components/PostHogPageView";
 import { SpeedInsights } from "~/components/speedInsights";
+import TanStackDevtools from "~/components/tan-stack-devtools";
 import { ThemeProvider } from "~/components/theme-provider";
 import { TRPCReactProvider } from "~/trpc/react";
 
@@ -68,10 +68,7 @@ export default function RootLayout({
           <CSPostHogProvider>
             <TRPCReactProvider>
               {children}
-              <ReactQueryDevtools
-                position="bottom"
-                buttonPosition="bottom-right"
-              />
+              <TanStackDevtools />
             </TRPCReactProvider>
             <Toaster />
             <SpeedInsights />

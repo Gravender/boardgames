@@ -1,12 +1,28 @@
+import type z from "zod";
 import { useMemo } from "react";
 
-interface Role {
-  id: number;
-  type?: "original" | "shared" | "linked";
-  name: string;
-  description?: string | null;
-}
+import type { originalRoleSchema, sharedRoleSchema } from "@board-games/shared";
 
+type Role =
+  | z.infer<typeof originalRoleSchema>
+  | z.infer<typeof sharedRoleSchema>;
+
+export function useFilteredRoles(
+  roles: z.infer<typeof sharedRoleSchema>[],
+  roleSearchTerm: string,
+): z.infer<typeof sharedRoleSchema>[];
+
+export function useFilteredRoles(
+  roles: z.infer<typeof originalRoleSchema>[],
+  roleSearchTerm: string,
+): z.infer<typeof originalRoleSchema>[];
+export function useFilteredRoles(
+  roles: (
+    | z.infer<typeof originalRoleSchema>
+    | z.infer<typeof sharedRoleSchema>
+  )[],
+  roleSearchTerm: string,
+): (z.infer<typeof originalRoleSchema> | z.infer<typeof sharedRoleSchema>)[];
 export function useFilteredRoles(roles: Role[], roleSearchTerm: string) {
   return useMemo(() => {
     const searchTerm = roleSearchTerm.toLowerCase();

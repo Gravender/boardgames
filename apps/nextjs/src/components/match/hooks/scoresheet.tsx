@@ -250,7 +250,7 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
             players: prevData.players.map((player) => {
               if (
                 newRoundScore.type === "player" &&
-                player.id === newRoundScore.matchPlayerId
+                player.baseMatchPlayerId === newRoundScore.matchPlayerId
               ) {
                 return {
                   ...player,
@@ -316,7 +316,8 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
           }
         } else {
           const player = context?.previousData?.players.find(
-            (player) => player.id === newRoundScore.matchPlayerId,
+            (player) =>
+              player.baseMatchPlayerId === newRoundScore.matchPlayerId,
           );
           if (player) {
             console.error(
@@ -367,7 +368,7 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
             players: prevData.players.map((player) => {
               if (
                 newScore.type === "player" &&
-                player.id === newScore.matchPlayerId
+                player.baseMatchPlayerId === newScore.matchPlayerId
               ) {
                 return {
                   ...player,
@@ -411,7 +412,7 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
           }
         } else {
           const player = context?.previousData?.players.find(
-            (player) => player.id === newScore.matchPlayerId,
+            (player) => player.baseMatchPlayerId === newScore.matchPlayerId,
           );
           if (player) {
             console.error(
@@ -510,7 +511,7 @@ export const useUpdateMatchDetailsMutation = (input: MatchInput) => {
             const newData = {
               ...prevData,
               players: prevData.players.map((player) => {
-                if (player.id === newDetails.id) {
+                if (player.baseMatchPlayerId === newDetails.id) {
                   return {
                     ...player,
                     details: newDetails.details,
@@ -570,7 +571,7 @@ export const useUpdateMatchDetailsMutation = (input: MatchInput) => {
           }
         } else {
           const player = context?.previousData?.players.find(
-            (player) => player.id === newDetails.id,
+            (player) => player.baseMatchPlayerId === newDetails.id,
           );
           if (player) {
             console.error(

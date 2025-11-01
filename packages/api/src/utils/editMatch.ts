@@ -26,10 +26,16 @@ export async function addPlayersToMatch(
     id: number;
     type: "original" | "shared" | "linked";
     teamId: number | null;
-    roles: {
-      id: number;
-      type: "original" | "shared" | "linked";
-    }[];
+    roles: (
+      | {
+          id: number;
+          type: "original";
+        }
+      | {
+          sharedId: number;
+          type: "shared" | "linked";
+        }
+    )[];
   }[],
   teams: {
     id: number;
@@ -46,17 +52,29 @@ export async function addPlayersToMatch(
     id: number;
     teamId: number | null;
     playerId: number;
-    roles: {
-      id: number;
-      type: "original" | "shared" | "linked";
-    }[];
+    roles: (
+      | {
+          id: number;
+          type: "original";
+        }
+      | {
+          sharedId: number;
+          type: "shared" | "linked";
+        }
+    )[];
   }[] = [];
   const playersToInsert: {
     processedPlayer: z.infer<typeof insertMatchPlayerSchema>;
-    roles: {
-      id: number;
-      type: "original" | "shared" | "linked";
-    }[];
+    roles: (
+      | {
+          id: number;
+          type: "original";
+        }
+      | {
+          sharedId: number;
+          type: "shared" | "linked";
+        }
+    )[];
   }[] = await Promise.all(
     playersToAdd.map(async (p) => {
       const processedPlayer = await processPlayer(
@@ -111,22 +129,20 @@ export async function addPlayersToMatch(
   const rolesToAdd = insertedMatchPlayers.flatMap((p) =>
     p.roles.map((role) => ({
       matchPlayerId: p.id,
-      roleId: role.id,
-      type: role.type,
+      ...role,
     })),
   );
   if (rolesToAdd.length > 0) {
     const originalRoles = rolesToAdd.filter(
-      (roleToAdd) =>
-        roleToAdd.type === "original" || roleToAdd.type === "linked",
+      (roleToAdd) => roleToAdd.type === "original",
     );
     const sharedRoles = rolesToAdd.filter(
-      (roleToAdd) => roleToAdd.type === "shared",
+      (roleToAdd) => roleToAdd.type !== "original",
     );
     await transaction.insert(matchPlayerRole).values(
       originalRoles.map((originalRole) => ({
         matchPlayerId: originalRole.matchPlayerId,
-        roleId: originalRole.roleId,
+        roleId: originalRole.id,
       })),
     );
     const returnedMatch = await transaction.query.match.findFirst({
@@ -143,13 +159,13 @@ export async function addPlayersToMatch(
     }
     const uniqueRoles = sharedRoles.reduce<
       {
-        id: number;
+        sharedId: number;
       }[]
     >((acc, role) => {
-      const existingRole = acc.find((r) => r.id === role.roleId);
+      const existingRole = acc.find((r) => r.sharedId === role.sharedId);
       if (!existingRole) {
         acc.push({
-          id: role.roleId,
+          sharedId: role.sharedId,
         });
       }
       return acc;
@@ -162,7 +178,7 @@ export async function addPlayersToMatch(
       const returnedSharedRole =
         await transaction.query.sharedGameRole.findFirst({
           where: {
-            gameRoleId: uniqueRole.id,
+            id: uniqueRole.sharedId,
             sharedWithId: userId,
           },
           with: {
@@ -201,7 +217,7 @@ export async function addPlayersToMatch(
         linkedGameRoleId = createdGameRole.id;
       }
       mappedSharedRoles.push({
-        sharedRoleId: uniqueRole.id,
+        sharedRoleId: uniqueRole.sharedId,
         createRoleId: linkedGameRoleId,
       });
     }
@@ -210,7 +226,7 @@ export async function addPlayersToMatch(
       roleId: number;
     }[] = sharedRoles.map((role) => {
       const createdRole = mappedSharedRoles.find(
-        (r) => r.sharedRoleId === role.roleId,
+        (r) => r.sharedRoleId === role.sharedId,
       );
       if (!createdRole) {
         throw new TRPCError({

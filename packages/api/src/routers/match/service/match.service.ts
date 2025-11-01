@@ -69,6 +69,7 @@ class MatchService {
             return matchPlayerRound;
           }),
           score: matchPlayer.score,
+          baseMatchPlayerId: matchPlayer.id,
           id: matchPlayer.id,
           type: "original" as const,
           playerType: "original" as const,
@@ -134,25 +135,28 @@ class MatchService {
           const linkedGameRole = sharedGameRole.linkedGameRole;
           if (linkedGameRole === null) {
             return {
-              id: sharedGameRole.gameRole.id,
+              sharedId: sharedGameRole.id,
               name: sharedGameRole.gameRole.name,
               description: sharedGameRole.gameRole.description,
               type: "shared" as const,
+              sharedType: "shared" as const,
             };
           }
           return {
-            id: linkedGameRole.id,
+            sharedId: sharedGameRole.id,
             name: linkedGameRole.name,
             description: linkedGameRole.description,
-            type: "linked" as const,
+            type: "shared" as const,
+            sharedType: "linked" as const,
           };
         });
 
         const matchPlayer = {
+          baseMatchPlayerId: sharedMatchPlayer.matchPlayer.id,
+          sharedMatchPlayerId: sharedMatchPlayer.id,
           type: "shared" as const,
           permissions: sharedMatchPlayer.permission,
           score: sharedMatchPlayer.matchPlayer.score,
-          id: sharedMatchPlayer.matchPlayer.id,
           details: sharedMatchPlayer.matchPlayer.details,
           teamId: sharedMatchPlayer.matchPlayer.teamId,
           order: sharedMatchPlayer.matchPlayer.order,

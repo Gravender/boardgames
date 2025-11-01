@@ -5,7 +5,11 @@ import { Search } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
-import { sharedOrOriginalSchema } from "@board-games/shared";
+import {
+  isSameRole,
+  originalRoleSchema,
+  sharedRoleSchema,
+} from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -22,7 +26,7 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 
 const roleSchema = z.array(
-  z.object({ type: sharedOrOriginalSchema, id: z.number() }),
+  z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
 );
 export const ManagePlayerRoles = ({
   player,
@@ -34,13 +38,22 @@ export const ManagePlayerRoles = ({
   player: {
     id: number;
     name: string;
-    roles: { type: "original" | "shared" | "linked"; id: number }[];
+    roles: (
+      | z.infer<typeof originalRoleSchema>
+      | z.infer<typeof sharedRoleSchema>
+    )[];
   };
-  teamRoles: { type: "original" | "shared" | "linked"; id: number }[];
+  teamRoles: (
+    | z.infer<typeof originalRoleSchema>
+    | z.infer<typeof sharedRoleSchema>
+  )[];
   roles: RouterOutputs["newGame"]["gameRoles"];
   onClose: () => void;
   onSave: (
-    roles: { type: "original" | "shared" | "linked"; id: number }[],
+    roles: (
+      | z.infer<typeof originalRoleSchema>
+      | z.infer<typeof sharedRoleSchema>
+    )[],
   ) => void;
 }) => {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
@@ -96,44 +109,39 @@ export const ManagePlayerRoles = ({
                   ) : (
                     filteredRoles.map((role) => {
                       const isTeamRole =
-                        teamRoles.findIndex(
-                          (r) => r.id === role.id && r.type === role.type,
-                        ) > -1;
+                        teamRoles.findIndex((r) => isSameRole(r, role)) > -1;
                       return (
                         <div
-                          key={`${role.type}-${role.id}`}
+                          key={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                           className="flex items-center space-x-3 rounded p-2"
                         >
                           <Checkbox
-                            id={`${role.type}-${role.id}`}
+                            id={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                             checked={
-                              field.value.find(
-                                (r) => r.id === role.id && r.type === role.type,
-                              ) !== undefined
+                              field.value.find((r) => isSameRole(r, role)) !==
+                              undefined
                             }
                             onCheckedChange={() => {
                               const foundRoleIndex = field.value.findIndex(
-                                (r) => r.id === role.id && r.type === role.type,
+                                (r) => isSameRole(r, role),
                               );
                               if (foundRoleIndex > -1) {
                                 const newRoles = [
                                   ...field.value.filter(
-                                    (r) =>
-                                      !(r.id == role.id && r.type == role.type),
+                                    (r) => !isSameRole(r, role),
                                   ),
                                 ];
                                 field.onChange(newRoles);
                               } else {
-                                field.onChange([
-                                  ...field.value,
-                                  { type: role.type, id: role.id },
-                                ]);
+                                field.onChange([...field.value, { ...role }]);
                               }
                             }}
                             disabled={isTeamRole}
                           />
                           <div className="flex-1 gap-2">
-                            <Label htmlFor={`${role.type}-${role.id}`}>
+                            <Label
+                              htmlFor={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
+                            >
                               {role.name}
                               {isTeamRole ? " (Team)" : ""}
                             </Label>
@@ -156,18 +164,15 @@ export const ManagePlayerRoles = ({
                   <ScrollArea>
                     <div className="flex max-h-12 flex-wrap gap-2">
                       {formRoles.map((formRole) => {
-                        const foundRole = roles.find(
-                          (r) =>
-                            r.id === formRole.id && r.type === formRole.type,
+                        const foundRole = roles.find((r) =>
+                          isSameRole(r, formRole),
                         );
                         const isTeamRole =
-                          teamRoles.findIndex(
-                            (r) =>
-                              r.id === formRole.id && r.type === formRole.type,
-                          ) > -1;
+                          teamRoles.findIndex((r) => isSameRole(r, formRole)) >
+                          -1;
                         return foundRole ? (
                           <Badge
-                            key={`${foundRole.type}-${foundRole.id}`}
+                            key={`${foundRole.type}-${foundRole.type === "original" ? foundRole.id : foundRole.sharedId}`}
                             variant="secondary"
                             className="w-28 truncate text-xs text-nowrap"
                           >
