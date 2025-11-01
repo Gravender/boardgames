@@ -262,6 +262,9 @@ export function QuickMatchSelection({
                       players: "players",
                     }}
                     originalPlayers={playersForMatch.players}
+                    addPlayerOnClick={() => {
+                      //TODO: add player dialog
+                    }}
                   />
                 )}
 
@@ -488,6 +491,9 @@ export function CustomMatchSelection({
                               originalPlayers={playersForMatch.players.map(
                                 (p) => ({ ...p, roles: [] }),
                               )}
+                              addPlayerOnClick={() => {
+                                //TODO: add player dialog
+                              }}
                             />
                           )}
                           {/* Continue Button */}

@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Search, UserPlus } from "lucide-react";
 import z from "zod";
 
 import { isSamePlayer } from "@board-games/shared";
+import { Button } from "@board-games/ui/button";
 import { Field, FieldError, FieldLabel } from "@board-games/ui/field";
 import {
   InputGroup,
@@ -54,29 +55,42 @@ export const PlayerSelectorField = withFieldGroup({
         usageType: "player" | "match" | "game";
       } | null;
     })[],
+    addPlayerOnClick: () => {
+      /* empty */
+    },
   },
-  render: function Render({ group, originalPlayers }) {
+  render: function Render({ group, originalPlayers, addPlayerOnClick }) {
     const [searchQuery, setSearchQuery] = useState("");
     const filteredPlayers = originalPlayers.filter((player) =>
       player.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
     return (
       <div className="space-y-4">
-        <InputGroup>
-          <InputGroupInput
-            placeholder="Search players..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <InputGroupAddon>
-            <Search />
-          </InputGroupAddon>
-          {searchQuery !== "" && (
-            <InputGroupAddon align="inline-end">
-              {filteredPlayers.length} results
+        <div className="flex gap-2">
+          <InputGroup className="flex-1">
+            <InputGroupInput
+              placeholder="Search players..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <InputGroupAddon>
+              <Search />
             </InputGroupAddon>
-          )}
-        </InputGroup>
+            {searchQuery !== "" && (
+              <InputGroupAddon align="inline-end">
+                {filteredPlayers.length} results
+              </InputGroupAddon>
+            )}
+          </InputGroup>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => addPlayerOnClick()}
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            Add Player
+          </Button>
+        </div>
         <group.AppField name="players" mode="array">
           {(field) => {
             const isInvalid =
