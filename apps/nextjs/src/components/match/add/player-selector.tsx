@@ -364,16 +364,16 @@ export function CustomMatchSelection({
   });
   const roleSchema = z.discriminatedUnion("type", [
     z.object({
+      id: z.number(),
       type: z.literal("original"),
       name: z.string(),
-      id: z.number(),
       description: z.string().nullable(),
     }),
     z.object({
-      type: z.literal("shared"),
-      shareType: sharedOrLinkedSchema,
-      name: z.string(),
       sharedId: z.number(),
+      type: z.literal("shared"),
+      sharedType: sharedOrLinkedSchema,
+      name: z.string(),
       description: z.string().nullable(),
     }),
   ]);
@@ -490,6 +490,7 @@ export function CustomMatchSelection({
           "--border-radius": "calc(var(--radius)  + 4px)",
         } as React.CSSProperties,
       });
+      form.reset();
       onCancel();
     },
   });
@@ -513,72 +514,7 @@ export function CustomMatchSelection({
     });
     form.setFieldValue("players", tempPlayers);
   };
-  const openRoleDialog = (
-    input:
-      | { type: "team"; id: number; index: number }
-      | {
-          type: "player";
-          id: number;
-          shareType: "original" | "shared";
-          index: number;
-        },
-  ) => {
-    if (input.type === "player") {
-      const currentPlayers = form.state.values.players;
-      if (input.shareType === "original") {
-        const foundPlayer = currentPlayers.find(
-          (p) => p.type === "original" && p.id === input.id,
-        );
-        if (foundPlayer) {
-          setRoleTarget({
-            index: input.index,
-            type: input.type,
-            id: input.id,
-            shareType: input.shareType,
-            name: foundPlayer.name,
-            teamId: foundPlayer.teamId,
-          });
-          setShowRoleDialog(true);
-        } else {
-          toast.error("Opening role dialog for player failed");
-          throw new Error("Player not found");
-        }
-      } else {
-        const foundPlayer = currentPlayers.find(
-          (p) => p.type === "shared" && p.sharedId === input.id,
-        );
-        if (foundPlayer) {
-          setRoleTarget({
-            index: input.index,
-            type: input.type,
-            id: input.id,
-            shareType: input.shareType,
-            name: foundPlayer.name,
-            teamId: foundPlayer.teamId,
-          });
-          setShowRoleDialog(true);
-        } else {
-          toast.error("Opening role dialog for player failed");
-          throw new Error("Player not found");
-        }
-      }
-    } else {
-      const currentTeams = form.state.values.teams;
-      const foundTeam = currentTeams.find((t) => t.id === input.id);
-      if (foundTeam) {
-        setRoleTarget({
-          index: input.index,
-          type: input.type,
-          id: input.id,
-          name: foundTeam.name,
-        });
-        setShowRoleDialog(true);
-      } else {
-        toast.error("Opening role dialog for team failed");
-        throw new Error("Team not found");
-      }
-    }
-  };
+
   return (
     <DialogContent className="max-w-4xl">
       <form
@@ -740,13 +676,15 @@ export function CustomMatchSelection({
                                                 type="button"
                                                 size="icon"
                                                 variant="ghost"
-                                                onClick={() =>
-                                                  openRoleDialog({
-                                                    type: "team",
+                                                onClick={() => {
+                                                  setRoleTarget({
                                                     id: team.id,
+                                                    type: "team" as const,
                                                     index: i,
-                                                  })
-                                                }
+                                                    name: team.name,
+                                                  });
+                                                  setShowRoleDialog(true);
+                                                }}
                                               >
                                                 <Shield className="h-4 w-4" />
                                               </Button>
@@ -842,20 +780,49 @@ export function CustomMatchSelection({
                                                           type="button"
                                                           size="icon"
                                                           variant="ghost"
-                                                          onClick={() =>
-                                                            openRoleDialog({
-                                                              type: "player",
-                                                              id:
-                                                                player.type ===
-                                                                "original"
-                                                                  ? player.id
-                                                                  : player.sharedId,
-                                                              shareType:
-                                                                player.type,
-                                                              index:
-                                                                playerIndex,
-                                                            })
-                                                          }
+                                                          onClick={() => {
+                                                            const foundPlayer =
+                                                              selectedPlayers[
+                                                                playerIndex
+                                                              ];
+                                                            if (
+                                                              foundPlayer ===
+                                                              undefined
+                                                            ) {
+                                                              return;
+                                                            }
+                                                            const roleObject =
+                                                              foundPlayer.type ===
+                                                              "original"
+                                                                ? {
+                                                                    id: foundPlayer.id,
+                                                                    type: "player" as const,
+                                                                    index:
+                                                                      playerIndex,
+                                                                    name: foundPlayer.name,
+                                                                    shareType:
+                                                                      "original" as const,
+                                                                    teamId:
+                                                                      foundPlayer.teamId,
+                                                                  }
+                                                                : {
+                                                                    id: foundPlayer.sharedId,
+                                                                    type: "player" as const,
+                                                                    index:
+                                                                      playerIndex,
+                                                                    name: foundPlayer.name,
+                                                                    shareType:
+                                                                      "shared" as const,
+                                                                    teamId:
+                                                                      foundPlayer.teamId,
+                                                                  };
+                                                            setRoleTarget(
+                                                              roleObject,
+                                                            );
+                                                            setShowRoleDialog(
+                                                              true,
+                                                            );
+                                                          }}
                                                         >
                                                           <Shield className="h-3 w-3" />
                                                         </Button>
@@ -1003,20 +970,49 @@ export function CustomMatchSelection({
                                                           type="button"
                                                           size="icon"
                                                           variant="ghost"
-                                                          onClick={() =>
-                                                            openRoleDialog({
-                                                              type: "player",
-                                                              id:
-                                                                player.type ===
-                                                                "original"
-                                                                  ? player.id
-                                                                  : player.sharedId,
-                                                              shareType:
-                                                                player.type,
-                                                              index:
-                                                                playerIndex,
-                                                            })
-                                                          }
+                                                          onClick={() => {
+                                                            const foundPlayer =
+                                                              selectedPlayers[
+                                                                playerIndex
+                                                              ];
+                                                            if (
+                                                              foundPlayer ===
+                                                              undefined
+                                                            ) {
+                                                              return;
+                                                            }
+                                                            const roleObject =
+                                                              foundPlayer.type ===
+                                                              "original"
+                                                                ? {
+                                                                    id: foundPlayer.id,
+                                                                    type: "player" as const,
+                                                                    index:
+                                                                      playerIndex,
+                                                                    name: foundPlayer.name,
+                                                                    shareType:
+                                                                      "original" as const,
+                                                                    teamId:
+                                                                      foundPlayer.teamId,
+                                                                  }
+                                                                : {
+                                                                    id: foundPlayer.sharedId,
+                                                                    type: "player" as const,
+                                                                    index:
+                                                                      playerIndex,
+                                                                    name: foundPlayer.name,
+                                                                    shareType:
+                                                                      "shared" as const,
+                                                                    teamId:
+                                                                      foundPlayer.teamId,
+                                                                  };
+                                                            setRoleTarget(
+                                                              roleObject,
+                                                            );
+                                                            setShowRoleDialog(
+                                                              true,
+                                                            );
+                                                          }}
                                                         >
                                                           <Shield className="h-3 w-3" />
                                                         </Button>

@@ -139,13 +139,15 @@ class MatchService {
               name: sharedGameRole.gameRole.name,
               description: sharedGameRole.gameRole.description,
               type: "shared" as const,
+              sharedType: "shared" as const,
             };
           }
           return {
             sharedId: sharedGameRole.id,
             name: linkedGameRole.name,
             description: linkedGameRole.description,
-            type: "linked" as const,
+            type: "shared" as const,
+            sharedType: "linked" as const,
           };
         });
 
