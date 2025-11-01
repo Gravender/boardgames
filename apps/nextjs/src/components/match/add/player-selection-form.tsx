@@ -3,7 +3,6 @@ import { Search } from "lucide-react";
 import z from "zod";
 
 import { isSamePlayer } from "@board-games/shared";
-import { Avatar, AvatarFallback, AvatarImage } from "@board-games/ui/avatar";
 import { Field, FieldError, FieldLabel } from "@board-games/ui/field";
 import {
   InputGroup,

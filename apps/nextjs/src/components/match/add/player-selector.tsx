@@ -52,7 +52,9 @@ import { toast } from "@board-games/ui/toast";
 
 import { useGameRoles } from "~/components/game/hooks/roles";
 import { PlayerImage } from "~/components/player-image";
+import { Spinner } from "~/components/spinner";
 import { useAppForm } from "~/hooks/form";
+import { usePlayers } from "../hooks/players";
 import { PlayerSelectorField } from "./player-selection-form";
 import { PlayerRoleSelectorField, TeamRoleSelectorField } from "./role-form";
 
@@ -187,57 +189,7 @@ export function QuickMatchSelection({
       message: "You must select at least one player",
     }),
   });
-
-  const players: (z.infer<typeof playerSchema> & {
-    matches: number;
-    image: {
-      name: string;
-      url: string | null;
-      type: "file" | "svg";
-      usageType: "player" | "match" | "game";
-    } | null;
-  })[] = [
-    {
-      id: 1,
-      type: "original",
-      name: "Player 1",
-      matches: 0,
-      image: null,
-    },
-    {
-      id: 2,
-      type: "original",
-      name: "Player 2",
-      matches: 0,
-
-      image: null,
-    },
-    {
-      id: 3,
-      type: "original",
-      name: "Player 3",
-      matches: 0,
-      image: null,
-    },
-    {
-      sharedId: 1,
-      type: "shared",
-      name: "Player 4",
-      shareType: "shared",
-      linkedPlayerId: null,
-      matches: 0,
-      image: null,
-    },
-    {
-      sharedId: 2,
-      type: "shared",
-      name: "Player 4",
-      shareType: "link",
-      linkedPlayerId: 8,
-      matches: 0,
-      image: null,
-    },
-  ];
+  const { playersForMatch, isLoading: isLoadingPlayers } = usePlayers();
 
   const form = useAppForm({
     formId: "quick-match-selection",
@@ -295,13 +247,23 @@ export function QuickMatchSelection({
                     {selectedPlayers.length} selected
                   </Badge>
                 </DialogHeader>
-                <PlayerSelectorField
-                  form={form}
-                  fields={{
-                    players: "players",
-                  }}
-                  originalPlayers={players}
-                />
+                {isLoadingPlayers ? (
+                  <div className="flex items-center justify-center">
+                    <Spinner />
+                  </div>
+                ) : playersForMatch === undefined ? (
+                  <div className="text-muted-foreground text-sm">
+                    No players found
+                  </div>
+                ) : (
+                  <PlayerSelectorField
+                    form={form}
+                    fields={{
+                      players: "players",
+                    }}
+                    originalPlayers={playersForMatch.players}
+                  />
+                )}
 
                 <DialogFooter className="sm:justify-between">
                   <Button
@@ -362,6 +324,7 @@ export function CustomMatchSelection({
     type: "original",
     id: 120,
   });
+  const { playersForMatch, isLoading: isLoadingPlayers } = usePlayers();
   const roleSchema = z.discriminatedUnion("type", [
     z.object({
       id: z.number(),
@@ -409,61 +372,6 @@ export function CustomMatchSelection({
     teams: z.array(teamsSchema),
     activeTab: z.literal("players").or(z.literal("teams")),
   });
-
-  const players: (z.infer<typeof playerSchema> & {
-    matches: number;
-    image: {
-      name: string;
-      url: string | null;
-      type: "file" | "svg";
-      usageType: "player" | "match" | "game";
-    } | null;
-  })[] = [
-    {
-      id: 1,
-      type: "original",
-      name: "Player 1",
-      matches: 0,
-      roles: [],
-      image: null,
-    },
-    {
-      id: 2,
-      type: "original",
-      name: "Player 2",
-      matches: 0,
-      roles: [],
-      image: null,
-    },
-    {
-      id: 3,
-      type: "original",
-      name: "Player 3",
-      matches: 0,
-      roles: [],
-      image: null,
-    },
-    {
-      sharedId: 1,
-      type: "shared",
-      name: "Player 4",
-      shareType: "shared",
-      linkedPlayerId: null,
-      matches: 0,
-      roles: [],
-      image: null,
-    },
-    {
-      sharedId: 2,
-      type: "shared",
-      name: "Player 4",
-      shareType: "link",
-      linkedPlayerId: 8,
-      matches: 0,
-      roles: [],
-      image: null,
-    },
-  ];
 
   const form = useAppForm({
     formId: "custom-match-selection",
@@ -563,13 +471,25 @@ export function CustomMatchSelection({
                         </TabsList>
                         {/* Player Selection Tab */}
                         <TabsContent value="players" className="mt-6 space-y-4">
-                          <PlayerSelectorField
-                            form={form}
-                            fields={{
-                              players: "players",
-                            }}
-                            originalPlayers={players}
-                          />
+                          {isLoadingPlayers ? (
+                            <div className="flex items-center justify-center">
+                              <Spinner />
+                            </div>
+                          ) : playersForMatch === undefined ? (
+                            <div className="text-muted-foreground text-sm">
+                              No players found
+                            </div>
+                          ) : (
+                            <PlayerSelectorField
+                              form={form}
+                              fields={{
+                                players: "players",
+                              }}
+                              originalPlayers={playersForMatch.players.map(
+                                (p) => ({ ...p, roles: [] }),
+                              )}
+                            />
+                          )}
                           {/* Continue Button */}
                           {selectedPlayers.length > 0 && (
                             <div className="flex justify-end pt-4">
