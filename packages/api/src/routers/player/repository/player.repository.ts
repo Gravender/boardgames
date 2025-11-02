@@ -1,6 +1,9 @@
 import { db } from "@board-games/db/client";
 
-import type { GetPlayersForMatchArgs } from "./player.repository.types";
+import type {
+  GetPlayersForMatchArgs,
+  GetRecentMatchWithPlayersArgs,
+} from "./player.repository.types";
 
 class PlayerRepository {
   public async getPlayersForMatch(args: GetPlayersForMatchArgs) {
@@ -102,6 +105,44 @@ class PlayerRepository {
       originalPlayers: originalPlayers,
       sharedPlayers: sharedPlayers,
     };
+  }
+  public async getRecentMatchWithPlayers(args: GetRecentMatchWithPlayersArgs) {
+    const response = await db.query.match.findMany({
+      columns: {
+        id: true,
+        name: true,
+        date: true,
+      },
+      where: {
+        createdBy: args.createdBy,
+        deletedAt: {
+          isNull: true,
+        },
+      },
+      with: {
+        players: {
+          columns: {
+            id: true,
+            name: true,
+          },
+          with: {
+            image: {
+              columns: {
+                name: true,
+                url: true,
+                type: true,
+                usageType: true,
+              },
+            },
+          },
+        },
+      },
+      limit: 5,
+      orderBy: {
+        date: "desc",
+      },
+    });
+    return response;
   }
 }
 export const playerRepository = new PlayerRepository();

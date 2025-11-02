@@ -1,7 +1,13 @@
 import { differenceInDays, isSameDay, max } from "date-fns";
 
-import type { GetPlayersForMatchOutputType } from "../player.output";
-import type { GetPlayersForMatchArgs } from "./player.service.types";
+import type {
+  GetPlayersForMatchOutputType,
+  GetRecentMatchWithPlayersOutputType,
+} from "../player.output";
+import type {
+  GetPlayersForMatchArgs,
+  GetRecentMatchWithPlayersArgs,
+} from "./player.service.types";
 import { playerRepository } from "../repository/player.repository";
 
 class PlayerService {
@@ -94,6 +100,16 @@ class PlayerService {
     });
     return {
       players: combinedPlayers,
+    };
+  }
+  public async getRecentMatchWithPlayers(
+    args: GetRecentMatchWithPlayersArgs,
+  ): Promise<GetRecentMatchWithPlayersOutputType> {
+    const response = await playerRepository.getRecentMatchWithPlayers({
+      createdBy: args.ctx.userId,
+    });
+    return {
+      recentMatches: response,
     };
   }
 }

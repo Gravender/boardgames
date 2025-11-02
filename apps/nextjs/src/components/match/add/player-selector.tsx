@@ -2,8 +2,10 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
+import { format } from "date-fns";
 import {
   ChevronLeft,
+  History,
   MoreHorizontal,
   Plus,
   Shield,
@@ -61,7 +63,11 @@ import { useGameRoles } from "~/components/game/hooks/roles";
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { useAppForm } from "~/hooks/form";
-import { useGroupsWithPlayers, usePlayers } from "../hooks/players";
+import {
+  useGroupsWithPlayers,
+  usePlayers,
+  useRecentMatchWithPlayers,
+} from "../hooks/players";
 import { PlayerSelectorField } from "./player-selection-form";
 import { PlayerRoleSelectorField, TeamRoleSelectorField } from "./role-form";
 
@@ -197,6 +203,7 @@ export function QuickMatchSelection({
   const { playersForMatch, isLoading: isLoadingPlayers } = usePlayers();
   const { groupsWithPlayers, isLoading: isLoadingGroups } =
     useGroupsWithPlayers();
+  const { recentMatches } = useRecentMatchWithPlayers();
   const [showGroupBrowser, setShowGroupBrowser] = useState(false);
 
   const form = useAppForm({
@@ -322,6 +329,68 @@ export function QuickMatchSelection({
                               Browse All
                             </Button>
                           )}
+                        </div>
+                      )}
+                    {recentMatches !== undefined &&
+                      recentMatches.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <History className="text-muted-foreground h-4 w-4" />
+                          <span className="text-sm font-medium">Previous:</span>
+                          {recentMatches.map((match) => {
+                            const matchPlayers = playersForMatch.players.filter(
+                              (p) =>
+                                match.players.find((mP) =>
+                                  isSamePlayer(p, {
+                                    type: "original" as const,
+                                    id: mP.id,
+                                  }),
+                                ),
+                            );
+                            if (matchPlayers.length === 0) {
+                              return null;
+                            }
+                            const firstThreeNames = matchPlayers
+                              .slice(0, 3)
+                              .map((p) => p.name)
+                              .join(", ");
+                            const remainingPlayers = matchPlayers.length - 3;
+                            const names =
+                              remainingPlayers > 0
+                                ? `${firstThreeNames}, and ${remainingPlayers} more`
+                                : firstThreeNames;
+                            return (
+                              <Tooltip key={match.id}>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      form.setFieldValue(
+                                        "players",
+                                        matchPlayers,
+                                      )
+                                    }
+                                    className="max-w-32 overflow-ellipsis"
+                                  >
+                                    <span className="truncate">
+                                      {match.name}
+                                    </span>
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <h4 className="font-semibold">
+                                    {match.name}
+                                  </h4>
+                                  <p className="text-xs">
+                                    <b className="font-medium">{"Date:"}</b>
+                                    {` ${format(match.date, "MMM dd, yyyy h:mm a")}`}
+                                  </p>
+                                  <p className="text-xs">{names}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            );
+                          })}
                         </div>
                       )}
                     <PlayerSelectorField

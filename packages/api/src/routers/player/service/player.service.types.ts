@@ -3,3 +3,8 @@ export interface GetPlayersForMatchArgs {
     userId: string;
   };
 }
+export interface GetRecentMatchWithPlayersArgs {
+  ctx: {
+    userId: string;
+  };
+}

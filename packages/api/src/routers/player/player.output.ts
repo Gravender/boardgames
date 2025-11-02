@@ -28,3 +28,24 @@ export const getPlayersForMatchOutput = z.object({
 export type GetPlayersForMatchOutputType = z.infer<
   typeof getPlayersForMatchOutput
 >;
+
+export const getRecentMatchWithPlayersOutput = z.object({
+  recentMatches: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      date: z.date(),
+      players: z.array(
+        z.object({
+          id: z.number(),
+          name: z.string(),
+          image: imageSchema.nullable(),
+        }),
+      ),
+    }),
+  ),
+});
+
+export type GetRecentMatchWithPlayersOutputType = z.infer<
+  typeof getRecentMatchWithPlayersOutput
+>;

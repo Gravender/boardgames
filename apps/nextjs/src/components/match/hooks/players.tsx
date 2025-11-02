@@ -25,3 +25,14 @@ export const useGroupsWithPlayers = () => {
     isLoading,
   };
 };
+
+export const useRecentMatchWithPlayers = () => {
+  const trpc = useTRPC();
+  const { data, isLoading } = useQuery(
+    trpc.newPlayer.getRecentMatchWithPlayers.queryOptions(),
+  );
+  return {
+    recentMatches: data?.recentMatches,
+    isLoading,
+  };
+};
