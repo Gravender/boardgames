@@ -19,7 +19,6 @@ class GroupService {
             [...sharedMatchIds].filter((id) => playerMatchIds.has(id)),
           );
         }
-        console.log(sharedMatchIds);
         return {
           id: group.id,
           name: group.name,
