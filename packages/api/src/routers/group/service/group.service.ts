@@ -9,16 +9,37 @@ class GroupService {
     const response = await groupRepository.getGroupsWithPlayers({
       createdBy: args.ctx.userId,
     });
-    const mappedGroup = response.map((row) => ({
-      id: row.id,
-      name: row.name,
-      matches: Number(row.finishedMatchCount),
-      players: row.players.map((player) => ({
-        id: player.id,
-        type: "original" as const,
-        name: player.name,
-      })),
-    }));
+    const mappedGroup = response.map((group) => {
+      const firstPlayer = group.players[0];
+      if (firstPlayer) {
+        let sharedMatchIds = new Set(firstPlayer.matches.map((m) => m.id));
+        for (const player of group.players) {
+          const playerMatchIds = new Set(player.matches.map((m) => m.id));
+          sharedMatchIds = new Set(
+            [...sharedMatchIds].filter((id) => playerMatchIds.has(id)),
+          );
+        }
+        console.log(sharedMatchIds);
+        return {
+          id: group.id,
+          name: group.name,
+          players: group.players.map((player) => {
+            return {
+              id: player.id,
+              type: "original" as const,
+              name: player.name,
+            };
+          }),
+          matches: sharedMatchIds.size,
+        };
+      }
+      return {
+        id: group.id,
+        name: group.name,
+        matches: 0,
+        players: [],
+      };
+    });
     mappedGroup.sort((a, b) => {
       if (a.matches > b.matches) {
         return -1;
@@ -29,7 +50,7 @@ class GroupService {
       return a.name.localeCompare(b.name);
     });
     return {
-      groups: mappedGroup,
+      groups: mappedGroup.filter((g) => g.players.length > 0),
     };
   }
 }

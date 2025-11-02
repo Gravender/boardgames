@@ -95,6 +95,24 @@ export const PlayerSelectorField = withFieldGroup({
           {(field) => {
             const isInvalid =
               field.state.meta.isTouched && !field.state.meta.isValid;
+            filteredPlayers.sort((a, b) => {
+              const selectedA = field.state.value.find((p) =>
+                isSamePlayer(p, a),
+              );
+              const selectedB = field.state.value.find((p) =>
+                isSamePlayer(p, b),
+              );
+              if (selectedA && selectedB) {
+                return 0;
+              }
+              if (selectedA) {
+                return -1;
+              }
+              if (selectedB) {
+                return 1;
+              }
+              return 0;
+            });
             return (
               <Field data-invalid={isInvalid}>
                 <FieldLabel htmlFor={field.name} className="sr-only">

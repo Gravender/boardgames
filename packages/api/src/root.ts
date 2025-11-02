@@ -3,6 +3,7 @@ import { friendsRouter } from "./routers/friends";
 import { gameRouter } from "./routers/game";
 import { gameRouter as newGameRouter } from "./routers/game/game.router";
 import { groupRouter } from "./routers/group";
+import { groupRouter as newGroupRouter } from "./routers/group/group.router";
 import { imageRouter } from "./routers/image";
 import { locationRouter } from "./routers/location";
 import { matchRouter as newMatchRouter } from "./routers/match/match.router";
@@ -31,6 +32,7 @@ export const appRouter = createTRPCRouter({
   round: roundRouter,
   dashboard: dashboardRouter,
   group: groupRouter,
+  newGroup: newGroupRouter,
   location: locationRouter,
   friend: friendsRouter,
   sharing: sharingRouter,

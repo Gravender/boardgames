@@ -14,3 +14,14 @@ export const usePlayers = () => {
     isLoading,
   };
 };
+
+export const useGroupsWithPlayers = () => {
+  const trpc = useTRPC();
+  const { data: groupsWithPlayers, isLoading } = useQuery(
+    trpc.newGroup.getGroupsWithPlayers.queryOptions(),
+  );
+  return {
+    groupsWithPlayers,
+    isLoading,
+  };
+};

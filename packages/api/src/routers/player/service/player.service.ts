@@ -25,7 +25,7 @@ class PlayerService {
           .map((sMp) => sMp.match);
       });
       const originalMatches = player.matchPlayers
-        .filter((mp) => !mp.match.finished)
+        .filter((mp) => mp.match.finished)
         .map((mp) => mp.match);
       const allMatches = [...originalMatches, ...sharedMatches];
       const recentScore =
@@ -81,9 +81,9 @@ class PlayerService {
       const aPlayedToday = a.lastPlayedAt && isSameDay(a.lastPlayedAt, now);
       const bPlayedToday = b.lastPlayedAt && isSameDay(b.lastPlayedAt, now);
       const aScore =
-        a.recentScore * 30 + (aPlayedToday ? 15 : 0) + a.matches * 0.6;
+        a.recentScore * 30 + (aPlayedToday ? 30 : 0) + a.matches * 0.4;
       const bScore =
-        b.recentScore * 30 + (bPlayedToday ? 15 : 0) + b.matches * 0.6;
+        b.recentScore * 30 + (bPlayedToday ? 30 : 0) + b.matches * 0.4;
       if (aScore > bScore) {
         return -1;
       }
