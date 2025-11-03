@@ -56,6 +56,7 @@ import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { useAppForm } from "~/hooks/form";
 import { usePlayers } from "../hooks/players";
+import { AddPlayerForm } from "./add-player-form";
 import { GroupQuickMatchSelection } from "./group-select";
 import { PlayerSelectorField } from "./player-selection-form";
 import { RecentMatchSelection } from "./recent-match-select";
@@ -174,6 +175,7 @@ export function QuickMatchSelection({
   onCancel,
   setMode,
 }: MatchCreationFlowProps) {
+  const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
   const playerSchema = z.discriminatedUnion("type", [
     z.object({
       type: z.literal("original"),
@@ -219,6 +221,24 @@ export function QuickMatchSelection({
       onCancel();
     },
   });
+  if (showAddPlayerDialog) {
+    return (
+      <DialogContent className="max-w-4xl">
+        <AddPlayerForm
+          description="Add a player to your match"
+          onReset={() => setShowAddPlayerDialog(false)}
+          onPlayerAdded={(player) => {
+            setShowAddPlayerDialog(false);
+            form.state.values.players.push({
+              id: player.id,
+              type: "original" as const,
+              name: player.name,
+            });
+          }}
+        />
+      </DialogContent>
+    );
+  }
   return (
     <DialogContent className="max-w-4xl">
       <form
@@ -278,7 +298,7 @@ export function QuickMatchSelection({
                       }}
                       originalPlayers={playersForMatch.players}
                       addPlayerOnClick={() => {
-                        //TODO: add player dialog
+                        setShowAddPlayerDialog(true);
                       }}
                     />
                   </>
@@ -321,6 +341,7 @@ export function CustomMatchSelection({
   onCancel,
   setMode,
 }: MatchCreationFlowProps) {
+  const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
   const [roleTarget, setRoleTarget] = useState<
     | {
@@ -341,7 +362,7 @@ export function CustomMatchSelection({
   >(null);
   const { gameRoles } = useGameRoles({
     type: "original",
-    id: 10,
+    id: 1,
   });
   const { playersForMatch, isLoading: isLoadingPlayers } = usePlayers();
   const roleSchema = z.discriminatedUnion("type", [
@@ -440,6 +461,28 @@ export function CustomMatchSelection({
     form.setFieldValue("players", tempPlayers);
   };
 
+  if (showAddPlayerDialog) {
+    return (
+      <DialogContent className="max-w-4xl">
+        <AddPlayerForm
+          description="Add a player to your match"
+          onReset={() => setShowAddPlayerDialog(false)}
+          onPlayerAdded={(player) => {
+            setShowAddPlayerDialog(false);
+            form.state.values.players.push({
+              id: player.id,
+              type: "original" as const,
+              name: player.name,
+              roles: [],
+              teamId: undefined,
+              image: player.image,
+            });
+          }}
+        />
+      </DialogContent>
+    );
+  }
+
   return (
     <DialogContent className="max-w-4xl">
       <form
@@ -531,7 +574,7 @@ export function CustomMatchSelection({
                                   (p) => ({ ...p, roles: [] }),
                                 )}
                                 addPlayerOnClick={() => {
-                                  //TODO: add player dialog
+                                  setShowAddPlayerDialog(true);
                                 }}
                               />
                             </>

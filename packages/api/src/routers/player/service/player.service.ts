@@ -25,11 +25,13 @@ class PlayerService {
       return Math.exp(-Math.log(2) * (daysAgo / 30));
     };
     const mappedOriginalPlayers = response.originalPlayers.map((player) => {
-      const sharedMatches = response.sharedPlayers.flatMap((sharedPlayer) => {
-        return sharedPlayer.sharedMatchPlayers
-          .filter((sMp) => sMp.match.finished)
-          .map((sMp) => sMp.match);
-      });
+      const sharedMatches = player.sharedLinkedPlayers.flatMap(
+        (sharedPlayer) => {
+          return sharedPlayer.sharedMatchPlayers
+            .filter((sMp) => sMp.match.finished)
+            .map((sMp) => sMp.match);
+        },
+      );
       const originalMatches = player.matchPlayers
         .filter((mp) => mp.match.finished)
         .map((mp) => mp.match);
