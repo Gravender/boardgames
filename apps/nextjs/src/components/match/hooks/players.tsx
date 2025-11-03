@@ -17,11 +17,11 @@ export const usePlayers = () => {
 
 export const useGroupsWithPlayers = () => {
   const trpc = useTRPC();
-  const { data: groupsWithPlayers, isLoading } = useQuery(
+  const { data, isLoading } = useQuery(
     trpc.newGroup.getGroupsWithPlayers.queryOptions(),
   );
   return {
-    groupsWithPlayers,
+    groups: data?.groups,
     isLoading,
   };
 };

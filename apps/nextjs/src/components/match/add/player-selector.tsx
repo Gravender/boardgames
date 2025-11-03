@@ -2,22 +2,19 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
-import { format } from "date-fns";
 import {
   ChevronLeft,
-  History,
-  MoreHorizontal,
   Plus,
   Shield,
   Trash2,
   User,
-  UserPlus,
   Users,
   Users2,
   X,
 } from "lucide-react";
 import z from "zod/v4";
 
+import type { RouterOutputs } from "@board-games/api";
 import {
   imageSchema,
   isSamePlayer,
@@ -53,24 +50,18 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { toast } from "@board-games/ui/toast";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@board-games/ui/tooltip";
 
 import { useGameRoles } from "~/components/game/hooks/roles";
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { useAppForm } from "~/hooks/form";
-import {
-  useGroupsWithPlayers,
-  usePlayers,
-  useRecentMatchWithPlayers,
-} from "../hooks/players";
+import { usePlayers } from "../hooks/players";
+import { GroupQuickMatchSelection } from "./group-select";
 import { PlayerSelectorField } from "./player-selection-form";
+import { RecentMatchSelection } from "./recent-match-select";
 import { PlayerRoleSelectorField, TeamRoleSelectorField } from "./role-form";
 
+type Players = RouterOutputs["newPlayer"]["getPlayersForMatch"]["players"];
 export interface MatchConfig {
   name: string;
   date: string;
@@ -201,10 +192,6 @@ export function QuickMatchSelection({
     }),
   });
   const { playersForMatch, isLoading: isLoadingPlayers } = usePlayers();
-  const { groupsWithPlayers, isLoading: isLoadingGroups } =
-    useGroupsWithPlayers();
-  const { recentMatches } = useRecentMatchWithPlayers();
-  const [showGroupBrowser, setShowGroupBrowser] = useState(false);
 
   const form = useAppForm({
     formId: "quick-match-selection",
@@ -272,127 +259,18 @@ export function QuickMatchSelection({
                   </div>
                 ) : (
                   <>
-                    {!isLoadingGroups &&
-                      groupsWithPlayers !== undefined &&
-                      groupsWithPlayers.groups.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <UserPlus className="text-muted-foreground h-4 w-4" />
-                          <span className="text-sm font-medium">Groups:</span>
-                          {groupsWithPlayers.groups.slice(0, 3).map((group) => (
-                            <Tooltip key={group.id}>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const groupPlayers =
-                                      playersForMatch.players.filter((p) =>
-                                        group.players.find((gP) =>
-                                          isSamePlayer(p, gP),
-                                        ),
-                                      );
-                                    form.setFieldValue("players", groupPlayers);
-                                  }}
-                                >
-                                  {group.name}
-                                  <Badge variant="secondary">
-                                    {group.matches}
-                                  </Badge>
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="mb-1 text-xs font-medium">
-                                  {group.players.length} players:
-                                </p>
-                                <p className="text-xs">
-                                  {playersForMatch.players
-                                    .filter((p) =>
-                                      group.players.find((gP) =>
-                                        isSamePlayer(p, gP),
-                                      ),
-                                    )
-                                    .map((p) => p.name)
-                                    .join(", ")}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          ))}
-                          {groupsWithPlayers.groups.length > 3 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setShowGroupBrowser(true)}
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              Browse All
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                    {recentMatches !== undefined &&
-                      recentMatches.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <History className="text-muted-foreground h-4 w-4" />
-                          <span className="text-sm font-medium">Previous:</span>
-                          {recentMatches.map((match) => {
-                            const matchPlayers = playersForMatch.players.filter(
-                              (p) =>
-                                match.players.find((mP) =>
-                                  isSamePlayer(p, {
-                                    type: "original" as const,
-                                    id: mP.id,
-                                  }),
-                                ),
-                            );
-                            if (matchPlayers.length === 0) {
-                              return null;
-                            }
-                            const firstThreeNames = matchPlayers
-                              .slice(0, 3)
-                              .map((p) => p.name)
-                              .join(", ");
-                            const remainingPlayers = matchPlayers.length - 3;
-                            const names =
-                              remainingPlayers > 0
-                                ? `${firstThreeNames}, and ${remainingPlayers} more`
-                                : firstThreeNames;
-                            return (
-                              <Tooltip key={match.id}>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      form.setFieldValue(
-                                        "players",
-                                        matchPlayers,
-                                      )
-                                    }
-                                    className="max-w-32 overflow-ellipsis"
-                                  >
-                                    <span className="truncate">
-                                      {match.name}
-                                    </span>
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <h4 className="font-semibold">
-                                    {match.name}
-                                  </h4>
-                                  <p className="text-xs">
-                                    <b className="font-medium">{"Date:"}</b>
-                                    {` ${format(match.date, "MMM dd, yyyy h:mm a")}`}
-                                  </p>
-                                  <p className="text-xs">{names}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            );
-                          })}
-                        </div>
-                      )}
+                    <GroupQuickMatchSelection
+                      players={playersForMatch.players}
+                      setPlayers={(groupPlayers: Players) => {
+                        form.setFieldValue("players", groupPlayers);
+                      }}
+                    />
+                    <RecentMatchSelection
+                      players={playersForMatch.players}
+                      setPlayers={(matchPlayers: Players) => {
+                        form.setFieldValue("players", matchPlayers);
+                      }}
+                    />
                     <PlayerSelectorField
                       form={form}
                       fields={{
@@ -430,70 +308,6 @@ export function QuickMatchSelection({
                     </Button>
                   </div>
                 </DialogFooter>
-                {groupsWithPlayers !== undefined &&
-                  playersForMatch !== undefined &&
-                  groupsWithPlayers.groups.length > 0 && (
-                    <Dialog
-                      open={showGroupBrowser}
-                      onOpenChange={setShowGroupBrowser}
-                    >
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Browse Groups</DialogTitle>
-                          <DialogDescription>
-                            Browse groups to add players to your match
-                          </DialogDescription>
-                        </DialogHeader>
-                        <ItemGroup className="max-h-[500px]">
-                          {groupsWithPlayers.groups.map((group) => {
-                            const groupPlayers = playersForMatch.players.filter(
-                              (p) =>
-                                group.players.find((gP) => isSamePlayer(p, gP)),
-                            );
-                            if (groupPlayers.length === 0) {
-                              return null;
-                            }
-                            return (
-                              <Item key={group.id} asChild variant="outline">
-                                <button
-                                  onClick={() => {
-                                    form.setFieldValue("players", groupPlayers);
-                                    setShowGroupBrowser(false);
-                                  }}
-                                >
-                                  <ItemContent>
-                                    <ItemTitle>
-                                      <span>{group.name}</span>
-                                      <Badge variant="secondary">
-                                        Played {group.matches} matches
-                                      </Badge>
-                                    </ItemTitle>
-                                    <ItemDescription className="text-left">
-                                      {groupPlayers.length} players
-                                    </ItemDescription>
-                                    <div className="flex gap-2">
-                                      {groupPlayers.map((p) => {
-                                        return (
-                                          <div className="flex gap-2">
-                                            <PlayerImage
-                                              className="size-4"
-                                              image={p.image}
-                                              alt={p.name}
-                                            />
-                                            <span>{p.name}</span>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </ItemContent>
-                                </button>
-                              </Item>
-                            );
-                          })}
-                        </ItemGroup>
-                      </DialogContent>
-                    </Dialog>
-                  )}
               </>
             );
           }}
@@ -561,10 +375,8 @@ export function CustomMatchSelection({
     }),
     z.object({
       type: z.literal("shared"),
-      shareType: z.literal("link").or(z.literal("shared")),
       name: z.string(),
       sharedId: z.number(),
-      linkedPlayerId: z.number().nullable(),
       roles: z.array(roleSchema),
       teamId: z.number().optional(),
       image: imageSchema.nullable(),
@@ -685,18 +497,44 @@ export function CustomMatchSelection({
                               No players found
                             </div>
                           ) : (
-                            <PlayerSelectorField
-                              form={form}
-                              fields={{
-                                players: "players",
-                              }}
-                              originalPlayers={playersForMatch.players.map(
-                                (p) => ({ ...p, roles: [] }),
-                              )}
-                              addPlayerOnClick={() => {
-                                //TODO: add player dialog
-                              }}
-                            />
+                            <>
+                              <GroupQuickMatchSelection
+                                players={playersForMatch.players}
+                                setPlayers={(groupPlayers: Players) => {
+                                  form.setFieldValue(
+                                    "players",
+                                    groupPlayers.map((p) => ({
+                                      ...p,
+                                      roles: [],
+                                    })),
+                                  );
+                                }}
+                              />
+                              <RecentMatchSelection
+                                players={playersForMatch.players}
+                                setPlayers={(matchPlayers: Players) => {
+                                  form.setFieldValue(
+                                    "players",
+                                    matchPlayers.map((p) => ({
+                                      ...p,
+                                      roles: [],
+                                    })),
+                                  );
+                                }}
+                              />
+                              <PlayerSelectorField
+                                form={form}
+                                fields={{
+                                  players: "players",
+                                }}
+                                originalPlayers={playersForMatch.players.map(
+                                  (p) => ({ ...p, roles: [] }),
+                                )}
+                                addPlayerOnClick={() => {
+                                  //TODO: add player dialog
+                                }}
+                              />
+                            </>
                           )}
                           {/* Continue Button */}
                           {selectedPlayers.length > 0 && (
