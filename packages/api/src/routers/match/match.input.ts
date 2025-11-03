@@ -47,7 +47,7 @@ export const createMatchInput = insertMatchSchema
                         id: z.number(),
                       }),
                       z.object({
-                        type: z.literal("shared").or(z.literal("linked")),
+                        type: z.literal("shared"),
                         sharedId: z.number(),
                       }),
                     ]),

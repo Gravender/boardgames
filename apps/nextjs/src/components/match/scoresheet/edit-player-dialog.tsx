@@ -5,11 +5,9 @@ import { Search } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
-import { selectGameRoleSchema } from "@board-games/db/zodSchema";
 import {
   isSameRole,
   originalRoleSchema,
-  sharedOrLinkedSchema,
   sharedRoleSchema,
 } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";

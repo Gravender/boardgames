@@ -15,7 +15,6 @@ export default function TanStackDevTools() {
           name: "TanStack Query",
           render: <ReactQueryDevtoolsPanel />,
         },
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         FormDevtoolsPlugin(),
       ]}
     />
