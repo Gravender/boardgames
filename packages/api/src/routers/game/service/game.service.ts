@@ -221,7 +221,6 @@ class GameService {
           name: string;
           description: string | null;
           type: "shared";
-          sharedType: "shared";
           sharedId: number;
           permission: "view" | "edit";
         }
@@ -249,7 +248,6 @@ class GameService {
           }
           uniqueRoles.set(`${role.type}-${role.roleId}`, {
             type: "shared",
-            sharedType: role.type,
             sharedId: role.sharedRoleId,
             name: role.name,
             description: role.description,

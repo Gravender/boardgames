@@ -6,10 +6,8 @@ import {
   selectMatchSchema,
 } from "@board-games/db/zodSchema";
 import {
-  originalRoleSchema,
   sharedOrOriginalOrLinkedSchema,
   sharedOrOriginalSchema,
-  sharedRoleSchema,
 } from "@board-games/shared";
 
 export const createMatchInput = insertMatchSchema
@@ -148,8 +146,14 @@ export const editMatchInput = z.discriminatedUnion("type", [
           teamId: z.number().nullable(),
           roles: z.array(
             z.discriminatedUnion("type", [
-              originalRoleSchema,
-              sharedRoleSchema,
+              z.object({
+                type: z.literal("original"),
+                id: z.number(),
+              }),
+              z.object({
+                type: z.literal("shared"),
+                sharedId: z.number(),
+              }),
             ]),
           ),
         }),
@@ -166,7 +170,16 @@ export const editMatchInput = z.discriminatedUnion("type", [
         id: z.number(),
         teamId: z.number().nullable(),
         roles: z.array(
-          z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
+          z.discriminatedUnion("type", [
+            z.object({
+              type: z.literal("original"),
+              id: z.number(),
+            }),
+            z.object({
+              type: z.literal("shared"),
+              sharedId: z.number(),
+            }),
+          ]),
         ),
       }),
     ),

@@ -56,7 +56,6 @@ export function AddPlayerForm({
   const createPlayer = useMutation(
     trpc.player.create.mutationOptions({
       onSuccess: async (player) => {
-        setIsUploading(false);
         await queryClient.cancelQueries(
           trpc.newPlayer.getPlayersForMatch.queryOptions(),
         );
@@ -89,6 +88,12 @@ export function AddPlayerForm({
             image: player.image ?? null,
           });
         }
+      },
+      onError: () => {
+        toast.error("Error creating player");
+      },
+      onSettled: () => {
+        setIsUploading(false);
       },
     }),
   );
@@ -136,6 +141,7 @@ export function AddPlayerForm({
         toast.error("Error", {
           description: "There was a problem uploading your Image.",
         });
+        setIsUploading(false);
       }
     },
   });
@@ -153,9 +159,8 @@ export function AddPlayerForm({
         }}
       >
         <FieldGroup>
-          <form.Field
-            name="name"
-            children={(field) => {
+          <form.Field name="name">
+            {(field) => {
               const isInvalid =
                 field.state.meta.isTouched && !field.state.meta.isValid;
               return (
@@ -175,10 +180,9 @@ export function AddPlayerForm({
                 </Field>
               );
             }}
-          />
-          <form.Field
-            name="imageUrl"
-            children={(field) => {
+          </form.Field>
+          <form.Field name="imageUrl">
+            {(field) => {
               const isInvalid =
                 field.state.meta.isTouched && !field.state.meta.isValid;
               return (
@@ -220,7 +224,7 @@ export function AddPlayerForm({
                 </Field>
               );
             }}
-          />
+          </form.Field>
         </FieldGroup>
         <DialogFooter className="gap-2">
           <Field orientation="horizontal">

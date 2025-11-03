@@ -191,7 +191,7 @@ export const PlayerSelectorField = withFieldGroup({
                 {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 {field.state.value.length < 1 && (
                   <div className="text-muted-foreground bg-muted/50 rounded-lg py-4 text-center text-sm">
-                    Select at least 1 players to start the match
+                    Select at least 1 player to start the match
                   </div>
                 )}
               </Field>

@@ -1,4 +1,4 @@
-import { differenceInDays, isSameDay, max } from "date-fns";
+import { differenceInHours, isSameDay, max } from "date-fns";
 
 import type {
   GetPlayersForMatchOutputType,
@@ -20,9 +20,9 @@ class PlayerService {
     const now = new Date();
 
     const recencyWeight = (date: Date) => {
-      const daysAgo = differenceInDays(now, date);
+      const daysAgo = differenceInHours(now, date);
       // Exponential decay with 30-day half-life
-      return Math.exp(-Math.log(2) * (daysAgo / 30));
+      return Math.exp(-Math.log(2) * (daysAgo / (30 * 24)));
     };
     const mappedOriginalPlayers = response.originalPlayers.map((player) => {
       const sharedMatches = player.sharedLinkedPlayers.flatMap(
@@ -89,9 +89,9 @@ class PlayerService {
       const aPlayedToday = a.lastPlayedAt && isSameDay(a.lastPlayedAt, now);
       const bPlayedToday = b.lastPlayedAt && isSameDay(b.lastPlayedAt, now);
       const aScore =
-        a.recentScore * 30 + (aPlayedToday ? 30 : 0) + a.matches * 0.4;
+        a.recentScore * 30 + (aPlayedToday ? 30 : 0) + a.matches * 0.2;
       const bScore =
-        b.recentScore * 30 + (bPlayedToday ? 30 : 0) + b.matches * 0.4;
+        b.recentScore * 30 + (bPlayedToday ? 30 : 0) + b.matches * 0.2;
       if (aScore > bScore) {
         return -1;
       }

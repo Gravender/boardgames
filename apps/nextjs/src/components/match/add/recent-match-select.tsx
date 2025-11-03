@@ -38,7 +38,7 @@ export function RecentMatchSelection({
           ),
         );
         if (
-          matchPlayers.length === 0 &&
+          matchPlayers.length === 0 ||
           matchPlayers.length === match.players.length
         ) {
           return null;

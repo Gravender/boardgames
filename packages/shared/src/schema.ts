@@ -109,7 +109,6 @@ export const originalRoleSchema = baseRoleSchema.extend({
 });
 export const sharedRoleSchema = baseRoleSchema.extend({
   type: z.literal("shared"),
-  sharedType: sharedOrLinkedSchema,
   sharedId: z.number(),
 });
 export const editRoleSchema = z.object({

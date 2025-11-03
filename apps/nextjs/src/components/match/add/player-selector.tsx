@@ -15,11 +15,7 @@ import {
 import z from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
-import {
-  imageSchema,
-  isSamePlayer,
-  sharedOrLinkedSchema,
-} from "@board-games/shared";
+import { imageSchema, isSamePlayer } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import {
@@ -375,7 +371,6 @@ export function CustomMatchSelection({
     z.object({
       sharedId: z.number(),
       type: z.literal("shared"),
-      sharedType: sharedOrLinkedSchema,
       name: z.string(),
       description: z.string().nullable(),
     }),

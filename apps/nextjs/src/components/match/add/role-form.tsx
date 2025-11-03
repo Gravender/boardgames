@@ -110,7 +110,6 @@ export const PlayerRoleSelectorField = withFieldGroup({
                           } else {
                             field.pushValue({
                               type: "shared",
-                              sharedType: role.type,
                               sharedId: role.sharedId,
                               name: role.name,
                               description: role.description,
@@ -222,8 +221,6 @@ export const TeamRoleSelectorField = withFieldGroup({
                           } else {
                             field.pushValue({
                               type: "shared",
-
-                              sharedType: role.type,
                               sharedId: role.sharedId,
                               name: role.name,
                               description: role.description,
