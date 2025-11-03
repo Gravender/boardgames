@@ -6,7 +6,7 @@ import { getSessionCookie } from "better-auth/cookies";
 export async function middleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request);
   const { pathname } = request.nextUrl;
-  if (sessionCookie && ["/login", "/signup"].includes(pathname)) {
+  if (sessionCookie && ["/login", "/sign-up"].includes(pathname)) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
   if (!sessionCookie && pathname.startsWith("/dashboard")) {
@@ -16,5 +16,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard", "/login", "/signup"],
+  matcher: ["/dashboard", "/login", "/sign-up"],
 };
