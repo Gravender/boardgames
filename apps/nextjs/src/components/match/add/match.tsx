@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { format, isSameDay } from "date-fns";
-import { CalendarIcon, X } from "lucide-react";
+import { CalendarIcon, Plus, X } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
@@ -39,6 +40,7 @@ import type {
 } from "./schema";
 import { Spinner } from "~/components/spinner";
 import { withForm } from "~/hooks/form";
+import { useAddLocationMutation } from "~/hooks/mutations/location/add";
 
 type ScoreSheets = RouterOutputs["newGame"]["gameScoresheets"];
 type Locations = RouterOutputs["location"]["getLocations"];
@@ -76,6 +78,9 @@ export const MatchForm = withForm({
     description,
     closeDialog,
   }) {
+    const [showAddLocation, setShowAddLocation] = useState(false);
+    const [newLocation, setNewLocation] = useState("");
+    const { createLocationMutation } = useAddLocationMutation();
     return (
       <>
         <DialogHeader>
@@ -198,98 +203,156 @@ export const MatchForm = withForm({
                     Location
                   </FieldLabel>
 
-                  <div className="flex w-full gap-2">
-                    <Select
-                      name={field.name}
-                      value={selectValue}
-                      onValueChange={(e) => {
-                        if (e === "null") {
-                          field.handleChange(null);
-                          return;
-                        }
-                        const [type, id] = e.split("-");
-                        const idToNumber = Number(id);
-                        if (isNaN(idToNumber)) {
-                          return;
-                        }
-                        if (type === "original") {
-                          field.handleChange({
-                            id: idToNumber,
-                            type: "original" as const,
-                          });
-                        }
-                        if (type === "shared") {
-                          field.handleChange({
-                            sharedId: idToNumber,
-                            type: "shared" as const,
-                          });
-                        }
-                      }}
-                    >
-                      <SelectTrigger
-                        aria-invalid={isInvalid}
-                        className="w-full min-w-[120px]"
+                  {!showAddLocation ? (
+                    <div className="flex w-full gap-2">
+                      <Select
+                        name={field.name}
+                        value={selectValue}
+                        onValueChange={(value) => {
+                          if (value === "add-new") {
+                            field.handleChange(null);
+                            setShowAddLocation(true);
+                            return;
+                          }
+                          if (value === "null") {
+                            field.handleChange(null);
+                            return;
+                          }
+                          const [type, id] = value.split("-");
+                          const idToNumber = Number(id);
+                          if (isNaN(idToNumber)) {
+                            return;
+                          }
+                          if (type === "original") {
+                            field.handleChange({
+                              id: idToNumber,
+                              type: "original" as const,
+                            });
+                          }
+                          if (type === "shared") {
+                            field.handleChange({
+                              sharedId: idToNumber,
+                              type: "shared" as const,
+                            });
+                          }
+                        }}
                       >
-                        <SelectValue>
-                          {foundLocation ? (
-                            <div className="flex items-center gap-2">
-                              <span>Location:</span>
-                              <span>{foundLocation.name}</span>
-                              {foundLocation.isDefault && (
-                                <span className="font-semibold">(Default)</span>
-                              )}
-                              {foundLocation.type === "shared" && (
-                                <span className="text-blue-500 dark:text-blue-400">
-                                  (Shared)
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            "Location: - (Optional)"
-                          )}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent position="item-aligned">
-                        {locations.map((location) => {
-                          const locationValue =
-                            location.type === "original"
-                              ? `original-${location.id}`
-                              : `shared-${location.sharedId}`;
-                          return (
-                            <SelectItem
-                              key={locationValue}
-                              value={locationValue}
-                            >
+                        <SelectTrigger
+                          aria-invalid={isInvalid}
+                          className="w-full min-w-[120px]"
+                        >
+                          <SelectValue>
+                            {foundLocation ? (
                               <div className="flex items-center gap-2">
-                                <span>{location.name}</span>
-                                {location.isDefault && (
+                                <span>Location:</span>
+                                <span>{foundLocation.name}</span>
+                                {foundLocation.isDefault && (
                                   <span className="font-semibold">
                                     (Default)
                                   </span>
                                 )}
-                                {location.type === "shared" && (
+                                {foundLocation.type === "shared" && (
                                   <span className="text-blue-500 dark:text-blue-400">
                                     (Shared)
                                   </span>
                                 )}
                               </div>
-                            </SelectItem>
+                            ) : (
+                              "Location: - (Optional)"
+                            )}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent position="item-aligned">
+                          <SelectItem value="null" className="sr-only">
+                            No location
+                          </SelectItem>
+                          {locations.map((location) => {
+                            const locationValue =
+                              location.type === "original"
+                                ? `original-${location.id}`
+                                : `shared-${location.sharedId}`;
+                            return (
+                              <SelectItem
+                                key={locationValue}
+                                value={locationValue}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span>{location.name}</span>
+                                  {location.isDefault && (
+                                    <span className="font-semibold">
+                                      (Default)
+                                    </span>
+                                  )}
+                                  {location.type === "shared" && (
+                                    <span className="text-blue-500 dark:text-blue-400">
+                                      (Shared)
+                                    </span>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                          <SelectItem value="add-new" className="text-primary">
+                            <div className="flex items-center">
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add new location
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="ghost"
+                        size={"icon"}
+                        type="button"
+                        className="rounded-full"
+                        onClick={() => {
+                          field.handleChange(null);
+                        }}
+                      >
+                        <X />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="New location name"
+                        value={newLocation}
+                        onChange={(e) => setNewLocation(e.target.value)}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          createLocationMutation.mutate(
+                            {
+                              name: newLocation,
+                            },
+                            {
+                              onSuccess: (data) => {
+                                field.handleChange({
+                                  id: data.id,
+                                  type: "original" as const,
+                                });
+                                setNewLocation("");
+                                setShowAddLocation(false);
+                              },
+                            },
                           );
-                        })}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      variant="ghost"
-                      size={"icon"}
-                      type="button"
-                      className="rounded-full"
-                      onClick={() => {
-                        field.handleChange(null);
-                      }}
-                    >
-                      <X />
-                    </Button>
-                  </div>
+                        }}
+                      >
+                        Add
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setShowAddLocation(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
               );

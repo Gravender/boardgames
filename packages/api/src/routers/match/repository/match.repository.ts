@@ -59,8 +59,7 @@ class MatchRepository {
       );
       const returnedScoresheet = await getScoreSheetAndRounds(
         {
-          id: input.scoresheet.id,
-          type: input.scoresheet.scoresheetType,
+          ...input.scoresheet,
           matchName: input.name,
           gameId: returnedGameId,
         },
@@ -86,7 +85,7 @@ class MatchRepository {
         } else {
           locationId = await cloneSharedLocationForUser(
             transaction,
-            input.location.id,
+            input.location.sharedId,
             args.createdBy,
           );
         }
@@ -121,6 +120,7 @@ class MatchRepository {
       }
       const insertedMatchPlayers = await getMatchPlayersAndTeams(
         returningMatch.id,
+        input.players,
         input.teams,
         returnedScoresheet.rounds,
         transaction,

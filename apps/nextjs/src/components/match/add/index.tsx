@@ -2,11 +2,12 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Button } from "@board-games/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@board-games/ui/dialog";
-import { toast } from "@board-games/ui/toast";
 
 import type {
   LocationType,
@@ -16,7 +17,9 @@ import type {
 } from "./schema";
 import { useScoresheets } from "~/components/game/hooks/scoresheets";
 import { useAppForm } from "~/hooks/form";
+import { useAddMatchMutation } from "~/hooks/mutations/match/add";
 import { useLocations } from "~/hooks/queries/locations";
+import { formatMatchLink } from "~/utils/linkFormatting";
 import { AddPlayerForm } from "./add-player-form";
 import { MatchForm } from "./match";
 import { CustomPlayerSelect } from "./player-selector";
@@ -26,6 +29,8 @@ type ScoreSheets = RouterOutputs["newGame"]["gameScoresheets"];
 type Locations = RouterOutputs["location"]["getLocations"];
 export function AddMatchDialog({
   game,
+  gameName,
+  matches,
 }: {
   game:
     | {
@@ -36,6 +41,8 @@ export function AddMatchDialog({
         sharedGameId: number;
         type: "shared";
       };
+  gameName: string;
+  matches: number;
 }) {
   const [showAddMatchDialog, setShowAddMatchDialog] = useState(false);
   const { scoresheets } = useScoresheets(game);
@@ -45,13 +52,15 @@ export function AddMatchDialog({
   return (
     <Dialog open={showAddMatchDialog} onOpenChange={setShowAddMatchDialog}>
       <DialogTrigger asChild>
-        <Button>Add Match</Button>
+        <Button className="rounded-full" size="icon">
+          <Plus />
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl">
         <AddMatchContent
           game={game}
-          gameName="Test Game"
-          matches={5}
+          gameName={gameName}
+          matches={matches}
           scoresheets={scoresheets}
           locations={locations}
           setShowAddMatchDialog={setShowAddMatchDialog}
@@ -86,6 +95,8 @@ function AddMatchContent({
   const [currentForm, setCurrentForm] = useState<
     "match" | "player" | "addPlayer"
   >("match");
+  const router = useRouter();
+  const { createMatchMutation } = useAddMatchMutation({ input: game });
   const form = useAppForm({
     formId: "add-match-form",
     defaultValues: {
@@ -101,20 +112,29 @@ function AddMatchContent({
       onSubmit: addMatchSchema,
     },
     onSubmit: ({ value }) => {
-      toast("You submitted the following values:", {
-        description: (
-          <pre className="bg-code text-code-foreground mt-2 w-[320px] overflow-x-auto rounded-md p-4">
-            <code>{JSON.stringify(value, null, 2)}</code>
-          </pre>
-        ),
-        position: "bottom-right",
-        classNames: {
-          content: "flex flex-col gap-2",
+      return createMatchMutation.mutate(
+        {
+          game: game,
+          name: value.name,
+          date: value.date,
+          players: value.players,
+          teams: value.teams,
+          scoresheet: value.scoresheet,
+          location: value.location,
         },
-        style: {
-          "--border-radius": "calc(var(--radius)  + 4px)",
-        } as React.CSSProperties,
-      });
+        {
+          onSuccess: (response) => {
+            const url = formatMatchLink({
+              matchId: response.id,
+              gameId: response.game.id,
+              type: "original",
+              finished: false,
+            });
+            router.push(url);
+            setShowAddMatchDialog(false);
+          },
+        },
+      );
     },
   });
 
