@@ -573,7 +573,7 @@ export async function getScoreSheetAndRounds(
     const returnedSharedScoresheet =
       await transaction.query.sharedScoresheet.findFirst({
         where: {
-          scoresheetId: input.sharedId,
+          id: input.sharedId,
           sharedWithId: userId,
         },
       });
@@ -686,13 +686,14 @@ export async function getMatchPlayersAndTeams(
   }
   const mappedPlayers = players.map((p) => {
     const team = mappedTeams.find((t) => t.originalId === p.teamId);
-    const rolesToAdd = team?.roles.filter(
+    const teamRoles = team?.roles ?? [];
+    const rolesToAdd = teamRoles.filter(
       (role) => !p.roles.find((r) => isSameRole(r, role)),
     );
     return {
       ...p,
       teamId: team ? team.createdId : null,
-      roles: [...p.roles, ...(rolesToAdd ?? [])],
+      roles: [...p.roles, ...rolesToAdd],
     };
   });
 

@@ -1,6 +1,5 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 import { format } from "date-fns";
 import {
@@ -98,10 +97,12 @@ export const QuickPlayerSelect = withForm({
     const { playersForMatch, isLoading: isLoadingPlayers } = usePlayers();
     return (
       <>
-        <DialogHeader className="mt-4 flex flex-row items-center justify-between">
+        <DialogHeader className="flex flex-row items-center justify-between">
           <div>
-            <DialogTitle>Temp Match Name</DialogTitle>
-            <DialogDescription>10/23/2023</DialogDescription>
+            <DialogTitle>{form.getFieldValue("name")}</DialogTitle>
+            <DialogDescription>
+              {format(form.getFieldValue("date"), "PPP")}
+            </DialogDescription>
           </div>
           <Badge variant="secondary" className="rounded px-4 py-2 text-base">
             <Users className="mr-2 h-4 w-4" />
@@ -249,7 +250,7 @@ export const CustomPlayerSelect = withForm({
     };
     return (
       <>
-        <DialogHeader className="mt-4 flex flex-row items-center justify-between">
+        <DialogHeader className="flex flex-row items-center justify-between">
           <div>
             <DialogTitle>{form.getFieldValue("name")}</DialogTitle>
             <DialogDescription>

@@ -21,16 +21,19 @@ export const useAddLocationMutation = () => {
           queryClient.getQueryData(
             trpc.location.getLocations.queryOptions().queryKey,
           ) ?? [];
-        prevLocations.push({
-          id: response.id,
-          type: "original" as const,
-          name: response.name,
-          isDefault: response.isDefault,
-          matches: 0,
-        });
+        const updatedLocations = [
+          ...prevLocations,
+          {
+            id: response.id,
+            type: "original" as const,
+            name: response.name,
+            isDefault: response.isDefault,
+            matches: 0,
+          },
+        ];
         queryClient.setQueryData(
           trpc.location.getLocations.queryOptions().queryKey,
-          prevLocations,
+          updatedLocations,
         );
         return response;
       },

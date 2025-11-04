@@ -33,8 +33,6 @@ export const useAddMatchMutation = ({ input }: { input: GameInput }) => {
         toast.error("Error", {
           description: "There was a problem adding your match.",
         });
-
-        throw new Error("There was a problem adding your match.");
       },
     }),
   );

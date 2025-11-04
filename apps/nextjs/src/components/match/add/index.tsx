@@ -145,12 +145,16 @@ function AddMatchContent({
         onReset={() => setCurrentForm("player")}
         onPlayerAdded={(player) => {
           setCurrentForm("player");
-          form.state.values.players.push({
-            ...player,
-            type: "original" as const,
-            roles: [],
-            teamId: undefined,
-          });
+
+          form.setFieldValue("players", [
+            ...form.state.values.players,
+            {
+              ...player,
+              type: "original" as const,
+              roles: [],
+              teamId: undefined,
+            },
+          ]);
         }}
       />
     );

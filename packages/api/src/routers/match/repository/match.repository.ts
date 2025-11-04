@@ -99,6 +99,7 @@ class MatchRepository {
           locationId: locationId,
           createdBy: args.createdBy,
           scoresheetId: returnedScoresheet.scoresheet.id,
+          running: true,
         })
         .returning();
       if (!returningMatch) {

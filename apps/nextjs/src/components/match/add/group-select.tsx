@@ -140,8 +140,12 @@ export function GroupQuickMatchSelection({
                       </ItemDescription>
                       <div className="flex gap-2">
                         {groupPlayers.map((p) => {
+                          const key =
+                            p.type === "original"
+                              ? `player-${p.id}`
+                              : `player-${p.sharedId}`;
                           return (
-                            <div className="flex gap-2">
+                            <div key={key} className="flex gap-2">
                               <PlayerImage
                                 className="size-4"
                                 image={p.image}
