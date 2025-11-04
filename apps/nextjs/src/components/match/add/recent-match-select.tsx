@@ -18,7 +18,9 @@ export function RecentMatchSelection({
   setPlayers,
 }: {
   players: Players;
-  setPlayers: (players: Players) => void;
+  setPlayers: (
+    players: Extract<Players[number], { type: "original" }>[],
+  ) => void;
 }) {
   const { recentMatches } = useRecentMatchWithPlayers();
   if (recentMatches === undefined || recentMatches.length === 0) {
@@ -29,17 +31,19 @@ export function RecentMatchSelection({
       <History className="text-muted-foreground h-4 w-4" />
       <span className="text-sm font-medium">Previous:</span>
       {recentMatches.map((match) => {
-        const matchPlayers = players.filter((p) =>
-          match.players.find((mP) =>
-            isSamePlayer(p, {
-              type: "original" as const,
-              id: mP.id,
-            }),
-          ),
-        );
+        const matchPlayers = players
+          .filter((p) =>
+            match.players.find((mP) =>
+              isSamePlayer(p, {
+                type: "original" as const,
+                id: mP.id,
+              }),
+            ),
+          )
+          .filter((p) => p.type === "original");
         if (
           matchPlayers.length === 0 ||
-          matchPlayers.length === match.players.length
+          matchPlayers.length !== match.players.length
         ) {
           return null;
         }

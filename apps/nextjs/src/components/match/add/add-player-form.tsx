@@ -245,7 +245,7 @@ export function AddPlayerForm({
                   <span>Uploading...</span>
                 </>
               ) : (
-                "Submit"
+                "Add Player"
               )}
             </Button>
           </Field>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Search, UserPlus } from "lucide-react";
-import z from "zod";
 
+import type { RouterOutputs } from "@board-games/api";
 import { isSamePlayer } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
 import { Field, FieldError, FieldLabel } from "@board-games/ui/field";
@@ -21,40 +21,20 @@ import {
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
+import type { PlayerType } from "./schema";
 import { PlayerImage } from "~/components/player-image";
 import { withFieldGroup } from "~/hooks/form";
 
-export const playerSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("original"),
-    name: z.string(),
-    id: z.number(),
-  }),
-  z.object({
-    type: z.literal("shared"),
-    name: z.string(),
-    sharedId: z.number(),
-  }),
-]);
-export type Player = z.infer<typeof playerSchema>;
-
 const defaultValues: {
-  players: Player[];
+  players: PlayerType[];
 } = {
   players: [],
 };
+type Players = RouterOutputs["newPlayer"]["getPlayersForMatch"]["players"];
 export const PlayerSelectorField = withFieldGroup({
   defaultValues,
   props: {
-    originalPlayers: [] as (Player & {
-      matches: number;
-      image: {
-        name: string;
-        url: string | null;
-        type: "file" | "svg";
-        usageType: "player" | "match" | "game";
-      } | null;
-    })[],
+    originalPlayers: [] as Players,
     addPlayerOnClick: () => {
       /* empty */
     },
@@ -137,7 +117,10 @@ export const PlayerSelectorField = withFieldGroup({
                               if (playerIndex > -1) {
                                 field.removeValue(playerIndex);
                               } else {
-                                field.pushValue(player);
+                                field.pushValue({
+                                  ...player,
+                                  roles: [],
+                                });
                               }
                             }}
                             className={cn(

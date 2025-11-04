@@ -71,16 +71,18 @@ export function GroupQuickMatchSelection({
                     );
                     setPlayers(groupPlayers);
                   }}
+                  className="max-w-32 overflow-ellipsis"
                 >
-                  {group.name}
+                  <span className="truncate">{group.name}</span>
                   <Badge variant="secondary">{group.matches}</Badge>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
-                <p className="mb-1 text-xs font-medium">
+              <TooltipContent className="max-w-48 gap-2">
+                <p className="text-xs font-medium">{group.name}</p>
+                <p className="text-xs font-medium">
                   {group.players.length} players:
                 </p>
-                <p className="text-xs">
+                <p className="text-xs text-wrap">
                   {groupPlayers.map((p) => p.name).join(", ")}
                 </p>
               </TooltipContent>
