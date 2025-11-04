@@ -50,7 +50,7 @@ export function LocationsTable() {
           {filteredLocations.map((location) => {
             return (
               <Card
-                key={`${location.id}-${location.type}`}
+                key={`${location.type}-${location.type === "shared" ? location.sharedId : location.id}`}
                 className={cn(
                   location.isDefault && "bg-sidebar hover:bg-sidebar/90",
                 )}
@@ -60,7 +60,7 @@ export function LocationsTable() {
                     prefetch={true}
                     href={
                       location.type === "shared"
-                        ? `/dashboard/locations/shared/${location.id}`
+                        ? `/dashboard/locations/shared/${location.sharedId}`
                         : `/dashboard/locations/${location.id}`
                     }
                     className="flex items-center gap-2"

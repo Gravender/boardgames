@@ -55,12 +55,16 @@ export function LocationDropDown({
     }),
   );
   const onDelete = () => {
-    deleteLocation.mutate({ id: data.id, type: data.type });
+    deleteLocation.mutate(
+      data.type === "shared"
+        ? { id: data.sharedId, type: "shared" }
+        : { id: data.id, type: "original" },
+    );
   };
   const onEditDefault = () => {
     if (data.type === "shared") {
       editDefaultLocation.mutate({
-        id: data.id,
+        id: data.sharedId,
         isDefault: !data.isDefault,
         type: "shared",
       });

@@ -40,22 +40,8 @@ import type {
 import { Spinner } from "~/components/spinner";
 import { withForm } from "~/hooks/form";
 
-type Locations = (
-  | {
-      id: number;
-      name: string;
-      type: "original";
-      isDefault: boolean;
-    }
-  | {
-      sharedId: number;
-      name: string;
-      type: "shared";
-      isDefault: boolean;
-    }
-)[];
-
 type ScoreSheets = RouterOutputs["newGame"]["gameScoresheets"];
+type Locations = RouterOutputs["location"]["getLocations"];
 export const defaultValues = {
   name: "",
   date: new Date(),
@@ -242,7 +228,7 @@ export const MatchForm = withForm({
                     >
                       <SelectTrigger
                         aria-invalid={isInvalid}
-                        className="min-w-[120px]"
+                        className="w-full min-w-[120px]"
                       >
                         <SelectValue>
                           {foundLocation ? (

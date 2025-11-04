@@ -13,59 +13,17 @@ import {
 import { insertLocationSchema } from "@board-games/db/zodSchema";
 
 import { protectedUserProcedure } from "../trpc";
+import { getLocationsOutput } from "./location/location.output";
+import { locationService } from "./location/service/location.service";
 
 export const locationRouter = {
-  getLocations: protectedUserProcedure.query(async ({ ctx }) => {
-    const userLocations = await ctx.db.query.location.findMany({
-      where: {
-        createdBy: ctx.userId,
-        deletedAt: {
-          isNull: true,
-        },
-      },
-      with: {
-        matches: true,
-        sharedMatches: {
-          where: {
-            sharedWithId: ctx.userId,
-          },
-        },
-      },
-      orderBy: (location, { asc }) => asc(location.name),
-    });
-    const sharedLocations = await ctx.db.query.sharedLocation.findMany({
-      where: {
-        sharedWithId: ctx.userId,
-        linkedLocationId: {
-          isNull: true,
-        },
-      },
-      with: {
-        sharedMatches: {
-          where: {
-            sharedWithId: ctx.userId,
-          },
-        },
-        location: true,
-      },
-    });
-    return [
-      ...userLocations.map((location) => ({
-        type: "original" as const,
-        ...location,
-        matches: location.matches.length + location.sharedMatches.length,
-      })),
-      ...sharedLocations.map((sharedLocation) => ({
-        type: "shared" as const,
-        ...sharedLocation.location,
-        isDefault: sharedLocation.isDefault,
-        permission: sharedLocation.permission,
-        id: sharedLocation.id,
-        locationId: sharedLocation.locationId,
-        matches: sharedLocation.sharedMatches.length,
-      })),
-    ];
-  }),
+  getLocations: protectedUserProcedure
+    .output(getLocationsOutput)
+    .query(async ({ ctx }) => {
+      return locationService.getLocations({
+        ctx,
+      });
+    }),
   getLocation: protectedUserProcedure
     .input(
       z.object({

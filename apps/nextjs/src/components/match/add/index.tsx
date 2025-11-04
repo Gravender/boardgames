@@ -16,12 +16,14 @@ import type {
 } from "./schema";
 import { useScoresheets } from "~/components/game/hooks/scoresheets";
 import { useAppForm } from "~/hooks/form";
+import { useLocations } from "~/hooks/queries/locations";
 import { AddPlayerForm } from "./add-player-form";
 import { MatchForm } from "./match";
 import { CustomPlayerSelect } from "./player-selector";
 import { addMatchSchema } from "./schema";
 
 type ScoreSheets = RouterOutputs["newGame"]["gameScoresheets"];
+type Locations = RouterOutputs["location"]["getLocations"];
 export function AddMatchDialog({
   game,
 }: {
@@ -37,7 +39,9 @@ export function AddMatchDialog({
 }) {
   const [showAddMatchDialog, setShowAddMatchDialog] = useState(false);
   const { scoresheets } = useScoresheets(game);
+  const { locations } = useLocations();
   if (!scoresheets) return null;
+  if (!locations) return null;
   return (
     <Dialog open={showAddMatchDialog} onOpenChange={setShowAddMatchDialog}>
       <DialogTrigger asChild>
@@ -49,6 +53,7 @@ export function AddMatchDialog({
           gameName="Test Game"
           matches={5}
           scoresheets={scoresheets}
+          locations={locations}
           setShowAddMatchDialog={setShowAddMatchDialog}
         />
       </DialogContent>
@@ -56,10 +61,11 @@ export function AddMatchDialog({
   );
 }
 function AddMatchContent({
-  scoresheets,
   game,
   gameName = "Game",
-  matches = 0,
+  matches,
+  scoresheets,
+  locations,
   setShowAddMatchDialog,
 }: {
   gameName: string;
@@ -74,6 +80,7 @@ function AddMatchContent({
         type: "shared";
       };
   scoresheets: ScoreSheets;
+  locations: Locations;
   setShowAddMatchDialog: Dispatch<SetStateAction<boolean>>;
 }) {
   const [currentForm, setCurrentForm] = useState<
@@ -84,7 +91,8 @@ function AddMatchContent({
     defaultValues: {
       name: `${gameName} #${matches + 1}`,
       date: new Date(),
-      location: null as LocationType,
+      location: (locations.find((location) => location.isDefault) ??
+        null) as LocationType,
       scoresheet: scoresheets[0] as ScoresheetType,
       teams: [] as TeamType[],
       players: [] as PlayerType[],
@@ -109,21 +117,6 @@ function AddMatchContent({
       });
     },
   });
-
-  const tempLocations = [
-    {
-      id: 1,
-      type: "original" as const,
-      name: "Location 1",
-      isDefault: true,
-    },
-    {
-      sharedId: 2,
-      type: "shared" as const,
-      name: "Location 2",
-      isDefault: false,
-    },
-  ];
 
   if (currentForm === "addPlayer") {
     return (
@@ -164,7 +157,7 @@ function AddMatchContent({
                 openPlayerForm={() => setCurrentForm("player")}
                 numberOfPlayers={selectedPlayers.length}
                 scoresheets={scoresheets}
-                locations={tempLocations}
+                locations={locations}
                 description="Add a new match to your collection."
                 closeDialog={() => setShowAddMatchDialog(false)}
               />
