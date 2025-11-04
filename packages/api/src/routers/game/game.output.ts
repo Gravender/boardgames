@@ -18,3 +18,23 @@ export const getGameRolesOutput = z.array(
   ]),
 );
 export type GetGameRolesOutputType = z.infer<typeof getGameRolesOutput>;
+
+export const getGameScoresheetsOutput = z.array(
+  z.discriminatedUnion("type", [
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      type: z.literal("original"),
+      isDefault: z.boolean(),
+    }),
+    z.object({
+      sharedId: z.number(),
+      name: z.string(),
+      type: z.literal("shared"),
+      isDefault: z.boolean(),
+    }),
+  ]),
+);
+export type GetGameScoresheetsOutputType = z.infer<
+  typeof getGameScoresheetsOutput
+>;

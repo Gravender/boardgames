@@ -16,7 +16,11 @@ import {
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
 
-import type { GetGameArgs, GetGameRolesArgs } from "./game.repository.types";
+import type {
+  GetGameArgs,
+  GetGameRolesArgs,
+  GetGameScoresheetsArgs,
+} from "./game.repository.types";
 
 class GameRepository {
   public async getGameMatches(args: GetGameArgs) {
@@ -475,6 +479,118 @@ class GameRepository {
     return {
       rows,
     };
+  }
+  public async getGameScoresheets(args: GetGameScoresheetsArgs) {
+    const { input } = args;
+
+    if (input.type === "original") {
+      const returnedGame = await db.query.game.findFirst({
+        where: {
+          id: input.id,
+          createdBy: args.userId,
+          deletedAt: {
+            isNull: true,
+          },
+        },
+        columns: {
+          id: true,
+        },
+        with: {
+          scoresheets: {
+            where: {
+              type: {
+                OR: [
+                  {
+                    eq: "Game",
+                  },
+                  {
+                    eq: "Default",
+                  },
+                ],
+              },
+            },
+            columns: {
+              id: true,
+              name: true,
+              type: true,
+            },
+          },
+          linkedGames: {
+            where: {
+              sharedWithId: args.userId,
+            },
+            with: {
+              sharedScoresheets: {
+                columns: {
+                  id: true,
+                  isDefault: true,
+                },
+                where: {
+                  sharedWithId: args.userId,
+                  type: "game",
+                  linkedScoresheetId: {
+                    isNull: true,
+                  },
+                },
+                with: {
+                  scoresheet: {
+                    columns: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!returnedGame) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Game not found.",
+        });
+      }
+      return {
+        type: "original" as const,
+        game: returnedGame,
+      };
+    } else {
+      const returnedSharedGame = await db.query.sharedGame.findFirst({
+        where: {
+          id: input.sharedGameId,
+          sharedWithId: args.userId,
+        },
+        with: {
+          sharedScoresheets: {
+            where: {
+              sharedWithId: args.userId,
+              type: "game",
+            },
+            columns: {
+              id: true,
+              isDefault: true,
+            },
+            with: {
+              scoresheet: {
+                columns: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!returnedSharedGame) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared game not found.",
+        });
+      }
+      return {
+        type: "shared" as const,
+        game: returnedSharedGame,
+      };
+    }
   }
 }
 export const gameRepository = new GameRepository();

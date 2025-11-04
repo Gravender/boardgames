@@ -1,32 +1,24 @@
-"use client";
-
-import { useState } from "react";
-
-import { Button } from "@board-games/ui/button";
-import { Dialog } from "@board-games/ui/dialog";
-
 import { AddMatchDialog } from "~/components/match/add/index";
-import { PlayerSelector } from "~/components/match/add/player-selector";
+import { prefetch, trpc } from "~/trpc/server";
 
 export default function TestPage() {
-  const [showDialog, setShowDialog] = useState(false);
-  const [mode, setMode] = useState<"select" | "quick" | "custom" | "match">(
-    "select",
+  const game = { id: 1, type: "original" as const };
+  void prefetch(trpc.newPlayer.getPlayersForMatch.queryOptions());
+  void prefetch(trpc.newPlayer.getRecentMatchWithPlayers.queryOptions());
+  void prefetch(trpc.newGroup.getGroupsWithPlayers.queryOptions());
+  void prefetch(
+    trpc.newGame.gameRoles.queryOptions({
+      ...game,
+    }),
+  );
+  void prefetch(
+    trpc.newGame.gameScoresheets.queryOptions({
+      ...game,
+    }),
   );
   return (
     <>
-      <AddMatchDialog />
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <Button onClick={() => setShowDialog(true)}>Open Dialog</Button>
-        {mode === "select" && (
-          <PlayerSelector
-            playerCount={0}
-            onCancel={() => setShowDialog(false)}
-            setMode={setMode}
-            setShowDialog={setShowDialog}
-          />
-        )}
-      </Dialog>
+      <AddMatchDialog game={game} />
     </>
   );
 }

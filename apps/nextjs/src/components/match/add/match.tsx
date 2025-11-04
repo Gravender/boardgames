@@ -1,6 +1,7 @@
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon, X } from "lucide-react";
 
+import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Calendar } from "@board-games/ui/calendar";
@@ -54,20 +55,7 @@ type Locations = (
     }
 )[];
 
-type Scoresheets = (
-  | {
-      id: number;
-      name: string;
-      type: "original";
-      default: boolean;
-    }
-  | {
-      sharedId: number;
-      name: string;
-      type: "shared";
-      default: boolean;
-    }
-)[];
+type ScoreSheets = RouterOutputs["newGame"]["gameScoresheets"];
 export const defaultValues = {
   name: "",
   date: new Date(),
@@ -83,7 +71,7 @@ export const MatchForm = withForm({
   defaultValues: defaultValues,
   props: {
     numberOfPlayers: 2,
-    scoresheets: [] as Scoresheets,
+    scoresheets: [] as ScoreSheets,
     locations: [] as Locations,
     description: "Add a new match to your collection.",
     closeDialog: () => {
