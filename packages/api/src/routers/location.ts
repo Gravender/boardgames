@@ -15,6 +15,7 @@ import { insertLocationSchema } from "@board-games/db/zodSchema";
 import { protectedUserProcedure } from "../trpc";
 import { getLocationsOutput } from "./location/location.output";
 import { locationService } from "./location/service/location.service";
+import { locationSharedRouter } from "./location/sub-routers/shared/shared-location.router";
 
 export const locationRouter = {
   getLocations: protectedUserProcedure
@@ -346,4 +347,5 @@ export const locationRouter = {
         }
       });
     }),
+  shared: locationSharedRouter,
 } satisfies TRPCRouterRecord;

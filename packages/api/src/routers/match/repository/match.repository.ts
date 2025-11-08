@@ -364,11 +364,12 @@ class MatchRepository {
           ? returnedSharedMatch.sharedLocation.linkedLocation
             ? {
                 id: returnedSharedMatch.sharedLocation.linkedLocation.id,
+                sharedId: returnedSharedMatch.sharedLocation.id,
                 name: returnedSharedMatch.sharedLocation.linkedLocation.name,
                 type: "linked" as const,
               }
             : {
-                id: returnedSharedMatch.sharedLocation.location.id,
+                sharedId: returnedSharedMatch.sharedLocation.location.id,
                 name: returnedSharedMatch.sharedLocation.location.name,
                 type: "shared" as const,
               }
@@ -1280,13 +1281,50 @@ class MatchRepository {
           code: "UNAUTHORIZED",
           message: "Does not have permission to edit this match.",
         });
-      await db
-        .update(match)
-        .set({
-          name: input.match.name,
-          date: input.match.date,
-        })
-        .where(eq(match.id, returnedSharedMatch.matchId));
+
+      if (input.match.location !== undefined) {
+        if (input.match.location !== null) {
+          const returnedSharedLocation =
+            await db.query.sharedLocation.findFirst({
+              where: {
+                id: input.match.location.sharedId,
+                sharedWithId: args.userId,
+                ownerId: returnedSharedMatch.ownerId,
+              },
+            });
+          if (!returnedSharedLocation) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Shared location not found.",
+            });
+          }
+          await db
+            .update(match)
+            .set({
+              name: input.match.name,
+              date: input.match.date,
+              locationId: returnedSharedLocation.locationId,
+            })
+            .where(eq(match.id, returnedSharedMatch.matchId));
+        } else {
+          await db
+            .update(match)
+            .set({
+              name: input.match.name,
+              date: input.match.date,
+              locationId: null,
+            })
+            .where(eq(match.id, returnedSharedMatch.matchId));
+        }
+      } else {
+        await db
+          .update(match)
+          .set({
+            name: input.match.name,
+            date: input.match.date,
+          })
+          .where(eq(match.id, returnedSharedMatch.matchId));
+      }
       return {
         type: "shared" as const,
         matchId: returnedSharedMatch.matchId,

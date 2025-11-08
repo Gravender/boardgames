@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 import { useTRPC } from "~/trpc/react";
 
@@ -10,5 +10,18 @@ export const useLocations = () => {
   return {
     locations,
     isLoadingLocations,
+  };
+};
+export const useSuspenseSharedLocationsFromSharedMatch = (
+  sharedMatchId: number,
+) => {
+  const trpc = useTRPC();
+  const { data: sharedLocations } = useSuspenseQuery(
+    trpc.location.shared.getSharedLocationsFromSharedMatch.queryOptions({
+      sharedMatchId,
+    }),
+  );
+  return {
+    sharedLocations: sharedLocations.locations,
   };
 };

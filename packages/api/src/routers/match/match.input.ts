@@ -218,6 +218,12 @@ export const editMatchInput = z.discriminatedUnion("type", [
       })
       .extend({
         sharedMatchId: z.number(),
+        location: z
+          .object({
+            sharedId: z.number(),
+            type: "shared" as const,
+          })
+          .nullish(),
       }),
   }),
 ]);

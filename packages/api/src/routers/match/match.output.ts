@@ -88,14 +88,26 @@ export const getMatchOutput = z.discriminatedUnion("type", [
         sharedGameId: z.number(),
         linkedGameId: z.number().nullable(),
       }),
-    location: selectLocationSchema
-      .pick({
-        id: true,
-        name: true,
-      })
-      .extend({
-        type: sharedOrLinkedSchema,
-      })
+    location: z
+      .discriminatedUnion("type", [
+        selectLocationSchema
+          .pick({
+            id: true,
+            name: true,
+          })
+          .extend({
+            type: z.literal("linked"),
+            sharedId: z.number(),
+          }),
+        selectLocationSchema
+          .pick({
+            name: true,
+          })
+          .extend({
+            type: z.literal("shared"),
+            sharedId: z.number(),
+          }),
+      ])
       .nullable(),
   }),
 ]);
