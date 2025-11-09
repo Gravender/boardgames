@@ -3,6 +3,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { format } from "date-fns";
 import { Plus } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -117,7 +118,10 @@ function AddMatchContent({
           game: game,
           name: value.name,
           date: value.date,
-          players: value.players,
+          players: value.players.map((p) => ({
+            ...p,
+            teamId: p.teamId ?? null,
+          })),
           teams: value.teams,
           scoresheet: value.scoresheet,
           location: value.location,
@@ -152,7 +156,7 @@ function AddMatchContent({
               ...player,
               type: "original" as const,
               roles: [],
-              teamId: undefined,
+              teamId: null,
             },
           ]);
         }}
@@ -171,9 +175,11 @@ function AddMatchContent({
         selector={(state) => ({
           selectedPlayers: state.values.players,
           teams: state.values.teams,
+          date: state.values.date,
+          name: state.values.name,
         })}
       >
-        {({ selectedPlayers, teams }) => {
+        {({ selectedPlayers, teams, name, date }) => {
           if (currentForm === "match") {
             return (
               <MatchForm
@@ -192,6 +198,12 @@ function AddMatchContent({
             return (
               <CustomPlayerSelect
                 form={form}
+                fields={{
+                  players: "players",
+                  teams: "teams",
+                }}
+                title={name}
+                description={format(date, "PPP")}
                 game={game}
                 teams={teams}
                 selectedPlayers={selectedPlayers}

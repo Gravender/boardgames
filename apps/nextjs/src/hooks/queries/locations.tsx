@@ -12,6 +12,15 @@ export const useLocations = () => {
     isLoadingLocations,
   };
 };
+export const useSuspenseLocations = () => {
+  const trpc = useTRPC();
+  const { data: locations } = useSuspenseQuery(
+    trpc.location.getLocations.queryOptions(),
+  );
+  return {
+    locations,
+  };
+};
 export const useSuspenseSharedLocationsFromSharedMatch = (
   sharedMatchId: number,
 ) => {

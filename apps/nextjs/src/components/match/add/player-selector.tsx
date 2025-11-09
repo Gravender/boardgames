@@ -53,10 +53,9 @@ import type {
 import { useGameRoles } from "~/components/game/hooks/roles";
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
-import { withForm } from "~/hooks/form";
+import { withFieldGroup, withForm } from "~/hooks/form";
 import { usePlayers } from "../hooks/players";
 import { GroupQuickMatchSelection } from "./group-select";
-import { defaultValues } from "./match";
 import { PlayerSelectorField } from "./player-selection-form";
 import { RecentMatchSelection } from "./recent-match-select";
 import { PlayerRoleSelectorField, TeamRoleSelectorField } from "./role-form";
@@ -123,6 +122,7 @@ export const QuickPlayerSelect = withForm({
                 const mappedPlayers = groupPlayers.map((p) => ({
                   ...p,
                   roles: [],
+                  teamId: null,
                 }));
                 form.setFieldValue("players", mappedPlayers);
               }}
@@ -133,6 +133,7 @@ export const QuickPlayerSelect = withForm({
                 const mappedPlayers = matchPlayers.map((p) => ({
                   ...p,
                   roles: [],
+                  teamId: null,
                 }));
                 form.setFieldValue("players", mappedPlayers);
               }}
@@ -174,9 +175,14 @@ export const QuickPlayerSelect = withForm({
   },
 });
 
-export const CustomPlayerSelect = withForm({
-  defaultValues: defaultValues,
+export const CustomPlayerSelect = withFieldGroup({
+  defaultValues: {
+    players: [] as PlayerType[],
+    teams: [] as TeamType[],
+  },
   props: {
+    title: "Players",
+    description: "Add players to your match",
     selectedPlayers: [] as PlayerType[],
     teams: [] as TeamType[],
     game: {
@@ -202,7 +208,9 @@ export const CustomPlayerSelect = withForm({
     },
   },
   render: function Render({
-    form,
+    title,
+    description,
+    group,
     selectedPlayers,
     teams,
     game,
@@ -221,7 +229,7 @@ export const CustomPlayerSelect = withForm({
           shareType: "shared" | "original";
           name: string;
           index: number;
-          teamId?: number;
+          teamId: number | null;
         }
       | {
           type: "team";
@@ -235,27 +243,22 @@ export const CustomPlayerSelect = withForm({
     const { playersForMatch, isLoading: isLoadingPlayers } = usePlayers();
     const individualPlayers = selectedPlayers.filter((p) => !p.teamId);
 
-    const assignPlayerToTeam = (
-      teamId: number | undefined,
-      player: PlayerType,
-    ) => {
-      const currentPlayers = form.state.values.players;
+    const assignPlayerToTeam = (teamId: number | null, player: PlayerType) => {
+      const currentPlayers = group.state.values.players;
       const tempPlayers = currentPlayers.map((p) => {
         if (isSamePlayer(p, player)) {
           return { ...p, teamId };
         }
         return p;
       });
-      form.setFieldValue("players", tempPlayers);
+      group.setFieldValue("players", tempPlayers);
     };
     return (
       <>
         <DialogHeader className="flex flex-row items-center justify-between">
           <div>
-            <DialogTitle>{form.getFieldValue("name")}</DialogTitle>
-            <DialogDescription>
-              {format(form.getFieldValue("date"), "PPP")}
-            </DialogDescription>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
           </div>
           <Badge variant="secondary" className="rounded-lg px-4 py-2 text-base">
             <Users className="mr-2 h-4 w-4" />
@@ -286,11 +289,12 @@ export const CustomPlayerSelect = withForm({
                 <GroupQuickMatchSelection
                   players={playersForMatch.players}
                   setPlayers={(groupPlayers: Players) => {
-                    form.setFieldValue(
+                    group.setFieldValue(
                       "players",
                       groupPlayers.map((p) => ({
                         ...p,
                         roles: [],
+                        teamId: null,
                       })),
                     );
                   }}
@@ -303,17 +307,18 @@ export const CustomPlayerSelect = withForm({
                       { type: "original" }
                     >[],
                   ) => {
-                    form.setFieldValue(
+                    group.setFieldValue(
                       "players",
                       matchPlayers.map((p) => ({
                         ...p,
                         roles: [],
+                        teamId: null,
                       })),
                     );
                   }}
                 />
                 <PlayerSelectorField
-                  form={form}
+                  form={group}
                   fields={{
                     players: "players",
                   }}
@@ -338,7 +343,7 @@ export const CustomPlayerSelect = withForm({
             )}
           </TabsContent>
           <TabsContent value="teams" className="mt-6">
-            <form.Field name="teams" mode="array">
+            <group.Field name="teams" mode="array">
               {(field) => {
                 const minTeamId =
                   teams.length > 0
@@ -379,7 +384,7 @@ export const CustomPlayerSelect = withForm({
                                 <Users2 />
                               </ItemMedia>
                               <ItemContent>
-                                <form.Field key={i} name={`teams[${i}].name`}>
+                                <group.Field key={i} name={`teams[${i}].name`}>
                                   {(subField) => {
                                     return (
                                       <Input
@@ -390,7 +395,7 @@ export const CustomPlayerSelect = withForm({
                                       />
                                     );
                                   }}
-                                </form.Field>
+                                </group.Field>
                                 <ItemDescription>
                                   {teamPlayers.length > 0 && (
                                     <Badge
@@ -434,13 +439,13 @@ export const CustomPlayerSelect = withForm({
                                   size="icon"
                                   variant="ghost"
                                   onClick={() => {
-                                    form.setFieldValue(
+                                    group.setFieldValue(
                                       "players",
                                       selectedPlayers.map((p) =>
                                         p.teamId === team.id
                                           ? {
                                               ...p,
-                                              teamId: undefined,
+                                              teamId: null,
                                             }
                                           : p,
                                       ),
@@ -512,7 +517,8 @@ export const CustomPlayerSelect = withForm({
                                                       shareType:
                                                         "original" as const,
                                                       teamId:
-                                                        foundPlayer.teamId,
+                                                        foundPlayer.teamId ??
+                                                        null,
                                                     }
                                                   : {
                                                       id: foundPlayer.sharedId,
@@ -522,7 +528,8 @@ export const CustomPlayerSelect = withForm({
                                                       shareType:
                                                         "shared" as const,
                                                       teamId:
-                                                        foundPlayer.teamId,
+                                                        foundPlayer.teamId ??
+                                                        null,
                                                     };
                                               setRoleTarget(roleObject);
                                               setShowRoleDialog(true);
@@ -535,10 +542,7 @@ export const CustomPlayerSelect = withForm({
                                             size="icon"
                                             variant="ghost"
                                             onClick={() =>
-                                              assignPlayerToTeam(
-                                                undefined,
-                                                player,
-                                              )
+                                              assignPlayerToTeam(null, player)
                                             }
                                           >
                                             <X className="h-3 w-3" />
@@ -665,7 +669,9 @@ export const CustomPlayerSelect = withForm({
                                                     name: foundPlayer.name,
                                                     shareType:
                                                       "original" as const,
-                                                    teamId: foundPlayer.teamId,
+                                                    teamId:
+                                                      foundPlayer.teamId ??
+                                                      null,
                                                   }
                                                 : {
                                                     id: foundPlayer.sharedId,
@@ -674,7 +680,9 @@ export const CustomPlayerSelect = withForm({
                                                     name: foundPlayer.name,
                                                     shareType:
                                                       "shared" as const,
-                                                    teamId: foundPlayer.teamId,
+                                                    teamId:
+                                                      foundPlayer.teamId ??
+                                                      null,
                                                   };
                                             setRoleTarget(roleObject);
                                             setShowRoleDialog(true);
@@ -695,7 +703,7 @@ export const CustomPlayerSelect = withForm({
                   </div>
                 );
               }}
-            </form.Field>
+            </group.Field>
           </TabsContent>
         </Tabs>
         <DialogFooter className="sm:justify-between">
@@ -723,7 +731,7 @@ export const CustomPlayerSelect = withForm({
             <DialogContent>
               {roleTarget.type === "player" ? (
                 <PlayerRoleSelectorField
-                  form={form}
+                  form={group}
                   fields={{
                     roles: `players[${roleTarget.index}].roles`,
                   }}
@@ -735,7 +743,7 @@ export const CustomPlayerSelect = withForm({
                 <TeamRoleSelectorField
                   title={roleTarget.name}
                   gameRoles={gameRoles}
-                  form={form}
+                  form={group}
                   fields={{ roles: `teams[${roleTarget.index}].roles` }}
                 />
               )}

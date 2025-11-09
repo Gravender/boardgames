@@ -17,7 +17,7 @@ import {
   vMatchCanonical,
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
-import { calculatePlacement } from "@board-games/shared";
+import { calculatePlacement, isSameRole } from "@board-games/shared";
 
 import type {
   CreateMatchOutputType,
@@ -336,6 +336,7 @@ class MatchRepository {
         type: "shared" as const,
         id: returnedSharedMatch.matchId,
         sharedMatchId: returnedSharedMatch.id,
+        permissions: returnedSharedMatch.permission,
         date: returnedSharedMatch.match.date,
         name: returnedSharedMatch.match.name,
         game: returnedSharedMatch.sharedGame.linkedGame
@@ -954,7 +955,7 @@ class MatchRepository {
             } else {
               locationId = await cloneSharedLocationForUser(
                 tx,
-                input.match.location.id,
+                input.match.location.sharedId,
                 userId,
               );
             }
@@ -977,8 +978,219 @@ class MatchRepository {
             outputMatch.location = { id: locationId };
           }
         }
-        if (input.editedTeams.length > 0) {
-          for (const editedTeam of input.editedTeams) {
+        const mappedTeams = returnedMatch.teams.map((team) => {
+          const teamPlayers = returnedMatch.matchPlayers.filter(
+            (mp) => mp.teamId === team.id,
+          );
+          const roleCount: {
+            id: number;
+            count: number;
+          }[] = [];
+          teamPlayers.forEach((player) => {
+            player.roles.forEach((role) => {
+              const existingRole = roleCount.find((r) => r.id === role.id);
+              if (existingRole) {
+                existingRole.count++;
+              } else {
+                roleCount.push({
+                  id: role.id,
+                  count: 1,
+                });
+              }
+            });
+          });
+          const teamRoles = roleCount
+            .filter((role) => role.count === teamPlayers.length)
+            .map((r) => {
+              return {
+                id: r.id,
+                type: "original" as const,
+              };
+            });
+          return {
+            id: team.id,
+            name: team.name,
+            roles: teamRoles,
+          };
+        });
+        const playersToRemove: {
+          id: number;
+        }[] = [];
+        const playersToAdd: (
+          | {
+              id: number;
+              type: "original";
+              teamId: number | null;
+              roles: (
+                | {
+                    id: number;
+                    type: "original";
+                  }
+                | {
+                    sharedId: number;
+                    type: "shared";
+                  }
+              )[];
+            }
+          | {
+              sharedId: number;
+              type: "shared";
+              teamId: number | null;
+              roles: (
+                | {
+                    id: number;
+                    type: "original";
+                  }
+                | {
+                    sharedId: number;
+                    type: "shared";
+                  }
+              )[];
+            }
+        )[] = [];
+        const updatedPlayers: {
+          id: number;
+          teamId: number | null;
+          rolesToAdd: (
+            | {
+                id: number;
+                type: "original";
+              }
+            | {
+                sharedId: number;
+                type: "shared";
+              }
+          )[];
+          rolesToRemove: {
+            id: number;
+          }[];
+        }[] = [];
+        input.players.forEach((player) => {
+          const foundPlayer = returnedMatch.matchPlayers.find(
+            (p) => player.type === "original" && p.playerId === player.id,
+          );
+          if (foundPlayer) {
+            const teamChanged = foundPlayer.teamId !== player.teamId;
+            const originalRoles = foundPlayer.roles;
+            const playerRoles = player.roles;
+            const teamRoles =
+              input.teams.find((t) => t.id === player.teamId)?.roles ?? [];
+            teamRoles.forEach((role) => {
+              const foundRole = playerRoles.find((r) => isSameRole(r, role));
+              if (!foundRole) {
+                playerRoles.push(role);
+              }
+            });
+            const rolesToRemove = originalRoles.filter(
+              (role) =>
+                !playerRoles.find((r) =>
+                  isSameRole(r, {
+                    id: role.id,
+                    type: "original",
+                  }),
+                ),
+            );
+            const rolesToAdd = playerRoles.filter(
+              (role) =>
+                !originalRoles.find((r) =>
+                  isSameRole(
+                    {
+                      id: r.id,
+                      type: "original",
+                    },
+                    role,
+                  ),
+                ),
+            );
+            if (
+              teamChanged ||
+              rolesToAdd.length > 0 ||
+              rolesToRemove.length > 0
+            ) {
+              updatedPlayers.push({
+                id: foundPlayer.id,
+                teamId: player.teamId,
+                rolesToAdd: rolesToAdd,
+                rolesToRemove: rolesToRemove,
+              });
+            }
+          } else {
+            const playerRoles = player.roles;
+            const teamRoles =
+              input.teams.find((t) => t.id === player.teamId)?.roles ?? [];
+            teamRoles.forEach((role) => {
+              const foundRole = playerRoles.find((r) => isSameRole(r, role));
+              if (!foundRole) {
+                playerRoles.push(role);
+              }
+            });
+            playersToAdd.push({
+              ...player,
+              roles: playerRoles,
+            });
+          }
+        });
+        returnedMatch.matchPlayers.forEach((mp) => {
+          const foundPlayer = input.players.find(
+            (p) => p.type === "original" && p.id === mp.playerId,
+          );
+          if (!foundPlayer) {
+            playersToRemove.push({
+              id: mp.playerId,
+            });
+          }
+        });
+        const addedTeams: {
+          id: number;
+          name: string;
+          roles: (
+            | {
+                id: number;
+                type: "original";
+              }
+            | {
+                sharedId: number;
+                type: "shared";
+              }
+          )[];
+        }[] = [];
+        const editedTeams: {
+          id: number;
+          name: string;
+        }[] = [];
+
+        const deletedTeams: {
+          id: number;
+        }[] = [];
+        input.teams.forEach((team) => {
+          const foundTeam = mappedTeams.find((t) => t.id === team.id);
+          if (foundTeam) {
+            const matchNameChanged = foundTeam.name !== team.name;
+            if (matchNameChanged) {
+              editedTeams.push({
+                id: team.id,
+                name: team.name,
+              });
+            }
+            return;
+          }
+          addedTeams.push({
+            id: team.id,
+            name: team.name,
+            roles: team.roles,
+          });
+        });
+        mappedTeams.forEach((team) => {
+          const foundTeam = input.teams.find((t) => t.id === team.id);
+          if (!foundTeam) {
+            deletedTeams.push({
+              id: team.id,
+            });
+          }
+        });
+
+        if (editedTeams.length > 0) {
+          for (const editedTeam of editedTeams) {
             await tx
               .update(team)
               .set({ name: editedTeam.name })
@@ -994,8 +1206,8 @@ class MatchRepository {
           score: number | null;
           rounds: z.infer<typeof selectRoundPlayerSchema>[];
         }[] = [];
-        if (input.addedTeams.length > 0) {
-          for (const addedTeam of input.addedTeams) {
+        if (addedTeams.length > 0) {
+          for (const addedTeam of addedTeams) {
             const [insertedTeam] = await tx
               .insert(team)
               .values({
@@ -1033,18 +1245,18 @@ class MatchRepository {
           };
         });
         //Add players to match
-        if (input.addPlayers.length > 0) {
+        if (playersToAdd.length > 0) {
           await addPlayersToMatch(
             tx,
             returnedMatch.id,
-            input.addPlayers,
+            playersToAdd,
             [...originalTeams, ...mappedAddedTeams],
             returnedMatch.scoresheet.rounds,
             userId,
           );
         }
         //Remove Players from Match
-        if (input.removePlayers.length > 0) {
+        if (playersToRemove.length > 0) {
           const matchPlayers = await tx
             .select({ id: matchPlayer.id })
             .from(matchPlayer)
@@ -1053,7 +1265,7 @@ class MatchRepository {
                 eq(matchPlayer.matchId, input.match.id),
                 inArray(
                   matchPlayer.playerId,
-                  input.removePlayers.map((player) => player.id),
+                  playersToRemove.map((player) => player.id),
                 ),
               ),
             );
@@ -1072,8 +1284,8 @@ class MatchRepository {
               ),
             );
         }
-        if (input.updatedPlayers.length > 0) {
-          for (const updatedPlayer of input.updatedPlayers) {
+        if (updatedPlayers.length > 0) {
+          for (const updatedPlayer of updatedPlayers) {
             let teamId: number | null = null;
             const originalPlayer = returnedMatch.matchPlayers.find(
               (mp) => mp.playerId === updatedPlayer.id,
@@ -1111,27 +1323,12 @@ class MatchRepository {
                 );
             }
 
-            // Determine role changes
-            const currentRoleIds = originalPlayer.roles.map((r) => r.id);
-            const rolesToAdd = updatedPlayer.roles.filter(
-              (playerRole) =>
-                !currentRoleIds.find(
-                  (r) => playerRole.type === "original" && r === playerRole.id,
-                ),
-            );
-            const rolesToRemove = currentRoleIds.filter(
-              (roleId) =>
-                !updatedPlayer.roles.find(
-                  (r) => r.type === "original" && r.id === roleId,
-                ),
-            );
-
             // Add new roles
-            if (rolesToAdd.length > 0) {
-              const originalRoles = rolesToAdd.filter(
+            if (updatedPlayer.rolesToAdd.length > 0) {
+              const originalRoles = updatedPlayer.rolesToAdd.filter(
                 (roleToAdd) => roleToAdd.type === "original",
               );
-              const sharedRoles = rolesToAdd.filter(
+              const sharedRoles = updatedPlayer.rolesToAdd.filter(
                 (roleToAdd) => roleToAdd.type !== "original",
               );
               await tx.insert(matchPlayerRole).values(
@@ -1192,23 +1389,24 @@ class MatchRepository {
             }
 
             // Remove old roles
-            if (rolesToRemove.length > 0) {
-              await tx
-                .delete(matchPlayerRole)
-                .where(
-                  and(
-                    eq(matchPlayerRole.matchPlayerId, originalPlayer.id),
-                    inArray(matchPlayerRole.roleId, rolesToRemove),
+            if (updatedPlayer.rolesToRemove.length > 0) {
+              await tx.delete(matchPlayerRole).where(
+                and(
+                  eq(matchPlayerRole.matchPlayerId, originalPlayer.id),
+                  inArray(
+                    matchPlayerRole.roleId,
+                    updatedPlayer.rolesToRemove.map((r) => r.id),
                   ),
-                );
+                ),
+              );
             }
           }
         }
         if (
           returnedMatch.finished &&
-          (input.addPlayers.length > 0 ||
-            input.removePlayers.length > 0 ||
-            input.updatedPlayers.length > 0)
+          (playersToAdd.length > 0 ||
+            playersToRemove.length > 0 ||
+            updatedPlayers.length > 0)
         ) {
           if (returnedMatch.scoresheet.winCondition !== "Manual") {
             const newMatchPlayers = await tx.query.matchPlayer.findMany({
@@ -1242,20 +1440,7 @@ class MatchRepository {
             .set({ finished: false })
             .where(eq(match.id, input.match.id));
           outputMatch.updatedScore = true;
-          outputMatch.players = [
-            ...input.addPlayers.map((p) => ({
-              id: p.id,
-              type: "original" as const,
-            })),
-            ...input.updatedPlayers.map((p) => ({
-              id: p.id,
-              type: "original" as const,
-            })),
-            ...input.removePlayers.map((p) => ({
-              id: p.id,
-              type: "original" as const,
-            })),
-          ];
+          outputMatch.players = [];
         }
 
         return outputMatch;

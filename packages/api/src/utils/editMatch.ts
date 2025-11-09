@@ -22,21 +22,38 @@ import { processPlayer } from "./addMatch";
 export async function addPlayersToMatch(
   transaction: TransactionType,
   matchId: number,
-  playersToAdd: {
-    id: number;
-    type: "original" | "shared" | "linked";
-    teamId: number | null;
-    roles: (
-      | {
-          id: number;
-          type: "original";
-        }
-      | {
-          sharedId: number;
-          type: "shared" | "linked";
-        }
-    )[];
-  }[],
+  playersToAdd: (
+    | {
+        id: number;
+        type: "original";
+        teamId: number | null;
+        roles: (
+          | {
+              id: number;
+              type: "original";
+            }
+          | {
+              sharedId: number;
+              type: "shared" | "linked";
+            }
+        )[];
+      }
+    | {
+        sharedId: number;
+        type: "shared";
+        teamId: number | null;
+        roles: (
+          | {
+              id: number;
+              type: "original";
+            }
+          | {
+              sharedId: number;
+              type: "shared" | "linked";
+            }
+        )[];
+      }
+  )[],
   teams: {
     id: number;
     teamId: number;

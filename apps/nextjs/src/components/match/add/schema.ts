@@ -50,7 +50,7 @@ const playerSchema = z.discriminatedUnion("type", [
     id: z.number(),
     name: z.string(),
     roles: z.array(roleSchema),
-    teamId: z.number().optional(),
+    teamId: z.number().nullish(),
     image: imageSchema.nullable(),
   }),
   z.object({
@@ -58,7 +58,7 @@ const playerSchema = z.discriminatedUnion("type", [
     sharedId: z.number(),
     name: z.string(),
     roles: z.array(roleSchema),
-    teamId: z.number().optional(),
+    teamId: z.number().nullish(),
     image: imageSchema.nullable(),
   }),
 ]);

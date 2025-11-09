@@ -76,6 +76,7 @@ export const getMatchOutput = z.discriminatedUnion("type", [
   }),
   baseGetMatchOutput.extend({
     type: z.literal("shared"),
+    permissions: z.literal("view").or(z.literal("edit")),
     sharedMatchId: z.number(),
     game: selectGameSchema
       .pick({

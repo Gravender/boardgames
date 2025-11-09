@@ -30,13 +30,13 @@ import {
 import { Skeleton } from "@board-games/ui/skeleton";
 
 import type { GameInput, MatchInput } from "../types/input";
+import { InputFieldSkeleton } from "~/components/input-field-skeleton";
 import { Spinner } from "~/components/spinner";
 import { useAppForm } from "~/hooks/form";
 import { useSuspenseSharedLocationsFromSharedMatch } from "~/hooks/queries/locations";
 import { useEditMatchMutation } from "../hooks/edit";
 import { useMatch } from "../hooks/suspenseQueries";
 import { editSharedMatchSchema } from "./schema";
-import { InputFieldSkeleton } from "~/components/input-field-skeleton";
 
 export function EditSharedMatchForm(input: {
   game: GameInput;
@@ -76,7 +76,11 @@ export function EditSharedMatchForm(input: {
       const matchNameChanged = value.name !== match.name;
       const matchDateChanged = isSameDay(value.date, match.date);
       const matchLocationChanged =
-        value.location?.sharedId !== match.location?.sharedId;
+        value.location === null && match.location !== null
+          ? true
+          : value.location !== null && match.location === null
+            ? true
+            : value.location?.sharedId !== match.location?.sharedId;
       editMatchMutation.mutate({
         type: "shared",
         match: {
@@ -88,6 +92,15 @@ export function EditSharedMatchForm(input: {
       });
     },
   });
+  if (match.permissions === "view") {
+    return (
+      <Card className="w-full max-w-xl">
+        <CardHeader>
+          <CardTitle>Don't have permission to edit this match</CardTitle>
+        </CardHeader>
+      </Card>
+    );
+  }
   return (
     <Card className="w-full max-w-xl">
       <CardHeader>
