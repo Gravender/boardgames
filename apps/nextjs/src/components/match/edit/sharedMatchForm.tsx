@@ -296,7 +296,7 @@ export function EditSharedMatchForm(input: {
                       <span>Submitting...</span>
                     </>
                   ) : (
-                    "Start Match"
+                    "Submit"
                   )}
                 </Button>
               )}
