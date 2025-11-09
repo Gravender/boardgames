@@ -17,7 +17,8 @@ export const useEditMatchMutation = (input: MatchInput) => {
   const editMatchMutation = useMutation(
     trpc.newMatch.editMatch.mutationOptions({
       onSuccess: async (result) => {
-        await queryClient.invalidateQueries();
+        await queryClient.invalidateQueries(trpc.newMatch.pathFilter());
+        await queryClient.invalidateQueries(trpc.newGame.pathFilter());
         toast.success("Match updated successfully.");
         posthog.capture("match edited successfully", {
           input: input,

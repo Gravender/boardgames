@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 import { useTRPC } from "~/trpc/react";
 
@@ -12,6 +12,15 @@ export const usePlayers = () => {
   return {
     playersForMatch,
     isLoading,
+  };
+};
+export const useSuspensePlayers = () => {
+  const trpc = useTRPC();
+  const { data: playersForMatch } = useSuspenseQuery(
+    trpc.newPlayer.getPlayersForMatch.queryOptions(),
+  );
+  return {
+    playersForMatch,
   };
 };
 

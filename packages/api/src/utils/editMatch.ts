@@ -102,6 +102,8 @@ export async function addPlayersToMatch(
         userId,
       );
       const foundTeam = teams.find((t) => t.id === p.teamId);
+      if (!foundTeam && p.teamId !== null)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Team not found." });
       return {
         processedPlayer: {
           matchId,

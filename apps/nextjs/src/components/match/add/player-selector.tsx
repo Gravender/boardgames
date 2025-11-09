@@ -50,7 +50,6 @@ import type {
   ScoresheetType,
   TeamType,
 } from "./schema";
-import { useGameRoles } from "~/components/game/hooks/roles";
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { withFieldGroup, withForm } from "~/hooks/form";
@@ -185,18 +184,10 @@ export const CustomPlayerSelect = withFieldGroup({
     description: "Add players to your match",
     selectedPlayers: [] as PlayerType[],
     teams: [] as TeamType[],
-    game: {
-      id: 1,
-      type: "original" as const,
-    } as
-      | {
-          id: number;
-          type: "original";
-        }
-      | {
-          sharedGameId: number;
-          type: "shared";
-        },
+    gameRoles: [] as RouterOutputs["newGame"]["gameRoles"],
+    playersForMatch: {
+      players: [],
+    } as RouterOutputs["newPlayer"]["getPlayersForMatch"],
     onCancel: () => {
       /* empty */
     },
@@ -213,7 +204,8 @@ export const CustomPlayerSelect = withFieldGroup({
     group,
     selectedPlayers,
     teams,
-    game,
+    gameRoles,
+    playersForMatch,
     onCancel,
     onBack,
     onAddPlayer,
@@ -239,8 +231,6 @@ export const CustomPlayerSelect = withFieldGroup({
         }
       | null
     >(null);
-    const { gameRoles } = useGameRoles(game);
-    const { playersForMatch, isLoading: isLoadingPlayers } = usePlayers();
     const individualPlayers = selectedPlayers.filter((p) => !p.teamId);
 
     const assignPlayerToTeam = (teamId: number | null, player: PlayerType) => {
@@ -272,71 +262,59 @@ export const CustomPlayerSelect = withFieldGroup({
         >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="players">Select Players</TabsTrigger>
-            <TabsTrigger value="teams">Teams & Roles</TabsTrigger>
+            <TabsTrigger value="teams">
+              Teams{gameRoles.length > 0 && " & Roles"}
+            </TabsTrigger>
           </TabsList>
           {/* Player Selection Tab */}
           <TabsContent value="players" className="mt-6 space-y-4">
-            {isLoadingPlayers ? (
-              <div className="flex items-center justify-center">
-                <Spinner />
-              </div>
-            ) : playersForMatch === undefined ? (
-              <div className="text-muted-foreground text-sm">
-                No players found
-              </div>
-            ) : (
-              <>
-                <GroupQuickMatchSelection
-                  players={playersForMatch.players}
-                  setPlayers={(groupPlayers: Players) => {
-                    group.setFieldValue(
-                      "players",
-                      groupPlayers.map((p) => ({
-                        ...p,
-                        roles: [],
-                        teamId: null,
-                      })),
-                    );
-                  }}
-                />
-                <RecentMatchSelection
-                  players={playersForMatch.players}
-                  setPlayers={(
-                    matchPlayers: Extract<
-                      Players[number],
-                      { type: "original" }
-                    >[],
-                  ) => {
-                    group.setFieldValue(
-                      "players",
-                      matchPlayers.map((p) => ({
-                        ...p,
-                        roles: [],
-                        teamId: null,
-                      })),
-                    );
-                  }}
-                />
-                <PlayerSelectorField
-                  form={group}
-                  fields={{
-                    players: "players",
-                  }}
-                  originalPlayers={playersForMatch.players.map((p) => ({
+            <GroupQuickMatchSelection
+              players={playersForMatch.players}
+              setPlayers={(groupPlayers: Players) => {
+                group.setFieldValue(
+                  "players",
+                  groupPlayers.map((p) => ({
                     ...p,
                     roles: [],
-                  }))}
-                  addPlayerOnClick={() => {
-                    onAddPlayer();
-                  }}
-                />
-              </>
-            )}
+                    teamId: null,
+                  })),
+                );
+              }}
+            />
+            <RecentMatchSelection
+              players={playersForMatch.players}
+              setPlayers={(
+                matchPlayers: Extract<Players[number], { type: "original" }>[],
+              ) => {
+                group.setFieldValue(
+                  "players",
+                  matchPlayers.map((p) => ({
+                    ...p,
+                    roles: [],
+                    teamId: null,
+                  })),
+                );
+              }}
+            />
+            <PlayerSelectorField
+              form={group}
+              fields={{
+                players: "players",
+              }}
+              originalPlayers={playersForMatch.players.map((p) => ({
+                ...p,
+                roles: [],
+              }))}
+              addPlayerOnClick={() => {
+                onAddPlayer();
+              }}
+            />
+
             {/* Continue Button */}
             {selectedPlayers.length > 0 && (
               <div className="flex justify-end pt-4">
                 <Button type="button" onClick={() => setCurrentTab("teams")}>
-                  Continue to Teams & Roles
+                  Continue to Teams{gameRoles.length > 0 && " & Roles"}
                   <ChevronLeft className="ml-2 h-4 w-4 rotate-180" />
                 </Button>
               </div>
@@ -418,22 +396,24 @@ export const CustomPlayerSelect = withFieldGroup({
                                 </ItemDescription>
                               </ItemContent>
                               <ItemActions>
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setRoleTarget({
-                                      id: team.id,
-                                      type: "team" as const,
-                                      index: i,
-                                      name: team.name,
-                                    });
-                                    setShowRoleDialog(true);
-                                  }}
-                                >
-                                  <Shield className="h-4 w-4" />
-                                </Button>
+                                {gameRoles.length > 0 && (
+                                  <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setRoleTarget({
+                                        id: team.id,
+                                        type: "team" as const,
+                                        index: i,
+                                        name: team.name,
+                                      });
+                                      setShowRoleDialog(true);
+                                    }}
+                                  >
+                                    <Shield className="h-4 w-4" />
+                                  </Button>
+                                )}
                                 <Button
                                   type="button"
                                   size="icon"
@@ -497,46 +477,49 @@ export const CustomPlayerSelect = withFieldGroup({
                                           </ItemDescription>
                                         </ItemContent>
                                         <ItemActions>
-                                          <Button
-                                            type="button"
-                                            size="icon"
-                                            variant="ghost"
-                                            onClick={() => {
-                                              const foundPlayer =
-                                                selectedPlayers[playerIndex];
-                                              if (foundPlayer === undefined) {
-                                                return;
-                                              }
-                                              const roleObject =
-                                                foundPlayer.type === "original"
-                                                  ? {
-                                                      id: foundPlayer.id,
-                                                      type: "player" as const,
-                                                      index: playerIndex,
-                                                      name: foundPlayer.name,
-                                                      shareType:
-                                                        "original" as const,
-                                                      teamId:
-                                                        foundPlayer.teamId ??
-                                                        null,
-                                                    }
-                                                  : {
-                                                      id: foundPlayer.sharedId,
-                                                      type: "player" as const,
-                                                      index: playerIndex,
-                                                      name: foundPlayer.name,
-                                                      shareType:
-                                                        "shared" as const,
-                                                      teamId:
-                                                        foundPlayer.teamId ??
-                                                        null,
-                                                    };
-                                              setRoleTarget(roleObject);
-                                              setShowRoleDialog(true);
-                                            }}
-                                          >
-                                            <Shield className="h-3 w-3" />
-                                          </Button>
+                                          {gameRoles.length > 0 && (
+                                            <Button
+                                              type="button"
+                                              size="icon"
+                                              variant="ghost"
+                                              onClick={() => {
+                                                const foundPlayer =
+                                                  selectedPlayers[playerIndex];
+                                                if (foundPlayer === undefined) {
+                                                  return;
+                                                }
+                                                const roleObject =
+                                                  foundPlayer.type ===
+                                                  "original"
+                                                    ? {
+                                                        id: foundPlayer.id,
+                                                        type: "player" as const,
+                                                        index: playerIndex,
+                                                        name: foundPlayer.name,
+                                                        shareType:
+                                                          "original" as const,
+                                                        teamId:
+                                                          foundPlayer.teamId ??
+                                                          null,
+                                                      }
+                                                    : {
+                                                        id: foundPlayer.sharedId,
+                                                        type: "player" as const,
+                                                        index: playerIndex,
+                                                        name: foundPlayer.name,
+                                                        shareType:
+                                                          "shared" as const,
+                                                        teamId:
+                                                          foundPlayer.teamId ??
+                                                          null,
+                                                      };
+                                                setRoleTarget(roleObject);
+                                                setShowRoleDialog(true);
+                                              }}
+                                            >
+                                              <Shield className="h-3 w-3" />
+                                            </Button>
+                                          )}
                                           <Button
                                             type="button"
                                             size="icon"
@@ -649,48 +632,50 @@ export const CustomPlayerSelect = withFieldGroup({
                                           )}
                                         </ItemDescription>
                                       </ItemContent>
-                                      <ItemActions>
-                                        <Button
-                                          type="button"
-                                          size="icon"
-                                          variant="ghost"
-                                          onClick={() => {
-                                            const foundPlayer =
-                                              selectedPlayers[playerIndex];
-                                            if (foundPlayer === undefined) {
-                                              return;
-                                            }
-                                            const roleObject =
-                                              foundPlayer.type === "original"
-                                                ? {
-                                                    id: foundPlayer.id,
-                                                    type: "player" as const,
-                                                    index: playerIndex,
-                                                    name: foundPlayer.name,
-                                                    shareType:
-                                                      "original" as const,
-                                                    teamId:
-                                                      foundPlayer.teamId ??
-                                                      null,
-                                                  }
-                                                : {
-                                                    id: foundPlayer.sharedId,
-                                                    type: "player" as const,
-                                                    index: playerIndex,
-                                                    name: foundPlayer.name,
-                                                    shareType:
-                                                      "shared" as const,
-                                                    teamId:
-                                                      foundPlayer.teamId ??
-                                                      null,
-                                                  };
-                                            setRoleTarget(roleObject);
-                                            setShowRoleDialog(true);
-                                          }}
-                                        >
-                                          <Shield className="h-3 w-3" />
-                                        </Button>
-                                      </ItemActions>
+                                      {gameRoles.length > 0 && (
+                                        <ItemActions>
+                                          <Button
+                                            type="button"
+                                            size="icon"
+                                            variant="ghost"
+                                            onClick={() => {
+                                              const foundPlayer =
+                                                selectedPlayers[playerIndex];
+                                              if (foundPlayer === undefined) {
+                                                return;
+                                              }
+                                              const roleObject =
+                                                foundPlayer.type === "original"
+                                                  ? {
+                                                      id: foundPlayer.id,
+                                                      type: "player" as const,
+                                                      index: playerIndex,
+                                                      name: foundPlayer.name,
+                                                      shareType:
+                                                        "original" as const,
+                                                      teamId:
+                                                        foundPlayer.teamId ??
+                                                        null,
+                                                    }
+                                                  : {
+                                                      id: foundPlayer.sharedId,
+                                                      type: "player" as const,
+                                                      index: playerIndex,
+                                                      name: foundPlayer.name,
+                                                      shareType:
+                                                        "shared" as const,
+                                                      teamId:
+                                                        foundPlayer.teamId ??
+                                                        null,
+                                                    };
+                                              setRoleTarget(roleObject);
+                                              setShowRoleDialog(true);
+                                            }}
+                                          >
+                                            <Shield className="h-3 w-3" />
+                                          </Button>
+                                        </ItemActions>
+                                      )}
                                     </Item>
                                   );
                                 })}

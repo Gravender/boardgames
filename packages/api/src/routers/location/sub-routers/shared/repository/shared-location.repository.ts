@@ -1,13 +1,8 @@
 import { TRPCError } from "@trpc/server";
 
-
-
 import { db } from "@board-games/db/client";
 
-
-
 import type { GetSharedLocationsWithUserArgs } from "./shared-location.repository.types";
-
 
 class SharedLocationRepository {
   public async getSharedLocationsFromSharedMatch(

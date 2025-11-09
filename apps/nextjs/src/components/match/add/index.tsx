@@ -16,11 +16,13 @@ import type {
   ScoresheetType,
   TeamType,
 } from "./schema";
+import { useGameRoles } from "~/components/game/hooks/roles";
 import { useScoresheets } from "~/components/game/hooks/scoresheets";
 import { useAppForm } from "~/hooks/form";
 import { useAddMatchMutation } from "~/hooks/mutations/match/add";
 import { useLocations } from "~/hooks/queries/locations";
 import { formatMatchLink } from "~/utils/linkFormatting";
+import { useSuspensePlayers } from "../hooks/players";
 import { AddPlayerForm } from "./add-player-form";
 import { MatchForm } from "./match";
 import { CustomPlayerSelect } from "./player-selector";
@@ -28,6 +30,7 @@ import { addMatchSchema } from "./schema";
 
 type ScoreSheets = RouterOutputs["newGame"]["gameScoresheets"];
 type Locations = RouterOutputs["location"]["getLocations"];
+type GameRoles = RouterOutputs["newGame"]["gameRoles"];
 export function AddMatchDialog({
   game,
   gameName,
@@ -35,12 +38,12 @@ export function AddMatchDialog({
 }: {
   game:
     | {
-        id: number;
         type: "original";
+        id: number;
       }
     | {
-        sharedGameId: number;
         type: "shared";
+        sharedGameId: number;
       };
   gameName: string;
   matches: number;
@@ -48,6 +51,7 @@ export function AddMatchDialog({
   const [showAddMatchDialog, setShowAddMatchDialog] = useState(false);
   const { scoresheets } = useScoresheets(game);
   const { locations } = useLocations();
+  const { gameRoles } = useGameRoles(game);
   if (!scoresheets) return null;
   if (!locations) return null;
   return (
@@ -64,6 +68,7 @@ export function AddMatchDialog({
           matches={matches}
           scoresheets={scoresheets}
           locations={locations}
+          gameRoles={gameRoles}
           setShowAddMatchDialog={setShowAddMatchDialog}
         />
       </DialogContent>
@@ -76,6 +81,7 @@ function AddMatchContent({
   matches,
   scoresheets,
   locations,
+  gameRoles,
   setShowAddMatchDialog,
 }: {
   gameName: string;
@@ -91,6 +97,7 @@ function AddMatchContent({
       };
   scoresheets: ScoreSheets;
   locations: Locations;
+  gameRoles: GameRoles;
   setShowAddMatchDialog: Dispatch<SetStateAction<boolean>>;
 }) {
   const [currentForm, setCurrentForm] = useState<
@@ -98,6 +105,7 @@ function AddMatchContent({
   >("match");
   const router = useRouter();
   const { createMatchMutation } = useAddMatchMutation({ input: game });
+  const { playersForMatch } = useSuspensePlayers();
   const form = useAppForm({
     formId: "add-match-form",
     defaultValues: {
@@ -204,9 +212,10 @@ function AddMatchContent({
                 }}
                 title={name}
                 description={format(date, "PPP")}
-                game={game}
+                gameRoles={gameRoles}
                 teams={teams}
                 selectedPlayers={selectedPlayers}
+                playersForMatch={playersForMatch}
                 onBack={() => setCurrentForm("match")}
                 onCancel={() => setShowAddMatchDialog(false)}
                 onAddPlayer={() => setCurrentForm("addPlayer")}

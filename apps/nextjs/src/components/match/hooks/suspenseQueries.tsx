@@ -17,6 +17,9 @@ export function useMatch(input: Extract<MatchInput, { type: "original" }>): {
 };
 export function useMatch(input: MatchInput): {
   match: RouterOutputs["newMatch"]["getMatch"];
+};
+export function useMatch(input: MatchInput): {
+  match: RouterOutputs["newMatch"]["getMatch"];
 } {
   const trpc = useTRPC();
   const { data: match } = useSuspenseQuery(
@@ -53,6 +56,10 @@ export function usePlayersAndTeams(
     RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["players"][number],
     { type: "original" }
   >[];
+  teams: RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["teams"];
+};
+export function usePlayersAndTeams(input: MatchInput): {
+  players: RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["players"];
   teams: RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["teams"];
 };
 export function usePlayersAndTeams(input: MatchInput): {

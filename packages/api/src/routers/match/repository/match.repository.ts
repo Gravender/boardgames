@@ -370,7 +370,7 @@ class MatchRepository {
                 type: "linked" as const,
               }
             : {
-                sharedId: returnedSharedMatch.sharedLocation.location.id,
+                sharedId: returnedSharedMatch.sharedLocation.id,
                 name: returnedSharedMatch.sharedLocation.location.name,
                 type: "shared" as const,
               }
@@ -1108,7 +1108,7 @@ class MatchRepository {
               rolesToRemove.length > 0
             ) {
               updatedPlayers.push({
-                id: foundPlayer.id,
+                id: foundPlayer.playerId,
                 teamId: player.teamId,
                 rolesToAdd: rolesToAdd,
                 rolesToRemove: rolesToRemove,
@@ -1206,6 +1206,7 @@ class MatchRepository {
           score: number | null;
           rounds: z.infer<typeof selectRoundPlayerSchema>[];
         }[] = [];
+
         if (addedTeams.length > 0) {
           for (const addedTeam of addedTeams) {
             const [insertedTeam] = await tx

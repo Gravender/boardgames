@@ -74,7 +74,7 @@ export function EditSharedMatchForm(input: {
     },
     onSubmit: ({ value }) => {
       const matchNameChanged = value.name !== match.name;
-      const matchDateChanged = isSameDay(value.date, match.date);
+      const matchDateChanged = !isSameDay(value.date, match.date);
       const matchLocationChanged =
         value.location === null && match.location !== null
           ? true
@@ -85,9 +85,9 @@ export function EditSharedMatchForm(input: {
         type: "shared",
         match: {
           sharedMatchId: match.id,
-          name: matchNameChanged ? undefined : value.name,
-          date: matchDateChanged ? undefined : value.date,
-          location: matchLocationChanged ? undefined : value.location,
+          name: matchNameChanged ? value.name : undefined,
+          date: matchDateChanged ? value.date : undefined,
+          location: matchLocationChanged ? value.location : undefined,
         },
       });
     },

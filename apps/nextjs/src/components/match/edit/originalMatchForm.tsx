@@ -39,6 +39,7 @@ import { Skeleton } from "@board-games/ui/skeleton";
 
 import type { GameInput, MatchInput } from "../types/input";
 import type { LocationType, PlayerType, TeamType } from "./schema";
+import { useGameRoles } from "~/components/game/hooks/roles";
 import { InputFieldSkeleton } from "~/components/input-field-skeleton";
 import { Spinner } from "~/components/spinner";
 import { useAppForm } from "~/hooks/form";
@@ -48,6 +49,7 @@ import { formatMatchLink } from "~/utils/linkFormatting";
 import { AddPlayerForm } from "../add/add-player-form";
 import { CustomPlayerSelect } from "../add/player-selector";
 import { useEditMatchMutation } from "../hooks/edit";
+import { useSuspensePlayers } from "../hooks/players";
 import { useMatch, usePlayersAndTeams } from "../hooks/suspenseQueries";
 import { editOriginalMatchSchema } from "./schema";
 
@@ -58,7 +60,9 @@ export function EditOriginalMatchForm(input: {
   const { locations } = useSuspenseLocations();
   const { editMatchMutation } = useEditMatchMutation(input.match);
   const { match } = useMatch(input.match);
+  const { gameRoles } = useGameRoles(input.game);
   const { teams, players } = usePlayersAndTeams(input.match);
+  const { playersForMatch } = useSuspensePlayers();
   const router = useRouter();
   const [showAddLocation, setShowAddLocation] = useState(false);
   const [newLocation, setNewLocation] = useState("");
@@ -134,22 +138,22 @@ export function EditOriginalMatchForm(input: {
     },
     onSubmit: ({ value }) => {
       const matchNameChanged = value.name !== match.name;
-      const matchDateChanged = isSameDay(value.date, match.date);
+      const matchDateChanged = !isSameDay(value.date, match.date);
       const checkLocationChanged = () => {
         if (value.location === null || match.location === null) {
           return value.location !== match.location;
         }
-        return isSameLocation(value.location, match.location);
+        return !isSameLocation(value.location, match.location);
       };
       const matchLocationChanged = checkLocationChanged();
-      editMatchMutation.mutate(
+      return editMatchMutation.mutate(
         {
           type: "original",
           match: {
             id: match.id,
-            name: matchNameChanged ? undefined : value.name,
-            date: matchDateChanged ? undefined : value.date,
-            location: matchLocationChanged ? undefined : value.location,
+            name: matchNameChanged ? value.name : undefined,
+            date: matchDateChanged ? value.date : undefined,
+            location: matchLocationChanged ? value.location : undefined,
           },
           teams: value.teams,
           players: value.players.map((p) => ({
@@ -564,9 +568,10 @@ export function EditOriginalMatchForm(input: {
                       }}
                       title={name}
                       description={format(date, "PPP")}
-                      game={input.game}
+                      gameRoles={gameRoles}
                       teams={teams}
                       selectedPlayers={selectedPlayers}
+                      playersForMatch={playersForMatch}
                       onBack={() => setShowPlayerDialog(false)}
                       onCancel={() => setShowPlayerDialog(false)}
                       onAddPlayer={() => setShowAddPlayerDialog(true)}
