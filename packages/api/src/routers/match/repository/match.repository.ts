@@ -1421,6 +1421,28 @@ class MatchRepository {
                 rounds: true,
               },
             });
+            if (deletedTeams.length > 0) {
+              deletedTeams.forEach((deletedTeam) => {
+                const foundPlayer = newMatchPlayers.find(
+                  (mp) => mp.teamId === deletedTeam.id,
+                );
+                if (foundPlayer) {
+                  throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Player team not changed for deleted team.",
+                  });
+                }
+              });
+              await tx.delete(team).where(
+                and(
+                  inArray(
+                    team.id,
+                    deletedTeams.map((team) => team.id),
+                  ),
+                  eq(team.matchId, input.match.id),
+                ),
+              );
+            }
             const finalPlacements = calculatePlacement(
               newMatchPlayers,
               returnedMatch.scoresheet,
@@ -1474,7 +1496,7 @@ class MatchRepository {
             await db.query.sharedLocation.findFirst({
               where: {
                 id: input.match.location.sharedId,
-                sharedWithId: args.userId,
+                sharedWithId: userId,
                 ownerId: returnedSharedMatch.ownerId,
               },
             });

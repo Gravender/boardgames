@@ -4,7 +4,10 @@ import { ErrorBoundary } from "react-error-boundary";
 import type { GameInput, MatchInput } from "../types/input";
 import { MatchNotFound } from "~/components/match/MatchNotFound";
 import { prefetch, trpc } from "~/trpc/server";
-import { EditOriginalMatchForm } from "./originalMatchForm";
+import {
+  EditOriginalMatchForm,
+  EditOriginalMatchSkeleton,
+} from "./originalMatchForm";
 import {
   EditSharedMatchForm,
   EditSharedMatchSkeleton,
@@ -53,7 +56,7 @@ export function EditMatch(input: EditMatchType) {
           </Suspense>
         )}
         {input.match.type === "original" && (
-          <Suspense fallback={<EditSharedMatchSkeleton />}>
+          <Suspense fallback={<EditOriginalMatchSkeleton />}>
             <EditOriginalMatchForm game={input.game} match={input.match} />
           </Suspense>
         )}

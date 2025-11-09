@@ -290,11 +290,6 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
         }
         return { newRoundScore, previousData: prevData };
       },
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
-        );
-      },
       onError: (error, newRoundScore, context) => {
         if (newRoundScore.type === "team") {
           const team = context?.previousData?.teams.find(
@@ -344,6 +339,11 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
           );
         }
       },
+      onSettled: async () => {
+        return queryClient.invalidateQueries(
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
+        );
+      },
     }),
   );
   return {
@@ -392,11 +392,6 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
         }
         return { newScore, previousData: prevData };
       },
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
-        );
-      },
       onError: (error, newScore, context) => {
         if (newScore.type === "team") {
           const team = context?.previousData?.teams.find(
@@ -432,6 +427,11 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
             context.previousData,
           );
         }
+      },
+      onSettled: async () => {
+        return queryClient.invalidateQueries(
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
+        );
       },
     }),
   );
