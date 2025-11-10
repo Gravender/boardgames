@@ -344,7 +344,7 @@ export function EditOriginalMatchForm(input: {
                           );
                         });
                         if (!foundLocation && field.state.value !== null) {
-                          field.handleChange(null);
+                          throw new Error("Location not found.");
                         }
                         return (
                           <Field
@@ -488,23 +488,23 @@ export function EditOriginalMatchForm(input: {
                                   size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    createLocationMutation.mutate(
-                                      {
-                                        name: newLocation,
-                                      },
-                                      {
-                                        onSuccess: (data) => {
-                                          if (newLocation.trim().length > 0) {
+                                    if (newLocation.trim().length > 0) {
+                                      createLocationMutation.mutate(
+                                        {
+                                          name: newLocation,
+                                        },
+                                        {
+                                          onSuccess: (data) => {
                                             field.handleChange({
                                               id: data.id,
                                               type: "original" as const,
                                             });
                                             setNewLocation("");
                                             setShowAddLocation(false);
-                                          }
+                                          },
                                         },
-                                      },
-                                    );
+                                      );
+                                    }
                                   }}
                                 >
                                   Add

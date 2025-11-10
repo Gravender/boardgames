@@ -195,7 +195,7 @@ export const MatchForm = withForm({
                 return location.sharedId === Number(selectValue.split("-")[1]);
               });
               if (!foundLocation && field.state.value !== null) {
-                field.handleChange(null);
+                throw new Error("Location not found.");
               }
               return (
                 <Field data-invalid={isInvalid} className="flex w-full">
@@ -325,23 +325,23 @@ export const MatchForm = withForm({
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          createLocationMutation.mutate(
-                            {
-                              name: newLocation,
-                            },
-                            {
-                              onSuccess: (data) => {
-                                if (newLocation.trim().length > 0) {
+                          if (newLocation.trim().length > 0) {
+                            createLocationMutation.mutate(
+                              {
+                                name: newLocation,
+                              },
+                              {
+                                onSuccess: (data) => {
                                   field.handleChange({
                                     id: data.id,
                                     type: "original" as const,
                                   });
                                   setNewLocation("");
                                   setShowAddLocation(false);
-                                }
+                                },
                               },
-                            },
-                          );
+                            );
+                          }
                         }}
                       >
                         Add
