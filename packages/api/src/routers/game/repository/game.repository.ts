@@ -97,8 +97,14 @@ class GameRepository {
         .from(vMatchPlayerCanonicalForUser)
         .where(
           or(
-            eq(vMatchPlayerCanonicalForUser.ownerId, args.userId),
-            eq(vMatchPlayerCanonicalForUser.sharedWithId, args.userId),
+            and(
+              eq(vMatchPlayerCanonicalForUser.ownerId, args.userId),
+              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
+            ),
+            and(
+              eq(vMatchPlayerCanonicalForUser.sharedWithId, args.userId),
+              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
+            ),
           ),
         )
         .innerJoin(
