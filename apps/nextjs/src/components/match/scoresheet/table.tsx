@@ -142,7 +142,7 @@ const HeaderRow = ({
                     {team.players.map((player) => {
                       return (
                         <button
-                          key={player.id}
+                          key={player.baseMatchPlayerId}
                           onClick={() => setPlayer(player)}
                         >
                           <Badge>{player.name}</Badge>
@@ -162,7 +162,7 @@ const HeaderRow = ({
             <TableHead
               className="min-w-20 text-center"
               scope="col"
-              key={player.id}
+              key={player.baseMatchPlayerId}
             >
               <Button
                 variant="ghost"
@@ -190,7 +190,11 @@ const HeaderRow = ({
         </div>
       </TableHead>
       {players.map((player) => (
-        <TableHead className="min-w-20 text-center" scope="col" key={player.id}>
+        <TableHead
+          className="min-w-20 text-center"
+          scope="col"
+          key={player.baseMatchPlayerId}
+        >
           <Button
             variant="ghost"
             type="button"
@@ -286,7 +290,7 @@ const BodyRow = ({
                 key={`team-${team.id}-round-${round.id}`}
                 className="p-0"
               >
-                <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
+                <div className="flex h-full min-h-10 w-full items-center justify-center p-1">
                   {round.type === "Numeric" ? (
                     <NumberInput
                       defaultValue={roundPlayers[0]?.score ?? ""}
@@ -322,15 +326,19 @@ const BodyRow = ({
             );
             return (
               <TableCell
-                key={`player-${player.id}-round-${round.id}`}
+                key={`player-${player.baseMatchPlayerId}-round-${round.id}`}
                 className="p-0"
               >
-                <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
+                <div className="flex h-full min-h-10 w-full items-center justify-center p-1">
                   {round.type === "Numeric" ? (
                     <NumberInput
                       defaultValue={roundPlayer?.score ?? ""}
                       onValueChange={(value) => {
-                        updatePlayerScore(player.id, round.id, value);
+                        updatePlayerScore(
+                          player.baseMatchPlayerId,
+                          round.id,
+                          value,
+                        );
                       }}
                       className="border-none text-center"
                     />
@@ -340,7 +348,7 @@ const BodyRow = ({
                       <DebouncedCheckbox
                         onDebouncedChange={(isChecked) => {
                           updatePlayerScore(
-                            player.id,
+                            player.baseMatchPlayerId,
                             round.id,
                             isChecked ? round.score : null,
                           );
@@ -382,15 +390,19 @@ const BodyRow = ({
         );
         return (
           <TableCell
-            key={`player-${player.id}-round-${round.id}`}
+            key={`player-${player.baseMatchPlayerId}-round-${round.id}`}
             className="p-0"
           >
-            <div className="flex h-full min-h-[40px] w-full items-center justify-center p-1">
+            <div className="flex h-full min-h-10 w-full items-center justify-center p-1">
               {round.type === "Numeric" ? (
                 <NumberInput
                   defaultValue={roundPlayer?.score ?? ""}
                   onValueChange={(value) => {
-                    updatePlayerScore(player.id, round.id, value);
+                    updatePlayerScore(
+                      player.baseMatchPlayerId,
+                      round.id,
+                      value,
+                    );
                   }}
                   className="border-none text-center"
                 />
@@ -400,7 +412,7 @@ const BodyRow = ({
                   <DebouncedCheckbox
                     onDebouncedChange={(isChecked) => {
                       updatePlayerScore(
-                        player.id,
+                        player.baseMatchPlayerId,
                         round.id,
                         isChecked ? round.score : null,
                       );
@@ -451,13 +463,13 @@ const CommentsRow = ({ match }: { match: MatchInput }) => {
           .map((player) => {
             return (
               <TableCell
-                key={`${player.id}-details`}
+                key={`${player.baseMatchPlayerId}-details`}
                 className="border-r border-b p-2"
               >
                 <DetailDialog
                   match={match}
                   data={{
-                    id: player.id,
+                    id: player.baseMatchPlayerId,
                     name: player.name,
                     details: player.details,
                     type: "player",
@@ -481,13 +493,13 @@ const CommentsRow = ({ match }: { match: MatchInput }) => {
       {players.map((player) => {
         return (
           <TableCell
-            key={`${player.id}-details`}
+            key={`${player.baseMatchPlayerId}-details`}
             className="border-r border-b p-2"
           >
             <DetailDialog
               match={match}
               data={{
-                id: player.id,
+                id: player.baseMatchPlayerId,
                 name: player.name,
                 details: player.details,
                 type: "player",
@@ -573,12 +585,12 @@ const TotalRow = ({ match }: { match: MatchInput }) => {
           .map((player) => {
             if (scoresheet.roundsScore === "Manual") {
               return (
-                <TableCell key={`${player.id}-total`}>
+                <TableCell key={`${player.baseMatchPlayerId}-total`}>
                   <NumberInput
                     className="text-center"
                     defaultValue={player.score ?? ""}
                     onValueChange={(value) => {
-                      updatePlayerScore(player.id, value);
+                      updatePlayerScore(player.baseMatchPlayerId, value);
                     }}
                   />
                 </TableCell>
@@ -591,7 +603,7 @@ const TotalRow = ({ match }: { match: MatchInput }) => {
               scoresheet,
             );
             return (
-              <TableCell key={`${player.id}-total`}>
+              <TableCell key={`${player.baseMatchPlayerId}-total`}>
                 <div className="flex items-center justify-center">
                   {total !== null && (
                     <span className="text-center">{total}</span>
@@ -614,12 +626,12 @@ const TotalRow = ({ match }: { match: MatchInput }) => {
       {players.map((player) => {
         if (scoresheet.roundsScore === "Manual") {
           return (
-            <TableCell key={`${player.id}-total`}>
+            <TableCell key={`${player.baseMatchPlayerId}-total`}>
               <NumberInput
                 className="text-center"
                 defaultValue={player.score ?? ""}
                 onValueChange={(value) => {
-                  updatePlayerScore(player.id, value);
+                  updatePlayerScore(player.baseMatchPlayerId, value);
                 }}
               />
             </TableCell>
@@ -632,7 +644,7 @@ const TotalRow = ({ match }: { match: MatchInput }) => {
           scoresheet,
         );
         return (
-          <TableCell key={`${player.id}-total`}>
+          <TableCell key={`${player.baseMatchPlayerId}-total`}>
             <div className="flex items-center justify-center">
               {total !== null && <span className="text-center">{total}</span>}
             </div>

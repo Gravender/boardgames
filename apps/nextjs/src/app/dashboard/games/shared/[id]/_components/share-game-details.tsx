@@ -6,7 +6,7 @@ import { EyeIcon, PencilIcon } from "lucide-react";
 import { Badge } from "@board-games/ui/badge";
 
 import { GameImage } from "~/components/game-image";
-import { AddMatchDialog } from "~/components/match/add";
+import { AddMatchDialog } from "~/components/match/add/index";
 import { useTRPC } from "~/trpc/react";
 import { GameDetails } from "../../../_components/game-details";
 import { MatchesList } from "../../../_components/matches-list";
@@ -72,7 +72,7 @@ export default function SharedGameDetails({ gameId }: { gameId: number }) {
         <MatchesList matches={game.matches} isShared={true} />
         <div className="absolute right-6 bottom-4 z-10 sm:right-10">
           <AddMatchDialog
-            gameInput={{
+            game={{
               type: "shared",
               sharedGameId: gameId,
             }}

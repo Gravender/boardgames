@@ -2,7 +2,8 @@
 
 import { Award, Medal, Trophy, Users } from "lucide-react";
 
-import { getOrdinalSuffix } from "@board-games/shared";
+import type { OriginalRole, SharedRole } from "@board-games/shared";
+import { getOrdinalSuffix, isSameRole } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
@@ -97,37 +98,26 @@ export function ShareMatchResults(input: { match: MatchInput }) {
       <CardContent className="flex flex-col gap-2 p-2 pt-0 sm:p-6">
         {matchResults().map((data) => {
           if (data.teamType === "Team") {
-            const roles = players.reduce<
-              {
-                id: number;
-                name: string;
-                description: string | null;
-                type: "original" | "shared" | "linked";
-              }[]
-            >((acc, player) => {
-              if (player.roles.length > 0) {
-                player.roles.forEach((role) => {
-                  const foundRole = acc.find(
-                    (r) => r.id === role.id && r.type === role.type,
-                  );
-                  if (!foundRole) {
-                    acc.push({
-                      id: role.id,
-                      name: role.name,
-                      description: role.description,
-                      type: role.type,
-                    });
-                  }
-                });
-              }
+            const roles = players.reduce<(OriginalRole | SharedRole)[]>(
+              (acc, player) => {
+                if (player.roles.length > 0) {
+                  player.roles.forEach((role) => {
+                    const foundRole = acc.find((r) => isSameRole(r, role));
+                    if (!foundRole) {
+                      acc.push(role);
+                    }
+                  });
+                }
 
-              return acc;
-            }, []);
+                return acc;
+              },
+              [],
+            );
             const teamRoles = roles.filter((role) => {
               return players.every((player) => {
                 if ("roles" in player) {
-                  const foundRole = player.roles.find(
-                    (r) => r.id === role.id && r.type === role.type,
+                  const foundRole = player.roles.find((r) =>
+                    isSameRole(r, role),
                   );
                   return foundRole !== undefined;
                 }
@@ -157,7 +147,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                           <div className="flex max-w-[50vw] items-center gap-2">
                             {teamRoles.map((role) => (
                               <Badge
-                                key={`${role.type}-${role.id}`}
+                                key={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                                 variant="secondary"
                                 className="text-foreground text-sm font-medium"
                               >
@@ -204,7 +194,10 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                 <ul className="flex max-h-28 flex-col flex-wrap gap-2 overflow-y-auto pl-2">
                   {data.players.map((player) => {
                     return (
-                      <li key={player.id} className="flex items-center">
+                      <li
+                        key={player.baseMatchPlayerId}
+                        className="flex items-center"
+                      >
                         <PlayerImage
                           className="mr-3 h-8 w-8"
                           image={player.image}
@@ -228,15 +221,14 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                             <div className="flex max-w-60 gap-2 overflow-x-auto">
                               {player.roles
                                 .filter((role) => {
-                                  const foundRole = teamRoles.find(
-                                    (r) =>
-                                      r.id === role.id && r.type === role.type,
+                                  const foundRole = teamRoles.find((r) =>
+                                    isSameRole(r, role),
                                   );
                                   return !foundRole;
                                 })
                                 .map((role) => (
                                   <Badge
-                                    key={`${role.type}-${role.id}`}
+                                    key={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                                     variant="outline"
                                     className="text-foreground text-sm font-medium text-nowrap"
                                   >
@@ -255,7 +247,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
           } else {
             return (
               <div
-                key={data.id}
+                key={data.baseMatchPlayerId}
                 className={cn(
                   "flex items-center rounded-lg border p-3",
                   data.winner

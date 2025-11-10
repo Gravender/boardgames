@@ -250,7 +250,7 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
             players: prevData.players.map((player) => {
               if (
                 newRoundScore.type === "player" &&
-                player.id === newRoundScore.matchPlayerId
+                player.baseMatchPlayerId === newRoundScore.matchPlayerId
               ) {
                 return {
                   ...player,
@@ -290,11 +290,6 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
         }
         return { newRoundScore, previousData: prevData };
       },
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
-        );
-      },
       onError: (error, newRoundScore, context) => {
         if (newRoundScore.type === "team") {
           const team = context?.previousData?.teams.find(
@@ -316,7 +311,8 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
           }
         } else {
           const player = context?.previousData?.players.find(
-            (player) => player.id === newRoundScore.matchPlayerId,
+            (player) =>
+              player.baseMatchPlayerId === newRoundScore.matchPlayerId,
           );
           if (player) {
             console.error(
@@ -343,6 +339,11 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
           );
         }
       },
+      onSettled: async () => {
+        return queryClient.invalidateQueries(
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
+        );
+      },
     }),
   );
   return {
@@ -367,7 +368,7 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
             players: prevData.players.map((player) => {
               if (
                 newScore.type === "player" &&
-                player.id === newScore.matchPlayerId
+                player.baseMatchPlayerId === newScore.matchPlayerId
               ) {
                 return {
                   ...player,
@@ -391,11 +392,6 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
         }
         return { newScore, previousData: prevData };
       },
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
-        );
-      },
       onError: (error, newScore, context) => {
         if (newScore.type === "team") {
           const team = context?.previousData?.teams.find(
@@ -411,7 +407,7 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
           }
         } else {
           const player = context?.previousData?.players.find(
-            (player) => player.id === newScore.matchPlayerId,
+            (player) => player.baseMatchPlayerId === newScore.matchPlayerId,
           );
           if (player) {
             console.error(
@@ -431,6 +427,11 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
             context.previousData,
           );
         }
+      },
+      onSettled: async () => {
+        return queryClient.invalidateQueries(
+          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
+        );
       },
     }),
   );
@@ -510,7 +511,7 @@ export const useUpdateMatchDetailsMutation = (input: MatchInput) => {
             const newData = {
               ...prevData,
               players: prevData.players.map((player) => {
-                if (player.id === newDetails.id) {
+                if (player.baseMatchPlayerId === newDetails.id) {
                   return {
                     ...player,
                     details: newDetails.details,
@@ -570,7 +571,7 @@ export const useUpdateMatchDetailsMutation = (input: MatchInput) => {
           }
         } else {
           const player = context?.previousData?.players.find(
-            (player) => player.id === newDetails.id,
+            (player) => player.baseMatchPlayerId === newDetails.id,
           );
           if (player) {
             console.error(

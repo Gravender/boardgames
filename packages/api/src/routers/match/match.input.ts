@@ -2,14 +2,19 @@ import { z } from "zod/v4";
 
 import {
   insertMatchSchema,
-  insertPlayerSchema,
   selectMatchSchema,
 } from "@board-games/db/zodSchema";
-import {
-  sharedOrOriginalOrLinkedSchema,
-  sharedOrOriginalSchema,
-} from "@board-games/shared";
 
+const roleSchema = z.discriminatedUnion("type", [
+  z.object({
+    id: z.number(),
+    type: z.literal("original"),
+  }),
+  z.object({
+    sharedId: z.number(),
+    type: z.literal("shared"),
+  }),
+]);
 export const createMatchInput = insertMatchSchema
   .pick({
     name: true,
@@ -27,38 +32,50 @@ export const createMatchInput = insertMatchSchema
         sharedGameId: z.number(),
       }),
     ]),
-    teams: z
-      .array(
+    players: z.array(
+      z.discriminatedUnion("type", [
         z.object({
-          name: z.string().or(z.literal("No Team")),
-          players: z
-            .array(
-              insertPlayerSchema
-                .pick({ id: true })
-                .required({ id: true })
-                .extend({
-                  type: sharedOrOriginalOrLinkedSchema,
-                  roles: z.array(
-                    z.object({
-                      id: z.number(),
-                      type: sharedOrOriginalOrLinkedSchema,
-                    }),
-                  ),
-                }),
-            )
-            .min(1),
+          type: z.literal("original"),
+          id: z.number(),
+          roles: z.array(roleSchema),
+          teamId: z.number().nullable(),
         }),
-      )
-      .min(1),
-    scoresheet: z.object({
-      id: z.number(),
-      scoresheetType: sharedOrOriginalSchema,
-    }),
-    location: z
-      .object({
+        z.object({
+          type: z.literal("shared"),
+          sharedId: z.number(),
+          roles: z.array(roleSchema),
+          teamId: z.number().nullable(),
+        }),
+      ]),
+    ),
+    teams: z.array(
+      z.object({
         id: z.number(),
-        type: sharedOrOriginalOrLinkedSchema,
-      })
+        name: z.string(),
+        roles: z.array(roleSchema),
+      }),
+    ),
+    scoresheet: z.discriminatedUnion("type", [
+      z.object({
+        type: z.literal("original"),
+        id: z.number(),
+      }),
+      z.object({
+        type: z.literal("shared"),
+        sharedId: z.number(),
+      }),
+    ]),
+    location: z
+      .discriminatedUnion("type", [
+        z.object({
+          type: z.literal("original"),
+          id: z.number(),
+        }),
+        z.object({
+          type: z.literal("shared"),
+          sharedId: z.number(),
+        }),
+      ])
       .nullable(),
   });
 export type CreateMatchInputType = z.infer<typeof createMatchInput>;
@@ -122,53 +139,40 @@ export const editMatchInput = z.discriminatedUnion("type", [
       .required({ id: true })
       .extend({
         location: z
-          .object({
-            id: z.number(),
-            type: sharedOrOriginalOrLinkedSchema,
-          })
+          .discriminatedUnion("type", [
+            z.object({
+              type: z.literal("original"),
+              id: z.number(),
+            }),
+            z.object({
+              type: z.literal("shared"),
+              sharedId: z.number(),
+            }),
+          ])
           .nullable()
           .optional(),
       }),
-    addPlayers: z.array(
-      insertPlayerSchema
-        .pick({
-          id: true,
-        })
-        .required({ id: true })
-        .extend({
-          type: sharedOrOriginalOrLinkedSchema,
+    players: z.array(
+      z.discriminatedUnion("type", [
+        z.object({
+          type: z.literal("original"),
+          id: z.number(),
+          roles: z.array(roleSchema),
           teamId: z.number().nullable(),
-          roles: z.array(
-            z.object({ type: sharedOrOriginalOrLinkedSchema, id: z.number() }),
-          ),
         }),
+        z.object({
+          type: z.literal("shared"),
+          sharedId: z.number(),
+          roles: z.array(roleSchema),
+          teamId: z.number().nullable(),
+        }),
+      ]),
     ),
-    removePlayers: z.array(
-      insertPlayerSchema
-        .pick({
-          id: true,
-        })
-        .required({ id: true }),
-    ),
-    updatedPlayers: z.array(
-      z.object({
-        id: z.number(),
-        teamId: z.number().nullable(),
-        roles: z.array(
-          z.object({ type: sharedOrOriginalOrLinkedSchema, id: z.number() }),
-        ),
-      }),
-    ),
-    editedTeams: z.array(
+    teams: z.array(
       z.object({
         id: z.number(),
         name: z.string(),
-      }),
-    ),
-    addedTeams: z.array(
-      z.object({
-        id: z.number(),
-        name: z.string(),
+        roles: z.array(roleSchema),
       }),
     ),
   }),
@@ -181,6 +185,12 @@ export const editMatchInput = z.discriminatedUnion("type", [
       })
       .extend({
         sharedMatchId: z.number(),
+        location: z
+          .object({
+            sharedId: z.number(),
+            type: "shared" as const,
+          })
+          .nullish(),
       }),
   }),
 ]);

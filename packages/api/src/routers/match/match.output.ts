@@ -1,7 +1,6 @@
 import z from "zod/v4";
 
 import {
-  selectGameRoleSchema,
   selectGameSchema,
   selectLocationSchema,
   selectMatchPlayerSchema,
@@ -14,8 +13,10 @@ import {
 } from "@board-games/db/zodSchema";
 import {
   imageSchema,
+  originalRoleSchema,
   sharedOrLinkedSchema,
   sharedOrOriginalSchema,
+  sharedRoleSchema,
 } from "@board-games/shared";
 
 export const createMatchOutput = selectMatchSchema
@@ -75,6 +76,7 @@ export const getMatchOutput = z.discriminatedUnion("type", [
   }),
   baseGetMatchOutput.extend({
     type: z.literal("shared"),
+    permissions: z.literal("view").or(z.literal("edit")),
     sharedMatchId: z.number(),
     game: selectGameSchema
       .pick({
@@ -87,14 +89,26 @@ export const getMatchOutput = z.discriminatedUnion("type", [
         sharedGameId: z.number(),
         linkedGameId: z.number().nullable(),
       }),
-    location: selectLocationSchema
-      .pick({
-        id: true,
-        name: true,
-      })
-      .extend({
-        type: sharedOrLinkedSchema,
-      })
+    location: z
+      .discriminatedUnion("type", [
+        selectLocationSchema
+          .pick({
+            id: true,
+            name: true,
+          })
+          .extend({
+            type: z.literal("linked"),
+            sharedId: z.number(),
+          }),
+        selectLocationSchema
+          .pick({
+            name: true,
+          })
+          .extend({
+            type: z.literal("shared"),
+            sharedId: z.number(),
+          }),
+      ])
       .nullable(),
   }),
 ]);
@@ -150,38 +164,22 @@ const baseMatchPlayer = selectMatchPlayerSchema
       }),
     ),
   });
+
 const sharedAndOriginalMatchPlayer = z.discriminatedUnion("type", [
   baseMatchPlayer.extend({
+    baseMatchPlayerId: z.number(),
     type: z.literal("original"),
     playerType: z.literal("original"),
-    roles: z.array(
-      selectGameRoleSchema
-        .pick({
-          id: true,
-          name: true,
-          description: true,
-        })
-        .extend({
-          type: z.literal("original"),
-        }),
-    ),
+    roles: z.array(originalRoleSchema),
   }),
-  baseMatchPlayer.extend({
+  baseMatchPlayer.omit({ id: true }).extend({
+    baseMatchPlayerId: z.number(),
+    sharedMatchPlayerId: z.number(),
     type: z.literal("shared"),
     playerType: sharedOrLinkedSchema.or(z.literal("not-shared")),
     sharedPlayerId: z.number().nullable(),
     linkedPlayerId: z.number().nullable(),
-    roles: z.array(
-      selectGameRoleSchema
-        .pick({
-          id: true,
-          name: true,
-          description: true,
-        })
-        .extend({
-          type: sharedOrLinkedSchema,
-        }),
-    ),
+    roles: z.array(sharedRoleSchema),
   }),
 ]);
 export const getMatchPlayersAndTeamsOutput = z.object({

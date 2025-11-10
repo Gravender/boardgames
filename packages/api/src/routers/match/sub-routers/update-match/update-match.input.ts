@@ -4,11 +4,7 @@ import {
   selectMatchPlayerSchema,
   selectRoundPlayerSchema,
 } from "@board-games/db/zodSchema";
-import {
-  sharedOrLinkedSchema,
-  sharedOrOriginalOrLinkedSchema,
-  sharedOrOriginalSchema,
-} from "@board-games/shared";
+import { originalRoleSchema, sharedRoleSchema } from "@board-games/shared";
 
 const matchInputSchema = z.discriminatedUnion("type", [
   z.object({
@@ -116,25 +112,24 @@ export type UpdateMatchDetailsInputType = z.infer<
   typeof updateMatchDetailsInput
 >;
 
-export const updateMatchPlayerTeamAndRolesInput = z.object({
-  matchPlayer: z.object({
+export const updateMatchPlayerTeamAndRolesInput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
     id: z.number(),
-    type: sharedOrOriginalSchema,
     teamId: z.number().nullish(),
+    rolesToAdd: z.array(
+      z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
+    ),
+    rolesToRemove: z.array(originalRoleSchema),
   }),
-  rolesToAdd: z.array(
-    z.object({
-      id: z.number(),
-      type: sharedOrOriginalOrLinkedSchema,
-    }),
-  ),
-  rolesToRemove: z.array(
-    z.object({
-      id: z.number(),
-      type: sharedOrOriginalOrLinkedSchema,
-    }),
-  ),
-});
+  z.object({
+    type: z.literal("shared"),
+    sharedMatchPlayerId: z.number(),
+    teamId: z.number().nullish(),
+    rolesToAdd: z.array(sharedRoleSchema),
+    rolesToRemove: z.array(sharedRoleSchema),
+  }),
+]);
 
 export type UpdateMatchPlayerTeamAndRolesInputType = z.infer<
   typeof updateMatchPlayerTeamAndRolesInput
@@ -154,39 +149,23 @@ export const updateMatchTeamInput = z.discriminatedUnion("type", [
       z.object({
         id: z.number(),
         roles: z.array(
-          z.object({
-            id: z.number(),
-            type: sharedOrOriginalOrLinkedSchema,
-          }),
+          z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
         ),
       }),
     ),
     playersToRemove: z.array(
       z.object({
         id: z.number(),
-        roles: z.array(
-          z.object({
-            id: z.number(),
-            type: sharedOrOriginalOrLinkedSchema,
-          }),
-        ),
+        roles: z.array(originalRoleSchema),
       }),
     ),
     playersToUpdate: z.array(
       z.object({
         id: z.number(),
         rolesToAdd: z.array(
-          z.object({
-            id: z.number(),
-            type: sharedOrOriginalOrLinkedSchema,
-          }),
+          z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
         ),
-        rolesToRemove: z.array(
-          z.object({
-            id: z.number(),
-            type: sharedOrOriginalOrLinkedSchema,
-          }),
-        ),
+        rolesToRemove: z.array(originalRoleSchema),
       }),
     ),
   }),
@@ -196,41 +175,21 @@ export const updateMatchTeamInput = z.discriminatedUnion("type", [
     team: teamSchema,
     playersToAdd: z.array(
       z.object({
-        id: z.number(),
-        roles: z.array(
-          z.object({
-            id: z.number(),
-            type: sharedOrLinkedSchema,
-          }),
-        ),
+        sharedMatchPlayerId: z.number(),
+        roles: z.array(sharedRoleSchema),
       }),
     ),
     playersToRemove: z.array(
       z.object({
-        id: z.number(),
-        roles: z.array(
-          z.object({
-            id: z.number(),
-            type: sharedOrLinkedSchema,
-          }),
-        ),
+        sharedMatchPlayerId: z.number(),
+        roles: z.array(sharedRoleSchema),
       }),
     ),
     playersToUpdate: z.array(
       z.object({
-        id: z.number(),
-        rolesToAdd: z.array(
-          z.object({
-            id: z.number(),
-            type: sharedOrLinkedSchema,
-          }),
-        ),
-        rolesToRemove: z.array(
-          z.object({
-            id: z.number(),
-            type: sharedOrLinkedSchema,
-          }),
-        ),
+        sharedMatchPlayerId: z.number(),
+        rolesToAdd: z.array(sharedRoleSchema),
+        rolesToRemove: z.array(sharedRoleSchema),
       }),
     ),
   }),

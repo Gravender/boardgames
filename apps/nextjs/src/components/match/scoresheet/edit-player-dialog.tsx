@@ -5,7 +5,11 @@ import { Search } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
-import { sharedOrOriginalSchema } from "@board-games/shared";
+import {
+  isSameRole,
+  originalRoleSchema,
+  sharedRoleSchema,
+} from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Checkbox } from "@board-games/ui/checkbox";
@@ -109,40 +113,43 @@ function Content({
 
   const { updateMatchPlayerTeamAndRolesMutation } =
     useUpdateMatchPlayerTeamAndRolesMutation();
-
   const formSchema = z.object({
     team: z.number().nullable(),
-    roles: z.array(z.object({ id: z.number(), type: sharedOrOriginalSchema })),
+    roles: z.array(
+      z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
+    ),
   });
 
   const form = useForm({
     schema: formSchema,
     defaultValues: {
       team: player.teamId ?? null,
-      roles: player.roles.map((role) => {
-        return { id: role.id, type: role.type };
-      }),
+      roles: player.roles,
     },
   });
   const getTeamRoles = (
     teamPlayers: Player[],
     allRoles: typeof roles,
-  ): { id: number; type: "original" | "shared" | "linked" }[] => {
+  ): (
+    | z.infer<typeof originalRoleSchema>
+    | z.infer<typeof sharedRoleSchema>
+  )[] => {
     if (teamPlayers.length === 0) return [];
     return allRoles.reduce<
-      { id: number; type: "original" | "shared" | "linked" }[]
+      (z.infer<typeof originalRoleSchema> | z.infer<typeof sharedRoleSchema>)[]
     >((acc, role) => {
       const roleInEveryPlayer = teamPlayers.every((p) =>
-        p.roles.some((r) => r.id === role.id && r.type === role.type),
+        p.roles.some((r) => {
+          return isSameRole(r, role);
+        }),
       );
       if (
-        !acc.find((r) => r.id === role.id && r.type === role.type) &&
+        !acc.find((r) => {
+          return isSameRole(r, role);
+        }) &&
         roleInEveryPlayer
       ) {
-        acc.push({
-          id: role.id,
-          type: role.type,
-        });
+        acc.push(role);
       }
       return acc;
     }, []);
@@ -157,33 +164,38 @@ function Content({
     const isSameTeam = data.team === player.teamId;
     const rolesToAdd = data.roles.filter(
       (role) =>
-        !player.roles.find((r) => r.id === role.id && r.type === role.type),
+        !player.roles.find((r) => {
+          return isSameRole(r, role);
+        }),
     );
-    const rolesToRemove = player.roles
-      .filter(
-        (role) =>
-          !data.roles.find((r) => r.id === role.id && r.type === role.type),
-      )
-      .map((role) => {
-        return { id: role.id, type: role.type };
-      });
+    const rolesToRemove = player.roles.filter(
+      (role) =>
+        !data.roles.find((r) => {
+          return isSameRole(r, role);
+        }),
+    );
+    const updateInput =
+      player.type === "original"
+        ? {
+            id: player.id,
+            type: "original" as const,
+            teamId: isSameTeam ? undefined : data.team,
+            rolesToAdd: rolesToAdd,
+            rolesToRemove: rolesToRemove.filter((r) => r.type === "original"),
+          }
+        : {
+            sharedMatchPlayerId: player.sharedMatchPlayerId,
+            type: "shared" as const,
+            teamId: isSameTeam ? undefined : data.team,
+            rolesToAdd: rolesToAdd.filter((r) => r.type !== "original"),
+            rolesToRemove: rolesToRemove.filter((r) => r.type !== "original"),
+          };
 
-    updateMatchPlayerTeamAndRolesMutation.mutate(
-      {
-        matchPlayer: {
-          id: player.id,
-          type: player.type,
-          teamId: isSameTeam ? undefined : data.team,
-        },
-        rolesToAdd: rolesToAdd,
-        rolesToRemove: rolesToRemove,
+    updateMatchPlayerTeamAndRolesMutation.mutate(updateInput, {
+      onSuccess: () => {
+        onClose();
       },
-      {
-        onSuccess: () => {
-          onClose();
-        },
-      },
-    );
+    });
   };
 
   const filteredRoles = useFilteredRoles(roles, roleSearchTerm);
@@ -229,16 +241,14 @@ function Content({
                         );
                         const customRoles = formRoles.filter(
                           (formRole) =>
-                            !teamRoles.find(
-                              (r) =>
-                                r.id === formRole.id &&
-                                r.type === formRole.type,
-                            ),
+                            !teamRoles.find((r) => {
+                              return isSameRole(r, formRole);
+                            }),
                         );
                         const updatedRoles = [
                           ...customRoles,
                           ...newTeamRoles.filter(
-                            (r) => !customRoles.includes(r),
+                            (r) => !customRoles.find((cr) => isSameRole(cr, r)),
                           ),
                         ];
 
@@ -279,15 +289,15 @@ function Content({
             <ScrollArea>
               <div className="flex max-h-[20vh] flex-col gap-2">
                 {filteredRoles.map((role) => {
-                  const roleIndex = formRoles.findIndex(
-                    (r) => r.id === role.id && r.type === role.type,
+                  const roleIndex = formRoles.findIndex((r) =>
+                    isSameRole(r, role),
                   );
                   const isTeamRole =
-                    teamRoles.findIndex((r) => r.id === role.id) > -1 &&
+                    teamRoles.findIndex((r) => isSameRole(r, role)) > -1 &&
                     formTeam !== null;
                   return (
                     <FormField
-                      key={`${role.type}-${role.id}`}
+                      key={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                       control={form.control}
                       name="roles"
                       render={({ field }) => (
@@ -300,18 +310,13 @@ function Content({
                                   field.onChange([
                                     ...formRoles,
                                     {
-                                      id: role.id,
-                                      type: role.type,
+                                      ...role,
                                     },
                                   ]);
                                 } else {
                                   field.onChange([
                                     ...formRoles.filter(
-                                      (r) =>
-                                        !(
-                                          r.id === role.id &&
-                                          r.type === role.type
-                                        ),
+                                      (r) => !isSameRole(r, role),
                                     ),
                                   ]);
                                 }
@@ -352,17 +357,14 @@ function Content({
               <ScrollArea>
                 <div className="flex max-w-60 items-center gap-2 sm:max-w-80">
                   {formRoles.map((roleId) => {
-                    const role = roles.find(
-                      (r) => r.id === roleId.id && r.type === roleId.type,
-                    );
+                    const role = roles.find((r) => isSameRole(r, roleId));
                     if (!role) return null;
                     const isTeamRole =
-                      teamRoles.find(
-                        (r) => r.id === roleId.id && r.type === roleId.type,
-                      ) && formTeam !== null;
+                      teamRoles.find((r) => isSameRole(r, roleId)) &&
+                      formTeam !== null;
                     return (
                       <Badge
-                        key={`${role.type}-${role.id}`}
+                        key={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                         variant={isTeamRole ? "outline" : "secondary"}
                         className="text-nowrap"
                       >

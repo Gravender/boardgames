@@ -75,7 +75,9 @@ const LocationContent = ({
         );
         if (location.type === "shared") {
           await queryClient.invalidateQueries(
-            trpc.sharing.getSharedLocation.queryOptions({ id: location.id }),
+            trpc.sharing.getSharedLocation.queryOptions({
+              id: location.sharedId,
+            }),
           );
         }
         if (location.type === "original") {
@@ -99,7 +101,7 @@ const LocationContent = ({
       });
     } else {
       mutation.mutate({
-        id: location.id,
+        id: location.sharedId,
         type: "shared",
         name: values.name,
       });

@@ -13,3 +13,10 @@ export interface GetGameRolesArgs {
     userId: string;
   };
 }
+
+export interface GetGameScoresheetsArgs {
+  input: GetGameInputType;
+  ctx: {
+    userId: string;
+  };
+}

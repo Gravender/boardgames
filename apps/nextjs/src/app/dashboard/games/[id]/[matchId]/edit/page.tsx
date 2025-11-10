@@ -1,11 +1,7 @@
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { ErrorBoundary } from "react-error-boundary";
 
-import { EditMatchForm } from "~/components/match/edit";
-import { MatchNotFound } from "~/components/match/MatchNotFound";
+import { EditMatch } from "~/components/match/edit/index";
 import { HydrateClient, prefetch, trpc } from "~/trpc/server";
-import Loading from "../../../loading";
 
 export default async function Page({
   params,
@@ -43,22 +39,16 @@ export default async function Page({
   prefetch(trpc.location.getLocations.queryOptions());
   return (
     <HydrateClient>
-      <ErrorBoundary fallback={<MatchNotFound />}>
-        <div className="flex w-full items-center justify-center">
-          <Suspense fallback={<Loading />}>
-            <EditMatchForm
-              match={{
-                type: "original",
-                id: Number(matchId),
-              }}
-              game={{
-                type: "original",
-                id: Number(gameId),
-              }}
-            />
-          </Suspense>
-        </div>
-      </ErrorBoundary>
+      <EditMatch
+        match={{
+          type: "original",
+          id: Number(matchId),
+        }}
+        game={{
+          type: "original",
+          id: Number(gameId),
+        }}
+      />
     </HydrateClient>
   );
 }

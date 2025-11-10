@@ -19,6 +19,7 @@ import {
   calculateFinalScore,
   calculatePlacement,
   formatDuration,
+  isSameMatchPlayer,
 } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
@@ -138,7 +139,12 @@ function ManualScoreSheet(input: { match: MatchInput }) {
         if (teamPlayers.length === 0) return null;
         const teamRoles = gameRoles.filter((role) => {
           const roleInEveryPlayer = teamPlayers.every((p) =>
-            p.roles.some((r) => r.id === role.id && r.type === role.type),
+            p.roles.some((r) => {
+              if (r.type == "original") {
+                return r.type === role.type && r.id === role.id;
+              }
+              return r.type === role.type && r.sharedId === role.sharedId;
+            }),
           );
           return roleInEveryPlayer;
         });
@@ -148,9 +154,12 @@ function ManualScoreSheet(input: { match: MatchInput }) {
             ...player,
             roles: player.roles.filter(
               (role) =>
-                !teamRoles.some(
-                  (r) => r.id === role.id && r.type === role.type,
-                ),
+                !teamRoles.some((r) => {
+                  if (r.type == "original") {
+                    return r.type === role.type && r.id === role.id;
+                  }
+                  return r.type === role.type && r.sharedId === role.sharedId;
+                }),
             ),
           })),
           roles: teamRoles,
@@ -198,7 +207,7 @@ function ManualScoreSheet(input: { match: MatchInput }) {
                             {team.roles.map((role) => {
                               return (
                                 <Badge
-                                  key={`${role.type}-${role.id}`}
+                                  key={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                                   variant="outline"
                                   className="text-nowrap"
                                 >
@@ -229,14 +238,13 @@ function ManualScoreSheet(input: { match: MatchInput }) {
                         <ScrollArea>
                           <div className="flex max-h-[20vh] flex-col gap-2">
                             {team.players.map((player) => {
-                              const foundPlayer = players.find(
-                                (p) =>
-                                  p.id === player.id && p.type === player.type,
+                              const foundPlayer = players.find((p) =>
+                                isSameMatchPlayer(p, player),
                               );
                               if (!foundPlayer) return null;
                               return (
                                 <div
-                                  key={`${player.id}-${player.playerId}`}
+                                  key={`${player.baseMatchPlayerId}-${player.playerId}`}
                                   className="flex flex-col rounded-lg border p-3"
                                 >
                                   <div className="flex items-center justify-between gap-2">
@@ -259,7 +267,7 @@ function ManualScoreSheet(input: { match: MatchInput }) {
                                       {player.roles.map((role) => {
                                         return (
                                           <Badge
-                                            key={`${role.type}-${role.id}`}
+                                            key={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                                             variant="outline"
                                             className="text-nowrap"
                                           >
@@ -277,7 +285,7 @@ function ManualScoreSheet(input: { match: MatchInput }) {
                                     <DetailDialog
                                       match={match}
                                       data={{
-                                        id: player.id,
+                                        id: player.baseMatchPlayerId,
                                         name: player.name,
                                         details: player.details,
                                         type: "player",
@@ -309,7 +317,9 @@ function ManualScoreSheet(input: { match: MatchInput }) {
               >
                 {individualPlayers.map((player) => {
                   return (
-                    <Card key={`${player.id}-${player.playerId}`}>
+                    <Card
+                      key={`${player.baseMatchPlayerId}-${player.playerId}`}
+                    >
                       <CardHeader className="pt-2 pb-0 sm:pt-4">
                         <CardTitle className="flex items-center justify-between gap-2 text-xl">
                           {player.name}
@@ -328,7 +338,7 @@ function ManualScoreSheet(input: { match: MatchInput }) {
                             {player.roles.map((role) => {
                               return (
                                 <Badge
-                                  key={`${role.type}-${role.id}`}
+                                  key={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                                   variant="outline"
                                   className="text-nowrap"
                                 >
@@ -348,7 +358,7 @@ function ManualScoreSheet(input: { match: MatchInput }) {
                           <DetailDialog
                             match={match}
                             data={{
-                              id: player.id,
+                              id: player.baseMatchPlayerId,
                               name: player.name,
                               details: player.details,
                               type: "player",
@@ -457,7 +467,7 @@ function ScoresheetFooter(input: { match: MatchInput }) {
       setManualWinners(
         players.map((player) => {
           return {
-            id: player.id,
+            id: player.baseMatchPlayerId,
             name: player.name,
             image: player.image,
             score: calculateFinalScore(
@@ -477,7 +487,7 @@ function ScoresheetFooter(input: { match: MatchInput }) {
 
     const playersPlacement = calculatePlacement(
       players.map((player) => ({
-        id: player.id,
+        id: player.baseMatchPlayerId,
         rounds: player.rounds.map((round) => ({
           score: round.score,
         })),
@@ -490,7 +500,9 @@ function ScoresheetFooter(input: { match: MatchInput }) {
     const placements: Record<number, number> = {};
     const nonTeamPlayerPlacements = playersPlacement
       .filter((player) => {
-        const foundPlayer = players.find((p) => p.id === player.id);
+        const foundPlayer = players.find(
+          (p) => p.baseMatchPlayerId === player.id,
+        );
         return foundPlayer?.teamId === null;
       })
       .map((player) => player.placement);
@@ -498,12 +510,16 @@ function ScoresheetFooter(input: { match: MatchInput }) {
       new Set(
         playersPlacement
           .filter((player) => {
-            const foundPlayer = players.find((p) => p.id === player.id);
+            const foundPlayer = players.find(
+              (p) => p.baseMatchPlayerId === player.id,
+            );
             return foundPlayer?.teamId !== null;
           })
           .map((player) => {
             {
-              const foundPlayer = players.find((p) => p.id === player.id);
+              const foundPlayer = players.find(
+                (p) => p.baseMatchPlayerId === player.id,
+              );
               return foundPlayer?.teamId ?? null;
             }
           }),
@@ -513,7 +529,7 @@ function ScoresheetFooter(input: { match: MatchInput }) {
         (player) => player.teamId === teamId,
       );
       const findPlayerPlacement = playersPlacement.find(
-        (player) => player.id === findFirstPlayer?.id,
+        (player) => player.id === findFirstPlayer?.baseMatchPlayerId,
       );
       return findPlayerPlacement?.placement ?? -1;
     });
@@ -532,7 +548,9 @@ function ScoresheetFooter(input: { match: MatchInput }) {
       setOpenTieBreakerDialog(true);
       setTieBreakers(
         playersPlacement.map((player) => {
-          const foundPlayer = players.find((p) => p.id === player.id);
+          const foundPlayer = players.find(
+            (p) => p.baseMatchPlayerId === player.id,
+          );
           if (!foundPlayer) {
             throw new Error("Player not found");
           }

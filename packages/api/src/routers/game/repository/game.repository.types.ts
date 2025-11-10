@@ -9,3 +9,7 @@ export interface GetGameRolesArgs {
   input: GetGameInputType;
   userId: string;
 }
+export interface GetGameScoresheetsArgs {
+  input: GetGameInputType;
+  userId: string;
+}

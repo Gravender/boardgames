@@ -3,8 +3,13 @@ import { TRPCError } from "@trpc/server";
 import type {
   GetGameMatchesOutputType,
   GetGameRolesOutputType,
-} from "../../../routers/game/game.output";
-import type { GetGameArgs, GetGameRolesArgs } from "./game.service.types";
+  GetGameScoresheetsOutputType,
+} from "../game.output";
+import type {
+  GetGameArgs,
+  GetGameRolesArgs,
+  GetGameScoresheetsArgs,
+} from "./game.service.types";
 import { gameRepository } from "../repository/game.repository";
 
 class GameService {
@@ -208,7 +213,114 @@ class GameService {
       input: args.input,
       userId: args.ctx.userId,
     });
-    return response.roles;
+    const uniqueRoles = new Map<
+      string,
+      | {
+          id: number;
+          name: string;
+          description: string | null;
+          type: "original";
+          permission: "edit";
+        }
+      | {
+          name: string;
+          description: string | null;
+          type: "shared";
+          sharedId: number;
+          permission: "view" | "edit";
+        }
+    >();
+    for (const role of response.rows) {
+      if (role.type === "original" || role.type === "shared") {
+        const existing = uniqueRoles.get(`${role.type}-${role.roleId}`);
+        if (existing) {
+          continue;
+        }
+        if (role.type === "original") {
+          uniqueRoles.set(`${role.type}-${role.roleId}`, {
+            type: "original",
+            id: role.roleId,
+            name: role.name,
+            description: role.description,
+            permission: "edit",
+          });
+        } else {
+          if (role.sharedRoleId === null) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Shared role not found.",
+            });
+          }
+          uniqueRoles.set(`${role.type}-${role.roleId}`, {
+            type: "shared",
+            sharedId: role.sharedRoleId,
+            name: role.name,
+            description: role.description,
+            permission: role.permission,
+          });
+        }
+      }
+    }
+    return Array.from(uniqueRoles.values());
+  }
+
+  public async getGameScoresheets(
+    args: GetGameScoresheetsArgs,
+  ): Promise<GetGameScoresheetsOutputType> {
+    const { input, ctx } = args;
+    const response = await gameRepository.getGameScoresheets({
+      input,
+      userId: ctx.userId,
+    });
+    if (response.type === "original") {
+      const originalScoresheets = response.game.scoresheets.map(
+        (scoresheet) => {
+          return {
+            id: scoresheet.id,
+            name: scoresheet.name,
+            type: "original" as const,
+            isDefault: scoresheet.type === "Default",
+          };
+        },
+      );
+      const sharedScoresheets = response.game.linkedGames.flatMap((lg) => {
+        return lg.sharedScoresheets.map((sharedScoresheet) => {
+          return {
+            sharedId: sharedScoresheet.id,
+            name: sharedScoresheet.scoresheet.name,
+            type: "shared" as const,
+            isDefault: sharedScoresheet.isDefault,
+          };
+        });
+      });
+      const combinedScoresheets = [
+        ...originalScoresheets,
+        ...sharedScoresheets,
+      ];
+      combinedScoresheets.sort((a, b) => {
+        if (a.isDefault && !b.isDefault) return -1;
+        if (!a.isDefault && b.isDefault) return 1;
+        return a.name.localeCompare(b.name);
+      });
+      return combinedScoresheets;
+    } else {
+      const sharedScoresheets = response.game.sharedScoresheets.map(
+        (sharedScoresheet) => {
+          return {
+            sharedId: sharedScoresheet.id,
+            name: sharedScoresheet.scoresheet.name,
+            type: "shared" as const,
+            isDefault: sharedScoresheet.isDefault,
+          };
+        },
+      );
+      sharedScoresheets.sort((a, b) => {
+        if (a.isDefault && !b.isDefault) return -1;
+        if (!a.isDefault && b.isDefault) return 1;
+        return a.name.localeCompare(b.name);
+      });
+      return sharedScoresheets;
+    }
   }
 }
 export const gameService = new GameService();

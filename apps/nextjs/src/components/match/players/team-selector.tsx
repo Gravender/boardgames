@@ -5,7 +5,11 @@ import { Plus, Search, SquarePen, Trash2 } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
-import { sharedOrOriginalOrLinkedSchema } from "@board-games/shared";
+import {
+  isSameRole,
+  originalRoleSchema,
+  sharedRoleSchema,
+} from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent } from "@board-games/ui/card";
@@ -32,18 +36,14 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 import type { Team } from "./selector";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 
-const roleSchema = z.array(
-  z.object({
-    id: z.number(),
-    type: sharedOrOriginalOrLinkedSchema,
-  }),
-);
 const formSchema = z.object({
   teams: z.array(
     z.object({
       id: z.number(),
       name: z.string(),
-      roles: roleSchema,
+      roles: z.array(
+        z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
+      ),
     }),
   ),
 });
@@ -89,10 +89,10 @@ export const ManageTeamContent = ({
         setActiveTeamEdit(null);
       };
       const onSave = (
-        roles: {
-          id: number;
-          type: z.infer<typeof sharedOrOriginalOrLinkedSchema>;
-        }[],
+        roles: (
+          | z.infer<typeof originalRoleSchema>
+          | z.infer<typeof sharedRoleSchema>
+        )[],
       ) => {
         const teamIndex = formTeams.findIndex((t) => t.id === activeTeamEdit);
         update(teamIndex, {
@@ -330,23 +330,25 @@ const ManageTeamRoles = ({
   team: {
     id: number;
     name: string;
-    roles: {
-      id: number;
-      type: z.infer<typeof sharedOrOriginalOrLinkedSchema>;
-    }[];
+    roles: (
+      | z.infer<typeof originalRoleSchema>
+      | z.infer<typeof sharedRoleSchema>
+    )[];
   };
   roles: RouterOutputs["newGame"]["gameRoles"];
   onClose: () => void;
   onSave: (
-    roles: {
-      id: number;
-      type: z.infer<typeof sharedOrOriginalOrLinkedSchema>;
-    }[],
+    roles: (
+      | z.infer<typeof originalRoleSchema>
+      | z.infer<typeof sharedRoleSchema>
+    )[],
   ) => void;
 }) => {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
   const formSchema = z.object({
-    roles: roleSchema,
+    roles: z.array(
+      z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
+    ),
   });
   const form = useForm({
     schema: formSchema,
@@ -398,41 +400,35 @@ const ManageTeamRoles = ({
                   ) : (
                     filteredRoles.map((role) => (
                       <div
-                        key={`${role.id}-${role.type}`}
+                        key={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                         className="flex items-center space-x-3 rounded p-2"
                       >
                         <Checkbox
-                          id={`${role.id}-${role.type}`}
+                          id={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                           checked={
-                            field.value.find(
-                              (r) => r.id === role.id && r.type === role.type,
-                            ) !== undefined
+                            field.value.find((r) => isSameRole(r, role)) !==
+                            undefined
                           }
                           onCheckedChange={() => {
-                            const foundRoleIndex = field.value.findIndex(
-                              (r) => r.id === role.id && r.type === role.type,
+                            const foundRoleIndex = field.value.findIndex((r) =>
+                              isSameRole(r, role),
                             );
                             if (foundRoleIndex > -1) {
                               const newRoles = [
                                 ...field.value.filter(
-                                  (r) =>
-                                    !(r.id === role.id && r.type === role.type),
+                                  (r) => !isSameRole(r, role),
                                 ),
                               ];
                               field.onChange(newRoles);
                             } else {
-                              field.onChange([
-                                ...field.value,
-                                {
-                                  id: role.id,
-                                  type: role.type,
-                                },
-                              ]);
+                              field.onChange([...field.value, role]);
                             }
                           }}
                         />
                         <div className="flex-1 gap-2">
-                          <Label htmlFor={`${role.id}-${role.type}`}>
+                          <Label
+                            htmlFor={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
+                          >
                             {role.name}
                           </Label>
 
@@ -453,13 +449,10 @@ const ManageTeamRoles = ({
                   <ScrollArea>
                     <div className="flex max-h-12 flex-wrap gap-2">
                       {formRoles.map((formRole) => {
-                        const role = roles.find(
-                          (r) =>
-                            r.id === formRole.id && r.type === formRole.type,
-                        );
+                        const role = roles.find((r) => isSameRole(r, formRole));
                         return role ? (
                           <Badge
-                            key={`${role.id}-${role.type}`}
+                            key={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                             variant="secondary"
                             className="w-28 truncate text-xs text-nowrap"
                           >

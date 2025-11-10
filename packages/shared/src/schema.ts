@@ -6,6 +6,7 @@ import {
   insertPlayerSchema,
   insertRoundSchema,
   insertScoreSheetSchema,
+  selectGameRoleSchema,
   selectGameSchema,
   selectLocationSchema,
   selectMatchPlayerSchema,
@@ -98,6 +99,18 @@ export const baseGameSchema = z
       });
     }
   });
+export const baseRoleSchema = selectGameRoleSchema.pick({
+  name: true,
+  description: true,
+});
+export const originalRoleSchema = baseRoleSchema.extend({
+  type: z.literal("original"),
+  id: z.number(),
+});
+export const sharedRoleSchema = baseRoleSchema.extend({
+  type: z.literal("shared"),
+  sharedId: z.number(),
+});
 export const editRoleSchema = z.object({
   id: z.number(),
   name: z.string().min(1, {
@@ -344,12 +357,7 @@ export const imageSchema = insertImageSchema
     usageType: true,
   })
   .required({ name: true, url: true });
-export const matchRoleSchema = z.array(
-  z.object({
-    id: z.number(),
-    type: sharedOrOriginalOrLinkedSchema,
-  }),
-);
+
 export const matchLocationSchema = z
   .object({
     id: z.number(),
@@ -368,7 +376,9 @@ export const addMatchPlayersSchema = z
         imageUrl: z.string().nullable(),
         matches: z.number(),
         teamId: z.number().nullable(),
-        roles: matchRoleSchema,
+        roles: z.array(
+          z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
+        ),
       }),
   )
   .refine((players) => players.length > 0, {
@@ -391,7 +401,9 @@ export const addMatchSchema = matchSchema.extend({
     z.object({
       id: z.number(),
       name: z.string(),
-      roles: matchRoleSchema,
+      roles: z.array(
+        z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
+      ),
     }),
   ),
 });
@@ -402,7 +414,9 @@ export const editMatchSchema = matchSchema.extend({
     z.object({
       id: z.number(),
       name: z.string(),
-      roles: matchRoleSchema,
+      roles: z.array(
+        z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
+      ),
     }),
   ),
 });

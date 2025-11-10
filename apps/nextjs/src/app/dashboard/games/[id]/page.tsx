@@ -46,21 +46,18 @@ export default async function Page({ params }: Props) {
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
   void prefetch(trpc.game.getGame.queryOptions({ id: Number(id) }));
-  void prefetch(
-    trpc.game.getGameScoresheets.queryOptions({
-      gameId: Number(id),
-      type: "original",
-    }),
-  );
   void prefetch(trpc.location.getLocations.queryOptions());
+  void prefetch(trpc.newPlayer.getPlayersForMatch.queryOptions());
+  void prefetch(trpc.newPlayer.getRecentMatchWithPlayers.queryOptions());
+  void prefetch(trpc.newGroup.getGroupsWithPlayers.queryOptions());
   void prefetch(
-    trpc.player.getPlayersByGame.queryOptions({
+    trpc.newGame.gameRoles.queryOptions({
       id: Number(id),
       type: "original",
     }),
   );
   void prefetch(
-    trpc.newGame.gameRoles.queryOptions({
+    trpc.newGame.gameScoresheets.queryOptions({
       id: Number(id),
       type: "original",
     }),
