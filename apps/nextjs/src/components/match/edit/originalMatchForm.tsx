@@ -344,7 +344,8 @@ export function EditOriginalMatchForm(input: {
                           );
                         });
                         if (!foundLocation && field.state.value !== null) {
-                          throw new Error("Location not found.");
+                          console.error("Location not found.");
+                          return null;
                         }
                         return (
                           <Field
