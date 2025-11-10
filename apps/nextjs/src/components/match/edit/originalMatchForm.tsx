@@ -494,12 +494,14 @@ export function EditOriginalMatchForm(input: {
                                       },
                                       {
                                         onSuccess: (data) => {
-                                          field.handleChange({
-                                            id: data.id,
-                                            type: "original" as const,
-                                          });
-                                          setNewLocation("");
-                                          setShowAddLocation(false);
+                                          if (newLocation.trim().length > 0) {
+                                            field.handleChange({
+                                              id: data.id,
+                                              type: "original" as const,
+                                            });
+                                            setNewLocation("");
+                                            setShowAddLocation(false);
+                                          }
                                         },
                                       },
                                     );
