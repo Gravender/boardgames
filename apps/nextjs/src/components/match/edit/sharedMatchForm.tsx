@@ -262,6 +262,7 @@ export function EditSharedMatchForm(input: {
                       size={"icon"}
                       type="button"
                       className="rounded-full"
+                      aria-label="Clear location"
                       onClick={() => {
                         field.handleChange(null);
                       }}
