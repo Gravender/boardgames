@@ -75,7 +75,7 @@ export const PlayerRoleSelectorField = withFieldGroup({
                   )}
                 </InputGroup>
                 <ScrollArea>
-                  <ItemGroup className="max-h-[500px] gap-4">
+                  <ItemGroup className="max-h-[60vh] gap-4">
                     {filteredRoles.map((role) => {
                       const selected = field.state.value.findIndex((r) => {
                         if (r.type == "original") {
@@ -202,7 +202,7 @@ export const TeamRoleSelectorField = withFieldGroup({
                   )}
                 </InputGroup>
                 <ScrollArea>
-                  <ItemGroup className="max-h-[500px] gap-4">
+                  <ItemGroup className="max-h-[60vh] gap-4">
                     {filteredRoles.map((role) => {
                       const selected = field.state.value.findIndex((r) => {
                         if (r.type == "original") {

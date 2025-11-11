@@ -351,7 +351,7 @@ export const CustomPlayerSelect = withFieldGroup({
                       </Button>
                     </div>
                     <ScrollArea>
-                      <ItemGroup className="max-h-[500px] gap-4">
+                      <ItemGroup className="max-h-[60vh] gap-4">
                         {teams.map((team, i) => {
                           const teamPlayers = selectedPlayers.filter(
                             (p) => p.teamId === team.id,

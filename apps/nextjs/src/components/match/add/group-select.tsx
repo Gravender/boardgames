@@ -109,7 +109,7 @@ export function GroupQuickMatchSelection({
               Browse groups to add players to your match
             </DialogDescription>
           </DialogHeader>
-          <ItemGroup className="max-h-[500px]">
+          <ItemGroup className="max-h-[60vh]">
             {groups.map((group) => {
               const groupPlayers = players.filter((p) =>
                 group.players.find((gP) => isSamePlayer(p, gP)),

@@ -99,7 +99,7 @@ export const PlayerSelectorField = withFieldGroup({
                   Players
                 </FieldLabel>
                 <ScrollArea>
-                  <ItemGroup className="max-h-[500px] gap-4">
+                  <ItemGroup className="max-h-[60vh] gap-4">
                     {filteredPlayers.map((player) => {
                       const playerIndex = field.state.value.findIndex((p) =>
                         isSamePlayer(p, player),
