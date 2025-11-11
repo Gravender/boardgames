@@ -1,4 +1,4 @@
-import { createEnv } from "@t3-oss/env-nextjs";
+import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod/v4";
 
 export function authEnv() {
@@ -15,7 +15,7 @@ export function authEnv() {
       NODE_ENV: z.enum(["development", "production"]).optional(),
       RESEND_API_KEY: z.string().min(1),
     },
-    experimental__runtimeEnv: {},
+    runtimeEnv: process.env,
     skipValidation:
       !!process.env.CI || process.env.npm_lifecycle_event === "lint",
   });
