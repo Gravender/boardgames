@@ -18,12 +18,39 @@ class PlayerService {
       createdBy: args.ctx.userId,
     });
     const now = new Date();
+    const recentActivityWindowInHours = 90 * 24;
 
     const recencyWeight = (date: Date) => {
       const daysAgo = differenceInHours(now, date);
-      // Exponential decay with 30-day half-life
-      return Math.exp(-Math.log(2) * (daysAgo / (30 * 24)));
+      return Math.exp(-Math.log(2) * (daysAgo / (90 * 24)));
     };
+    const summarizeMatches = (matches: { date: Date }[]) => {
+      const totalMatches = matches.length;
+      let lastPlayedAt: Date | null = null;
+      let weightedRecencySum = 0;
+      let recentMatchesCount = 0;
+
+      matches.forEach((match) => {
+        weightedRecencySum += recencyWeight(match.date);
+        lastPlayedAt = lastPlayedAt ? max([lastPlayedAt, match.date]) : match.date;
+        if (differenceInHours(now, match.date) <= recentActivityWindowInHours) {
+          recentMatchesCount += 1;
+        }
+      });
+
+      const recentScore =
+        totalMatches > 0 ? weightedRecencySum / totalMatches : 0;
+      const participationRate =
+        totalMatches > 0 ? recentMatchesCount / totalMatches : 0;
+
+      return {
+        recentScore,
+        lastPlayedAt,
+        recentMatchesCount,
+        participationRate,
+      };
+    };
+
     const mappedOriginalPlayers = response.originalPlayers.map((player) => {
       const sharedMatches = player.sharedLinkedPlayers.flatMap(
         (sharedPlayer) => {
@@ -36,15 +63,12 @@ class PlayerService {
         .filter((mp) => mp.match.finished)
         .map((mp) => mp.match);
       const allMatches = [...originalMatches, ...sharedMatches];
-      const recentScore =
-        allMatches.length > 0
-          ? allMatches.reduce((sum, m) => sum + recencyWeight(m.date), 0) /
-            allMatches.length
-          : 0;
-      const lastPlayedAt =
-        allMatches.length > 0
-          ? allMatches.reduce((latest, m) => max([latest, m.date]), new Date(0))
-          : null;
+      const {
+        recentScore,
+        lastPlayedAt,
+        recentMatchesCount,
+        participationRate,
+      } = summarizeMatches(allMatches);
       return {
         id: player.id,
         type: "original" as const,
@@ -54,24 +78,20 @@ class PlayerService {
         isUser: player.isUser,
         recentScore,
         lastPlayedAt,
+        recentMatchesCount,
+        participationRate,
       };
     });
     const mappedSharedPlayers = response.sharedPlayers.map((sharedPlayer) => {
       const sharedMatches = sharedPlayer.sharedMatchPlayers
         .filter((sMp) => sMp.match.finished)
         .map((sMp) => sMp.match);
-      const recentScore =
-        sharedMatches.length > 0
-          ? sharedMatches.reduce((sum, m) => sum + recencyWeight(m.date), 0) /
-            sharedMatches.length
-          : 0;
-      const lastPlayedAt =
-        sharedMatches.length > 0
-          ? sharedMatches.reduce(
-              (latest, m) => max([latest, m.date]),
-              new Date(0),
-            )
-          : null;
+      const {
+        recentScore,
+        lastPlayedAt,
+        recentMatchesCount,
+        participationRate,
+      } = summarizeMatches(sharedMatches);
       return {
         sharedId: sharedPlayer.id,
         type: "shared" as const,
@@ -81,22 +101,42 @@ class PlayerService {
         isUser: false,
         recentScore,
         lastPlayedAt,
+        recentMatchesCount,
+        participationRate,
       };
     });
     const combinedPlayers = [...mappedOriginalPlayers, ...mappedSharedPlayers];
 
     combinedPlayers.sort((a, b) => {
-      const aPlayedToday = a.lastPlayedAt && isSameDay(a.lastPlayedAt, now);
-      const bPlayedToday = b.lastPlayedAt && isSameDay(b.lastPlayedAt, now);
-      const aScore =
-        a.recentScore * 30 + (aPlayedToday ? 30 : 0) + a.matches * 0.2;
-      const bScore =
-        b.recentScore * 30 + (bPlayedToday ? 30 : 0) + b.matches * 0.2;
-      if (aScore > bScore) {
-        return -1;
-      }
-      if (aScore < bScore) {
-        return 1;
+      const scoreForPlayer = (player: {
+        recentScore: number;
+        matches: number;
+        lastPlayedAt: Date | null;
+        recentMatchesCount: number;
+        participationRate: number;
+        name: string;
+      }) => {
+        const sameDayBoost =
+          player.lastPlayedAt && isSameDay(player.lastPlayedAt, now) ? 40 : 0;
+        const recentActivityScore =
+          player.recentMatchesCount * 3 + player.participationRate * 20;
+        const consistencyScore = Math.min(player.matches, 30);
+        const lastRecencyScore =
+          player.lastPlayedAt !== null
+            ? recencyWeight(player.lastPlayedAt) * 50
+            : 0;
+
+        return (
+          sameDayBoost +
+          recentActivityScore +
+          consistencyScore +
+          lastRecencyScore
+        );
+      };
+      const aScore = scoreForPlayer(a);
+      const bScore = scoreForPlayer(b);
+      if (aScore !== bScore) {
+        return bScore - aScore;
       }
       return a.name.localeCompare(b.name);
     });
