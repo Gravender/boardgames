@@ -1,6 +1,7 @@
 import "~/styles/globals.css";
 
 import type { Metadata, Viewport } from "next";
+import type { ComponentType } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { Toaster } from "@board-games/ui/toast";
@@ -9,9 +10,14 @@ import { cn } from "@board-games/ui/utils";
 import { CSPostHogProvider } from "~/components/analytics";
 import PostHogPageView from "~/components/PostHogPageView";
 import { SpeedInsights } from "~/components/speedInsights";
-import TanStackDevtools from "~/components/tan-stack-devtools";
 import { ThemeProvider } from "~/components/theme-provider";
+import { env } from "~/env";
 import { TRPCReactProvider } from "~/trpc/react";
+
+const Devtools: ComponentType =
+  env.NODE_ENV === "development"
+    ? (await import("~/components/tan-stack-devtools")).default
+    : () => null;
 
 export const metadata: Metadata = {
   title: {
@@ -68,7 +74,7 @@ export default function RootLayout({
           <CSPostHogProvider>
             <TRPCReactProvider>
               {children}
-              <TanStackDevtools />
+              <Devtools />
             </TRPCReactProvider>
             <Toaster />
             <SpeedInsights />
