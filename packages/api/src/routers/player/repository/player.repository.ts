@@ -137,7 +137,7 @@ class PlayerRepository {
           },
         },
       },
-      limit: 5,
+      limit: 3,
       orderBy: {
         date: "desc",
       },
