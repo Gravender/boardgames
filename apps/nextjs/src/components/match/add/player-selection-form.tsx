@@ -99,7 +99,7 @@ export const PlayerSelectorField = withFieldGroup({
                   Players
                 </FieldLabel>
                 <ScrollArea>
-                  <ItemGroup className="max-h-[40vh] gap-4">
+                  <ItemGroup className="max-h-[40vh] gap-2">
                     {filteredPlayers.map((player) => {
                       const playerIndex = field.state.value.findIndex((p) =>
                         isSamePlayer(p, player),
@@ -140,43 +140,19 @@ export const PlayerSelectorField = withFieldGroup({
                                 {`${player.matches} matches played`}
                               </ItemDescription>
                             </ItemContent>
-                            <div
-                              className={cn(
-                                "flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors",
-                                playerIndex > -1
-                                  ? "border-primary bg-primary"
-                                  : "border-muted-foreground",
-                              )}
-                            >
-                              {playerIndex > -1 && (
-                                <svg
-                                  className="text-primary-foreground h-4 w-4"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={3}
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
-                              )}
-                            </div>
                           </button>
                         </Item>
                       );
                     })}
                   </ItemGroup>
                 </ScrollArea>
-
-                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 {field.state.value.length < 1 && (
-                  <div className="text-muted-foreground bg-muted/50 rounded-lg py-4 text-center text-sm">
+                  <div className="text-muted-foreground bg-muted/50 rounded-lg py-2 text-center text-sm">
                     Select at least 1 player to start the match
                   </div>
                 )}
+
+                {isInvalid && <FieldError errors={field.state.meta.errors} />}
               </Field>
             );
           }}

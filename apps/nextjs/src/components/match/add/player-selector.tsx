@@ -245,12 +245,15 @@ export const CustomPlayerSelect = withFieldGroup({
     };
     return (
       <>
-        <DialogHeader className="flex flex-row items-center justify-between">
+        <DialogHeader className="flex shrink-0 flex-row items-center justify-between">
           <div>
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </div>
-          <Badge variant="secondary" className="rounded-lg px-4 py-2 text-base">
+          <Badge
+            variant="secondary"
+            className="hidden rounded-lg px-4 py-2 text-base sm:inline-flex"
+          >
             <Users className="mr-2 h-4 w-4" />
             {selectedPlayers.length} selected
           </Badge>
@@ -258,7 +261,7 @@ export const CustomPlayerSelect = withFieldGroup({
         <Tabs
           value={currentTab}
           onValueChange={(value) => setCurrentTab(value as "players" | "teams")}
-          className="w-full"
+          className="w-full flex-1 overflow-y-auto"
         >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="players">Select Players</TabsTrigger>
@@ -267,7 +270,7 @@ export const CustomPlayerSelect = withFieldGroup({
             </TabsTrigger>
           </TabsList>
           {/* Player Selection Tab */}
-          <TabsContent value="players" className="mt-6 space-y-4">
+          <TabsContent value="players" className="space-y-2 sm:space-y-4">
             <GroupQuickMatchSelection
               players={playersForMatch.players}
               setPlayers={(groupPlayers: Players) => {
@@ -320,7 +323,7 @@ export const CustomPlayerSelect = withFieldGroup({
               </div>
             )}
           </TabsContent>
-          <TabsContent value="teams" className="mt-6">
+          <TabsContent value="teams">
             <group.Field name="teams" mode="array">
               {(field) => {
                 const minTeamId =
@@ -691,25 +694,13 @@ export const CustomPlayerSelect = withFieldGroup({
             </group.Field>
           </TabsContent>
         </Tabs>
-        <DialogFooter className="sm:justify-between">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              onBack();
-            }}
-          >
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            Back
+        <DialogFooter className="shrink-0">
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            Cancel
           </Button>
-          <div className="flex gap-2">
-            <Button type="button" variant="secondary" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button type="button" variant="default" onClick={onBack}>
-              Save
-            </Button>
-          </div>
+          <Button type="button" variant="default" onClick={onBack}>
+            Save
+          </Button>
         </DialogFooter>
         <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
           {roleTarget !== null && (
