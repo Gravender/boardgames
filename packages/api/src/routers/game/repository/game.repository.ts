@@ -1,6 +1,12 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, eq, isNull, or, sql } from "drizzle-orm";
 
+import type {
+  Filter,
+  InferQueryResult,
+  QueryConfig,
+  TransactionType,
+} from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 import {
   game,
@@ -16,13 +22,53 @@ import {
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
 
-import type {
-  GetGameArgs,
-  GetGameRolesArgs,
-  GetGameScoresheetsArgs,
-} from "./game.repository.types";
+import type { GetGameArgs, GetGameRolesArgs } from "./game.repository.types";
 
+interface GameBaseFilter {
+  id: NonNullable<Filter<"game">["id"]>;
+  createdBy: NonNullable<Filter<"game">["createdBy"]>;
+}
 class GameRepository {
+  public async getGame<TConfig extends QueryConfig<"game">>(
+    filters: GameBaseFilter & TConfig,
+    tx?: TransactionType,
+  ): Promise<InferQueryResult<"game", TConfig> | undefined> {
+    const database = tx ?? db;
+    const { id, createdBy, ...queryConfig } = filters;
+    const result = await database.query.game.findFirst({
+      ...(queryConfig as unknown as TConfig),
+      where: {
+        id,
+        createdBy,
+        deletedAt: { isNull: true },
+        ...(queryConfig as unknown as TConfig).where,
+      },
+    });
+    return result as InferQueryResult<"game", TConfig> | undefined;
+  }
+  public async getSharedGame(
+    filters: {
+      id: NonNullable<Filter<"sharedGame">["id"]>;
+      sharedWithId: NonNullable<Filter<"sharedGame">["sharedWithId"]>;
+      where?: QueryConfig<"sharedGame">["where"];
+      with?: QueryConfig<"sharedGame">["with"];
+      orderBy?: QueryConfig<"sharedGame">["orderBy"];
+    },
+    tx?: TransactionType,
+  ) {
+    const database = tx ?? db;
+    const result = await database.query.sharedGame.findFirst({
+      where: {
+        id: filters.id,
+        sharedWithId: filters.sharedWithId,
+        ...filters.where,
+      },
+      with: filters.with,
+      orderBy: filters.orderBy,
+    });
+    return result;
+  }
+
   public async getGameMatches(args: GetGameArgs) {
     const { input } = args;
     const teamsByMatch = db.$with("teams_by_match").as(
@@ -415,52 +461,9 @@ class GameRepository {
   }
 
   public async getGameRoles(args: GetGameRolesArgs) {
-    const { input } = args;
-    let canonicalGameId: number;
+    const { input, tx } = args;
 
-    if (input.type === "original") {
-      const returnedGame = await db.query.game.findFirst({
-        where: {
-          id: input.id,
-          createdBy: args.userId,
-          deletedAt: {
-            isNull: true,
-          },
-        },
-        columns: {
-          id: true,
-        },
-      });
-      if (!returnedGame) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Game not found.",
-        });
-      }
-      canonicalGameId = returnedGame.id;
-    } else {
-      const returnedSharedGame = await db.query.sharedGame.findFirst({
-        where: {
-          id: input.sharedGameId,
-          sharedWithId: args.userId,
-        },
-        columns: {
-          id: true,
-          linkedGameId: true,
-          gameId: true,
-        },
-      });
-      if (!returnedSharedGame) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Shared game not found.",
-        });
-      }
-      canonicalGameId =
-        returnedSharedGame.linkedGameId ?? returnedSharedGame.gameId;
-    }
-
-    const rows = await db
+    const rows = await tx
       .select({
         type: vGameRoleCanonical.sourceType,
         roleId: vGameRoleCanonical.canonicalGameRoleId,
@@ -472,10 +475,10 @@ class GameRepository {
       .from(vGameRoleCanonical)
       .where(
         and(
-          eq(vGameRoleCanonical.canonicalGameId, canonicalGameId),
+          eq(vGameRoleCanonical.canonicalGameId, input.canonicalGameId),
           eq(vGameRoleCanonical.visibleToUserId, args.userId),
           isNull(vGameRoleCanonical.linkedGameRoleId),
-          input.type === "shared"
+          input.sourceType === "shared"
             ? eq(vGameRoleCanonical.sourceType, "shared")
             : sql`true`,
         ),
@@ -485,118 +488,6 @@ class GameRepository {
     return {
       rows,
     };
-  }
-  public async getGameScoresheets(args: GetGameScoresheetsArgs) {
-    const { input } = args;
-
-    if (input.type === "original") {
-      const returnedGame = await db.query.game.findFirst({
-        where: {
-          id: input.id,
-          createdBy: args.userId,
-          deletedAt: {
-            isNull: true,
-          },
-        },
-        columns: {
-          id: true,
-        },
-        with: {
-          scoresheets: {
-            where: {
-              type: {
-                OR: [
-                  {
-                    eq: "Game",
-                  },
-                  {
-                    eq: "Default",
-                  },
-                ],
-              },
-            },
-            columns: {
-              id: true,
-              name: true,
-              type: true,
-            },
-          },
-          linkedGames: {
-            where: {
-              sharedWithId: args.userId,
-            },
-            with: {
-              sharedScoresheets: {
-                columns: {
-                  id: true,
-                  isDefault: true,
-                },
-                where: {
-                  sharedWithId: args.userId,
-                  type: "game",
-                  linkedScoresheetId: {
-                    isNull: true,
-                  },
-                },
-                with: {
-                  scoresheet: {
-                    columns: {
-                      name: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-      if (!returnedGame) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Game not found.",
-        });
-      }
-      return {
-        type: "original" as const,
-        game: returnedGame,
-      };
-    } else {
-      const returnedSharedGame = await db.query.sharedGame.findFirst({
-        where: {
-          id: input.sharedGameId,
-          sharedWithId: args.userId,
-        },
-        with: {
-          sharedScoresheets: {
-            where: {
-              sharedWithId: args.userId,
-              type: "game",
-            },
-            columns: {
-              id: true,
-              isDefault: true,
-            },
-            with: {
-              scoresheet: {
-                columns: {
-                  name: true,
-                },
-              },
-            },
-          },
-        },
-      });
-      if (!returnedSharedGame) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Shared game not found.",
-        });
-      }
-      return {
-        type: "shared" as const,
-        game: returnedSharedGame,
-      };
-    }
   }
 }
 export const gameRepository = new GameRepository();

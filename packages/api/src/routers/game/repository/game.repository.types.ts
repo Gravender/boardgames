@@ -1,3 +1,5 @@
+import type { TransactionType } from "@board-games/db/client";
+
 import type { GetGameInputType } from "../../../routers/game/game.input";
 
 export interface GetGameArgs {
@@ -6,10 +8,10 @@ export interface GetGameArgs {
 }
 
 export interface GetGameRolesArgs {
-  input: GetGameInputType;
+  input: {
+    sourceType: "original" | "shared";
+    canonicalGameId: number;
+  };
   userId: string;
-}
-export interface GetGameScoresheetsArgs {
-  input: GetGameInputType;
-  userId: string;
+  tx: TransactionType;
 }
