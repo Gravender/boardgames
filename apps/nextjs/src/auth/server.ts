@@ -2,7 +2,6 @@ import "server-only";
 
 import { cache } from "react";
 import { headers } from "next/headers";
-import { nextCookies } from "better-auth/next-js";
 
 import { initAuth } from "@board-games/auth";
 
@@ -23,7 +22,6 @@ export const auth = initAuth({
   githubClientSecret: env.AUTH_GITHUB_CLIENT_SECRET,
   googleClientId: env.AUTH_GOOGLE_CLIENT_ID,
   googleClientSecret: env.AUTH_GOOGLE_CLIENT_SECRET,
-  extraPlugins: [nextCookies()],
 });
 
 export const getSession = cache(async () =>
