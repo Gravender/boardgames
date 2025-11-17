@@ -34,7 +34,7 @@
     "luxon": "^3.7.1",
     "posthog-node": "^5.1.0",
     "superjson": "2.2.3",
-    "uploadthing": "^7.4.1",
+    "uploadthing": "^7.7.4",
     "zod": "catalog:"
   },
   "devDependencies": {
