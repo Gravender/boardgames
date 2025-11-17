@@ -105,7 +105,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
       <CardContent className="flex flex-col gap-2 p-2 pt-0 sm:p-6">
         {sortedPlayersAndTeams.map((data) => {
           if (data.teamType === "Team") {
-            const roles = players.reduce<(OriginalRole | SharedRole)[]>(
+            const roles = data.players.reduce<(OriginalRole | SharedRole)[]>(
               (acc, player) => {
                 if (player.roles.length > 0) {
                   player.roles.forEach((role) => {
@@ -121,7 +121,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
               [],
             );
             const teamRoles = roles.filter((role) => {
-              return players.every((player) => {
+              return data.players.every((player) => {
                 if ("roles" in player) {
                   const foundRole = player.roles.find((r) =>
                     isSameRole(r, role),
