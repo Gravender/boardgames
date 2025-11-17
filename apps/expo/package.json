@@ -73,7 +73,7 @@
     "superjson": "2.2.3",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
-    "uploadthing": "^7.7.4",
+    "uploadthing": "^7.4.1",
     "zod": "catalog:"
   },
   "devDependencies": {

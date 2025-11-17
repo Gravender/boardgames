@@ -44,7 +44,7 @@
     "superjson": "2.2.3",
     "svix": "^1.81.0",
     "ua-parser-js": "^2.0.6",
-    "uploadthing": "^7.7.4",
+    "uploadthing": "^7.4.1",
     "zod": "catalog:",
     "zustand": "^5.0.8"
   },
