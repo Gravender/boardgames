@@ -488,10 +488,7 @@ export const shareMetaRouter = {
           (cItem) => cItem.itemType === "scoresheet",
         )) {
           const foundMappedGame = mappedGame[cItem.item.gameId];
-          if (
-            foundMappedGame !== undefined &&
-            foundMappedGame.type === "request"
-          ) {
+          if (foundMappedGame?.type === "request") {
             foundMappedGame.scoresheets.push(cItem);
           }
         }
