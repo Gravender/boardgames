@@ -38,10 +38,10 @@ class GameRepository {
     const result = await database.query.game.findFirst({
       ...(queryConfig as unknown as TConfig),
       where: {
+        ...(queryConfig as unknown as TConfig).where,
         id,
         createdBy,
         deletedAt: { isNull: true },
-        ...(queryConfig as unknown as TConfig).where,
       },
     });
     return result as InferQueryResult<"game", TConfig> | undefined;
@@ -59,9 +59,9 @@ class GameRepository {
     const database = tx ?? db;
     const result = await database.query.sharedGame.findFirst({
       where: {
+        ...filters.where,
         id: filters.id,
         sharedWithId: filters.sharedWithId,
-        ...filters.where,
       },
       with: filters.with,
       orderBy: filters.orderBy,

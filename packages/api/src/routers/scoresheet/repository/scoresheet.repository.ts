@@ -19,6 +19,7 @@ class ScoresheetRepository {
     const database = tx ?? db;
     const result = await database.query.scoresheet.findFirst({
       where: {
+        ...filters.where,
         id: filters.id,
         createdBy: filters.createdBy,
         deletedAt: {
@@ -34,7 +35,6 @@ class ScoresheetRepository {
             },
           ],
         },
-        ...filters.where,
       },
       with: filters.with,
       orderBy: filters.orderBy,
@@ -54,17 +54,17 @@ class ScoresheetRepository {
     const database = tx ?? db;
     const result = await database.query.sharedScoresheet.findFirst({
       where: {
+        ...filters.where,
         id: filters.id,
         sharedWithId: filters.sharedWithId,
         type: "game",
         linkedScoresheetId: {
           isNull: true,
         },
-        ...filters.where,
       },
       with: {
-        scoresheet: true,
         ...filters.with,
+        scoresheet: true,
       },
       orderBy: filters.orderBy,
     });
@@ -83,6 +83,7 @@ class ScoresheetRepository {
     const database = tx ?? db;
     const result = await database.query.scoresheet.findMany({
       where: {
+        ...filters.where,
         createdBy: filters.createdBy,
         gameId: filters.gameId,
         deletedAt: {
@@ -98,7 +99,6 @@ class ScoresheetRepository {
             },
           ],
         },
-        ...filters.where,
       },
       with: filters.with,
       orderBy: filters.orderBy,
@@ -117,13 +117,13 @@ class ScoresheetRepository {
     const database = tx ?? db;
     const result = await database.query.sharedScoresheet.findMany({
       where: {
+        ...filters.where,
         sharedWithId: filters.sharedWithId,
         type: "game",
-        ...filters.where,
       },
       with: {
-        scoresheet: true,
         ...filters.with,
+        scoresheet: true,
       },
       orderBy: filters.orderBy,
     });
