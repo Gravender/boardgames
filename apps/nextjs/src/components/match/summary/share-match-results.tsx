@@ -49,54 +49,61 @@ export function ShareMatchResults(input: { match: MatchInput }) {
     }
     return undefined;
   };
-  const matchResults = () => {
-    const playersWithoutTeams = players
-      .filter((player) => player.teamId === null)
-      .map((player) => ({ ...player, teamType: "Player" as const }));
-
-    const teamsWithTeams = teams
-      .map((team) => {
-        const teamPlayers = players.filter(
-          (player) => player.teamId === team.id,
-        );
-        const [firstTeamPlayer] = teamPlayers;
-        return {
-          ...team,
-          players: teamPlayers,
-          placement: firstTeamPlayer?.placement ?? 0,
-          score: firstTeamPlayer?.score ?? 0,
-          winner: firstTeamPlayer?.winner ?? false,
-          teamType: "Team" as const,
-        };
+  const playersWithoutTeams = players
+    .filter((player) => player.teamId === null)
+    .map((player) => ({
+      ...player,
+      performance: calculatePerformance(player),
+      teamType: "Player" as const,
+    }));
+  const teamsWithTeams = teams
+    .map((team) => {
+      const teamPlayers = players.filter((player) => player.teamId === team.id);
+      const [firstTeamPlayer] = teamPlayers;
+      return {
+        ...team,
+        players: teamPlayers.map((player) => ({
+          ...player,
+          performance: calculatePerformance(player),
+        })),
+        placement: firstTeamPlayer?.placement ?? 0,
+        score: firstTeamPlayer?.score ?? 0,
+        winner: firstTeamPlayer?.winner ?? false,
+        teamType: "Team" as const,
+      };
+    })
+    .filter((team) => team.players.length > 0);
+  const sortedPlayersAndTeams: (
+    | ((typeof players)[number] & {
+        teamType: "Player";
+        performance: string | undefined;
       })
-      .filter((team) => team.players.length > 0);
-    const sortedPlayersAndTeams: (
-      | ((typeof players)[number] & { teamType: "Player" })
-      | ((typeof teams)[number] & {
-          teamType: "Team";
-          placement: number;
-          score: number;
-          winner: boolean;
-          players: typeof players;
-        })
-    )[] = [...teamsWithTeams, ...playersWithoutTeams].toSorted((a, b) => {
-      if (a.placement === b.placement) {
-        return a.name.localeCompare(b.name);
-      } else {
-        if (a.placement === null) return -1;
-        if (b.placement === null) return 1;
-        return a.placement - b.placement;
-      }
-    });
-    return sortedPlayersAndTeams;
-  };
+    | ((typeof teams)[number] & {
+        teamType: "Team";
+        placement: number;
+        score: number;
+        winner: boolean;
+        players: ((typeof players)[number] & {
+          performance: string | undefined;
+        })[];
+      })
+  )[] = [...teamsWithTeams, ...playersWithoutTeams].toSorted((a, b) => {
+    if (a.placement === b.placement) {
+      return a.name.localeCompare(b.name);
+    } else {
+      if (a.placement === null) return -1;
+      if (b.placement === null) return 1;
+      return a.placement - b.placement;
+    }
+  });
+
   return (
     <Card className="w-full">
       <CardHeader>
         <CardTitle>Match Results</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-2 p-2 pt-0 sm:p-6">
-        {matchResults().map((data) => {
+        {sortedPlayersAndTeams.map((data) => {
           if (data.teamType === "Team") {
             const roles = players.reduce<(OriginalRole | SharedRole)[]>(
               (acc, player) => {
@@ -210,12 +217,12 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                               {player.name}
                             </p>
 
-                            {calculatePerformance(player) && (
+                            {player.performance && (
                               <Badge
                                 variant="outline"
                                 className="text-foreground text-sm font-medium"
                               >
-                                {calculatePerformance(player)}
+                                {player.performance}
                               </Badge>
                             )}
                             <div className="flex max-w-60 gap-2 overflow-x-auto">
@@ -265,12 +272,12 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate font-medium">{data.name}</p>
 
-                    {calculatePerformance(data) && (
+                    {data.performance && (
                       <Badge
                         variant="outline"
                         className="text-foreground text-sm font-medium"
                       >
-                        {calculatePerformance(data)}
+                        {data.performance}
                       </Badge>
                     )}
                   </div>
