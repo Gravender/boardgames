@@ -66,7 +66,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
           ...player,
           performance: calculatePerformance(player),
         })),
-        placement: firstTeamPlayer?.placement ?? 0,
+        placement: firstTeamPlayer?.placement ?? null,
         score: firstTeamPlayer?.score ?? 0,
         winner: firstTeamPlayer?.winner ?? false,
         teamType: "Team" as const,
@@ -80,7 +80,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
       })
     | ((typeof teams)[number] & {
         teamType: "Team";
-        placement: number;
+        placement: number | null;
         score: number;
         winner: boolean;
         players: ((typeof players)[number] & {
