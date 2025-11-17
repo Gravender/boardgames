@@ -406,14 +406,14 @@ export const shareRequestRouter = {
                   ],
                 },
               });
-              if (existingShare && existingShare.status === "pending") {
+              if (existingShare?.status === "pending") {
                 shareMessages.push({
                   success: false,
                   message: "There is already a pending share",
                 });
                 return false;
               }
-              if (existingShare && existingShare.status === "accepted") {
+              if (existingShare?.status === "accepted") {
                 shareMessages.push({
                   success: false,
                   message: "This has already been accepted",
@@ -1066,14 +1066,14 @@ export const shareRequestRouter = {
                 },
               });
 
-              if (existingShare && existingShare.status === "pending") {
+              if (existingShare?.status === "pending") {
                 shareMessages.push({
                   success: false,
                   message: "There is already a pending share",
                 });
                 return false;
               }
-              if (existingShare && existingShare.status === "accepted") {
+              if (existingShare?.status === "accepted") {
                 shareMessages.push({
                   success: false,
                   message: "This has already been accepted",

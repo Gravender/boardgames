@@ -59,7 +59,7 @@ export async function handleLocationSharing(
     },
   });
 
-  if (existingReq && existingReq.status === "accepted") {
+  if (existingReq?.status === "accepted") {
     const existingShared = await transaction.query.sharedLocation.findFirst({
       where: { locationId, sharedWithId: friendId, ownerId },
     });

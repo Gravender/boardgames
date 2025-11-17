@@ -610,7 +610,7 @@ export const shareGameRouter = {
             sharedWithId: ctx.userId,
           },
         });
-        if (returnedSharedGame && returnedSharedGame.permission === "edit") {
+        if (returnedSharedGame?.permission === "edit") {
           if (input.game.type === "updateGame") {
             await tx
               .update(game)
@@ -631,8 +631,7 @@ export const shareGameRouter = {
             for (const inputScoresheet of input.scoresheets) {
               if (
                 inputScoresheet.type === "New" &&
-                returnedSharedGame &&
-                returnedSharedGame.permission === "edit"
+                returnedSharedGame?.permission === "edit"
               ) {
                 const [returnedScoresheet] = await tx2
                   .insert(scoresheet)

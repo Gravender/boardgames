@@ -22,7 +22,7 @@
     "@board-games/eslint-config": "workspace:*",
     "@board-games/prettier-config": "workspace:*",
     "@board-games/tsconfig": "workspace:*",
-    "@types/node": "^22.18.10",
+    "@types/node": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"

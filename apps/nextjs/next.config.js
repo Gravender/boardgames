@@ -31,9 +31,6 @@ let nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   reactStrictMode: true,
   // PostHog rewrites
   async rewrites() {

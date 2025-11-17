@@ -775,7 +775,7 @@ export default function RolesTab({
               </div>
             )}
 
-            {selectedPlayer && selectedPlayer.roles.length === 0 && (
+            {selectedPlayer?.roles.length === 0 && (
               <Card>
                 <CardContent className="text-muted-foreground p-6 text-center">
                   No role performance data available for {selectedPlayer.name}.

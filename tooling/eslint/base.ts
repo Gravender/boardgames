@@ -1,5 +1,3 @@
-/// <reference types="./types.d.ts" />
-
 import * as path from "node:path";
 import { includeIgnoreFile } from "@eslint/compat";
 import eslint from "@eslint/js";
@@ -37,10 +35,15 @@ export const restrictEnvAccess = defineConfig(
     },
   },
 );
-
+const gitignoreConfig = includeIgnoreFile(
+  path.join(import.meta.dirname, "../../.gitignore"),
+);
+const gitignoreIgnoresConfig: { ignores: string[] } = {
+  ignores: gitignoreConfig.ignores ?? [],
+};
 export const baseConfig = defineConfig(
   // Ignore files not tracked by VCS and any config files
-  includeIgnoreFile(path.join(import.meta.dirname, "../../.gitignore")),
+  gitignoreIgnoresConfig,
   { ignores: ["**/*.config.*"] },
   {
     files: ["**/*.js", "**/*.ts", "**/*.tsx"],
