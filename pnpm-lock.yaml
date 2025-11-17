@@ -280,7 +280,7 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@4.1.17)
       uploadthing:
-        specifier: ^7.4.1
+        specifier: ^7.7.4
         version: 7.7.4(express@5.1.0)(next@16.0.3(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(tailwindcss@4.1.17)
       zod:
         specifier: 'catalog:'
@@ -404,7 +404,7 @@ importers:
         specifier: ^2.0.6
         version: 2.0.6
       uploadthing:
-        specifier: ^7.4.1
+        specifier: ^7.7.4
         version: 7.7.4(express@5.1.0)(next@16.0.3(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(tailwindcss@4.1.17)
       zod:
         specifier: 'catalog:'
@@ -492,7 +492,7 @@ importers:
         specifier: 2.2.3
         version: 2.2.3
       uploadthing:
-        specifier: ^7.4.1
+        specifier: ^7.7.4
         version: 7.7.4(express@5.1.0)(next@16.0.3(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(tailwindcss@4.1.17)
       zod:
         specifier: 'catalog:'
