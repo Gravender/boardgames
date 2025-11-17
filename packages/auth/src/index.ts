@@ -16,9 +16,7 @@ const env = authEnv();
 
 const resend = new Resend(env.RESEND_API_KEY);
 
-export function initAuth<
-  TExtraPlugins extends BetterAuthPlugin[] = [],
->(options: {
+export function initAuth(options: {
   baseUrl: string;
   productionUrl: string;
   secret: string | undefined;
@@ -27,8 +25,6 @@ export function initAuth<
   githubClientSecret: string;
   googleClientId: string;
   googleClientSecret: string;
-
-  extraPlugins?: TExtraPlugins;
 }) {
   const config = {
     database: drizzleAdapter(db, {
@@ -84,7 +80,6 @@ export function initAuth<
       expo(),
       username(),
       admin(),
-      ...(options.extraPlugins ?? []),
     ],
     socialProviders: {
       github: {
