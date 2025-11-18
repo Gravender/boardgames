@@ -89,7 +89,7 @@ export function TieBreakerDialog({
           image: p.image,
           score: p.score,
           teamId: p.teamId,
-          placement: 0,
+          placement: players.length,
         };
       }
 
