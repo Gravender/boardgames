@@ -12,7 +12,7 @@ interface NumberInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
   (
-    { defaultValue, onValueChange, debounceTime = 700, className, ...props },
+    { defaultValue, onValueChange, debounceTime = 1200, className, ...props },
     ref,
   ) => {
     const [internalValue, setInternalValue] = useState<string>(
@@ -44,6 +44,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
         isValid,
       };
     };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setInternalValue(value);
@@ -54,10 +55,15 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
         debouncedOnChange(parsedValue);
       }
     };
-    const handleBlur = () => {
-      const { isValid, parsedValue } = validateValue(internalValue);
+
+    const handleBlur = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setInternalValue(value);
+
+      const { isValid, parsedValue } = validateValue(value);
+
       if (isValid) {
-        debouncedOnChange(parsedValue);
+        onValueChange?.(parsedValue);
       }
     };
 
