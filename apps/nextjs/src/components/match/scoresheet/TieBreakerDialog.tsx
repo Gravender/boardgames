@@ -2,7 +2,8 @@ import { useRouter } from "next/navigation";
 import { Users } from "lucide-react";
 import { z } from "zod/v4";
 
-import { imageSchema } from "@board-games/shared";
+import type { RouterOutputs } from "@board-games/api";
+import { calculatePlacement, imageSchema } from "@board-games/shared";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -37,6 +38,7 @@ import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { formatMatchLink } from "~/utils/linkFormatting";
 import { useUpdateMatchPlacementsMutation } from "../hooks/scoresheet";
+import { usePlayersAndTeams } from "../hooks/suspenseQueries";
 
 export const TieBreakerPlayerSchema = z
   .array(
@@ -50,26 +52,63 @@ export const TieBreakerPlayerSchema = z
     }),
   )
   .min(1);
+type Scoresheet = RouterOutputs["newMatch"]["getMatchScoresheet"];
 export function TieBreakerDialog({
   isOpen,
   setIsOpen,
-  players,
-  teams,
   gameAndMatch,
+  scoresheet,
 }: {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   gameAndMatch: GameAndMatchInput;
-
-  teams: { id: number; name: string }[];
-  players: z.infer<typeof TieBreakerPlayerSchema>;
+  scoresheet: Scoresheet;
 }) {
+  const { teams, players } = usePlayersAndTeams(gameAndMatch.match);
+
+  const playersPlacement = calculatePlacement(
+    players.map((player) => ({
+      id: player.baseMatchPlayerId,
+      rounds: player.rounds.map((round) => ({
+        score: round.score,
+      })),
+      teamId: player.teamId,
+    })),
+
+    scoresheet,
+  );
+  const mappedPlayers: z.infer<typeof TieBreakerPlayerSchema> = players.map(
+    (p) => {
+      const foundPlayer = playersPlacement.find(
+        (playerPlacement) => p.baseMatchPlayerId === playerPlacement.id,
+      );
+      if (!foundPlayer) {
+        return {
+          matchPlayerId: p.baseMatchPlayerId,
+          name: p.name,
+          image: p.image,
+          score: p.score,
+          teamId: p.teamId,
+          placement: players.length,
+        };
+      }
+
+      return {
+        matchPlayerId: p.baseMatchPlayerId,
+        name: p.name,
+        image: p.image,
+        placement: foundPlayer.placement,
+        score: foundPlayer.score,
+        teamId: p.teamId,
+      };
+    },
+  );
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogContent>
         <Content
           setIsOpen={setIsOpen}
-          players={players}
+          players={mappedPlayers}
           teams={teams}
           gameAndMatch={gameAndMatch}
         />

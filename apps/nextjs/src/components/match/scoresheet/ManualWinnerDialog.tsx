@@ -3,7 +3,7 @@ import { Users } from "lucide-react";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
-import { imageSchema } from "@board-games/shared";
+import { calculateFinalScore, imageSchema } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
 import { Checkbox } from "@board-games/ui/checkbox";
 import {
@@ -30,6 +30,7 @@ import type { GameAndMatchInput } from "../types/input";
 import { PlayerImage } from "~/components/player-image";
 import { formatMatchLink } from "~/utils/linkFormatting";
 import { useUpdateMatchManualWinnerMutation } from "../hooks/scoresheet";
+import { usePlayersAndTeams } from "../hooks/suspenseQueries";
 
 const playerSchema = z.object({
   id: z.number(),
@@ -45,26 +46,36 @@ export function ManualWinnerDialog({
   isOpen,
   setIsOpen,
   gameAndMatch,
-  teams,
-  players,
   scoresheet,
 }: {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   gameAndMatch: GameAndMatchInput;
-  teams: { id: number; name: string }[];
-  players: z.infer<typeof ManualWinnerPlayerSchema>;
   scoresheet: Scoresheet;
 }) {
+  const { teams, players } = usePlayersAndTeams(gameAndMatch.match);
+
+  const mappedPlayers = players.map((p) => ({
+    id: p.baseMatchPlayerId,
+    name: p.name,
+    image: p.image,
+    score: calculateFinalScore(
+      p.rounds.map((round) => ({
+        score: round.score,
+      })),
+      scoresheet,
+    ),
+    teamId: p.teamId,
+  }));
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent>
         <Content
           setIsOpen={setIsOpen}
-          players={players}
           gameAndMatch={gameAndMatch}
-          teams={teams}
           scoresheet={scoresheet}
+          teams={teams}
+          players={mappedPlayers}
         />
       </DialogContent>
     </Dialog>
@@ -86,7 +97,6 @@ function Content({
   scoresheet: Scoresheet;
 }) {
   const router = useRouter();
-
   const { updateMatchManualWinnerMutation } =
     useUpdateMatchManualWinnerMutation(gameAndMatch.match);
 

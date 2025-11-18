@@ -1,6 +1,5 @@
 "use client";
 
-import type { z } from "zod/v4";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { differenceInSeconds } from "date-fns";
@@ -16,7 +15,6 @@ import { usePostHog } from "posthog-js/react";
 
 import type { RouterOutputs } from "@board-games/api";
 import {
-  calculateFinalScore,
   calculatePlacement,
   formatDuration,
   isSameMatchPlayer,
@@ -29,8 +27,6 @@ import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
 import type { MatchInput } from "./types/input";
-import type { ManualWinnerPlayerSchema } from "~/components/match/scoresheet/ManualWinnerDialog";
-import type { TieBreakerPlayerSchema } from "~/components/match/scoresheet/TieBreakerDialog";
 import {
   useMatch,
   usePlayersAndTeams,
@@ -391,16 +387,10 @@ function ManualScoreSheet(input: { match: MatchInput }) {
 function ScoresheetFooter(input: { match: MatchInput }) {
   const { match } = useMatch(input.match);
   const { scoresheet } = useScoresheet(input.match);
-  const { teams, players } = usePlayersAndTeams(input.match);
+  const { players } = usePlayersAndTeams(input.match);
   const [duration, setDuration] = useState(match.duration);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [manualWinners, setManualWinners] = useState<
-    z.infer<typeof ManualWinnerPlayerSchema>
-  >([]);
   const [openManualWinnerDialog, setOpenManualWinnerDialog] = useState(false);
-  const [tieBreakers, setTieBreakers] = useState<
-    z.infer<typeof TieBreakerPlayerSchema>
-  >([]);
   const [openTieBreakerDialog, setOpenTieBreakerDialog] = useState(false);
 
   //TODO: fix lint error
@@ -464,22 +454,6 @@ function ScoresheetFooter(input: { match: MatchInput }) {
     }
     setIsSubmitting(true);
     if (scoresheet.winCondition === "Manual") {
-      setManualWinners(
-        players.map((player) => {
-          return {
-            id: player.baseMatchPlayerId,
-            name: player.name,
-            image: player.image,
-            score: calculateFinalScore(
-              player.rounds.map((round) => ({
-                score: round.score,
-              })),
-              scoresheet,
-            ),
-            teamId: player.teamId,
-          };
-        }),
-      );
       setOpenManualWinnerDialog(true);
       updateFinalScores();
       return;
@@ -546,29 +520,6 @@ function ScoresheetFooter(input: { match: MatchInput }) {
     }
     if (isTieBreaker) {
       setOpenTieBreakerDialog(true);
-      setTieBreakers(
-        playersPlacement.map((player) => {
-          const foundPlayer = players.find(
-            (p) => p.baseMatchPlayerId === player.id,
-          );
-          if (!foundPlayer) {
-            throw new Error("Player not found");
-          }
-          return {
-            matchPlayerId: player.id,
-            name: foundPlayer.name,
-            image: foundPlayer.image,
-            placement: player.placement,
-            score: calculateFinalScore(
-              foundPlayer.rounds.map((round) => ({
-                score: round.score,
-              })),
-              scoresheet,
-            ),
-            teamId: foundPlayer.teamId,
-          };
-        }),
-      );
       updateFinalScores();
     } else {
       updateFinalScores();
@@ -649,8 +600,6 @@ function ScoresheetFooter(input: { match: MatchInput }) {
             ? { type: "original", game: match.game, match: match }
             : { type: "shared", game: match.game, match: match }
         }
-        players={manualWinners}
-        teams={teams}
         scoresheet={scoresheet}
       />
       <TieBreakerDialog
@@ -661,8 +610,7 @@ function ScoresheetFooter(input: { match: MatchInput }) {
             ? { type: "original", game: match.game, match: match }
             : { type: "shared", game: match.game, match: match }
         }
-        players={tieBreakers}
-        teams={teams}
+        scoresheet={scoresheet}
       />
     </>
   );
