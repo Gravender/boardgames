@@ -12,6 +12,7 @@ import type {
   GetGameRolesArgs,
   GetGameScoresheetsArgs,
 } from "./game.service.types";
+import { assertFound } from "../../../utils/databaseHelpers";
 import { scoresheetRepository } from "../../scoresheet/repository/scoresheet.repository";
 import { gameRepository } from "../repository/game.repository";
 
@@ -65,7 +66,12 @@ class GameService {
                 placement: mp.placement,
                 winner: mp.winner,
                 playerType: "original" as const,
-                image: mp.image,
+                image: mp.image as {
+                  name: string;
+                  url: string | null;
+                  type: "file" | "svg";
+                  usageType: "game" | "player" | "match";
+                } | null,
               };
             }),
           };
@@ -130,7 +136,12 @@ class GameService {
                       : ("shared" as const),
                 sharedPlayerId: mp.sharedPlayerId,
                 linkedPlayerId: mp.linkedPlayerId,
-                image: mp.image,
+                image: mp.image as {
+                  name: string;
+                  url: string | null;
+                  type: "file" | "svg";
+                  usageType: "game" | "player" | "match";
+                } | null,
               };
             }),
           };
@@ -201,7 +212,12 @@ class GameService {
                     : ("shared" as const),
               sharedPlayerId: mp.sharedPlayerId,
               linkedPlayerId: mp.linkedPlayerId,
-              image: mp.image,
+              image: mp.image as {
+                name: string;
+                url: string | null;
+                type: "file" | "svg";
+                usageType: "game" | "player" | "match";
+              } | null,
             };
           }),
         };
@@ -222,13 +238,7 @@ class GameService {
           },
           tx,
         );
-        if (!returnedGame) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Game not found.",
-          });
-        }
-        canonicalGameId = returnedGame.id;
+        canonicalGameId = assertFound(returnedGame, "Game not found.").id;
       } else {
         const returnedSharedGame = await gameRepository.getSharedGame(
           {
@@ -237,14 +247,12 @@ class GameService {
           },
           tx,
         );
-        if (!returnedSharedGame) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Shared game not found.",
-          });
-        }
+        const assertedSharedGame = assertFound(
+          returnedSharedGame,
+          "Shared game not found.",
+        );
         canonicalGameId =
-          returnedSharedGame.linkedGameId ?? returnedSharedGame.gameId;
+          assertedSharedGame.linkedGameId ?? assertedSharedGame.gameId;
       }
       if (!canonicalGameId) {
         throw new TRPCError({

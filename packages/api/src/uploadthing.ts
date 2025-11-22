@@ -10,7 +10,7 @@ import { getSession } from "./auth";
 
 const f = createUploadthing();
 
-export const uploadRouter: FileRouter = {
+export const uploadRouter = {
   imageUploader: f({
     image: {
       /**

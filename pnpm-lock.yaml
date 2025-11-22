@@ -482,6 +482,9 @@ importers:
       '@trpc/server':
         specifier: 'catalog:'
         version: 11.7.1(typescript@5.9.3)
+      drizzle-plus:
+        specifier: 1.0.0-rc.1
+        version: 1.0.0-rc.1(drizzle-orm@1.0.0-beta.1-5e64efc(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.15.5)(@vercel/postgres@0.10.0(utf-8-validate@6.0.5))(better-sqlite3@12.4.1)(gel@2.0.2)(kysely@0.28.8)(postgres@3.4.5)(prisma@5.22.0))
       luxon:
         specifier: ^3.7.1
         version: 3.7.1
@@ -5440,8 +5443,8 @@ packages:
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
-  baseline-browser-mapping@2.8.28:
-    resolution: {integrity: sha512-gYjt7OIqdM0PcttNYP2aVrr2G0bMALkBaoehD4BuRGjAOtipg0b6wHg1yNL+s5zSnLZZrGHOw4IrND8CD+3oIQ==}
+  baseline-browser-mapping@2.8.30:
+    resolution: {integrity: sha512-aTUKW4ptQhS64+v2d6IkPzymEzzhw+G0bA1g3uBRV3+ntkH+svttKseW5IOR4Ed6NUVKqnY7qT3dKvzQ7io4AA==}
     hasBin: true
 
   basic-ftp@5.0.5:
@@ -5610,6 +5613,9 @@ packages:
 
   caniuse-lite@1.0.30001755:
     resolution: {integrity: sha512-44V+Jm6ctPj7R52Na4TLi3Zri4dWUljJd+RDm+j8LtNCc/ihLCT+X1TzoOAkRETEWqjuLnh9581Tl80FvK7jVA==}
+
+  caniuse-lite@1.0.30001756:
+    resolution: {integrity: sha512-4HnCNKbMLkLdhJz3TToeVWHSnfJvPaq6vu/eRP0Ahub/07n484XHhBF5AJoSGHdVrS8tKFauUQz8Bp9P7LVx7A==}
 
   chai@5.2.0:
     resolution: {integrity: sha512-mCuXncKXk5iCLhfhwTc0izo0gtEmpz5CtG2y8GiOINBlMVS6v8TMRc5TaLWKS6692m9+dVVfzgeVxR5UxWHTYw==}
@@ -6395,6 +6401,11 @@ packages:
       sqlite3:
         optional: true
 
+  drizzle-plus@1.0.0-rc.1:
+    resolution: {integrity: sha512-PyerVKxq0PCuURyfu1eBuYkPx8idbc19I5nY3tXdQzTU6gXb3ZJNgvglbnE/j5mvSDb+GE0h2sof09MpWS1fhA==}
+    peerDependencies:
+      drizzle-orm: '>=1.0.0-0'
+
   drizzle-zod@0.8.3:
     resolution: {integrity: sha512-66yVOuvGhKJnTdiqj1/Xaaz9/qzOdRJADpDa68enqS6g3t0kpNkwNYjUuaeXgZfO/UWuIM9HIhSlJ6C5ZraMww==}
     peerDependencies:
@@ -6420,8 +6431,8 @@ packages:
   electron-to-chromium@1.5.162:
     resolution: {integrity: sha512-hQA+Zb5QQwoSaXJWEAGEw1zhk//O7qDzib05Z4qTqZfNju/FAkrm5ZInp0JbTp4Z18A6bilopdZWEYrFSsfllA==}
 
-  electron-to-chromium@1.5.254:
-    resolution: {integrity: sha512-DcUsWpVhv9svsKRxnSCZ86SjD+sp32SGidNB37KpqXJncp1mfUgKbHvBomE89WJDbfVKw1mdv5+ikrvd43r+Bg==}
+  electron-to-chromium@1.5.259:
+    resolution: {integrity: sha512-I+oLXgpEJzD6Cwuwt1gYjxsDmu/S/Kd41mmLA3O+/uH2pFRO/DvOjUyGozL8j3KeLV6WyZ7ssPwELMsXCcsJAQ==}
 
   embla-carousel-react@8.6.0:
     resolution: {integrity: sha512-0/PjqU7geVmo6F734pmPqpyHqiM99olvyecY7zdweCw+6tKEXnrE90pBiBbMMU8s5tICemzpQ3hi5EpxzGW+JA==}
@@ -16078,7 +16089,7 @@ snapshots:
 
   base64-js@1.5.1: {}
 
-  baseline-browser-mapping@2.8.28: {}
+  baseline-browser-mapping@2.8.30: {}
 
   basic-ftp@5.0.5: {}
 
@@ -16187,9 +16198,9 @@ snapshots:
 
   browserslist@4.28.0:
     dependencies:
-      baseline-browser-mapping: 2.8.28
-      caniuse-lite: 1.0.30001755
-      electron-to-chromium: 1.5.254
+      baseline-browser-mapping: 2.8.30
+      caniuse-lite: 1.0.30001756
+      electron-to-chromium: 1.5.259
       node-releases: 2.0.27
       update-browserslist-db: 1.1.4(browserslist@4.28.0)
 
@@ -16270,6 +16281,8 @@ snapshots:
   camelcase@6.3.0: {}
 
   caniuse-lite@1.0.30001755: {}
+
+  caniuse-lite@1.0.30001756: {}
 
   chai@5.2.0:
     dependencies:
@@ -16939,6 +16952,10 @@ snapshots:
       postgres: 3.4.5
       prisma: 5.22.0
 
+  drizzle-plus@1.0.0-rc.1(drizzle-orm@1.0.0-beta.1-5e64efc(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.15.5)(@vercel/postgres@0.10.0(utf-8-validate@6.0.5))(better-sqlite3@12.4.1)(gel@2.0.2)(kysely@0.28.8)(postgres@3.4.5)(prisma@5.22.0)):
+    dependencies:
+      drizzle-orm: 1.0.0-beta.1-5e64efc(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.15.5)(@vercel/postgres@0.10.0(utf-8-validate@6.0.5))(better-sqlite3@12.4.1)(gel@2.0.2)(kysely@0.28.8)(postgres@3.4.5)(prisma@5.22.0)
+
   drizzle-zod@0.8.3(drizzle-orm@1.0.0-beta.1-5e64efc(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.15.5)(@vercel/postgres@0.10.0(utf-8-validate@6.0.5))(better-sqlite3@12.4.1)(gel@2.0.2)(kysely@0.28.8)(postgres@3.4.5)(prisma@5.22.0))(zod@4.1.12):
     dependencies:
       drizzle-orm: 1.0.0-beta.1-5e64efc(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.15.5)(@vercel/postgres@0.10.0(utf-8-validate@6.0.5))(better-sqlite3@12.4.1)(gel@2.0.2)(kysely@0.28.8)(postgres@3.4.5)(prisma@5.22.0)
@@ -16965,7 +16982,7 @@ snapshots:
 
   electron-to-chromium@1.5.162: {}
 
-  electron-to-chromium@1.5.254: {}
+  electron-to-chromium@1.5.259: {}
 
   embla-carousel-react@8.6.0(react@19.1.1):
     dependencies:

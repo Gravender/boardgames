@@ -1,5 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, eq, isNull, or, sql } from "drizzle-orm";
+import { caseWhen } from "drizzle-plus";
+import { jsonAgg, jsonAggNotNull, jsonBuildObject } from "drizzle-plus/pg";
 
 import type {
   Filter,
@@ -22,7 +24,11 @@ import {
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
 
-import type { GetGameArgs, GetGameRolesArgs } from "./game.repository.types";
+import type {
+  GetGameArgs,
+  GetGameMatchesOutputType,
+  GetGameRolesArgs,
+} from "./game.repository.types";
 
 interface GameBaseFilter {
   id: NonNullable<Filter<"game">["id"]>;
@@ -69,7 +75,9 @@ class GameRepository {
     return result;
   }
 
-  public async getGameMatches(args: GetGameArgs) {
+  public async getGameMatches(
+    args: GetGameArgs,
+  ): Promise<GetGameMatchesOutputType> {
     const { input } = args;
     const teamsByMatch = db.$with("teams_by_match").as(
       db
@@ -87,15 +95,15 @@ class GameRepository {
       db
         .select({
           matchId: teamsByMatch.matchId,
-          teams: sql<{ id: number; name: string }[]>`
-        json_agg(
-          json_build_object(
-            'id', ${teamsByMatch.teamId},
-            'name', ${teamsByMatch.teamName}
-          )
-          ORDER BY ${teamsByMatch.teamId}
-        )
-      `.as("teams"),
+          teams: jsonAgg(
+            jsonBuildObject({
+              id: teamsByMatch.teamId,
+              name: teamsByMatch.teamName,
+            }),
+            {
+              orderBy: asc(teamsByMatch.teamId),
+            },
+          ).as("teams"),
         })
         .from(teamsByMatch)
         .groupBy(teamsByMatch.matchId),
@@ -116,25 +124,23 @@ class GameRepository {
             placement: vMatchPlayerCanonicalForUser.placement,
             winner: vMatchPlayerCanonicalForUser.winner,
             type: vMatchPlayerCanonicalForUser.sourceType,
-            playerName: sql<string>`"boardgames_player"."name"`.as(
-              "player_name",
-            ),
-            playerImageId: sql<number>`"boardgames_image"."id"`.as(
-              "player_image_id",
-            ),
-            playerImageName: sql<string>`"boardgames_image"."name"`.as(
-              "player_image_name",
-            ),
-            playerImageUrl: sql<string>`"boardgames_image"."url"`.as(
-              "player_image_url",
-            ),
-            playerImageType: sql<string>`"boardgames_image"."type"`.as(
-              "player_image_type",
-            ),
-            playerImageUsageType:
-              sql<string>`"boardgames_image"."usage_type"`.as(
-                "player_image_usage_type",
-              ),
+            playerName: player.name,
+            playerImage: caseWhen<{
+              name: string;
+              url: string | null;
+              type: "file" | "svg";
+              usageType: "game" | "player" | "match";
+            } | null>(sql`${player.imageId} IS NULL`, sql`NULL`)
+              .else(
+                jsonBuildObject({
+                  name: image.name,
+                  url: image.url,
+                  type: image.type,
+                  usageType: image.usageType,
+                }),
+              )
+              .as("player_image"),
+            playerImageId: player.imageId,
             playerType: vMatchPlayerCanonicalForUser.playerSourceType,
             sharedPlayerId: vMatchPlayerCanonicalForUser.sharedPlayerId,
             linkedPlayerId: vMatchPlayerCanonicalForUser.linkedPlayerId,
@@ -168,54 +174,23 @@ class GameRepository {
       db
         .select({
           matchId: playersByMatch.matchId,
-          matchPlayers: sql<
-            {
-              id: number;
-              playerId: number;
-              name: string;
-              score: number | null;
-              teamId: number | null;
-              placement: number | null;
-              winner: boolean | null;
-              type: "original" | "shared";
-              playerType: "original" | "shared" | "linked" | "not-shared";
-              sharedPlayerId: number | null;
-              linkedPlayerId: number | null;
-              image: {
-                name: string;
-                url: string | null;
-                type: "file" | "svg";
-                usageType: "game" | "player" | "match";
-              } | null;
-            }[]
-          >`
-        json_agg(
-          json_build_object(
-            'id', ${playersByMatch.baseMatchPlayerId},
-            'playerId', ${playersByMatch.playerId},
-            'name', ${playersByMatch.playerName},
-            'score', ${playersByMatch.score},
-            'teamId', ${playersByMatch.teamId},
-            'placement', ${playersByMatch.placement},
-            'winner', ${playersByMatch.winner},
-            'type', ${playersByMatch.type},
-            'playerType', ${playersByMatch.playerType},
-            'sharedPlayerId', ${playersByMatch.sharedPlayerId},
-            'linkedPlayerId', ${playersByMatch.linkedPlayerId},
-            'image',
-              CASE
-                WHEN ${playersByMatch.playerImageId} IS NULL THEN NULL
-                ELSE json_build_object(
-                  'name', ${playersByMatch.playerImageName},
-                  'url', ${playersByMatch.playerImageUrl},
-                  'type', ${playersByMatch.playerImageType},
-                  'usageType', ${playersByMatch.playerImageUsageType}
-                )
-              END
-          )
-          ORDER BY ${playersByMatch.baseMatchPlayerId}
-        )
-      `.as("match_players"),
+          matchPlayers: jsonAggNotNull(
+            jsonBuildObject({
+              id: playersByMatch.baseMatchPlayerId,
+              playerId: playersByMatch.playerId,
+              name: playersByMatch.playerName,
+              score: playersByMatch.score,
+              teamId: playersByMatch.teamId,
+              placement: playersByMatch.placement,
+              winner: playersByMatch.winner,
+              type: playersByMatch.type,
+              playerType: playersByMatch.playerType,
+              sharedPlayerId: playersByMatch.sharedPlayerId,
+              linkedPlayerId: playersByMatch.linkedPlayerId,
+              image: playersByMatch.playerImage,
+            }),
+            { orderBy: asc(playersByMatch.baseMatchPlayerId) },
+          ).as("match_players"),
         })
         .from(playersByMatch)
         .groupBy(playersByMatch.matchId),
@@ -262,69 +237,41 @@ class GameRepository {
           type: vMatchCanonical.visibilitySource,
           finished: vMatchCanonical.finished,
           duration: match.duration,
-          game: sql<{
-            id: number;
-            linkedGameId: number | null;
-            sharedGameId: number | null;
-            type: "original" | "shared" | "linked";
-            name: string;
-            image: {
+          game: jsonBuildObject({
+            id: vMatchCanonical.canonicalGameId,
+            linkedGameId: vMatchCanonical.linkedGameId,
+            sharedGameId: vMatchCanonical.sharedGameId,
+            type: vMatchCanonical.gameVisibilitySource,
+            name: game.name,
+            image: caseWhen<{
               name: string;
               url: string | null;
               type: "file" | "svg";
               usageType: "game" | "player" | "match";
-            } | null;
-          }>`json_build_object(
-        'id', ${vMatchCanonical.canonicalGameId},
-        'linkedGameId', ${vMatchCanonical.linkedGameId},
-        'sharedGameId', ${vMatchCanonical.sharedGameId},
-        'type', ${vMatchCanonical.gameVisibilitySource},
-        'name', ${game.name},
-        'image',
-          CASE
-            WHEN ${game.imageId} IS NULL THEN NULL
-            ELSE json_build_object(
-              'name', ${image.name},
-              'url', ${image.url},
-              'type', ${image.type},
-              'usageType', ${image.usageType}
+            } | null>(sql`${game.imageId} IS NULL`, sql`NULL`).else(
+              jsonBuildObject({
+                name: image.name,
+                url: image.url,
+                type: image.type,
+                usageType: image.usageType,
+              }),
+            ),
+          }).as("game"),
+          location: caseWhen<{ id: number; name: string } | null>(
+            sql`${location.id} IS NULL`,
+            sql`NULL`,
+          )
+            .else(
+              jsonBuildObject({
+                id: location.id,
+                name: location.name,
+              }),
             )
-          END
-      )`.as("game"),
-          location: sql<{
-            id: number;
-            name: string;
-          } | null>`CASE
-            WHEN ${location.id} IS NULL THEN NULL
-            ELSE json_build_object(
-              'id', ${location.id},
-              'name', ${location.name}
-            )
-          END`.as("location"),
+            .as("location"),
           teams: sql<
             { id: number; name: string }[]
-          >`coalesce(teams_agg.teams, '[]'::json)`.as("teams"),
-          matchPlayers: sql<
-            {
-              id: number;
-              playerId: number;
-              name: string;
-              score: number | null;
-              teamId: number | null;
-              placement: number | null;
-              winner: boolean | null;
-              type: "original" | "shared";
-              playerType: "original" | "shared" | "linked" | "not-shared";
-              sharedPlayerId: number | null;
-              linkedPlayerId: number | null;
-              image: {
-                name: string;
-                url: string | null;
-                type: "file" | "svg";
-                usageType: "game" | "player" | "match";
-              } | null;
-            }[]
-          >`coalesce(players_agg.match_players, '[]'::json)`.as("matchPlayers"),
+          >`coalesce(${teamsAgg.teams}, '[]'::jsonb)`.as("teams"),
+          matchPlayers: playersAgg.matchPlayers,
         })
         .from(vMatchCanonical)
         .where(
@@ -372,69 +319,41 @@ class GameRepository {
           type: vMatchCanonical.visibilitySource,
           finished: vMatchCanonical.finished,
           duration: match.duration,
-          game: sql<{
-            id: number;
-            linkedGameId: number | null;
-            sharedGameId: number;
-            type: "linked" | "shared";
-            name: string;
-            image: {
+          game: jsonBuildObject({
+            id: vMatchCanonical.canonicalGameId,
+            linkedGameId: vMatchCanonical.linkedGameId,
+            sharedGameId: vMatchCanonical.sharedGameId,
+            type: vMatchCanonical.gameVisibilitySource,
+            name: game.name,
+            image: caseWhen<{
               name: string;
               url: string | null;
               type: "file" | "svg";
               usageType: "game" | "player" | "match";
-            } | null;
-          }>`json_build_object(
-        'id', ${vMatchCanonical.canonicalGameId},
-        'linkedGameId', ${vMatchCanonical.linkedGameId},
-        'sharedGameId', ${vMatchCanonical.sharedGameId},
-        'type', ${vMatchCanonical.gameVisibilitySource},
-        'name', ${game.name},
-        'image',
-          CASE
-            WHEN ${game.imageId} IS NULL THEN NULL
-            ELSE json_build_object(
-              'name', ${image.name},
-              'url', ${image.url},
-              'type', ${image.type},
-              'usageType', ${image.usageType}
+            } | null>(sql`${game.imageId} IS NULL`, sql`NULL`).else(
+              jsonBuildObject({
+                name: image.name,
+                url: image.url,
+                type: image.type,
+                usageType: image.usageType,
+              }),
+            ),
+          }).as("game"),
+          location: caseWhen<{ id: number; name: string } | null>(
+            sql`${location.id} IS NULL`,
+            sql`NULL`,
+          )
+            .else(
+              jsonBuildObject({
+                id: location.id,
+                name: location.name,
+              }),
             )
-          END
-      )`.as("game"),
-          location: sql<{
-            id: number;
-            name: string;
-          } | null>`CASE
-            WHEN ${location.id} IS NULL THEN NULL
-            ELSE json_build_object(
-              'id', ${location.id},
-              'name', ${location.name}
-            )
-          END`.as("location"),
+            .as("location"),
           teams: sql<
             { id: number; name: string }[]
-          >`coalesce(teams_agg.teams, '[]'::json)`.as("teams"),
-          matchPlayers: sql<
-            {
-              id: number;
-              playerId: number;
-              name: string;
-              score: number | null;
-              teamId: number | null;
-              placement: number | null;
-              winner: boolean | null;
-              type: "shared";
-              playerType: "linked" | "shared";
-              sharedPlayerId: number | null;
-              linkedPlayerId: number | null;
-              image: {
-                name: string;
-                url: string | null;
-                type: "file" | "svg";
-                usageType: "game" | "player" | "match";
-              } | null;
-            }[]
-          >`coalesce(players_agg.match_players, '[]'::json)`.as("matchPlayers"),
+          >`coalesce(${teamsAgg.teams}, '[]'::jsonb)`.as("teams"),
+          matchPlayers: playersAgg.matchPlayers,
         })
         .from(vMatchCanonical)
         .where(
