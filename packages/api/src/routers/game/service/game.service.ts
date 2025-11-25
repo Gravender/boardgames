@@ -1,6 +1,8 @@
 import { TRPCError } from "@trpc/server";
 
+import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
+import { gameRole } from "@board-games/db/schema";
 
 import type {
   GetGameMatchesOutputType,
@@ -238,7 +240,15 @@ class GameService {
           },
           tx,
         );
-        canonicalGameId = assertFound(returnedGame, "Game not found.").id;
+        assertFound(
+          returnedGame,
+          {
+            userId: args.ctx.userId,
+            value: args.input,
+          },
+          "Game not found.",
+        );
+        canonicalGameId = returnedGame.id;
       } else {
         const returnedSharedGame = await gameRepository.getSharedGame(
           {
@@ -247,12 +257,16 @@ class GameService {
           },
           tx,
         );
-        const assertedSharedGame = assertFound(
+        assertFound(
           returnedSharedGame,
+          {
+            userId: args.ctx.userId,
+            value: args.input,
+          },
           "Shared game not found.",
         );
         canonicalGameId =
-          assertedSharedGame.linkedGameId ?? assertedSharedGame.gameId;
+          returnedSharedGame.linkedGameId ?? returnedSharedGame.gameId;
       }
       if (!canonicalGameId) {
         throw new TRPCError({
@@ -434,6 +448,41 @@ class GameService {
       }
     });
     return response;
+  }
+
+  public async insertGameRole(args: {
+    input: {
+      gameId: number;
+      name: string;
+      description: string | null;
+      createdBy: string;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [returnedGameRole] = await database
+      .insert(gameRole)
+      .values(input)
+      .returning();
+    return returnedGameRole;
+  }
+  public async insertGameRoles(args: {
+    input: {
+      gameId: number;
+      name: string;
+      description: string | null;
+      createdBy: string;
+    }[];
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [returnedGameRole] = await database
+      .insert(gameRole)
+      .values(input)
+      .returning();
+    return returnedGameRole;
   }
 }
 export const gameService = new GameService();

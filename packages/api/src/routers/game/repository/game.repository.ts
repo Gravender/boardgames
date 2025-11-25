@@ -12,6 +12,7 @@ import type {
 import { db } from "@board-games/db/client";
 import {
   game,
+  gameRole,
   image,
   location,
   match,
@@ -25,6 +26,8 @@ import {
 } from "@board-games/db/views";
 
 import type {
+  CreateGameArgs,
+  CreateGameRoleArgs,
   GetGameArgs,
   GetGameMatchesOutputType,
   GetGameRolesArgs,
@@ -44,35 +47,71 @@ class GameRepository {
     const result = await database.query.game.findFirst({
       ...(queryConfig as unknown as TConfig),
       where: {
-        ...(queryConfig as unknown as TConfig).where,
         id,
         createdBy,
         deletedAt: { isNull: true },
+        ...(queryConfig as unknown as TConfig).where,
       },
     });
     return result as InferQueryResult<"game", TConfig> | undefined;
   }
-  public async getSharedGame(
+  public async getSharedGame<TConfig extends QueryConfig<"sharedGame">>(
     filters: {
       id: NonNullable<Filter<"sharedGame">["id"]>;
       sharedWithId: NonNullable<Filter<"sharedGame">["sharedWithId"]>;
-      where?: QueryConfig<"sharedGame">["where"];
-      with?: QueryConfig<"sharedGame">["with"];
-      orderBy?: QueryConfig<"sharedGame">["orderBy"];
-    },
+    } & TConfig,
     tx?: TransactionType,
-  ) {
+  ): Promise<InferQueryResult<"sharedGame", TConfig> | undefined> {
     const database = tx ?? db;
+    const { id, sharedWithId, ...queryConfig } = filters;
     const result = await database.query.sharedGame.findFirst({
+      ...(queryConfig as unknown as TConfig),
       where: {
-        ...filters.where,
-        id: filters.id,
-        sharedWithId: filters.sharedWithId,
+        id: id,
+        sharedWithId: sharedWithId,
+        ...(queryConfig as unknown as TConfig).where,
       },
-      with: filters.with,
-      orderBy: filters.orderBy,
     });
-    return result;
+    return result as InferQueryResult<"sharedGame", TConfig> | undefined;
+  }
+  public async createGame(args: CreateGameArgs) {
+    const { input, userId, tx } = args;
+    const database = tx ?? db;
+    const [returningGame] = await database
+      .insert(game)
+      .values({
+        name: input.name,
+        ownedBy: input.ownedBy,
+        playersMin: input.playersMin,
+        playersMax: input.playersMax,
+        playtimeMin: input.playtimeMin,
+        playtimeMax: input.playtimeMax,
+        yearPublished: input.yearPublished,
+        imageId: input.imageId,
+        createdBy: userId,
+      })
+      .returning();
+    return returningGame;
+  }
+  public async createGameRole(args: CreateGameRoleArgs) {
+    const { input, userId, tx } = args;
+    const database = tx ?? db;
+    const values = Array.isArray(input.role)
+      ? input.role.map((role) => ({
+          ...role,
+          createdBy: userId,
+        }))
+      : [
+          {
+            ...input.role,
+            createdBy: userId,
+          },
+        ];
+    const [returningGameRole] = await database
+      .insert(gameRole)
+      .values(values)
+      .returning();
+    return returningGameRole;
   }
 
   public async getGameMatches(

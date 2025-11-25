@@ -495,6 +495,12 @@ export const gameRouter = {
           },
           with: {
             sharedScoresheets: {
+              where: {
+                sharedWithId: ctx.userId,
+                linkedScoresheetId: {
+                  isNull: true,
+                },
+              },
               with: {
                 scoresheet: {
                   where: {

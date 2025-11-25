@@ -2,6 +2,12 @@ import type z from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 
+import type {
+  Filter,
+  InferQueryResult,
+  QueryConfig,
+  TransactionType,
+} from "@board-games/db/client";
 import type { selectRoundPlayerSchema } from "@board-games/db/zodSchema";
 import { db } from "@board-games/db/client";
 import {
@@ -11,6 +17,7 @@ import {
   matchPlayerRole,
   scoresheet,
   sharedGameRole,
+  sharedMatch,
   team,
 } from "@board-games/db/schema";
 import {
@@ -20,235 +27,63 @@ import {
 import { calculatePlacement, isSameRole } from "@board-games/shared";
 
 import type {
-  CreateMatchOutputType,
   EditMatchOutputType,
   GetMatchOutputType,
   GetMatchScoresheetOutputType,
 } from "../match.output";
 import type {
-  CreateMatchArgs,
   DeleteMatchArgs,
   EditMatchArgs,
   GetMatchArgs,
   GetMatchPlayersAndTeamsArgs,
   GetMatchScoresheetArgs,
+  InsertMatchInputType,
+  InsertSharedMatchInputType,
 } from "./match.repository.types";
-import analyticsServerClient from "../../../analytics";
 import { Logger } from "../../../common/logger";
-import {
-  getGame,
-  getMatchPlayersAndTeams,
-  getScoreSheetAndRounds,
-  shareMatchWithFriends,
-} from "../../../utils/addMatch";
 import { addPlayersToMatch } from "../../../utils/editMatch";
 import { cloneSharedLocationForUser } from "../../../utils/handleSharedLocation";
 
 class MatchRepository {
   private readonly logger = new Logger(MatchRepository.name);
-
-  public async createMatch(
-    args: CreateMatchArgs,
-  ): Promise<CreateMatchOutputType> {
-    const { input } = args;
-    const response = await db.transaction(async (transaction) => {
-      const returnedGameId = await getGame(
-        input.game,
-        transaction,
-        args.createdBy,
-      );
-      const returnedScoresheet = await getScoreSheetAndRounds(
-        {
-          ...input.scoresheet,
-          matchName: input.name,
-          gameId: returnedGameId,
-        },
-        transaction,
-        args.createdBy,
-      );
-      let locationId: number | null = null;
-      if (input.location) {
-        if (input.location.type === "original") {
-          const returnedLocation = await transaction.query.location.findFirst({
-            where: {
-              id: input.location.id,
-              createdBy: args.createdBy,
-            },
-          });
-          if (!returnedLocation) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Location not found.",
-            });
-          }
-          locationId = returnedLocation.id;
-        } else {
-          locationId = await cloneSharedLocationForUser(
-            transaction,
-            input.location.sharedId,
-            args.createdBy,
-          );
-        }
-      }
-      const [returningMatch] = await transaction
-        .insert(match)
-        .values({
-          name: input.name,
-          date: input.date,
-          gameId: returnedGameId,
-          locationId: locationId,
-          createdBy: args.createdBy,
-          scoresheetId: returnedScoresheet.scoresheet.id,
-          running: true,
-        })
-        .returning();
-      if (!returningMatch) {
-        analyticsServerClient.capture({
-          distinctId: args.createdBy,
-          event: "match create error",
-          properties: {
-            input,
-          },
-        });
-        this.logger.error("Match Not Created Successfully", {
-          input,
-          createdBy: args.createdBy,
-        });
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Match Not Created Successfully",
-        });
-      }
-      const insertedMatchPlayers = await getMatchPlayersAndTeams(
-        returningMatch.id,
-        input.players,
-        input.teams,
-        returnedScoresheet.rounds,
-        transaction,
-        args.createdBy,
-      );
-      const createdMatch = await transaction.query.match.findFirst({
-        where: {
-          id: returningMatch.id,
-        },
-        with: {
-          scoresheet: true,
-          game: true,
-          matchPlayers: {
-            with: {
-              player: {
-                columns: { id: true },
-                with: {
-                  linkedFriend: true,
-                },
-              },
-            },
-          },
-          location: true,
-        },
-      });
-      if (!createdMatch) {
-        this.logger.error("Failed to find created match.", {
-          input,
-          createdBy: args.createdBy,
-        });
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to find created match.",
-        });
-      }
-      const playerIds = createdMatch.matchPlayers
-        .map((mp) => mp.player.linkedFriend?.id ?? false)
-        .filter((id) => id !== false);
-      // Auto-share matches with friends when:
-      // 1. The friend has enabled auto-sharing matches (autoShareMatches)
-      // 2. The friend allows receiving shared matches (allowSharedMatches)
-      const friendPlayers = await db.query.friend.findMany({
-        where: {
-          userId: args.createdBy,
-          id: {
-            in: playerIds,
-          },
-        },
-        with: {
-          friendSetting: true,
-          friend: {
-            with: {
-              friends: {
-                where: { friendId: args.createdBy },
-                with: { friendSetting: true },
-              },
-            },
-          },
-        },
-      });
-      const shareFriends = createdMatch.matchPlayers
-        .flatMap((matchPlayer) => {
-          const returnedFriend = friendPlayers.find(
-            (friendPlayer) =>
-              friendPlayer.id === matchPlayer.player.linkedFriend?.id,
-          );
-          const returnedFriendSetting = returnedFriend?.friend.friends.find(
-            (friend) => friend.friendId === args.createdBy,
-          )?.friendSetting;
-          if (
-            returnedFriend?.friendSetting?.autoShareMatches === true &&
-            returnedFriendSetting?.allowSharedMatches === true
-          ) {
-            return {
-              friendUserId: returnedFriend.friendId,
-              shareLocation:
-                returnedFriend.friendSetting.includeLocationWithMatch === true,
-              sharePlayers:
-                returnedFriend.friendSetting.sharePlayersWithMatch === true,
-              defaultPermissionForMatches:
-                returnedFriend.friendSetting.defaultPermissionForMatches,
-              defaultPermissionForPlayers:
-                returnedFriend.friendSetting.defaultPermissionForPlayers,
-              defaultPermissionForLocation:
-                returnedFriend.friendSetting.defaultPermissionForLocation,
-              defaultPermissionForGame:
-                returnedFriend.friendSetting.defaultPermissionForGame,
-              allowSharedPlayers:
-                returnedFriendSetting.allowSharedPlayers === true,
-              allowSharedLocation:
-                returnedFriendSetting.allowSharedLocation === true,
-              autoAcceptMatches:
-                returnedFriendSetting.autoAcceptMatches === true,
-              autoAcceptPlayers:
-                returnedFriendSetting.autoAcceptPlayers === true,
-              autoAcceptLocation:
-                returnedFriendSetting.autoAcceptLocation === true,
-            };
-          }
-          return false;
-        })
-        .filter((friend) => friend !== false);
-
-      await shareMatchWithFriends(
-        transaction,
-        args.createdBy,
-        createdMatch,
-        shareFriends,
-      );
-      return {
-        id: createdMatch.id,
-        date: createdMatch.date,
-        name: createdMatch.name,
-        game: {
-          id: createdMatch.game.id,
-        },
-        location: createdMatch.location
-          ? {
-              id: createdMatch.location.id,
-            }
-          : null,
-        players: insertedMatchPlayers.map((mp) => ({
-          id: mp.playerId,
-        })),
-      };
+  public async insert(input: InsertMatchInputType, tx?: TransactionType) {
+    const database = tx ?? db;
+    const [returningMatch] = await database
+      .insert(match)
+      .values(input)
+      .returning();
+    return returningMatch;
+  }
+  public async insertSharedMatch(
+    input: InsertSharedMatchInputType,
+    tx?: TransactionType,
+  ) {
+    const database = tx ?? db;
+    const [returningMatch] = await database
+      .insert(sharedMatch)
+      .values(input)
+      .returning();
+    return returningMatch;
+  }
+  public async get<TConfig extends QueryConfig<"match">>(
+    filters: {
+      id: NonNullable<Filter<"match">["id"]>;
+      createdBy: NonNullable<Filter<"match">["createdBy"]>;
+    } & TConfig,
+    tx?: TransactionType,
+  ): Promise<InferQueryResult<"match", TConfig> | undefined> {
+    const database = tx ?? db;
+    const { id, createdBy, ...queryConfig } = filters;
+    const result = await database.query.match.findFirst({
+      ...(queryConfig as unknown as TConfig),
+      where: {
+        ...(queryConfig as unknown as TConfig).where,
+        id,
+        createdBy,
+        deletedAt: { isNull: true },
+      },
     });
-    return response;
+    return result as InferQueryResult<"match", TConfig> | undefined;
   }
   public async getMatch(args: GetMatchArgs): Promise<GetMatchOutputType> {
     const { input } = args;

@@ -17,6 +17,7 @@ const sharedScoresheet = createTable(
   "shared_scoresheet",
   {
     id: serial("id").primaryKey(),
+    parentId: integer("parent_id"),
     ownerId: text("owner_id")
       .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
