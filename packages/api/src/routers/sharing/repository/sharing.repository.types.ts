@@ -6,7 +6,6 @@ export const insertShareRequestSchemaInput = insertShareRequestSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  deletedAt: true,
 });
 export type InsertShareRequestInputType = z.infer<
   typeof insertShareRequestSchemaInput

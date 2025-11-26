@@ -17,8 +17,6 @@ import {
   sharedGameRole,
 } from "@board-games/db/schema";
 
-import { processPlayer } from "./addMatch";
-
 export async function addPlayersToMatch(
   transaction: TransactionType,
   matchId: number,

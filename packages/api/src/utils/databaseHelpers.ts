@@ -10,7 +10,7 @@ export function assertFound<T>(
   },
   message = "Entity not found",
 ): asserts value is NonNullable<T> {
-  if (value == null) {
+  if (!value) {
     analyticsServerClient.capture({
       distinctId: properties.userId,
       event: message,
@@ -30,7 +30,7 @@ export function assertInserted<T>(
   },
   message = "Entity Not Inserted",
 ): asserts value is NonNullable<T> {
-  if (value === undefined) {
+  if (!value) {
     analyticsServerClient.capture({
       distinctId: properties.userId,
       event: message,

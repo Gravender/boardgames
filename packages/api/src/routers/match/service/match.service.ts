@@ -23,7 +23,6 @@ import { Logger } from "../../../common/logger";
 import { assertFound, assertInserted } from "../../../utils/databaseHelpers";
 import { friendService } from "../../friend/service/friend.service";
 import { gameRepository } from "../../game/repository/game.repository";
-import { gameService } from "../../game/service/game.service";
 import { sharedGameRepository } from "../../game/sub-routers/shared/repository/shared-game.repository";
 import { locationRepository } from "../../location/repository/location.repository";
 import { playerRepository } from "../../player/repository/player.repository";
@@ -113,7 +112,7 @@ class MatchService {
           gameId = createdGame.id;
           await sharedGameRepository.linkSharedGame({
             input: {
-              sharedGameId: createdGame.id,
+              sharedGameId: returnedSharedGame.id,
               linkedGameId: createdGame.id,
             },
             tx,
@@ -272,10 +271,10 @@ class MatchService {
             userId: args.ctx.userId,
             value: args.input,
           },
-          "Scoresheet Not Created Successfully. For Create Match.",
+          "Match Scoresheet Not Created Successfully. For Create Match.",
         );
         matchScoresheet = {
-          id: returnedSharedScoresheet.id,
+          id: insertedScoresheet.id,
           rounds: [],
         };
         const mappedRounds = returnedSharedScoresheet.scoresheet.rounds.map(
@@ -627,7 +626,7 @@ class MatchService {
             );
             let linkedGameRoleId = returnedSharedRole.linkedGameRoleId;
             if (linkedGameRoleId === null) {
-              const createdGameRole = await gameService.insertGameRole({
+              const createdGameRole = await gameRepository.createGameRole({
                 input: {
                   gameId: insertedMatch.gameId,
                   name: returnedSharedRole.gameRole.name,

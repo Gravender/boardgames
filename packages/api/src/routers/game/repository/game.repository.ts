@@ -28,6 +28,7 @@ import {
 import type {
   CreateGameArgs,
   CreateGameRoleArgs,
+  CreateGameRolesArgs,
   GetGameArgs,
   GetGameMatchesOutputType,
   GetGameRolesArgs,
@@ -94,24 +95,22 @@ class GameRepository {
     return returningGame;
   }
   public async createGameRole(args: CreateGameRoleArgs) {
-    const { input, userId, tx } = args;
+    const { input, tx } = args;
     const database = tx ?? db;
-    const values = Array.isArray(input.role)
-      ? input.role.map((role) => ({
-          ...role,
-          createdBy: userId,
-        }))
-      : [
-          {
-            ...input.role,
-            createdBy: userId,
-          },
-        ];
     const [returningGameRole] = await database
       .insert(gameRole)
-      .values(values)
+      .values(input)
       .returning();
     return returningGameRole;
+  }
+  public async createGameRoles(args: CreateGameRolesArgs) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const returningGameRoles = await database
+      .insert(gameRole)
+      .values(input)
+      .returning();
+    return returningGameRoles;
   }
 
   public async getGameMatches(

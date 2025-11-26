@@ -18,17 +18,19 @@ export interface CreateGameArgs {
   tx?: TransactionType;
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const createGameRoleInput = insertGameRoleSchema.pick({
-  name: true,
-  description: true,
-  gameId: true,
+const createGameRoleInput = insertGameRoleSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
 });
 type CreateGameRoleInputType = z.infer<typeof createGameRoleInput>;
 export interface CreateGameRoleArgs {
-  input: {
-    role: CreateGameRoleInputType | CreateGameRoleInputType[];
-  };
-  userId: string;
+  input: CreateGameRoleInputType;
+  tx?: TransactionType;
+}
+export interface CreateGameRolesArgs {
+  input: CreateGameRoleInputType[];
   tx?: TransactionType;
 }
 export interface GetGameMatchesOutputType {

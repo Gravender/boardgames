@@ -280,7 +280,7 @@ class FriendService {
                 ownerId: args.ctx.userId,
                 sharedWithId: friend.friendUserId,
                 where: {
-                  itemType: "location",
+                  itemType: "game",
                   itemId: returnedMatch.gameId,
                   OR: [
                     {
@@ -471,11 +471,12 @@ class FriendService {
                       sharedScoresheetId: parentSharedScoresheet.id,
                     };
                   }
+                } else {
+                  parentSharedScoresheetOutput = {
+                    sharedScoresheetRequestId: parentSharedScoresheetRequest.id,
+                    sharedScoresheetId: null,
+                  };
                 }
-                parentSharedScoresheetOutput = {
-                  sharedScoresheetRequestId: parentSharedScoresheetRequest.id,
-                  sharedScoresheetId: null,
-                };
               } else {
                 const parentSharedScoresheetRequest =
                   await sharingRepository.insert(
@@ -708,7 +709,7 @@ class FriendService {
                     userId: args.ctx.userId,
                     value: args.input,
                   },
-                  "Shared  player request not created.",
+                  "Shared player request not created.",
                 );
               }
               const insertedMatchPlayerRequest = await sharingRepository.insert(

@@ -1,8 +1,6 @@
 import { TRPCError } from "@trpc/server";
 
-import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
-import { gameRole } from "@board-games/db/schema";
 
 import type {
   GetGameMatchesOutputType,
@@ -448,41 +446,6 @@ class GameService {
       }
     });
     return response;
-  }
-
-  public async insertGameRole(args: {
-    input: {
-      gameId: number;
-      name: string;
-      description: string | null;
-      createdBy: string;
-    };
-    tx?: TransactionType;
-  }) {
-    const { input, tx } = args;
-    const database = tx ?? db;
-    const [returnedGameRole] = await database
-      .insert(gameRole)
-      .values(input)
-      .returning();
-    return returnedGameRole;
-  }
-  public async insertGameRoles(args: {
-    input: {
-      gameId: number;
-      name: string;
-      description: string | null;
-      createdBy: string;
-    }[];
-    tx?: TransactionType;
-  }) {
-    const { input, tx } = args;
-    const database = tx ?? db;
-    const [returnedGameRole] = await database
-      .insert(gameRole)
-      .values(input)
-      .returning();
-    return returnedGameRole;
   }
 }
 export const gameService = new GameService();
