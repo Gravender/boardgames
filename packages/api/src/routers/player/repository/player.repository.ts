@@ -85,6 +85,27 @@ class PlayerRepository {
     });
     return result as InferQueryResult<"sharedPlayer", TConfig> | undefined;
   }
+  public async getSharedPlayerByPlayerId<
+    TConfig extends QueryConfig<"sharedPlayer">,
+  >(
+    filters: {
+      playerId: NonNullable<Filter<"sharedPlayer">["playerId"]>;
+      sharedWithId: NonNullable<Filter<"sharedPlayer">["sharedWithId"]>;
+    } & TConfig,
+    tx?: TransactionType,
+  ): Promise<InferQueryResult<"sharedPlayer", TConfig> | undefined> {
+    const database = tx ?? db;
+    const { playerId, sharedWithId, ...queryConfig } = filters;
+    const result = await database.query.sharedPlayer.findFirst({
+      ...(queryConfig as unknown as TConfig),
+      where: {
+        playerId: playerId,
+        sharedWithId: sharedWithId,
+        ...(queryConfig as unknown as TConfig).where,
+      },
+    });
+    return result as InferQueryResult<"sharedPlayer", TConfig> | undefined;
+  }
   public async linkSharedPlayer(args: {
     input: {
       sharedPlayerId: number;

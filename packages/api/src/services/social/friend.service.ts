@@ -182,15 +182,14 @@ class FriendService {
                   });
                 if (existingSharedLocationRequest !== undefined) {
                   if (existingSharedLocationRequest.status === "accepted") {
-                    const existingShared = await locationRepository.getShared({
-                      id: 1,
-                      sharedWithId: friend.friendUserId,
-                      where: {
-                        id: undefined,
-                        ownerId: args.ctx.userId,
+                    const existingShared =
+                      await locationRepository.getSharedByLocationId({
                         locationId: returnedMatch.locationId,
-                      },
-                    });
+                        sharedWithId: friend.friendUserId,
+                        where: {
+                          ownerId: args.ctx.userId,
+                        },
+                      });
                     assertFound(
                       existingShared,
                       {
@@ -295,18 +294,15 @@ class FriendService {
 
               if (existingSharedGameRequest !== undefined) {
                 if (existingSharedGameRequest.status === "accepted") {
-                  const existingSharedGame = await gameRepository.getSharedGame(
-                    {
-                      id: 1,
+                  const existingSharedGame =
+                    await gameRepository.getSharedGameByGameId({
+                      gameId: returnedMatch.gameId,
                       sharedWithId: friend.friendUserId,
                       where: {
-                        id: undefined,
-                        gameId: returnedMatch.gameId,
                         ownerId: args.ctx.userId,
                       },
                       tx: tx2,
-                    },
-                  );
+                    });
                   assertFound(
                     existingSharedGame,
                     {
@@ -342,17 +338,15 @@ class FriendService {
                   "Shared game request not created.",
                 );
                 if (friend.autoAcceptMatches) {
-                  const existingSharedGame = await gameRepository.getSharedGame(
-                    {
-                      id: 1,
+                  const existingSharedGame =
+                    await gameRepository.getSharedGameByGameId({
+                      gameId: returnedMatch.gameId,
                       sharedWithId: friend.friendUserId,
                       where: {
-                        id: returnedMatch.gameId,
                         ownerId: args.ctx.userId,
                       },
                       tx: tx2,
-                    },
-                  );
+                    });
                   if (!existingSharedGame) {
                     const createdSharedGame =
                       await sharedGameRepository.insertSharedGame({
@@ -424,11 +418,10 @@ class FriendService {
               if (parentSharedScoresheetRequest !== undefined) {
                 if (parentSharedScoresheetRequest.status === "accepted") {
                   const parentSharedScoresheet =
-                    await scoresheetRepository.getShared({
-                      id: 1,
+                    await scoresheetRepository.getSharedByScoresheetId({
                       sharedWithId: friend.friendUserId,
+                      scoresheetId: parentSharedScoresheetRequest.itemId,
                       where: {
-                        id: parentSharedScoresheetRequest.itemId,
                         ownerId: args.ctx.userId,
                       },
                     });
@@ -717,8 +710,7 @@ class FriendService {
                   ownerId: args.ctx.userId,
                   sharedWithId: friend.friendUserId,
                   itemType: "matchPlayer",
-                  itemId: returnedMatch.id,
-                  itemParentId: returnedMatch.id,
+                  itemId: matchPlayer.id,
                   status: friend.autoAcceptMatches ? "accepted" : "pending",
                   permission: friend.defaultPermissionForMatches,
                   expiresAt: null,
@@ -739,12 +731,10 @@ class FriendService {
               } | null = null;
               if (friend.autoAcceptPlayers) {
                 const returnedSharedPlayer =
-                  await playerRepository.getSharedPlayer({
-                    id: 1,
+                  await playerRepository.getSharedPlayerByPlayerId({
+                    playerId: matchPlayer.playerId,
                     sharedWithId: friend.friendUserId,
                     where: {
-                      id: undefined,
-                      playerId: matchPlayer.playerId,
                       ownerId: args.ctx.userId,
                     },
                   });

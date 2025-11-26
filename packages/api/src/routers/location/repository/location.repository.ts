@@ -86,6 +86,34 @@ class LocationRepository {
     });
     return result as InferQueryResult<"sharedLocation", TConfig> | undefined;
   }
+  public async getSharedByLocationId<
+    TConfig extends QueryConfig<"sharedLocation">,
+  >(
+    filters: {
+      locationId: NonNullable<Filter<"sharedLocation">["locationId"]>;
+      sharedWithId: NonNullable<Filter<"sharedLocation">["sharedWithId"]>;
+    } & TConfig,
+    tx?: TransactionType,
+  ): Promise<InferQueryResult<"sharedLocation", TConfig> | undefined> {
+    const database = tx ?? db;
+    const { locationId, sharedWithId, ...queryConfig } = filters;
+    const result = await database.query.sharedLocation.findFirst({
+      where: {
+        locationId: locationId,
+        sharedWithId: sharedWithId,
+        linkedLocationId: {
+          isNull: true,
+        },
+        ...(queryConfig.where ?? {}),
+      },
+      with: {
+        location: true,
+        ...(queryConfig.with ?? {}),
+      },
+      orderBy: queryConfig.orderBy,
+    });
+    return result as InferQueryResult<"sharedLocation", TConfig> | undefined;
+  }
   public async getLocations(args: GetLocationsArgs) {
     const originalLocations = await db.query.location.findMany({
       where: {

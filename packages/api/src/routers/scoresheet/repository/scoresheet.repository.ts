@@ -107,6 +107,35 @@ class ScoresheetRepository {
     });
     return result as InferQueryResult<"sharedScoresheet", TConfig> | undefined;
   }
+  public async getSharedByScoresheetId<
+    TConfig extends QueryConfig<"sharedScoresheet">,
+  >(
+    filters: {
+      scoresheetId: NonNullable<Filter<"sharedScoresheet">["scoresheetId"]>;
+      sharedWithId: NonNullable<Filter<"sharedScoresheet">["sharedWithId"]>;
+    } & TConfig,
+    tx?: TransactionType,
+  ): Promise<InferQueryResult<"sharedScoresheet", TConfig> | undefined> {
+    const database = tx ?? db;
+    const { scoresheetId, sharedWithId, ...queryConfig } = filters;
+    const result = await database.query.sharedScoresheet.findFirst({
+      where: {
+        scoresheetId: scoresheetId,
+        sharedWithId: sharedWithId,
+        type: "game",
+        linkedScoresheetId: {
+          isNull: true,
+        },
+        ...(queryConfig.where ?? {}),
+      },
+      with: {
+        scoresheet: true,
+        ...(queryConfig.with ?? {}),
+      },
+      orderBy: queryConfig.orderBy,
+    });
+    return result as InferQueryResult<"sharedScoresheet", TConfig> | undefined;
+  }
   public async getAll(
     filters: {
       createdBy: NonNullable<Filter<"scoresheet">["createdBy"]>;

@@ -75,6 +75,25 @@ class GameRepository {
     });
     return result as InferQueryResult<"sharedGame", TConfig> | undefined;
   }
+  public async getSharedGameByGameId<TConfig extends QueryConfig<"sharedGame">>(
+    filters: {
+      gameId: NonNullable<Filter<"sharedGame">["gameId"]>;
+      sharedWithId: NonNullable<Filter<"sharedGame">["sharedWithId"]>;
+    } & TConfig,
+    tx?: TransactionType,
+  ): Promise<InferQueryResult<"sharedGame", TConfig> | undefined> {
+    const database = tx ?? db;
+    const { gameId, sharedWithId, ...queryConfig } = filters;
+    const result = await database.query.sharedGame.findFirst({
+      ...(queryConfig as unknown as TConfig),
+      where: {
+        gameId: gameId,
+        sharedWithId: sharedWithId,
+        ...(queryConfig as unknown as TConfig).where,
+      },
+    });
+    return result as InferQueryResult<"sharedGame", TConfig> | undefined;
+  }
   public async createGame(args: CreateGameArgs) {
     const { input, userId, tx } = args;
     const database = tx ?? db;
