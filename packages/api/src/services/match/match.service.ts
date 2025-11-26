@@ -457,7 +457,7 @@ class MatchService {
             id: returnedMatch.id,
             name: input.match.name,
             date: input.match.date,
-            location: locationId,
+            locationId: locationId,
           },
           tx: tx,
         });
@@ -1038,7 +1038,7 @@ class MatchService {
               id: returnedSharedMatch.matchId,
               name: input.match.name,
               date: input.match.date,
-              location: returnedSharedLocation.locationId,
+              locationId: returnedSharedLocation.locationId,
             },
             tx: tx,
           });
@@ -1074,7 +1074,7 @@ class MatchService {
               id: returnedSharedMatch.matchId,
               name: input.match.name,
               date: input.match.date,
-              location: null,
+              locationId: null,
             },
             tx: tx,
           });

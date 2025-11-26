@@ -184,7 +184,6 @@ class LocationRepository {
     const [linkedLocation] = await database
       .update(sharedLocation)
       .set({
-        id: input.sharedLocationId,
         linkedLocationId: input.linkedLocationId,
       })
       .where(eq(sharedLocation.id, input.sharedLocationId))

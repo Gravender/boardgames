@@ -771,7 +771,7 @@ class MatchRepository {
       .set({
         name: input.name,
         date: input.date,
-        locationId: input.location,
+        locationId: input.locationId,
       })
       .where(eq(match.id, input.id))
       .returning();

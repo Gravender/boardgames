@@ -124,11 +124,11 @@ class MatchPlayerRepository {
   }) {
     const { input, tx } = args;
     const database = tx ?? db;
-    const [returnedMatchRoundPlayer] = await database
+    const [returnedMatchPlayerRole] = await database
       .insert(matchPlayerRole)
       .values(input)
       .returning();
-    return returnedMatchRoundPlayer;
+    return returnedMatchPlayerRole;
   }
   public async insertMatchPlayerRoles(args: {
     input: {

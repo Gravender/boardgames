@@ -67,7 +67,7 @@ export interface UpdateMatchArgs {
     id: number;
     name?: string;
     date?: Date;
-    location?: number | null;
+    locationId?: number | null;
   };
   tx?: TransactionType;
 }
