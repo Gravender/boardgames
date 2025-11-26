@@ -3,7 +3,7 @@ import type {
   DeleteMatchInputType,
   EditMatchInputType,
   GetMatchInputType,
-} from "../match.input";
+} from "../../routers/match/match.input";
 
 export interface CreateMatchArgs {
   input: CreateMatchInputType;

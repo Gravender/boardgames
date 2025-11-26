@@ -30,7 +30,7 @@ import type {
   EditMatchOutputType,
   GetMatchOutputType,
   GetMatchScoresheetOutputType,
-} from "../match.output";
+} from "../../routers/match/match.output";
 import type {
   DeleteMatchArgs,
   EditMatchArgs,
@@ -40,9 +40,9 @@ import type {
   InsertMatchInputType,
   InsertSharedMatchInputType,
 } from "./match.repository.types";
-import { Logger } from "../../../common/logger";
-import { addPlayersToMatch } from "../../../utils/editMatch";
-import { cloneSharedLocationForUser } from "../../../utils/handleSharedLocation";
+import { Logger } from "../../common/logger";
+import { addPlayersToMatch } from "../../utils/editMatch";
+import { cloneSharedLocationForUser } from "../../utils/handleSharedLocation";
 
 class MatchRepository {
   private readonly logger = new Logger(MatchRepository.name);

@@ -2,16 +2,16 @@ import { TRPCError } from "@trpc/server";
 
 import { db } from "@board-games/db/client";
 
-import { assertFound, assertInserted } from "../../../utils/databaseHelpers";
-import { gameRepository } from "../../game/repository/game.repository";
-import { sharedGameRepository } from "../../game/sub-routers/shared/repository/shared-game.repository";
-import { locationRepository } from "../../location/repository/location.repository";
-import { matchRepository } from "../../match/repository/match.repository";
-import { matchPlayerRepository } from "../../match/sub-routers/matchPlayer.repository";
-import { playerRepository } from "../../player/repository/player.repository";
-import { scoresheetRepository } from "../../scoresheet/repository/scoresheet.repository";
-import { sharingRepository } from "../../sharing/repository/sharing.repository";
-import { friendRepository } from "../repository/friend.repository";
+import { matchRepository } from "../../repositories/match/match.repository";
+import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
+import { sharingRepository } from "../../repositories/sharing/sharing.repository";
+import { friendRepository } from "../../repositories/social/friend.repository";
+import { gameRepository } from "../../routers/game/repository/game.repository";
+import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
+import { locationRepository } from "../../routers/location/repository/location.repository";
+import { playerRepository } from "../../routers/player/repository/player.repository";
+import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
+import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
 class FriendService {
   public async autoShareMatch(args: {

@@ -10,7 +10,7 @@ import type {
   GetMatchPlayersAndTeamsOutputType,
   GetMatchScoresheetOutputType,
   GetMatchSummaryOutputType,
-} from "../match.output";
+} from "../../routers/match/match.output";
 import type {
   CreateMatchArgs,
   DeleteMatchArgs,
@@ -19,17 +19,17 @@ import type {
   GetMatchPlayersAndTeamsArgs,
   GetMatchScoresheetArgs,
 } from "./match.service.types";
-import { Logger } from "../../../common/logger";
-import { assertFound, assertInserted } from "../../../utils/databaseHelpers";
-import { friendService } from "../../friend/service/friend.service";
-import { gameRepository } from "../../game/repository/game.repository";
-import { sharedGameRepository } from "../../game/sub-routers/shared/repository/shared-game.repository";
-import { locationRepository } from "../../location/repository/location.repository";
-import { playerRepository } from "../../player/repository/player.repository";
-import { scoresheetRepository } from "../../scoresheet/repository/scoresheet.repository";
-import { matchRepository } from "../repository/match.repository";
-import { matchPlayerRepository } from "../sub-routers/matchPlayer.repository";
-import { teamRepository } from "../sub-routers/team/team.repository";
+import { Logger } from "../../common/logger";
+import { matchRepository } from "../../repositories/match/match.repository";
+import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
+import { teamRepository } from "../../repositories/match/team.repository";
+import { gameRepository } from "../../routers/game/repository/game.repository";
+import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
+import { locationRepository } from "../../routers/location/repository/location.repository";
+import { playerRepository } from "../../routers/player/repository/player.repository";
+import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
+import { assertFound, assertInserted } from "../../utils/databaseHelpers";
+import { friendService } from "../social/friend.service";
 
 class MatchService {
   private readonly logger = new Logger(MatchService.name);
