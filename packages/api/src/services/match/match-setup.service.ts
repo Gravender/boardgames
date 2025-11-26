@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 
 import type { TransactionType } from "@board-games/db/client";
 
+import type { InsertRoundInputType } from "../../routers/scoresheet/repository/scoresheet.repository.types";
 import type { CreateMatchArgs } from "./match.service.types";
 import { gameRepository } from "../../routers/game/repository/game.repository";
 import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
@@ -145,23 +146,11 @@ class MatchSetupService {
         "Scoresheet Not Created Successfully. For Create Match.",
       );
 
-      const mappedRounds = returnedScoresheet.rounds.map((round) => ({
-        name: round.name,
-        order: round.order,
-        color: round.color,
-        type: round.type,
-        score: round.score,
-        scoresheetId: insertedScoresheet.id,
-      }));
-
-      let rounds: { id: number }[] = [];
-      if (mappedRounds.length > 0) {
-        const insertedRounds = await scoresheetRepository.insertRound(
-          mappedRounds,
-          tx,
-        );
-        rounds = insertedRounds.map((round) => ({ id: round.id }));
-      }
+      const rounds = await this.insertRoundsFromTemplate(
+        returnedScoresheet.rounds,
+        insertedScoresheet.id,
+        tx,
+      );
       return { id: insertedScoresheet.id, rounds };
     }
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -247,25 +236,11 @@ class MatchSetupService {
         "Match Scoresheet Not Created Successfully. For Create Match.",
       );
 
-      const mappedRounds = returnedSharedScoresheet.scoresheet.rounds.map(
-        (round) => ({
-          name: round.name,
-          order: round.order,
-          color: round.color,
-          type: round.type,
-          score: round.score,
-          scoresheetId: insertedMatchScoresheet.id,
-        }),
+      const rounds = await this.insertRoundsFromTemplate(
+        returnedSharedScoresheet.scoresheet.rounds,
+        insertedMatchScoresheet.id,
+        tx,
       );
-      let rounds: { id: number }[] = [];
-      if (mappedRounds.length > 0) {
-        const insertedRounds = await scoresheetRepository.insertRound(
-          mappedRounds,
-          tx,
-        );
-        rounds = insertedRounds.map((round) => ({ id: round.id }));
-      }
-
       return { id: insertedMatchScoresheet.id, rounds };
     }
     throw new TRPCError({
@@ -355,6 +330,22 @@ class MatchSetupService {
       code: "BAD_REQUEST",
       message: "Unknown location type.",
     });
+  }
+  private async insertRoundsFromTemplate(
+    rounds: InsertRoundInputType[],
+    scoresheetId: number,
+    tx: TransactionType,
+  ): Promise<{ id: number }[]> {
+    const mappedRounds = rounds.map((round) => ({
+      ...round,
+      scoresheetId,
+    }));
+    if (mappedRounds.length === 0) return [];
+    const insertedRounds = await scoresheetRepository.insertRound(
+      mappedRounds,
+      tx,
+    );
+    return insertedRounds.map((round) => ({ id: round.id }));
   }
 }
 

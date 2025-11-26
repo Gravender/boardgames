@@ -19,7 +19,183 @@ class MatchParticipantsService {
   }) {
     const { input, matchId, gameId, userId, tx, scoresheetRoundIds } = args;
 
-    const mappedTeams = await Promise.all(
+    const mappedTeams = await this.createMappedTeams({
+      input: {
+        teams: input.teams,
+      },
+      matchId,
+      userId,
+      tx,
+    });
+
+    const mappedMatchPlayers = await Promise.all(
+      input.players.map(async (p) => {
+        const team = mappedTeams.find((t) => t.originalId === p.teamId);
+        const teamRoles = team?.roles ?? [];
+
+        const rolesToAdd = teamRoles.filter(
+          (role) => !p.roles.find((r) => isSameRole(r, role)),
+        );
+
+        const processedPlayerId = await this.processPlayer({
+          playerToProcess: p,
+          userId,
+          tx,
+        });
+
+        const returnedMatchPlayer = await matchPlayerRepository.insert({
+          input: {
+            matchId,
+            playerId: processedPlayerId,
+            teamId: team ? team.createdId : null,
+          },
+          tx,
+        });
+
+        assertInserted(
+          returnedMatchPlayer,
+          { userId, value: input },
+          "Match player not created.",
+        );
+
+        return {
+          matchPlayerId: returnedMatchPlayer.id,
+          playerId: processedPlayerId,
+          teamId: team ? team.createdId : null,
+          roles: [...p.roles, ...rolesToAdd],
+        };
+      }),
+    );
+
+    await matchRolesService.attachRolesToMatchPlayers({
+      userId,
+      tx,
+      gameId,
+      mappedMatchPlayers,
+    });
+
+    const roundPlayersToInsert = scoresheetRoundIds.flatMap((roundId) =>
+      mappedMatchPlayers.map((player) => ({
+        roundId,
+        matchPlayerId: player.matchPlayerId,
+      })),
+    );
+
+    if (roundPlayersToInsert.length > 0) {
+      await matchPlayerRepository.insertRounds({
+        input: roundPlayersToInsert,
+        tx,
+      });
+    }
+
+    return { mappedMatchPlayers };
+  }
+
+  public async processPlayer(args: {
+    playerToProcess:
+      | {
+          id: number;
+          type: "original";
+        }
+      | {
+          sharedId: number;
+          type: "shared";
+        };
+    userId: string;
+    tx: TransactionType;
+  }) {
+    const { playerToProcess, userId, tx } = args;
+    if (playerToProcess.type === "original") {
+      return playerToProcess.id;
+    }
+    const foundSharedPlayer = await playerRepository.getSharedPlayer(
+      {
+        sharedWithId: userId,
+        id: playerToProcess.sharedId,
+        with: {
+          player: true,
+        },
+      },
+      tx,
+    );
+    assertFound(
+      foundSharedPlayer,
+      { userId, value: playerToProcess },
+      "Shared player not found. For Create Match.",
+    );
+    if (foundSharedPlayer.linkedPlayerId !== null) {
+      const linkedPlayer = await playerRepository.getPlayer(
+        {
+          id: foundSharedPlayer.linkedPlayerId,
+          createdBy: userId,
+        },
+        tx,
+      );
+
+      assertFound(
+        linkedPlayer,
+        { userId, value: playerToProcess },
+        "Linked player not found. For Create Match.",
+      );
+
+      return linkedPlayer.id;
+    } else {
+      const insertedPlayer = await playerRepository.insert({
+        input: {
+          createdBy: userId,
+          name: foundSharedPlayer.player.name,
+        },
+        tx,
+      });
+
+      assertInserted(
+        insertedPlayer,
+        { userId, value: playerToProcess },
+        "Player not created.",
+      );
+
+      const linkedPlayer = await playerRepository.linkSharedPlayer({
+        input: {
+          sharedPlayerId: foundSharedPlayer.id,
+          linkedPlayerId: insertedPlayer.id,
+        },
+        tx,
+      });
+
+      assertInserted(
+        linkedPlayer,
+        { userId, value: playerToProcess },
+        "Linked player not created.",
+      );
+
+      return insertedPlayer.id;
+    }
+  }
+
+  public async createMappedTeams(args: {
+    input: {
+      teams: {
+        id: number;
+        name: string;
+        roles: (
+          | {
+              id: number;
+              type: "original";
+            }
+          | {
+              sharedId: number;
+              type: "shared";
+            }
+        )[];
+      }[];
+    };
+    matchId: number;
+    userId: string;
+    tx: TransactionType;
+  }) {
+    const { input, matchId, userId, tx } = args;
+
+    return Promise.all(
       input.teams.map(async (inputTeam) => {
         const createdTeam = await teamRepository.createTeam({
           input: {
@@ -42,155 +218,6 @@ class MatchParticipantsService {
         };
       }),
     );
-
-    const mappedMatchPlayers = await Promise.all(
-      input.players.map(async (p) => {
-        const team = mappedTeams.find((t) => t.originalId === p.teamId);
-        const teamRoles = team?.roles ?? [];
-
-        const rolesToAdd = teamRoles.filter(
-          (role) => !p.roles.find((r) => isSameRole(r, role)),
-        );
-
-        if (p.type === "original") {
-          const returnedMatchPlayer = await matchPlayerRepository.insert({
-            input: {
-              matchId,
-              playerId: p.id,
-              teamId: team ? team.createdId : null,
-            },
-            tx,
-          });
-
-          assertInserted(
-            returnedMatchPlayer,
-            { userId, value: input },
-            "Match player not created.",
-          );
-
-          return {
-            matchPlayerId: returnedMatchPlayer.id,
-            playerId: p.id,
-            teamId: team ? team.createdId : null,
-            roles: [...p.roles, ...rolesToAdd],
-          };
-        }
-
-        // shared player branch
-        const foundSharedPlayer = await playerRepository.getSharedPlayer(
-          {
-            sharedWithId: userId,
-            id: p.sharedId,
-            with: {
-              player: true,
-            },
-          },
-          tx,
-        );
-
-        assertFound(
-          foundSharedPlayer,
-          { userId, value: input },
-          "Shared player not found. For Create Match.",
-        );
-
-        let localPlayerId: number;
-
-        if (foundSharedPlayer.linkedPlayerId !== null) {
-          const linkedPlayer = await playerRepository.getPlayer(
-            {
-              id: foundSharedPlayer.linkedPlayerId,
-              createdBy: userId,
-            },
-            tx,
-          );
-
-          assertFound(
-            linkedPlayer,
-            { userId, value: input },
-            "Linked player not found. For Create Match.",
-          );
-
-          localPlayerId = linkedPlayer.id;
-        } else {
-          const insertedPlayer = await playerRepository.insert({
-            input: {
-              createdBy: userId,
-              name: foundSharedPlayer.player.name,
-            },
-            tx,
-          });
-
-          assertInserted(
-            insertedPlayer,
-            { userId, value: input },
-            "Player not created.",
-          );
-
-          const linkedPlayer = await playerRepository.linkSharedPlayer({
-            input: {
-              sharedPlayerId: foundSharedPlayer.id,
-              linkedPlayerId: insertedPlayer.id,
-            },
-            tx,
-          });
-
-          assertInserted(
-            linkedPlayer,
-            { userId, value: input },
-            "Linked player not created.",
-          );
-
-          localPlayerId = insertedPlayer.id;
-        }
-
-        const returnedMatchPlayer = await matchPlayerRepository.insert({
-          input: {
-            matchId,
-            playerId: localPlayerId,
-            teamId: team ? team.createdId : null,
-          },
-          tx,
-        });
-
-        assertInserted(
-          returnedMatchPlayer,
-          { userId, value: input },
-          "Match player not created.",
-        );
-
-        return {
-          matchPlayerId: returnedMatchPlayer.id,
-          playerId: localPlayerId,
-          teamId: team ? team.createdId : null,
-          roles: [...p.roles, ...rolesToAdd],
-        };
-      }),
-    );
-
-    await matchRolesService.attachRolesToMatchPlayers({
-      input,
-      userId,
-      tx,
-      gameId,
-      mappedMatchPlayers,
-    });
-
-    const roundPlayersToInsert = scoresheetRoundIds.flatMap((roundId) =>
-      mappedMatchPlayers.map((player) => ({
-        roundId,
-        matchPlayerId: player.matchPlayerId,
-      })),
-    );
-
-    if (roundPlayersToInsert.length > 0) {
-      await matchPlayerRepository.insertRounds({
-        input: roundPlayersToInsert,
-        tx,
-      });
-    }
-
-    return { mappedMatchPlayers };
   }
 }
 

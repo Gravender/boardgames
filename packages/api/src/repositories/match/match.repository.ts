@@ -1,4 +1,3 @@
-import type z from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 
@@ -8,41 +7,32 @@ import type {
   QueryConfig,
   TransactionType,
 } from "@board-games/db/client";
-import type { selectRoundPlayerSchema } from "@board-games/db/zodSchema";
 import { db } from "@board-games/db/client";
 import {
-  gameRole,
   match,
   matchPlayer,
-  matchPlayerRole,
   scoresheet,
-  sharedGameRole,
   sharedMatch,
-  team,
 } from "@board-games/db/schema";
 import {
   vMatchCanonical,
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
-import { calculatePlacement, isSameRole } from "@board-games/shared";
 
 import type {
-  EditMatchOutputType,
   GetMatchOutputType,
   GetMatchScoresheetOutputType,
 } from "../../routers/match/match.output";
 import type {
   DeleteMatchArgs,
-  EditMatchArgs,
   GetMatchArgs,
   GetMatchPlayersAndTeamsArgs,
   GetMatchScoresheetArgs,
   InsertMatchInputType,
   InsertSharedMatchInputType,
+  UpdateMatchArgs,
 } from "./match.repository.types";
 import { Logger } from "../../common/logger";
-import { addPlayersToMatch } from "../../utils/editMatch";
-import { cloneSharedLocationForUser } from "../../utils/handleSharedLocation";
 
 class MatchRepository {
   private readonly logger = new Logger(MatchRepository.name);
@@ -84,6 +74,25 @@ class MatchRepository {
       },
     });
     return result as InferQueryResult<"match", TConfig> | undefined;
+  }
+  public async getShared<TConfig extends QueryConfig<"sharedMatch">>(
+    filters: {
+      id: NonNullable<Filter<"sharedMatch">["id"]>;
+      sharedWithId: NonNullable<Filter<"sharedMatch">["sharedWithId"]>;
+    } & TConfig,
+    tx?: TransactionType,
+  ): Promise<InferQueryResult<"sharedMatch", TConfig> | undefined> {
+    const database = tx ?? db;
+    const { id, sharedWithId, ...queryConfig } = filters;
+    const result = await database.query.sharedMatch.findFirst({
+      ...(queryConfig as unknown as TConfig),
+      where: {
+        ...(queryConfig as unknown as TConfig).where,
+        id,
+        sharedWithId,
+      },
+    });
+    return result as InferQueryResult<"sharedMatch", TConfig> | undefined;
   }
   public async getMatch(args: GetMatchArgs): Promise<GetMatchOutputType> {
     const { input } = args;
@@ -737,652 +746,36 @@ class MatchRepository {
       .set({ deletedAt: new Date() })
       .where(eq(scoresheet.id, returnedMatch.scoresheetId));
   }
-  public async editMatch(args: EditMatchArgs): Promise<EditMatchOutputType> {
-    const { input, userId } = args;
 
-    if (input.type === "original") {
-      const result = await db.transaction(async (tx) => {
-        const returnedMatch = await tx.query.match.findFirst({
-          where: {
-            id: input.match.id,
-            createdBy: userId,
-            deletedAt: {
-              isNull: true,
-            },
-          },
-          with: {
-            scoresheet: {
-              with: {
-                rounds: true,
-              },
-            },
-            matchPlayers: {
-              with: {
-                playerRounds: true,
-                roles: true,
-              },
-            },
-            teams: true,
-          },
-        });
-        if (!returnedMatch)
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Match not found.",
-          });
-        const outputMatch: EditMatchOutputType = {
-          type: "original" as const,
-          matchId: input.match.id,
-          game: {
-            id: returnedMatch.gameId,
-          },
-          date: input.match.date,
-          location: undefined,
-          players: [],
-          updatedScore: false,
-        };
+  public async unfinishedMatch(args: {
+    input: {
+      matchId: number;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [returnedMatch] = await database
+      .update(match)
+      .set({ finished: false })
+      .where(eq(match.id, input.matchId))
+      .returning();
+    return returnedMatch;
+  }
 
-        if (input.match.name || input.match.date || input.match.location) {
-          let locationId: null | number | undefined;
-          if (input.match.location) {
-            if (input.match.location.type === "original") {
-              locationId = input.match.location.id;
-            } else {
-              locationId = await cloneSharedLocationForUser(
-                tx,
-                input.match.location.sharedId,
-                userId,
-              );
-            }
-          }
-          await tx
-            .update(match)
-            .set({
-              name: input.match.name,
-              date: input.match.date,
-              locationId: locationId,
-            })
-            .where(eq(match.id, input.match.id));
-          outputMatch.date = input.match.date;
-          outputMatch.game = { id: returnedMatch.gameId };
-          if (typeof locationId !== "undefined") {
-            outputMatch.location = locationId ? { id: locationId } : undefined;
-          }
-
-          if (locationId) {
-            outputMatch.location = { id: locationId };
-          }
-        }
-        const mappedTeams = returnedMatch.teams.map((team) => {
-          const teamPlayers = returnedMatch.matchPlayers.filter(
-            (mp) => mp.teamId === team.id,
-          );
-          const roleCount: {
-            id: number;
-            count: number;
-          }[] = [];
-          teamPlayers.forEach((player) => {
-            player.roles.forEach((role) => {
-              const existingRole = roleCount.find((r) => r.id === role.id);
-              if (existingRole) {
-                existingRole.count++;
-              } else {
-                roleCount.push({
-                  id: role.id,
-                  count: 1,
-                });
-              }
-            });
-          });
-          const teamRoles = roleCount
-            .filter((role) => role.count === teamPlayers.length)
-            .map((r) => {
-              return {
-                id: r.id,
-                type: "original" as const,
-              };
-            });
-          return {
-            id: team.id,
-            name: team.name,
-            roles: teamRoles,
-          };
-        });
-        const playersToRemove: {
-          id: number;
-        }[] = [];
-        const playersToAdd: (
-          | {
-              id: number;
-              type: "original";
-              teamId: number | null;
-              roles: (
-                | {
-                    id: number;
-                    type: "original";
-                  }
-                | {
-                    sharedId: number;
-                    type: "shared";
-                  }
-              )[];
-            }
-          | {
-              sharedId: number;
-              type: "shared";
-              teamId: number | null;
-              roles: (
-                | {
-                    id: number;
-                    type: "original";
-                  }
-                | {
-                    sharedId: number;
-                    type: "shared";
-                  }
-              )[];
-            }
-        )[] = [];
-        const updatedPlayers: {
-          id: number;
-          teamId: number | null;
-          rolesToAdd: (
-            | {
-                id: number;
-                type: "original";
-              }
-            | {
-                sharedId: number;
-                type: "shared";
-              }
-          )[];
-          rolesToRemove: {
-            id: number;
-          }[];
-        }[] = [];
-        input.players.forEach((player) => {
-          const foundPlayer = returnedMatch.matchPlayers.find(
-            (p) => player.type === "original" && p.playerId === player.id,
-          );
-          if (foundPlayer) {
-            const teamChanged = foundPlayer.teamId !== player.teamId;
-            const originalRoles = foundPlayer.roles;
-            const playerRoles = player.roles;
-            const teamRoles =
-              input.teams.find((t) => t.id === player.teamId)?.roles ?? [];
-            teamRoles.forEach((role) => {
-              const foundRole = playerRoles.find((r) => isSameRole(r, role));
-              if (!foundRole) {
-                playerRoles.push(role);
-              }
-            });
-            const rolesToRemove = originalRoles.filter(
-              (role) =>
-                !playerRoles.find((r) =>
-                  isSameRole(r, {
-                    id: role.id,
-                    type: "original",
-                  }),
-                ),
-            );
-            const rolesToAdd = playerRoles.filter(
-              (role) =>
-                !originalRoles.find((r) =>
-                  isSameRole(
-                    {
-                      id: r.id,
-                      type: "original",
-                    },
-                    role,
-                  ),
-                ),
-            );
-            if (
-              teamChanged ||
-              rolesToAdd.length > 0 ||
-              rolesToRemove.length > 0
-            ) {
-              updatedPlayers.push({
-                id: foundPlayer.playerId,
-                teamId: player.teamId,
-                rolesToAdd: rolesToAdd,
-                rolesToRemove: rolesToRemove,
-              });
-            }
-          } else {
-            const playerRoles = player.roles;
-            const teamRoles =
-              input.teams.find((t) => t.id === player.teamId)?.roles ?? [];
-            teamRoles.forEach((role) => {
-              const foundRole = playerRoles.find((r) => isSameRole(r, role));
-              if (!foundRole) {
-                playerRoles.push(role);
-              }
-            });
-            playersToAdd.push({
-              ...player,
-              roles: playerRoles,
-            });
-          }
-        });
-        returnedMatch.matchPlayers.forEach((mp) => {
-          const foundPlayer = input.players.find(
-            (p) => p.type === "original" && p.id === mp.playerId,
-          );
-          if (!foundPlayer) {
-            playersToRemove.push({
-              id: mp.playerId,
-            });
-          }
-        });
-        const addedTeams: {
-          id: number;
-          name: string;
-          roles: (
-            | {
-                id: number;
-                type: "original";
-              }
-            | {
-                sharedId: number;
-                type: "shared";
-              }
-          )[];
-        }[] = [];
-        const editedTeams: {
-          id: number;
-          name: string;
-        }[] = [];
-
-        const deletedTeams: {
-          id: number;
-        }[] = [];
-        input.teams.forEach((team) => {
-          const foundTeam = mappedTeams.find((t) => t.id === team.id);
-          if (foundTeam) {
-            const matchNameChanged = foundTeam.name !== team.name;
-            if (matchNameChanged) {
-              editedTeams.push({
-                id: team.id,
-                name: team.name,
-              });
-            }
-            return;
-          }
-          addedTeams.push({
-            id: team.id,
-            name: team.name,
-            roles: team.roles,
-          });
-        });
-        mappedTeams.forEach((team) => {
-          const foundTeam = input.teams.find((t) => t.id === team.id);
-          if (!foundTeam) {
-            deletedTeams.push({
-              id: team.id,
-            });
-          }
-        });
-
-        if (editedTeams.length > 0) {
-          for (const editedTeam of editedTeams) {
-            await tx
-              .update(team)
-              .set({ name: editedTeam.name })
-              .where(eq(team.id, editedTeam.id));
-          }
-        }
-        //Add Teams
-        const mappedAddedTeams: {
-          id: number;
-          teamId: number;
-          placement: number | null;
-          winner: boolean;
-          score: number | null;
-          rounds: z.infer<typeof selectRoundPlayerSchema>[];
-        }[] = [];
-
-        if (addedTeams.length > 0) {
-          for (const addedTeam of addedTeams) {
-            const [insertedTeam] = await tx
-              .insert(team)
-              .values({
-                name: addedTeam.name,
-                matchId: input.match.id,
-              })
-              .returning();
-            if (!insertedTeam) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Team not created",
-              });
-            }
-            mappedAddedTeams.push({
-              id: addedTeam.id,
-              teamId: insertedTeam.id,
-              placement: null,
-              winner: false,
-              score: null,
-              rounds: [],
-            });
-          }
-        }
-        const originalTeams = returnedMatch.teams.map((team) => {
-          const teamPlayer = returnedMatch.matchPlayers.find(
-            (mp) => mp.teamId === team.id,
-          );
-          return {
-            id: team.id,
-            teamId: team.id,
-            placement: teamPlayer?.placement ?? null,
-            winner: teamPlayer?.winner ?? false,
-            score: teamPlayer?.score ?? null,
-            rounds: teamPlayer?.playerRounds ?? [],
-          };
-        });
-        //Add players to match
-        if (playersToAdd.length > 0) {
-          await addPlayersToMatch(
-            tx,
-            returnedMatch.id,
-            playersToAdd,
-            [...originalTeams, ...mappedAddedTeams],
-            returnedMatch.scoresheet.rounds,
-            userId,
-          );
-        }
-        //Remove Players from Match
-        if (playersToRemove.length > 0) {
-          const matchPlayers = await tx
-            .select({ id: matchPlayer.id })
-            .from(matchPlayer)
-            .where(
-              and(
-                eq(matchPlayer.matchId, input.match.id),
-                inArray(
-                  matchPlayer.playerId,
-                  playersToRemove.map((player) => player.id),
-                ),
-              ),
-            );
-          await tx
-            .update(matchPlayer)
-            .set({ deletedAt: new Date() })
-            .where(
-              and(
-                eq(matchPlayer.matchId, input.match.id),
-                inArray(
-                  matchPlayer.id,
-                  matchPlayers.map(
-                    (returnedMatchPlayer) => returnedMatchPlayer.id,
-                  ),
-                ),
-              ),
-            );
-        }
-        if (updatedPlayers.length > 0) {
-          for (const updatedPlayer of updatedPlayers) {
-            let teamId: number | null = null;
-            const originalPlayer = returnedMatch.matchPlayers.find(
-              (mp) => mp.playerId === updatedPlayer.id,
-            );
-            if (!originalPlayer) continue;
-            if (originalPlayer.teamId !== updatedPlayer.teamId) {
-              if (updatedPlayer.teamId !== null) {
-                const foundTeam = returnedMatch.teams.find(
-                  (t) => t.id === updatedPlayer.teamId,
-                );
-                if (foundTeam) {
-                  teamId = foundTeam.id;
-                } else {
-                  const foundInsertedTeam = mappedAddedTeams.find(
-                    (t) => t.id === updatedPlayer.teamId,
-                  );
-                  if (foundInsertedTeam) {
-                    teamId = foundInsertedTeam.teamId;
-                  } else {
-                    throw new TRPCError({
-                      code: "NOT_FOUND",
-                      message: "Team not found.",
-                    });
-                  }
-                }
-              }
-              await tx
-                .update(matchPlayer)
-                .set({ teamId })
-                .where(
-                  and(
-                    eq(matchPlayer.playerId, updatedPlayer.id),
-                    eq(matchPlayer.matchId, input.match.id),
-                  ),
-                );
-            }
-
-            // Add new roles
-            if (updatedPlayer.rolesToAdd.length > 0) {
-              const originalRoles = updatedPlayer.rolesToAdd.filter(
-                (roleToAdd) => roleToAdd.type === "original",
-              );
-              const sharedRoles = updatedPlayer.rolesToAdd.filter(
-                (roleToAdd) => roleToAdd.type !== "original",
-              );
-              await tx.insert(matchPlayerRole).values(
-                originalRoles.map((roleId) => ({
-                  matchPlayerId: originalPlayer.id,
-                  roleId: roleId.id,
-                })),
-              );
-              for (const sharedRoleToAdd of sharedRoles) {
-                const returnedSharedRole =
-                  await tx.query.sharedGameRole.findFirst({
-                    where: {
-                      gameRoleId: sharedRoleToAdd.sharedId,
-                      sharedWithId: userId,
-                    },
-                    with: {
-                      gameRole: true,
-                    },
-                  });
-                if (!returnedSharedRole) {
-                  throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "Shared role not found.",
-                  });
-                }
-                if (returnedSharedRole.linkedGameRoleId === null) {
-                  throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "Shared role not found.",
-                  });
-                }
-                const [createdGameRole] = await tx
-                  .insert(gameRole)
-                  .values({
-                    gameId: returnedMatch.gameId,
-                    name: returnedSharedRole.gameRole.name,
-                    description: returnedSharedRole.gameRole.description,
-                    createdBy: userId,
-                  })
-                  .returning();
-                if (!createdGameRole) {
-                  throw new TRPCError({
-                    code: "INTERNAL_SERVER_ERROR",
-                    message: "Failed to create game role",
-                  });
-                }
-                await tx.insert(matchPlayerRole).values({
-                  matchPlayerId: originalPlayer.id,
-                  roleId: createdGameRole.id,
-                });
-                await tx
-                  .update(sharedGameRole)
-                  .set({
-                    linkedGameRoleId: createdGameRole.id,
-                  })
-                  .where(eq(sharedGameRole.id, returnedSharedRole.id));
-              }
-            }
-
-            // Remove old roles
-            if (updatedPlayer.rolesToRemove.length > 0) {
-              await tx.delete(matchPlayerRole).where(
-                and(
-                  eq(matchPlayerRole.matchPlayerId, originalPlayer.id),
-                  inArray(
-                    matchPlayerRole.roleId,
-                    updatedPlayer.rolesToRemove.map((r) => r.id),
-                  ),
-                ),
-              );
-            }
-          }
-        }
-        if (
-          returnedMatch.finished &&
-          (playersToAdd.length > 0 ||
-            playersToRemove.length > 0 ||
-            updatedPlayers.length > 0)
-        ) {
-          if (returnedMatch.scoresheet.winCondition !== "Manual") {
-            const newMatchPlayers = await tx.query.matchPlayer.findMany({
-              where: {
-                matchId: input.match.id,
-                deletedAt: {
-                  isNull: true,
-                },
-              },
-              with: {
-                rounds: true,
-              },
-            });
-            if (deletedTeams.length > 0) {
-              deletedTeams.forEach((deletedTeam) => {
-                const foundPlayer = newMatchPlayers.find(
-                  (mp) => mp.teamId === deletedTeam.id,
-                );
-                if (foundPlayer) {
-                  throw new TRPCError({
-                    code: "INTERNAL_SERVER_ERROR",
-                    message: "Player team not changed for deleted team.",
-                  });
-                }
-              });
-              await tx.delete(team).where(
-                and(
-                  inArray(
-                    team.id,
-                    deletedTeams.map((team) => team.id),
-                  ),
-                  eq(team.matchId, input.match.id),
-                ),
-              );
-            }
-            const finalPlacements = calculatePlacement(
-              newMatchPlayers,
-              returnedMatch.scoresheet,
-            );
-            for (const placement of finalPlacements) {
-              await tx
-                .update(matchPlayer)
-                .set({
-                  placement: placement.placement,
-                  score: placement.score,
-                  winner: placement.placement === 1,
-                })
-                .where(eq(matchPlayer.id, placement.id));
-            }
-          }
-          await tx
-            .update(match)
-            .set({ finished: false })
-            .where(eq(match.id, input.match.id));
-          outputMatch.updatedScore = true;
-          outputMatch.players = [];
-        }
-
-        return outputMatch;
-      });
-      return result;
-    } else {
-      const returnedSharedMatch = await db.query.sharedMatch.findFirst({
-        where: {
-          id: input.match.sharedMatchId,
-          sharedWithId: userId,
-        },
-        with: {
-          sharedGame: true,
-        },
-      });
-      if (!returnedSharedMatch)
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Shared match not found.",
-        });
-      if (returnedSharedMatch.permission !== "edit")
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Does not have permission to edit this match.",
-        });
-
-      if (input.match.location !== undefined) {
-        if (input.match.location !== null) {
-          const returnedSharedLocation =
-            await db.query.sharedLocation.findFirst({
-              where: {
-                id: input.match.location.sharedId,
-                sharedWithId: userId,
-                ownerId: returnedSharedMatch.ownerId,
-              },
-            });
-          if (!returnedSharedLocation) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Shared location not found.",
-            });
-          }
-          await db
-            .update(match)
-            .set({
-              name: input.match.name,
-              date: input.match.date,
-              locationId: returnedSharedLocation.locationId,
-            })
-            .where(eq(match.id, returnedSharedMatch.matchId));
-        } else {
-          await db
-            .update(match)
-            .set({
-              name: input.match.name,
-              date: input.match.date,
-              locationId: null,
-            })
-            .where(eq(match.id, returnedSharedMatch.matchId));
-        }
-      } else {
-        await db
-          .update(match)
-          .set({
-            name: input.match.name,
-            date: input.match.date,
-          })
-          .where(eq(match.id, returnedSharedMatch.matchId));
-      }
-      return {
-        type: "shared" as const,
-        matchId: returnedSharedMatch.matchId,
-        game: returnedSharedMatch.sharedGame.linkedGameId
-          ? {
-              id: returnedSharedMatch.sharedGame.linkedGameId,
-              type: "original" as const,
-            }
-          : {
-              id: returnedSharedMatch.sharedGame.gameId,
-              type: "shared" as const,
-            },
-        date: input.match.date,
-      };
-    }
+  public async updateMatch(args: UpdateMatchArgs) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [returnedMatch] = await database
+      .update(match)
+      .set({
+        name: input.name,
+        date: input.date,
+        locationId: input.location,
+      })
+      .where(eq(match.id, input.id))
+      .returning();
+    return returnedMatch;
   }
 }
 export const matchRepository = new MatchRepository();

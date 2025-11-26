@@ -1,5 +1,6 @@
 import type z from "zod";
 
+import type { TransactionType } from "@board-games/db/client";
 import {
   insertMatchSchema,
   insertSharedMatchSchema,
@@ -59,4 +60,14 @@ export interface DeleteMatchArgs {
 export interface EditMatchArgs {
   input: EditMatchInputType;
   userId: string;
+}
+
+export interface UpdateMatchArgs {
+  input: {
+    id: number;
+    name?: string;
+    date?: Date;
+    location?: number | null;
+  };
+  tx?: TransactionType;
 }

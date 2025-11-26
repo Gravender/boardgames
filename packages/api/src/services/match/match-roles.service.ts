@@ -1,6 +1,5 @@
 import type { TransactionType } from "@board-games/db/client";
 
-import type { CreateMatchArgs } from "./match.service.types";
 import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
 import { gameRepository } from "../../routers/game/repository/game.repository";
 import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
@@ -8,14 +7,12 @@ import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
 class MatchRolesService {
   public async attachRolesToMatchPlayers(args: {
-    input: CreateMatchArgs["input"];
     userId: string;
     tx: TransactionType;
     gameId: number;
     mappedMatchPlayers: {
       matchPlayerId: number;
       playerId: number;
-      teamId: number | null;
       roles: (
         | {
             type: "original";
@@ -28,7 +25,7 @@ class MatchRolesService {
       )[];
     }[];
   }) {
-    const { input, userId, tx, gameId, mappedMatchPlayers } = args;
+    const { userId, tx, gameId, mappedMatchPlayers } = args;
 
     const rolesToAdd = mappedMatchPlayers.flatMap((p) =>
       p.roles.map((role) => ({
@@ -84,7 +81,7 @@ class MatchRolesService {
 
         assertFound(
           returnedSharedRole,
-          { userId, value: input },
+          { userId, value: { input: mappedMatchPlayers } },
           "Shared role not found.",
         );
 
@@ -103,7 +100,7 @@ class MatchRolesService {
 
           assertInserted(
             createdGameRole,
-            { userId, value: input },
+            { userId, value: { input: mappedMatchPlayers } },
             "Game role not created.",
           );
 
@@ -119,7 +116,7 @@ class MatchRolesService {
 
           assertInserted(
             linkedRole,
-            { userId, value: input },
+            { userId, value: { input: mappedMatchPlayers } },
             "Linked role not created.",
           );
         }
@@ -137,7 +134,7 @@ class MatchRolesService {
 
         assertFound(
           createdRole,
-          { userId, value: input },
+          { userId, value: { input: mappedMatchPlayers } },
           "Shared role not found.",
         );
 
