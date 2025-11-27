@@ -251,7 +251,7 @@ class MatchPlayerRepository {
     const database = tx ?? db;
     const deletedMatchPlayerRoles = await database
       .delete(matchPlayerRole)
-      .where(inArray(matchPlayerRole.roleId, input.matchPlayerIds))
+      .where(inArray(matchPlayerRole.matchPlayerId, input.matchPlayerIds))
       .returning();
     return deletedMatchPlayerRoles;
   }
