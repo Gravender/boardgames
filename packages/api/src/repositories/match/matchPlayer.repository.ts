@@ -206,6 +206,21 @@ class MatchPlayerRepository {
       .returning();
     return deletedMatchPlayers;
   }
+  public async deleteMatchPlayersByMatchId(args: {
+    input: {
+      matchId: number;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const deletedMatchPlayers = await database
+      .update(matchPlayer)
+      .set({ deletedAt: new Date() })
+      .where(eq(matchPlayer.matchId, input.matchId))
+      .returning();
+    return deletedMatchPlayers;
+  }
   public async deleteMatchPlayerRoles(args: {
     input: {
       matchPlayerId: number;
@@ -223,6 +238,20 @@ class MatchPlayerRepository {
           inArray(matchPlayerRole.roleId, input.roleIds),
         ),
       )
+      .returning();
+    return deletedMatchPlayerRoles;
+  }
+  public async deleteMatchPlayersRolesByMatchPlayerId(args: {
+    input: {
+      matchPlayerIds: number[];
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const deletedMatchPlayerRoles = await database
+      .delete(matchPlayerRole)
+      .where(inArray(matchPlayerRole.roleId, input.matchPlayerIds))
       .returning();
     return deletedMatchPlayerRoles;
   }

@@ -27,6 +27,7 @@ import { matchRepository } from "../../repositories/match/match.repository";
 import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
 import { teamRepository } from "../../repositories/match/team.repository";
 import { locationRepository } from "../../routers/location/repository/location.repository";
+import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 import { friendService } from "../social/friend.service";
 import { matchParticipantsService } from "./match-participants.service";
@@ -376,9 +377,43 @@ class MatchService {
     };
   }
   public async deleteMatch(args: DeleteMatchArgs) {
-    return matchRepository.deleteMatch({
-      input: args.input,
-      userId: args.ctx.userId,
+    const { input } = args;
+    await db.transaction(async (tx) => {
+      const returnedMatch = await matchRepository.get(
+        {
+          id: input.id,
+          createdBy: args.ctx.userId,
+        },
+        tx,
+      );
+      assertFound(
+        returnedMatch,
+        {
+          userId: args.ctx.userId,
+          value: input,
+        },
+        "Match not found.",
+      );
+      await matchPlayerRepository.deleteMatchPlayersByMatchId({
+        input: {
+          matchId: returnedMatch.id,
+        },
+        tx,
+      });
+      await matchRepository.deleteMatch({
+        input: {
+          id: returnedMatch.id,
+          createdBy: args.ctx.userId,
+        },
+        tx,
+      });
+      await scoresheetRepository.deleteScoresheet({
+        input: {
+          id: returnedMatch.scoresheetId,
+          createdBy: args.ctx.userId,
+        },
+        tx,
+      });
     });
   }
   public async editMatch(args: EditMatchArgs): Promise<EditMatchOutputType> {
@@ -511,7 +546,7 @@ class MatchService {
       });
 
       const playersToRemove: {
-        id: number;
+        matchPlayerId: number;
       }[] = [];
       const playersToAdd: (
         | {
@@ -546,7 +581,7 @@ class MatchService {
           }
       )[] = [];
       const updatedPlayers: {
-        id: number;
+        matchPlayerId: number;
         teamId: number | null;
         rolesToAdd: (
           | {
@@ -606,7 +641,7 @@ class MatchService {
             rolesToRemove.length > 0
           ) {
             updatedPlayers.push({
-              id: foundPlayer.playerId,
+              matchPlayerId: foundPlayer.id,
               teamId: player.teamId,
               rolesToAdd: rolesToAdd,
               rolesToRemove: rolesToRemove,
@@ -634,7 +669,7 @@ class MatchService {
         );
         if (!foundPlayer) {
           playersToRemove.push({
-            id: mp.playerId,
+            matchPlayerId: mp.id,
           });
         }
       });
@@ -822,11 +857,17 @@ class MatchService {
         }
       }
       if (playersToRemove.length > 0) {
+        await matchPlayerRepository.deleteMatchPlayersRolesByMatchPlayerId({
+          input: {
+            matchPlayerIds: playersToRemove.map((p) => p.matchPlayerId),
+          },
+          tx,
+        });
         const deletedMatchPlayers =
           await matchPlayerRepository.deleteMatchPlayers({
             input: {
               matchId: returnedMatch.id,
-              matchPlayerIds: playersToRemove.map((p) => p.id),
+              matchPlayerIds: playersToRemove.map((p) => p.matchPlayerId),
             },
             tx,
           });
@@ -857,7 +898,7 @@ class MatchService {
         for (const updatedPlayer of updatedPlayers) {
           let teamId: number | null = null;
           const originalPlayer = returnedMatch.matchPlayers.find(
-            (mp) => mp.playerId === updatedPlayer.id,
+            (mp) => mp.id === updatedPlayer.matchPlayerId,
           );
           if (!originalPlayer) continue;
           if (originalPlayer.teamId !== updatedPlayer.teamId) {
@@ -883,7 +924,7 @@ class MatchService {
             }
             await matchPlayerRepository.updateMatchPlayerTeam({
               input: {
-                id: updatedPlayer.id,
+                id: updatedPlayer.matchPlayerId,
                 teamId,
               },
               tx,

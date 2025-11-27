@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import type {
   Filter,
@@ -35,17 +35,24 @@ class ScoresheetRepository {
       .returning();
     return returningScoresheet;
   }
-  public async insertRound(
-    input: InsertRoundInputType | InsertRoundInputType[],
+  public async insertRound(input: InsertRoundInputType, tx?: TransactionType) {
+    const database = tx ?? db;
+    const [returningRound] = await database
+      .insert(round)
+      .values(input)
+      .returning();
+    return returningRound;
+  }
+  public async insertRounds(
+    input: InsertRoundInputType[],
     tx?: TransactionType,
   ) {
     const database = tx ?? db;
-    const values = Array.isArray(input) ? input : [input];
-    const returningRound = await database
+    const returningRounds = await database
       .insert(round)
-      .values(values)
+      .values(input)
       .returning();
-    return returningRound;
+    return returningRounds;
   }
   public async get<TConfig extends QueryConfig<"scoresheet">>(
     filters: {
@@ -212,6 +219,27 @@ class ScoresheetRepository {
       .where(eq(sharedScoresheet.id, input.sharedScoresheetId))
       .returning();
     return linkedScoresheet;
+  }
+  public async deleteScoresheet(args: {
+    input: {
+      id: number;
+      createdBy: string;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const deletedScoresheet = await database
+      .update(scoresheet)
+      .set({ deletedAt: new Date() })
+      .where(
+        and(
+          eq(scoresheet.id, input.id),
+          eq(scoresheet.createdBy, input.createdBy),
+        ),
+      )
+      .returning();
+    return deletedScoresheet;
   }
 }
 export const scoresheetRepository = new ScoresheetRepository();

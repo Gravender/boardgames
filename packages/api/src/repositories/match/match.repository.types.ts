@@ -8,7 +8,6 @@ import {
 
 import type {
   CreateMatchInputType,
-  DeleteMatchInputType,
   EditMatchInputType,
   GetMatchInputType,
 } from "../../routers/match/match.input";
@@ -49,11 +48,6 @@ export interface GetMatchScoresheetArgs {
 
 export interface GetMatchPlayersAndTeamsArgs {
   input: GetMatchInputType;
-  userId: string;
-}
-
-export interface DeleteMatchArgs {
-  input: DeleteMatchInputType;
   userId: string;
 }
 

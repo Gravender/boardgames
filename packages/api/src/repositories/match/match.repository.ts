@@ -8,12 +8,7 @@ import type {
   TransactionType,
 } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
-import {
-  match,
-  matchPlayer,
-  scoresheet,
-  sharedMatch,
-} from "@board-games/db/schema";
+import { match, scoresheet, sharedMatch } from "@board-games/db/schema";
 import {
   vMatchCanonical,
   vMatchPlayerCanonicalForUser,
@@ -24,7 +19,6 @@ import type {
   GetMatchScoresheetOutputType,
 } from "../../routers/match/match.output";
 import type {
-  DeleteMatchArgs,
   GetMatchArgs,
   GetMatchPlayersAndTeamsArgs,
   GetMatchScoresheetArgs,
@@ -719,32 +713,22 @@ class MatchRepository {
       matchPlayers: matchPlayersResults,
     };
   }
-  public async deleteMatch(args: DeleteMatchArgs) {
-    const { input } = args;
+  public async deleteMatch(args: {
+    input: {
+      id: number;
+      createdBy: string;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
 
-    const returnedMatch = await db.query.match.findFirst({
-      where: {
-        id: input.id,
-        createdBy: args.userId,
-      },
-    });
-    if (!returnedMatch)
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Match not found.",
-      });
-    await db
-      .update(matchPlayer)
-      .set({ deletedAt: new Date() })
-      .where(eq(matchPlayer.matchId, returnedMatch.id));
-    await db
+    const deletedMatch = await database
       .update(match)
       .set({ deletedAt: new Date() })
-      .where(eq(match.id, returnedMatch.id));
-    await db
-      .update(scoresheet)
-      .set({ deletedAt: new Date() })
-      .where(eq(scoresheet.id, returnedMatch.scoresheetId));
+      .where(and(eq(match.id, input.id), eq(match.createdBy, input.createdBy)))
+      .returning();
+    return deletedMatch;
   }
 
   public async unfinishedMatch(args: {

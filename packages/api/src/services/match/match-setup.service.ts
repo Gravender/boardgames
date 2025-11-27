@@ -337,11 +337,19 @@ class MatchSetupService {
     tx: TransactionType,
   ): Promise<{ id: number }[]> {
     const mappedRounds = rounds.map((round) => ({
-      ...round,
+      name: round.name,
+      type: round.type,
+      color: round.color,
+      score: round.score,
+      winCondition: round.winCondition,
+      toggleScore: round.toggleScore,
+      modifier: round.modifier,
+      lookup: round.lookup,
+      order: round.order,
       scoresheetId,
     }));
     if (mappedRounds.length === 0) return [];
-    const insertedRounds = await scoresheetRepository.insertRound(
+    const insertedRounds = await scoresheetRepository.insertRounds(
       mappedRounds,
       tx,
     );
