@@ -44,7 +44,7 @@ const players = createTable(
     ),
     uniqueIndex("boardgames_player_is_user_created_by")
       .on(table.createdBy)
-      .where(eq(table.isUser, true)),
+      .where(sql`"boardgames_player"."is_user" = true`),
   ],
 );
 
