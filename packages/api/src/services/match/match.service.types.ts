@@ -1,36 +1,52 @@
+import type { matchRepository } from "../../repositories/match/match.repository";
 import type {
   CreateMatchInputType,
   DeleteMatchInputType,
   EditMatchInputType,
   GetMatchInputType,
-} from "../match.input";
+} from "../../routers/match/match.input";
 
 export interface CreateMatchArgs {
   input: CreateMatchInputType;
-  createdBy: string;
+  ctx: {
+    userId: string;
+  };
 }
 
 export interface GetMatchArgs {
   input: GetMatchInputType;
-  userId: string;
+  ctx: {
+    userId: string;
+  };
 }
 
 export interface GetMatchScoresheetArgs {
   input: GetMatchInputType;
-  userId: string;
+  ctx: {
+    userId: string;
+  };
 }
 
 export interface GetMatchPlayersAndTeamsArgs {
   input: GetMatchInputType;
-  userId: string;
+  ctx: {
+    userId: string;
+  };
 }
 
 export interface DeleteMatchArgs {
   input: DeleteMatchInputType;
-  userId: string;
+  ctx: {
+    userId: string;
+  };
 }
 
 export interface EditMatchArgs {
   input: EditMatchInputType;
-  userId: string;
+  ctx: {
+    userId: string;
+  };
 }
+export type MatchPlayersAndTeamsResponse = Awaited<
+  ReturnType<typeof matchRepository.getMatchPlayersAndTeams>
+>;

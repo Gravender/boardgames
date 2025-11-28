@@ -262,3 +262,11 @@ export const editMatchOutput = z.discriminatedUnion("type", [
 ]);
 
 export type EditMatchOutputType = z.infer<typeof editMatchOutput>;
+export type OriginalEditMatchOutputType = Extract<
+  EditMatchOutputType,
+  { type: "original" }
+>;
+export type SharedEditMatchOutputType = Extract<
+  EditMatchOutputType,
+  { type: "shared" }
+>;

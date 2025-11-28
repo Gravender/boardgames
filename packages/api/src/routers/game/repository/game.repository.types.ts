@@ -1,10 +1,37 @@
-import type { TransactionType } from "@board-games/db/client";
+import type z from "zod";
 
-import type { GetGameInputType } from "../../../routers/game/game.input";
+import type { TransactionType } from "@board-games/db/client";
+import { insertGameRoleSchema } from "@board-games/db/zodSchema";
+
+import type {
+  CreateGameInputType,
+  GetGameInputType,
+} from "../../../routers/game/game.input";
 
 export interface GetGameArgs {
   input: GetGameInputType;
   userId: string;
+}
+export interface CreateGameArgs {
+  input: CreateGameInputType["game"] & { imageId: number | null };
+  userId: string;
+  tx?: TransactionType;
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const createGameRoleInput = insertGameRoleSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+});
+type CreateGameRoleInputType = z.infer<typeof createGameRoleInput>;
+export interface CreateGameRoleArgs {
+  input: CreateGameRoleInputType;
+  tx?: TransactionType;
+}
+export interface CreateGameRolesArgs {
+  input: CreateGameRoleInputType[];
+  tx?: TransactionType;
 }
 export interface GetGameMatchesOutputType {
   matches: {

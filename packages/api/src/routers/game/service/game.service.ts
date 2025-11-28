@@ -238,7 +238,15 @@ class GameService {
           },
           tx,
         );
-        canonicalGameId = assertFound(returnedGame, "Game not found.").id;
+        assertFound(
+          returnedGame,
+          {
+            userId: args.ctx.userId,
+            value: args.input,
+          },
+          "Game not found.",
+        );
+        canonicalGameId = returnedGame.id;
       } else {
         const returnedSharedGame = await gameRepository.getSharedGame(
           {
@@ -247,12 +255,16 @@ class GameService {
           },
           tx,
         );
-        const assertedSharedGame = assertFound(
+        assertFound(
           returnedSharedGame,
+          {
+            userId: args.ctx.userId,
+            value: args.input,
+          },
           "Shared game not found.",
         );
         canonicalGameId =
-          assertedSharedGame.linkedGameId ?? assertedSharedGame.gameId;
+          returnedSharedGame.linkedGameId ?? returnedSharedGame.gameId;
       }
       if (!canonicalGameId) {
         throw new TRPCError({

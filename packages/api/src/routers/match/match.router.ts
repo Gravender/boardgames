@@ -1,5 +1,6 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
+import { matchService } from "../../services/match/match.service";
 import { protectedUserProcedure } from "../../trpc";
 import {
   createMatchInput,
@@ -17,7 +18,6 @@ import {
   getMatchScoresheetOutput,
   getMatchSummaryOutput,
 } from "./match.output";
-import { matchService } from "./service/match.service";
 import { dateMatchRouter } from "./sub-routers/date/date-match.router";
 import { updateMatchRouter } from "./sub-routers/update-match/update-match.router";
 

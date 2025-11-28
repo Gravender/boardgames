@@ -37,6 +37,7 @@ const shareRequest = createTable(
       ],
     }).notNull(),
     itemId: integer("item_id").notNull(),
+    itemParentId: integer("item_parent_id"),
     permission: text("permission", { enum: ["view", "edit"] })
       .default("view")
       .notNull(),

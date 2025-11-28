@@ -642,6 +642,21 @@ export const relations = defineRelations(schema, (r) => ({
     }),
   },
   sharedScoresheet: {
+    parent: r.one.sharedScoresheet({
+      from: r.sharedScoresheet.parentId,
+      to: r.sharedScoresheet.id,
+      optional: true,
+      where: {
+        type: "game",
+      },
+    }),
+    childScoresheets: r.many.sharedScoresheet({
+      from: r.sharedScoresheet.id,
+      to: r.sharedScoresheet.parentId,
+      where: {
+        type: "match",
+      },
+    }),
     owner: r.one.user({
       from: r.sharedScoresheet.ownerId,
       to: r.user.id,
