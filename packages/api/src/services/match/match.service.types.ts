@@ -1,3 +1,4 @@
+import type { matchRepository } from "../../repositories/match/match.repository";
 import type {
   CreateMatchInputType,
   DeleteMatchInputType,
@@ -46,3 +47,6 @@ export interface EditMatchArgs {
     userId: string;
   };
 }
+export type MatchPlayersAndTeamsResponse = Awaited<
+  ReturnType<typeof matchRepository.getMatchPlayersAndTeams>
+>;
