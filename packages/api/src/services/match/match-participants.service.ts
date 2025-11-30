@@ -24,14 +24,17 @@ class MatchParticipantsService {
 
     let part = 0;
     try {
-      const mappedTeams = await this.createMappedTeams({
-        input: {
-          teams: input.teams,
-        },
-        matchId,
-        userId,
-        tx,
-      });
+      const mappedTeams =
+        input.teams.length > 0
+          ? await this.createMappedTeams({
+              input: {
+                teams: input.teams,
+              },
+              matchId,
+              userId,
+              tx,
+            })
+          : [];
       part++;
 
       const mappedMatchPlayers = await Promise.all(
