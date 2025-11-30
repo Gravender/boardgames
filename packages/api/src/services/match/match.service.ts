@@ -105,10 +105,13 @@ class MatchService {
         );
         //five
         part++;
-        const foundMatch = await matchRepository.get({
-          id: insertedMatch.id,
-          createdBy: args.ctx.userId,
-        });
+        const foundMatch = await matchRepository.get(
+          {
+            id: insertedMatch.id,
+            createdBy: args.ctx.userId,
+          },
+          tx,
+        );
         assertFound(
           foundMatch,
           {
