@@ -41,40 +41,72 @@ class MatchParticipantsService {
 
       const mappedMatchPlayers = await Promise.all(
         input.players.map(async (p) => {
-          const team = mappedTeams.find((t) => t.originalId === p.teamId);
-          const teamRoles = team?.roles ?? [];
+          let matchPlayerPart = 0;
+          try {
+            const team = mappedTeams.find((t) => t.originalId === p.teamId);
+            const teamRoles = team?.roles ?? [];
 
-          const rolesToAdd = teamRoles.filter(
-            (role) => !p.roles.find((r) => isSameRole(r, role)),
-          );
+            const rolesToAdd = teamRoles.filter(
+              (role) => !p.roles.find((r) => isSameRole(r, role)),
+            );
 
-          const processedPlayerId = await this.processPlayer({
-            playerToProcess: p,
-            userId,
-            tx,
-          });
+            const processedPlayerId = await this.processPlayer({
+              playerToProcess: p,
+              userId,
+              tx,
+            });
+            matchPlayerPart++;
 
-          const returnedMatchPlayer = await matchPlayerRepository.insert({
-            input: {
-              matchId,
+            const returnedMatchPlayer = await matchPlayerRepository.insert({
+              input: {
+                matchId,
+                playerId: processedPlayerId,
+                teamId: team ? team.createdId : null,
+              },
+              tx,
+            });
+            matchPlayerPart++;
+
+            assertInserted(
+              returnedMatchPlayer,
+              { userId, value: input },
+              "Match player not created.",
+            );
+            matchPlayerPart++;
+
+            return {
+              matchPlayerId: returnedMatchPlayer.id,
               playerId: processedPlayerId,
               teamId: team ? team.createdId : null,
-            },
-            tx,
-          });
-
-          assertInserted(
-            returnedMatchPlayer,
-            { userId, value: input },
-            "Match player not created.",
-          );
-
-          return {
-            matchPlayerId: returnedMatchPlayer.id,
-            playerId: processedPlayerId,
-            teamId: team ? team.createdId : null,
-            roles: [...p.roles, ...rolesToAdd],
-          };
+              roles: [...p.roles, ...rolesToAdd],
+            };
+          } catch (e) {
+            await posthog.captureImmediate({
+              distinctId: userId,
+              event: "matchPlayer.create failure",
+              properties: {
+                matchId,
+                gameId,
+                error: e,
+                input,
+              },
+            });
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message:
+                "Match Player Insert Failure" +
+                " Part: " +
+                matchPlayerPart +
+                " Input: " +
+                input.name +
+                (e instanceof Error ? ` – ${e.name}: ${e.message}` : ""),
+              cause: {
+                error: e,
+                part,
+                input: input,
+              },
+            });
+          }
         }),
       );
       part++;
