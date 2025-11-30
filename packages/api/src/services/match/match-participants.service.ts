@@ -277,29 +277,42 @@ class MatchParticipantsService {
   }) {
     const { input, matchId, userId, tx } = args;
 
-    return Promise.all(
-      input.teams.map(async (inputTeam) => {
-        const createdTeam = await teamRepository.createTeam({
-          input: {
-            name: inputTeam.name,
-            matchId,
-          },
-          tx,
-        });
+    const mappedTeams: {
+      originalId: number;
+      createdId: number;
+      roles: (
+        | {
+            id: number;
+            type: "original";
+          }
+        | {
+            sharedId: number;
+            type: "shared";
+          }
+      )[];
+    }[] = [];
+    for (const inputTeam of input.teams) {
+      const createdTeam = await teamRepository.createTeam({
+        input: {
+          name: inputTeam.name,
+          matchId,
+        },
+        tx,
+      });
 
-        assertInserted(
-          createdTeam,
-          { userId, value: input },
-          "Team not created.",
-        );
+      assertInserted(
+        createdTeam,
+        { userId, value: input },
+        "Team not created.",
+      );
 
-        return {
-          originalId: inputTeam.id,
-          createdId: createdTeam.id,
-          roles: inputTeam.roles,
-        };
-      }),
-    );
+      mappedTeams.push({
+        originalId: inputTeam.id,
+        createdId: createdTeam.id,
+        roles: inputTeam.roles,
+      });
+    }
+    return mappedTeams;
   }
 }
 
