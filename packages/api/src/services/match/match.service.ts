@@ -858,33 +858,51 @@ class MatchService {
       if (playersToAdd.length > 0) {
         const combinedTeams = [...originalTeams, ...mappedAddedTeams];
 
-        const playersToInsert = await Promise.all(
-          playersToAdd.map(async (p) => {
-            const foundTeam = combinedTeams.find((t) => t.id === p.teamId);
-            if (!foundTeam && p.teamId !== null)
-              throw new TRPCError({
-                code: "NOT_FOUND",
-                message: "Team not found.",
-              });
-            const processedPlayerId =
-              await matchParticipantsService.processPlayer({
-                playerToProcess: p,
-                userId: args.ctx.userId,
-                tx,
-              });
-            return {
-              processedPlayer: {
-                matchId: returnedMatch.id,
-                playerId: processedPlayerId,
-                teamId: foundTeam?.teamId ?? null,
-                score: foundTeam?.score ?? null,
-                placement: foundTeam?.placement ?? null,
-                winner: foundTeam?.winner ?? null,
-              },
-              roles: p.roles,
-            };
-          }),
-        );
+        const playersToInsert: {
+          processedPlayer: {
+            matchId: number;
+            playerId: number;
+            teamId: number | null;
+            score: number | null;
+            placement: number | null;
+            winner: boolean | null;
+          };
+          roles: (
+            | {
+                id: number;
+                type: "original";
+              }
+            | {
+                sharedId: number;
+                type: "shared";
+              }
+          )[];
+        }[] = [];
+        for (const p of playersToAdd) {
+          const foundTeam = combinedTeams.find((t) => t.id === p.teamId);
+          if (!foundTeam && p.teamId !== null)
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Team not found.",
+            });
+          const processedPlayerId =
+            await matchParticipantsService.processPlayer({
+              playerToProcess: p,
+              userId: args.ctx.userId,
+              tx,
+            });
+          playersToInsert.push({
+            processedPlayer: {
+              matchId: returnedMatch.id,
+              playerId: processedPlayerId,
+              teamId: foundTeam?.teamId ?? null,
+              score: foundTeam?.score ?? null,
+              placement: foundTeam?.placement ?? null,
+              winner: foundTeam?.winner ?? null,
+            },
+            roles: p.roles,
+          });
+        }
         if (playersToInsert.length === 0) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
