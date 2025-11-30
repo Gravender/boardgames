@@ -120,7 +120,7 @@ class MatchService {
         });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Match Insert Failure",
+          message: "Match Insert Failure" + " Part: " + part,
           cause: {
             error: e,
             part,
