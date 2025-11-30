@@ -37,7 +37,6 @@ import {
 } from "@board-games/db/zodSchema";
 import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
-import analyticsServerClient from "../analytics";
 import { protectedUserProcedure } from "../trpc";
 import { utapi } from "../uploadthing";
 import {
@@ -213,7 +212,7 @@ export const gameRouter = {
         }
         return returningGame;
       });
-      analyticsServerClient.capture({
+      await ctx.posthog.captureImmediate({
         distinctId: ctx.userId,
         event: "game created",
         properties: {
@@ -1517,7 +1516,7 @@ export const gameRouter = {
             }
             if (existingImage) {
               if (existingImage.type === "file" && existingImage.fileId) {
-                analyticsServerClient.capture({
+                await ctx.posthog.captureImmediate({
                   distinctId: ctx.userId,
                   event: "uploadthing begin image delete",
                   properties: {
@@ -1528,7 +1527,7 @@ export const gameRouter = {
                 });
                 const result = await utapi.deleteFiles(existingImage.fileId);
                 if (!result.success) {
-                  analyticsServerClient.capture({
+                  await ctx.posthog.captureImmediate({
                     distinctId: ctx.userId,
                     event: "uploadthing image delete error",
                     properties: {
@@ -1863,7 +1862,7 @@ export const gameRouter = {
         }
         return deletedGame;
       });
-      analyticsServerClient.capture({
+      await ctx.posthog.captureImmediate({
         distinctId: ctx.userId,
         event: "game delete",
         properties: {

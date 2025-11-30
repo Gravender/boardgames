@@ -1,3 +1,5 @@
+import type { PostHog } from "posthog-node";
+
 import type { matchRepository } from "../../repositories/match/match.repository";
 import type {
   CreateMatchInputType,
@@ -10,6 +12,7 @@ export interface CreateMatchArgs {
   input: CreateMatchInputType;
   ctx: {
     userId: string;
+    posthog: PostHog;
   };
 }
 

@@ -23,7 +23,6 @@ import type {
   GetMatchScoresheetArgs,
   MatchPlayersAndTeamsResponse,
 } from "./match.service.types";
-import analyticsServerClient from "../../analytics";
 import { Logger } from "../../common/logger";
 import { matchRepository } from "../../repositories/match/match.repository";
 import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
@@ -44,7 +43,7 @@ class MatchService {
   ): Promise<CreateMatchOutputType> {
     const {
       input,
-      ctx: { userId },
+      ctx: { userId, posthog },
     } = args;
     const response = await db.transaction(async (tx) => {
       let part = 0;
@@ -54,6 +53,7 @@ class MatchService {
           userId,
           tx,
         });
+        // one
         part++;
 
         const matchScoresheet = await matchSetupService.resolveMatchScoresheet({
@@ -62,6 +62,7 @@ class MatchService {
           gameId,
           tx,
         });
+        //two
         part++;
 
         const locationId = await matchSetupService.resolveLocationForMatch({
@@ -69,6 +70,7 @@ class MatchService {
           userId,
           tx,
         });
+        //three
         part++;
         const insertedMatch = await matchRepository.insert(
           {
@@ -82,6 +84,7 @@ class MatchService {
           },
           tx,
         );
+        //four
         part++;
         assertInserted(
           insertedMatch,
@@ -91,6 +94,7 @@ class MatchService {
           },
           "Match not created.",
         );
+        //five
         part++;
         const { mappedMatchPlayers } =
           await matchParticipantsService.createTeamsPlayersAndRounds({
@@ -100,7 +104,9 @@ class MatchService {
             userId,
             tx,
             scoresheetRoundIds: matchScoresheet.rounds.map((r) => r.id),
+            posthog,
           });
+        //six
         part++;
         return {
           match: insertedMatch,
@@ -110,7 +116,7 @@ class MatchService {
           })),
         };
       } catch (e) {
-        analyticsServerClient.capture({
+        await posthog.captureImmediate({
           distinctId: args.ctx.userId,
           event: "match.insert failure",
           properties: {
@@ -119,6 +125,9 @@ class MatchService {
             input: args.input,
           },
         });
+        if (e instanceof TRPCError) {
+          throw e;
+        }
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Match Insert Failure" + " Part: " + part,
@@ -140,7 +149,7 @@ class MatchService {
         },
       });
     } catch (e) {
-      analyticsServerClient.capture({
+      await posthog.captureImmediate({
         distinctId: args.ctx.userId,
         event: "friend share failure",
         properties: {

@@ -5,6 +5,8 @@ import { z, ZodError } from "zod/v4";
 import type { Auth } from "@board-games/auth";
 import { db } from "@board-games/db/client";
 
+import { getPosthogServerClient } from "./analytics";
+
 /**
  * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
  * 1. You want to modify request context (see Part 1).
@@ -34,10 +36,12 @@ export const createTRPCContext = async (opts: {
   const session = await authApi.getSession({
     headers: opts.headers,
   });
+  const posthog = getPosthogServerClient();
   return {
     authApi,
     session,
     db,
+    posthog,
   };
 };
 

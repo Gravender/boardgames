@@ -6,7 +6,6 @@ import z from "zod/v4";
 import { image, matchImage } from "@board-games/db/schema";
 import { insertImageSchema } from "@board-games/db/zodSchema";
 
-import analyticsServerClient from "../analytics";
 import { protectedUserProcedure } from "../trpc";
 import { utapi } from "../uploadthing";
 
@@ -55,7 +54,7 @@ export const imageRouter = {
       }
       await ctx.db.delete(image).where(eq(image.id, imageToDelete.id));
       if (imageToDelete.type === "file" && imageToDelete.fileId) {
-        analyticsServerClient.capture({
+        await ctx.posthog.captureImmediate({
           distinctId: ctx.userId,
           event: "uploadthing begin image delete",
           properties: {
@@ -66,7 +65,7 @@ export const imageRouter = {
         });
         const result = await utapi.deleteFiles(imageToDelete.fileId);
         if (!result.success) {
-          analyticsServerClient.capture({
+          await ctx.posthog.captureImmediate({
             distinctId: ctx.userId,
             event: "uploadthing image delete error",
             properties: {
@@ -92,7 +91,7 @@ export const imageRouter = {
           },
         });
         if (!returnedMatchImage) {
-          analyticsServerClient.capture({
+          await ctx.posthog.captureImmediate({
             distinctId: ctx.userId,
             event: "delete match image error",
             properties: {
@@ -110,7 +109,7 @@ export const imageRouter = {
           returnedMatchImage.image.type === "file" &&
           returnedMatchImage.image.fileId
         ) {
-          analyticsServerClient.capture({
+          await ctx.posthog.captureImmediate({
             distinctId: ctx.userId,
             event: "uploadthing begin image delete",
             properties: {
@@ -123,7 +122,7 @@ export const imageRouter = {
             returnedMatchImage.image.fileId,
           );
           if (!result.success) {
-            analyticsServerClient.capture({
+            await ctx.posthog.captureImmediate({
               distinctId: ctx.userId,
               event: "uploadthing image delete error",
               properties: {

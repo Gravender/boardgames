@@ -4,16 +4,19 @@ import { PostHog } from "posthog-node";
 
 import { env } from "./env";
 
-function serverSideAnalytics() {
-  const posthogClient = new PostHog(env.NEXT_PUBLIC_POSTHOG_KEY, {
-    host: "https://us.i.posthog.com",
-    flushAt: 1,
-    flushInterval: 0,
-  });
+let posthogClient: PostHog | null = null;
+export function getPosthogServerClient() {
+  if (!posthogClient) {
+    posthogClient = new PostHog(env.NEXT_PUBLIC_POSTHOG_KEY, {
+      host: "https://us.i.posthog.com",
+      flushAt: 1,
+      flushInterval: 0,
+    });
+
+    if (process.env.NODE_ENV === "development") {
+      posthogClient.debug(true);
+    }
+  }
 
   return posthogClient;
 }
-
-const analyticsServerClient = serverSideAnalytics();
-
-export default analyticsServerClient;

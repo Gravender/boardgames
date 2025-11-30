@@ -1,10 +1,10 @@
+import type { PostHog } from "posthog-node";
 import { TRPCError } from "@trpc/server";
 
 import type { TransactionType } from "@board-games/db/client";
 import { isSameRole } from "@board-games/shared";
 
 import type { CreateMatchArgs } from "./match.service.types";
-import analyticsServerClient from "../../analytics";
 import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
 import { teamRepository } from "../../repositories/match/team.repository";
 import { playerRepository } from "../../routers/player/repository/player.repository";
@@ -14,13 +14,15 @@ import { matchRolesService } from "./match-roles.service";
 class MatchParticipantsService {
   public async createTeamsPlayersAndRounds(args: {
     input: CreateMatchArgs["input"];
+    posthog: PostHog;
     matchId: number;
     gameId: number;
     userId: string;
     tx: TransactionType;
     scoresheetRoundIds: number[];
   }) {
-    const { input, matchId, gameId, userId, tx, scoresheetRoundIds } = args;
+    const { input, matchId, gameId, userId, tx, scoresheetRoundIds, posthog } =
+      args;
 
     let part = 0;
     try {
@@ -102,7 +104,7 @@ class MatchParticipantsService {
 
       return { mappedMatchPlayers };
     } catch (e) {
-      analyticsServerClient.capture({
+      await posthog.captureImmediate({
         distinctId: userId,
         event: "matchPlayer.create failure",
         properties: {
@@ -111,6 +113,9 @@ class MatchParticipantsService {
           error: e,
         },
       });
+      if (e instanceof TRPCError) {
+        throw e;
+      }
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Match Player Insert Failure" + " Part: " + part,

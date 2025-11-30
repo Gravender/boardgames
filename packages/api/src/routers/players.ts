@@ -18,7 +18,6 @@ import {
 import { calculatePlacement } from "@board-games/shared";
 
 import type { Player, PlayerMatch } from "../utils/player";
-import analyticsServerClient from "../analytics";
 import { protectedUserProcedure } from "../trpc";
 import { utapi } from "../uploadthing";
 import {
@@ -964,7 +963,7 @@ export const playerRouter = {
               });
             }
             if (imageToDelete.type === "file" && imageToDelete.fileId) {
-              analyticsServerClient.capture({
+              await ctx.posthog.captureImmediate({
                 distinctId: ctx.userId,
                 event: "uploadthing begin image delete",
                 properties: {
@@ -975,7 +974,7 @@ export const playerRouter = {
               });
               const result = await utapi.deleteFiles(imageToDelete.fileId);
               if (!result.success) {
-                analyticsServerClient.capture({
+                await ctx.posthog.captureImmediate({
                   distinctId: ctx.userId,
                   event: "uploadthing image delete error",
                   properties: {
