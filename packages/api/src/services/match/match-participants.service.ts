@@ -87,8 +87,8 @@ class MatchParticipantsService {
               properties: {
                 matchId,
                 gameId,
-                error: e,
-                input,
+                errorName: e instanceof Error ? e.name : typeof e,
+                errorMessage: e instanceof Error ? e.message : String(e),
               },
             });
             throw new TRPCError({
@@ -98,7 +98,7 @@ class MatchParticipantsService {
                 " Part: " +
                 matchPlayerPart +
                 " Input: " +
-                input.name +
+                (p.type === "original" ? p.id : p.sharedId) +
                 (e instanceof Error ? ` – ${e.name}: ${e.message}` : ""),
               cause: {
                 error: e,

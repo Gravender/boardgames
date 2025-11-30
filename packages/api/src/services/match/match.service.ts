@@ -84,6 +84,15 @@ class MatchService {
           },
           tx,
         );
+
+        await posthog.captureImmediate({
+          distinctId: userId,
+          event: "match.insert debug",
+          properties: {
+            insertedMatchId: insertedMatch?.id,
+            table: "boardgames_match?",
+          },
+        });
         //four
         part++;
         assertInserted(
@@ -100,7 +109,7 @@ class MatchService {
           await matchParticipantsService.createTeamsPlayersAndRounds({
             input,
             matchId: insertedMatch.id,
-            gameId,
+            gameId: insertedMatch.gameId,
             userId,
             tx,
             scoresheetRoundIds: matchScoresheet.rounds.map((r) => r.id),
