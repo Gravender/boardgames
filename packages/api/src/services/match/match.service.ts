@@ -118,11 +118,16 @@ class MatchService {
             input: args.input,
           },
         });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Match Insert Failure",
+          cause: {
+            error: e,
+            part,
+            input: args.input,
+          },
+        });
       }
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Match Insert Failure",
-      });
     });
     await friendService.autoShareMatch({
       input: {
