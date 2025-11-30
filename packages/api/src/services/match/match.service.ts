@@ -91,6 +91,7 @@ class MatchService {
           },
           "Match not created.",
         );
+        part++;
         const { mappedMatchPlayers } =
           await matchParticipantsService.createTeamsPlayersAndRounds({
             input,
