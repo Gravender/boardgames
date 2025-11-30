@@ -23,6 +23,7 @@ import type {
   GetMatchScoresheetArgs,
   MatchPlayersAndTeamsResponse,
 } from "./match.service.types";
+import analyticsServerClient from "../../analytics";
 import { Logger } from "../../common/logger";
 import { matchRepository } from "../../repositories/match/match.repository";
 import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
@@ -46,60 +47,82 @@ class MatchService {
       ctx: { userId },
     } = args;
     const response = await db.transaction(async (tx) => {
-      const gameId = await matchSetupService.resolveGameForMatch({
-        gameInput: input.game,
-        userId,
-        tx,
-      });
-
-      const matchScoresheet = await matchSetupService.resolveMatchScoresheet({
-        scoresheetInput: input.scoresheet,
-        userId,
-        gameId,
-        tx,
-      });
-
-      const locationId = await matchSetupService.resolveLocationForMatch({
-        locationInput: input.location,
-        userId,
-        tx,
-      });
-      const insertedMatch = await matchRepository.insert(
-        {
-          name: input.name,
-          date: input.date,
-          gameId: gameId,
-          locationId: locationId,
-          createdBy: userId,
-          scoresheetId: matchScoresheet.id,
-          running: true,
-        },
-        tx,
-      );
-      assertInserted(
-        insertedMatch,
-        {
-          userId: args.ctx.userId,
-          value: args.input,
-        },
-        "Match not created.",
-      );
-      const { mappedMatchPlayers } =
-        await matchParticipantsService.createTeamsPlayersAndRounds({
-          input,
-          matchId: insertedMatch.id,
-          gameId,
+      let part = 0;
+      try {
+        const gameId = await matchSetupService.resolveGameForMatch({
+          gameInput: input.game,
           userId,
           tx,
-          scoresheetRoundIds: matchScoresheet.rounds.map((r) => r.id),
         });
-      return {
-        match: insertedMatch,
-        players: mappedMatchPlayers.map((mp) => ({
-          matchPlayerId: mp.matchPlayerId,
-          playerId: mp.playerId,
-        })),
-      };
+        part++;
+
+        const matchScoresheet = await matchSetupService.resolveMatchScoresheet({
+          scoresheetInput: input.scoresheet,
+          userId,
+          gameId,
+          tx,
+        });
+        part++;
+
+        const locationId = await matchSetupService.resolveLocationForMatch({
+          locationInput: input.location,
+          userId,
+          tx,
+        });
+        part++;
+        const insertedMatch = await matchRepository.insert(
+          {
+            name: input.name,
+            date: input.date,
+            gameId: gameId,
+            locationId: locationId,
+            createdBy: userId,
+            scoresheetId: matchScoresheet.id,
+            running: true,
+          },
+          tx,
+        );
+        part++;
+        assertInserted(
+          insertedMatch,
+          {
+            userId: args.ctx.userId,
+            value: args.input,
+          },
+          "Match not created.",
+        );
+        const { mappedMatchPlayers } =
+          await matchParticipantsService.createTeamsPlayersAndRounds({
+            input,
+            matchId: insertedMatch.id,
+            gameId,
+            userId,
+            tx,
+            scoresheetRoundIds: matchScoresheet.rounds.map((r) => r.id),
+          });
+        part++;
+        return {
+          match: insertedMatch,
+          players: mappedMatchPlayers.map((mp) => ({
+            matchPlayerId: mp.matchPlayerId,
+            playerId: mp.playerId,
+          })),
+        };
+      } catch (e) {
+        analyticsServerClient.capture({
+          distinctId: args.ctx.userId,
+          event: "match.insert failure",
+          properties: {
+            error: e,
+            part,
+            input: args.input,
+          },
+        });
+      }
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Match Insert Failure",
+      });
     });
     await friendService.autoShareMatch({
       input: {

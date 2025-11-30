@@ -1,10 +1,7 @@
-import { TRPCError } from "@trpc/server";
-
 import type { TransactionType } from "@board-games/db/client";
 import { isSameRole } from "@board-games/shared";
 
 import type { CreateMatchArgs } from "./match.service.types";
-import analyticsServerClient from "../../analytics";
 import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
 import { teamRepository } from "../../repositories/match/team.repository";
 import { playerRepository } from "../../routers/player/repository/player.repository";
@@ -46,44 +43,27 @@ class MatchParticipantsService {
           tx,
         });
 
-        try {
-          const returnedMatchPlayer = await matchPlayerRepository.insert({
-            input: {
-              matchId,
-              playerId: processedPlayerId,
-              teamId: team ? team.createdId : null,
-            },
-            tx,
-          });
-
-          assertInserted(
-            returnedMatchPlayer,
-            { userId, value: input },
-            "Match player not created.",
-          );
-
-          return {
-            matchPlayerId: returnedMatchPlayer.id,
+        const returnedMatchPlayer = await matchPlayerRepository.insert({
+          input: {
+            matchId,
             playerId: processedPlayerId,
             teamId: team ? team.createdId : null,
-            roles: [...p.roles, ...rolesToAdd],
-          };
-        } catch (e) {
-          analyticsServerClient.capture({
-            distinctId: userId,
-            event: "matchPlayer.insert failure",
-            properties: {
-              matchId,
-              playerId: processedPlayerId,
-              teamId: team ? team.createdId : null,
-              error: e,
-            },
-          });
-        }
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Match Player Insert Failure",
+          },
+          tx,
         });
+
+        assertInserted(
+          returnedMatchPlayer,
+          { userId, value: input },
+          "Match player not created.",
+        );
+
+        return {
+          matchPlayerId: returnedMatchPlayer.id,
+          playerId: processedPlayerId,
+          teamId: team ? team.createdId : null,
+          roles: [...p.roles, ...rolesToAdd],
+        };
       }),
     );
 
