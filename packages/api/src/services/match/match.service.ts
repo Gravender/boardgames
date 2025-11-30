@@ -129,14 +129,36 @@ class MatchService {
         });
       }
     });
-    await friendService.autoShareMatch({
-      input: {
-        matchId: response.match.id,
-      },
-      ctx: {
-        userId: args.ctx.userId,
-      },
-    });
+    try {
+      await friendService.autoShareMatch({
+        input: {
+          matchId: response.match.id,
+        },
+        ctx: {
+          userId: args.ctx.userId,
+        },
+      });
+    } catch (e) {
+      analyticsServerClient.capture({
+        distinctId: args.ctx.userId,
+        event: "friend share failure",
+        properties: {
+          error: e,
+          response: response,
+          input: args.input,
+        },
+      });
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Friend Share Failure",
+        cause: {
+          error: e,
+          response: response,
+          input: args.input,
+        },
+      });
+    }
+
     return {
       id: response.match.id,
       date: response.match.date,
