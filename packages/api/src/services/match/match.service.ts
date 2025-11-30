@@ -105,20 +105,34 @@ class MatchService {
         );
         //five
         part++;
+        const foundMatch = await matchRepository.get({
+          id: insertedMatch.id,
+          createdBy: args.ctx.userId,
+        });
+        assertFound(
+          foundMatch,
+          {
+            userId: args.ctx.userId,
+            value: args.input,
+          },
+          "Match not created.",
+        );
+        //six
+        part++;
         const { mappedMatchPlayers } =
           await matchParticipantsService.createTeamsPlayersAndRounds({
             input,
-            matchId: insertedMatch.id,
-            gameId: insertedMatch.gameId,
+            matchId: foundMatch.id,
+            gameId: foundMatch.gameId,
             userId,
             tx,
             scoresheetRoundIds: matchScoresheet.rounds.map((r) => r.id),
             posthog,
           });
-        //six
+        //seven
         part++;
         return {
-          match: insertedMatch,
+          match: foundMatch,
           players: mappedMatchPlayers.map((mp) => ({
             matchPlayerId: mp.matchPlayerId,
             playerId: mp.playerId,
