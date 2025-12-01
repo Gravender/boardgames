@@ -24,7 +24,6 @@ class MatchParticipantsService {
     const { input, matchId, gameId, userId, tx, scoresheetRoundIds, posthog } =
       args;
 
-    let part = 0;
     try {
       const mappedTeams =
         input.teams.length > 0
@@ -37,7 +36,6 @@ class MatchParticipantsService {
               tx,
             })
           : [];
-      part++;
 
       const mappedMatchPlayers: {
         matchPlayerId: number;
@@ -55,7 +53,6 @@ class MatchParticipantsService {
         )[];
       }[] = [];
       for (const p of input.players) {
-        let matchPlayerPart = 0;
         try {
           const team = mappedTeams.find((t) => t.originalId === p.teamId);
           const teamRoles = team?.roles ?? [];
@@ -69,7 +66,6 @@ class MatchParticipantsService {
             userId,
             tx,
           });
-          matchPlayerPart++;
 
           const returnedMatchPlayer = await matchPlayerRepository.insert({
             input: {
@@ -79,14 +75,12 @@ class MatchParticipantsService {
             },
             tx,
           });
-          matchPlayerPart++;
 
           assertInserted(
             returnedMatchPlayer,
             { userId, value: input },
             "Match player not created.",
           );
-          matchPlayerPart++;
           mappedMatchPlayers.push({
             matchPlayerId: returnedMatchPlayer.id,
             playerId: processedPlayerId,
@@ -107,22 +101,14 @@ class MatchParticipantsService {
           });
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message:
-              "Match Player Insert Failure" +
-              " Part: " +
-              matchPlayerPart +
-              " Input: " +
-              (p.type === "original" ? p.id : p.sharedId) +
-              (e instanceof Error ? ` – ${e.name}: ${e.message}` : ""),
+            message: "Match Player Insert Failure",
             cause: {
               error: e,
-              part,
               input: input,
             },
           });
         }
       }
-      part++;
 
       await matchRolesService.attachRolesToMatchPlayers({
         userId,
@@ -130,7 +116,6 @@ class MatchParticipantsService {
         gameId,
         mappedMatchPlayers,
       });
-      part++;
 
       const roundPlayersToInsert = scoresheetRoundIds.flatMap((roundId) =>
         mappedMatchPlayers.map((player) => ({
@@ -145,7 +130,6 @@ class MatchParticipantsService {
           tx,
         });
       }
-      part++;
 
       return { mappedMatchPlayers };
     } catch (e) {
@@ -163,10 +147,9 @@ class MatchParticipantsService {
       }
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Match Player Insert Failure" + " Part: " + part,
+        message: "Match Player Insert Failure",
         cause: {
           error: e,
-          part,
           input: input,
         },
       });

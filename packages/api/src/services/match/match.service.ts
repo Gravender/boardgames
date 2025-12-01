@@ -46,15 +46,12 @@ class MatchService {
       ctx: { userId, posthog },
     } = args;
     const response = await db.transaction(async (tx) => {
-      let part = 0;
       try {
         const gameId = await matchSetupService.resolveGameForMatch({
           gameInput: input.game,
           userId,
           tx,
         });
-        // one
-        part++;
 
         const matchScoresheet = await matchSetupService.resolveMatchScoresheet({
           scoresheetInput: input.scoresheet,
@@ -62,16 +59,13 @@ class MatchService {
           gameId,
           tx,
         });
-        //two
-        part++;
 
         const locationId = await matchSetupService.resolveLocationForMatch({
           locationInput: input.location,
           userId,
           tx,
         });
-        //three
-        part++;
+
         const insertedMatch = await matchRepository.insert(
           {
             name: input.name,
@@ -85,16 +79,6 @@ class MatchService {
           tx,
         );
 
-        await posthog.captureImmediate({
-          distinctId: userId,
-          event: "match.insert debug",
-          properties: {
-            insertedMatchId: insertedMatch?.id,
-            table: "boardgames_match?",
-          },
-        });
-        //four
-        part++;
         assertInserted(
           insertedMatch,
           {
@@ -103,39 +87,19 @@ class MatchService {
           },
           "Match not created.",
         );
-        //five
-        part++;
-        const foundMatch = await matchRepository.get(
-          {
-            id: insertedMatch.id,
-            createdBy: args.ctx.userId,
-          },
-          tx,
-        );
-        assertFound(
-          foundMatch,
-          {
-            userId: args.ctx.userId,
-            value: args.input,
-          },
-          "Match not created.",
-        );
-        //six
-        part++;
+
         const { mappedMatchPlayers } =
           await matchParticipantsService.createTeamsPlayersAndRounds({
             input,
-            matchId: foundMatch.id,
-            gameId: foundMatch.gameId,
+            matchId: insertedMatch.id,
+            gameId: insertedMatch.gameId,
             userId,
             tx,
             scoresheetRoundIds: matchScoresheet.rounds.map((r) => r.id),
             posthog,
           });
-        //seven
-        part++;
         return {
-          match: foundMatch,
+          match: insertedMatch,
           players: mappedMatchPlayers.map((mp) => ({
             matchPlayerId: mp.matchPlayerId,
             playerId: mp.playerId,
@@ -147,7 +111,6 @@ class MatchService {
           event: "match.insert failure",
           properties: {
             error: e,
-            part,
             input: args.input,
           },
         });
@@ -156,10 +119,9 @@ class MatchService {
         }
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Match Insert Failure" + " Part: " + part,
+          message: "Match Insert Failure",
           cause: {
             error: e,
-            part,
             input: args.input,
           },
         });
