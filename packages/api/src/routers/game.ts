@@ -29,12 +29,7 @@ import {
   sharedScoresheet,
   team,
 } from "@board-games/db/schema";
-import {
-  insertGameSchema,
-  insertRoundSchema,
-  insertScoreSheetSchema,
-  selectGameSchema,
-} from "@board-games/db/zodSchema";
+import { selectGameSchema } from "@board-games/db/zodSchema";
 import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 import { protectedUserProcedure } from "../trpc";
@@ -44,183 +39,19 @@ import {
   matchesAggregated,
   playerAndRolesAggregated,
 } from "../utils/gameStats";
+import { createGameInput } from "./game/game.input";
+import { createGameOutput } from "./game/game.output";
+import { gameService } from "./game/service/game.service";
 
 export const gameRouter = {
   create: protectedUserProcedure
-    .input(
-      z.object({
-        game: insertGameSchema.omit({
-          createdBy: true,
-          id: true,
-          createdAt: true,
-          updatedAt: true,
-          imageId: true,
-        }),
-        image: z
-          .discriminatedUnion("type", [
-            z.object({
-              type: z.literal("file"),
-              imageId: z.number(),
-            }),
-            z.object({
-              type: z.literal("svg"),
-              name: z.string(),
-            }),
-          ])
-          .nullable(),
-        scoresheets: z.array(
-          z.object({
-            scoresheet: insertScoreSheetSchema
-              .omit({
-                id: true,
-                createdAt: true,
-                updatedAt: true,
-                createdBy: true,
-                type: true,
-                gameId: true,
-              })
-              .required({ name: true }),
-            rounds: z.array(
-              insertRoundSchema
-                .omit({
-                  id: true,
-                  createdAt: true,
-                  updatedAt: true,
-                  scoresheetId: true,
-                })
-                .required({ name: true }),
-            ),
-          }),
-        ),
-        roles: z.array(
-          z.object({
-            name: z.string(),
-            description: z.string().nullable(),
-          }),
-        ),
-      }),
-    )
+    .input(createGameInput)
+    .output(createGameOutput)
     .mutation(async ({ ctx, input }) => {
-      const result = await ctx.db.transaction(async (transaction) => {
-        let imageId: number | null = null;
-        if (input.image?.type === "file") {
-          imageId = input.image.imageId;
-        } else if (input.image?.type === "svg") {
-          const existingSvg = await transaction.query.image.findFirst({
-            where: {
-              name: input.image.name,
-              type: "svg",
-              usageType: "game",
-            },
-          });
-          if (existingSvg) {
-            imageId = existingSvg.id;
-          } else {
-            const [returnedImage] = await transaction
-              .insert(image)
-              .values({
-                type: "svg",
-                name: input.image.name,
-                usageType: "game",
-              })
-              .returning();
-            if (!returnedImage) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Failed to create image",
-              });
-            }
-            imageId = returnedImage.id;
-          }
-        }
-        const [returningGame] = await transaction
-          .insert(game)
-          .values({
-            name: input.game.name,
-            ownedBy: input.game.ownedBy,
-            playersMin: input.game.playersMin,
-            playersMax: input.game.playersMax,
-            playtimeMin: input.game.playtimeMin,
-            playtimeMax: input.game.playtimeMax,
-            yearPublished: input.game.yearPublished,
-            imageId: imageId,
-            createdBy: ctx.userId,
-          })
-          .returning();
-        if (!returningGame) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to create game",
-          });
-        }
-        if (input.roles.length > 0) {
-          const mappedRoles = input.roles.map((role) => ({
-            name: role.name,
-            description: role.description,
-            gameId: returningGame.id,
-            createdBy: ctx.userId,
-          }));
-          await transaction.insert(gameRole).values(mappedRoles);
-        }
-        if (input.scoresheets.length === 0) {
-          const [returnedScoresheet] = await transaction
-            .insert(scoresheet)
-            .values({
-              name: "Default",
-              createdBy: ctx.userId,
-              gameId: returningGame.id,
-              type: "Default",
-            })
-            .returning();
-          if (!returnedScoresheet) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create scoresheet",
-            });
-          }
-          await transaction.insert(round).values({
-            name: "Round 1",
-            scoresheetId: returnedScoresheet.id,
-            type: "Numeric",
-            order: 1,
-          });
-        } else {
-          for (const inputScoresheet of input.scoresheets) {
-            const [returnedScoresheet] = await transaction
-              .insert(scoresheet)
-              .values({
-                ...inputScoresheet.scoresheet,
-                createdBy: ctx.userId,
-                gameId: returningGame.id,
-                type: "Game",
-              })
-              .returning();
-            if (!returnedScoresheet) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Failed to create scoresheet",
-              });
-            }
-
-            const rounds = inputScoresheet.rounds.map((round, index) => ({
-              ...round,
-              scoresheetId: returnedScoresheet.id,
-              order: index + 1,
-            }));
-            await transaction.insert(round).values(rounds);
-          }
-        }
-        return returningGame;
+      return gameService.createGame({
+        ctx,
+        input,
       });
-      await ctx.posthog.captureImmediate({
-        distinctId: ctx.userId,
-        event: "game created",
-        properties: {
-          gameName: result.name,
-          gameId: result.id,
-        },
-      });
-      return result;
     }),
   getGame: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))

@@ -51,6 +51,8 @@ export const createGameInput = z.object({
           createdAt: true,
           updatedAt: true,
           createdBy: true,
+          deletedAt: true,
+          parentId: true,
           type: true,
           gameId: true,
         })
