@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
-import { db } from "@board-games/db/client";
 import type { TransactionType } from "@board-games/db/client";
+import { db } from "@board-games/db/client";
 import { image } from "@board-games/db/schema";
 
 import type {
@@ -33,16 +33,14 @@ class GameService {
           tx,
         });
 
-        const insertedGame = await gameRepository.createGame(
-          {
-            input: {
-              ...input.game,
-              imageId,
-            },
-            userId,
-            tx,
+        const insertedGame = await gameRepository.createGame({
+          input: {
+            ...input.game,
+            imageId,
           },
-        );
+          userId,
+          tx,
+        });
 
         assertInserted(
           insertedGame,
@@ -134,8 +132,10 @@ class GameService {
               order: index + 1,
             }));
             if (rounds.length > 0) {
-              const createdRounds =
-                await scoresheetRepository.insertRounds(rounds, tx);
+              const createdRounds = await scoresheetRepository.insertRounds(
+                rounds,
+                tx,
+              );
               assertInserted(
                 createdRounds.at(0),
                 {
