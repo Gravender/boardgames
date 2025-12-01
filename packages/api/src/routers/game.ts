@@ -32,8 +32,6 @@ import {
 import { selectGameSchema } from "@board-games/db/zodSchema";
 import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
-import { createGameInput } from "./game/game.input";
-import { gameService } from "./game/service/game.service";
 import { protectedUserProcedure } from "../trpc";
 import { utapi } from "../uploadthing";
 import {
@@ -41,10 +39,14 @@ import {
   matchesAggregated,
   playerAndRolesAggregated,
 } from "../utils/gameStats";
+import { createGameInput } from "./game/game.input";
+import { createGameOutput } from "./game/game.output";
+import { gameService } from "./game/service/game.service";
 
 export const gameRouter = {
   create: protectedUserProcedure
     .input(createGameInput)
+    .output(createGameOutput)
     .mutation(async ({ ctx, input }) => {
       return gameService.createGame({
         ctx,

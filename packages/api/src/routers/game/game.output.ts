@@ -1,10 +1,25 @@
 import z from "zod/v4";
 
+import { selectGameSchema } from "@board-games/db/zodSchema";
 import {
   matchWithGameAndPlayersSchema,
   originalRoleSchema,
   sharedRoleSchema,
 } from "@board-games/shared";
+
+export const createGameOutput = selectGameSchema.pick({
+  id: true,
+  name: true,
+  ownedBy: true,
+  playersMin: true,
+  playersMax: true,
+  playtimeMin: true,
+  playtimeMax: true,
+  yearPublished: true,
+  imageId: true,
+  description: true,
+  rules: true,
+});
 
 export const getGameMatchesOutput = z.array(matchWithGameAndPlayersSchema);
 export type GetGameMatchesOutputType = z.infer<typeof getGameMatchesOutput>;
