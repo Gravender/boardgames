@@ -1,70 +1,67 @@
-# 🎲 Board Game Tracker
+# Board Game Tracker
 
-A full-featured web application for tracking board games, players, matches, scoresheets, and statistics. Built with Next.js and a PostgreSQL backend using Drizzle ORM.
+A web and mobile project for logging board games, players, matches, scoresheets, and sharing data across friends. The stack pairs Next.js and Expo clients with a tRPC API backed by Drizzle ORM and PostgreSQL.
 
-## 🚀 Features
+## Project goals
 
-### 📊 Game and Match Stats
+- Track games and matches with flexible scoring (rounds, placements, manual or cooperative scoring).
+- Provide meaningful insights: win rates, streaks, placement charts, and match timelines.
+- Make sharing first-class with link-based access, friend requests, and permissioned edits.
+- Keep players, teams, locations, and groups reusable across matches and shared contexts.
 
-- Win/loss ratios, player performance, and match trends.
-- Charts: Placement distribution, match durations, and win rates.
-- Responsive and interactive statistics pages for both owned and shared games.
+## Monorepo layout
 
-### 👥 Sharing System
+- `apps/nextjs` — React 19 / Next.js 16 web app.
+- `apps/expo` — React Native client using Expo Router.
+- `packages/api` — tRPC procedures, match services, and auth integration.
+- `packages/db` — Drizzle schema, migrations, seeds, and database helpers.
+- `packages/ui` — Shared UI components (Tailwind + Radix).
+- `packages/shared` — Cross-platform utilities and score logic.
+- `packages/auth` — Auth configuration consumed by the apps.
 
-- Share games, matches, players, and scoresheets via links or with friends.
-- Configurable permissions (view/edit) and support for nested sharing (e.g., shared game → matches → match players).
-- Share requests system with acceptance flows and expiry handling.
-- Friend system for streamlined sharing and management.
+## Current status notes
 
-### 🧑‍🤝‍🧑 Players and Teams
+- Expo app is behind the web app and may not reflect the latest features or APIs. Expect setup drift until it is refreshed.
+- Playwright e2e tests are outdated; they may fail or reference removed flows and need updates before relying on them.
 
-- Detailed player statistics including wins, matches played, and history.
-- Team management during match creation.
-- Shared players and linking support across user accounts.
+## Prerequisites
 
-### 📍 Locations and Groups
+- Node.js >= 22.21.0 and pnpm >= 10.15.1.
+- Docker (for the local PostgreSQL container).
+- Optional: Expo tooling for mobile (`npm i -g expo` plus Android/iOS tooling if you plan to run the app).
 
-- Associate matches with locations and group data.
-- Default locations and editable location/group pages.
-- Calendar view to browse past matches by date.
+## Setup
 
-### 📄 Scoresheets and Rounds
+1) Install dependencies  
+`pnpm install`
 
-- Flexible scoring models: manual, cooperative, target score, etc.
-- Multiple scoresheets per game.
-- Round management with visual color indicators and player scoring.
+2) Create environment file  
+`cp .env.example .env` then fill in required secrets (Clerk keys, UploadThing token, Sentry token). The `POSTGRES_URL` value is used by the database scripts.
 
-### 📱 Cross-Platform Support
+3) Start the local database (Docker)  
+`./start-database.sh`  
+This script creates/starts a `games-postgres` container using the credentials from `POSTGRES_URL`.
 
-- Web app using Next.js with React 19.
-- Consistent component library across platforms (ShadCN + Radix UI + Tailwind CSS).
+4) Apply schema and seed data  
+- `pnpm db:push` to sync the Drizzle schema.  
+- `pnpm db:seed` to populate sample data (optional but recommended for local exploration).
 
-## ⚙️ Tech Stack
+5) Run the web app  
+- `pnpm dev` to start Turbo in watch mode.  
+- Or scope to the web app: `pnpm turbo run dev --filter=@board-games/nextjs`.
 
-- **Frontend:** Next.js 15, React 19, Tailwind CSS, ShadCN, Radix UI
-- **Backend:** tRPC, Drizzle ORM, PostgreSQL
-- **Auth:** Clerk
-- **Testing:** Playwright, Vitest
-- **Dev Tools:** TurboRepo, PNPM, ESLint, Prettier
+6) Run the Expo client (optional)  
+`pnpm turbo run dev --filter=@board-games/expo` then open the Expo bundler for your platform.
 
-## 📦 Monorepo Structure
+## Useful scripts
 
-```
-apps/
-  - web (Next.js)
-  - mobile (Expo)
-packages/
-  - api (tRPC routers)
-  - db (Drizzle schemas)
-  - ui (shared UI components)
-  - shared (utils and score calculations)
-```
+- `pnpm db:studio` — Open Drizzle Studio against the local database.
+- `pnpm lint` / `pnpm typecheck` — Static checks.
+- `pnpm e2e` — Playwright tests for the web client.
+- `./stop-database.sh` — Stop the local PostgreSQL container.
 
-## 📅 Changelog Highlights
+## What to expect in development
 
-- **2025-04:** Major revamp of stats pages and shared match/player handling.
-- **2025-03:** Added full sharing system with linking, permissions, and friend-based access.
-- **2025-02:** Improved match/team integration and dynamic score/ranking logic.
-- **2025-01:** TurboRepo migration and first Expo app release.
-- **2024-12:** Initial feature-rich release with support for scoresheets, locations, and dashboards.
+- Turbo coordinates workspaces; most scripts respect the shared `.env`.
+- Sharing features rely on Clerk; ensure test keys are present or requests will fail.
+- Stats and charts depend on seeded data; run `pnpm db:seed` if pages look empty.
