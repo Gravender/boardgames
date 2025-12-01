@@ -107,6 +107,8 @@ class GameRepository {
         playtimeMin: input.playtimeMin,
         playtimeMax: input.playtimeMax,
         yearPublished: input.yearPublished,
+        description: input.description,
+        rules: input.rules,
         imageId: input.imageId,
         createdBy: userId,
       })
