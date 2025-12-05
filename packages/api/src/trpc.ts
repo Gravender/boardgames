@@ -31,6 +31,9 @@ import { getPosthogServerClient } from "./analytics";
 export const createTRPCContext = async (opts: {
   headers: Headers;
   auth: Auth;
+  deleteFiles: (
+    keys: string | string[],
+  ) => Promise<{ readonly success: boolean; readonly deletedCount: number }>;
 }) => {
   const authApi = opts.auth.api;
   const session = await authApi.getSession({
@@ -38,10 +41,10 @@ export const createTRPCContext = async (opts: {
   });
   const posthog = getPosthogServerClient();
   return {
-    authApi,
     session,
     db,
     posthog,
+    deleteFiles: opts.deleteFiles,
   };
 };
 

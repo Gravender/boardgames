@@ -4,22 +4,17 @@ import { eq, inArray } from "drizzle-orm";
 import { db } from "@board-games/db/client";
 import { game, round, scoresheet, user } from "@board-games/db/schema";
 
+import { getBetterAuthUserId } from "./getUserId";
+
 test.describe("Game Page", () => {
   const GAME_NAME = "Game Test";
   const EDITED_GAME_NAME = "Edited Game";
-  function getClerkUserId() {
-    if (!process.env.E2E_CLERK_USER_ID) {
-      throw new Error("E2E_CLERK_USER_ID is not set");
-    }
-    return process.env.E2E_CLERK_USER_ID;
-  }
   async function deleteGames(browserName: string) {
-    const clerkUserId = getClerkUserId();
-    //TODO - fix this
+    const betterAuthUserId = getBetterAuthUserId(browserName);
     const [returnedUser] = await db
       .select()
       .from(user)
-      .where(eq(user.id, clerkUserId));
+      .where(eq(user.id, betterAuthUserId));
     if (returnedUser) {
       const browserGameName = browserName + "_" + GAME_NAME;
       const editedBrowserGameName = browserName + "_" + EDITED_GAME_NAME;
@@ -130,6 +125,8 @@ test.describe("Game Page", () => {
     );
     await expect(page.locator("form")).toContainText("Default");
     await page.getByRole("button", { name: "Submit" }).click();
+    await page.goto("/dashboard/");
+    await page.goto("/dashboard/games");
     await page.getByRole("textbox", { name: "Search games..." }).click();
     await page
       .getByRole("textbox", { name: "Search games..." })

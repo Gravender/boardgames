@@ -61,7 +61,7 @@ catalogs:
       specifier: ^5.9.3
       version: 5.9.3
     zod:
-      specifier: ^4.1.12
+      specifier: 4.1.12
       version: 4.1.12
   react19:
     '@types/react':
@@ -328,6 +328,9 @@ importers:
       '@board-games/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@board-games/file-upload':
+        specifier: workspace:*
+        version: link:../../packages/file-upload
       '@board-games/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -494,9 +497,6 @@ importers:
       superjson:
         specifier: 2.2.3
         version: 2.2.3
-      uploadthing:
-        specifier: ^7.7.4
-        version: 7.7.4(express@5.1.0)(next@16.0.7(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(tailwindcss@4.1.17)
       zod:
         specifier: 'catalog:'
         version: 4.1.12
@@ -623,6 +623,40 @@ importers:
       drizzle-kit:
         specifier: 1.0.0-beta.1-5e64efc
         version: 1.0.0-beta.1-5e64efc
+      eslint:
+        specifier: 'catalog:'
+        version: 9.39.1(jiti@2.6.1)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.6.2
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/file-upload:
+    dependencies:
+      '@board-games/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@board-games/db':
+        specifier: workspace:*
+        version: link:../db
+      uploadthing:
+        specifier: ^7.7.4
+        version: 7.7.4(express@5.1.0)(next@16.0.7(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(tailwindcss@4.1.17)
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.12
+    devDependencies:
+      '@board-games/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@board-games/prettier-config':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@board-games/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
       eslint:
         specifier: 'catalog:'
         version: 9.39.1(jiti@2.6.1)
@@ -862,6 +896,9 @@ importers:
       '@playwright/test':
         specifier: ^1.53.1
         version: 1.53.1
+      '@t3-oss/env-core':
+        specifier: ^0.13.8
+        version: 0.13.8(typescript@5.9.3)(zod@4.1.12)
       eslint:
         specifier: 'catalog:'
         version: 9.39.1(jiti@2.6.1)
@@ -871,6 +908,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.12
 
   tooling/prettier:
     dependencies:
@@ -10503,6 +10543,9 @@ packages:
   zod@4.1.12:
     resolution: {integrity: sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ==}
 
+  zod@4.1.13:
+    resolution: {integrity: sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig==}
+
   zustand@4.5.7:
     resolution: {integrity: sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==}
     engines: {node: '>=12.7.0'}
@@ -11428,7 +11471,7 @@ snapshots:
       jose: 6.1.2
       kysely: 0.28.8
       nanostores: 1.0.1
-      zod: 4.1.12
+      zod: 4.1.13
 
   '@better-auth/expo@1.4.0-beta.9(better-auth@1.4.0-beta.9(better-sqlite3@12.4.1)(next@16.0.7(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(expo-constants@18.0.10)(expo-crypto@14.0.2(expo@54.0.18))(expo-linking@8.0.8)(expo-secure-store@15.0.7(expo@54.0.18))(expo-web-browser@15.0.8(expo@54.0.18)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(bufferutil@4.0.9)(react@19.1.2)))':
     dependencies:
@@ -17373,8 +17416,8 @@ snapshots:
       '@babel/parser': 7.28.4
       eslint: 9.39.1(jiti@2.6.1)
       hermes-parser: 0.25.1
-      zod: 4.1.12
-      zod-validation-error: 4.0.2(zod@4.1.12)
+      zod: 4.1.13
+      zod-validation-error: 4.0.2(zod@4.1.13)
     transitivePeerDependencies:
       - supports-color
 
@@ -22122,13 +22165,15 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  zod-validation-error@4.0.2(zod@4.1.12):
+  zod-validation-error@4.0.2(zod@4.1.13):
     dependencies:
-      zod: 4.1.12
+      zod: 4.1.13
 
   zod@3.25.76: {}
 
   zod@4.1.12: {}
+
+  zod@4.1.13: {}
 
   zustand@4.5.7(@types/react@19.1.17)(react@19.1.2):
     dependencies:

@@ -8,6 +8,7 @@ import type { AppRouter } from "@board-games/api";
 import { appRouter, createTRPCContext } from "@board-games/api";
 
 import { auth } from "~/auth/server";
+import { utapi } from "~/utils/uploadthing-server";
 import { createQueryClient } from "./query-client";
 
 /**
@@ -18,6 +19,7 @@ const createContext = cache(async () => {
   const heads = new Headers(await headers());
   heads.set("x-trpc-source", "rsc");
   return createTRPCContext({
+    deleteFiles: utapi.deleteFiles,
     headers: heads,
     auth,
   });

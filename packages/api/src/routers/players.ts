@@ -19,7 +19,6 @@ import { calculatePlacement } from "@board-games/shared";
 
 import type { Player, PlayerMatch } from "../utils/player";
 import { protectedUserProcedure } from "../trpc";
-import { utapi } from "../uploadthing";
 import {
   aggregatePlayerStats,
   getTeamStats,
@@ -972,7 +971,7 @@ export const playerRouter = {
                   fileId: imageToDelete.fileId,
                 },
               });
-              const result = await utapi.deleteFiles(imageToDelete.fileId);
+              const result = await ctx.deleteFiles(imageToDelete.fileId);
               if (!result.success) {
                 await ctx.posthog.captureImmediate({
                   distinctId: ctx.userId,

@@ -1,6 +1,13 @@
+import path from "path";
+import { fileURLToPath } from "url";
 import { defineConfig, devices } from "@playwright/test";
 
 import "dotenv/config";
+
+import { baseUrl } from "./src/baseurl";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Read environment variables from file.
@@ -28,7 +35,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: baseUrl,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
@@ -37,39 +44,105 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
-      name: "setup clerk",
+      name: "setup better-auth chromium",
       testMatch: /global\.auth\.ts/,
-      teardown: "cleanup clerk",
+      use: {
+        ...devices["Desktop Chrome"],
+      },
+      teardown: "cleanup better-auth chromium",
     },
     {
-      name: "cleanup clerk",
-      testMatch: /global\.teardown\.ts/,
+      name: "setup better-auth firefox",
+      testMatch: /global\.auth\.ts/,
+      use: {
+        ...devices["Desktop Firefox"],
+      },
+      teardown: "cleanup better-auth firefox",
+    },
+    {
+      name: "setup better-auth webkit",
+      testMatch: /global\.auth\.ts/,
+      use: {
+        ...devices["Desktop Safari"],
+      },
+      teardown: "cleanup better-auth webkit",
+    },
+    {
+      name: "cleanup better-auth chromium",
+      use: {
+        storageState: path.resolve(
+          __dirname,
+          "playwright",
+          ".better-auth",
+          "user-chromium.json",
+        ),
+      },
+      testMatch: /global\.signout\.ts/,
+    },
+    {
+      name: "cleanup better-auth firefox",
+      use: {
+        storageState: path.resolve(
+          __dirname,
+          "playwright",
+          ".better-auth",
+          "user-firefox.json",
+        ),
+      },
+      testMatch: /global\.signout\.ts/,
+    },
+    {
+      name: "cleanup better-auth webkit",
+      use: {
+        storageState: path.resolve(
+          __dirname,
+          "playwright",
+          ".better-auth",
+          "user-webkit.json",
+        ),
+      },
+      testMatch: /global\.signout\.ts/,
     },
     {
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        storageState: "playwright/.clerk/user.json",
+        storageState: path.resolve(
+          __dirname,
+          "playwright",
+          ".better-auth",
+          "user-chromium.json",
+        ),
       },
-      dependencies: ["setup clerk"],
+      dependencies: ["setup better-auth chromium"],
     },
 
     {
       name: "firefox",
       use: {
         ...devices["Desktop Firefox"],
-        storageState: "playwright/.clerk/user.json",
+        storageState: path.resolve(
+          __dirname,
+          "playwright",
+          ".better-auth",
+          "user-firefox.json",
+        ),
       },
-      dependencies: ["setup clerk"],
+      dependencies: ["setup better-auth firefox"],
     },
 
     {
       name: "webkit",
       use: {
         ...devices["Desktop Safari"],
-        storageState: "playwright/.clerk/user.json",
+        storageState: path.resolve(
+          __dirname,
+          "playwright",
+          ".better-auth",
+          "user-webkit.json",
+        ),
       },
-      dependencies: ["setup clerk"],
+      dependencies: ["setup better-auth webkit"],
     },
 
     /* Test against mobile viewports. */

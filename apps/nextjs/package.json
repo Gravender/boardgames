@@ -19,6 +19,7 @@
     "@board-games/api": "workspace:*",
     "@board-games/auth": "workspace:*",
     "@board-games/db": "workspace:*",
+    "@board-games/file-upload": "workspace:*",
     "@board-games/shared": "workspace:*",
     "@board-games/ui": "workspace:*",
     "@sentry/nextjs": "^10.25.0",

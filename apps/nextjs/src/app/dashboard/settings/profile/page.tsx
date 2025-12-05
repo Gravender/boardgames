@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 
-import { getSession } from "@board-games/api/auth";
 import { Separator } from "@board-games/ui/separator";
 
+import { getSession } from "~/auth/server";
 import { ProfileHeader } from "./_components/profile-header";
 import { ProfileTabs } from "./_components/profile-tabs";
 

@@ -22,9 +22,11 @@
     "@board-games/prettier-config": "workspace:*",
     "@board-games/tsconfig": "workspace:*",
     "@playwright/test": "^1.53.1",
+    "@t3-oss/env-core": "^0.13.8",
     "eslint": "catalog:",
     "prettier": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "zod": "catalog:"
   },
   "prettier": "@board-games/prettier-config"
 }

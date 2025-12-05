@@ -7,7 +7,6 @@ import { image, matchImage } from "@board-games/db/schema";
 import { insertImageSchema } from "@board-games/db/zodSchema";
 
 import { protectedUserProcedure } from "../trpc";
-import { utapi } from "../uploadthing";
 
 export const imageRouter = {
   create: protectedUserProcedure
@@ -63,7 +62,7 @@ export const imageRouter = {
             fileId: imageToDelete.fileId,
           },
         });
-        const result = await utapi.deleteFiles(imageToDelete.fileId);
+        const result = await ctx.deleteFiles(imageToDelete.fileId);
         if (!result.success) {
           await ctx.posthog.captureImmediate({
             distinctId: ctx.userId,
@@ -118,9 +117,7 @@ export const imageRouter = {
               fileId: returnedMatchImage.image.fileId,
             },
           });
-          const result = await utapi.deleteFiles(
-            returnedMatchImage.image.fileId,
-          );
+          const result = await ctx.deleteFiles(returnedMatchImage.image.fileId);
           if (!result.success) {
             await ctx.posthog.captureImmediate({
               distinctId: ctx.userId,

@@ -33,7 +33,6 @@ import { selectGameSchema } from "@board-games/db/zodSchema";
 import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 import { protectedUserProcedure } from "../trpc";
-import { utapi } from "../uploadthing";
 import {
   headToHeadStats,
   matchesAggregated,
@@ -1356,7 +1355,7 @@ export const gameRouter = {
                     fileId: existingImage.fileId,
                   },
                 });
-                const result = await utapi.deleteFiles(existingImage.fileId);
+                const result = await ctx.deleteFiles(existingImage.fileId);
                 if (!result.success) {
                   await ctx.posthog.captureImmediate({
                     distinctId: ctx.userId,

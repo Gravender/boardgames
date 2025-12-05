@@ -55,10 +55,10 @@ dist/
 .env.sentry-build-plugin
 
 # Playwright
-tooling/playwright-web/test-results/
+tooling/playwright-web/playwright/
 tooling/playwright-web/playwright-report/
+tooling/playwright-web/test-results/
 tooling/playwright-web/blob-report/
-tooling/playwright-web/playwright/.cache/
 
 # turbo
 .turbo

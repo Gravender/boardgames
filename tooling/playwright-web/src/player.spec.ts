@@ -4,22 +4,17 @@ import { eq, inArray } from "drizzle-orm";
 import { db } from "@board-games/db/client";
 import { player, user } from "@board-games/db/schema";
 
+import { getBetterAuthUserId } from "./getUserId";
+
 test.describe("Players Page", () => {
   const PLAYER_NAME = "Player Test";
   const EDITED_PLAYER_NAME = "Edited Player";
-  function getClerkUserId() {
-    if (!process.env.E2E_CLERK_USER_ID) {
-      throw new Error("E2E_CLERK_USER_ID is not set");
-    }
-    return process.env.E2E_CLERK_USER_ID;
-  }
   async function deletePlayers(browserName: string) {
-    const clerkUserId = getClerkUserId();
-    //TODO - fix this
+    const betterAuthUserId = getBetterAuthUserId(browserName);
     const [returnedUser] = await db
       .select()
       .from(user)
-      .where(eq(user.id, clerkUserId));
+      .where(eq(user.id, betterAuthUserId));
     if (returnedUser) {
       const browserPlayerName = browserName + "_" + PLAYER_NAME;
       const editedBrowserPlayerName = browserName + "_" + EDITED_PLAYER_NAME;

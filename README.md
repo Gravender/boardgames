@@ -62,6 +62,23 @@ A web and mobile project for logging board games, players, matches, scoresheets,
 - `pnpm e2e` — Playwright tests for the web client.
 - `./stop-database.sh` — Stop the local PostgreSQL container.
 
+## E2E Testing
+
+Playwright e2e tests require the following environment variables:
+
+- `E2E_TEST_USERNAME` — Username for the test user (will be created if it doesn't exist)
+- `E2E_TEST_PASSWORD` — Password for the test user
+- `E2E_TEST_EMAIL` — Email for the test user (optional, defaults to `{username}@test.local`)
+
+The test setup will automatically:
+
+1. Create the test user if it doesn't exist
+2. Sign in using Better Auth
+3. Extract and save the userId from the authentication response
+4. Save the authenticated session state for use across tests
+
+The userId is automatically retrieved from Better Auth and made available to tests, so you don't need to set it manually.
+
 ## What to expect in development
 
 - Turbo coordinates workspaces; most scripts respect the shared `.env`.
