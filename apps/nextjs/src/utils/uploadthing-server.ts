@@ -1,4 +1,4 @@
-"server-only";
+import "server-only";
 
 import { UTApi } from "@board-games/file-upload/uploadthing";
 
