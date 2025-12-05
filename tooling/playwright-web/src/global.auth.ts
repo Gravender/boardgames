@@ -116,7 +116,6 @@ setup("authenticate", async ({ page, browserName }) => {
     const sessionData = (await sessionResponse.json()) as {
       user?: { id?: string };
     };
-    console.log("sessionData", sessionResponse);
     userId = sessionData.user?.id;
   }
 

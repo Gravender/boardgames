@@ -21,7 +21,7 @@ export function getBetterAuthUserId(browserName: string): string {
       throw new Error(`userId not found in userId-${browserName}.json`);
     }
     return userId;
-  } catch (error) {
+  } catch (_) {
     throw new Error(
       `Failed to read userId from ${userIdFile}. Make sure authentication setup has run for browser: ${browserName}.`,
     );
