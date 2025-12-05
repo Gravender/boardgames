@@ -248,7 +248,7 @@ const AddGameForm = ({
     trpc.game.create.mutationOptions({
       onSuccess: async (result) => {
         await queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
-        await setImagePreview(null);
+        setImagePreview(null);
         form.reset();
         setIsUploading(false);
         setIsOpen(false);

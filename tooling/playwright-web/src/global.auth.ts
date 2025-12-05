@@ -23,7 +23,13 @@ setup("authenticate", async ({ page, browserName }) => {
 
   username = username + browserName;
   password = password + browserName;
-  email = email + browserName;
+  // Insert browserName into email local part (before @) to create unique but valid emails
+  // e.g., test@example.com + chromium -> testchromium@example.com
+  const [localPart, domain] = email.split("@");
+  if (!domain) {
+    throw new Error(`Invalid email format: ${email}`);
+  }
+  email = `${localPart}${browserName}@${domain}`;
 
   // Use browser-specific file paths (relative to config file location)
   // Config file is at tooling/playwright-web/playwright.config.ts
