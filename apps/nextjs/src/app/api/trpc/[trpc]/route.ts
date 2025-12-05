@@ -2,7 +2,9 @@ import type { NextRequest } from "next/server";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
 import { appRouter, createTRPCContext } from "@board-games/api";
-import { auth } from "@board-games/api/auth";
+
+import { auth } from "~/auth/server";
+import { utapi } from "~/utils/uploadthing-server";
 
 /**
  * Configure basic CORS headers
@@ -31,6 +33,7 @@ const handler = async (req: NextRequest) => {
     createContext: () =>
       createTRPCContext({
         auth: auth,
+        deleteFiles: utapi.deleteFiles,
         headers: req.headers,
       }),
     onError({ error, path }) {

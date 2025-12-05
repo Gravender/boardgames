@@ -36,22 +36,22 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
       },
       {
         type: "add",
-        path: "packages/{{ name }}/eslint.config.ts",
+        path: "packages/{ name }/eslint.config.ts",
         templateFile: "templates/eslint.config.ts.hbs",
       },
       {
         type: "add",
-        path: "packages/{{ name }}/package.json",
+        path: "packages/{ name }/package.json",
         templateFile: "templates/package.json.hbs",
       },
       {
         type: "add",
-        path: "packages/{{ name }}/tsconfig.json",
+        path: "packages/{ name }/tsconfig.json",
         templateFile: "templates/tsconfig.json.hbs",
       },
       {
         type: "add",
-        path: "packages/{{ name }}/src/index.ts",
+        path: "packages/{ name }/src/index.ts",
         template: "export const name = '{{ name }}';",
       },
       {

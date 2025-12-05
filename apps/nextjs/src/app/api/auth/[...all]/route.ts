@@ -1,4 +1,4 @@
-import { auth } from "@board-games/api/auth";
+import { auth } from "~/auth/server";
 
 export const GET = auth.handler;
 export const POST = auth.handler;

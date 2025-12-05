@@ -16,9 +16,9 @@ import {
   Users,
 } from "lucide-react";
 
-import { getSession } from "@board-games/api/auth";
 import { Button } from "@board-games/ui/button";
 
+import { getSession } from "~/auth/server";
 import { FeatureInfoModal } from "~/components/feature-info-modal";
 import { ModeToggle } from "~/components/theme-toggle";
 

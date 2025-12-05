@@ -1,13 +1,11 @@
 {
-  "name": "@board-games/api",
-  "version": "0.1.0",
+  "name": "@board-games/file-upload",
   "private": true,
+  "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./src/index.ts"
-    }
+    ".": "./src/index.ts",
+    "./uploadthing": "./src/index.ts"
   },
   "license": "MIT",
   "scripts": {
@@ -15,25 +13,19 @@
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "dev": "tsc",
     "format": "prettier --check . --ignore-path ../../.gitignore",
-    "lint": "eslint --flag unstable_native_nodejs_ts_config",
+    "lint": "eslint--flag unstable_native_nodejs_ts_config",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
     "@board-games/auth": "workspace:*",
     "@board-games/db": "workspace:*",
-    "@board-games/shared": "workspace:*",
-    "@trpc/server": "catalog:",
-    "drizzle-plus": "1.0.0-rc.1",
-    "luxon": "^3.7.1",
-    "posthog-node": "^5.1.0",
-    "superjson": "2.2.3",
+    "uploadthing": "^7.7.4",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@board-games/eslint-config": "workspace:*",
     "@board-games/prettier-config": "workspace:*",
     "@board-games/tsconfig": "workspace:*",
-    "@types/luxon": "^3.4.2",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
