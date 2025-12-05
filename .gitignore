@@ -59,8 +59,6 @@ tooling/playwright-web/test-results/
 tooling/playwright-web/playwright-report/
 tooling/playwright-web/blob-report/
 tooling/playwright-web/playwright/.cache/
-tooling/playwright-web/playwright/.clerk
 
 # turbo
 .turbo
-playwright/.clerk/user.json

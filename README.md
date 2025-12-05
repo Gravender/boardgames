@@ -32,26 +32,28 @@ A web and mobile project for logging board games, players, matches, scoresheets,
 
 ## Setup
 
-1) Install dependencies  
-`pnpm install`
+1. Install dependencies  
+   `pnpm install`
 
-2) Create environment file  
-`cp .env.example .env` then fill in required secrets (Clerk keys, UploadThing token, Sentry token). The `POSTGRES_URL` value is used by the database scripts.
+2. Create environment file  
+   `cp .env.example .env` then fill in required secrets (UploadThing token, Sentry token). The `POSTGRES_URL` value is used by the database scripts.
 
-3) Start the local database (Docker)  
-`./start-database.sh`  
-This script creates/starts a `games-postgres` container using the credentials from `POSTGRES_URL`.
+3. Start the local database (Docker)  
+   `./start-database.sh`  
+   This script creates/starts a `games-postgres` container using the credentials from `POSTGRES_URL`.
 
-4) Apply schema and seed data  
-- `pnpm db:push` to sync the Drizzle schema.  
+4. Apply schema and seed data
+
+- `pnpm db:push` to sync the Drizzle schema.
 - `pnpm db:seed` to populate sample data (optional but recommended for local exploration).
 
-5) Run the web app  
-- `pnpm dev` to start Turbo in watch mode.  
+5. Run the web app
+
+- `pnpm dev` to start Turbo in watch mode.
 - Or scope to the web app: `pnpm turbo run dev --filter=@board-games/nextjs`.
 
-6) Run the Expo client (optional)  
-`pnpm turbo run dev --filter=@board-games/expo` then open the Expo bundler for your platform.
+6. Run the Expo client (optional)  
+   `pnpm turbo run dev --filter=@board-games/expo` then open the Expo bundler for your platform.
 
 ## Useful scripts
 
@@ -63,5 +65,5 @@ This script creates/starts a `games-postgres` container using the credentials fr
 ## What to expect in development
 
 - Turbo coordinates workspaces; most scripts respect the shared `.env`.
-- Sharing features rely on Clerk; ensure test keys are present or requests will fail.
+- Sharing features rely on Better-Auth; ensure test keys are present or requests will fail.
 - Stats and charts depend on seeded data; run `pnpm db:seed` if pages look empty.
