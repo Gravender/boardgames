@@ -10,8 +10,8 @@ import { image, matchImage } from "@board-games/db/schema";
 export { UTApi } from "uploadthing/server";
 const f = createUploadthing();
 
-export function createUploadRouter(auth: Auth): FileRouter {
-  return {
+export function createUploadRouter(auth: Auth) {
+  const router = {
     imageUploader: f({
       image: {
         /**
@@ -61,51 +61,58 @@ export function createUploadRouter(auth: Auth): FileRouter {
         return { userId: session.user.id, usageType: input.usageType, input };
       })
       .onUploadComplete(async ({ metadata, file }) => {
-        const [returnedImage] = await db
-          .insert(image)
-          .values({
-            name: file.name,
-            url: file.url,
-            createdBy: metadata.userId,
-            type: "file",
-            fileId: file.key,
-            fileSize: file.size,
-            usageType: metadata.usageType,
-          })
-          .returning();
-        if (!returnedImage) {
-          // eslint-disable-next-line @typescript-eslint/only-throw-error
-          throw new UploadThingError("Image not added to database");
-        }
-        if (metadata.input.usageType === "match") {
-          const returnedMatch = await db.query.match.findFirst({
-            where: {
-              id: metadata.input.matchId,
-              createdBy: metadata.userId,
-            },
-          });
-          if (!returnedMatch) {
-            // eslint-disable-next-line @typescript-eslint/only-throw-error
-            throw new UploadThingError("Match not found");
-          }
-          const [returnedMatchImage] = await db
-            .insert(matchImage)
+        const returnedImage = await db.transaction(async (tx) => {
+          const [insertedImage] = await tx
+            .insert(image)
             .values({
-              matchId: metadata.input.matchId,
-              imageId: returnedImage.id,
+              name: file.name,
+              url: file.url,
               createdBy: metadata.userId,
-              caption: metadata.input.caption,
-              duration: metadata.input.duration,
+              type: "file",
+              fileId: file.key,
+              fileSize: file.size,
+              usageType: metadata.usageType,
             })
             .returning();
-          if (!returnedMatchImage) {
+          if (!insertedImage) {
             // eslint-disable-next-line @typescript-eslint/only-throw-error
-            throw new UploadThingError("MatchImage not added to database");
+            throw new UploadThingError("Image not added to database");
           }
-        }
+          if (metadata.input.usageType === "match") {
+            const returnedMatch = await tx.query.match.findFirst({
+              where: {
+                id: metadata.input.matchId,
+                createdBy: metadata.userId,
+              },
+            });
+            if (!returnedMatch) {
+              // eslint-disable-next-line @typescript-eslint/only-throw-error
+              throw new UploadThingError("Match not found");
+            }
+            const [returnedMatchImage] = await tx
+              .insert(matchImage)
+              .values({
+                matchId: metadata.input.matchId,
+                imageId: insertedImage.id,
+                createdBy: metadata.userId,
+                caption: metadata.input.caption,
+                duration: metadata.input.duration,
+              })
+              .returning();
+            if (!returnedMatchImage) {
+              // eslint-disable-next-line @typescript-eslint/only-throw-error
+              throw new UploadThingError("MatchImage not added to database");
+            }
+          }
+          return insertedImage;
+        });
         return { uploadedBy: metadata.userId, imageId: returnedImage.id };
       }),
-  } satisfies FileRouter;
+  };
+  // Type assertion to satisfy TypeScript's requirement for explicit type annotation
+  // while preserving the inferred type structure for ReturnType
+  return router as FileRouter;
 }
 
+// Export the inferred type for client-side usage
 export type uploadRouter = ReturnType<typeof createUploadRouter>;
