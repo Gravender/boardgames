@@ -1,4 +1,4 @@
-import type { GetMatchInputType } from "../../../match.input";
+import type { GetMatchInputType } from "../../routers/match/match.input";
 import type {
   UpdateMatchCommentInputType,
   UpdateMatchDetailsInputType,
@@ -8,16 +8,24 @@ import type {
   UpdateMatchPlayerTeamAndRolesInputType,
   UpdateMatchScoreInputType,
   UpdateMatchTeamInputType,
-} from "../update-match.input";
+} from "../../routers/match/sub-routers/update-match/update-match.input";
+import type { BaseRepoArgs } from "../../utils/databaseHelpers";
 
 export interface UserScopedArgs<T> {
   input: T;
   userId: string;
 }
 
-export type MatchStartRepoArgs = UserScopedArgs<GetMatchInputType>;
-export type MatchPauseRepoArgs = UserScopedArgs<GetMatchInputType>;
-export type MatchResetDurationRepoArgs = UserScopedArgs<GetMatchInputType>;
+export type MatchStartRepoArgs = BaseRepoArgs<{
+  id: number;
+}>;
+export type MatchPauseRepoArgs = BaseRepoArgs<{
+  id: number;
+  duration: number;
+}>;
+export type MatchResetDurationRepoArgs = BaseRepoArgs<{
+  id: number;
+}>;
 export type UpdateMatchRoundScoreRepoArgs =
   UserScopedArgs<UpdateMatchScoreInputType>;
 export type UpdateMatchPlayerScoreRepoArgs =
