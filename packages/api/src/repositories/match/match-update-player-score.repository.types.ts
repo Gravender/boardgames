@@ -26,4 +26,3 @@ export type UpdateMatchPlayersWinnerRepoArgs = BaseRepoArgs<{
   matchId: number;
   winners: { id: number }[];
 }>;
-

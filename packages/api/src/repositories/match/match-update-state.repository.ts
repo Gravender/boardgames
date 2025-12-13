@@ -5,11 +5,11 @@ import { db } from "@board-games/db/client";
 import { match } from "@board-games/db/schema";
 
 import type {
+  FinishMatchRepoArgs,
   MatchPauseRepoArgs,
   MatchResetDurationRepoArgs,
   MatchStartRepoArgs,
   UpdateMatchCommentRepoArgs,
-  FinishMatchRepoArgs,
 } from "./match-update-state.repository.types";
 
 class MatchUpdateStateRepository {
@@ -131,4 +131,3 @@ class MatchUpdateStateRepository {
 }
 
 export const matchUpdateStateRepository = new MatchUpdateStateRepository();
-
