@@ -89,7 +89,6 @@ class MatchUpdateStateService {
 
       const currentTime = new Date();
       let duration = returnedMatch.duration;
-      let startTime: Date | null = null;
 
       if (returnedMatch.running && returnedMatch.startTime) {
         const timeDelta = differenceInSeconds(
@@ -104,7 +103,7 @@ class MatchUpdateStateService {
           id: returnedMatch.id,
           duration,
           running: false,
-          startTime,
+          startTime: null,
           endTime: currentTime,
           finished: true,
         },

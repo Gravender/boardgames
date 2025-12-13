@@ -1,9 +1,4 @@
-import type { TransactionType } from "@board-games/db/client";
-
-export interface BaseRepoArgs<TInput> {
-  input: TInput;
-  tx?: TransactionType;
-}
+import type { BaseRepoArgs } from "../../utils/databaseHelpers";
 
 export type UpdateMatchPlayerDetailsRepoArgs = BaseRepoArgs<{
   id: number;
@@ -14,4 +9,3 @@ export type UpdateTeamDetailsRepoArgs = BaseRepoArgs<{
   teamId: number;
   details: string;
 }>;
-

@@ -10,15 +10,14 @@ import type {
   UpdateMatchPlayerScoreArgs,
   UpdateMatchScoreArgs,
 } from "./update-match.service.types";
+import { matchUpdatePlayerScoreRepository } from "../../repositories/match/match-update-player-score.repository";
+import { matchUpdateStateRepository } from "../../repositories/match/match-update-state.repository";
 import { matchRepository } from "../../repositories/match/match.repository";
 import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
-import { matchUpdateStateRepository } from "../../repositories/match/match-update-state.repository";
-import { matchUpdatePlayerScoreRepository } from "../../repositories/match/match-update-player-score.repository";
 import { assertFound } from "../../utils/databaseHelpers";
 import { getMatchForUpdate } from "./match-update-helpers";
 
 class MatchUpdateScoreService {
-
   public async updateMatchRoundScore(args: UpdateMatchScoreArgs) {
     const { input, ctx } = args;
     await db.transaction(async (tx) => {
@@ -262,12 +261,16 @@ class MatchUpdateScoreService {
             input: {
               matchId: returnedMatch.id,
               placements: finalPlacements
-                .filter((p) => p.score !== null)
-                .map((p) => ({
-                  id: p.id,
-                  score: p.score!,
-                  placement: p.placement,
-                })),
+                .map((p) =>
+                  p.score !== null
+                    ? {
+                        id: p.id,
+                        score: p.score,
+                        placement: p.placement,
+                      }
+                    : null,
+                )
+                .filter((p) => p !== null),
             },
             tx,
           },
@@ -286,15 +289,13 @@ class MatchUpdateScoreService {
       });
 
       const foundMatchPlayers =
-        await matchPlayerRepository.getAllMatchPlayersFromViewCanonicalForUser(
-          {
-            input: {
-              matchId: returnedMatch.id,
-              userId: ctx.userId,
-            },
-            tx,
+        await matchPlayerRepository.getAllMatchPlayersFromViewCanonicalForUser({
+          input: {
+            matchId: returnedMatch.id,
+            userId: ctx.userId,
           },
-        );
+          tx,
+        });
       if (foundMatchPlayers.length === 0) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -336,15 +337,13 @@ class MatchUpdateScoreService {
       });
 
       const foundMatchPlayers =
-        await matchPlayerRepository.getAllMatchPlayersFromViewCanonicalForUser(
-          {
-            input: {
-              matchId: returnedMatch.id,
-              userId: ctx.userId,
-            },
-            tx,
+        await matchPlayerRepository.getAllMatchPlayersFromViewCanonicalForUser({
+          input: {
+            matchId: returnedMatch.id,
+            userId: ctx.userId,
           },
-        );
+          tx,
+        });
       if (foundMatchPlayers.length === 0) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -370,11 +369,15 @@ class MatchUpdateScoreService {
         {
           input: {
             placements: input.playersPlacement
-              .filter((p) => p.placement !== null)
-              .map((p) => ({
-                id: p.id,
-                placement: p.placement!,
-              })),
+              .map((p) =>
+                p.placement !== null
+                  ? {
+                      id: p.id,
+                      placement: p.placement,
+                    }
+                  : null,
+              )
+              .filter((p) => p !== null),
           },
           tx,
         },
@@ -384,4 +387,3 @@ class MatchUpdateScoreService {
 }
 
 export const matchUpdateScoreService = new MatchUpdateScoreService();
-

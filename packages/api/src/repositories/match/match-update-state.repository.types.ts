@@ -1,4 +1,3 @@
-import type { GetMatchInputType } from "../../routers/match/match.input";
 import type { UpdateMatchCommentInputType } from "../../routers/match/sub-routers/update-match/update-match.input";
 import type { BaseRepoArgs } from "../../utils/databaseHelpers";
 
@@ -28,4 +27,3 @@ export type FinishMatchRepoArgs = BaseRepoArgs<{
   endTime: Date;
   finished: boolean;
 }>;
-

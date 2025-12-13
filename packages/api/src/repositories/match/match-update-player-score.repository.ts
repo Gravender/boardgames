@@ -6,7 +6,6 @@ import { db } from "@board-games/db/client";
 import { matchPlayer } from "@board-games/db/schema";
 
 import type {
-  UpdateMatchPlayerScoreRepoArgs,
   UpdateMatchPlayersPlacementRepoArgs,
   UpdateMatchPlayersScoreRepoArgs,
   UpdateMatchPlayersWinnerRepoArgs,
@@ -93,7 +92,9 @@ class MatchUpdatePlayerScoreRepository {
       .where(eq(matchPlayer.id, input.id));
   }
 
-  public async updateMatchPlayersWinner(args: UpdateMatchPlayersWinnerRepoArgs) {
+  public async updateMatchPlayersWinner(
+    args: UpdateMatchPlayersWinnerRepoArgs,
+  ) {
     const { input, tx } = args;
     const database = tx ?? db;
 
@@ -133,11 +134,11 @@ class MatchUpdatePlayerScoreRepository {
   public async updateMatchPlayersScorePlacementAndWinner(args: {
     input: {
       matchId: number;
-      placements: Array<{
+      placements: {
         id: number;
         score: number;
         placement: number;
-      }>;
+      }[];
     };
     tx?: TransactionType;
   }) {
@@ -224,4 +225,3 @@ class MatchUpdatePlayerScoreRepository {
 
 export const matchUpdatePlayerScoreRepository =
   new MatchUpdatePlayerScoreRepository();
-

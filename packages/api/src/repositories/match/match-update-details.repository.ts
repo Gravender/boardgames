@@ -1,6 +1,5 @@
 import { eq } from "drizzle-orm";
 
-import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 import { matchPlayer, team } from "@board-games/db/schema";
 
@@ -34,4 +33,3 @@ class MatchUpdateDetailsRepository {
 }
 
 export const matchUpdateDetailsRepository = new MatchUpdateDetailsRepository();
-

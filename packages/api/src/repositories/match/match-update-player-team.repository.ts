@@ -1,12 +1,11 @@
 import { and, eq, inArray } from "drizzle-orm";
 
-import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 import { matchPlayer } from "@board-games/db/schema";
 
 import type {
-  UpdateMatchPlayerTeamRepoArgs,
   UpdateMatchPlayersTeamRepoArgs,
+  UpdateMatchPlayerTeamRepoArgs,
 } from "./match-update-player-team.repository.types";
 
 class MatchUpdatePlayerTeamRepository {
@@ -44,4 +43,3 @@ class MatchUpdatePlayerTeamRepository {
 
 export const matchUpdatePlayerTeamRepository =
   new MatchUpdatePlayerTeamRepository();
-

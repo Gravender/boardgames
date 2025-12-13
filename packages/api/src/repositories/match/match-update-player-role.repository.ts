@@ -10,15 +10,15 @@ import {
 } from "@board-games/db/schema";
 
 import type {
-  InsertMatchPlayerRoleRepoArgs,
-  InsertMatchPlayerRolesRepoArgs,
-  InsertSharedMatchPlayerRoleRepoArgs,
-  InsertSharedMatchPlayerRolesRepoArgs,
   DeleteMatchPlayerRoleRepoArgs,
   DeleteMatchPlayerRolesRepoArgs,
   DeleteSharedMatchPlayerRoleRepoArgs,
   DeleteSharedMatchPlayerRolesRepoArgs,
   GetMatchPlayerRoleArgs,
+  InsertMatchPlayerRoleRepoArgs,
+  InsertMatchPlayerRolesRepoArgs,
+  InsertSharedMatchPlayerRoleRepoArgs,
+  InsertSharedMatchPlayerRolesRepoArgs,
 } from "./match-update-player-role.repository.types";
 
 class MatchUpdatePlayerRoleRepository {
@@ -105,10 +105,7 @@ class MatchUpdatePlayerRoleRepository {
             sharedMatchPlayerRole.sharedMatchPlayerId,
             input.sharedMatchPlayerId,
           ),
-          eq(
-            sharedMatchPlayerRole.sharedGameRoleId,
-            input.sharedGameRoleId,
-          ),
+          eq(sharedMatchPlayerRole.sharedGameRoleId, input.sharedGameRoleId),
         ),
       );
   }
@@ -173,10 +170,10 @@ class MatchUpdatePlayerRoleRepository {
     const { input, tx } = args;
     const database = tx ?? db;
     const foundRole = await database.query.matchPlayerRole.findFirst({
-      where: and(
-        eq(matchPlayerRole.matchPlayerId, input.matchPlayerId),
-        eq(matchPlayerRole.roleId, input.roleId),
-      ),
+      where: {
+        matchPlayerId: input.matchPlayerId,
+        roleId: input.roleId,
+      },
     });
     return foundRole;
   }
@@ -184,4 +181,3 @@ class MatchUpdatePlayerRoleRepository {
 
 export const matchUpdatePlayerRoleRepository =
   new MatchUpdatePlayerRoleRepository();
-

@@ -1,9 +1,4 @@
-import type { TransactionType } from "@board-games/db/client";
-
-export interface BaseRepoArgs<TInput> {
-  input: TInput;
-  tx?: TransactionType;
-}
+import type { BaseRepoArgs } from "../../utils/databaseHelpers";
 
 export type InsertMatchPlayerRoleRepoArgs = BaseRepoArgs<{
   matchPlayerId: number;
@@ -11,10 +6,10 @@ export type InsertMatchPlayerRoleRepoArgs = BaseRepoArgs<{
 }>;
 
 export type InsertMatchPlayerRolesRepoArgs = BaseRepoArgs<
-  Array<{
+  {
     matchPlayerId: number;
     roleId: number;
-  }>
+  }[]
 >;
 
 export type DeleteMatchPlayerRoleRepoArgs = BaseRepoArgs<{
@@ -33,10 +28,10 @@ export type InsertSharedMatchPlayerRoleRepoArgs = BaseRepoArgs<{
 }>;
 
 export type InsertSharedMatchPlayerRolesRepoArgs = BaseRepoArgs<
-  Array<{
+  {
     sharedMatchPlayerId: number;
     sharedGameRoleId: number;
-  }>
+  }[]
 >;
 
 export type DeleteSharedMatchPlayerRoleRepoArgs = BaseRepoArgs<{
@@ -53,4 +48,3 @@ export type GetMatchPlayerRoleArgs = BaseRepoArgs<{
   matchPlayerId: number;
   roleId: number;
 }>;
-

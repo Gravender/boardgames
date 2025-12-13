@@ -288,7 +288,7 @@ class MatchUpdatePlayerService {
               });
             if (existingMatchPlayerRole) {
               throw new TRPCError({
-                code: "NOT_FOUND",
+                code: "CONFLICT",
                 message: "Shared role already exists.",
               });
             }
@@ -356,7 +356,8 @@ class MatchUpdatePlayerService {
           if (sharedRoles.length > 0) {
             throw new TRPCError({
               code: "METHOD_NOT_SUPPORTED",
-              message: "Original roles not allowed for shared match players.",
+              message:
+                "Shared roles cannot be removed from original match players via this method.",
             });
           }
         }
@@ -867,7 +868,7 @@ class MatchUpdatePlayerService {
                 });
               if (existingMatchPlayerRole) {
                 throw new TRPCError({
-                  code: "NOT_FOUND",
+                  code: "CONFLICT",
                   message: "Shared role already exists.",
                 });
               }
@@ -1071,7 +1072,7 @@ class MatchUpdatePlayerService {
                 });
               if (existingMatchPlayerRole) {
                 throw new TRPCError({
-                  code: "NOT_FOUND",
+                  code: "CONFLICT",
                   message: "Shared role already exists.",
                 });
               }

@@ -5,14 +5,13 @@ import { db } from "@board-games/db/client";
 import { team } from "@board-games/db/schema";
 
 class TeamRepository {
-  public async get(args: {
-    id: number;
-    tx?: TransactionType;
-  }) {
+  public async get(args: { id: number; tx?: TransactionType }) {
     const { id, tx } = args;
     const database = tx ?? db;
     const foundTeam = await database.query.team.findFirst({
-      where: eq(team.id, id),
+      where: {
+        id: id,
+      },
     });
     return foundTeam;
   }

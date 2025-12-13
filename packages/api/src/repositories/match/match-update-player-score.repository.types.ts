@@ -16,14 +16,14 @@ export type UpdateMatchPlayersScoreRepoArgs = BaseRepoArgs<{
 }>;
 
 export type UpdateMatchPlayersPlacementRepoArgs = BaseRepoArgs<{
-  placements: Array<{
+  placements: {
     id: number;
     placement: number;
-  }>;
+  }[];
 }>;
 
 export type UpdateMatchPlayersWinnerRepoArgs = BaseRepoArgs<{
   matchId: number;
-  winners: Array<{ id: number }>;
+  winners: { id: number }[];
 }>;
 

@@ -1,6 +1,5 @@
 import { TRPCError } from "@trpc/server";
 
-import type { TransactionType } from "@board-games/db/client";
 import type { getMatchArgs } from "./update-match.service.types";
 import { matchRepository } from "../../repositories/match/match.repository";
 import { assertFound } from "../../utils/databaseHelpers";
@@ -50,4 +49,3 @@ export async function getMatchForUpdate(args: getMatchArgs) {
     return returnedSharedMatch.match;
   }
 }
-
