@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 
+import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 
 import type {
@@ -16,6 +17,7 @@ import { teamRepository } from "../../repositories/match/team.repository";
 import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 import { getMatchForUpdate } from "./match-update-helpers";
+import { sharedRoleService } from "./shared-role.service";
 
 class MatchUpdatePlayerService {
   public async updateMatchDetails(args: UpdateMatchDetailsArgs) {
@@ -177,70 +179,13 @@ class MatchUpdatePlayerService {
           );
 
           for (const sharedRoleToAdd of sharedRoles) {
-            const returnedSharedRole = await sharedGameRepository.getSharedRole(
-              {
-                input: {
-                  sharedRoleId: sharedRoleToAdd,
-                },
-                userId: ctx.userId,
-                tx,
-              },
-            );
-            assertFound(
-              returnedSharedRole,
-              {
-                userId: ctx.userId,
-                value: input,
-              },
-              "Shared role not found.",
-            );
-
-            let linkedGameRoleId = returnedSharedRole.linkedGameRoleId;
-            if (!linkedGameRoleId) {
-              const createdGameRole =
-                await matchUpdatePlayerRoleRepository.createGameRole({
-                  input: {
-                    gameId: returnedMatch.gameId,
-                    name: returnedSharedRole.gameRole.name,
-                    description: returnedSharedRole.gameRole.description,
-                    createdBy: ctx.userId,
-                  },
-                  tx,
-                });
-              assertInserted(
-                createdGameRole,
-                {
-                  userId: ctx.userId,
-                  value: input,
-                },
-                "Game role not created.",
-              );
-
-              const linkedRole =
-                await matchUpdatePlayerRoleRepository.linkSharedGameRole({
-                  input: {
-                    sharedGameRoleId: returnedSharedRole.id,
-                    linkedGameRoleId: createdGameRole.id,
-                  },
-                  tx,
-                });
-              assertInserted(
-                linkedRole,
-                {
-                  userId: ctx.userId,
-                  value: input,
-                },
-                "Linked role not created.",
-              );
-              linkedGameRoleId = createdGameRole.id;
-            }
-
-            await matchUpdatePlayerRoleRepository.insertMatchPlayerRole({
-              input: {
-                matchPlayerId: input.id,
-                roleId: linkedGameRoleId,
-              },
+            await sharedRoleService.insertSharedRoleForMatchPlayer({
+              userId: ctx.userId,
               tx,
+              gameId: returnedMatch.gameId,
+              matchPlayerId: input.id,
+              sharedRoleId: sharedRoleToAdd,
+              errorContext: input,
             });
           }
         }
@@ -416,6 +361,548 @@ class MatchUpdatePlayerService {
     });
   }
 
+  /**
+   * Validates that a team belongs to the specified match.
+   */
+  private async validateTeamBelongsToMatch(
+    ctx: UpdateMatchTeamArgs["ctx"],
+    tx: TransactionType,
+    returnedMatch: Awaited<ReturnType<typeof getMatchForUpdate>>,
+    teamId: number,
+  ): Promise<NonNullable<Awaited<ReturnType<typeof teamRepository.get>>>> {
+    const currentTeam = await teamRepository.get({
+      id: teamId,
+      tx,
+    });
+    assertFound(
+      currentTeam,
+      {
+        userId: ctx.userId,
+        value: { teamId },
+      },
+      "Team not found.",
+    );
+
+    if (currentTeam.matchId !== returnedMatch.id) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Team does not belong to this match.",
+      });
+    }
+
+    return currentTeam;
+  }
+
+  /**
+   * Fetches and filters match players by IDs with permission check.
+   * Returns filtered players and throws if not all requested players have edit permission.
+   */
+  private async getAndFilterMatchPlayers(
+    ctx: UpdateMatchTeamArgs["ctx"],
+    tx: TransactionType,
+    matchId: number,
+    playerIds: number[],
+    filterFn: (
+      mp: Awaited<
+        ReturnType<
+          typeof matchPlayerRepository.getAllMatchPlayersFromViewCanonicalForUser
+        >
+      >[number],
+    ) => boolean,
+  ) {
+    const foundMatchPlayers =
+      await matchPlayerRepository.getAllMatchPlayersFromViewCanonicalForUser({
+        input: {
+          matchId,
+          userId: ctx.userId,
+        },
+        tx,
+      });
+
+    const filteredPlayers = foundMatchPlayers.filter(filterFn);
+
+    if (filteredPlayers.length !== playerIds.length) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Does not have permission to edit all match players.",
+      });
+    }
+
+    return filteredPlayers;
+  }
+
+  /**
+   * Inserts a shared role for a player, creating and linking the game role if needed.
+   * @deprecated Use sharedRoleService.insertSharedRoleForMatchPlayer instead
+   */
+  private async insertRolesForSharedPlayer(
+    ctx: UpdateMatchTeamArgs["ctx"],
+    tx: TransactionType,
+    matchGameId: number,
+    matchPlayerId: number,
+    sharedRoleId: number,
+  ) {
+    await sharedRoleService.insertSharedRoleForMatchPlayer({
+      userId: ctx.userId,
+      tx,
+      gameId: matchGameId,
+      matchPlayerId,
+      sharedRoleId,
+      errorContext: { sharedRoleId },
+    });
+  }
+
+  /**
+   * Handles adding players to a team for an original match.
+   */
+  private async handleOriginalMatchPlayersToAdd(
+    ctx: UpdateMatchTeamArgs["ctx"],
+    tx: TransactionType,
+    returnedMatch: Awaited<ReturnType<typeof getMatchForUpdate>>,
+    currentTeam: NonNullable<Awaited<ReturnType<typeof teamRepository.get>>>,
+    playersToAdd: Extract<
+      UpdateMatchTeamArgs["input"],
+      { type: "original" }
+    >["playersToAdd"],
+  ) {
+    const playerIds = playersToAdd.map((p) => p.id);
+    await this.getAndFilterMatchPlayers(
+      ctx,
+      tx,
+      returnedMatch.id,
+      playerIds,
+      (mp) =>
+        playerIds.includes(mp.baseMatchPlayerId) && mp.permission === "edit",
+    );
+
+    await matchUpdatePlayerTeamRepository.updateMatchPlayersTeam({
+      input: {
+        matchId: returnedMatch.id,
+        matchPlayerIds: playerIds,
+        teamId: currentTeam.id,
+      },
+      tx,
+    });
+
+    const originalRoles: number[] = [];
+    const sharedRoles: { matchPlayerId: number; sharedId: number }[] = [];
+    for (const playerToAdd of playersToAdd) {
+      for (const role of playerToAdd.roles) {
+        if (role.type === "original") {
+          originalRoles.push(role.id);
+        } else {
+          sharedRoles.push({
+            matchPlayerId: playerToAdd.id,
+            sharedId: role.sharedId,
+          });
+        }
+      }
+    }
+
+    if (originalRoles.length > 0) {
+      const originalRolesToInsert = playersToAdd.flatMap((p) =>
+        p.roles
+          .filter((r) => r.type === "original")
+          .map((r) => ({
+            matchPlayerId: p.id,
+            roleId: r.id,
+          })),
+      );
+      await matchUpdatePlayerRoleRepository.insertMatchPlayerRoles({
+        input: originalRolesToInsert,
+        tx,
+      });
+    }
+
+    if (sharedRoles.length > 0) {
+      for (const sharedRole of sharedRoles) {
+        await this.insertRolesForSharedPlayer(
+          ctx,
+          tx,
+          returnedMatch.gameId,
+          sharedRole.matchPlayerId,
+          sharedRole.sharedId,
+        );
+      }
+    }
+  }
+
+  /**
+   * Handles removing players from a team for an original match.
+   */
+  private async handleOriginalMatchPlayersToRemove(
+    ctx: UpdateMatchTeamArgs["ctx"],
+    tx: TransactionType,
+    returnedMatch: Awaited<ReturnType<typeof getMatchForUpdate>>,
+    playersToRemove: Extract<
+      UpdateMatchTeamArgs["input"],
+      { type: "original" }
+    >["playersToRemove"],
+  ) {
+    const playerIds = playersToRemove.map((p) => p.id);
+    await this.getAndFilterMatchPlayers(
+      ctx,
+      tx,
+      returnedMatch.id,
+      playerIds,
+      (mp) =>
+        playerIds.includes(mp.baseMatchPlayerId) && mp.permission === "edit",
+    );
+
+    await matchUpdatePlayerTeamRepository.updateMatchPlayersTeam({
+      input: {
+        matchId: returnedMatch.id,
+        matchPlayerIds: playerIds,
+        teamId: null,
+      },
+      tx,
+    });
+
+    const rolesToRemove = playersToRemove.flatMap((p) =>
+      p.roles.map((r) => ({
+        matchPlayerId: p.id,
+        roleId: r.id,
+      })),
+    );
+    if (rolesToRemove.length > 0) {
+      for (const roleToRemove of rolesToRemove) {
+        await matchUpdatePlayerRoleRepository.deleteMatchPlayerRole({
+          input: {
+            matchPlayerId: roleToRemove.matchPlayerId,
+            roleId: roleToRemove.roleId,
+          },
+          tx,
+        });
+      }
+    }
+  }
+
+  /**
+   * Handles updating players (adding/removing roles) for an original match.
+   */
+  private async handleOriginalMatchPlayersToUpdate(
+    ctx: UpdateMatchTeamArgs["ctx"],
+    tx: TransactionType,
+    returnedMatch: Awaited<ReturnType<typeof getMatchForUpdate>>,
+    playersToUpdate: Extract<
+      UpdateMatchTeamArgs["input"],
+      { type: "original" }
+    >["playersToUpdate"],
+  ) {
+    const playerIds = playersToUpdate.map((p) => p.id);
+    await this.getAndFilterMatchPlayers(
+      ctx,
+      tx,
+      returnedMatch.id,
+      playerIds,
+      (mp) =>
+        playerIds.includes(mp.baseMatchPlayerId) && mp.permission === "edit",
+    );
+
+    // Add roles
+    const rolesToAdd = playersToUpdate.flatMap((p) =>
+      p.rolesToAdd.map((role) => ({
+        matchPlayerId: p.id,
+        role: role,
+      })),
+    );
+    if (rolesToAdd.length > 0) {
+      const originalRolesToAdd = rolesToAdd
+        .filter((r) => r.role.type === "original")
+        .map((r) => ({
+          matchPlayerId: r.matchPlayerId,
+          roleId: r.role.type === "original" ? r.role.id : 0,
+        }))
+        .filter((r) => r.roleId !== 0);
+      if (originalRolesToAdd.length > 0) {
+        await matchUpdatePlayerRoleRepository.insertMatchPlayerRoles({
+          input: originalRolesToAdd,
+          tx,
+        });
+      }
+
+      const sharedRolesToAdd = rolesToAdd.filter(
+        (r) => r.role.type !== "original",
+      );
+      for (const sharedRoleToAdd of sharedRolesToAdd) {
+        const sharedRoleId =
+          sharedRoleToAdd.role.type === "shared"
+            ? sharedRoleToAdd.role.sharedId
+            : 0;
+        if (sharedRoleId !== 0) {
+          await this.insertRolesForSharedPlayer(
+            ctx,
+            tx,
+            returnedMatch.gameId,
+            sharedRoleToAdd.matchPlayerId,
+            sharedRoleId,
+          );
+        }
+      }
+    }
+
+    // Remove roles
+    const rolesToRemove = playersToUpdate.flatMap((p) =>
+      p.rolesToRemove.map((role) => ({
+        matchPlayerId: p.id,
+        roleId: role.id,
+      })),
+    );
+    if (rolesToRemove.length > 0) {
+      for (const roleToRemove of rolesToRemove) {
+        await matchUpdatePlayerRoleRepository.deleteMatchPlayerRole({
+          input: {
+            matchPlayerId: roleToRemove.matchPlayerId,
+            roleId: roleToRemove.roleId,
+          },
+          tx,
+        });
+      }
+    }
+  }
+
+  /**
+   * Handles adding players to a team for a shared match.
+   */
+  private async handleSharedMatchPlayersToAdd(
+    ctx: UpdateMatchTeamArgs["ctx"],
+    tx: TransactionType,
+    returnedMatch: Awaited<ReturnType<typeof getMatchForUpdate>>,
+    currentTeam: NonNullable<Awaited<ReturnType<typeof teamRepository.get>>>,
+    playersToAdd: Extract<
+      UpdateMatchTeamArgs["input"],
+      { type: "shared" }
+    >["playersToAdd"],
+  ) {
+    const sharedPlayerIds = playersToAdd.map((p) => p.sharedMatchPlayerId);
+    const filteredPlayers = await this.getAndFilterMatchPlayers(
+      ctx,
+      tx,
+      returnedMatch.id,
+      sharedPlayerIds,
+      (mp) =>
+        mp.sharedMatchPlayerId !== null &&
+        sharedPlayerIds.includes(mp.sharedMatchPlayerId) &&
+        mp.permission === "edit",
+    );
+
+    const baseMatchPlayerIds = filteredPlayers.map(
+      (mp) => mp.baseMatchPlayerId,
+    );
+    await matchUpdatePlayerTeamRepository.updateMatchPlayersTeam({
+      input: {
+        matchId: returnedMatch.id,
+        matchPlayerIds: baseMatchPlayerIds,
+        teamId: currentTeam.id,
+      },
+      tx,
+    });
+
+    for (const playerToAdd of playersToAdd) {
+      const foundPlayer = filteredPlayers.find(
+        (mp) => mp.sharedMatchPlayerId === playerToAdd.sharedMatchPlayerId,
+      );
+      if (!foundPlayer?.sharedMatchPlayerId) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Shared Match Player not set.",
+        });
+      }
+
+      for (const role of playerToAdd.roles) {
+        await sharedRoleService.insertSharedRoleForSharedMatchPlayer({
+          userId: ctx.userId,
+          tx,
+          gameId: returnedMatch.gameId,
+          baseMatchPlayerId: foundPlayer.baseMatchPlayerId,
+          sharedMatchPlayerId: foundPlayer.sharedMatchPlayerId,
+          sharedRoleId: role.sharedId,
+          errorContext: { sharedRoleId: role.sharedId },
+        });
+      }
+    }
+  }
+
+  /**
+   * Handles removing players from a team for a shared match.
+   */
+  private async handleSharedMatchPlayersToRemove(
+    ctx: UpdateMatchTeamArgs["ctx"],
+    tx: TransactionType,
+    returnedMatch: Awaited<ReturnType<typeof getMatchForUpdate>>,
+    playersToRemove: Extract<
+      UpdateMatchTeamArgs["input"],
+      { type: "shared" }
+    >["playersToRemove"],
+  ) {
+    const sharedPlayerIds = playersToRemove.map((p) => p.sharedMatchPlayerId);
+    const filteredPlayers = await this.getAndFilterMatchPlayers(
+      ctx,
+      tx,
+      returnedMatch.id,
+      sharedPlayerIds,
+      (mp) =>
+        mp.sharedMatchPlayerId !== null &&
+        sharedPlayerIds.includes(mp.sharedMatchPlayerId) &&
+        mp.permission === "edit",
+    );
+
+    const baseMatchPlayerIds = filteredPlayers.map(
+      (mp) => mp.baseMatchPlayerId,
+    );
+    await matchUpdatePlayerTeamRepository.updateMatchPlayersTeam({
+      input: {
+        matchId: returnedMatch.id,
+        matchPlayerIds: baseMatchPlayerIds,
+        teamId: null,
+      },
+      tx,
+    });
+
+    for (const playerToRemove of playersToRemove) {
+      const foundPlayer = filteredPlayers.find(
+        (mp) => mp.sharedMatchPlayerId === playerToRemove.sharedMatchPlayerId,
+      );
+      if (!foundPlayer?.sharedMatchPlayerId) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Shared Match Player not set.",
+        });
+      }
+
+      for (const role of playerToRemove.roles) {
+        const returnedSharedRole = await sharedGameRepository.getSharedRole({
+          input: {
+            sharedRoleId: role.sharedId,
+          },
+          userId: ctx.userId,
+          tx,
+        });
+        assertFound(
+          returnedSharedRole,
+          {
+            userId: ctx.userId,
+            value: { sharedRoleId: role.sharedId },
+          },
+          "Shared role not found.",
+        );
+
+        await matchUpdatePlayerRoleRepository.deleteSharedMatchPlayerRole({
+          input: {
+            sharedMatchPlayerId: foundPlayer.sharedMatchPlayerId,
+            sharedGameRoleId: returnedSharedRole.id,
+          },
+          tx,
+        });
+
+        await matchUpdatePlayerRoleRepository.deleteMatchPlayerRole({
+          input: {
+            matchPlayerId: foundPlayer.baseMatchPlayerId,
+            roleId: returnedSharedRole.gameRoleId,
+          },
+          tx,
+        });
+      }
+    }
+  }
+
+  /**
+   * Handles updating players (adding/removing roles) for a shared match.
+   */
+  private async handleSharedMatchPlayersToUpdate(
+    ctx: UpdateMatchTeamArgs["ctx"],
+    tx: TransactionType,
+    returnedMatch: Awaited<ReturnType<typeof getMatchForUpdate>>,
+    playersToUpdate: Extract<
+      UpdateMatchTeamArgs["input"],
+      { type: "shared" }
+    >["playersToUpdate"],
+  ) {
+    const sharedPlayerIds = playersToUpdate.map((p) => p.sharedMatchPlayerId);
+    const filteredPlayers = await this.getAndFilterMatchPlayers(
+      ctx,
+      tx,
+      returnedMatch.id,
+      sharedPlayerIds,
+      (mp) =>
+        mp.sharedMatchPlayerId !== null &&
+        sharedPlayerIds.includes(mp.sharedMatchPlayerId) &&
+        mp.permission === "edit",
+    );
+
+    // Add roles
+    for (const playerToUpdate of playersToUpdate) {
+      const foundPlayer = filteredPlayers.find(
+        (mp) => mp.sharedMatchPlayerId === playerToUpdate.sharedMatchPlayerId,
+      );
+      if (!foundPlayer?.sharedMatchPlayerId) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Shared Match Player not set.",
+        });
+      }
+
+      for (const role of playerToUpdate.rolesToAdd) {
+        await sharedRoleService.insertSharedRoleForSharedMatchPlayer({
+          userId: ctx.userId,
+          tx,
+          gameId: returnedMatch.gameId,
+          baseMatchPlayerId: foundPlayer.baseMatchPlayerId,
+          sharedMatchPlayerId: foundPlayer.sharedMatchPlayerId,
+          sharedRoleId: role.sharedId,
+          errorContext: { sharedRoleId: role.sharedId },
+        });
+      }
+    }
+
+    // Remove roles
+    for (const playerToUpdate of playersToUpdate) {
+      const foundPlayer = filteredPlayers.find(
+        (mp) => mp.sharedMatchPlayerId === playerToUpdate.sharedMatchPlayerId,
+      );
+      if (!foundPlayer?.sharedMatchPlayerId) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Shared Match Player not set.",
+        });
+      }
+
+      for (const role of playerToUpdate.rolesToRemove) {
+        const returnedSharedRole = await sharedGameRepository.getSharedRole({
+          input: {
+            sharedRoleId: role.sharedId,
+          },
+          userId: ctx.userId,
+          tx,
+        });
+        assertFound(
+          returnedSharedRole,
+          {
+            userId: ctx.userId,
+            value: { sharedRoleId: role.sharedId },
+          },
+          "Shared role not found.",
+        );
+
+        await matchUpdatePlayerRoleRepository.deleteSharedMatchPlayerRole({
+          input: {
+            sharedMatchPlayerId: foundPlayer.sharedMatchPlayerId,
+            sharedGameRoleId: returnedSharedRole.id,
+          },
+          tx,
+        });
+
+        await matchUpdatePlayerRoleRepository.deleteMatchPlayerRole({
+          input: {
+            matchPlayerId: foundPlayer.baseMatchPlayerId,
+            roleId: returnedSharedRole.gameRoleId,
+          },
+          tx,
+        });
+      }
+    }
+  }
+
   public async updateMatchTeam(args: UpdateMatchTeamArgs) {
     const { input, ctx } = args;
     await db.transaction(async (tx) => {
@@ -428,25 +915,12 @@ class MatchUpdatePlayerService {
         tx,
       });
 
-      const currentTeam = await teamRepository.get({
-        id: input.team.id,
+      const currentTeam = await this.validateTeamBelongsToMatch(
+        ctx,
         tx,
-      });
-      assertFound(
-        currentTeam,
-        {
-          userId: ctx.userId,
-          value: input,
-        },
-        "Team not found.",
+        returnedMatch,
+        input.team.id,
       );
-
-      if (currentTeam.matchId !== returnedMatch.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Team does not belong to this match.",
-        });
-      }
 
       if (input.team.name !== undefined) {
         await teamRepository.updateTeam({
@@ -459,712 +933,60 @@ class MatchUpdatePlayerService {
       }
 
       if (input.type === "original") {
-        // Handle playersToAdd
         if (input.playersToAdd.length > 0) {
-          const playerIds = input.playersToAdd.map((p) => p.id);
-          const foundMatchPlayers =
-            await matchPlayerRepository.getAllMatchPlayersFromViewCanonicalForUser(
-              {
-                input: {
-                  matchId: returnedMatch.id,
-                  userId: ctx.userId,
-                },
-                tx,
-              },
-            );
-          const playersToAdd = foundMatchPlayers.filter(
-            (mp) =>
-              playerIds.includes(mp.baseMatchPlayerId) &&
-              mp.permission === "edit",
-          );
-          if (playersToAdd.length !== playerIds.length) {
-            throw new TRPCError({
-              code: "UNAUTHORIZED",
-              message: "Does not have permission to edit all match players.",
-            });
-          }
-
-          await matchUpdatePlayerTeamRepository.updateMatchPlayersTeam({
-            input: {
-              matchId: returnedMatch.id,
-              matchPlayerIds: playerIds,
-              teamId: currentTeam.id,
-            },
+          await this.handleOriginalMatchPlayersToAdd(
+            ctx,
             tx,
-          });
-
-          const originalRoles: number[] = [];
-          const sharedRoles: { matchPlayerId: number; sharedId: number }[] = [];
-          for (const playerToAdd of input.playersToAdd) {
-            for (const role of playerToAdd.roles) {
-              if (role.type === "original") {
-                originalRoles.push(role.id);
-              } else {
-                sharedRoles.push({
-                  matchPlayerId: playerToAdd.id,
-                  sharedId: role.sharedId,
-                });
-              }
-            }
-          }
-
-          if (originalRoles.length > 0) {
-            const originalRolesToInsert = input.playersToAdd.flatMap((p) =>
-              p.roles
-                .filter((r) => r.type === "original")
-                .map((r) => ({
-                  matchPlayerId: p.id,
-                  roleId: r.id,
-                })),
-            );
-            await matchUpdatePlayerRoleRepository.insertMatchPlayerRoles({
-              input: originalRolesToInsert,
-              tx,
-            });
-          }
-
-          if (sharedRoles.length > 0) {
-            for (const sharedRole of sharedRoles) {
-              const returnedSharedRole =
-                await sharedGameRepository.getSharedRole({
-                  input: {
-                    sharedRoleId: sharedRole.sharedId,
-                  },
-                  userId: ctx.userId,
-                  tx,
-                });
-              assertFound(
-                returnedSharedRole,
-                {
-                  userId: ctx.userId,
-                  value: input,
-                },
-                "Shared role not found.",
-              );
-
-              let linkedGameRoleId = returnedSharedRole.linkedGameRoleId;
-              if (!linkedGameRoleId) {
-                const createdGameRole =
-                  await matchUpdatePlayerRoleRepository.createGameRole({
-                    input: {
-                      gameId: returnedMatch.gameId,
-                      name: returnedSharedRole.gameRole.name,
-                      description: returnedSharedRole.gameRole.description,
-                      createdBy: ctx.userId,
-                    },
-                    tx,
-                  });
-                assertInserted(
-                  createdGameRole,
-                  {
-                    userId: ctx.userId,
-                    value: input,
-                  },
-                  "Game role not created.",
-                );
-
-                const linkedRole =
-                  await matchUpdatePlayerRoleRepository.linkSharedGameRole({
-                    input: {
-                      sharedGameRoleId: returnedSharedRole.id,
-                      linkedGameRoleId: createdGameRole.id,
-                    },
-                    tx,
-                  });
-                assertInserted(
-                  linkedRole,
-                  {
-                    userId: ctx.userId,
-                    value: input,
-                  },
-                  "Linked role not created.",
-                );
-                linkedGameRoleId = createdGameRole.id;
-              }
-
-              await matchUpdatePlayerRoleRepository.insertMatchPlayerRole({
-                input: {
-                  matchPlayerId: sharedRole.matchPlayerId,
-                  roleId: linkedGameRoleId,
-                },
-                tx,
-              });
-            }
-          }
+            returnedMatch,
+            currentTeam,
+            input.playersToAdd,
+          );
         }
 
-        // Handle playersToRemove
         if (input.playersToRemove.length > 0) {
-          const playerIds = input.playersToRemove.map((p) => p.id);
-          const foundMatchPlayers =
-            await matchPlayerRepository.getAllMatchPlayersFromViewCanonicalForUser(
-              {
-                input: {
-                  matchId: returnedMatch.id,
-                  userId: ctx.userId,
-                },
-                tx,
-              },
-            );
-          const playersToRemove = foundMatchPlayers.filter(
-            (mp) =>
-              playerIds.includes(mp.baseMatchPlayerId) &&
-              mp.permission === "edit",
-          );
-          if (playersToRemove.length !== playerIds.length) {
-            throw new TRPCError({
-              code: "UNAUTHORIZED",
-              message: "Does not have permission to edit all match players.",
-            });
-          }
-
-          await matchUpdatePlayerTeamRepository.updateMatchPlayersTeam({
-            input: {
-              matchId: returnedMatch.id,
-              matchPlayerIds: playerIds,
-              teamId: null,
-            },
+          await this.handleOriginalMatchPlayersToRemove(
+            ctx,
             tx,
-          });
-
-          const rolesToRemove = input.playersToRemove.flatMap((p) =>
-            p.roles.map((r) => ({
-              matchPlayerId: p.id,
-              roleId: r.id,
-            })),
+            returnedMatch,
+            input.playersToRemove,
           );
-          if (rolesToRemove.length > 0) {
-            for (const roleToRemove of rolesToRemove) {
-              await matchUpdatePlayerRoleRepository.deleteMatchPlayerRole({
-                input: {
-                  matchPlayerId: roleToRemove.matchPlayerId,
-                  roleId: roleToRemove.roleId,
-                },
-                tx,
-              });
-            }
-          }
         }
 
-        // Handle playersToUpdate
         if (input.playersToUpdate.length > 0) {
-          const playerIds = input.playersToUpdate.map((p) => p.id);
-          const foundMatchPlayers =
-            await matchPlayerRepository.getAllMatchPlayersFromViewCanonicalForUser(
-              {
-                input: {
-                  matchId: returnedMatch.id,
-                  userId: ctx.userId,
-                },
-                tx,
-              },
-            );
-          const playersToUpdate = foundMatchPlayers.filter(
-            (mp) =>
-              playerIds.includes(mp.baseMatchPlayerId) &&
-              mp.permission === "edit",
+          await this.handleOriginalMatchPlayersToUpdate(
+            ctx,
+            tx,
+            returnedMatch,
+            input.playersToUpdate,
           );
-          if (playersToUpdate.length !== playerIds.length) {
-            throw new TRPCError({
-              code: "UNAUTHORIZED",
-              message: "Does not have permission to edit all match players.",
-            });
-          }
-
-          // Add roles
-          const rolesToAdd = input.playersToUpdate.flatMap((p) =>
-            p.rolesToAdd.map((role) => ({
-              matchPlayerId: p.id,
-              role: role,
-            })),
-          );
-          if (rolesToAdd.length > 0) {
-            const originalRolesToAdd = rolesToAdd
-              .filter((r) => r.role.type === "original")
-              .map((r) => ({
-                matchPlayerId: r.matchPlayerId,
-                roleId: r.role.type === "original" ? r.role.id : 0,
-              }))
-              .filter((r) => r.roleId !== 0);
-            if (originalRolesToAdd.length > 0) {
-              await matchUpdatePlayerRoleRepository.insertMatchPlayerRoles({
-                input: originalRolesToAdd,
-                tx,
-              });
-            }
-
-            const sharedRolesToAdd = rolesToAdd.filter(
-              (r) => r.role.type !== "original",
-            );
-            for (const sharedRoleToAdd of sharedRolesToAdd) {
-              const returnedSharedRole =
-                await sharedGameRepository.getSharedRole({
-                  input: {
-                    sharedRoleId:
-                      sharedRoleToAdd.role.type === "shared"
-                        ? sharedRoleToAdd.role.sharedId
-                        : 0,
-                  },
-                  userId: ctx.userId,
-                  tx,
-                });
-              assertFound(
-                returnedSharedRole,
-                {
-                  userId: ctx.userId,
-                  value: input,
-                },
-                "Shared role not found.",
-              );
-
-              let linkedGameRoleId = returnedSharedRole.linkedGameRoleId;
-              if (!linkedGameRoleId) {
-                const createdGameRole =
-                  await matchUpdatePlayerRoleRepository.createGameRole({
-                    input: {
-                      gameId: returnedMatch.gameId,
-                      name: returnedSharedRole.gameRole.name,
-                      description: returnedSharedRole.gameRole.description,
-                      createdBy: ctx.userId,
-                    },
-                    tx,
-                  });
-                assertInserted(
-                  createdGameRole,
-                  {
-                    userId: ctx.userId,
-                    value: input,
-                  },
-                  "Game role not created.",
-                );
-
-                const linkedRole =
-                  await matchUpdatePlayerRoleRepository.linkSharedGameRole({
-                    input: {
-                      sharedGameRoleId: returnedSharedRole.id,
-                      linkedGameRoleId: createdGameRole.id,
-                    },
-                    tx,
-                  });
-                assertInserted(
-                  linkedRole,
-                  {
-                    userId: ctx.userId,
-                    value: input,
-                  },
-                  "Linked role not created.",
-                );
-                linkedGameRoleId = createdGameRole.id;
-              }
-
-              await matchUpdatePlayerRoleRepository.insertMatchPlayerRole({
-                input: {
-                  matchPlayerId: sharedRoleToAdd.matchPlayerId,
-                  roleId: linkedGameRoleId,
-                },
-                tx,
-              });
-            }
-          }
-
-          // Remove roles
-          const rolesToRemove = input.playersToUpdate.flatMap((p) =>
-            p.rolesToRemove.map((role) => ({
-              matchPlayerId: p.id,
-              roleId: role.id,
-            })),
-          );
-          if (rolesToRemove.length > 0) {
-            for (const roleToRemove of rolesToRemove) {
-              await matchUpdatePlayerRoleRepository.deleteMatchPlayerRole({
-                input: {
-                  matchPlayerId: roleToRemove.matchPlayerId,
-                  roleId: roleToRemove.roleId,
-                },
-                tx,
-              });
-            }
-          }
         }
       } else {
-        // Handle shared match type
-        // Handle playersToAdd
         if (input.playersToAdd.length > 0) {
-          const sharedPlayerIds = input.playersToAdd.map(
-            (p) => p.sharedMatchPlayerId,
-          );
-          const foundMatchPlayers =
-            await matchPlayerRepository.getAllMatchPlayersFromViewCanonicalForUser(
-              {
-                input: {
-                  matchId: returnedMatch.id,
-                  userId: ctx.userId,
-                },
-                tx,
-              },
-            );
-          const playersToAdd = foundMatchPlayers.filter(
-            (mp) =>
-              mp.sharedMatchPlayerId !== null &&
-              sharedPlayerIds.includes(mp.sharedMatchPlayerId) &&
-              mp.permission === "edit",
-          );
-          if (playersToAdd.length !== sharedPlayerIds.length) {
-            throw new TRPCError({
-              code: "UNAUTHORIZED",
-              message: "Does not have permission to edit all match players.",
-            });
-          }
-
-          const baseMatchPlayerIds = playersToAdd.map(
-            (mp) => mp.baseMatchPlayerId,
-          );
-          await matchUpdatePlayerTeamRepository.updateMatchPlayersTeam({
-            input: {
-              matchId: returnedMatch.id,
-              matchPlayerIds: baseMatchPlayerIds,
-              teamId: currentTeam.id,
-            },
+          await this.handleSharedMatchPlayersToAdd(
+            ctx,
             tx,
-          });
-
-          for (const playerToAdd of input.playersToAdd) {
-            const foundPlayer = playersToAdd.find(
-              (mp) =>
-                mp.sharedMatchPlayerId === playerToAdd.sharedMatchPlayerId,
-            );
-            if (!foundPlayer?.sharedMatchPlayerId) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Shared Match Player not set.",
-              });
-            }
-
-            for (const role of playerToAdd.roles) {
-              const returnedSharedRole =
-                await sharedGameRepository.getSharedRole({
-                  input: {
-                    sharedRoleId: role.sharedId,
-                  },
-                  userId: ctx.userId,
-                  tx,
-                });
-              assertFound(
-                returnedSharedRole,
-                {
-                  userId: ctx.userId,
-                  value: input,
-                },
-                "Shared role not found.",
-              );
-
-              const existingMatchPlayerRole =
-                await matchUpdatePlayerRoleRepository.getMatchPlayerRole({
-                  input: {
-                    matchPlayerId: foundPlayer.baseMatchPlayerId,
-                    roleId: returnedSharedRole.gameRoleId,
-                  },
-                  tx,
-                });
-              if (existingMatchPlayerRole) {
-                throw new TRPCError({
-                  code: "CONFLICT",
-                  message: "Shared role already exists.",
-                });
-              }
-
-              const insertedMatchPlayerRole =
-                await matchUpdatePlayerRoleRepository.insertMatchPlayerRole({
-                  input: {
-                    matchPlayerId: foundPlayer.baseMatchPlayerId,
-                    roleId: returnedSharedRole.gameRoleId,
-                  },
-                  tx,
-                });
-              assertInserted(
-                insertedMatchPlayerRole,
-                {
-                  userId: ctx.userId,
-                  value: input,
-                },
-                "Failed to create match player role",
-              );
-
-              const insertedSharedMatchPlayerRole =
-                await matchUpdatePlayerRoleRepository.insertSharedMatchPlayerRole(
-                  {
-                    input: {
-                      sharedMatchPlayerId: foundPlayer.sharedMatchPlayerId,
-                      sharedGameRoleId: returnedSharedRole.id,
-                    },
-                    tx,
-                  },
-                );
-              assertInserted(
-                insertedSharedMatchPlayerRole,
-                {
-                  userId: ctx.userId,
-                  value: input,
-                },
-                "Failed to create shared match player role",
-              );
-            }
-          }
+            returnedMatch,
+            currentTeam,
+            input.playersToAdd,
+          );
         }
 
-        // Handle playersToRemove
         if (input.playersToRemove.length > 0) {
-          const sharedPlayerIds = input.playersToRemove.map(
-            (p) => p.sharedMatchPlayerId,
-          );
-          const foundMatchPlayers =
-            await matchPlayerRepository.getAllMatchPlayersFromViewCanonicalForUser(
-              {
-                input: {
-                  matchId: returnedMatch.id,
-                  userId: ctx.userId,
-                },
-                tx,
-              },
-            );
-          const playersToRemove = foundMatchPlayers.filter(
-            (mp) =>
-              mp.sharedMatchPlayerId !== null &&
-              sharedPlayerIds.includes(mp.sharedMatchPlayerId) &&
-              mp.permission === "edit",
-          );
-          if (playersToRemove.length !== sharedPlayerIds.length) {
-            throw new TRPCError({
-              code: "UNAUTHORIZED",
-              message: "Does not have permission to edit all match players.",
-            });
-          }
-
-          const baseMatchPlayerIds = playersToRemove.map(
-            (mp) => mp.baseMatchPlayerId,
-          );
-          await matchUpdatePlayerTeamRepository.updateMatchPlayersTeam({
-            input: {
-              matchId: returnedMatch.id,
-              matchPlayerIds: baseMatchPlayerIds,
-              teamId: null,
-            },
+          await this.handleSharedMatchPlayersToRemove(
+            ctx,
             tx,
-          });
-
-          for (const playerToRemove of input.playersToRemove) {
-            const foundPlayer = playersToRemove.find(
-              (mp) =>
-                mp.sharedMatchPlayerId === playerToRemove.sharedMatchPlayerId,
-            );
-            if (!foundPlayer?.sharedMatchPlayerId) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Shared Match Player not set.",
-              });
-            }
-
-            for (const role of playerToRemove.roles) {
-              const returnedSharedRole =
-                await sharedGameRepository.getSharedRole({
-                  input: {
-                    sharedRoleId: role.sharedId,
-                  },
-                  userId: ctx.userId,
-                  tx,
-                });
-              assertFound(
-                returnedSharedRole,
-                {
-                  userId: ctx.userId,
-                  value: input,
-                },
-                "Shared role not found.",
-              );
-
-              await matchUpdatePlayerRoleRepository.deleteSharedMatchPlayerRole(
-                {
-                  input: {
-                    sharedMatchPlayerId: foundPlayer.sharedMatchPlayerId,
-                    sharedGameRoleId: returnedSharedRole.id,
-                  },
-                  tx,
-                },
-              );
-
-              await matchUpdatePlayerRoleRepository.deleteMatchPlayerRole({
-                input: {
-                  matchPlayerId: foundPlayer.baseMatchPlayerId,
-                  roleId: returnedSharedRole.gameRoleId,
-                },
-                tx,
-              });
-            }
-          }
+            returnedMatch,
+            input.playersToRemove,
+          );
         }
 
-        // Handle playersToUpdate
         if (input.playersToUpdate.length > 0) {
-          const sharedPlayerIds = input.playersToUpdate.map(
-            (p) => p.sharedMatchPlayerId,
+          await this.handleSharedMatchPlayersToUpdate(
+            ctx,
+            tx,
+            returnedMatch,
+            input.playersToUpdate,
           );
-          const foundMatchPlayers =
-            await matchPlayerRepository.getAllMatchPlayersFromViewCanonicalForUser(
-              {
-                input: {
-                  matchId: returnedMatch.id,
-                  userId: ctx.userId,
-                },
-                tx,
-              },
-            );
-          const playersToUpdate = foundMatchPlayers.filter(
-            (mp) =>
-              mp.sharedMatchPlayerId !== null &&
-              sharedPlayerIds.includes(mp.sharedMatchPlayerId) &&
-              mp.permission === "edit",
-          );
-          if (playersToUpdate.length !== sharedPlayerIds.length) {
-            throw new TRPCError({
-              code: "UNAUTHORIZED",
-              message: "Does not have permission to edit all match players.",
-            });
-          }
-
-          // Add roles
-          for (const playerToUpdate of input.playersToUpdate) {
-            const foundPlayer = playersToUpdate.find(
-              (mp) =>
-                mp.sharedMatchPlayerId === playerToUpdate.sharedMatchPlayerId,
-            );
-            if (!foundPlayer?.sharedMatchPlayerId) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Shared Match Player not set.",
-              });
-            }
-
-            for (const role of playerToUpdate.rolesToAdd) {
-              const returnedSharedRole =
-                await sharedGameRepository.getSharedRole({
-                  input: {
-                    sharedRoleId: role.sharedId,
-                  },
-                  userId: ctx.userId,
-                  tx,
-                });
-              assertFound(
-                returnedSharedRole,
-                {
-                  userId: ctx.userId,
-                  value: input,
-                },
-                "Shared role not found.",
-              );
-
-              const existingMatchPlayerRole =
-                await matchUpdatePlayerRoleRepository.getMatchPlayerRole({
-                  input: {
-                    matchPlayerId: foundPlayer.baseMatchPlayerId,
-                    roleId: returnedSharedRole.gameRoleId,
-                  },
-                  tx,
-                });
-              if (existingMatchPlayerRole) {
-                throw new TRPCError({
-                  code: "CONFLICT",
-                  message: "Shared role already exists.",
-                });
-              }
-
-              const insertedMatchPlayerRole =
-                await matchUpdatePlayerRoleRepository.insertMatchPlayerRole({
-                  input: {
-                    matchPlayerId: foundPlayer.baseMatchPlayerId,
-                    roleId: returnedSharedRole.gameRoleId,
-                  },
-                  tx,
-                });
-              assertInserted(
-                insertedMatchPlayerRole,
-                {
-                  userId: ctx.userId,
-                  value: input,
-                },
-                "Failed to create match player role",
-              );
-
-              const insertedSharedMatchPlayerRole =
-                await matchUpdatePlayerRoleRepository.insertSharedMatchPlayerRole(
-                  {
-                    input: {
-                      sharedMatchPlayerId: foundPlayer.sharedMatchPlayerId,
-                      sharedGameRoleId: returnedSharedRole.id,
-                    },
-                    tx,
-                  },
-                );
-              assertInserted(
-                insertedSharedMatchPlayerRole,
-                {
-                  userId: ctx.userId,
-                  value: input,
-                },
-                "Failed to create shared match player role",
-              );
-            }
-          }
-
-          // Remove roles
-          for (const playerToUpdate of input.playersToUpdate) {
-            const foundPlayer = playersToUpdate.find(
-              (mp) =>
-                mp.sharedMatchPlayerId === playerToUpdate.sharedMatchPlayerId,
-            );
-            if (!foundPlayer?.sharedMatchPlayerId) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Shared Match Player not set.",
-              });
-            }
-
-            for (const role of playerToUpdate.rolesToRemove) {
-              const returnedSharedRole =
-                await sharedGameRepository.getSharedRole({
-                  input: {
-                    sharedRoleId: role.sharedId,
-                  },
-                  userId: ctx.userId,
-                  tx,
-                });
-              assertFound(
-                returnedSharedRole,
-                {
-                  userId: ctx.userId,
-                  value: input,
-                },
-                "Shared role not found.",
-              );
-
-              await matchUpdatePlayerRoleRepository.deleteSharedMatchPlayerRole(
-                {
-                  input: {
-                    sharedMatchPlayerId: foundPlayer.sharedMatchPlayerId,
-                    sharedGameRoleId: returnedSharedRole.id,
-                  },
-                  tx,
-                },
-              );
-
-              await matchUpdatePlayerRoleRepository.deleteMatchPlayerRole({
-                input: {
-                  matchPlayerId: foundPlayer.baseMatchPlayerId,
-                  roleId: returnedSharedRole.gameRoleId,
-                },
-                tx,
-              });
-            }
-          }
         }
       }
     });
