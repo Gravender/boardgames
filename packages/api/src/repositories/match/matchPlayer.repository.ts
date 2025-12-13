@@ -16,7 +16,10 @@ import {
 import { vMatchPlayerCanonicalForUser } from "@board-games/db/views";
 
 import type {
+  GetAllMatchPlayersFromViewCanonicalForUserArgs,
   GetFromViewCanonicalForUserArgs,
+  GetFromViewCanonicalForUserByOriginalIdArgs,
+  GetFromViewCanonicalForUserBySharedIdArgs,
   GetMatchPlayersByTeamFromViewCanonicalForUserArgs,
   GetRoundPlayerArgs,
   GetRoundPlayersArgs,
@@ -57,6 +60,43 @@ class MatchPlayerRepository {
       );
     return foundMatchPlayer;
   }
+  public async getFromViewCanonicalForUserByOriginalId(
+    args: GetFromViewCanonicalForUserByOriginalIdArgs,
+  ) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [foundMatchPlayer] = await database
+      .select()
+      .from(vMatchPlayerCanonicalForUser)
+      .where(
+        and(
+          eq(vMatchPlayerCanonicalForUser.baseMatchPlayerId, input.id),
+          eq(vMatchPlayerCanonicalForUser.ownerId, input.userId),
+          eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
+        ),
+      );
+    return foundMatchPlayer;
+  }
+  public async getFromViewCanonicalForUserBySharedId(
+    args: GetFromViewCanonicalForUserBySharedIdArgs,
+  ) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [foundMatchPlayer] = await database
+      .select()
+      .from(vMatchPlayerCanonicalForUser)
+      .where(
+        and(
+          eq(
+            vMatchPlayerCanonicalForUser.sharedMatchPlayerId,
+            input.sharedMatchPlayerId,
+          ),
+          eq(vMatchPlayerCanonicalForUser.sharedWithId, input.userId),
+          eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
+        ),
+      );
+    return foundMatchPlayer;
+  }
   public async getMatchPlayersByTeamFromViewCanonicalForUser(
     args: GetMatchPlayersByTeamFromViewCanonicalForUserArgs,
   ) {
@@ -83,6 +123,33 @@ class MatchPlayerRepository {
       );
     return returnedMatchPlayers;
   }
+
+  public async getAllMatchPlayersFromViewCanonicalForUser(
+    args: GetAllMatchPlayersFromViewCanonicalForUserArgs,
+  ) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const returnedMatchPlayers = await database
+      .select()
+      .from(vMatchPlayerCanonicalForUser)
+      .where(
+        and(
+          eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.matchId),
+          or(
+            and(
+              eq(vMatchPlayerCanonicalForUser.sharedWithId, input.userId),
+              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
+            ),
+            and(
+              eq(vMatchPlayerCanonicalForUser.ownerId, input.userId),
+              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
+            ),
+          ),
+        ),
+      );
+    return returnedMatchPlayers;
+  }
+
   public async getMany<TConfig extends ManyQueryConfig<"matchPlayer">>(
     filters: {
       matchId: NonNullable<Filter<"matchPlayer">["matchId"]>;

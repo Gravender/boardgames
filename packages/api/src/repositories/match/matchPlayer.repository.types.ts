@@ -19,9 +19,25 @@ export type GetFromViewCanonicalForUserArgs = BaseRepoArgs<{
   matchId: number;
   userId: string;
 }>;
+
+export type GetFromViewCanonicalForUserBySharedIdArgs = BaseRepoArgs<{
+  sharedMatchPlayerId: number;
+  userId: string;
+}>;
+
+export type GetFromViewCanonicalForUserByOriginalIdArgs = BaseRepoArgs<{
+  id: number;
+  userId: string;
+}>;
+
 export type GetMatchPlayersByTeamFromViewCanonicalForUserArgs = BaseRepoArgs<{
   matchId: number;
   teamId: number;
+  userId: string;
+}>;
+
+export type GetAllMatchPlayersFromViewCanonicalForUserArgs = BaseRepoArgs<{
+  matchId: number;
   userId: string;
 }>;
 
