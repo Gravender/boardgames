@@ -453,27 +453,6 @@ class MatchUpdatePlayerService {
   }
 
   /**
-   * Inserts a shared role for a player, creating and linking the game role if needed.
-   * @deprecated Use sharedRoleService.insertSharedRoleForMatchPlayer instead
-   */
-  private async insertRolesForSharedPlayer(
-    ctx: UpdateMatchTeamArgs["ctx"],
-    tx: TransactionType,
-    matchGameId: number,
-    matchPlayerId: number,
-    sharedRoleId: number,
-  ) {
-    await sharedRoleService.insertSharedRoleForMatchPlayer({
-      userId: ctx.userId,
-      tx,
-      gameId: matchGameId,
-      matchPlayerId,
-      sharedRoleId,
-      errorContext: { sharedRoleId },
-    });
-  }
-
-  /**
    * Handles adding players to a team for an original match.
    */
   private async handleOriginalMatchPlayersToAdd(
@@ -537,13 +516,16 @@ class MatchUpdatePlayerService {
 
     if (sharedRoles.length > 0) {
       for (const sharedRole of sharedRoles) {
-        await this.insertRolesForSharedPlayer(
-          ctx,
+        await sharedRoleService.insertSharedRoleForMatchPlayer({
+          userId: ctx.userId,
           tx,
-          returnedMatch.gameId,
-          sharedRole.matchPlayerId,
-          sharedRole.sharedId,
-        );
+          gameId: returnedMatch.gameId,
+          matchPlayerId: sharedRole.matchPlayerId,
+          sharedRoleId: sharedRole.sharedId,
+          errorContext: {
+            sharedRoleId: sharedRole.sharedId,
+          },
+        });
       }
     }
   }
@@ -651,13 +633,14 @@ class MatchUpdatePlayerService {
             ? sharedRoleToAdd.role.sharedId
             : 0;
         if (sharedRoleId !== 0) {
-          await this.insertRolesForSharedPlayer(
-            ctx,
+          await sharedRoleService.insertSharedRoleForMatchPlayer({
+            userId: ctx.userId,
             tx,
-            returnedMatch.gameId,
-            sharedRoleToAdd.matchPlayerId,
-            sharedRoleId,
-          );
+            gameId: returnedMatch.gameId,
+            matchPlayerId: sharedRoleToAdd.matchPlayerId,
+            sharedRoleId: sharedRoleId,
+            errorContext: { sharedRoleId },
+          });
         }
       }
     }
