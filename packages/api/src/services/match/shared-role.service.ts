@@ -1,13 +1,11 @@
 import { TRPCError } from "@trpc/server";
 
 import type { TransactionType } from "@board-games/db/client";
-import { matchUpdatePlayerRoleRepository } from "@board-games/api/repositories/match/match-update-player-role.repository";
-import { gameRepository } from "@board-games/api/routers/game/repository/game.repository";
-import { sharedGameRepository } from "@board-games/api/routers/game/sub-routers/shared/repository/shared-game.repository";
-import {
-  assertFound,
-  assertInserted,
-} from "@board-games/api/utils/databaseHelpers";
+
+import { matchUpdatePlayerRoleRepository } from "../../repositories/match/match-update-player-role.repository";
+import { gameRepository } from "../../routers/game/repository/game.repository";
+import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
+import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
 /**
  * Unified service for handling shared role operations.

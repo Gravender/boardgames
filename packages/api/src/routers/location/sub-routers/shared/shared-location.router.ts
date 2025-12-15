@@ -1,7 +1,6 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
-import { protectedUserProcedure } from "@board-games/api/trpc";
-
+import { protectedUserProcedure } from "../../../../trpc";
 import { sharedLocationService } from "./service/shared-location.service";
 import { sharedLocationsFromSharedMatchInput } from "./shared-location.input";
 import { getSharedLocationsFromSharedMatchOutput } from "./shared-location.output";

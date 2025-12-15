@@ -5,12 +5,6 @@ import { compareAsc } from "date-fns";
 import { eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 
-import type { PlayerMatch } from "@board-games/api/utils/gameStats";
-import { protectedUserProcedure } from "@board-games/api/trpc";
-import {
-  headToHeadStats,
-  playerAndRolesAggregated,
-} from "@board-games/api/utils/gameStats";
 import {
   game,
   round,
@@ -19,6 +13,13 @@ import {
 } from "@board-games/db/schema";
 import { selectSharedGameSchema } from "@board-games/db/zodSchema";
 import { editScoresheetSchemaApiInput } from "@board-games/shared";
+
+import type { PlayerMatch } from "../../utils/gameStats";
+import { protectedUserProcedure } from "../../trpc";
+import {
+  headToHeadStats,
+  playerAndRolesAggregated,
+} from "../../utils/gameStats";
 
 export const shareGameRouter = {
   getSharedGame: protectedUserProcedure

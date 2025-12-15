@@ -1,17 +1,14 @@
 import { TRPCError } from "@trpc/server";
 
-import type { InsertRoundInputType } from "@board-games/api/routers/scoresheet/repository/scoresheet.repository.types";
 import type { TransactionType } from "@board-games/db/client";
-import { gameRepository } from "@board-games/api/routers/game/repository/game.repository";
-import { sharedGameRepository } from "@board-games/api/routers/game/sub-routers/shared/repository/shared-game.repository";
-import { locationRepository } from "@board-games/api/routers/location/repository/location.repository";
-import { scoresheetRepository } from "@board-games/api/routers/scoresheet/repository/scoresheet.repository";
-import {
-  assertFound,
-  assertInserted,
-} from "@board-games/api/utils/databaseHelpers";
 
+import type { InsertRoundInputType } from "../../routers/scoresheet/repository/scoresheet.repository.types";
 import type { CreateMatchArgs } from "./match.service.types";
+import { gameRepository } from "../../routers/game/repository/game.repository";
+import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
+import { locationRepository } from "../../routers/location/repository/location.repository";
+import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
+import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
 class MatchSetupService {
   public async resolveGameForMatch(args: {

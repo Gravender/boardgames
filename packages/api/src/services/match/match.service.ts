@@ -1,6 +1,9 @@
 import { TRPCError } from "@trpc/server";
 
-import type { EditMatchInputType } from "@board-games/api/routers/match/match.input";
+import { db } from "@board-games/db/client";
+import { calculatePlacement, isSameRole } from "@board-games/shared";
+
+import type { EditMatchInputType } from "../../routers/match/match.input";
 import type {
   CreateMatchOutputType,
   EditMatchOutputType,
@@ -10,20 +13,7 @@ import type {
   GetMatchSummaryOutputType,
   OriginalEditMatchOutputType,
   SharedEditMatchOutputType,
-} from "@board-games/api/routers/match/match.output";
-import { Logger } from "@board-games/api/common/logger";
-import { matchRepository } from "@board-games/api/repositories/match/match.repository";
-import { matchPlayerRepository } from "@board-games/api/repositories/match/matchPlayer.repository";
-import { teamRepository } from "@board-games/api/repositories/match/team.repository";
-import { locationRepository } from "@board-games/api/routers/location/repository/location.repository";
-import { scoresheetRepository } from "@board-games/api/routers/scoresheet/repository/scoresheet.repository";
-import {
-  assertFound,
-  assertInserted,
-} from "@board-games/api/utils/databaseHelpers";
-import { db } from "@board-games/db/client";
-import { calculatePlacement, isSameRole } from "@board-games/shared";
-
+} from "../../routers/match/match.output";
 import type {
   CreateMatchArgs,
   DeleteMatchArgs,
@@ -33,6 +23,13 @@ import type {
   GetMatchScoresheetArgs,
   MatchPlayersAndTeamsResponse,
 } from "./match.service.types";
+import { Logger } from "../../common/logger";
+import { matchRepository } from "../../repositories/match/match.repository";
+import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
+import { teamRepository } from "../../repositories/match/team.repository";
+import { locationRepository } from "../../routers/location/repository/location.repository";
+import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
+import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 import { friendService } from "../social/friend.service";
 import { matchParticipantsService } from "./match-participants.service";
 import { matchRolesService } from "./match-roles.service";

@@ -1,11 +1,6 @@
 import { TRPCError } from "@trpc/server";
 
 import type { TransactionType } from "@board-games/db/client";
-import { scoresheetRepository } from "@board-games/api/routers/scoresheet/repository/scoresheet.repository";
-import {
-  assertFound,
-  assertInserted,
-} from "@board-games/api/utils/databaseHelpers";
 import { db } from "@board-games/db/client";
 import { image } from "@board-games/db/schema";
 
@@ -20,6 +15,8 @@ import type {
   GetGameRolesArgs,
   GetGameScoresheetsArgs,
 } from "./game.service.types";
+import { assertFound, assertInserted } from "../../../utils/databaseHelpers";
+import { scoresheetRepository } from "../../scoresheet/repository/scoresheet.repository";
 import { gameRepository } from "../repository/game.repository";
 
 class GameService {

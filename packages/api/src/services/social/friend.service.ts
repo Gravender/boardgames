@@ -1,19 +1,17 @@
 import { TRPCError } from "@trpc/server";
 
-import { matchRepository } from "@board-games/api/repositories/match/match.repository";
-import { matchPlayerRepository } from "@board-games/api/repositories/match/matchPlayer.repository";
-import { sharingRepository } from "@board-games/api/repositories/sharing/sharing.repository";
-import { friendRepository } from "@board-games/api/repositories/social/friend.repository";
-import { gameRepository } from "@board-games/api/routers/game/repository/game.repository";
-import { sharedGameRepository } from "@board-games/api/routers/game/sub-routers/shared/repository/shared-game.repository";
-import { locationRepository } from "@board-games/api/routers/location/repository/location.repository";
-import { playerRepository } from "@board-games/api/routers/player/repository/player.repository";
-import { scoresheetRepository } from "@board-games/api/routers/scoresheet/repository/scoresheet.repository";
-import {
-  assertFound,
-  assertInserted,
-} from "@board-games/api/utils/databaseHelpers";
 import { db } from "@board-games/db/client";
+
+import { matchRepository } from "../../repositories/match/match.repository";
+import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
+import { sharingRepository } from "../../repositories/sharing/sharing.repository";
+import { friendRepository } from "../../repositories/social/friend.repository";
+import { gameRepository } from "../../routers/game/repository/game.repository";
+import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
+import { locationRepository } from "../../routers/location/repository/location.repository";
+import { playerRepository } from "../../routers/player/repository/player.repository";
+import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
+import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
 class FriendService {
   public async autoShareMatch(args: {

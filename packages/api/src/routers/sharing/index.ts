@@ -1,5 +1,4 @@
-import { createTRPCRouter, mergeRouters } from "@board-games/api/trpc";
-
+import { createTRPCRouter, mergeRouters } from "../../trpc";
 import { shareAcceptanceRouter } from "./share-accept";
 import { shareGameRouter } from "./share-game";
 import { shareLinkRouter } from "./share-link";

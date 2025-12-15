@@ -1,10 +1,5 @@
 import { TRPCError } from "@trpc/server";
 
-import { matchUpdatePlayerScoreRepository } from "@board-games/api/repositories/match/match-update-player-score.repository";
-import { matchUpdateStateRepository } from "@board-games/api/repositories/match/match-update-state.repository";
-import { matchRepository } from "@board-games/api/repositories/match/match.repository";
-import { matchPlayerRepository } from "@board-games/api/repositories/match/matchPlayer.repository";
-import { assertFound } from "@board-games/api/utils/databaseHelpers";
 import { db } from "@board-games/db/client";
 import { calculatePlacement } from "@board-games/shared";
 
@@ -15,6 +10,11 @@ import type {
   UpdateMatchPlayerScoreArgs,
   UpdateMatchScoreArgs,
 } from "./update-match.service.types";
+import { matchUpdatePlayerScoreRepository } from "../../repositories/match/match-update-player-score.repository";
+import { matchUpdateStateRepository } from "../../repositories/match/match-update-state.repository";
+import { matchRepository } from "../../repositories/match/match.repository";
+import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
+import { assertFound } from "../../utils/databaseHelpers";
 import { getMatchForUpdate } from "./match-update-helpers";
 
 class MatchUpdateScoreService {

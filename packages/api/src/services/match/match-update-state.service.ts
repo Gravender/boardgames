@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { differenceInSeconds } from "date-fns";
 
-import { matchUpdateStateRepository } from "@board-games/api/repositories/match/match-update-state.repository";
 import { db } from "@board-games/db/client";
 
 import type {
@@ -10,6 +9,7 @@ import type {
   MatchStartArgs,
   UpdateMatchCommentArgs,
 } from "./update-match.service.types";
+import { matchUpdateStateRepository } from "../../repositories/match/match-update-state.repository";
 import { getMatchForUpdate } from "./match-update-helpers";
 
 class MatchUpdateStateService {

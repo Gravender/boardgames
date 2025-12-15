@@ -1,5 +1,5 @@
-import type { UpdateMatchCommentInputType } from "@board-games/api/routers/match/sub-routers/update-match/update-match.input";
-import type { BaseRepoArgs } from "@board-games/api/utils/databaseHelpers";
+import type { UpdateMatchCommentInputType } from "../../routers/match/sub-routers/update-match/update-match.input";
+import type { BaseRepoArgs } from "../../utils/databaseHelpers";
 
 export type MatchStartRepoArgs = BaseRepoArgs<{
   id: number;

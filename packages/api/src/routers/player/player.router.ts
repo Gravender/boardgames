@@ -1,7 +1,6 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
-import { protectedUserProcedure } from "@board-games/api/trpc";
-
+import { protectedUserProcedure } from "../../trpc";
 import {
   getPlayersForMatchOutput,
   getRecentMatchWithPlayersOutput,

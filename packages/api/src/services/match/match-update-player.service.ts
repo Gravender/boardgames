@@ -1,17 +1,6 @@
 import { TRPCError } from "@trpc/server";
 
 import type { TransactionType } from "@board-games/db/client";
-import { matchUpdateDetailsRepository } from "@board-games/api/repositories/match/match-update-details.repository";
-import { matchUpdatePlayerRoleRepository } from "@board-games/api/repositories/match/match-update-player-role.repository";
-import { matchUpdatePlayerTeamRepository } from "@board-games/api/repositories/match/match-update-player-team.repository";
-import { matchRepository } from "@board-games/api/repositories/match/match.repository";
-import { matchPlayerRepository } from "@board-games/api/repositories/match/matchPlayer.repository";
-import { teamRepository } from "@board-games/api/repositories/match/team.repository";
-import { sharedGameRepository } from "@board-games/api/routers/game/sub-routers/shared/repository/shared-game.repository";
-import {
-  assertFound,
-  assertInserted,
-} from "@board-games/api/utils/databaseHelpers";
 import { db } from "@board-games/db/client";
 
 import type {
@@ -19,6 +8,14 @@ import type {
   UpdateMatchPlayerTeamAndRolesArgs,
   UpdateMatchTeamArgs,
 } from "./update-match.service.types";
+import { matchUpdateDetailsRepository } from "../../repositories/match/match-update-details.repository";
+import { matchUpdatePlayerRoleRepository } from "../../repositories/match/match-update-player-role.repository";
+import { matchUpdatePlayerTeamRepository } from "../../repositories/match/match-update-player-team.repository";
+import { matchRepository } from "../../repositories/match/match.repository";
+import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
+import { teamRepository } from "../../repositories/match/team.repository";
+import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
+import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 import { getMatchForUpdate } from "./match-update-helpers";
 import { sharedRoleService } from "./shared-role.service";
 

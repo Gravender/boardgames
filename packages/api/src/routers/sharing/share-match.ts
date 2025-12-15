@@ -5,13 +5,14 @@ import { compareAsc, differenceInSeconds } from "date-fns";
 import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 
-import { protectedUserProcedure } from "@board-games/api/trpc";
 import { match, matchPlayer, roundPlayer, team } from "@board-games/db/schema";
 import {
   selectRoundPlayerSchema,
   selectSharedMatchPlayerSchema,
   selectSharedMatchSchema,
 } from "@board-games/db/zodSchema";
+
+import { protectedUserProcedure } from "../../trpc";
 
 export const shareMatchRouter = {
   getSharedMatch: protectedUserProcedure

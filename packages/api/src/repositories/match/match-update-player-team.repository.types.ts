@@ -1,4 +1,4 @@
-import type { BaseRepoArgs } from "@board-games/api/utils/databaseHelpers";
+import type { BaseRepoArgs } from "../../utils/databaseHelpers";
 
 export type UpdateMatchPlayerTeamRepoArgs = BaseRepoArgs<{
   id: number;

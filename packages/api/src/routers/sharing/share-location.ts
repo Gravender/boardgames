@@ -1,7 +1,8 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
-import { protectedUserProcedure } from "@board-games/api/trpc";
 import { selectSharedLocationSchema } from "@board-games/db/zodSchema";
+
+import { protectedUserProcedure } from "../../trpc";
 
 export const shareLocationRouter = {
   getSharedLocation: protectedUserProcedure

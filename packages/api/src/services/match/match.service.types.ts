@@ -1,12 +1,12 @@
 import type { PostHog } from "posthog-node";
 
-import type { matchRepository } from "@board-games/api/repositories/match/match.repository";
+import type { matchRepository } from "../../repositories/match/match.repository";
 import type {
   CreateMatchInputType,
   DeleteMatchInputType,
   EditMatchInputType,
   GetMatchInputType,
-} from "@board-games/api/routers/match/match.input";
+} from "../../routers/match/match.input";
 
 export interface CreateMatchArgs {
   input: CreateMatchInputType;
