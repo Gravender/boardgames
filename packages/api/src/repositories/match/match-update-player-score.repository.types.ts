@@ -1,10 +1,5 @@
 import type { UpdateMatchPlayerScoreInputType } from "../../routers/match/sub-routers/update-match/update-match.input";
-import type { BaseRepoArgs } from "../../utils/databaseHelpers";
-
-export interface UserScopedArgs<T> {
-  input: T;
-  userId: string;
-}
+import type { BaseRepoArgs, UserScopedArgs } from "../../utils/databaseHelpers";
 
 export type UpdateMatchPlayerScoreRepoArgs =
   UserScopedArgs<UpdateMatchPlayerScoreInputType>;

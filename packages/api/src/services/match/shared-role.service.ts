@@ -240,7 +240,6 @@ class SharedRoleService {
       });
 
     if (existingMatchPlayerRole) {
-      const { TRPCError } = await import("@trpc/server");
       throw new TRPCError({
         code: "CONFLICT",
         message: "Shared role already exists.",

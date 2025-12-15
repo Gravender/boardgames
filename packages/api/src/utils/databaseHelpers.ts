@@ -65,3 +65,8 @@ export interface BaseServiceArgs<TInput> {
 export interface WithTx {
   tx?: TransactionType;
 }
+
+export interface UserScopedArgs<T> {
+  input: T;
+  userId: string;
+}
