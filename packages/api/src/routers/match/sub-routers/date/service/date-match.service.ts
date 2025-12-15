@@ -1,5 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
+import { aggregatePlayerStats } from "@board-games/api/utils/player";
+
 import type {
   GetMatchesByCalendarOutputType,
   GetMatchesByDateOutputType,
@@ -8,7 +10,6 @@ import type {
   GetMatchesByCalendarArgs,
   GetMatchesByDateArgs,
 } from "./date-match.service.types";
-import { aggregatePlayerStats } from "../../../../../utils/player";
 import { dateMatchRepository } from "../repository/date-match.repository";
 
 class DateMatchService {

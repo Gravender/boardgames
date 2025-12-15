@@ -2,16 +2,15 @@ import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
 
-import { selectSharedPlayerSchema } from "@board-games/db/zodSchema";
-
-import type { PlayerMatch } from "../../utils/player";
-import { protectedUserProcedure } from "../../trpc";
+import type { PlayerMatch } from "@board-games/api/utils/player";
+import { protectedUserProcedure } from "@board-games/api/trpc";
 import {
   aggregatePlayerStats,
   getTeamStats,
   headToHeadStats,
   teammateFrequency,
-} from "../../utils/player";
+} from "@board-games/api/utils/player";
+import { selectSharedPlayerSchema } from "@board-games/db/zodSchema";
 
 export const sharePlayerRouter = {
   getSharedPlayer: protectedUserProcedure

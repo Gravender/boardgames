@@ -1,8 +1,9 @@
 import { TRPCError } from "@trpc/server";
 
+import { matchRepository } from "@board-games/api/repositories/match/match.repository";
+import { assertFound } from "@board-games/api/utils/databaseHelpers";
+
 import type { getMatchArgs } from "./update-match.service.types";
-import { matchRepository } from "../../repositories/match/match.repository";
-import { assertFound } from "../../utils/databaseHelpers";
 
 export async function getMatchForUpdate(args: getMatchArgs) {
   const { input, ctx, tx } = args;

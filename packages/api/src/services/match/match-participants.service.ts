@@ -2,13 +2,16 @@ import type { PostHog } from "posthog-node";
 import { TRPCError } from "@trpc/server";
 
 import type { TransactionType } from "@board-games/db/client";
+import { matchPlayerRepository } from "@board-games/api/repositories/match/matchPlayer.repository";
+import { teamRepository } from "@board-games/api/repositories/match/team.repository";
+import { playerRepository } from "@board-games/api/routers/player/repository/player.repository";
+import {
+  assertFound,
+  assertInserted,
+} from "@board-games/api/utils/databaseHelpers";
 import { isSameRole } from "@board-games/shared";
 
 import type { CreateMatchArgs } from "./match.service.types";
-import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
-import { teamRepository } from "../../repositories/match/team.repository";
-import { playerRepository } from "../../routers/player/repository/player.repository";
-import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 import { matchRolesService } from "./match-roles.service";
 
 class MatchParticipantsService {

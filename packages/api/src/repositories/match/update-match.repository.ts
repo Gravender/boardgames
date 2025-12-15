@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { differenceInSeconds } from "date-fns";
 import { and, eq, inArray, notInArray, or, sql } from "drizzle-orm";
 
+import { Logger } from "@board-games/api/common/logger";
 import { db } from "@board-games/db/client";
 import {
   gameRole,
@@ -29,7 +30,6 @@ import type {
   UpdateMatchPlayerTeamAndRolesRepoArgs,
   UpdateMatchTeamRepoArgs,
 } from "./update-match.repository.types";
-import { Logger } from "../../common/logger";
 
 class UpdateMatchRepository {
   private readonly logger = new Logger(UpdateMatchRepository.name);

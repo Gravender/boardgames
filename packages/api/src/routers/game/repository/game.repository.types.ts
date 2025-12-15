@@ -1,12 +1,11 @@
 import type z from "zod";
 
-import type { TransactionType } from "@board-games/db/client";
-import { insertGameRoleSchema } from "@board-games/db/zodSchema";
-
 import type {
   CreateGameInputType,
   GetGameInputType,
-} from "../../../routers/game/game.input";
+} from "@board-games/api/routers/game/game.input";
+import type { TransactionType } from "@board-games/db/client";
+import { insertGameRoleSchema } from "@board-games/db/zodSchema";
 
 export interface GetGameArgs {
   input: GetGameInputType;

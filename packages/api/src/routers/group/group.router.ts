@@ -1,6 +1,7 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
-import { protectedUserProcedure } from "../../trpc";
+import { protectedUserProcedure } from "@board-games/api/trpc";
+
 import { getGroupWithPlayers } from "./group.output";
 import { groupService } from "./service/group.service";
 

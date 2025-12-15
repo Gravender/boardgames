@@ -1,4 +1,4 @@
-import type { GetMatchInputType } from "../../routers/match/match.input";
+import type { GetMatchInputType } from "@board-games/api/routers/match/match.input";
 import type {
   UpdateMatchCommentInputType,
   UpdateMatchDetailsInputType,
@@ -8,8 +8,8 @@ import type {
   UpdateMatchPlayerTeamAndRolesInputType,
   UpdateMatchScoreInputType,
   UpdateMatchTeamInputType,
-} from "../../routers/match/sub-routers/update-match/update-match.input";
-import type { BaseRepoArgs } from "../../utils/databaseHelpers";
+} from "@board-games/api/routers/match/sub-routers/update-match/update-match.input";
+import type { BaseRepoArgs } from "@board-games/api/utils/databaseHelpers";
 
 export interface UserScopedArgs<T> {
   input: T;

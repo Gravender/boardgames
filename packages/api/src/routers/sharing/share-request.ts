@@ -11,6 +11,8 @@ import type {
   selectSharedMatchSchema,
   selectSharedPlayerSchema,
 } from "@board-games/db/zodSchema";
+import { protectedUserProcedure } from "@board-games/api/trpc";
+import { handleLocationSharing } from "@board-games/api/utils/sharing";
 import {
   game,
   sharedGame,
@@ -20,9 +22,6 @@ import {
   sharedScoresheet,
   shareRequest,
 } from "@board-games/db/schema";
-
-import { protectedUserProcedure } from "../../trpc";
-import { handleLocationSharing } from "../../utils/sharing";
 
 export const shareRequestRouter = {
   requestShareGame: protectedUserProcedure

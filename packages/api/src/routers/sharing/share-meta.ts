@@ -12,9 +12,8 @@ import type {
   selectPlayerSchema,
   selectScoreSheetSchema,
 } from "@board-games/db/zodSchema";
+import { protectedUserProcedure } from "@board-games/api/trpc";
 import { scoresheet } from "@board-games/db/schema";
-
-import { protectedUserProcedure } from "../../trpc";
 
 export const shareMetaRouter = {
   getShareRequest: protectedUserProcedure

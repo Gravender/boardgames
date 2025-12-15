@@ -1,7 +1,8 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
-import { matchService } from "../../services/match/match.service";
-import { protectedUserProcedure } from "../../trpc";
+import { matchService } from "@board-games/api/services/match/match.service";
+import { protectedUserProcedure } from "@board-games/api/trpc";
+
 import {
   createMatchInput,
   deleteMatchInput,

@@ -1,6 +1,6 @@
 import type { TransactionType } from "@board-games/db/client";
+import { matchPlayerRepository } from "@board-games/api/repositories/match/matchPlayer.repository";
 
-import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
 import { sharedRoleService } from "./shared-role.service";
 
 class MatchRolesService {

@@ -2,11 +2,16 @@ import { TRPCError } from "@trpc/server";
 import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 
 import type {
+  GetMatchOutputType,
+  GetMatchScoresheetOutputType,
+} from "@board-games/api/routers/match/match.output";
+import type {
   Filter,
   InferQueryResult,
   QueryConfig,
   TransactionType,
 } from "@board-games/db/client";
+import { Logger } from "@board-games/api/common/logger";
 import { db } from "@board-games/db/client";
 import { match, scoresheet, sharedMatch } from "@board-games/db/schema";
 import {
@@ -15,10 +20,6 @@ import {
 } from "@board-games/db/views";
 
 import type {
-  GetMatchOutputType,
-  GetMatchScoresheetOutputType,
-} from "../../routers/match/match.output";
-import type {
   GetMatchArgs,
   GetMatchPlayersAndTeamsArgs,
   GetMatchScoresheetArgs,
@@ -26,7 +27,6 @@ import type {
   InsertSharedMatchInputType,
   UpdateMatchArgs,
 } from "./match.repository.types";
-import { Logger } from "../../common/logger";
 
 class MatchRepository {
   private readonly logger = new Logger(MatchRepository.name);

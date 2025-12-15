@@ -3,9 +3,8 @@ import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod/v4";
 
+import { protectedUserProcedure } from "@board-games/api/trpc";
 import { sharedGame, sharedPlayer } from "@board-games/db/schema";
-
-import { protectedUserProcedure } from "../../trpc";
 
 export const shareLinkingRouter = {
   linkSharedPlayer: protectedUserProcedure

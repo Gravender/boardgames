@@ -9,9 +9,8 @@ import type {
   selectMatchSchema,
   selectScoreSheetSchema,
 } from "@board-games/db/zodSchema";
+import { publicProcedure } from "@board-games/api/trpc";
 import { game, scoresheet } from "@board-games/db/schema";
-
-import { publicProcedure } from "../../trpc";
 
 export const shareLinkRouter = {
   getSharedItemByToken: publicProcedure

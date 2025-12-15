@@ -1,16 +1,15 @@
 import type z from "zod";
 
+import type {
+  CreateMatchInputType,
+  EditMatchInputType,
+  GetMatchInputType,
+} from "@board-games/api/routers/match/match.input";
 import type { TransactionType } from "@board-games/db/client";
 import {
   insertMatchSchema,
   insertSharedMatchSchema,
 } from "@board-games/db/zodSchema";
-
-import type {
-  CreateMatchInputType,
-  EditMatchInputType,
-  GetMatchInputType,
-} from "../../routers/match/match.input";
 
 export const insertMatchSchemaInput = insertMatchSchema.pick({
   createdBy: true,

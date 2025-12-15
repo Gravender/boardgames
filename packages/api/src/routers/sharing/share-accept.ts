@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod/v4";
 
 import type { selectSharedLocationSchema } from "@board-games/db/zodSchema";
+import { protectedUserProcedure } from "@board-games/api/trpc";
 import {
   game,
   sharedGame,
@@ -14,8 +15,6 @@ import {
   sharedScoresheet,
   shareRequest,
 } from "@board-games/db/schema";
-
-import { protectedUserProcedure } from "../../trpc";
 
 export const shareAcceptanceRouter = {
   acceptGameShareRequest: protectedUserProcedure
