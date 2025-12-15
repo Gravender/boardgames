@@ -224,8 +224,8 @@ class MatchUpdateScoreService {
 
       const matchWithData = await matchRepository.get(
         {
+          createdBy: returnedMatch.createdBy,
           id: returnedMatch.id,
-          createdBy: ctx.userId,
           with: {
             scoresheet: true,
             matchPlayers: {
@@ -260,17 +260,17 @@ class MatchUpdateScoreService {
           {
             input: {
               matchId: returnedMatch.id,
-              placements: finalPlacements
-                .map((p) =>
-                  p.score !== null
-                    ? {
+              placements: finalPlacements.flatMap((p) =>
+                p.score !== null
+                  ? [
+                      {
                         id: p.id,
                         score: p.score,
                         placement: p.placement,
-                      }
-                    : null,
-                )
-                .filter((p) => p !== null),
+                      },
+                    ]
+                  : [],
+              ),
             },
             tx,
           },

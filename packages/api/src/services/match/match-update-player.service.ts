@@ -61,6 +61,24 @@ class MatchUpdatePlayerService {
           tx,
         });
       } else {
+        const foundTeam = await teamRepository.get({
+          id: input.teamId,
+          tx,
+        });
+        assertFound(
+          foundTeam,
+          {
+            userId: ctx.userId,
+            value: input,
+          },
+          "Team not found.",
+        );
+        if (foundTeam.matchId !== returnedMatch.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Team does not belong to this match.",
+          });
+        }
         await matchUpdateDetailsRepository.updateTeamDetails({
           input: {
             teamId: input.teamId,
@@ -165,7 +183,7 @@ class MatchUpdatePlayerService {
           const returnedMatch = await matchRepository.get(
             {
               id: foundMatchPlayer.canonicalMatchId,
-              createdBy: ctx.userId,
+              createdBy: foundMatchPlayer.ownerId,
             },
             tx,
           );

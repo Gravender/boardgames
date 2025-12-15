@@ -1,3 +1,5 @@
+import { TRPCError } from "@trpc/server";
+
 import type { TransactionType } from "@board-games/db/client";
 
 import { matchUpdatePlayerRoleRepository } from "../../repositories/match/match-update-player-role.repository";
@@ -160,9 +162,10 @@ class SharedRoleService {
     const matchPlayerRoles = roles.map((role) => {
       const gameRoleId = sharedRoleToGameRoleMap.get(role.sharedRoleId);
       if (!gameRoleId) {
-        throw new Error(
-          `Failed to get linked game role for shared role ${role.sharedRoleId}`,
-        );
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to get linked game role for shared role ${role.sharedRoleId}`,
+        });
       }
       return {
         matchPlayerId: role.matchPlayerId,
