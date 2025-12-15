@@ -1,4 +1,7 @@
+import type { PostHog } from "posthog-node";
 import { TRPCError } from "@trpc/server";
+
+import type { TransactionType } from "@board-games/db/client";
 
 export function assertFound<T>(
   value: T | null | undefined,
@@ -29,4 +32,41 @@ export function assertInserted<T>(
       message,
     });
   }
+}
+
+export function assertUpdated<T>(
+  value: T,
+  properties: {
+    userId: string;
+    value: Record<string | number, unknown>;
+  },
+  message = "Entity Not Updated",
+): asserts value is NonNullable<T> {
+  if (!value) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message,
+    });
+  }
+}
+
+export interface BaseRepoArgs<TInput> {
+  input: TInput;
+  tx?: TransactionType;
+}
+export interface BaseServiceArgs<TInput> {
+  input: TInput;
+  ctx: {
+    userId: string;
+    posthog: PostHog;
+  };
+}
+
+export interface WithTx {
+  tx?: TransactionType;
+}
+
+export interface UserScopedArgs<T> {
+  input: T;
+  userId: string;
 }

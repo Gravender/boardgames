@@ -5,6 +5,17 @@ import { db } from "@board-games/db/client";
 import { team } from "@board-games/db/schema";
 
 class TeamRepository {
+  public async get(args: { id: number; tx?: TransactionType }) {
+    const { id, tx } = args;
+    const database = tx ?? db;
+    const foundTeam = await database.query.team.findFirst({
+      where: {
+        id: id,
+      },
+    });
+    return foundTeam;
+  }
+
   public async createTeam(args: {
     input: {
       name: string;

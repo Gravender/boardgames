@@ -1,8 +1,8 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
+import { updateMatchService } from "../../../../services/match/update-match.service";
 import { protectedUserProcedure } from "../../../../trpc";
 import { getMatchInput } from "../../match.input";
-import { updateMatchService } from "./service/update-match.service";
 import {
   updateMatchCommentInput,
   updateMatchDetailsInput,
