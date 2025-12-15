@@ -13,14 +13,10 @@ export async function deletePlayers(browserName: string) {
     .from(user)
     .where(eq(user.id, betterAuthUserId));
   if (returnedUser) {
-    const browserPlayerName = browserName + "_" + PLAYER_NAME;
-    const editedBrowserPlayerName = browserName + "_" + EDITED_PLAYER_NAME;
     const returnedPlayers = await db.query.player.findMany({
       where: {
         createdBy: returnedUser.id,
-        name: {
-          OR: [browserPlayerName, editedBrowserPlayerName],
-        },
+        isUser: false,
       },
     });
     if (returnedPlayers.length > 0) {

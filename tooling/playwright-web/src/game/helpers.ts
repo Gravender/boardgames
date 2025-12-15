@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 import { eq, inArray } from "drizzle-orm";
 
+import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 import {
   game,
@@ -12,81 +13,176 @@ import {
   round,
   roundPlayer,
   scoresheet,
+  team,
   user,
 } from "@board-games/db/schema";
 
 import { getBetterAuthUserId } from "../getUserId";
-import { EDITED_GAME_NAME, GAME_NAME } from "../shared/test-data";
 
-export async function deleteGames(browserName: string) {
-  const betterAuthUserId = getBetterAuthUserId(browserName);
+/**
+ * Fetches the user and all games created by that user with their related data.
+ *
+ * @param userId - The user ID to fetch games for
+ * @returns An object containing the user and their games with related scoresheets and matches, or null if user not found
+ */
+async function fetchUserGames(userId: string) {
   const [returnedUser] = await db
     .select()
     .from(user)
-    .where(eq(user.id, betterAuthUserId));
-  if (returnedUser) {
-    const returnedGames = await db.query.game.findMany({
-      where: {
-        createdBy: returnedUser.id,
-      },
-      with: {
-        scoresheets: true,
-        matches: {
-          with: {
-            matchPlayers: true,
-            teams: true,
-          },
+    .where(eq(user.id, userId));
+
+  if (!returnedUser) {
+    return null;
+  }
+
+  const returnedGames = await db.query.game.findMany({
+    where: {
+      createdBy: returnedUser.id,
+    },
+    with: {
+      scoresheets: true,
+      matches: {
+        with: {
+          matchPlayers: true,
         },
       },
-    });
-    const returnedScoresheets = await db.query.scoresheet.findMany({
-      where: {
-        gameId: {
-          in: returnedGames.map((g) => g.id),
-        },
+    },
+  });
+
+  const returnedScoresheets = await db.query.scoresheet.findMany({
+    where: {
+      gameId: {
+        in: returnedGames.map((g) => g.id),
       },
+    },
+  });
+
+  return {
+    user: returnedUser,
+    games: returnedGames,
+    scoresheets: returnedScoresheets,
+  };
+}
+
+/**
+ * Deletes all match-related data in the correct cascade order.
+ * Deletion order: matchPlayerRole -> roundPlayer -> matchPlayer -> match
+ *
+ * @param games - Array of games with their matches and matchPlayers
+ * @param tx - Database transaction (optional, defaults to direct db access)
+ */
+async function deleteMatchRelatedData(
+  games: {
+    matches: {
+      matchPlayers: { id: number }[];
+      id: number;
+    }[];
+  }[],
+  tx?: TransactionType,
+) {
+  const database = tx ?? db;
+  const matchPlayers = games.flatMap((g) =>
+    g.matches.flatMap((m) => m.matchPlayers.map((mp) => mp.id)),
+  );
+  const matches = games.flatMap((g) => g.matches.map((m) => m.id));
+
+  if (matchPlayers.length > 0) {
+    await database
+      .delete(matchPlayerRole)
+      .where(inArray(matchPlayerRole.matchPlayerId, matchPlayers));
+    await database
+      .delete(roundPlayer)
+      .where(inArray(roundPlayer.matchPlayerId, matchPlayers));
+    await database
+      .delete(matchPlayer)
+      .where(inArray(matchPlayer.id, matchPlayers));
+  }
+
+  if (matches.length > 0) {
+    await database.delete(team).where(inArray(team.matchId, matches));
+    await database.delete(match).where(inArray(match.id, matches));
+  }
+}
+
+/**
+ * Deletes all scoresheet-related data in the correct cascade order.
+ * Deletion order: round -> scoresheet
+ *
+ * @param scoresheets - Array of scoresheets to delete
+ * @param tx - Database transaction (optional, defaults to direct db access)
+ */
+async function deleteScoresheetRelatedData(
+  scoresheets: { id: number }[],
+  tx?: TransactionType,
+) {
+  const database = tx ?? db;
+
+  if (scoresheets.length > 0) {
+    const scoresheetIds = scoresheets.map((s) => s.id);
+    await database
+      .delete(round)
+      .where(inArray(round.scoresheetId, scoresheetIds));
+    await database
+      .delete(scoresheet)
+      .where(inArray(scoresheet.id, scoresheetIds));
+  }
+}
+
+/**
+ * Deletes all game-related data in the correct cascade order.
+ * Deletion order: gameRole -> game
+ *
+ * @param games - Array of games to delete
+ * @param tx - Database transaction (optional, defaults to direct db access)
+ */
+async function deleteGameRelatedData(
+  games: { id: number }[],
+  tx?: TransactionType,
+) {
+  const database = tx ?? db;
+  const gameIds = games.map((g) => g.id);
+
+  await database.delete(gameRole).where(inArray(gameRole.gameId, gameIds));
+  await database.delete(game).where(inArray(game.id, gameIds));
+}
+
+/**
+ * Deletes all games created by a user and all their related data.
+ *
+ * This function performs a complete cascade deletion of:
+ * - Match-related data: matchPlayerRole, roundPlayer, matchPlayer, match
+ * - Scoresheet-related data: round, scoresheet
+ * - Game-related data: gameRole, game
+ *
+ * The deletion is performed within a database transaction to ensure atomicity.
+ * If any deletion fails, the entire operation is rolled back to prevent partial
+ * deletions. Errors are logged to the console for debugging.
+ *
+ * @param browserName - The browser name used to identify the test user
+ * @throws Logs error to console if deletion fails, but does not throw to avoid
+ *         breaking test execution
+ */
+export async function deleteGames(browserName: string) {
+  const betterAuthUserId = getBetterAuthUserId(browserName);
+  const userData = await fetchUserGames(betterAuthUserId);
+
+  if (!userData || userData.games.length === 0) {
+    return;
+  }
+
+  try {
+    await db.transaction(async (tx) => {
+      await deleteMatchRelatedData(userData.games, tx);
+      await deleteScoresheetRelatedData(userData.scoresheets, tx);
+      await deleteGameRelatedData(userData.games, tx);
     });
-    if (returnedGames.length > 0) {
-      const matchPlayers = returnedGames.flatMap((g) =>
-        g.matches.flatMap((m) => m.matchPlayers.map((mp) => mp.id)),
-      );
-      const matches = returnedGames.flatMap((g) => g.matches.map((m) => m.id));
-      if (matchPlayers.length > 0) {
-        await db
-          .delete(matchPlayerRole)
-          .where(inArray(matchPlayerRole.matchPlayerId, matchPlayers));
-        await db
-          .delete(roundPlayer)
-          .where(inArray(roundPlayer.matchPlayerId, matchPlayers));
-        await db
-          .delete(matchPlayer)
-          .where(inArray(matchPlayer.id, matchPlayers));
-      }
-      if (matches.length > 0) {
-        await db.delete(match).where(inArray(match.id, matches));
-      }
-      if (returnedScoresheets.length > 0) {
-        const mappedScoresheets = returnedScoresheets.map((s) => s.id);
-        await db
-          .delete(round)
-          .where(inArray(round.scoresheetId, mappedScoresheets));
-        await db
-          .delete(scoresheet)
-          .where(inArray(scoresheet.id, mappedScoresheets));
-      }
-      await db.delete(gameRole).where(
-        inArray(
-          gameRole.gameId,
-          returnedGames.map((g) => g.id),
-        ),
-      );
-      await db.delete(game).where(
-        inArray(
-          game.id,
-          returnedGames.map((g) => g.id),
-        ),
-      );
-    }
+  } catch (error) {
+    console.error(
+      `Failed to delete games for user ${betterAuthUserId}:`,
+      error,
+    );
+    // Re-throw to ensure transaction rollback
+    throw error;
   }
 }
 
@@ -165,54 +261,6 @@ export interface ScoresheetConfig {
   }[];
 }
 
-export async function createRole(
-  page: Page,
-  name: string,
-  description?: string,
-) {
-  // Navigate to roles form if not already there
-  const editRolesButton = page.getByRole("button", {
-    name: /Edit Game Roles/i,
-  });
-  if (await editRolesButton.isVisible()) {
-    await editRolesButton.click();
-  }
-
-  // Wait for roles form to be visible
-  await page
-    .waitForSelector('input[placeholder="Role Name"]', { state: "visible" })
-    .catch(() => {
-      // If already in form, continue
-    });
-
-  // Click add role button if there's a new role form
-  const addRoleButton = page
-    .getByRole("button", { name: /Add Role|^\+$/i })
-    .first();
-  if (await addRoleButton.isVisible()) {
-    await addRoleButton.click();
-  }
-
-  // Fill in role name
-  const nameInput = page.locator('input[placeholder="Role Name"]').last();
-  await nameInput.fill(name);
-
-  // Fill in description if provided
-  if (description) {
-    const descInput = page
-      .locator('textarea[placeholder="Role Description"]')
-      .last();
-    await descInput.fill(description);
-  }
-
-  // Save the role
-  const saveButton = page.getByRole("button", { name: /Save/i }).last();
-  await saveButton.click();
-
-  // Wait for form to close or role to appear
-  await page.waitForTimeout(500);
-}
-
 export async function createScoresheet(page: Page, config: ScoresheetConfig) {
   // Click "Create New" button in scoresheet section
   const createButton = page.getByRole("button", { name: "Create New" });
@@ -231,13 +279,11 @@ export async function createScoresheet(page: Page, config: ScoresheetConfig) {
   await nameInput.fill(config.name);
 
   // Set win condition
-  if (config.winCondition) {
-    const winConditionSelect = page.getByRole("combobox", {
-      name: "Win Condition",
-    });
-    await winConditionSelect.click();
-    await page.getByText(config.winCondition, { exact: true }).click();
-  }
+  const winConditionSelect = page.getByRole("combobox", {
+    name: "Win Condition",
+  });
+  await winConditionSelect.click();
+  await page.getByText(config.winCondition, { exact: true }).click();
 
   // Set isCoop
   if (config.isCoop !== undefined) {
@@ -283,6 +329,7 @@ export async function createScoresheet(page: Page, config: ScoresheetConfig) {
   if (config.rounds && config.rounds.length > 0) {
     for (let i = 0; i < config.rounds.length; i++) {
       const round = config.rounds[i];
+      if (round === undefined) continue;
       // Add round button if not first round
       if (i > 0) {
         const addRoundButton = page
