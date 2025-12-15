@@ -1,0 +1,118 @@
+import { expect, test } from "@playwright/test";
+
+import { GAME_NAME } from "../shared/test-data";
+import { deleteGames, findGameLink } from "./helpers";
+
+test.describe("Game Detail Page", () => {
+  test.beforeAll(async ({ browserName }) => {
+    await deleteGames(browserName);
+  });
+  test.afterAll(async ({ browserName }) => {
+    await deleteGames(browserName);
+  });
+
+  test("Navigate to game detail page", async ({ page, browserName }) => {
+    const browserGameName = browserName + "_" + GAME_NAME;
+    // First create a game
+    await page.goto("/dashboard/games");
+    await page.getByRole("button", { name: "add game" }).click();
+    await page.getByPlaceholder("Game name").fill(browserGameName);
+    await page.getByRole("button", { name: "More options" }).click();
+    await page.locator('input[name="playersMin"]').fill("1");
+    await page.locator('input[name="playersMax"]').fill("4");
+    await page.locator('input[name="playtimeMin"]').fill("15");
+    await page.locator('input[name="playtimeMax"]').fill("30");
+    await page.locator('input[name="yearPublished"]').fill("2014");
+    await page.getByRole("button", { name: "Create New" }).click();
+    await page.getByRole("textbox", { name: "Sheet Name" }).fill("Default");
+    await page.getByRole("combobox", { name: "Win Condition" }).click();
+    await page.getByLabel("Highest Score").getByText("Highest Score").click();
+    await page.getByRole("button", { name: "Submit" }).click();
+    await page.getByRole("button", { name: "Submit" }).click();
+    // Wait for success toast to appear
+    await expect(page.getByText(/Game .* created successfully!/i)).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Navigate to games list and click on game
+    await page.goto("/dashboard/games");
+    await page
+      .getByRole("textbox", { name: "Search games..." })
+      .fill(browserGameName);
+    const gameLink = await findGameLink(page, browserGameName);
+    await gameLink.click();
+
+    // Verify we're on the game detail page
+    await expect(page).toHaveURL(/\/dashboard\/games\/\d+/);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      browserGameName,
+    );
+  });
+
+  test("Verify game information display", async ({ page, browserName }) => {
+    const browserGameName = browserName + "_" + GAME_NAME;
+    await page.goto("/dashboard/games");
+    await page
+      .getByRole("textbox", { name: "Search games..." })
+      .fill(browserGameName);
+    const gameLink = await findGameLink(page, browserGameName);
+    await gameLink.click();
+
+    // Verify game name is displayed
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      browserGameName,
+    );
+
+    // Verify game details are visible (players, playtime, year)
+    await expect(page.getByText(/1-4 players/)).toBeVisible();
+    await expect(page.getByText(/15-30 min/)).toBeVisible();
+    await expect(page.getByText(/2014/)).toBeVisible();
+  });
+
+  test("Verify statistics link", async ({ page, browserName }) => {
+    const browserGameName = browserName + "_" + GAME_NAME;
+    await page.goto("/dashboard/games");
+    await page
+      .getByRole("textbox", { name: "Search games..." })
+      .fill(browserGameName);
+    const gameLink = await findGameLink(page, browserGameName);
+    await gameLink.click();
+
+    // Verify statistics link exists
+    const statsLink = page.getByRole("link", { name: /View Statistics/i });
+    await expect(statsLink).toBeVisible();
+    await statsLink.click();
+    await expect(page).toHaveURL(/\/dashboard\/games\/\d+\/stats/);
+  });
+
+  test("Verify match history display", async ({ page, browserName }) => {
+    const browserGameName = browserName + "_" + GAME_NAME;
+    await page.goto("/dashboard/games");
+    await page
+      .getByRole("textbox", { name: "Search games..." })
+      .fill(browserGameName);
+    const gameLink = await findGameLink(page, browserGameName);
+    await gameLink.click();
+
+    // Verify match history section exists
+    await expect(
+      page.getByRole("heading", { name: /Match History/i }),
+    ).toBeVisible();
+  });
+
+  test("Verify add match button", async ({ page, browserName }) => {
+    const browserGameName = browserName + "_" + GAME_NAME;
+    await page.goto("/dashboard/games");
+    await page
+      .getByRole("textbox", { name: "Search games..." })
+      .fill(browserGameName);
+    const gameLink = await findGameLink(page, browserGameName);
+    await gameLink.click();
+
+    // Verify add match button exists (it's a floating button)
+    const addMatchButton = page.getByRole("button", {
+      name: "add match",
+    });
+    await expect(addMatchButton).toBeVisible();
+  });
+});

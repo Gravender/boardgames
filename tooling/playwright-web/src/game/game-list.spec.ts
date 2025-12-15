@@ -1,80 +1,16 @@
 import { expect, test } from "@playwright/test";
-import { eq, inArray } from "drizzle-orm";
 
-import { db } from "@board-games/db/client";
-import { game, round, scoresheet, user } from "@board-games/db/schema";
+import { EDITED_GAME_NAME, GAME_NAME } from "../shared/test-data";
+import { deleteGames, gameAriaText } from "./helpers";
 
-import { getBetterAuthUserId } from "./getUserId";
-
-test.describe("Game Page", () => {
-  const GAME_NAME = "Game Test";
-  const EDITED_GAME_NAME = "Edited Game";
-  async function deleteGames(browserName: string) {
-    const betterAuthUserId = getBetterAuthUserId(browserName);
-    const [returnedUser] = await db
-      .select()
-      .from(user)
-      .where(eq(user.id, betterAuthUserId));
-    if (returnedUser) {
-      const browserGameName = browserName + "_" + GAME_NAME;
-      const editedBrowserGameName = browserName + "_" + EDITED_GAME_NAME;
-      const returnedGames = await db.query.game.findMany({
-        where: {
-          createdBy: returnedUser.id,
-          name: {
-            OR: [browserGameName, editedBrowserGameName],
-          },
-        },
-        with: {
-          scoresheets: true,
-        },
-      });
-      if (returnedGames.length > 0) {
-        const mappedScoresheets = returnedGames.flatMap((g) =>
-          g.scoresheets.map((s) => s.id),
-        );
-        if (mappedScoresheets.length > 0) {
-          await db
-            .delete(round)
-            .where(inArray(round.scoresheetId, mappedScoresheets));
-          await db
-            .delete(scoresheet)
-            .where(inArray(scoresheet.id, mappedScoresheets));
-        }
-        await db.delete(game).where(
-          inArray(
-            game.id,
-            returnedGames.map((g) => g.id),
-          ),
-        );
-      }
-    }
-  }
-  function gameAriaText(
-    gameName: string,
-    yearPublished: number,
-    playersMin: number,
-    playersMax: number,
-    playtimeMin: number,
-    playtimeMax: number,
-  ) {
-    const temp = `
-        - listitem:
-          - link:
-            - /url: //dashboard/games/\\d+/
-          - heading "${gameName}" [level=3]
-          - text: (${yearPublished})
-          - button "Open menu"
-          - text: ${playersMin}-${playersMax} players ${playtimeMin}-${playtimeMax} min 0 plays
-        `;
-    return temp;
-  }
+test.describe("Game List", () => {
   test.beforeAll(async ({ browserName }) => {
     await deleteGames(browserName);
   });
   test.afterAll(async ({ browserName }) => {
     await deleteGames(browserName);
   });
+
   test("Add Game when no games exist", async ({ page, browserName }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
     await page.goto("/dashboard/games");
@@ -125,6 +61,10 @@ test.describe("Game Page", () => {
     );
     await expect(page.locator("form")).toContainText("Default");
     await page.getByRole("button", { name: "Submit" }).click();
+    // Wait for success toast to appear
+    await expect(page.getByText(/Game .* created successfully!/i)).toBeVisible({
+      timeout: 10000,
+    });
     await page.goto("/dashboard/");
     await page.goto("/dashboard/games");
     await page.getByRole("textbox", { name: "Search games..." }).click();
@@ -144,7 +84,8 @@ test.describe("Game Page", () => {
       page.getByLabel("Games", { exact: true }).getByRole("listitem"),
     ).toMatchAriaSnapshot(originalGameAriaText);
   });
-  test("Edit game", async ({ page, browserName }) => {
+
+  test("Edit game from list", async ({ page, browserName }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
     const editedBrowserGameName = browserName + "_" + EDITED_GAME_NAME;
     await page.goto("/dashboard/games");
