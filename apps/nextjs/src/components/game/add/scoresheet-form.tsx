@@ -330,6 +330,9 @@ export const ScoresheetForm = withFieldGroup({
           <Button type="button" variant="secondary" onClick={() => onBack()}>
             Cancel
           </Button>
+          {/*  
+          TODO: Add validation before saving
+           */}
           <Button type="button" onClick={() => onSave()}>
             Submit
           </Button>
