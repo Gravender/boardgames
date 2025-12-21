@@ -15,7 +15,6 @@ test.describe("Game List", () => {
     const browserGameName = browserName + "_" + GAME_NAME;
     await page.goto("/dashboard/games");
     await page.getByRole("button", { name: "add game" }).click();
-    await page.getByPlaceholder("Game name").click();
     await page.getByPlaceholder("Game name").fill(browserGameName);
     await expect(
       page.getByLabel("Add Game").getByText("Players"),
@@ -25,41 +24,30 @@ test.describe("Game List", () => {
     ).not.toBeVisible();
     await expect(page.getByText("Year Published")).not.toBeVisible();
     await page.getByRole("button", { name: "More options" }).click();
+
     await expect(
-      page.getByLabel("Add Game").getByText("Players"),
+      page
+        .getByLabel("Add Game", { exact: true })
+        .getByText("Players", { exact: true }),
     ).toBeVisible();
+
     await expect(
-      page.getByLabel("Add Game").getByText("Playtime"),
+      page
+        .getByLabel("Add Game", { exact: true })
+        .getByText("Playtime", { exact: true }),
     ).toBeVisible();
-    await expect(page.getByText("Year Published")).toBeVisible();
-    await page.locator('input[name="playersMin"]').click();
-    await page.locator('input[name="playersMin"]').fill("1");
-    await page.locator('input[name="playersMax"]').click();
-    await page.locator('input[name="playersMax"]').fill("4");
-    await page.locator('input[name="playtimeMin"]').click();
-    await page.locator('input[name="playtimeMin"]').fill("15");
-    await page.locator('input[name="playtimeMax"]').click();
-    await page.locator('input[name="playtimeMax"]').fill("30");
-    await page.locator('input[name="yearPublished"]').click();
-    await page.locator('input[name="yearPublished"]').fill("2014");
+    await page.locator('input[name="game.playersMin"]').fill("1");
+    await page.locator('input[name="game.playersMax"]').fill("4");
+    await page.locator('input[name="game.playtimeMin"]').fill("15");
+    await page.locator('input[name="game.playtimeMax"]').fill("30");
+    await page.locator('input[name="game.yearPublished"]').fill("2014");
     await page.getByRole("button", { name: "Create New" }).click();
-    await expect(page.getByRole("heading")).toContainText("Add Scoresheet");
-
-    await page.getByRole("textbox", { name: "Sheet Name" }).click();
     await page.getByRole("textbox", { name: "Sheet Name" }).fill("Default");
-    await page.getByRole("combobox", { name: "Win Condition" }).click();
+    await page.locator('button[name="winCondition"]').click();
     await page.getByLabel("Highest Score").getByText("Highest Score").click();
+    await page.locator('button[name="roundsScore"]').click();
+    await page.getByRole("option", { name: "Aggregate" }).click();
     await page.getByRole("button", { name: "Submit" }).click();
-    await expect(page.getByRole("heading")).toContainText("Add Game");
-
-    await expect(
-      page.getByRole("button", { name: "Default Win Condition:" }),
-    ).toBeVisible();
-    await expect(page.locator("form")).toContainText("Rounds:1");
-    await expect(page.locator("form")).toContainText(
-      "Win Condition:Highest Score",
-    );
-    await expect(page.locator("form")).toContainText("Default");
     await page.getByRole("button", { name: "Submit" }).click();
     // Wait for success toast to appear
     await expect(page.getByText(/Game .* created successfully!/i)).toBeVisible({

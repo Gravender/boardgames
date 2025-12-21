@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 
+import { AddGameDialog } from "~/components/game/add";
 import { HydrateClient, prefetch, trpc } from "~/trpc/server";
-import { AddGameDialog } from "./_components/addGameDialog";
 import { GamesData } from "./_components/games-list";
 import { GamesListSkeleton } from "./_components/games-list-skeleton";
 

@@ -4,7 +4,6 @@ import { db } from "@board-games/db/client";
 import { player, user } from "@board-games/db/schema";
 
 import { getBetterAuthUserId } from "../getUserId";
-import { EDITED_PLAYER_NAME, PLAYER_NAME } from "../shared/test-data";
 
 export async function deletePlayers(browserName: string) {
   const betterAuthUserId = getBetterAuthUserId(browserName);
