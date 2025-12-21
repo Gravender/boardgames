@@ -10,7 +10,12 @@ import { Button } from "@board-games/ui/button";
 import { CardContent } from "@board-games/ui/card";
 import { Checkbox } from "@board-games/ui/checkbox";
 import { DialogFooter } from "@board-games/ui/dialog";
-import { Field, FieldError, FieldLabel } from "@board-games/ui/field";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@board-games/ui/field";
 import { Input } from "@board-games/ui/input";
 import {
   Select,
@@ -271,6 +276,9 @@ export const ScoresheetForm = withFieldGroup({
                         <FieldLabel htmlFor={field.name}>
                           Scoring Method
                         </FieldLabel>
+                        <FieldDescription>
+                          Select how the scoresheet rounds are scored.
+                        </FieldDescription>
                         <Select
                           value={field.state.value}
                           onValueChange={(value) => {
