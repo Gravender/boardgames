@@ -41,7 +41,10 @@ export const RoundsForm = withFieldGroup({
                                 field.state.meta.isTouched &&
                                 !field.state.meta.isValid;
                               return (
-                                <Field data-invalid={isInvalid}>
+                                <Field
+                                  data-invalid={isInvalid}
+                                  className="w-fit rounded-2xl"
+                                >
                                   <FieldLabel className="hidden">
                                     Round Color
                                   </FieldLabel>

@@ -107,11 +107,7 @@ export const ScoresheetForm = withFieldGroup({
                     const isInvalid =
                       field.state.meta.isTouched && !field.state.meta.isValid;
                     return (
-                      <Field
-                        data-invalid={isInvalid}
-                        className="flex flex-row items-start gap-2 space-y-0 space-x-3"
-                      >
-                        <FieldLabel htmlFor={field.name}>Is Co-op?</FieldLabel>
+                      <Field data-invalid={isInvalid} orientation="horizontal">
                         <Checkbox
                           id={field.name}
                           checked={field.state.value}
@@ -119,6 +115,12 @@ export const ScoresheetForm = withFieldGroup({
                             field.handleChange(checked as boolean)
                           }
                         />
+                        <FieldLabel
+                          htmlFor={field.name}
+                          className="font-normal"
+                        >
+                          Is Co-op?
+                        </FieldLabel>
                         {isInvalid && (
                           <FieldError errors={field.state.meta.errors} />
                         )}
