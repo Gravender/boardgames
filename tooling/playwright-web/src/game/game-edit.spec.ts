@@ -71,7 +71,9 @@ test.describe("Game Edit Page", () => {
     if (!gameIdMatch) {
       throw new Error("Could not extract game ID from URL");
     }
-    const gameId = parseInt(gameIdMatch[1]!, 10);
+    const gameIdToParse = gameIdMatch[1] ?? "";
+    expect(gameIdToParse).not.toBe("");
+    const gameId = parseInt(gameIdToParse, 10);
 
     // Navigate back to games list page to access the menu
     await page.goto("/dashboard/games");

@@ -95,12 +95,11 @@ export const RoundPopOver = withFieldGroup({
                           const isInvalid =
                             field.state.meta.isTouched &&
                             !field.state.meta.isValid;
-                          const fieldValue = field.state.value ?? 0;
                           return (
                             <Field data-invalid={isInvalid}>
                               <FieldLabel>Score</FieldLabel>
                               <NumberInput
-                                value={fieldValue}
+                                defaultValue={field.state.value}
                                 onValueChange={(value) => {
                                   const numValue = value ?? 0;
                                   field.handleChange(numValue);
