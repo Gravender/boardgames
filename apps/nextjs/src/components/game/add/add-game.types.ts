@@ -39,7 +39,7 @@ export const defaultValues: AddGameFormValues = {
     roles: [],
   },
   scoresheets: [],
-  activeScoreSheetIndex: 0,
+  activeScoreSheetIndex: undefined,
   activeForm: "game",
   moreOptions: false,
   gameRolesOpen: false,

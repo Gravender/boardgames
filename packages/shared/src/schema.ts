@@ -192,7 +192,7 @@ export const scoreSheetSchema = insertScoreSheetSchema
           input: ctx.value,
           message:
             "Win condition must be Manual or Target Score for Coop games.",
-          path: ["winCondition"],
+          path: ["winCondition", "isCoop"],
         });
       }
     }

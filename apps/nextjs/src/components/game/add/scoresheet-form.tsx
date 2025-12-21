@@ -79,7 +79,7 @@ export const ScoresheetForm = withFieldGroup({
             roundsLength: state.values.rounds.length,
           })}
         >
-          {({ winCondition, isCoop, roundsLength }) => {
+          {({ winCondition, isCoop }) => {
             return (
               <CardContent className="flex flex-col gap-2 px-2 sm:gap-4 sm:px-6">
                 <group.AppField name={`scoresheet.name`}>
@@ -242,7 +242,12 @@ export const ScoresheetForm = withFieldGroup({
                   name={`scoresheet.roundsScore`}
                   validators={{
                     onChangeListenTo: [`scoresheet.winCondition`, `rounds`],
-                    onChange: ({ value }) => {
+                    onChange: ({ value, fieldApi }) => {
+                      const winCondition = fieldApi.form.getFieldValue(
+                        `scoresheet.winCondition`,
+                      );
+                      const rounds =
+                        fieldApi.form.getFieldValue(`scoresheet.rounds`);
                       if (winCondition !== "Manual" && value === "None") {
                         return [
                           {
@@ -254,7 +259,8 @@ export const ScoresheetForm = withFieldGroup({
                       if (
                         winCondition !== "Manual" &&
                         value !== "Manual" &&
-                        roundsLength === 0
+                        Array.isArray(rounds) &&
+                        rounds.length === 0
                       ) {
                         return [
                           {

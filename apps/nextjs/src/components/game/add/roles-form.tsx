@@ -147,6 +147,7 @@ export const RolesForm = withFieldGroup({
                                 </Button>
                                 <Button
                                   type="button"
+                                  disabled={newGameRole.name === ""}
                                   onClick={() => {
                                     const minId = Math.min(
                                       ...field.state.value.map(
@@ -300,6 +301,7 @@ export const RolesForm = withFieldGroup({
                                       onClick={() =>
                                         setEditGameRoleIndex(roleIndex)
                                       }
+                                      aria-label="Edit role"
                                     >
                                       <SquarePen className="h-4 w-4" />
                                     </Button>
@@ -311,6 +313,7 @@ export const RolesForm = withFieldGroup({
                                         field.removeValue(roleIndex);
                                       }}
                                       className="text-destructive hover:text-destructive"
+                                      aria-label="Remove role"
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </Button>

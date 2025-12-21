@@ -22,7 +22,7 @@ export const RoundsForm = withFieldGroup({
   render: function Render({ group }) {
     return (
       <div className="flex flex-col gap-2 pb-4">
-        <div className="text-xl font-semibold">Rows</div>
+        <div className="text-xl font-semibold">Rounds</div>
         <group.Field name="rounds" mode="array">
           {(field) => {
             return (
