@@ -18,15 +18,17 @@ test.describe("Game Detail Page", () => {
     await page.getByRole("button", { name: "add game" }).click();
     await page.getByPlaceholder("Game name").fill(browserGameName);
     await page.getByRole("button", { name: "More options" }).click();
-    await page.locator('input[name="playersMin"]').fill("1");
-    await page.locator('input[name="playersMax"]').fill("4");
-    await page.locator('input[name="playtimeMin"]').fill("15");
-    await page.locator('input[name="playtimeMax"]').fill("30");
-    await page.locator('input[name="yearPublished"]').fill("2014");
+    await page.locator('input[name="game.playersMin"]').fill("1");
+    await page.locator('input[name="game.playersMax"]').fill("4");
+    await page.locator('input[name="game.playtimeMin"]').fill("15");
+    await page.locator('input[name="game.playtimeMax"]').fill("30");
+    await page.locator('input[name="game.yearPublished"]').fill("2014");
     await page.getByRole("button", { name: "Create New" }).click();
     await page.getByRole("textbox", { name: "Sheet Name" }).fill("Default");
-    await page.getByRole("combobox", { name: "Win Condition" }).click();
+    await page.locator('button[name="winCondition"]').click();
     await page.getByLabel("Highest Score").getByText("Highest Score").click();
+    await page.locator('button[name="roundsScore"]').click();
+    await page.getByRole("option", { name: "Aggregate" }).click();
     await page.getByRole("button", { name: "Submit" }).click();
     await page.getByRole("button", { name: "Submit" }).click();
     // Wait for success toast to appear

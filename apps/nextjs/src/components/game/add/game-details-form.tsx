@@ -258,6 +258,7 @@ export const GameDetailsForm = withForm({
                               </FieldLabel>
                               <Input
                                 type="number"
+                                name={field.name}
                                 placeholder="Min"
                                 value={field.state.value ?? ""}
                                 onBlur={field.handleBlur}
@@ -306,6 +307,7 @@ export const GameDetailsForm = withForm({
                               </FieldLabel>
                               <Input
                                 type="number"
+                                name={field.name}
                                 placeholder="Max"
                                 value={field.state.value ?? ""}
                                 onBlur={field.handleBlur}
@@ -359,6 +361,7 @@ export const GameDetailsForm = withForm({
                               </FieldLabel>
                               <Input
                                 type="number"
+                                name={field.name}
                                 placeholder="Min"
                                 value={field.state.value ?? ""}
                                 onBlur={field.handleBlur}
@@ -408,6 +411,7 @@ export const GameDetailsForm = withForm({
                               </FieldLabel>
                               <Input
                                 type="number"
+                                name={field.name}
                                 placeholder="Max"
                                 value={field.state.value ?? ""}
                                 onBlur={field.handleBlur}
@@ -443,6 +447,7 @@ export const GameDetailsForm = withForm({
                               </FieldLabel>
                               <Input
                                 type="number"
+                                name={field.name}
                                 placeholder="Year"
                                 value={field.state.value ?? ""}
                                 onBlur={field.handleBlur}

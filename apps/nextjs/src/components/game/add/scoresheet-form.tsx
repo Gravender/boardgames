@@ -185,7 +185,10 @@ export const ScoresheetForm = withFieldGroup({
                             }
                           }}
                         >
-                          <SelectTrigger aria-invalid={isInvalid}>
+                          <SelectTrigger
+                            aria-invalid={isInvalid}
+                            name="winCondition"
+                          >
                             <SelectValue placeholder="Select a win condition" />
                           </SelectTrigger>
                           <SelectContent>
@@ -296,7 +299,10 @@ export const ScoresheetForm = withFieldGroup({
                             }
                           }}
                         >
-                          <SelectTrigger aria-invalid={isInvalid}>
+                          <SelectTrigger
+                            aria-invalid={isInvalid}
+                            name={"roundsScore"}
+                          >
                             <SelectValue placeholder="Select a scoring method" />
                           </SelectTrigger>
                           <SelectContent>
