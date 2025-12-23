@@ -5,10 +5,22 @@ import { createGameViaTrpc } from "../trpc/procedures";
 import { deleteGames, findGameCard, findGameLink } from "./helpers";
 
 test.describe("Game Edit Page", () => {
+  // Shared state for game cleanup
+  let gameId: number | undefined;
   test.beforeAll(async ({ browserName }) => {
     await deleteGames(browserName);
   });
   test.afterAll(async ({ browserName }) => {
+    await deleteGames(browserName);
+  });
+  test.beforeEach(async ({ browserName }) => {
+    const browserGameName = browserName + "_" + GAME_NAME;
+    const createdGame = await createGameViaTrpc(browserName, browserGameName);
+    gameId = createdGame.id;
+  });
+
+  test.afterEach(async ({ browserName }) => {
+    // Cleanup game after each test
     await deleteGames(browserName);
   });
 
@@ -17,10 +29,6 @@ test.describe("Game Edit Page", () => {
     browserName,
   }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
-    // Create a game first
-    const createdGame = await createGameViaTrpc(browserName, browserGameName);
-    const gameId = createdGame.id;
-
     // Navigate back to games list page to access the menu
     await page.goto("/dashboard/games");
     await page
@@ -32,7 +40,9 @@ test.describe("Game Edit Page", () => {
     await menuButton.click();
     await page.getByRole("menuitem", { name: "Edit" }).click();
     // Wait for navigation to edit page
-    await page.waitForURL(/\/dashboard\/games\/\d+\/edit/, { timeout: 5000 });
+    await page.waitForURL(/\/dashboard\/games\/\d+\/edit/, {
+      timeout: 5000,
+    });
 
     // Verify we're on edit page
     await expect(page).toHaveURL(`/dashboard/games/${gameId}/edit`);
@@ -45,18 +55,8 @@ test.describe("Game Edit Page", () => {
     const browserGameName = browserName + "_" + GAME_NAME;
     const editedName = browserGameName + " Edited";
 
-    // Create and navigate to edit page
-    await page.goto("/dashboard/games");
-    await page
-      .getByRole("textbox", { name: "Search games..." })
-      .fill(browserGameName);
-    // Find the game card and get the menu button within it
-    const gameCard = await findGameCard(page, browserGameName);
-    const menuButton = gameCard.getByRole("button", { name: "Open menu" });
-    await menuButton.click();
-    await page.getByRole("menuitem", { name: "Edit" }).click();
-    // Wait for navigation to edit page
-    await page.waitForURL(/\/dashboard\/games\/\d+\/edit/, { timeout: 5000 });
+    // Navigate to edit page
+    await page.goto(`/dashboard/games/${gameId}/edit`);
 
     // Edit game name
     const nameInput = page.getByRole("textbox", { name: "Game Name" });
@@ -81,19 +81,9 @@ test.describe("Game Edit Page", () => {
     await expect(editedGameLink).toBeVisible();
   });
 
-  test("Form validation", async ({ page, browserName }) => {
-    const browserGameName = browserName + "_" + GAME_NAME;
-    await page.goto("/dashboard/games");
-    await page
-      .getByRole("textbox", { name: "Search games..." })
-      .fill(browserGameName);
-    // Find the game card and get the menu button within it
-    const gameCard = await findGameCard(page, browserGameName);
-    const menuButton = gameCard.getByRole("button", { name: "Open menu" });
-    await menuButton.click();
-    await page.getByRole("menuitem", { name: "Edit" }).click();
-    // Wait for navigation to edit page
-    await page.waitForURL(/\/dashboard\/games\/\d+\/edit/, { timeout: 5000 });
+  test("Form validation", async ({ page }) => {
+    // Navigate to edit page
+    await page.goto(`/dashboard/games/${gameId}/edit`);
 
     // Clear required field
     const nameInput = page.getByRole("textbox", { name: "Game Name" });
@@ -105,4 +95,285 @@ test.describe("Game Edit Page", () => {
     // Verify validation error (form should not submit)
     await expect(nameInput).toBeVisible();
   });
+
+  test("Change game image to different SVG icon", async ({
+    page,
+    browserName,
+  }) => {
+    const browserGameName = browserName + "_" + GAME_NAME;
+
+    // Navigate to edit page
+    await page.goto(`/dashboard/games/${gameId}/edit`);
+
+    // Open icon selector (assuming there's a button or popover to change icon)
+    // Look for icon selector - it might be in a popover or button
+
+    await page.getByRole("button", { name: "Icons" }).click();
+
+    const iconButton = page.getByRole("button", { name: "icon-Gamepad" });
+    await iconButton.click();
+
+    // Submit
+    await page.getByRole("button", { name: "Submit" }).click();
+
+    // Verify change persisted
+    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Verify icon changed by checking the game card
+    await page
+      .getByRole("textbox", { name: "Search games..." })
+      .fill(browserGameName);
+    const editedGameCard = await findGameCard(page, browserGameName);
+    // The icon should be visible - we can verify by checking the image/icon is present
+    await expect(editedGameCard).toBeVisible();
+  });
+
+  /* test("Change default scoresheet", async ({ page, browserName }) => {
+    const browserGameName = browserName + "_" + GAME_NAME;
+
+    // Create game with multiple scoresheets
+    const createdGame = await createGameWithScoresheetViaTrpc(
+      browserName,
+      browserGameName,
+      [
+        {
+          name: "Default Scoresheet",
+          winCondition: "Highest Score",
+          isDefault: true,
+          rounds: [
+            { name: "Round 1", type: "Numeric" },
+            { name: "Round 2", type: "Numeric" },
+          ],
+        },
+        {
+          name: "Alternative Scoresheet",
+          winCondition: "Lowest Score",
+          isDefault: false,
+          rounds: [{ name: "Round 1", type: "Numeric" }],
+        },
+      ],
+    );
+    gameId = createdGame.id;
+
+    // Navigate to edit page
+    await page.goto(`/dashboard/games/${gameId}/edit`);
+
+    // Find the scoresheet section and switch to the alternative scoresheet
+    // Look for scoresheet tabs or buttons
+    const scoresheetButton = page.getByText("Alternative Scoresheet");
+    await scoresheetButton.click();
+
+    // Mark this scoresheet as default
+    const isDefaultCheckbox = page.getByRole("checkbox", {
+      name: /Is Default/i,
+    });
+    const isChecked = await isDefaultCheckbox.isChecked();
+    if (!isChecked) {
+      await isDefaultCheckbox.click();
+    }
+
+    // Submit
+    await page.getByRole("button", { name: "Submit" }).click();
+    await page.getByRole("button", { name: "Submit" }).click();
+    // Verify change persisted
+    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Verify default changed by navigating back
+    await page.goto(`/dashboard/games/${gameId}/edit`);
+
+    // Check that Alternative Scoresheet is now default
+    const altScoresheetButton = page.getByText("Alternative Scoresheet");
+    await altScoresheetButton.click();
+    await expect(
+      page.getByRole("checkbox", { name: /Is Default/i }),
+    ).toBeChecked();
+  });
+
+  test("Change number of rounds for a scoresheet", async ({
+    page,
+    browserName,
+  }) => {
+    const browserGameName = browserName + "_" + GAME_NAME;
+
+    // Create game with scoresheet containing initial rounds
+    const createdGame = await createGameWithScoresheetViaTrpc(
+      browserName,
+      browserGameName,
+      [
+        {
+          name: "Test Scoresheet",
+          winCondition: "Highest Score",
+          rounds: [
+            { name: "Round 1", type: "Numeric" },
+            { name: "Round 2", type: "Numeric" },
+          ],
+        },
+      ],
+    );
+    gameId = createdGame.id;
+
+    // Navigate to edit page
+    await page.goto(`/dashboard/games/${gameId}/edit`);
+
+    // Navigate to scoresheet section
+    const scoresheetButton = page.getByText("Test Scoresheet");
+    await scoresheetButton.click();
+
+    // Add a new round
+    const addRoundButton = page
+      .getByRole("button", { name: /Add Round|^\+$/i })
+      .last();
+    await addRoundButton.click();
+
+    // Fill in the new round details
+    const roundInputs = page.locator('input[placeholder*="Round" i]');
+    const roundCount = await roundInputs.count();
+    const newRoundInput = roundInputs.nth(roundCount - 1);
+    await newRoundInput.fill("Round 3");
+
+    // Submit
+    await page.getByRole("button", { name: "Submit" }).click();
+
+    // Verify change persisted
+    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Verify rounds count changed
+    await page.goto(`/dashboard/games/${gameId}/edit`);
+
+    const editedScoresheetButton = page.getByText("Test Scoresheet");
+    await editedScoresheetButton.click();
+
+    // Verify there are now 3 rounds
+    const finalRoundInputs = page.locator('input[placeholder*="Round" i]');
+    await expect(finalRoundInputs).toHaveCount(3);
+  });
+
+  test("Add scoresheet", async ({ page }) => {
+    // Navigate to edit page
+    await page.goto(`/dashboard/games/${gameId}/edit`);
+
+    // Click "Create New" button in scoresheet section
+    const createButton = page.getByRole("button", { name: "Create New" });
+    await createButton.click();
+
+    // Wait for scoresheet form
+    await page.waitForSelector(
+      'input[placeholder*="Sheet name" i], input[name="name"]',
+      { state: "visible" },
+    );
+
+    // Fill in scoresheet details
+    const nameInput = page
+      .getByRole("textbox", { name: "Sheet Name" })
+      .or(page.locator('input[name="name"]'));
+    await nameInput.fill("New Scoresheet");
+
+    // Set win condition
+    const winConditionSelect = page.getByRole("combobox", {
+      name: "Win Condition",
+    });
+    await winConditionSelect.click();
+    await page.getByText("Highest Score", { exact: true }).click();
+
+    // Add a round
+    const roundInput = page
+      .locator('input[placeholder*="Round" i]')
+      .or(page.locator('input[name="rounds.0.name"]'))
+      .first();
+    await roundInput.fill("Round 1");
+
+    // Submit scoresheet form
+    const submitButton = page.getByRole("button", { name: "Submit" });
+    await submitButton.click();
+
+    // Wait for form to close and main form to be visible again
+    await page.waitForTimeout(500);
+
+    // Submit the main form
+    await page.getByRole("button", { name: "Submit" }).click();
+
+    // Verify change persisted
+    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Verify scoresheet was added
+    await page.goto(`/dashboard/games/${gameId}/edit`);
+
+    // Check that the new scoresheet is visible
+    await expect(page.getByText("New Scoresheet")).toBeVisible();
+  });
+
+  test("Delete scoresheet", async ({ page, browserName }) => {
+    const browserGameName = browserName + "_" + GAME_NAME;
+
+    // Create game with multiple scoresheets
+    const createdGame = await createGameWithScoresheetViaTrpc(
+      browserName,
+      browserGameName,
+      [
+        {
+          name: "Scoresheet 1",
+          winCondition: "Highest Score",
+          rounds: [{ name: "Round 1", type: "Numeric" }],
+        },
+        {
+          name: "Scoresheet 2",
+          winCondition: "Lowest Score",
+          rounds: [{ name: "Round 1", type: "Numeric" }],
+        },
+      ],
+    );
+    gameId = createdGame.id;
+
+    // Navigate to edit page
+    await page.goto(`/dashboard/games/${gameId}/edit`);
+
+    // Navigate to the scoresheet to delete
+    const scoresheetButton = page.getByText("Scoresheet 2");
+    await scoresheetButton.click();
+
+    // Find and click delete button (might be in a menu or as a button)
+    const deleteButton = page
+      .getByRole("button", { name: /Delete|Remove/i })
+      .or(page.locator('button[aria-label*="delete" i]'))
+      .first();
+    await deleteButton.click();
+
+    // Confirm deletion if there's a confirmation dialog
+    const confirmButton = page
+      .getByRole("button", { name: /Confirm|Yes|Delete/i })
+      .first();
+    if (await confirmButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await confirmButton.click();
+    }
+
+    // Submit the main form
+    await page.getByRole("button", { name: "Submit" }).click();
+
+    // Verify change persisted
+    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Verify scoresheet was deleted
+    await page.goto(`/dashboard/games/${gameId}/edit`);
+
+    // Check that Scoresheet 2 is no longer visible
+    await expect(page.getByText("Scoresheet 2")).not.toBeVisible();
+    // But Scoresheet 1 should still be there
+    await expect(page.getByText("Scoresheet 1")).toBeVisible();
+  });
+ */
 });

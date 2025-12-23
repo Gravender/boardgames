@@ -47,6 +47,10 @@ let nextConfig = {
   },
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
+
+  experimental: {
+    turbopackFileSystemCacheForDev: true,
+  },
 };
 
 nextConfig = withSentryConfig(nextConfig, {
