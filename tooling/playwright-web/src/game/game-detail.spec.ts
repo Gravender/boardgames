@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { GAME_NAME } from "../shared/test-data";
+import { createGameViaTrpc } from "../trpc/procedures";
 import { deleteGames, findGameLink } from "./helpers";
 
 test.describe("Game Detail Page", () => {
@@ -14,28 +15,7 @@ test.describe("Game Detail Page", () => {
   test("Navigate to game detail page", async ({ page, browserName }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
     // First create a game
-    await page.goto("/dashboard/games");
-    await page.getByRole("button", { name: "add game" }).click();
-    await page.getByPlaceholder("Game name").fill(browserGameName);
-    await page.getByRole("button", { name: "More options" }).click();
-    await page.locator('input[name="game.playersMin"]').fill("1");
-    await page.locator('input[name="game.playersMax"]').fill("4");
-    await page.locator('input[name="game.playtimeMin"]').fill("15");
-    await page.locator('input[name="game.playtimeMax"]').fill("30");
-    await page.locator('input[name="game.yearPublished"]').fill("2014");
-    await page.getByRole("button", { name: "Create New" }).click();
-    await page.getByRole("textbox", { name: "Sheet Name" }).fill("Default");
-    await page.locator('button[name="winCondition"]').click();
-    await page.getByLabel("Highest Score").getByText("Highest Score").click();
-    await page.locator('button[name="roundsScore"]').click();
-    await page.getByRole("option", { name: "Aggregate" }).click();
-    await page.getByRole("button", { name: "Submit" }).click();
-    await page.getByRole("button", { name: "Submit" }).click();
-    // Wait for success toast to appear
-    await expect(page.getByText(/Game .* created successfully!/i)).toBeVisible({
-      timeout: 10000,
-    });
-
+    const createdGame = await createGameViaTrpc(browserName, browserGameName);
     // Navigate to games list and click on game
     await page.goto("/dashboard/games");
     await page
