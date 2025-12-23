@@ -4,6 +4,7 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter, createTRPCContext } from "@board-games/api";
 
 import { auth } from "~/auth/server";
+import { getPosthogServerClient } from "~/utils/analytics-server";
 import { utapi } from "~/utils/uploadthing-server";
 
 /**
@@ -35,6 +36,7 @@ const handler = async (req: NextRequest) => {
         auth: auth,
         deleteFiles: utapi.deleteFiles,
         headers: req.headers,
+        posthog: getPosthogServerClient(),
       }),
     onError({ error, path }) {
       console.error(`>>> tRPC Error on '${path}'`, error);

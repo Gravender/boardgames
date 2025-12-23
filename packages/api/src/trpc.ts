@@ -1,11 +1,10 @@
+import type { PostHog } from "posthog-node";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { z, ZodError } from "zod/v4";
 
 import type { Auth } from "@board-games/auth";
 import { db } from "@board-games/db/client";
-
-import { getPosthogServerClient } from "./analytics";
 
 /**
  * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
@@ -31,6 +30,7 @@ import { getPosthogServerClient } from "./analytics";
 export const createTRPCContext = async (opts: {
   headers: Headers;
   auth: Auth;
+  posthog: PostHog;
   deleteFiles: (
     keys: string | string[],
   ) => Promise<{ readonly success: boolean; readonly deletedCount: number }>;
@@ -39,11 +39,10 @@ export const createTRPCContext = async (opts: {
   const session = await authApi.getSession({
     headers: opts.headers,
   });
-  const posthog = getPosthogServerClient();
   return {
     session,
     db,
-    posthog,
+    posthog: opts.posthog,
     deleteFiles: opts.deleteFiles,
   };
 };

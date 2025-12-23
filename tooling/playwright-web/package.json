@@ -17,6 +17,8 @@
     "e2e": "pnpm exec playwright test"
   },
   "devDependencies": {
+    "@board-games/api": "workspace:*",
+    "@board-games/auth": "workspace:*",
     "@board-games/db": "workspace:*",
     "@board-games/eslint-config": "workspace:*",
     "@board-games/prettier-config": "workspace:*",

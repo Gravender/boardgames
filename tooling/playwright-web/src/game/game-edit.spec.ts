@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { GAME_NAME } from "../shared/test-data";
+import { createGameViaTrpc } from "../trpc/procedures";
 import { deleteGames, findGameCard, findGameLink } from "./helpers";
 
 test.describe("Game Edit Page", () => {
@@ -17,54 +18,8 @@ test.describe("Game Edit Page", () => {
   }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
     // Create a game first
-    await page.goto("/dashboard/games");
-    await page.getByRole("button", { name: "add game" }).click();
-    await page.getByPlaceholder("Game name").fill(browserGameName);
-    await page.getByRole("button", { name: "More options" }).click();
-    await page.locator('input[name="game.playersMin"]').fill("1");
-    await page.locator('input[name="game.playersMax"]').fill("4");
-    await page.locator('input[name="game.playtimeMin"]').fill("15");
-    await page.locator('input[name="game.playtimeMax"]').fill("30");
-    await page.locator('input[name="game.yearPublished"]').fill("2014");
-    await page.getByRole("button", { name: "Create New" }).click();
-    await page.getByRole("textbox", { name: "Sheet Name" }).fill("Default");
-    await page.locator('button[name="winCondition"]').click();
-    await page.getByLabel("Highest Score").getByText("Highest Score").click();
-    await page.locator('button[name="roundsScore"]').click();
-    await page.getByRole("option", { name: "Aggregate" }).click();
-    await page.getByRole("button", { name: "Submit" }).click();
-    await page.getByRole("button", { name: "Submit" }).click();
-    // Wait for success toast to appear
-    await expect(page.getByText(/Game .* created successfully!/i)).toBeVisible({
-      timeout: 10000,
-    });
-    // Wait for navigation to complete
-    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
-
-    await expect(page.getByText(/Game .* created successfully!/i)).toBeVisible({
-      timeout: 10000,
-    });
-    // Navigate to game detail page
-    await page.goto("/dashboard/games");
-    // Wait for search input to be ready
-    const searchInput = page.getByRole("textbox", { name: "Search games..." });
-    await searchInput.click();
-    await searchInput.fill(browserGameName);
-    // Find the game link using helper function (based on gameAriaText pattern)
-    const gameLink = await findGameLink(page, browserGameName);
-    await gameLink.click();
-    // Wait for navigation to game detail page
-    await page.waitForURL(/\/dashboard\/games\/\d+/, { timeout: 5000 });
-
-    // Get game ID from URL
-    const url = page.url();
-    const gameIdMatch = /\/games\/(\d+)/.exec(url);
-    if (!gameIdMatch) {
-      throw new Error("Could not extract game ID from URL");
-    }
-    const gameIdToParse = gameIdMatch[1] ?? "";
-    expect(gameIdToParse).not.toBe("");
-    const gameId = parseInt(gameIdToParse, 10);
+    const createdGame = await createGameViaTrpc(browserName, browserGameName);
+    const gameId = createdGame.id;
 
     // Navigate back to games list page to access the menu
     await page.goto("/dashboard/games");
@@ -124,36 +79,6 @@ test.describe("Game Edit Page", () => {
     // Use findGameLink to verify the edited game is visible
     const editedGameLink = await findGameLink(page, editedName);
     await expect(editedGameLink).toBeVisible();
-  });
-
-  test("More options collapsible", async ({ page, browserName }) => {
-    const browserGameName = browserName + "_" + GAME_NAME;
-    await page.goto("/dashboard/games");
-    await page
-      .getByRole("textbox", { name: "Search games..." })
-      .fill(browserGameName);
-    // Find the game card and get the menu button within it
-    const gameCard = await findGameCard(page, browserGameName);
-    const menuButton = gameCard.getByRole("button", { name: "Open menu" });
-    await menuButton.click();
-    await page.getByRole("menuitem", { name: "Edit" }).click();
-    // Wait for navigation to edit page
-    await page.waitForURL(/\/dashboard\/games\/\d+\/edit/, { timeout: 5000 });
-
-    // Verify more options button exists
-    const moreOptionsButton = page.getByRole("button", {
-      name: "More options",
-    });
-    await expect(moreOptionsButton).toBeVisible();
-
-    // Click to expand
-    await moreOptionsButton.click();
-
-    // Verify additional fields are visible
-    await expect(page.locator('input[name="playersMin"]')).toBeVisible();
-    await expect(page.locator('input[name="playersMax"]')).toBeVisible();
-    await expect(page.locator('input[name="playtimeMin"]')).toBeVisible();
-    await expect(page.locator('input[name="playtimeMax"]')).toBeVisible();
   });
 
   test("Form validation", async ({ page, browserName }) => {

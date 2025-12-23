@@ -50,6 +50,7 @@ tooling/
 ### Code Style
 
 - **TypeScript**: Strict mode enabled, use type inference where appropriate
+- **File Size**: TypeScript files should have a maximum of 500 lines before being broken up into separate files
 - **Imports**: Use workspace package imports (e.g., `@board-games/ui`, `@board-games/api`)
 - **File Naming**:
   - Components: PascalCase (e.g., `MatchSummary.tsx`)

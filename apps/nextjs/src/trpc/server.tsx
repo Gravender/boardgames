@@ -8,6 +8,7 @@ import type { AppRouter } from "@board-games/api";
 import { appRouter, createTRPCContext } from "@board-games/api";
 
 import { auth } from "~/auth/server";
+import { getPosthogServerClient } from "~/utils/analytics-server";
 import { utapi } from "~/utils/uploadthing-server";
 import { createQueryClient } from "./query-client";
 
@@ -22,6 +23,7 @@ const createContext = cache(async () => {
     deleteFiles: utapi.deleteFiles,
     headers: heads,
     auth,
+    posthog: getPosthogServerClient(),
   });
 });
 

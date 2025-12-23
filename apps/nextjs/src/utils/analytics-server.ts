@@ -2,7 +2,7 @@ import "server-only";
 
 import { PostHog } from "posthog-node";
 
-import { env } from "./env";
+import { env } from "~/env";
 
 let posthogClient: PostHog | null = null;
 export function getPosthogServerClient() {
