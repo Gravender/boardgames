@@ -2,8 +2,8 @@ import type { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 
 import type { TransactionType } from "@board-games/db/client";
+import type { editScoresheetSchemaApiInput } from "@board-games/shared";
 import { db } from "@board-games/db/client";
-import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 import type {
   GetGameMatchesOutputType,
@@ -619,21 +619,20 @@ class GameService {
       ctx: { userId, posthog, deleteFiles },
     } = args;
 
-    const existingGame = await gameRepository.getGame({
-      id: input.game.id,
-      createdBy: userId,
-    });
-
-    assertFound(
-      existingGame,
-      {
-        userId,
-        value: input.game,
-      },
-      "Game not found.",
-    );
-
     await db.transaction(async (tx) => {
+      const existingGame = await gameRepository.getGame({
+        id: input.game.id,
+        createdBy: userId,
+      });
+
+      assertFound(
+        existingGame,
+        {
+          userId,
+          value: input.game,
+        },
+        "Game not found.",
+      );
       await this.updateGameRoles({
         input: {
           updatedRoles: input.updatedRoles,
@@ -851,6 +850,7 @@ class GameService {
       return imageInput.imageId;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (imageInput.type === "svg") {
       const existingSvg = await imageRepository.findFirst(
         {
@@ -933,6 +933,21 @@ class GameService {
       if (inputScoresheet.type === "Update Scoresheet") {
         if (inputScoresheet.scoresheet.scoresheetType === "original") {
           const originalScoresheet = inputScoresheet.scoresheet;
+          const returnedOriginalScoresheet = await scoresheetRepository.get(
+            {
+              id: originalScoresheet.scoresheet.id,
+              createdBy: userId,
+            },
+            tx,
+          );
+          assertFound(
+            returnedOriginalScoresheet,
+            {
+              userId,
+              value: inputScoresheet.scoresheet,
+            },
+            "Scoresheet not found.",
+          );
           const scoresheetId = (
             originalScoresheet.scoresheet as { id: number; isDefault?: boolean }
           ).id;
@@ -943,20 +958,18 @@ class GameService {
                 isDefault?: boolean;
               }
             ).isDefault ?? false;
-          await scoresheetRepository.update(
-            {
-              input: {
-                id: scoresheetId,
-                name: originalScoresheet.name,
-                winCondition: originalScoresheet.winCondition,
-                isCoop: originalScoresheet.isCoop,
-                type: isDefault ? "Default" : "Game",
-                roundsScore: originalScoresheet.roundsScore,
-                targetScore: originalScoresheet.targetScore,
-              },
-              tx,
+          await scoresheetRepository.update({
+            input: {
+              id: scoresheetId,
+              name: originalScoresheet.scoresheet.name,
+              winCondition: originalScoresheet.scoresheet.winCondition,
+              isCoop: originalScoresheet.scoresheet.isCoop,
+              type: isDefault ? "Default" : "Game",
+              roundsScore: originalScoresheet.scoresheet.roundsScore,
+              targetScore: originalScoresheet.scoresheet.targetScore,
             },
-          );
+            tx,
+          });
         } else {
           const sharedScoresheetInput = inputScoresheet.scoresheet;
           const sharedScoresheetId = (
@@ -979,36 +992,34 @@ class GameService {
             },
             tx,
           );
-          if (!returnedSharedScoresheet) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Shared scoresheet not found.",
-            });
-          }
-          if (returnedSharedScoresheet.permission === "edit") {
-            await scoresheetRepository.update(
-              {
-                input: {
-                  id: returnedSharedScoresheet.scoresheetId,
-                  name: sharedScoresheetInput.name,
-                  winCondition: sharedScoresheetInput.winCondition,
-                  isCoop: sharedScoresheetInput.isCoop,
-                  roundsScore: sharedScoresheetInput.roundsScore,
-                  targetScore: sharedScoresheetInput.targetScore,
-                },
-                tx,
-              },
-            );
-          }
-          await scoresheetRepository.updateShared(
+          assertFound(
+            returnedSharedScoresheet,
             {
+              userId,
+              value: sharedScoresheetInput,
+            },
+            "Shared scoresheet not found.",
+          );
+          if (returnedSharedScoresheet.permission === "edit") {
+            await scoresheetRepository.update({
               input: {
-                id: returnedSharedScoresheet.id,
-                isDefault,
+                id: returnedSharedScoresheet.scoresheetId,
+                name: sharedScoresheetInput.scoresheet.name,
+                winCondition: sharedScoresheetInput.scoresheet.winCondition,
+                isCoop: sharedScoresheetInput.scoresheet.isCoop,
+                roundsScore: sharedScoresheetInput.scoresheet.roundsScore,
+                targetScore: sharedScoresheetInput.scoresheet.targetScore,
               },
               tx,
+            });
+          }
+          await scoresheetRepository.updateShared({
+            input: {
+              id: returnedSharedScoresheet.id,
+              isDefault,
             },
-          );
+            tx,
+          });
         }
       }
 
@@ -1019,20 +1030,37 @@ class GameService {
 
         if (inputScoresheet.scoresheet.scoresheetType === "original") {
           const originalScoresheet = inputScoresheet.scoresheet;
-          if ("id" in originalScoresheet) {
-            scoresheetId = originalScoresheet.id as number;
-          }
+          const returnedOriginalScoresheet = await scoresheetRepository.get(
+            {
+              id:
+                "id" in originalScoresheet
+                  ? originalScoresheet.id
+                  : originalScoresheet.scoresheet.id,
+              createdBy: userId,
+            },
+            tx,
+          );
+          assertFound(
+            returnedOriginalScoresheet,
+            {
+              userId,
+              value: originalScoresheet,
+            },
+            "Scoresheet not found.",
+          );
+          scoresheetId = returnedOriginalScoresheet.id;
           scoresheetPermission = "edit";
         } else {
           const sharedScoresheetInput = inputScoresheet.scoresheet;
           if ("id" in sharedScoresheetInput) {
-            const returnedSharedScoresheet = await scoresheetRepository.getShared(
-              {
-                id: sharedScoresheetInput.id as number,
-                sharedWithId: userId,
-              },
-              tx,
-            );
+            const returnedSharedScoresheet =
+              await scoresheetRepository.getShared(
+                {
+                  id: sharedScoresheetInput.id,
+                  sharedWithId: userId,
+                },
+                tx,
+              );
             if (!returnedSharedScoresheet) {
               throw new TRPCError({
                 code: "NOT_FOUND",
@@ -1045,49 +1073,43 @@ class GameService {
           }
         }
 
-        if ("name" in inputScoresheet.scoresheet && scoresheetId) {
+        if ("scoresheet" in inputScoresheet.scoresheet && scoresheetId) {
           const scoresheetData = inputScoresheet.scoresheet;
           if (scoresheetPermission === "edit") {
             const scoresheetType = () => {
               if (
                 scoresheetData.scoresheetType === "original" &&
-                "isDefault" in scoresheetData
+                "isDefault" in scoresheetData.scoresheet
               ) {
-                return (scoresheetData.isDefault as boolean)
-                  ? "Default"
-                  : "Game";
+                return scoresheetData.scoresheet.isDefault ? "Default" : "Game";
               }
               return undefined;
             };
-            await scoresheetRepository.update(
-              {
-                input: {
-                  id: scoresheetId,
-                  name: scoresheetData.name,
-                  winCondition: scoresheetData.winCondition,
-                  isCoop: scoresheetData.isCoop,
-                  type: scoresheetType(),
-                  roundsScore: scoresheetData.roundsScore,
-                  targetScore: scoresheetData.targetScore,
-                },
-                tx,
+            await scoresheetRepository.update({
+              input: {
+                id: scoresheetId,
+                name: scoresheetData.scoresheet.name,
+                winCondition: scoresheetData.scoresheet.winCondition,
+                isCoop: scoresheetData.scoresheet.isCoop,
+                type: scoresheetType(),
+                roundsScore: scoresheetData.scoresheet.roundsScore,
+                targetScore: scoresheetData.scoresheet.targetScore,
               },
-            );
+              tx,
+            });
           }
           if (
             scoresheetData.scoresheetType === "shared" &&
             sharedScoresheetId &&
-            "isDefault" in scoresheetData
+            "isDefault" in scoresheetData.scoresheet
           ) {
-            await scoresheetRepository.updateShared(
-              {
-                input: {
-                  id: sharedScoresheetId,
-                  isDefault: scoresheetData.isDefault as boolean,
-                },
-                tx,
+            await scoresheetRepository.updateShared({
+              input: {
+                id: sharedScoresheetId,
+                isDefault: scoresheetData.scoresheet.isDefault,
               },
-            );
+              tx,
+            });
           }
         }
 
@@ -1115,14 +1137,12 @@ class GameService {
           inputScoresheet.roundsToDelete.length > 0 &&
           scoresheetPermission === "edit"
         ) {
-          await scoresheetRepository.deleteRounds(
-            {
-              input: {
-                ids: inputScoresheet.roundsToDelete,
-              },
-              tx,
+          await scoresheetRepository.deleteRounds({
+            input: {
+              ids: inputScoresheet.roundsToDelete,
             },
-          );
+            tx,
+          });
         }
       }
     }
@@ -1136,20 +1156,18 @@ class GameService {
     tx: TransactionType;
   }) {
     const { roundsToEdit, tx } = args;
-    await scoresheetRepository.updateRounds(
-      {
-        input: roundsToEdit.map((round) => ({
-          id: round.id,
-          name: round.name,
-          score: round.score,
-          type: round.type,
-          color: round.color,
-          lookup: round.lookup,
-          modifier: round.modifier,
-        })),
-        tx,
-      },
-    );
+    await scoresheetRepository.updateRounds({
+      input: roundsToEdit.map((round) => ({
+        id: round.id,
+        name: round.name,
+        score: round.score,
+        type: round.type,
+        color: round.color,
+        lookup: round.lookup,
+        modifier: round.modifier,
+      })),
+      tx,
+    });
   }
 
   private async deleteScoresheets(args: {
@@ -1167,28 +1185,24 @@ class GameService {
 
     if (originalScoresheetsToDelete.length > 0) {
       for (const scoresheetToDelete of originalScoresheetsToDelete) {
-        await scoresheetRepository.deleteScoresheet(
-          {
-            input: {
-              id: scoresheetToDelete.id,
-              createdBy: userId,
-            },
-            tx,
+        await scoresheetRepository.deleteScoresheet({
+          input: {
+            id: scoresheetToDelete.id,
+            createdBy: userId,
           },
-        );
+          tx,
+        });
       }
     }
 
     if (sharedScoresheetsToDelete.length > 0) {
       for (const sharedScoresheetToDelete of sharedScoresheetsToDelete) {
-        await scoresheetRepository.deleteSharedScoresheet(
-          {
-            input: {
-              id: sharedScoresheetToDelete.id,
-            },
-            tx,
+        await scoresheetRepository.deleteSharedScoresheet({
+          input: {
+            id: sharedScoresheetToDelete.id,
           },
-        );
+          tx,
+        });
       }
     }
   }

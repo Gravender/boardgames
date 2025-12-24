@@ -25,6 +25,7 @@ export function GameImage({
     if (!image)
       return (
         <GameImageIcon
+          aria-label="No Image"
           imageIcon={{
             type: "file",
             name: "No Image",
@@ -46,6 +47,7 @@ export function GameImage({
   };
   return (
     <div
+      aria-label={alt}
       className={cn(
         "relative flex shrink-0 overflow-hidden rounded",
         containerClassName,
@@ -114,6 +116,7 @@ function GameImageIcon({
 
   return (
     <Icon
+      aria-label={imageIcon.name}
       className={cn(
         "bg-muted h-full w-full items-center justify-center rounded-md p-2",
         className,

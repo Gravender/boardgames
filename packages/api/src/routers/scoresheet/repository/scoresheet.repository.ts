@@ -389,6 +389,9 @@ class ScoresheetRepository {
     tx?: TransactionType;
   }) {
     const { input, tx } = args;
+    if (input.ids.length === 0) {
+      return [];
+    }
     const database = tx ?? db;
     const deletedRounds = await database
       .delete(round)

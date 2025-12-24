@@ -215,119 +215,51 @@ export const roundSchema = baseRoundSchema.extend({
 
 export const roundsSchema = z.array(roundSchema);
 
-const baseEditScoresheetSchema = {
-  isDefault: z.boolean().optional(),
-  id: z.number(),
-};
-const originalEditScoresheetSchema = scoreSheetSchema.safeExtend({
-  scoresheetType: z.literal("original"),
-  scoresheet: baseEditScoresheetSchema,
-});
-const sharedEditScoresheetSchema = scoreSheetSchema.safeExtend({
-  scoresheetType: z.literal("shared"),
-  scoresheet: baseEditScoresheetSchema,
-});
-const newEditScoresheetSchema = scoreSheetSchema.safeExtend({
-  id: z.null(),
-  scoresheet: baseEditScoresheetSchema,
-});
-export const editScoresheetSchemaForm = z
-  .discriminatedUnion("scoresheetType", [
-    originalEditScoresheetSchema.safeExtend({
-      scoreSheetChanged: z.boolean(),
-      roundChanged: z.boolean(),
-      rounds: roundsSchema,
-    }),
-    sharedEditScoresheetSchema.safeExtend({
-      scoresheetType: z.literal("shared"),
-      permission: z.literal("view").or(z.literal("edit")),
-      scoreSheetChanged: z.boolean(),
-      roundChanged: z.boolean(),
-      rounds: roundsSchema,
-    }),
-    newEditScoresheetSchema.safeExtend({
-      scoresheetType: z.literal("new"),
-      rounds: roundsSchema,
-    }),
-  ])
-  .check((ctx) => {
-    if (
-      ctx.value.winCondition !== "Manual" &&
-      ctx.value.roundsScore === "None"
-    ) {
-      ctx.issues.push({
-        code: "custom",
-        input: ctx.value,
-        message:
-          "Rounds score cannot be None when win condition is not Manual.",
-        path: ["roundsScore"],
-      });
-    }
-    if (ctx.value.isCoop) {
-      if (
-        ctx.value.winCondition !== "Manual" &&
-        ctx.value.winCondition !== "Target Score"
-      ) {
-        ctx.issues.push({
-          code: "custom",
-          input: ctx.value,
-          message:
-            "Win condition must be Manual or Target Score for Coop games.",
-          path: ["winCondition"],
-        });
-      }
-    }
-    if (
-      ctx.value.winCondition !== "Manual" &&
-      ctx.value.roundsScore !== "Manual" &&
-      ctx.value.rounds.length === 0
-    ) {
-      ctx.issues.push({
-        code: "custom",
-        input: ctx.value,
-        message:
-          "Rounds cannot be empty when win condition is not Manual and rounds score is not Manual.",
-        path: ["roundsScore"],
-        params: {
-          roundsScore: ctx.value.roundsScore,
-          winCondition: ctx.value.winCondition,
-          rounds: ctx.value.rounds,
-        },
-      });
-      ctx.issues.push({
-        code: "custom",
-        input: ctx.value,
-        message:
-          "Rounds cannot be empty when win condition is not Manual and rounds score is not Manual.",
-        path: ["winCondition"],
-        params: {
-          roundsScore: ctx.value.roundsScore,
-          winCondition: ctx.value.winCondition,
-          rounds: ctx.value.rounds,
-        },
-      });
-    }
-  });
-
 export const editScoresheetSchemaApiInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("New"),
-    scoresheet: newEditScoresheetSchema.omit({ id: true }),
+    scoresheet: scoreSheetSchema.safeExtend({
+      isDefault: z.boolean().optional(),
+    }),
     rounds: roundsSchema,
   }),
   z.object({
     type: z.literal("Update Scoresheet"),
     scoresheet: z.discriminatedUnion("scoresheetType", [
-      originalEditScoresheetSchema,
-      sharedEditScoresheetSchema,
+      z.object({
+        scoresheetType: z.literal("original"),
+        scoresheet: scoreSheetSchema.safeExtend({
+          isDefault: z.boolean().optional(),
+          id: z.number(),
+        }),
+      }),
+      z.object({
+        scoresheetType: z.literal("shared"),
+        scoresheet: scoreSheetSchema.safeExtend({
+          isDefault: z.boolean().optional(),
+          id: z.number(),
+        }),
+      }),
     ]),
   }),
   z.object({
     type: z.literal("Update Scoresheet & Rounds"),
     scoresheet: z
       .discriminatedUnion("scoresheetType", [
-        originalEditScoresheetSchema,
-        sharedEditScoresheetSchema,
+        z.object({
+          scoresheetType: z.literal("original"),
+          scoresheet: scoreSheetSchema.safeExtend({
+            isDefault: z.boolean().optional(),
+            id: z.number(),
+          }),
+        }),
+        z.object({
+          scoresheetType: z.literal("shared"),
+          scoresheet: scoreSheetSchema.safeExtend({
+            isDefault: z.boolean().optional(),
+            id: z.number(),
+          }),
+        }),
       ])
       .or(
         z.object({

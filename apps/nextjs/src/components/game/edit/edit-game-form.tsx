@@ -121,7 +121,10 @@ export function EditGameForm({
       } else {
         // File upload needed
         try {
-          const imageFile = gameValues.gameImg.file as File;
+          const imageFile = gameValues.gameImg.file;
+          if (!(imageFile instanceof File)) {
+            throw new Error("Expected a File for upload");
+          }
           const uploadResult = await startUpload([imageFile], {
             usageType: "game",
           });

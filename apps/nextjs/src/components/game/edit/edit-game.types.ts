@@ -168,7 +168,10 @@ export function transformEditGameDataToFormValues(
             targetScore: scoresheet.targetScore,
             isDefault: scoresheet.isDefault,
           },
-          rounds: scoresheet.rounds,
+          rounds: scoresheet.rounds.map((r) => ({
+            ...r,
+            roundId: r.id,
+          })),
           scoreSheetChanged: false,
           roundChanged: false,
         };
@@ -186,7 +189,10 @@ export function transformEditGameDataToFormValues(
             targetScore: scoresheet.targetScore,
             isDefault: scoresheet.isDefault,
           },
-          rounds: scoresheet.rounds,
+          rounds: scoresheet.rounds.map((r) => ({
+            ...r,
+            roundId: r.id,
+          })),
           scoreSheetChanged: false,
           roundChanged: false,
         };
