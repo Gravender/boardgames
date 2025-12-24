@@ -777,6 +777,7 @@ const GameForm = ({
                           <div className="grid grid-cols-4 gap-2">
                             {gameIcons.map((option) => (
                               <Button
+                                aria-label={`icon-${option.name}`}
                                 key={option.name}
                                 type="button"
                                 variant="outline"
