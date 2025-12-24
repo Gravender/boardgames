@@ -1,4 +1,5 @@
-import { and, eq } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import type {
   Filter,
@@ -240,6 +241,171 @@ class ScoresheetRepository {
       )
       .returning();
     return deletedScoresheet;
+  }
+
+  public async update(args: {
+    input: {
+      id: number;
+      name?: string;
+      winCondition?: string;
+      isCoop?: boolean;
+      type?: "Template" | "Default" | "Match" | "Game";
+      roundsScore?: string;
+      targetScore?: number;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const { id, ...updateData } = input;
+    const [updatedScoresheet] = await database
+      .update(scoresheet)
+      .set(updateData)
+      .where(eq(scoresheet.id, id))
+      .returning();
+    return updatedScoresheet;
+  }
+
+  public async updateShared(args: {
+    input: {
+      id: number;
+      isDefault?: boolean;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const { id, ...updateData } = input;
+    const [updatedSharedScoresheet] = await database
+      .update(sharedScoresheet)
+      .set(updateData)
+      .where(eq(sharedScoresheet.id, id))
+      .returning();
+    return updatedSharedScoresheet;
+  }
+
+  public async updateRounds(args: {
+    input: Array<{
+      id: number;
+      name?: string;
+      score?: number;
+      type?: string;
+      color?: string | null;
+      lookup?: number | null;
+      modifier?: number | null;
+    }>;
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const ids = input.map((p) => p.id);
+    const nameSqlChunks: SQL[] = [sql`(case`];
+    const scoreSqlChunks: SQL[] = [sql`(case`];
+    const typeSqlChunks: SQL[] = [sql`(case`];
+    const colorSqlChunks: SQL[] = [sql`(case`];
+    const lookupSqlChunks: SQL[] = [sql`(case`];
+    const modifierSqlChunks: SQL[] = [sql`(case`];
+
+    for (const inputRound of input) {
+      if (inputRound.name !== undefined) {
+        nameSqlChunks.push(
+          sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.name}::varchar`}`,
+        );
+      }
+      if (inputRound.score !== undefined) {
+        scoreSqlChunks.push(
+          sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.score}::integer`}`,
+        );
+      }
+      if (inputRound.type !== undefined) {
+        typeSqlChunks.push(
+          sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.type}::varchar`}`,
+        );
+      }
+      if (inputRound.color !== undefined) {
+        colorSqlChunks.push(
+          sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.color}::varchar`}`,
+        );
+      }
+      if (inputRound.lookup !== undefined) {
+        lookupSqlChunks.push(
+          sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.lookup}::integer`}`,
+        );
+      }
+      if (inputRound.modifier !== undefined) {
+        modifierSqlChunks.push(
+          sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.modifier}::integer`}`,
+        );
+      }
+    }
+
+    nameSqlChunks.push(sql`end)`);
+    scoreSqlChunks.push(sql`end)`);
+    typeSqlChunks.push(sql`end)`);
+    colorSqlChunks.push(sql`end)`);
+    lookupSqlChunks.push(sql`end)`);
+    modifierSqlChunks.push(sql`end)`);
+
+    const setData: Record<string, SQL | undefined> = {};
+    if (nameSqlChunks.length > 2) {
+      setData.name = sql.join(nameSqlChunks, sql.raw(" "));
+    }
+    if (scoreSqlChunks.length > 2) {
+      setData.score = sql.join(scoreSqlChunks, sql.raw(" "));
+    }
+    if (typeSqlChunks.length > 2) {
+      setData.type = sql.join(typeSqlChunks, sql.raw(" "));
+    }
+    if (colorSqlChunks.length > 2) {
+      setData.color = sql.join(colorSqlChunks, sql.raw(" "));
+    }
+    if (lookupSqlChunks.length > 2) {
+      setData.lookup = sql.join(lookupSqlChunks, sql.raw(" "));
+    }
+    if (modifierSqlChunks.length > 2) {
+      setData.modifier = sql.join(modifierSqlChunks, sql.raw(" "));
+    }
+
+    if (Object.keys(setData).length === 0) {
+      return [];
+    }
+
+    const updatedRounds = await database
+      .update(round)
+      .set(setData)
+      .where(inArray(round.id, ids))
+      .returning();
+    return updatedRounds;
+  }
+
+  public async deleteRounds(args: {
+    input: {
+      ids: number[];
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const deletedRounds = await database
+      .delete(round)
+      .where(inArray(round.id, input.ids))
+      .returning();
+    return deletedRounds;
+  }
+
+  public async deleteSharedScoresheet(args: {
+    input: {
+      id: number;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const deletedSharedScoresheet = await database
+      .delete(sharedScoresheet)
+      .where(eq(sharedScoresheet.id, input.id))
+      .returning();
+    return deletedSharedScoresheet;
   }
 }
 export const scoresheetRepository = new ScoresheetRepository();

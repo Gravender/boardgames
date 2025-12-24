@@ -1,16 +1,8 @@
-import type { SQL } from "drizzle-orm";
 import type { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { eq, inArray, sql } from "drizzle-orm";
 
 import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
-import {
-  image,
-  round,
-  scoresheet,
-  sharedScoresheet,
-} from "@board-games/db/schema";
 import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 import type {
@@ -26,6 +18,7 @@ import type {
   GetGameScoresheetsArgs,
 } from "./game.service.types";
 import { gameRepository } from "../../repositories/game/game.repository";
+import { imageRepository } from "../../repositories/image/image.repository";
 import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
@@ -675,6 +668,7 @@ class GameService {
       if (input.scoresheetsToDelete.length > 0) {
         await this.deleteScoresheets({
           input: input.scoresheetsToDelete,
+          userId,
           tx,
         });
       }
@@ -742,11 +736,12 @@ class GameService {
     let imageId: number | null | undefined = undefined;
     if (input.image !== undefined) {
       const existingImage = existingGame.imageId
-        ? await tx.query.image.findFirst({
-            where: {
+        ? await imageRepository.getById(
+            {
               id: existingGame.imageId,
             },
-          })
+            tx,
+          )
         : null;
 
       imageId = await this.resolveImageIdForEdit({
@@ -857,24 +852,25 @@ class GameService {
     }
 
     if (imageInput.type === "svg") {
-      const existingSvg = await tx.query.image.findFirst({
-        where: {
+      const existingSvg = await imageRepository.findFirst(
+        {
           name: imageInput.name,
           type: "svg",
           usageType: "game",
         },
-      });
+        tx,
+      );
       if (existingSvg) {
         return existingSvg.id;
       }
-      const [returnedImage] = await tx
-        .insert(image)
-        .values({
+      const returnedImage = await imageRepository.insert(
+        {
           type: "svg",
           name: imageInput.name,
           usageType: "game",
-        })
-        .returning();
+        },
+        tx,
+      );
       assertInserted(
         returnedImage,
         {
@@ -947,17 +943,20 @@ class GameService {
                 isDefault?: boolean;
               }
             ).isDefault ?? false;
-          await tx
-            .update(scoresheet)
-            .set({
-              name: originalScoresheet.name,
-              winCondition: originalScoresheet.winCondition,
-              isCoop: originalScoresheet.isCoop,
-              type: isDefault ? "Default" : "Game",
-              roundsScore: originalScoresheet.roundsScore,
-              targetScore: originalScoresheet.targetScore,
-            })
-            .where(eq(scoresheet.id, scoresheetId));
+          await scoresheetRepository.update(
+            {
+              input: {
+                id: scoresheetId,
+                name: originalScoresheet.name,
+                winCondition: originalScoresheet.winCondition,
+                isCoop: originalScoresheet.isCoop,
+                type: isDefault ? "Default" : "Game",
+                roundsScore: originalScoresheet.roundsScore,
+                targetScore: originalScoresheet.targetScore,
+              },
+              tx,
+            },
+          );
         } else {
           const sharedScoresheetInput = inputScoresheet.scoresheet;
           const sharedScoresheetId = (
@@ -973,13 +972,13 @@ class GameService {
                 isDefault?: boolean;
               }
             ).isDefault ?? false;
-          const returnedSharedScoresheet =
-            await tx.query.sharedScoresheet.findFirst({
-              where: {
-                id: sharedScoresheetId,
-                sharedWithId: userId,
-              },
-            });
+          const returnedSharedScoresheet = await scoresheetRepository.getShared(
+            {
+              id: sharedScoresheetId,
+              sharedWithId: userId,
+            },
+            tx,
+          );
           if (!returnedSharedScoresheet) {
             throw new TRPCError({
               code: "NOT_FOUND",
@@ -987,23 +986,29 @@ class GameService {
             });
           }
           if (returnedSharedScoresheet.permission === "edit") {
-            await tx
-              .update(scoresheet)
-              .set({
-                name: sharedScoresheetInput.name,
-                winCondition: sharedScoresheetInput.winCondition,
-                isCoop: sharedScoresheetInput.isCoop,
-                roundsScore: sharedScoresheetInput.roundsScore,
-                targetScore: sharedScoresheetInput.targetScore,
-              })
-              .where(eq(scoresheet.id, returnedSharedScoresheet.scoresheetId));
+            await scoresheetRepository.update(
+              {
+                input: {
+                  id: returnedSharedScoresheet.scoresheetId,
+                  name: sharedScoresheetInput.name,
+                  winCondition: sharedScoresheetInput.winCondition,
+                  isCoop: sharedScoresheetInput.isCoop,
+                  roundsScore: sharedScoresheetInput.roundsScore,
+                  targetScore: sharedScoresheetInput.targetScore,
+                },
+                tx,
+              },
+            );
           }
-          await tx
-            .update(sharedScoresheet)
-            .set({
-              isDefault,
-            })
-            .where(eq(sharedScoresheet.id, returnedSharedScoresheet.id));
+          await scoresheetRepository.updateShared(
+            {
+              input: {
+                id: returnedSharedScoresheet.id,
+                isDefault,
+              },
+              tx,
+            },
+          );
         }
       }
 
@@ -1021,13 +1026,13 @@ class GameService {
         } else {
           const sharedScoresheetInput = inputScoresheet.scoresheet;
           if ("id" in sharedScoresheetInput) {
-            const returnedSharedScoresheet =
-              await tx.query.sharedScoresheet.findFirst({
-                where: {
-                  id: sharedScoresheetInput.id as number,
-                  sharedWithId: userId,
-                },
-              });
+            const returnedSharedScoresheet = await scoresheetRepository.getShared(
+              {
+                id: sharedScoresheetInput.id as number,
+                sharedWithId: userId,
+              },
+              tx,
+            );
             if (!returnedSharedScoresheet) {
               throw new TRPCError({
                 code: "NOT_FOUND",
@@ -1054,29 +1059,35 @@ class GameService {
               }
               return undefined;
             };
-            await tx
-              .update(scoresheet)
-              .set({
-                name: scoresheetData.name,
-                winCondition: scoresheetData.winCondition,
-                isCoop: scoresheetData.isCoop,
-                type: scoresheetType(),
-                roundsScore: scoresheetData.roundsScore,
-                targetScore: scoresheetData.targetScore,
-              })
-              .where(eq(scoresheet.id, scoresheetId));
+            await scoresheetRepository.update(
+              {
+                input: {
+                  id: scoresheetId,
+                  name: scoresheetData.name,
+                  winCondition: scoresheetData.winCondition,
+                  isCoop: scoresheetData.isCoop,
+                  type: scoresheetType(),
+                  roundsScore: scoresheetData.roundsScore,
+                  targetScore: scoresheetData.targetScore,
+                },
+                tx,
+              },
+            );
           }
           if (
             scoresheetData.scoresheetType === "shared" &&
             sharedScoresheetId &&
             "isDefault" in scoresheetData
           ) {
-            await tx
-              .update(sharedScoresheet)
-              .set({
-                isDefault: scoresheetData.isDefault as boolean,
-              })
-              .where(eq(sharedScoresheet.id, sharedScoresheetId));
+            await scoresheetRepository.updateShared(
+              {
+                input: {
+                  id: sharedScoresheetId,
+                  isDefault: scoresheetData.isDefault as boolean,
+                },
+                tx,
+              },
+            );
           }
         }
 
@@ -1094,16 +1105,24 @@ class GameService {
           inputScoresheet.roundsToAdd.length > 0 &&
           scoresheetPermission === "edit"
         ) {
-          await tx.insert(round).values(inputScoresheet.roundsToAdd);
+          await scoresheetRepository.insertRounds(
+            inputScoresheet.roundsToAdd,
+            tx,
+          );
         }
 
         if (
           inputScoresheet.roundsToDelete.length > 0 &&
           scoresheetPermission === "edit"
         ) {
-          await tx
-            .delete(round)
-            .where(inArray(round.id, inputScoresheet.roundsToDelete));
+          await scoresheetRepository.deleteRounds(
+            {
+              input: {
+                ids: inputScoresheet.roundsToDelete,
+              },
+              tx,
+            },
+          );
         }
       }
     }
@@ -1117,67 +1136,28 @@ class GameService {
     tx: TransactionType;
   }) {
     const { roundsToEdit, tx } = args;
-    const ids = roundsToEdit.map((p: { id: number }) => p.id);
-    const nameSqlChunks: SQL[] = [sql`(case`];
-    const scoreSqlChunks: SQL[] = [sql`(case`];
-    const typeSqlChunks: SQL[] = [sql`(case`];
-    const colorSqlChunks: SQL[] = [sql`(case`];
-    const lookupSqlChunks: SQL[] = [sql`(case`];
-    const modifierSqlChunks: SQL[] = [sql`(case`];
-
-    for (const inputRound of roundsToEdit) {
-      nameSqlChunks.push(
-        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.name}::varchar`}`,
-      );
-      scoreSqlChunks.push(
-        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.score}::integer`}`,
-      );
-      typeSqlChunks.push(
-        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.type}::varchar`}`,
-      );
-      colorSqlChunks.push(
-        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.color}::varchar`}`,
-      );
-      lookupSqlChunks.push(
-        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.lookup}::integer`}`,
-      );
-      modifierSqlChunks.push(
-        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.modifier}::integer`}`,
-      );
-    }
-
-    nameSqlChunks.push(sql`end)`);
-    scoreSqlChunks.push(sql`end)`);
-    typeSqlChunks.push(sql`end)`);
-    colorSqlChunks.push(sql`end)`);
-    lookupSqlChunks.push(sql`end)`);
-    modifierSqlChunks.push(sql`end)`);
-
-    const finalNameSql = sql.join(nameSqlChunks, sql.raw(" "));
-    const finalScoreSql = sql.join(scoreSqlChunks, sql.raw(" "));
-    const finalTypeSql = sql.join(typeSqlChunks, sql.raw(" "));
-    const finalColorSql = sql.join(colorSqlChunks, sql.raw(" "));
-    const finalLookupSql = sql.join(lookupSqlChunks, sql.raw(" "));
-    const finalModifierSql = sql.join(modifierSqlChunks, sql.raw(" "));
-
-    await tx
-      .update(round)
-      .set({
-        name: finalNameSql,
-        score: finalScoreSql,
-        type: finalTypeSql,
-        color: finalColorSql,
-        lookup: finalLookupSql,
-        modifier: finalModifierSql,
-      })
-      .where(inArray(round.id, ids));
+    await scoresheetRepository.updateRounds(
+      {
+        input: roundsToEdit.map((round) => ({
+          id: round.id,
+          name: round.name,
+          score: round.score,
+          type: round.type,
+          color: round.color,
+          lookup: round.lookup,
+          modifier: round.modifier,
+        })),
+        tx,
+      },
+    );
   }
 
   private async deleteScoresheets(args: {
     input: EditGameArgs["input"]["scoresheetsToDelete"];
+    userId: string;
     tx: TransactionType;
   }) {
-    const { input, tx } = args;
+    const { input, userId, tx } = args;
     const sharedScoresheetsToDelete = input.filter(
       (scoresheetDelete) => scoresheetDelete.scoresheetType === "shared",
     );
@@ -1186,24 +1166,30 @@ class GameService {
     );
 
     if (originalScoresheetsToDelete.length > 0) {
-      await tx
-        .update(scoresheet)
-        .set({ deletedAt: new Date() })
-        .where(
-          inArray(
-            scoresheet.id,
-            originalScoresheetsToDelete.map((s) => s.id),
-          ),
+      for (const scoresheetToDelete of originalScoresheetsToDelete) {
+        await scoresheetRepository.deleteScoresheet(
+          {
+            input: {
+              id: scoresheetToDelete.id,
+              createdBy: userId,
+            },
+            tx,
+          },
         );
+      }
     }
 
     if (sharedScoresheetsToDelete.length > 0) {
-      await tx.delete(sharedScoresheet).where(
-        inArray(
-          sharedScoresheet.id,
-          sharedScoresheetsToDelete.map((s) => s.id),
-        ),
-      );
+      for (const sharedScoresheetToDelete of sharedScoresheetsToDelete) {
+        await scoresheetRepository.deleteSharedScoresheet(
+          {
+            input: {
+              id: sharedScoresheetToDelete.id,
+            },
+            tx,
+          },
+        );
+      }
     }
   }
 
@@ -1220,24 +1206,25 @@ class GameService {
       return imageInput.imageId;
     }
 
-    const existingSvg = await tx.query.image.findFirst({
-      where: {
+    const existingSvg = await imageRepository.findFirst(
+      {
         name: imageInput.name,
         type: "svg",
         usageType: "game",
       },
-    });
+      tx,
+    );
     if (existingSvg) {
       return existingSvg.id;
     }
-    const [returnedImage] = await tx
-      .insert(image)
-      .values({
+    const returnedImage = await imageRepository.insert(
+      {
         type: "svg",
         name: imageInput.name,
         usageType: "game",
-      })
-      .returning();
+      },
+      tx,
+    );
     assertInserted(
       returnedImage,
       {
