@@ -7,6 +7,10 @@ import type {
   QueryConfig,
   TransactionType,
 } from "@board-games/db/client";
+import type {
+  scoreSheetRoundsScore,
+  scoreSheetWinConditions,
+} from "@board-games/db/constants";
 import { db } from "@board-games/db/client";
 import { round, scoresheet, sharedScoresheet } from "@board-games/db/schema";
 
@@ -247,10 +251,10 @@ class ScoresheetRepository {
     input: {
       id: number;
       name?: string;
-      winCondition?: string;
+      winCondition?: (typeof scoreSheetWinConditions)[number];
       isCoop?: boolean;
       type?: "Template" | "Default" | "Match" | "Game";
-      roundsScore?: string;
+      roundsScore?: (typeof scoreSheetRoundsScore)[number];
       targetScore?: number;
     };
     tx?: TransactionType;
@@ -285,7 +289,7 @@ class ScoresheetRepository {
   }
 
   public async updateRounds(args: {
-    input: Array<{
+    input: {
       id: number;
       name?: string;
       score?: number;
@@ -293,7 +297,7 @@ class ScoresheetRepository {
       color?: string | null;
       lookup?: number | null;
       modifier?: number | null;
-    }>;
+    }[];
     tx?: TransactionType;
   }) {
     const { input, tx } = args;
