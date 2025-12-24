@@ -5,6 +5,7 @@ import { Plus, Search, SquarePen, Trash2 } from "lucide-react";
 import z from "zod";
 
 import { editRoleSchema } from "@board-games/shared";
+import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import {
   Card,
@@ -51,13 +52,9 @@ export const RolesForm = withFieldGroup({
     return (
       <group.Subscribe selector={(state) => state.values.roles}>
         {(roles) => {
-          const rolesWithType = roles.map((r) => ({
-            ...r,
-            type: "original" as const,
-          }));
           const searchTerm = roleSearchTerm.toLowerCase();
 
-          const filteredRoles = rolesWithType.filter(
+          const filteredRoles = roles.filter(
             (role) =>
               role.name.toLowerCase().includes(searchTerm) ||
               role.description?.toLowerCase().includes(searchTerm),
@@ -149,14 +146,17 @@ export const RolesForm = withFieldGroup({
                                   type="button"
                                   disabled={newGameRole.name === ""}
                                   onClick={() => {
-                                    const minId = Math.min(
-                                      ...field.state.value.map(
-                                        (role) => role.id,
-                                      ),
-                                      0,
-                                    );
+                                    // Generate a temporary negative id for new roles
+                                    const existingIds = field.state.value
+                                      .filter((r) => r.type === "new")
+                                      .map((r) => r.id);
+                                    const minId =
+                                      existingIds.length > 0
+                                        ? Math.min(...existingIds)
+                                        : 0;
                                     field.pushValue({
-                                      id: isNaN(minId) ? -1 : minId - 1,
+                                      type: "new",
+                                      id: minId - 1,
                                       name: newGameRole.name,
                                       description: newGameRole.description,
                                     });
@@ -185,15 +185,56 @@ export const RolesForm = withFieldGroup({
                             </Button>
                           )}
                           {filteredRoles.map((role) => {
-                            const roleIndex = roles.findIndex(
-                              (r) => r.id === role.id,
-                            );
-                            if (roleIndex === editGameRoleIndex) {
+                            // Find the index in the original roles array
+                            const roleIndex = roles.findIndex((r) => {
+                              if (r.type === "new" && role.type === "new") {
+                                // For new roles, compare by id
+                                return r.id === role.id;
+                              }
+                              if (
+                                r.type === "original" &&
+                                role.type === "original"
+                              ) {
+                                return r.id === role.id;
+                              }
+                              if (
+                                r.type === "shared" &&
+                                role.type === "shared"
+                              ) {
+                                return r.sharedId === role.sharedId;
+                              }
+                              return false;
+                            });
+
+                            // If not found, it might be a new role that hasn't been added yet
+                            const actualRoleIndex =
+                              roleIndex >= 0 ? roleIndex : roles.length;
+
+                            const isShared = role.type === "shared";
+                            const canEdit =
+                              role.type === "new" ||
+                              role.type === "original" ||
+                              (role.type === "shared" &&
+                                role.permission === "edit");
+
+                            if (
+                              actualRoleIndex === editGameRoleIndex &&
+                              canEdit
+                            ) {
                               return (
-                                <Card key={role.id} className="gap-2 p-2 py-2">
+                                <Card
+                                  key={
+                                    role.type === "original"
+                                      ? role.id
+                                      : role.type === "shared"
+                                        ? role.sharedId
+                                        : role.id
+                                  }
+                                  className="gap-2 p-2 py-2"
+                                >
                                   <CardContent className="flex flex-col gap-2 px-2">
                                     <group.AppField
-                                      name={`roles[${roleIndex}].name`}
+                                      name={`roles[${actualRoleIndex}].name`}
                                     >
                                       {(field) => {
                                         const isInvalid =
@@ -214,6 +255,7 @@ export const RolesForm = withFieldGroup({
                                                 )
                                               }
                                               aria-invalid={isInvalid}
+                                              disabled={!canEdit}
                                             />
                                             {isInvalid && (
                                               <FieldError
@@ -225,7 +267,7 @@ export const RolesForm = withFieldGroup({
                                       }}
                                     </group.AppField>
                                     <group.AppField
-                                      name={`roles[${roleIndex}].description`}
+                                      name={`roles[${actualRoleIndex}].description`}
                                     >
                                       {(field) => {
                                         const isInvalid =
@@ -251,6 +293,7 @@ export const RolesForm = withFieldGroup({
                                                 );
                                               }}
                                               aria-invalid={isInvalid}
+                                              disabled={!canEdit}
                                             />
                                             {isInvalid && (
                                               <FieldError
@@ -279,13 +322,44 @@ export const RolesForm = withFieldGroup({
                             }
 
                             return (
-                              <Card key={role.id} className="p-2 py-2">
+                              <Card
+                                key={
+                                  role.type === "original"
+                                    ? role.id
+                                    : role.type === "shared"
+                                      ? role.sharedId
+                                      : role.id
+                                }
+                                className="p-2 py-2"
+                              >
                                 <CardContent className="flex flex-row justify-between gap-2 px-4">
                                   <div className="flex flex-1 items-center gap-3">
                                     <div className="flex-1">
-                                      <h4 className="text-sm font-medium">
-                                        {role.name}
-                                      </h4>
+                                      <div className="flex items-center gap-2">
+                                        <h4 className="text-sm font-medium">
+                                          {role.name}
+                                        </h4>
+                                        {isShared && (
+                                          <Badge
+                                            variant="outline"
+                                            className="bg-blue-600 text-xs text-white"
+                                          >
+                                            Shared
+                                          </Badge>
+                                        )}
+                                        {isShared && (
+                                          <Badge
+                                            variant={
+                                              role.permission === "edit"
+                                                ? "default"
+                                                : "secondary"
+                                            }
+                                            className="text-xs"
+                                          >
+                                            {role.permission}
+                                          </Badge>
+                                        )}
+                                      </div>
                                       {role.description && (
                                         <p className="text-muted-foreground max-w-xs truncate text-xs">
                                           {role.description}
@@ -294,29 +368,35 @@ export const RolesForm = withFieldGroup({
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-1">
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() =>
-                                        setEditGameRoleIndex(roleIndex)
-                                      }
-                                      aria-label="Edit role"
-                                    >
-                                      <SquarePen className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => {
-                                        field.removeValue(roleIndex);
-                                      }}
-                                      className="text-destructive hover:text-destructive"
-                                      aria-label="Remove role"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                    {canEdit && actualRoleIndex >= 0 && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() =>
+                                          setEditGameRoleIndex(actualRoleIndex)
+                                        }
+                                        aria-label="Edit role"
+                                      >
+                                        <SquarePen className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                    {actualRoleIndex >= 0 &&
+                                      (role.type !== "shared" ||
+                                        role.permission === "edit") && (
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => {
+                                            field.removeValue(actualRoleIndex);
+                                          }}
+                                          className="text-destructive hover:text-destructive"
+                                          aria-label="Remove role"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      )}
                                   </div>
                                 </CardContent>
                               </Card>

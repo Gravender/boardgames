@@ -41,8 +41,8 @@ import {
 import { useTRPC } from "~/trpc/react";
 import { EditSharedMatchForm } from "./edit-shared-match-dialog-content";
 
-type Game = NonNullable<RouterOutputs["game"]["getGame"]>;
-export function MatchDropDown({ match }: { match: Game["matches"][number] }) {
+type Matches = NonNullable<RouterOutputs["newGame"]["gameMatches"]>;
+export function MatchDropDown({ match }: { match: Matches[number] }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isSharingEditDialog, setIsSharingEditDialogOpen] = useState(false);
 
@@ -73,7 +73,7 @@ export function MatchDropDown({ match }: { match: Game["matches"][number] }) {
             <DropdownMenuItem asChild>
               <Link
                 prefetch={true}
-                href={`/dashboard/games/${match.gameId}/${match.id}/edit`}
+                href={`/dashboard/games/${match.game.id}/${match.id}/edit`}
                 className="flex items-center gap-2"
               >
                 <PencilIcon className="mr-2 h-4 w-4" />
@@ -92,8 +92,8 @@ export function MatchDropDown({ match }: { match: Game["matches"][number] }) {
               prefetch={true}
               href={
                 match.type === "shared"
-                  ? `/dashboard/games/shared/${match.gameId}/${match.id}`
-                  : `/dashboard/games/${match.gameId}/${match.id}`
+                  ? `/dashboard/games/shared/${match.game.sharedGameId}/${match.id}`
+                  : `/dashboard/games/${match.game.id}/${match.id}`
               }
               className="flex items-center gap-2"
             >
@@ -107,8 +107,8 @@ export function MatchDropDown({ match }: { match: Game["matches"][number] }) {
                 prefetch={true}
                 href={
                   match.type === "shared"
-                    ? `/dashboard/games/shared/${match.gameId}/${match.id}/summary`
-                    : `/dashboard/games/${match.gameId}/${match.id}/summary`
+                    ? `/dashboard/games/shared/${match.game.sharedGameId}/${match.id}/summary`
+                    : `/dashboard/games/${match.game.id}/${match.id}/summary`
                 }
                 className="flex items-center gap-2"
               >
@@ -122,7 +122,7 @@ export function MatchDropDown({ match }: { match: Game["matches"][number] }) {
               <DropdownMenuItem asChild>
                 <Link
                   prefetch={true}
-                  href={`/dashboard/games/${match.gameId}/${match.id}/share`}
+                  href={`/dashboard/games/${match.game.id}/${match.id}/share`}
                   className="flex items-center gap-2"
                 >
                   <Link2Icon className="mr-2 h-4 w-4" />

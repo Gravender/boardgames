@@ -1,22 +1,22 @@
 "use client";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { EyeIcon, PencilIcon } from "lucide-react";
 
 import { Badge } from "@board-games/ui/badge";
 
 import { GameImage } from "~/components/game-image";
+import { useGame } from "~/components/game/hooks/game";
+import { useGameMatches } from "~/components/game/hooks/matches";
 import { AddMatchDialog } from "~/components/match/add/index";
-import { useTRPC } from "~/trpc/react";
 import { GameDetails } from "../../../_components/game-details";
 import { MatchesList } from "../../../_components/matches-list";
 
 export default function SharedGameDetails({ gameId }: { gameId: number }) {
-  const trpc = useTRPC();
-  const { data: game } = useSuspenseQuery(
-    trpc.sharing.getSharedGame.queryOptions({ id: gameId }),
-  );
-  if (game === null) return null;
+  const { game } = useGame({ sharedGameId: gameId, type: "shared" });
+  const { gameMatches } = useGameMatches({
+    sharedGameId: gameId,
+    type: "shared",
+  });
   return (
     <div>
       {/* Game details section */}
@@ -58,7 +58,7 @@ export default function SharedGameDetails({ gameId }: { gameId: number }) {
             players={game.players}
             playtime={game.playtime}
             yearPublished={game.yearPublished}
-            matchesCount={game.matches.length}
+            matchesCount={gameMatches.length}
             isShared={true}
           />
         </div>
@@ -69,7 +69,7 @@ export default function SharedGameDetails({ gameId }: { gameId: number }) {
         <div className="mb-3 flex items-center justify-between md:mb-4">
           <h2 className="text-xl font-semibold md:text-2xl">Match History</h2>
         </div>
-        <MatchesList matches={game.matches} isShared={true} />
+        <MatchesList matches={gameMatches} isShared={true} />
         <div className="absolute right-6 bottom-4 z-10 sm:right-10">
           <AddMatchDialog
             game={{
@@ -77,7 +77,7 @@ export default function SharedGameDetails({ gameId }: { gameId: number }) {
               sharedGameId: gameId,
             }}
             gameName={game.name}
-            matches={game.matches.length}
+            matches={gameMatches.length}
           />
         </div>
       </div>
