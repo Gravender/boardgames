@@ -2,8 +2,8 @@ import { TRPCError } from "@trpc/server";
 
 import type { TransactionType } from "@board-games/db/client";
 
+import { gameRepository } from "../../repositories/game/game.repository";
 import { matchUpdatePlayerRoleRepository } from "../../repositories/match/match-update-player-role.repository";
-import { gameRepository } from "../../routers/game/repository/game.repository";
 import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
