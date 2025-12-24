@@ -102,6 +102,7 @@ export async function createGameWithScoresheetViaTrpc(
     (config) => ({
       scoresheet: {
         name: config.name,
+        isDefault: config.isDefault ?? false,
         winCondition: config.winCondition,
         isCoop: config.isCoop ?? false,
         targetScore: config.targetScore ?? 0,
