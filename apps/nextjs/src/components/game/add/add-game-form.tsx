@@ -192,6 +192,8 @@ export function AddGameForm({
                   onBack={() => {
                     form.setFieldValue("activeForm", "game");
                   }}
+                  roundsEditable={true}
+                  scoresheetEditable={true}
                 />
               )}
               {activeForm === "game" && (

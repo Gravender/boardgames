@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { caller, HydrateClient } from "~/trpc/server";
-import { EditGameForm } from "./_components/editGameForm";
+import { EditGameForm } from "~/components/game/edit/edit-game-form";
 
 export default async function Page({
   params,

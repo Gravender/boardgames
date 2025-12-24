@@ -221,15 +221,15 @@ const baseEditScoresheetSchema = {
 };
 const originalEditScoresheetSchema = scoreSheetSchema.safeExtend({
   scoresheetType: z.literal("original"),
-  ...baseEditScoresheetSchema,
+  scoresheet: baseEditScoresheetSchema,
 });
 const sharedEditScoresheetSchema = scoreSheetSchema.safeExtend({
   scoresheetType: z.literal("shared"),
-  ...baseEditScoresheetSchema,
+  scoresheet: baseEditScoresheetSchema,
 });
 const newEditScoresheetSchema = scoreSheetSchema.safeExtend({
-  ...baseEditScoresheetSchema,
   id: z.null(),
+  scoresheet: baseEditScoresheetSchema,
 });
 export const editScoresheetSchemaForm = z
   .discriminatedUnion("scoresheetType", [
@@ -239,6 +239,7 @@ export const editScoresheetSchemaForm = z
       rounds: roundsSchema,
     }),
     sharedEditScoresheetSchema.safeExtend({
+      scoresheetType: z.literal("shared"),
       permission: z.literal("view").or(z.literal("edit")),
       scoreSheetChanged: z.boolean(),
       roundChanged: z.boolean(),

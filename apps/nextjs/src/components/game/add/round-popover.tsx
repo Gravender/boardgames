@@ -32,13 +32,21 @@ const defaultValues: {
 
 export const RoundPopOver = withFieldGroup({
   defaultValues,
-  render: function Render({ group }) {
+  props: {
+    disabled: false,
+  },
+  render: function Render({ group, disabled }) {
     const roundTypeOptions = roundTypes;
 
     return (
       <Popover>
         <PopoverTrigger asChild>
-          <Button type="button" variant="outline" size="icon">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            disabled={disabled}
+          >
             <Settings />
           </Button>
         </PopoverTrigger>
