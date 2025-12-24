@@ -53,3 +53,6 @@ export const getGameScoresheetsOutput = z.array(
 export type GetGameScoresheetsOutputType = z.infer<
   typeof getGameScoresheetsOutput
 >;
+
+export const editGameOutput = z.void();
+export type EditGameOutputType = z.infer<typeof editGameOutput>;

@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, isNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { caseWhen } from "drizzle-plus";
 import { jsonAgg, jsonAggNotNull, jsonBuildObject } from "drizzle-plus/pg";
 
@@ -29,9 +29,12 @@ import type {
   CreateGameArgs,
   CreateGameRoleArgs,
   CreateGameRolesArgs,
+  DeleteGameRoleArgs,
   GetGameArgs,
   GetGameMatchesOutputType,
   GetGameRolesArgs,
+  UpdateGameArgs,
+  UpdateGameRoleArgs,
 } from "./game.repository.types";
 
 interface GameBaseFilter {
@@ -466,6 +469,54 @@ class GameRepository {
     return {
       rows,
     };
+  }
+
+  public async updateGame(args: UpdateGameArgs) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [updatedGame] = await database
+      .update(game)
+      .set({
+        name: input.name,
+        ownedBy: input.ownedBy,
+        playersMin: input.playersMin,
+        playersMax: input.playersMax,
+        playtimeMin: input.playtimeMin,
+        playtimeMax: input.playtimeMax,
+        yearPublished: input.yearPublished,
+        imageId: input.imageId,
+      })
+      .where(eq(game.id, input.id))
+      .returning();
+    return updatedGame;
+  }
+
+  public async updateGameRole(args: UpdateGameRoleArgs) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    await database
+      .update(gameRole)
+      .set({
+        name: input.name,
+        description: input.description,
+      })
+      .where(eq(gameRole.id, input.id));
+  }
+
+  public async deleteGameRole(args: DeleteGameRoleArgs) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    await database
+      .update(gameRole)
+      .set({
+        deletedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(gameRole.gameId, input.gameId),
+          inArray(gameRole.id, input.roleIds),
+        ),
+      );
   }
 }
 export const gameRepository = new GameRepository();

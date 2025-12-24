@@ -5,6 +5,7 @@ import {
   insertRoundSchema,
   insertScoreSheetSchema,
 } from "@board-games/db/zodSchema";
+import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 export const getGameInput = z.discriminatedUnion("type", [
   z.object({
@@ -78,3 +79,55 @@ export const createGameInput = z.object({
 });
 
 export type CreateGameInputType = z.infer<typeof createGameInput>;
+
+export const editGameInput = z.object({
+  game: z.discriminatedUnion("type", [
+    z.object({
+      type: z.literal("updateGame"),
+      id: z.number(),
+      name: z.string().optional(),
+      ownedBy: z.boolean().nullish(),
+      image: z
+        .discriminatedUnion("type", [
+          z.object({
+            type: z.literal("file"),
+            imageId: z.number(),
+          }),
+          z.object({
+            type: z.literal("svg"),
+            name: z.string(),
+          }),
+        ])
+        .nullish(),
+      playersMin: z.number().nullish(),
+      playersMax: z.number().nullish(),
+      playtimeMin: z.number().nullish(),
+      playtimeMax: z.number().nullish(),
+      yearPublished: z.number().nullish(),
+    }),
+    z.object({ type: z.literal("default"), id: z.number() }),
+  ]),
+  scoresheets: z.array(editScoresheetSchemaApiInput),
+  scoresheetsToDelete: z.array(
+    z.object({
+      id: z.number(),
+      scoresheetType: z.literal("original").or(z.literal("shared")),
+    }),
+  ),
+  updatedRoles: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      description: z.string().nullable(),
+    }),
+  ),
+  newRoles: z.array(
+    z.object({
+      name: z.string(),
+      description: z.string().nullable(),
+    }),
+  ),
+  deletedRoles: z.array(z.number()),
+});
+
+export type EditGameInputType = z.infer<typeof editGameInput>;

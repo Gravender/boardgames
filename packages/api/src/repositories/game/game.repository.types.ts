@@ -95,3 +95,35 @@ export interface GetGameRolesArgs {
   userId: string;
   tx: TransactionType;
 }
+
+export interface UpdateGameArgs {
+  input: {
+    id: number;
+    name?: string;
+    ownedBy?: boolean | null;
+    playersMin?: number | null;
+    playersMax?: number | null;
+    playtimeMin?: number | null;
+    playtimeMax?: number | null;
+    yearPublished?: number | null;
+    imageId?: number | null;
+  };
+  tx?: TransactionType;
+}
+
+export interface UpdateGameRoleArgs {
+  input: {
+    id: number;
+    name: string;
+    description: string | null;
+  };
+  tx?: TransactionType;
+}
+
+export interface DeleteGameRoleArgs {
+  input: {
+    gameId: number;
+    roleIds: number[];
+  };
+  tx?: TransactionType;
+}

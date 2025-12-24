@@ -1,8 +1,17 @@
+import type { SQL } from "drizzle-orm";
+import type { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
+import { eq, inArray, sql } from "drizzle-orm";
 
 import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
-import { image } from "@board-games/db/schema";
+import {
+  image,
+  round,
+  scoresheet,
+  sharedScoresheet,
+} from "@board-games/db/schema";
+import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 import type {
   GetGameMatchesOutputType,
@@ -11,6 +20,7 @@ import type {
 } from "../../routers/game/game.output";
 import type {
   CreateGameArgs,
+  EditGameArgs,
   GetGameArgs,
   GetGameRolesArgs,
   GetGameScoresheetsArgs,
@@ -610,6 +620,593 @@ class GameService {
     });
     return response;
   }
+  public async editGame(args: EditGameArgs) {
+    const {
+      input,
+      ctx: { userId, posthog, deleteFiles },
+    } = args;
+
+    const existingGame = await gameRepository.getGame({
+      id: input.game.id,
+      createdBy: userId,
+    });
+
+    assertFound(
+      existingGame,
+      {
+        userId,
+        value: input.game,
+      },
+      "Game not found.",
+    );
+
+    await db.transaction(async (tx) => {
+      await this.updateGameRoles({
+        input: {
+          updatedRoles: input.updatedRoles,
+          newRoles: input.newRoles,
+          deletedRoles: input.deletedRoles,
+        },
+        gameId: existingGame.id,
+        userId,
+        tx,
+      });
+
+      if (input.game.type === "updateGame") {
+        await this.updateGameDetails({
+          input: input.game,
+          existingGame,
+          userId,
+          posthog,
+          deleteFiles,
+          tx,
+        });
+      }
+
+      if (input.scoresheets.length > 0) {
+        await this.updateScoresheets({
+          input: input.scoresheets,
+          gameId: existingGame.id,
+          userId,
+          tx,
+        });
+      }
+
+      if (input.scoresheetsToDelete.length > 0) {
+        await this.deleteScoresheets({
+          input: input.scoresheetsToDelete,
+          tx,
+        });
+      }
+    });
+  }
+
+  private async updateGameRoles(args: {
+    input: {
+      updatedRoles: EditGameArgs["input"]["updatedRoles"];
+      newRoles: EditGameArgs["input"]["newRoles"];
+      deletedRoles: EditGameArgs["input"]["deletedRoles"];
+    };
+    gameId: number;
+    userId: string;
+    tx: TransactionType;
+  }) {
+    const { input, gameId, userId, tx } = args;
+
+    if (input.updatedRoles.length > 0) {
+      for (const updatedRole of input.updatedRoles) {
+        await gameRepository.updateGameRole({
+          input: {
+            id: updatedRole.id,
+            name: updatedRole.name,
+            description: updatedRole.description,
+          },
+          tx,
+        });
+      }
+    }
+
+    if (input.newRoles.length > 0) {
+      await gameRepository.createGameRoles({
+        input: input.newRoles.map((newRole) => ({
+          name: newRole.name,
+          description: newRole.description,
+          gameId,
+          createdBy: userId,
+        })),
+        tx,
+      });
+    }
+
+    if (input.deletedRoles.length > 0) {
+      await gameRepository.deleteGameRole({
+        input: {
+          gameId,
+          roleIds: input.deletedRoles,
+        },
+        tx,
+      });
+    }
+  }
+
+  private async updateGameDetails(args: {
+    input: Extract<EditGameArgs["input"]["game"], { type: "updateGame" }>;
+    existingGame: { id: number; imageId: number | null };
+    userId: string;
+    posthog: EditGameArgs["ctx"]["posthog"];
+    deleteFiles: EditGameArgs["ctx"]["deleteFiles"];
+    tx: TransactionType;
+  }) {
+    const { input, existingGame, userId, posthog, deleteFiles, tx } = args;
+
+    let imageId: number | null | undefined = undefined;
+    if (input.image !== undefined) {
+      const existingImage = existingGame.imageId
+        ? await tx.query.image.findFirst({
+            where: {
+              id: existingGame.imageId,
+            },
+          })
+        : null;
+
+      imageId = await this.resolveImageIdForEdit({
+        imageInput: input.image,
+        existingImage,
+        userId,
+        posthog,
+        deleteFiles,
+        tx,
+      });
+    }
+
+    await gameRepository.updateGame({
+      input: {
+        id: existingGame.id,
+        name: input.name,
+        ownedBy: input.ownedBy,
+        playersMin: input.playersMin,
+        playersMax: input.playersMax,
+        playtimeMin: input.playtimeMin,
+        playtimeMax: input.playtimeMax,
+        yearPublished: input.yearPublished,
+        imageId,
+      },
+      tx,
+    });
+  }
+
+  private async resolveImageIdForEdit(args: {
+    imageInput: Extract<
+      EditGameArgs["input"]["game"],
+      { type: "updateGame" }
+    >["image"];
+    existingImage:
+      | {
+          type: string;
+          fileId: string | null;
+          name: string;
+          id: number;
+        }
+      | null
+      | undefined;
+    userId: string;
+    posthog: EditGameArgs["ctx"]["posthog"];
+    deleteFiles: EditGameArgs["ctx"]["deleteFiles"];
+    tx: TransactionType;
+  }): Promise<number | null | undefined> {
+    const { imageInput, existingImage, userId, posthog, deleteFiles, tx } =
+      args;
+    if (imageInput === undefined) {
+      return undefined;
+    }
+
+    if (imageInput === null) {
+      if (existingImage?.type === "file" && existingImage.fileId) {
+        await posthog.captureImmediate({
+          distinctId: userId,
+          event: "uploadthing begin image delete",
+          properties: {
+            imageName: existingImage.name,
+            imageId: existingImage.id,
+            fileId: existingImage.fileId,
+          },
+        });
+        const result = await deleteFiles(existingImage.fileId);
+        if (!result.success) {
+          await posthog.captureImmediate({
+            distinctId: userId,
+            event: "uploadthing image delete error",
+            properties: {
+              imageName: existingImage.name,
+              imageId: existingImage.id,
+              fileId: existingImage.fileId,
+            },
+          });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        }
+      }
+      return null;
+    }
+
+    if (imageInput.type === "file") {
+      if (existingImage?.type === "file" && existingImage.fileId) {
+        await posthog.captureImmediate({
+          distinctId: userId,
+          event: "uploadthing begin image delete",
+          properties: {
+            imageName: existingImage.name,
+            imageId: existingImage.id,
+            fileId: existingImage.fileId,
+          },
+        });
+        const result = await deleteFiles(existingImage.fileId);
+        if (!result.success) {
+          await posthog.captureImmediate({
+            distinctId: userId,
+            event: "uploadthing image delete error",
+            properties: {
+              imageName: existingImage.name,
+              imageId: existingImage.id,
+              fileId: existingImage.fileId,
+            },
+          });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        }
+      }
+      return imageInput.imageId;
+    }
+
+    if (imageInput.type === "svg") {
+      const existingSvg = await tx.query.image.findFirst({
+        where: {
+          name: imageInput.name,
+          type: "svg",
+          usageType: "game",
+        },
+      });
+      if (existingSvg) {
+        return existingSvg.id;
+      }
+      const [returnedImage] = await tx
+        .insert(image)
+        .values({
+          type: "svg",
+          name: imageInput.name,
+          usageType: "game",
+        })
+        .returning();
+      assertInserted(
+        returnedImage,
+        {
+          userId,
+          value: { image: imageInput },
+        },
+        "Failed to create image",
+      );
+      return returnedImage.id;
+    }
+
+    return undefined;
+  }
+
+  private async updateScoresheets(args: {
+    input: EditGameArgs["input"]["scoresheets"];
+    gameId: number;
+    userId: string;
+    tx: TransactionType;
+  }) {
+    const { input, gameId, userId, tx } = args;
+
+    for (const inputScoresheet of input) {
+      if (inputScoresheet.type === "New") {
+        const returnedScoresheet = await scoresheetRepository.insert(
+          {
+            name: inputScoresheet.scoresheet.name,
+            winCondition: inputScoresheet.scoresheet.winCondition,
+            isCoop: inputScoresheet.scoresheet.isCoop,
+            roundsScore: inputScoresheet.scoresheet.roundsScore,
+            targetScore: inputScoresheet.scoresheet.targetScore,
+            createdBy: userId,
+            gameId,
+            type: "Game",
+          },
+          tx,
+        );
+        assertInserted(
+          returnedScoresheet,
+          {
+            userId,
+            value: { gameId },
+          },
+          "Failed to create scoresheet",
+        );
+
+        const roundsToInsert = inputScoresheet.rounds.map((round, index) => ({
+          name: round.name,
+          type: round.type,
+          score: round.score,
+          color: round.color,
+          lookup: round.lookup,
+          modifier: round.modifier,
+          scoresheetId: returnedScoresheet.id,
+          order: index + 1,
+        }));
+        await scoresheetRepository.insertRounds(roundsToInsert, tx);
+      }
+
+      if (inputScoresheet.type === "Update Scoresheet") {
+        if (inputScoresheet.scoresheet.scoresheetType === "original") {
+          const originalScoresheet = inputScoresheet.scoresheet;
+          const scoresheetId = (
+            originalScoresheet.scoresheet as { id: number; isDefault?: boolean }
+          ).id;
+          const isDefault =
+            (
+              originalScoresheet.scoresheet as {
+                id: number;
+                isDefault?: boolean;
+              }
+            ).isDefault ?? false;
+          await tx
+            .update(scoresheet)
+            .set({
+              name: originalScoresheet.name,
+              winCondition: originalScoresheet.winCondition,
+              isCoop: originalScoresheet.isCoop,
+              type: isDefault ? "Default" : "Game",
+              roundsScore: originalScoresheet.roundsScore,
+              targetScore: originalScoresheet.targetScore,
+            })
+            .where(eq(scoresheet.id, scoresheetId));
+        } else {
+          const sharedScoresheetInput = inputScoresheet.scoresheet;
+          const sharedScoresheetId = (
+            sharedScoresheetInput.scoresheet as {
+              id: number;
+              isDefault?: boolean;
+            }
+          ).id;
+          const isDefault =
+            (
+              sharedScoresheetInput.scoresheet as {
+                id: number;
+                isDefault?: boolean;
+              }
+            ).isDefault ?? false;
+          const returnedSharedScoresheet =
+            await tx.query.sharedScoresheet.findFirst({
+              where: {
+                id: sharedScoresheetId,
+                sharedWithId: userId,
+              },
+            });
+          if (!returnedSharedScoresheet) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Shared scoresheet not found.",
+            });
+          }
+          if (returnedSharedScoresheet.permission === "edit") {
+            await tx
+              .update(scoresheet)
+              .set({
+                name: sharedScoresheetInput.name,
+                winCondition: sharedScoresheetInput.winCondition,
+                isCoop: sharedScoresheetInput.isCoop,
+                roundsScore: sharedScoresheetInput.roundsScore,
+                targetScore: sharedScoresheetInput.targetScore,
+              })
+              .where(eq(scoresheet.id, returnedSharedScoresheet.scoresheetId));
+          }
+          await tx
+            .update(sharedScoresheet)
+            .set({
+              isDefault,
+            })
+            .where(eq(sharedScoresheet.id, returnedSharedScoresheet.id));
+        }
+      }
+
+      if (inputScoresheet.type === "Update Scoresheet & Rounds") {
+        let scoresheetId: number | undefined = undefined;
+        let sharedScoresheetId: number | undefined = undefined;
+        let scoresheetPermission: "view" | "edit" = "view";
+
+        if (inputScoresheet.scoresheet.scoresheetType === "original") {
+          const originalScoresheet = inputScoresheet.scoresheet;
+          if ("id" in originalScoresheet) {
+            scoresheetId = originalScoresheet.id as number;
+          }
+          scoresheetPermission = "edit";
+        } else {
+          const sharedScoresheetInput = inputScoresheet.scoresheet;
+          if ("id" in sharedScoresheetInput) {
+            const returnedSharedScoresheet =
+              await tx.query.sharedScoresheet.findFirst({
+                where: {
+                  id: sharedScoresheetInput.id as number,
+                  sharedWithId: userId,
+                },
+              });
+            if (!returnedSharedScoresheet) {
+              throw new TRPCError({
+                code: "NOT_FOUND",
+                message: "Shared scoresheet not found.",
+              });
+            }
+            scoresheetId = returnedSharedScoresheet.scoresheetId;
+            sharedScoresheetId = returnedSharedScoresheet.id;
+            scoresheetPermission = returnedSharedScoresheet.permission;
+          }
+        }
+
+        if ("name" in inputScoresheet.scoresheet && scoresheetId) {
+          const scoresheetData = inputScoresheet.scoresheet;
+          if (scoresheetPermission === "edit") {
+            const scoresheetType = () => {
+              if (
+                scoresheetData.scoresheetType === "original" &&
+                "isDefault" in scoresheetData
+              ) {
+                return (scoresheetData.isDefault as boolean)
+                  ? "Default"
+                  : "Game";
+              }
+              return undefined;
+            };
+            await tx
+              .update(scoresheet)
+              .set({
+                name: scoresheetData.name,
+                winCondition: scoresheetData.winCondition,
+                isCoop: scoresheetData.isCoop,
+                type: scoresheetType(),
+                roundsScore: scoresheetData.roundsScore,
+                targetScore: scoresheetData.targetScore,
+              })
+              .where(eq(scoresheet.id, scoresheetId));
+          }
+          if (
+            scoresheetData.scoresheetType === "shared" &&
+            sharedScoresheetId &&
+            "isDefault" in scoresheetData
+          ) {
+            await tx
+              .update(sharedScoresheet)
+              .set({
+                isDefault: scoresheetData.isDefault as boolean,
+              })
+              .where(eq(sharedScoresheet.id, sharedScoresheetId));
+          }
+        }
+
+        if (
+          inputScoresheet.roundsToEdit.length > 0 &&
+          scoresheetPermission === "edit"
+        ) {
+          await this.bulkUpdateRounds({
+            roundsToEdit: inputScoresheet.roundsToEdit,
+            tx,
+          });
+        }
+
+        if (
+          inputScoresheet.roundsToAdd.length > 0 &&
+          scoresheetPermission === "edit"
+        ) {
+          await tx.insert(round).values(inputScoresheet.roundsToAdd);
+        }
+
+        if (
+          inputScoresheet.roundsToDelete.length > 0 &&
+          scoresheetPermission === "edit"
+        ) {
+          await tx
+            .delete(round)
+            .where(inArray(round.id, inputScoresheet.roundsToDelete));
+        }
+      }
+    }
+  }
+
+  private async bulkUpdateRounds(args: {
+    roundsToEdit: Extract<
+      z.infer<typeof editScoresheetSchemaApiInput>,
+      { type: "Update Scoresheet & Rounds" }
+    >["roundsToEdit"];
+    tx: TransactionType;
+  }) {
+    const { roundsToEdit, tx } = args;
+    const ids = roundsToEdit.map((p: { id: number }) => p.id);
+    const nameSqlChunks: SQL[] = [sql`(case`];
+    const scoreSqlChunks: SQL[] = [sql`(case`];
+    const typeSqlChunks: SQL[] = [sql`(case`];
+    const colorSqlChunks: SQL[] = [sql`(case`];
+    const lookupSqlChunks: SQL[] = [sql`(case`];
+    const modifierSqlChunks: SQL[] = [sql`(case`];
+
+    for (const inputRound of roundsToEdit) {
+      nameSqlChunks.push(
+        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.name}::varchar`}`,
+      );
+      scoreSqlChunks.push(
+        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.score}::integer`}`,
+      );
+      typeSqlChunks.push(
+        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.type}::varchar`}`,
+      );
+      colorSqlChunks.push(
+        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.color}::varchar`}`,
+      );
+      lookupSqlChunks.push(
+        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.lookup}::integer`}`,
+      );
+      modifierSqlChunks.push(
+        sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.modifier}::integer`}`,
+      );
+    }
+
+    nameSqlChunks.push(sql`end)`);
+    scoreSqlChunks.push(sql`end)`);
+    typeSqlChunks.push(sql`end)`);
+    colorSqlChunks.push(sql`end)`);
+    lookupSqlChunks.push(sql`end)`);
+    modifierSqlChunks.push(sql`end)`);
+
+    const finalNameSql = sql.join(nameSqlChunks, sql.raw(" "));
+    const finalScoreSql = sql.join(scoreSqlChunks, sql.raw(" "));
+    const finalTypeSql = sql.join(typeSqlChunks, sql.raw(" "));
+    const finalColorSql = sql.join(colorSqlChunks, sql.raw(" "));
+    const finalLookupSql = sql.join(lookupSqlChunks, sql.raw(" "));
+    const finalModifierSql = sql.join(modifierSqlChunks, sql.raw(" "));
+
+    await tx
+      .update(round)
+      .set({
+        name: finalNameSql,
+        score: finalScoreSql,
+        type: finalTypeSql,
+        color: finalColorSql,
+        lookup: finalLookupSql,
+        modifier: finalModifierSql,
+      })
+      .where(inArray(round.id, ids));
+  }
+
+  private async deleteScoresheets(args: {
+    input: EditGameArgs["input"]["scoresheetsToDelete"];
+    tx: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const sharedScoresheetsToDelete = input.filter(
+      (scoresheetDelete) => scoresheetDelete.scoresheetType === "shared",
+    );
+    const originalScoresheetsToDelete = input.filter(
+      (scoresheetDelete) => scoresheetDelete.scoresheetType === "original",
+    );
+
+    if (originalScoresheetsToDelete.length > 0) {
+      await tx
+        .update(scoresheet)
+        .set({ deletedAt: new Date() })
+        .where(
+          inArray(
+            scoresheet.id,
+            originalScoresheetsToDelete.map((s) => s.id),
+          ),
+        );
+    }
+
+    if (sharedScoresheetsToDelete.length > 0) {
+      await tx.delete(sharedScoresheet).where(
+        inArray(
+          sharedScoresheet.id,
+          sharedScoresheetsToDelete.map((s) => s.id),
+        ),
+      );
+    }
+  }
+
   private async resolveImageId(args: {
     imageInput: CreateGameArgs["input"]["image"];
     userId: string;

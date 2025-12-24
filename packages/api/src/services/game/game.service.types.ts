@@ -2,6 +2,7 @@ import type { PostHog } from "posthog-node";
 
 import type {
   CreateGameInputType,
+  EditGameInputType,
   GetGameInputType,
 } from "../../routers/game/game.input";
 
@@ -31,5 +32,14 @@ export interface GetGameScoresheetsArgs {
   input: GetGameInputType;
   ctx: {
     userId: string;
+  };
+}
+
+export interface EditGameArgs {
+  input: EditGameInputType;
+  ctx: {
+    userId: string;
+    posthog: PostHog;
+    deleteFiles: (fileId: string) => Promise<{ success: boolean }>;
   };
 }
