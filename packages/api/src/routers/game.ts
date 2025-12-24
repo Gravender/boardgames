@@ -32,6 +32,7 @@ import {
 import { selectGameSchema } from "@board-games/db/zodSchema";
 import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
+import { gameService } from "../services/game/game.service";
 import { protectedUserProcedure } from "../trpc";
 import {
   headToHeadStats,
@@ -40,7 +41,6 @@ import {
 } from "../utils/gameStats";
 import { createGameInput } from "./game/game.input";
 import { createGameOutput } from "./game/game.output";
-import { gameService } from "./game/service/game.service";
 
 export const gameRouter = {
   create: protectedUserProcedure

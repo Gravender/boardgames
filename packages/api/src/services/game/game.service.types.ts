@@ -3,7 +3,7 @@ import type { PostHog } from "posthog-node";
 import type {
   CreateGameInputType,
   GetGameInputType,
-} from "../../../routers/game/game.input";
+} from "../../routers/game/game.input";
 
 export interface CreateGameArgs {
   input: CreateGameInputType;

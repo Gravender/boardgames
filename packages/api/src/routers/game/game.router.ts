@@ -1,5 +1,6 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
+import { gameService } from "../../services/game/game.service";
 import { protectedUserProcedure } from "../../trpc";
 import { getGameInput } from "./game.input";
 import {
@@ -7,7 +8,6 @@ import {
   getGameRolesOutput,
   getGameScoresheetsOutput,
 } from "./game.output";
-import { gameService } from "./service/game.service";
 
 export const gameRouter = {
   gameMatches: protectedUserProcedure

@@ -8,16 +8,16 @@ import type {
   GetGameMatchesOutputType,
   GetGameRolesOutputType,
   GetGameScoresheetsOutputType,
-} from "../game.output";
+} from "../../routers/game/game.output";
 import type {
   CreateGameArgs,
   GetGameArgs,
   GetGameRolesArgs,
   GetGameScoresheetsArgs,
 } from "./game.service.types";
-import { assertFound, assertInserted } from "../../../utils/databaseHelpers";
-import { scoresheetRepository } from "../../scoresheet/repository/scoresheet.repository";
-import { gameRepository } from "../repository/game.repository";
+import { gameRepository } from "../../repositories/game/game.repository";
+import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
+import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
 class GameService {
   public async createGame(args: CreateGameArgs) {

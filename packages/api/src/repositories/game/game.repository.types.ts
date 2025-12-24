@@ -6,7 +6,7 @@ import { insertGameRoleSchema } from "@board-games/db/zodSchema";
 import type {
   CreateGameInputType,
   GetGameInputType,
-} from "../../../routers/game/game.input";
+} from "../../routers/game/game.input";
 
 export interface GetGameArgs {
   input: GetGameInputType;
