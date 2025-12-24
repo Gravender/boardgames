@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { RouterOutputs } from "@board-games/api";
 import type { ImagePreviewType } from "@board-games/shared";
@@ -18,7 +17,7 @@ import { toast } from "@board-games/ui/toast";
 
 import { Spinner } from "~/components/spinner";
 import { useAppForm } from "~/hooks/form";
-import { useTRPC } from "~/trpc/react";
+import { useUpdateGameMutation } from "~/hooks/mutations/game/update";
 import { useUploadThing } from "~/utils/uploadthing";
 import { RolesForm } from "../add/roles-form";
 import { ScoresheetForm } from "../add/scoresheet-form";
@@ -40,8 +39,7 @@ export function EditGameForm({
   const [isUploading, setIsUploading] = useState(false);
   const { startUpload } = useUploadThing("imageUploader");
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const trpc = useTRPC();
+  const { updateGameMutation } = useUpdateGameMutation();
 
   const defaultValues = transformEditGameDataToFormValues(data);
 
@@ -61,18 +59,6 @@ export function EditGameForm({
       }
     }
   }, [data.game.gameImg]);
-
-  const mutation = useMutation(
-    trpc.game.updateGame.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries();
-        toast("Game updated successfully!");
-        form.reset();
-        setImagePreview(null);
-        router.push(`/dashboard/games`);
-      },
-    }),
-  );
 
   const form = useAppForm({
     formId: "edit-game-form",
@@ -166,7 +152,16 @@ export function EditGameForm({
         apiInput.deletedRoles.length > 0;
 
       if (hasChanges) {
-        mutation.mutate(apiInput);
+        updateGameMutation.mutate(apiInput, {
+          onSuccess: () => {
+            form.reset();
+            setImagePreview(null);
+            router.push(`/dashboard/games`);
+          },
+          onSettled: () => {
+            setIsUploading(false);
+          },
+        });
       } else {
         setIsUploading(false);
         toast("No changes to save");
