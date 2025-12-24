@@ -5,12 +5,22 @@ import { protectedUserProcedure } from "../../trpc";
 import { getGameInput } from "./game.input";
 import {
   getGameMatchesOutput,
+  getGameOutput,
   getGameRolesOutput,
   getGameScoresheetsOutput,
   getGameScoreSheetsWithRoundsOutput,
 } from "./game.output";
 
 export const gameRouter = {
+  getGame: protectedUserProcedure
+    .input(getGameInput)
+    .output(getGameOutput)
+    .query(async ({ ctx, input }) => {
+      return gameService.getGame({
+        ctx,
+        input,
+      });
+    }),
   gameMatches: protectedUserProcedure
     .input(getGameInput)
     .output(getGameMatchesOutput)

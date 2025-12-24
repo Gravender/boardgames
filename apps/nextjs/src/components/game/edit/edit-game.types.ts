@@ -159,7 +159,24 @@ export function transformEditGameDataToFormValues(
               name: game.image.name,
             }
         : null,
-      roles: roles,
+      roles: roles.map((role) => {
+        if (role.type === "original") {
+          return {
+            type: "original" as const,
+            id: role.id,
+            name: role.name,
+            description: role.description,
+          };
+        } else {
+          return {
+            type: "shared" as const,
+            sharedId: role.sharedId,
+            permission: role.permission,
+            name: role.name,
+            description: role.description,
+          };
+        }
+      }),
     },
     scoresheets: scoresheets.map((scoresheet) => {
       if (scoresheet.type === "original") {

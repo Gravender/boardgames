@@ -1,14 +1,13 @@
 import type { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 
 import type { TransactionType } from "@board-games/db/client";
 import type { editScoresheetSchemaApiInput } from "@board-games/shared";
 import { db } from "@board-games/db/client";
-import { gameRole } from "@board-games/db/schema";
 
 import type {
   GetGameMatchesOutputType,
+  GetGameOutputType,
   GetGameRolesOutputType,
   GetGameScoresheetsOutputType,
   GetGameScoreSheetsWithRoundsOutputType,
@@ -187,6 +186,124 @@ class GameService {
       });
     }
   }
+  public async getGame(args: GetGameArgs): Promise<GetGameOutputType> {
+    const { input, ctx } = args;
+    const result = await db.transaction(async (tx) => {
+      if (input.type === "original") {
+        const returnedGame = await gameRepository.getGame(
+          {
+            id: input.id,
+            createdBy: ctx.userId,
+            with: {
+              image: true,
+            },
+          },
+          tx,
+        );
+        assertFound(
+          returnedGame,
+          {
+            userId: ctx.userId,
+            value: input,
+          },
+          "Game not found",
+        );
+        if (returnedGame.image?.usageType !== "game") {
+          await ctx.posthog.captureImmediate({
+            distinctId: ctx.userId,
+            event: "game image not found",
+            properties: {
+              gameId: returnedGame.id,
+            },
+          });
+        }
+        return {
+          type: "original" as const,
+          id: returnedGame.id,
+          name: returnedGame.name,
+          image:
+            returnedGame.image?.usageType === "game"
+              ? {
+                  name: returnedGame.image.name,
+                  url: returnedGame.image.url,
+                  type: returnedGame.image.type,
+                  usageType: "game" as const,
+                }
+              : null,
+          players: {
+            min: returnedGame.playersMin,
+            max: returnedGame.playersMax,
+          },
+          playtime: {
+            min: returnedGame.playtimeMin,
+            max: returnedGame.playtimeMax,
+          },
+          yearPublished: returnedGame.yearPublished,
+          ownedBy: returnedGame.ownedBy,
+        };
+      } else {
+        const returnedSharedGame = await gameRepository.getSharedGame(
+          {
+            id: input.sharedGameId,
+            sharedWithId: ctx.userId,
+            with: {
+              game: {
+                with: {
+                  image: true,
+                },
+              },
+            },
+          },
+          tx,
+        );
+        assertFound(
+          returnedSharedGame,
+          {
+            userId: ctx.userId,
+            value: input,
+          },
+          "Shared game not found",
+        );
+        if (returnedSharedGame.game.image?.usageType !== "game") {
+          await ctx.posthog.captureImmediate({
+            distinctId: ctx.userId,
+            event: "game image not found",
+            properties: {
+              gameId: returnedSharedGame.game.id,
+            },
+          });
+        }
+        return {
+          type: "shared" as const,
+          id: returnedSharedGame.game.id,
+          sharedGameId: returnedSharedGame.id,
+          name: returnedSharedGame.game.name,
+          image:
+            returnedSharedGame.game.image?.usageType === "game"
+              ? {
+                  name: returnedSharedGame.game.image.name,
+                  url: returnedSharedGame.game.image.url,
+                  type: returnedSharedGame.game.image.type,
+                  usageType: "game" as const,
+                }
+              : null,
+          players: {
+            min: returnedSharedGame.game.playersMin,
+            max: returnedSharedGame.game.playersMax,
+          },
+          playtime: {
+            min: returnedSharedGame.game.playtimeMin,
+            max: returnedSharedGame.game.playtimeMax,
+          },
+          yearPublished: returnedSharedGame.game.yearPublished,
+          ownedBy: returnedSharedGame.game.ownedBy,
+          permission: returnedSharedGame.permission,
+        };
+      }
+    });
+    return result;
+  }
+
   public async getGameMatches(
     args: GetGameArgs,
   ): Promise<GetGameMatchesOutputType> {
@@ -267,6 +384,7 @@ class GameService {
           return {
             ...match,
             sharedMatchId: match.sharedMatchId,
+            permissions: match.permissions,
             game: {
               id: match.game.id,
               name: match.game.name,

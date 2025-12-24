@@ -40,7 +40,9 @@ import { MatchDropDown } from "./matchesDropDown";
 
 interface BaseMatch {
   id: number;
-  gameId: number;
+  game: {
+    id: number;
+  };
   date: Date;
   name: string;
   finished: boolean;
@@ -52,7 +54,6 @@ interface BaseMatch {
 interface OriginalMatch extends BaseMatch {
   type: "original";
   location: {
-    type: "original";
     name: string;
   } | null;
 }
@@ -442,8 +443,8 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
                         prefetch={true}
                         href={
                           match.finished
-                            ? `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}/summary`
-                            : `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}`
+                            ? `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.game.id}/${match.id}/summary`
+                            : `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.game.id}/${match.id}`
                         }
                       >
                         {match.finished ? (
@@ -466,8 +467,8 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
                           prefetch={true}
                           href={
                             match.finished
-                              ? `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}/summary`
-                              : `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}`
+                              ? `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.game.id}/${match.id}/summary`
+                              : `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.game.id}/${match.id}`
                           }
                         >
                           <h3 className="xs:text-lg text-base font-medium">
@@ -511,16 +512,18 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
                           <div className="flex items-center gap-1 text-sm sm:text-base">
                             <MapPinIcon className="h-4 w-4" />
                             <span>{match.location.name}</span>
-                            {match.location.type === "linked" && (
-                              <Badge variant="outline" className="text-xs">
-                                Linked
-                              </Badge>
-                            )}
-                            {match.location.type === "shared" && (
-                              <Badge variant="outline" className="text-xs">
-                                Shared
-                              </Badge>
-                            )}
+                            {"type" in match.location &&
+                              match.location.type === "linked" && (
+                                <Badge variant="outline" className="text-xs">
+                                  Linked
+                                </Badge>
+                              )}
+                            {"type" in match.location &&
+                              match.location.type === "shared" && (
+                                <Badge variant="outline" className="text-xs">
+                                  Shared
+                                </Badge>
+                              )}
                           </div>
                         )}
 

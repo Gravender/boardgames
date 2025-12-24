@@ -18,6 +18,7 @@ export interface GetGameArgs {
   input: GetGameInputType;
   ctx: {
     userId: string;
+    posthog: PostHog;
   };
 }
 

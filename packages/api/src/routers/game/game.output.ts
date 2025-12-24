@@ -82,3 +82,48 @@ export type GetGameScoreSheetsWithRoundsOutputType = z.infer<
 
 export const editGameOutput = z.void();
 export type EditGameOutputType = z.infer<typeof editGameOutput>;
+
+const imageSchema = z.object({
+  name: z.string(),
+  url: z.string().nullable(),
+  type: z.enum(["file", "svg"]),
+  usageType: z.literal("game"),
+});
+
+export const getGameOutput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    id: z.number(),
+    name: z.string(),
+    image: imageSchema.nullable(),
+    players: z.object({
+      min: z.number().nullable(),
+      max: z.number().nullable(),
+    }),
+    playtime: z.object({
+      min: z.number().nullable(),
+      max: z.number().nullable(),
+    }),
+    yearPublished: z.number().nullable(),
+    ownedBy: z.boolean().nullable(),
+  }),
+  z.object({
+    type: z.literal("shared"),
+    id: z.number(),
+    sharedGameId: z.number(),
+    name: z.string(),
+    image: imageSchema.nullable(),
+    players: z.object({
+      min: z.number().nullable(),
+      max: z.number().nullable(),
+    }),
+    playtime: z.object({
+      min: z.number().nullable(),
+      max: z.number().nullable(),
+    }),
+    yearPublished: z.number().nullable(),
+    ownedBy: z.boolean().nullable(),
+    permission: z.enum(["view", "edit"]),
+  }),
+]);
+export type GetGameOutputType = z.infer<typeof getGameOutput>;

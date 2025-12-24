@@ -67,7 +67,10 @@ export function AddGameForm({
                   }
                 : null,
             scoresheets: scoreSheets,
-            roles: gameValues.roles,
+            roles: gameValues.roles.map((role) => ({
+              name: role.name,
+              description: role.description,
+            })),
           },
           {
             onSuccess: () => {

@@ -131,6 +131,7 @@ export const editRoleSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("new"),
+    id: z.number(),
     name: z.string().min(1, {
       message: "Role name is required",
     }),
@@ -422,6 +423,7 @@ export const baseMatchSchema = selectMatchSchema
 const sharedMatchWithGameAndPlayersSchema = baseMatchSchema.extend({
   type: z.literal("shared"),
   sharedMatchId: z.number(),
+  permissions: z.literal("view").or(z.literal("edit")),
   game: baseGameForMatchSchema.extend({
     type: sharedOrLinkedSchema,
     sharedGameId: z.number(),

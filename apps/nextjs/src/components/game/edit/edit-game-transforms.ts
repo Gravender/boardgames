@@ -157,7 +157,12 @@ export function transformToApiInput(
       },
     )
     .filter((role) => role !== null);
-  const newRoles = gameValues.roles.filter((role) => role.type === "new");
+  const newRoles = gameValues.roles
+    .filter((role) => role.type === "new")
+    .map((role) => ({
+      name: role.name,
+      description: role.description,
+    }));
   const deletedRoles: RouterInputs["game"]["updateGame"]["deletedRoles"] =
     initialRoles
       .filter(

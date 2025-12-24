@@ -33,7 +33,6 @@ import type {
   DeleteGameRoleArgs,
   DeleteSharedGameRoleArgs,
   GetGameArgs,
-  GetGameMatchesOutputType,
   GetGameRolesArgs,
   GetSharedRoleArgs,
   UpdateGameArgs,
@@ -140,9 +139,7 @@ class GameRepository {
     return returningGameRoles;
   }
 
-  public async getGameMatches(
-    args: GetGameArgs,
-  ): Promise<GetGameMatchesOutputType> {
+  public async getGameMatches(args: GetGameArgs) {
     const { input } = args;
     const teamsByMatch = db.$with("teams_by_match").as(
       db
@@ -296,6 +293,7 @@ class GameRepository {
         .select({
           id: vMatchCanonical.matchId,
           sharedMatchId: vMatchCanonical.sharedMatchId,
+          permissions: vMatchCanonical.permission,
           name: vMatchCanonical.name,
           date: vMatchCanonical.matchDate,
           comment: vMatchCanonical.comment,
@@ -378,6 +376,7 @@ class GameRepository {
         .select({
           id: vMatchCanonical.matchId,
           sharedMatchId: vMatchCanonical.sharedMatchId,
+          permissions: vMatchCanonical.permission,
           name: vMatchCanonical.name,
           date: vMatchCanonical.matchDate,
           comment: vMatchCanonical.comment,

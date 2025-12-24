@@ -35,8 +35,16 @@ import {
   matchesAggregated,
   playerAndRolesAggregated,
 } from "../utils/gameStats";
-import { createGameInput, editGameInput } from "./game/game.input";
-import { createGameOutput, editGameOutput } from "./game/game.output";
+import {
+  createGameInput,
+  editGameInput,
+  getGameInput,
+} from "./game/game.input";
+import {
+  createGameOutput,
+  editGameOutput,
+  getGameOutput,
+} from "./game/game.output";
 
 export const gameRouter = {
   create: protectedUserProcedure
@@ -49,160 +57,13 @@ export const gameRouter = {
       });
     }),
   getGame: protectedUserProcedure
-    .input(selectGameSchema.pick({ id: true }))
+    .input(getGameInput)
+    .output(getGameOutput)
     .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query.game.findFirst({
-        where: {
-          id: input.id,
-          createdBy: ctx.userId,
-          deletedAt: {
-            isNull: true,
-          },
-        },
-        with: {
-          image: true,
-          matches: {
-            with: {
-              matchPlayers: {
-                with: {
-                  player: true,
-                },
-              },
-              location: true,
-            },
-            orderBy: {
-              date: "desc",
-            },
-          },
-          sharedGameMatches: {
-            where: {
-              sharedWithId: ctx.userId,
-            },
-            with: {
-              match: true,
-              sharedMatchPlayers: {
-                with: {
-                  matchPlayer: true,
-                  sharedPlayer: {
-                    with: {
-                      linkedPlayer: true,
-                    },
-                  },
-                },
-              },
-              sharedLocation: {
-                with: {
-                  location: true,
-                  linkedLocation: true,
-                },
-              },
-            },
-          },
-        },
+      return gameService.getGame({
+        ctx,
+        input: input,
       });
-      if (!result) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Game not found",
-        });
-      }
-      const linkedMatches = result.sharedGameMatches.map((mMatch) => {
-        const mSharedLocation = mMatch.sharedLocation;
-        const linkedLocation = mSharedLocation?.linkedLocation;
-        return {
-          type: "shared" as const,
-          permissions: mMatch.permission,
-          id: mMatch.id,
-          gameId: mMatch.sharedGameId,
-          date: mMatch.match.date,
-          name: mMatch.match.name,
-          finished: mMatch.match.finished,
-          location: mSharedLocation
-            ? {
-                type: linkedLocation
-                  ? ("linked" as const)
-                  : ("shared" as const),
-                name: linkedLocation?.name ?? mSharedLocation.location.name,
-              }
-            : null,
-          won:
-            mMatch.sharedMatchPlayers.findIndex(
-              (sharedMatchPlayer) =>
-                sharedMatchPlayer.matchPlayer.winner &&
-                sharedMatchPlayer.sharedPlayer?.linkedPlayer?.isUser,
-            ) !== -1,
-          duration: mMatch.match.duration,
-        };
-      });
-      return {
-        id: result.id,
-        name: result.name,
-        image: result.image,
-        players: {
-          min: result.playersMin,
-          max: result.playersMax,
-        },
-        playtime: {
-          min: result.playtimeMin,
-          max: result.playtimeMax,
-        },
-        yearPublished: result.yearPublished,
-        ownedBy: result.ownedBy,
-        matches: [
-          ...result.matches.map<
-            | {
-                type: "original";
-                id: number;
-                gameId: number;
-                date: Date;
-                name: string;
-                finished: boolean;
-                location: {
-                  type: "original";
-                  name: string;
-                } | null;
-                won: boolean;
-                duration: number;
-              }
-            | {
-                type: "shared";
-                permissions: "view" | "edit";
-                id: number;
-                gameId: number;
-                date: Date;
-                name: string;
-                finished: boolean;
-                location: {
-                  type: "shared" | "linked";
-                  name: string;
-                } | null;
-                won: boolean;
-                duration: number;
-              }
-          >((match) => {
-            return {
-              type: "original" as const,
-              id: match.id,
-              gameId: match.gameId,
-              date: match.date,
-              won:
-                match.matchPlayers.findIndex(
-                  (player) => player.winner && player.player.isUser,
-                ) !== -1,
-              name: match.name,
-              location: match.location
-                ? {
-                    type: "original" as const,
-                    name: match.location.name,
-                  }
-                : null,
-              finished: match.finished,
-              duration: match.duration,
-            };
-          }),
-          ...linkedMatches,
-        ],
-      };
     }),
   getGameMetaData: protectedUserProcedure
     .input(selectGameSchema.pick({ id: true }))
