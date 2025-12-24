@@ -111,13 +111,32 @@ export const sharedRoleSchema = baseRoleSchema.extend({
   type: z.literal("shared"),
   sharedId: z.number(),
 });
-export const editRoleSchema = z.object({
-  id: z.number(),
-  name: z.string().min(1, {
-    message: "Role name is required",
+export const editRoleSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    id: z.number(),
+    name: z.string().min(1, {
+      message: "Role name is required",
+    }),
+    description: z.string().nullable(),
   }),
-  description: z.string().nullable(),
-});
+  z.object({
+    type: z.literal("shared"),
+    sharedId: z.number(),
+    permission: z.literal("edit").or(z.literal("view")),
+    name: z.string().min(1, {
+      message: "Role name is required",
+    }),
+    description: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal("new"),
+    name: z.string().min(1, {
+      message: "Role name is required",
+    }),
+    description: z.string().nullable(),
+  }),
+]);
 export const createGameSchema = baseGameSchema.omit({ gameImg: true }).extend({
   gameImg: z
     .discriminatedUnion("type", [
@@ -226,47 +245,49 @@ export const editScoresheetSchemaApiInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("Update Scoresheet"),
     scoresheet: z.discriminatedUnion("scoresheetType", [
-      z.object({
+      scoreSheetSchema.safeExtend({
         scoresheetType: z.literal("original"),
-        scoresheet: scoreSheetSchema.safeExtend({
-          isDefault: z.boolean().optional(),
-          id: z.number(),
-        }),
+        id: z.number(),
+        isDefault: z.boolean().optional(),
       }),
-      z.object({
+      scoreSheetSchema.safeExtend({
         scoresheetType: z.literal("shared"),
-        scoresheet: scoreSheetSchema.safeExtend({
-          isDefault: z.boolean().optional(),
-          id: z.number(),
-        }),
+        sharedId: z.number(),
+        isDefault: z.boolean().optional(),
       }),
     ]),
   }),
   z.object({
     type: z.literal("Update Scoresheet & Rounds"),
-    scoresheet: z
-      .discriminatedUnion("scoresheetType", [
-        z.object({
+    scoresheet: z.discriminatedUnion("scoreSheetUpdated", [
+      z.discriminatedUnion("scoresheetType", [
+        scoreSheetSchema.safeExtend({
+          scoreSheetUpdated: z.literal("updated"),
           scoresheetType: z.literal("original"),
-          scoresheet: scoreSheetSchema.safeExtend({
-            isDefault: z.boolean().optional(),
-            id: z.number(),
-          }),
-        }),
-        z.object({
-          scoresheetType: z.literal("shared"),
-          scoresheet: scoreSheetSchema.safeExtend({
-            isDefault: z.boolean().optional(),
-            id: z.number(),
-          }),
-        }),
-      ])
-      .or(
-        z.object({
           id: z.number(),
-          scoresheetType: z.literal("original").or(z.literal("shared")),
+          isDefault: z.boolean().optional(),
         }),
-      ),
+        scoreSheetSchema.safeExtend({
+          scoreSheetUpdated: z.literal("updated"),
+          scoresheetType: z.literal("shared"),
+          sharedId: z.number(),
+          isDefault: z.boolean().optional(),
+        }),
+      ]),
+
+      z.discriminatedUnion("scoresheetType", [
+        z.object({
+          scoreSheetUpdated: z.literal("false"),
+          scoresheetType: z.literal("original"),
+          id: z.number(),
+        }),
+        z.object({
+          scoreSheetUpdated: z.literal("false"),
+          scoresheetType: z.literal("shared"),
+          sharedId: z.number(),
+        }),
+      ]),
+    ]),
     roundsToEdit: z.array(
       baseRoundSchema
         .omit({ name: true, order: true })
@@ -274,7 +295,6 @@ export const editScoresheetSchemaApiInput = z.discriminatedUnion("type", [
     ),
     roundsToAdd: z.array(
       baseRoundSchema.extend({
-        scoresheetId: z.number(),
         order: z.number(),
       }),
     ),

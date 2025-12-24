@@ -414,7 +414,7 @@ class ScoresheetRepository {
 
   public async deleteSharedScoresheet(args: {
     input: {
-      id: number;
+      sharedId: number;
     };
     tx?: TransactionType;
   }) {
@@ -422,7 +422,7 @@ class ScoresheetRepository {
     const database = tx ?? db;
     const deletedSharedScoresheet = await database
       .delete(sharedScoresheet)
-      .where(eq(sharedScoresheet.id, input.id))
+      .where(eq(sharedScoresheet.id, input.sharedId))
       .returning();
     return deletedSharedScoresheet;
   }

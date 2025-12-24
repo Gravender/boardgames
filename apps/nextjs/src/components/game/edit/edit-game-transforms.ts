@@ -1,19 +1,25 @@
 import type { RouterInputs, RouterOutputs } from "@board-games/api";
+import { isSameRole, isSameScoresheet } from "@board-games/shared";
 
 import type { EditGameFormValues } from "./edit-game.types";
 
 // Helper function to transform form scoresheets back to edit format for change tracking
 export function transformFormScoresheetsToEditFormat(
   formScoresheets: EditGameFormValues["scoresheets"],
-  originalScoresheets: NonNullable<
-    RouterOutputs["game"]["getEditGame"]
-  >["scoresheets"],
+  initialScoresheets: NonNullable<
+    RouterOutputs["newGame"]["gameScoreSheetsWithRounds"]
+  >,
 ) {
   return formScoresheets.map((formSheet) => {
-    const originalSheet = originalScoresheets.find(
+    const originalSheet = initialScoresheets.find(
       (s) =>
-        s.id === formSheet.scoresheet.id &&
-        s.scoresheetType === formSheet.scoresheetType,
+        formSheet.scoresheetType !== "new" &&
+        isSameScoresheet(
+          s,
+          formSheet.scoresheetType === "original"
+            ? { type: "original", id: formSheet.scoresheet.id }
+            : { type: "shared", sharedId: formSheet.sharedId },
+        ),
     );
 
     // Check if scoresheet changed
@@ -56,7 +62,11 @@ export function transformFormScoresheetsToEditFormat(
 // Transform form values to API input format
 export function transformToApiInput(
   formValues: EditGameFormValues,
-  originalData: NonNullable<RouterOutputs["game"]["getEditGame"]>,
+  initialGame: NonNullable<RouterOutputs["game"]["getGame"]>,
+  initialScoresheets: NonNullable<
+    RouterOutputs["newGame"]["gameScoreSheetsWithRounds"]
+  >,
+  initialRoles: NonNullable<RouterOutputs["newGame"]["gameRoles"]>,
   image:
     | { type: "svg"; name: string }
     | { type: "file"; imageId: number }
@@ -66,22 +76,20 @@ export function transformToApiInput(
   const gameValues = formValues.game;
   const formScoresheets = transformFormScoresheetsToEditFormat(
     formValues.scoresheets,
-    originalData.scoresheets,
+    initialScoresheets,
   );
 
   // Check game changes
-  const nameChanged = gameValues.name !== originalData.game.name;
-  const ownedByChanged = gameValues.ownedBy !== originalData.game.ownedBy;
-  const playersMinChanged =
-    gameValues.playersMin !== originalData.game.playersMin;
-  const playersMaxChanged =
-    gameValues.playersMax !== originalData.game.playersMax;
+  const nameChanged = gameValues.name !== initialGame.name;
+  const ownedByChanged = gameValues.ownedBy !== initialGame.ownedBy;
+  const playersMinChanged = gameValues.playersMin !== initialGame.players.min;
+  const playersMaxChanged = gameValues.playersMax !== initialGame.players.max;
   const playtimeMinChanged =
-    gameValues.playtimeMin !== originalData.game.playtimeMin;
+    gameValues.playtimeMin !== initialGame.playtime.min;
   const playtimeMaxChanged =
-    gameValues.playtimeMax !== originalData.game.playtimeMax;
+    gameValues.playtimeMax !== initialGame.playtime.max;
   const yearPublishedChanged =
-    gameValues.yearPublished !== originalData.game.yearPublished;
+    gameValues.yearPublished !== initialGame.yearPublished;
   const imageChanged = image !== undefined;
 
   const gameChanged =
@@ -106,7 +114,7 @@ export function transformToApiInput(
   const game = gameChanged
     ? {
         type: "updateGame" as const,
-        id: originalData.game.id,
+        id: initialGame.id,
         name: nameChanged ? gameValues.name : undefined,
         ownedBy: ownedByChanged ? gameValues.ownedBy : undefined,
         playersMin: playersMinChanged ? gameValues.playersMin : undefined,
@@ -118,27 +126,57 @@ export function transformToApiInput(
           : undefined,
         image: image,
       }
-    : { type: "default" as const, id: originalData.game.id };
+    : { type: "default" as const, id: initialGame.id };
 
   // Build roles updates
   const updatedRoles = gameValues.roles
-    .map((role) => {
-      const originalRole = originalData.roles.find((r) => r.id === role.id);
-      if (!originalRole) return null;
-      const nameChanged = role.name !== originalRole.name;
-      const descriptionChanged = role.description !== originalRole.description;
-      if (!nameChanged && !descriptionChanged) return null;
-      return {
-        id: role.id,
-        name: role.name,
-        description: role.description,
-      };
-    })
+    .map<RouterInputs["game"]["updateGame"]["updatedRoles"][number] | null>(
+      (role) => {
+        const originalRole = initialRoles.find(
+          (r) => role.type !== "new" && isSameRole(r, role),
+        );
+        if (!originalRole) return null;
+        const nameChanged = role.name !== originalRole.name;
+        const descriptionChanged =
+          role.description !== originalRole.description;
+        if (!nameChanged && !descriptionChanged) return null;
+        if (originalRole.type === "original") {
+          return {
+            type: "original" as const,
+            id: originalRole.id,
+            name: role.name,
+            description: role.description,
+          };
+        }
+        return {
+          type: "shared",
+          sharedId: originalRole.sharedId,
+          name: role.name,
+          description: role.description,
+        };
+      },
+    )
     .filter((role) => role !== null);
-  const newRoles = gameValues.roles.filter((role) => role.id < 0);
-  const deletedRoles = originalData.roles
-    .filter((role) => !gameValues.roles.find((vRole) => vRole.id === role.id))
-    .map((role) => role.id);
+  const newRoles = gameValues.roles.filter((role) => role.type === "new");
+  const deletedRoles: RouterInputs["game"]["updateGame"]["deletedRoles"] =
+    initialRoles
+      .filter(
+        (role) =>
+          !gameValues.roles.find(
+            (vRole) => vRole.type !== "new" && isSameRole(vRole, role),
+          ),
+      )
+      .map((role) =>
+        role.type === "original"
+          ? {
+              type: "original",
+              id: role.id,
+            }
+          : {
+              type: "shared",
+              sharedId: role.sharedId,
+            },
+      );
 
   // Build scoresheets updates
   let changedScoresheets: RouterInputs["game"]["updateGame"]["scoresheets"] =
@@ -157,10 +195,15 @@ export function transformToApiInput(
       .map<
         RouterInputs["game"]["updateGame"]["scoresheets"][number] | undefined
       >((scoresheet) => {
-        const foundScoresheet = originalData.scoresheets.find(
+        const foundScoresheet = initialScoresheets.find(
           (dataScoresheet) =>
-            dataScoresheet.id === scoresheet.scoresheet.id &&
-            dataScoresheet.scoresheetType === scoresheet.scoresheetType,
+            scoresheet.scoresheetType !== "new" &&
+            isSameScoresheet(
+              dataScoresheet,
+              scoresheet.scoresheetType === "original"
+                ? { type: "original", id: scoresheet.scoresheet.id }
+                : { type: "shared", sharedId: scoresheet.sharedId },
+            ),
         );
 
         if (!foundScoresheet || scoresheet.scoresheetType === "new") {
@@ -278,7 +321,6 @@ export function transformToApiInput(
                 type: round.type,
                 score: round.score,
                 color: round.color,
-                scoresheetId: foundScoresheet.id,
                 order:
                   foundScoresheet.rounds.length -
                   roundsToDelete.length +
@@ -289,7 +331,14 @@ export function transformToApiInput(
             .filter<UpdateScoresheetAndRoundsType["roundsToAdd"][number]>(
               (round) => round !== undefined,
             );
-
+          const baseScoresheet = {
+            name: scoresheetName ?? foundScoresheet.name,
+            winCondition: scoresheetWinCondition,
+            isCoop: scoresheetIsCoop ?? foundScoresheet.isCoop,
+            isDefault: scoresheet.scoresheet.isDefault ?? false,
+            roundsScore: scoresheetRoundsScore,
+            targetScore: scoresheetTargetScore,
+          };
           const updateScoresheetAndRounds: Extract<
             RouterInputs["game"]["updateGame"]["scoresheets"][number],
             { type: "Update Scoresheet & Rounds" }
@@ -297,19 +346,29 @@ export function transformToApiInput(
             type: "Update Scoresheet & Rounds" as const,
             scoresheet: hasScoresheetChanged
               ? {
-                  id: foundScoresheet.id,
-                  scoresheetType: scoresheet.scoresheetType,
-                  name: scoresheetName,
-                  winCondition: scoresheetWinCondition,
-                  isCoop: scoresheetIsCoop ?? foundScoresheet.isCoop,
-                  isDefault: scoresheet.scoresheet.isDefault ?? false,
-                  roundsScore: scoresheetRoundsScore,
-                  targetScore: scoresheetTargetScore,
+                  scoreSheetUpdated: "updated" as const,
+                  ...(scoresheet.scoresheetType === "original"
+                    ? {
+                        id: scoresheet.scoresheet.id,
+                        scoresheetType: "original",
+                      }
+                    : {
+                        sharedId: scoresheet.sharedId,
+                        scoresheetType: "shared",
+                      }),
+                  ...baseScoresheet,
                 }
-              : {
-                  id: foundScoresheet.id,
-                  scoresheetType: scoresheet.scoresheetType,
-                },
+              : scoresheet.scoresheetType === "original"
+                ? {
+                    scoreSheetUpdated: "false" as const,
+                    scoresheetType: "original",
+                    id: scoresheet.scoresheet.id,
+                  }
+                : {
+                    scoreSheetUpdated: "false" as const,
+                    scoresheetType: "shared",
+                    sharedId: scoresheet.sharedId,
+                  },
             roundsToEdit: changedRounds,
             roundsToAdd: roundsToAdd,
             roundsToDelete: roundsToDelete,
@@ -318,21 +377,31 @@ export function transformToApiInput(
         }
 
         if (scoresheet.scoreSheetChanged) {
+          const baseScoresheet = {
+            name: scoresheetName ?? foundScoresheet.name,
+            winCondition: scoresheetWinCondition,
+            isCoop: scoresheetIsCoop ?? foundScoresheet.isCoop,
+            isDefault: scoresheet.scoresheet.isDefault ?? false,
+            roundsScore: scoresheetRoundsScore,
+            targetScore: scoresheetTargetScore,
+          };
           const updateScoresheet: Extract<
             RouterInputs["game"]["updateGame"]["scoresheets"][number],
             { type: "Update Scoresheet" }
           > = {
             type: "Update Scoresheet" as const,
-            scoresheet: {
-              id: foundScoresheet.id,
-              scoresheetType: scoresheet.scoresheetType,
-              name: scoresheetName ?? foundScoresheet.name,
-              winCondition: scoresheetWinCondition,
-              isCoop: scoresheetIsCoop ?? foundScoresheet.isCoop,
-              isDefault: scoresheet.scoresheet.isDefault ?? false,
-              roundsScore: scoresheetRoundsScore,
-              targetScore: scoresheetTargetScore,
-            },
+            scoresheet:
+              scoresheet.scoresheetType === "original"
+                ? {
+                    scoresheetType: "original",
+                    id: scoresheet.scoresheet.id,
+                    ...baseScoresheet,
+                  }
+                : {
+                    scoresheetType: "shared",
+                    sharedId: scoresheet.sharedId,
+                    ...baseScoresheet,
+                  },
           };
           return updateScoresheet;
         }
@@ -346,20 +415,27 @@ export function transformToApiInput(
           scoresheet !== undefined,
       );
 
-    scoresheetsToDelete = originalData.scoresheets
+    scoresheetsToDelete = initialScoresheets
       .filter(
         (foundScoresheet) =>
           !formScoresheets.find(
             (scoresheet) =>
-              scoresheet.scoresheet.id === foundScoresheet.id &&
-              scoresheet.scoresheetType === foundScoresheet.scoresheetType,
+              scoresheet.scoresheetType !== "new" &&
+              isSameScoresheet(
+                foundScoresheet,
+                scoresheet.scoresheetType === "original"
+                  ? { type: "original" as const, id: scoresheet.scoresheet.id }
+                  : { type: "shared" as const, sharedId: scoresheet.sharedId },
+              ),
           ),
       )
       .map((foundScoresheet) => {
-        return {
-          id: foundScoresheet.id,
-          scoresheetType: foundScoresheet.scoresheetType,
-        };
+        return foundScoresheet.type === "original"
+          ? { scoresheetType: "original" as const, id: foundScoresheet.id }
+          : {
+              scoresheetType: "shared" as const,
+              sharedId: foundScoresheet.sharedId,
+            };
       });
   }
 

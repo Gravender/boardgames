@@ -1,14 +1,17 @@
 import type { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
 
 import type { TransactionType } from "@board-games/db/client";
 import type { editScoresheetSchemaApiInput } from "@board-games/shared";
 import { db } from "@board-games/db/client";
+import { gameRole } from "@board-games/db/schema";
 
 import type {
   GetGameMatchesOutputType,
   GetGameRolesOutputType,
   GetGameScoresheetsOutputType,
+  GetGameScoreSheetsWithRoundsOutputType,
 } from "../../routers/game/game.output";
 import type {
   CreateGameArgs,
@@ -16,6 +19,7 @@ import type {
   GetGameArgs,
   GetGameRolesArgs,
   GetGameScoresheetsArgs,
+  GetGameScoreSheetsWithRoundsArgs,
 } from "./game.service.types";
 import { gameRepository } from "../../repositories/game/game.repository";
 import { imageRepository } from "../../repositories/image/image.repository";
@@ -549,6 +553,10 @@ class GameService {
               name: scoresheet.name,
               type: "original" as const,
               isDefault: scoresheet.type === "Default",
+              winCondition: scoresheet.winCondition,
+              isCoop: scoresheet.isCoop,
+              roundsScore: scoresheet.roundsScore,
+              targetScore: scoresheet.targetScore,
             };
           },
         );
@@ -558,7 +566,12 @@ class GameService {
               sharedId: sharedScoresheet.id,
               name: sharedScoresheet.scoresheet.name,
               type: "shared" as const,
+              permission: sharedScoresheet.permission,
               isDefault: sharedScoresheet.isDefault,
+              winCondition: sharedScoresheet.scoresheet.winCondition,
+              isCoop: sharedScoresheet.scoresheet.isCoop,
+              roundsScore: sharedScoresheet.scoresheet.roundsScore,
+              targetScore: sharedScoresheet.scoresheet.targetScore,
             };
           },
         );
@@ -601,7 +614,12 @@ class GameService {
               sharedId: sharedScoresheet.id,
               name: sharedScoresheet.scoresheet.name,
               type: "shared" as const,
+              permission: sharedScoresheet.permission,
               isDefault: sharedScoresheet.isDefault,
+              winCondition: sharedScoresheet.scoresheet.winCondition,
+              isCoop: sharedScoresheet.scoresheet.isCoop,
+              roundsScore: sharedScoresheet.scoresheet.roundsScore,
+              targetScore: sharedScoresheet.scoresheet.targetScore,
             };
           })
           .sort((a, b) => {
@@ -613,6 +631,234 @@ class GameService {
     });
     return response;
   }
+
+  public async getGameScoreSheetsWithRounds(
+    args: GetGameScoreSheetsWithRoundsArgs,
+  ): Promise<GetGameScoreSheetsWithRoundsOutputType> {
+    const { input, ctx } = args;
+    const response = await db.transaction(async (tx) => {
+      if (input.type === "original") {
+        const returnedGame = await gameRepository.getGame(
+          {
+            id: input.id,
+            createdBy: ctx.userId,
+            with: {
+              linkedGames: {
+                where: {
+                  sharedWithId: ctx.userId,
+                },
+              },
+            },
+          },
+          tx,
+        );
+        if (!returnedGame) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Game not found.",
+          });
+        }
+        const originalScoresheets = await scoresheetRepository.getAll(
+          {
+            createdBy: ctx.userId,
+            gameId: returnedGame.id,
+            with: {
+              rounds: {
+                orderBy: {
+                  order: "asc",
+                },
+              },
+            },
+          },
+          tx,
+        );
+        const sharedScoresheets = await scoresheetRepository.getAllShared(
+          {
+            sharedWithId: ctx.userId,
+            where: {
+              sharedGameId: {
+                in: returnedGame.linkedGames.map((lg) => lg.id),
+              },
+            },
+            with: {
+              scoresheet: {
+                with: {
+                  rounds: {
+                    orderBy: {
+                      order: "asc",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          tx,
+        );
+        const mappedOriginalScoresheets = originalScoresheets.map(
+          (scoresheet) => {
+            const scoresheetWithRounds = scoresheet as typeof scoresheet & {
+              rounds?: {
+                id: number;
+                name: string;
+                type: "Checkbox" | "Numeric";
+                order: number;
+                score: number;
+                color: string | null;
+                lookup: number | null;
+                modifier: number | null;
+              }[];
+            };
+            return {
+              id: scoresheetWithRounds.id,
+              name: scoresheetWithRounds.name,
+              type: "original" as const,
+              isDefault: scoresheetWithRounds.type === "Default",
+              winCondition: scoresheetWithRounds.winCondition,
+              isCoop: scoresheetWithRounds.isCoop,
+              roundsScore: scoresheetWithRounds.roundsScore,
+              targetScore: scoresheetWithRounds.targetScore,
+              rounds: (scoresheetWithRounds.rounds ?? []).map((round) => ({
+                id: round.id,
+                name: round.name,
+                type: round.type,
+                order: round.order,
+                score: round.score,
+                color: round.color,
+                lookup: round.lookup,
+                modifier: round.modifier,
+              })),
+            };
+          },
+        );
+        const mappedSharedScoresheets = sharedScoresheets.map(
+          (sharedScoresheet) => {
+            const scoresheetWithRounds =
+              sharedScoresheet.scoresheet as typeof sharedScoresheet.scoresheet & {
+                rounds?: {
+                  id: number;
+                  name: string;
+                  type: "Checkbox" | "Numeric";
+                  order: number;
+                  score: number;
+                  color: string | null;
+                  lookup: number | null;
+                  modifier: number | null;
+                }[];
+              };
+            return {
+              sharedId: sharedScoresheet.id,
+              name: scoresheetWithRounds.name,
+              type: "shared" as const,
+              permission: sharedScoresheet.permission,
+              isDefault: sharedScoresheet.isDefault,
+              winCondition: scoresheetWithRounds.winCondition,
+              isCoop: scoresheetWithRounds.isCoop,
+              roundsScore: scoresheetWithRounds.roundsScore,
+              targetScore: scoresheetWithRounds.targetScore,
+              rounds: (scoresheetWithRounds.rounds ?? []).map((round) => ({
+                id: round.id,
+                name: round.name,
+                type: round.type,
+                order: round.order,
+                score: round.score,
+                color: round.color,
+                lookup: round.lookup,
+                modifier: round.modifier,
+              })),
+            };
+          },
+        );
+        const combinedScoresheets = [
+          ...mappedOriginalScoresheets,
+          ...mappedSharedScoresheets,
+        ];
+        combinedScoresheets.sort((a, b) => {
+          if (a.isDefault && !b.isDefault) return -1;
+          if (!a.isDefault && b.isDefault) return 1;
+          return a.name.localeCompare(b.name);
+        });
+        return combinedScoresheets;
+      } else {
+        const returnedSharedGame = await gameRepository.getSharedGame(
+          {
+            id: input.sharedGameId,
+            sharedWithId: ctx.userId,
+          },
+          tx,
+        );
+        if (!returnedSharedGame) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared game not found.",
+          });
+        }
+        const sharedScoresheets = await scoresheetRepository.getAllShared(
+          {
+            sharedWithId: ctx.userId,
+            where: {
+              sharedGameId: returnedSharedGame.id,
+            },
+            with: {
+              scoresheet: {
+                with: {
+                  rounds: {
+                    orderBy: {
+                      order: "asc",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          tx,
+        );
+        return sharedScoresheets
+          .map((sharedScoresheet) => {
+            const scoresheetWithRounds =
+              sharedScoresheet.scoresheet as typeof sharedScoresheet.scoresheet & {
+                rounds?: {
+                  id: number;
+                  name: string;
+                  type: "Checkbox" | "Numeric";
+                  order: number;
+                  score: number;
+                  color: string | null;
+                  lookup: number | null;
+                  modifier: number | null;
+                }[];
+              };
+            return {
+              sharedId: sharedScoresheet.id,
+              name: scoresheetWithRounds.name,
+              type: "shared" as const,
+              permission: sharedScoresheet.permission,
+              isDefault: sharedScoresheet.isDefault,
+              winCondition: scoresheetWithRounds.winCondition,
+              isCoop: scoresheetWithRounds.isCoop,
+              roundsScore: scoresheetWithRounds.roundsScore,
+              targetScore: scoresheetWithRounds.targetScore,
+              rounds: (scoresheetWithRounds.rounds ?? []).map((round) => ({
+                id: round.id,
+                name: round.name,
+                type: round.type,
+                order: round.order,
+                score: round.score,
+                color: round.color,
+                lookup: round.lookup,
+                modifier: round.modifier,
+              })),
+            };
+          })
+          .sort((a, b) => {
+            if (a.isDefault && !b.isDefault) return -1;
+            if (!a.isDefault && b.isDefault) return 1;
+            return a.name.localeCompare(b.name);
+          });
+      }
+    });
+    return response;
+  }
+
   public async editGame(args: EditGameArgs) {
     const {
       input,
@@ -687,12 +933,49 @@ class GameService {
     const { input, gameId, userId, tx } = args;
 
     if (input.updatedRoles.length > 0) {
-      for (const updatedRole of input.updatedRoles) {
+      const originalRoles = input.updatedRoles.filter(
+        (role) => role.type === "original",
+      );
+      const sharedRoles = input.updatedRoles.filter(
+        (role) => role.type === "shared",
+      );
+      for (const originalRole of originalRoles) {
+        await gameRepository.updateGameRole({
+          input: originalRole,
+          tx,
+        });
+      }
+      for (const sharedRole of sharedRoles) {
+        const returnedSharedRole = await gameRepository.getSharedRole({
+          input: {
+            sharedRoleId: sharedRole.sharedId,
+          },
+          userId,
+          tx,
+        });
+        assertFound(
+          returnedSharedRole,
+          {
+            userId,
+            value: sharedRole,
+          },
+          "Shared role not found.",
+        );
+
+        if (returnedSharedRole.permission !== "edit") {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Does not have permission to edit this role.",
+          });
+        }
+
         await gameRepository.updateGameRole({
           input: {
-            id: updatedRole.id,
-            name: updatedRole.name,
-            description: updatedRole.description,
+            id:
+              returnedSharedRole.linkedGameRoleId ??
+              returnedSharedRole.gameRoleId,
+            name: sharedRole.name,
+            description: sharedRole.description,
           },
           tx,
         });
@@ -712,13 +995,50 @@ class GameService {
     }
 
     if (input.deletedRoles.length > 0) {
-      await gameRepository.deleteGameRole({
-        input: {
-          gameId,
-          roleIds: input.deletedRoles,
-        },
-        tx,
-      });
+      const originalRoles = input.deletedRoles.filter(
+        (role) => role.type === "original",
+      );
+      const sharedRoles = input.deletedRoles.filter(
+        (role) => role.type === "shared",
+      );
+
+      if (originalRoles.length > 0) {
+        await gameRepository.deleteGameRole({
+          input: {
+            gameId,
+            roleIds: originalRoles.map((role) => role.id),
+          },
+          tx,
+        });
+      }
+
+      if (sharedRoles.length > 0) {
+        // Verify shared roles exist and user has permission before deleting
+        for (const sharedRole of sharedRoles) {
+          const returnedSharedRole = await gameRepository.getSharedRole({
+            input: {
+              sharedRoleId: sharedRole.sharedId,
+            },
+            userId,
+            tx,
+          });
+          assertFound(
+            returnedSharedRole,
+            {
+              userId,
+              value: sharedRole,
+            },
+            "Shared role not found.",
+          );
+        }
+
+        await gameRepository.deleteSharedGameRole({
+          input: {
+            sharedRoleIds: sharedRoles.map((role) => role.sharedId),
+          },
+          tx,
+        });
+      }
     }
   }
 
@@ -935,7 +1255,7 @@ class GameService {
           const originalScoresheet = inputScoresheet.scoresheet;
           const returnedOriginalScoresheet = await scoresheetRepository.get(
             {
-              id: originalScoresheet.scoresheet.id,
+              id: originalScoresheet.id,
               createdBy: userId,
             },
             tx,
@@ -948,46 +1268,28 @@ class GameService {
             },
             "Scoresheet not found.",
           );
-          const scoresheetId = (
-            originalScoresheet.scoresheet as { id: number; isDefault?: boolean }
-          ).id;
-          const isDefault =
-            (
-              originalScoresheet.scoresheet as {
-                id: number;
-                isDefault?: boolean;
-              }
-            ).isDefault ?? false;
           await scoresheetRepository.update({
             input: {
-              id: scoresheetId,
-              name: originalScoresheet.scoresheet.name,
-              winCondition: originalScoresheet.scoresheet.winCondition,
-              isCoop: originalScoresheet.scoresheet.isCoop,
-              type: isDefault ? "Default" : "Game",
-              roundsScore: originalScoresheet.scoresheet.roundsScore,
-              targetScore: originalScoresheet.scoresheet.targetScore,
+              id: originalScoresheet.id,
+              name: originalScoresheet.name,
+              winCondition: originalScoresheet.winCondition,
+              isCoop: originalScoresheet.isCoop,
+              type:
+                originalScoresheet.isDefault !== undefined
+                  ? originalScoresheet.isDefault
+                    ? "Default"
+                    : "Game"
+                  : undefined,
+              roundsScore: originalScoresheet.roundsScore,
+              targetScore: originalScoresheet.targetScore,
             },
             tx,
           });
         } else {
           const sharedScoresheetInput = inputScoresheet.scoresheet;
-          const sharedScoresheetId = (
-            sharedScoresheetInput.scoresheet as {
-              id: number;
-              isDefault?: boolean;
-            }
-          ).id;
-          const isDefault =
-            (
-              sharedScoresheetInput.scoresheet as {
-                id: number;
-                isDefault?: boolean;
-              }
-            ).isDefault ?? false;
           const returnedSharedScoresheet = await scoresheetRepository.getShared(
             {
-              id: sharedScoresheetId,
+              id: sharedScoresheetInput.sharedId,
               sharedWithId: userId,
             },
             tx,
@@ -1004,38 +1306,36 @@ class GameService {
             await scoresheetRepository.update({
               input: {
                 id: returnedSharedScoresheet.scoresheetId,
-                name: sharedScoresheetInput.scoresheet.name,
-                winCondition: sharedScoresheetInput.scoresheet.winCondition,
-                isCoop: sharedScoresheetInput.scoresheet.isCoop,
-                roundsScore: sharedScoresheetInput.scoresheet.roundsScore,
-                targetScore: sharedScoresheetInput.scoresheet.targetScore,
+                name: sharedScoresheetInput.name,
+                winCondition: sharedScoresheetInput.winCondition,
+                isCoop: sharedScoresheetInput.isCoop,
+                roundsScore: sharedScoresheetInput.roundsScore,
+                targetScore: sharedScoresheetInput.targetScore,
               },
               tx,
             });
           }
-          await scoresheetRepository.updateShared({
-            input: {
-              id: returnedSharedScoresheet.id,
-              isDefault,
-            },
-            tx,
-          });
+          if (sharedScoresheetInput.isDefault !== undefined) {
+            await scoresheetRepository.updateShared({
+              input: {
+                id: returnedSharedScoresheet.id,
+                isDefault: sharedScoresheetInput.isDefault,
+              },
+              tx,
+            });
+          }
         }
       }
 
       if (inputScoresheet.type === "Update Scoresheet & Rounds") {
         let scoresheetId: number | undefined = undefined;
         let sharedScoresheetId: number | undefined = undefined;
-        let scoresheetPermission: "view" | "edit" = "view";
 
         if (inputScoresheet.scoresheet.scoresheetType === "original") {
           const originalScoresheet = inputScoresheet.scoresheet;
           const returnedOriginalScoresheet = await scoresheetRepository.get(
             {
-              id:
-                "id" in originalScoresheet
-                  ? originalScoresheet.id
-                  : originalScoresheet.scoresheet.id,
+              id: originalScoresheet.id,
               createdBy: userId,
             },
             tx,
@@ -1049,94 +1349,93 @@ class GameService {
             "Scoresheet not found.",
           );
           scoresheetId = returnedOriginalScoresheet.id;
-          scoresheetPermission = "edit";
         } else {
           const sharedScoresheetInput = inputScoresheet.scoresheet;
-          if ("id" in sharedScoresheetInput) {
-            const returnedSharedScoresheet =
-              await scoresheetRepository.getShared(
-                {
-                  id: sharedScoresheetInput.id,
-                  sharedWithId: userId,
-                },
-                tx,
-              );
-            if (!returnedSharedScoresheet) {
-              throw new TRPCError({
-                code: "NOT_FOUND",
-                message: "Shared scoresheet not found.",
-              });
-            }
-            scoresheetId = returnedSharedScoresheet.scoresheetId;
-            sharedScoresheetId = returnedSharedScoresheet.id;
-            scoresheetPermission = returnedSharedScoresheet.permission;
-          }
-        }
-
-        if ("scoresheet" in inputScoresheet.scoresheet && scoresheetId) {
-          const scoresheetData = inputScoresheet.scoresheet;
-          if (scoresheetPermission === "edit") {
-            const scoresheetType = () => {
-              if (
-                scoresheetData.scoresheetType === "original" &&
-                "isDefault" in scoresheetData.scoresheet
-              ) {
-                return scoresheetData.scoresheet.isDefault ? "Default" : "Game";
-              }
-              return undefined;
-            };
-            await scoresheetRepository.update({
-              input: {
-                id: scoresheetId,
-                name: scoresheetData.scoresheet.name,
-                winCondition: scoresheetData.scoresheet.winCondition,
-                isCoop: scoresheetData.scoresheet.isCoop,
-                type: scoresheetType(),
-                roundsScore: scoresheetData.scoresheet.roundsScore,
-                targetScore: scoresheetData.scoresheet.targetScore,
-              },
-              tx,
+          const returnedSharedScoresheet = await scoresheetRepository.getShared(
+            {
+              id: sharedScoresheetInput.sharedId,
+              sharedWithId: userId,
+            },
+            tx,
+          );
+          assertFound(
+            returnedSharedScoresheet,
+            {
+              userId,
+              value: sharedScoresheetInput,
+            },
+            "Shared scoresheet not found.",
+          );
+          if (returnedSharedScoresheet.permission !== "edit") {
+            throw new TRPCError({
+              code: "UNAUTHORIZED",
+              message: "Does not have permission to edit this scoresheet.",
             });
           }
+          scoresheetId = returnedSharedScoresheet.scoresheetId;
+          sharedScoresheetId = returnedSharedScoresheet.id;
+        }
+
+        if (
+          inputScoresheet.scoresheet.scoreSheetUpdated === "updated" &&
+          scoresheetId
+        ) {
+          const scoresheetData = inputScoresheet.scoresheet;
+          const scoresheetType = () => {
+            if (
+              scoresheetData.scoresheetType === "original" &&
+              "isDefault" in inputScoresheet.scoresheet
+            ) {
+              return inputScoresheet.scoresheet.isDefault ? "Default" : "Game";
+            }
+            return undefined;
+          };
+          await scoresheetRepository.update({
+            input: {
+              id: scoresheetId,
+              name: scoresheetData.name,
+              winCondition: scoresheetData.winCondition,
+              isCoop: scoresheetData.isCoop,
+              type: scoresheetType(),
+              roundsScore: scoresheetData.roundsScore,
+              targetScore: scoresheetData.targetScore,
+            },
+            tx,
+          });
+
           if (
             scoresheetData.scoresheetType === "shared" &&
             sharedScoresheetId &&
-            "isDefault" in scoresheetData.scoresheet
+            inputScoresheet.scoresheet.isDefault !== undefined
           ) {
             await scoresheetRepository.updateShared({
               input: {
                 id: sharedScoresheetId,
-                isDefault: scoresheetData.scoresheet.isDefault,
+                isDefault: inputScoresheet.scoresheet.isDefault,
               },
               tx,
             });
           }
         }
 
-        if (
-          inputScoresheet.roundsToEdit.length > 0 &&
-          scoresheetPermission === "edit"
-        ) {
+        if (inputScoresheet.roundsToEdit.length > 0) {
           await this.bulkUpdateRounds({
             roundsToEdit: inputScoresheet.roundsToEdit,
             tx,
           });
         }
 
-        if (
-          inputScoresheet.roundsToAdd.length > 0 &&
-          scoresheetPermission === "edit"
-        ) {
+        if (inputScoresheet.roundsToAdd.length > 0) {
           await scoresheetRepository.insertRounds(
-            inputScoresheet.roundsToAdd,
+            inputScoresheet.roundsToAdd.map((round) => ({
+              ...round,
+              scoresheetId,
+            })),
             tx,
           );
         }
 
-        if (
-          inputScoresheet.roundsToDelete.length > 0 &&
-          scoresheetPermission === "edit"
-        ) {
+        if (inputScoresheet.roundsToDelete.length > 0) {
           await scoresheetRepository.deleteRounds({
             input: {
               ids: inputScoresheet.roundsToDelete,
@@ -1201,7 +1500,7 @@ class GameService {
       for (const sharedScoresheetToDelete of sharedScoresheetsToDelete) {
         await scoresheetRepository.deleteSharedScoresheet({
           input: {
-            id: sharedScoresheetToDelete.id,
+            sharedId: sharedScoresheetToDelete.sharedId,
           },
           tx,
         });

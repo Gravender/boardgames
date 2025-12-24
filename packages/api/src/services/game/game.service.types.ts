@@ -35,6 +35,13 @@ export interface GetGameScoresheetsArgs {
   };
 }
 
+export interface GetGameScoreSheetsWithRoundsArgs {
+  input: GetGameInputType;
+  ctx: {
+    userId: string;
+  };
+}
+
 export interface EditGameArgs {
   input: EditGameInputType;
   ctx: {

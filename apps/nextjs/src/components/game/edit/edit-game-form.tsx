@@ -29,9 +29,15 @@ import {
 import { GameDetailsForm } from "./game-details-form";
 
 export function EditGameForm({
-  data,
+  initialGame,
+  initialScoresheets,
+  initialRoles,
 }: {
-  data: NonNullable<RouterOutputs["game"]["getEditGame"]>;
+  initialGame: NonNullable<RouterOutputs["game"]["getGame"]>;
+  initialScoresheets: NonNullable<
+    RouterOutputs["newGame"]["gameScoreSheetsWithRounds"]
+  >;
+  initialRoles: NonNullable<RouterOutputs["newGame"]["gameRoles"]>;
 }) {
   const [imagePreview, setImagePreview] = useState<ImagePreviewType | null>(
     null,
@@ -41,24 +47,28 @@ export function EditGameForm({
   const router = useRouter();
   const { updateGameMutation } = useUpdateGameMutation();
 
-  const defaultValues = transformEditGameDataToFormValues(data);
+  const defaultValues = transformEditGameDataToFormValues(
+    initialGame,
+    initialScoresheets,
+    initialRoles,
+  );
 
   // Initialize image preview from existing data
   useEffect(() => {
-    if (data.game.gameImg) {
-      if (data.game.gameImg.type === "file") {
+    if (initialGame.image) {
+      if (initialGame.image.type === "file") {
         setImagePreview({
           type: "file",
-          url: data.game.gameImg.url ?? "",
+          url: initialGame.image.url ?? "",
         });
       } else {
         setImagePreview({
           type: "svg",
-          name: data.game.gameImg.name,
+          name: initialGame.image.name,
         });
       }
     }
-  }, [data.game.gameImg]);
+  }, [initialGame.image]);
 
   const form = useAppForm({
     formId: "edit-game-form",
@@ -73,17 +83,17 @@ export function EditGameForm({
 
       // Check if image changed
       const isSameImage = () => {
-        if (gameValues.gameImg === null && data.game.gameImg === null)
+        if (gameValues.gameImg === null && initialGame.image === null)
           return true;
-        if (gameValues.gameImg?.type === data.game.gameImg?.type) {
+        if (gameValues.gameImg?.type === initialGame.image?.type) {
           if (gameValues.gameImg?.type === "file") {
             return (
               typeof gameValues.gameImg.file === "string" &&
-              gameValues.gameImg.file === data.game.gameImg?.url
+              gameValues.gameImg.file === initialGame.image?.url
             );
           }
           if (gameValues.gameImg?.type === "svg") {
-            return gameValues.gameImg.name === data.game.gameImg?.name;
+            return gameValues.gameImg.name === initialGame.image?.name;
           }
         }
         return false;
@@ -140,7 +150,13 @@ export function EditGameForm({
       }
 
       // Transform to API format
-      const apiInput = transformToApiInput(value, data, image);
+      const apiInput = transformToApiInput(
+        value,
+        initialGame,
+        initialScoresheets,
+        initialRoles,
+        image,
+      );
 
       // Only mutate if there are changes
       const hasChanges =
@@ -208,7 +224,7 @@ export function EditGameForm({
                   <CardTitle>
                     {activeForm === "scoresheet"
                       ? `Edit ${scoresheetName} Scoresheet`
-                      : `Edit ${data.game.name}`}
+                      : `Edit ${initialGame.name}`}
                   </CardTitle>
                 </CardHeader>
                 {activeForm === "scoresheet" && currentScoresheet && (

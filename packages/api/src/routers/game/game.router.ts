@@ -7,6 +7,7 @@ import {
   getGameMatchesOutput,
   getGameRolesOutput,
   getGameScoresheetsOutput,
+  getGameScoreSheetsWithRoundsOutput,
 } from "./game.output";
 
 export const gameRouter = {
@@ -33,6 +34,15 @@ export const gameRouter = {
     .output(getGameScoresheetsOutput)
     .query(async ({ ctx, input }) => {
       return gameService.getGameScoresheets({
+        ctx,
+        input,
+      });
+    }),
+  gameScoreSheetsWithRounds: protectedUserProcedure
+    .input(getGameInput)
+    .output(getGameScoreSheetsWithRoundsOutput)
+    .query(async ({ ctx, input }) => {
+      return gameService.getGameScoreSheetsWithRounds({
         ctx,
         input,
       });

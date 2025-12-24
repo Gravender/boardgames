@@ -17,6 +17,7 @@ import {
   location,
   match,
   player,
+  sharedGameRole,
   team,
 } from "@board-games/db/schema";
 import {
@@ -30,9 +31,11 @@ import type {
   CreateGameRoleArgs,
   CreateGameRolesArgs,
   DeleteGameRoleArgs,
+  DeleteSharedGameRoleArgs,
   GetGameArgs,
   GetGameMatchesOutputType,
   GetGameRolesArgs,
+  GetSharedRoleArgs,
   UpdateGameArgs,
   UpdateGameRoleArgs,
 } from "./game.repository.types";
@@ -517,6 +520,29 @@ class GameRepository {
           inArray(gameRole.id, input.roleIds),
         ),
       );
+  }
+
+  public async getSharedRole(args: GetSharedRoleArgs) {
+    const { input, userId, tx } = args;
+    const database = tx ?? db;
+    const returnedSharedRole = await database.query.sharedGameRole.findFirst({
+      where: {
+        id: input.sharedRoleId,
+        sharedWithId: userId,
+      },
+      with: {
+        gameRole: true,
+      },
+    });
+    return returnedSharedRole;
+  }
+
+  public async deleteSharedGameRole(args: DeleteSharedGameRoleArgs) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    await database
+      .delete(sharedGameRole)
+      .where(inArray(sharedGameRole.id, input.sharedRoleIds));
   }
 }
 export const gameRepository = new GameRepository();

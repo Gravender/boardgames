@@ -15,7 +15,6 @@ import type {
 } from "@board-games/db/zodSchema";
 import {
   game,
-  gameRole,
   image,
   location,
   match,
@@ -25,7 +24,6 @@ import {
   roundPlayer,
   scoresheet,
   sharedGame,
-  sharedScoresheet,
   team,
 } from "@board-games/db/schema";
 import { selectGameSchema } from "@board-games/db/zodSchema";

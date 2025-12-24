@@ -127,3 +127,18 @@ export interface DeleteGameRoleArgs {
   };
   tx?: TransactionType;
 }
+
+export interface GetSharedRoleArgs {
+  input: {
+    sharedRoleId: number;
+  };
+  userId: string;
+  tx?: TransactionType;
+}
+
+export interface DeleteSharedGameRoleArgs {
+  input: {
+    sharedRoleIds: number[];
+  };
+  tx?: TransactionType;
+}

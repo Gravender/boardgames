@@ -133,30 +133,36 @@ export const defaultScoresheetsFormValues: {
 
 // Transform API output to form default values
 export function transformEditGameDataToFormValues(
-  data: NonNullable<RouterOutputs["game"]["getEditGame"]>,
+  game: NonNullable<RouterOutputs["game"]["getGame"]>,
+  scoresheets: NonNullable<
+    RouterOutputs["newGame"]["gameScoreSheetsWithRounds"]
+  >,
+  roles: NonNullable<RouterOutputs["newGame"]["gameRoles"]>,
 ): EditGameFormValues {
   return {
     game: {
-      ...data.game,
-      gameImg: data.game.gameImg
-        ? data.game.gameImg.type === "file"
+      name: game.name,
+      ownedBy: game.ownedBy ?? false,
+      playersMin: game.players.min,
+      playersMax: game.players.max,
+      playtimeMin: game.playtime.min,
+      playtimeMax: game.playtime.max,
+      yearPublished: game.yearPublished,
+      gameImg: game.image
+        ? game.image.type === "file"
           ? {
               type: "file" as const,
-              file: data.game.gameImg.url ?? "",
+              file: game.image.url ?? "",
             }
           : {
               type: "svg" as const,
-              name: data.game.gameImg.name,
+              name: game.image.name,
             }
         : null,
-      roles: data.roles.map((role) => ({
-        id: role.id,
-        name: role.name,
-        description: role.description,
-      })),
+      roles: roles,
     },
-    scoresheets: data.scoresheets.map((scoresheet) => {
-      if (scoresheet.scoresheetType === "original") {
+    scoresheets: scoresheets.map((scoresheet) => {
+      if (scoresheet.type === "original") {
         return {
           scoresheetType: "original" as const,
           scoresheet: {
@@ -178,10 +184,10 @@ export function transformEditGameDataToFormValues(
       } else {
         return {
           scoresheetType: "shared" as const,
-          sharedId: scoresheet.id,
+          sharedId: scoresheet.sharedId,
           permission: scoresheet.permission,
           scoresheet: {
-            id: scoresheet.id,
+            id: scoresheet.sharedId,
             name: scoresheet.name,
             winCondition: scoresheet.winCondition,
             isCoop: scoresheet.isCoop,

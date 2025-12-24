@@ -109,17 +109,32 @@ export const editGameInput = z.object({
   ]),
   scoresheets: z.array(editScoresheetSchemaApiInput),
   scoresheetsToDelete: z.array(
-    z.object({
-      id: z.number(),
-      scoresheetType: z.literal("original").or(z.literal("shared")),
-    }),
+    z.discriminatedUnion("scoresheetType", [
+      z.object({
+        scoresheetType: z.literal("original"),
+        id: z.number(),
+      }),
+      z.object({
+        scoresheetType: z.literal("shared"),
+        sharedId: z.number(),
+      }),
+    ]),
   ),
   updatedRoles: z.array(
-    z.object({
-      id: z.number(),
-      name: z.string(),
-      description: z.string().nullable(),
-    }),
+    z.discriminatedUnion("type", [
+      z.object({
+        type: z.literal("original"),
+        id: z.number(),
+        name: z.string(),
+        description: z.string().nullable(),
+      }),
+      z.object({
+        type: z.literal("shared"),
+        sharedId: z.number(),
+        name: z.string(),
+        description: z.string().nullable(),
+      }),
+    ]),
   ),
   newRoles: z.array(
     z.object({
@@ -127,7 +142,18 @@ export const editGameInput = z.object({
       description: z.string().nullable(),
     }),
   ),
-  deletedRoles: z.array(z.number()),
+  deletedRoles: z.array(
+    z.discriminatedUnion("type", [
+      z.object({
+        type: z.literal("original"),
+        id: z.number(),
+      }),
+      z.object({
+        type: z.literal("shared"),
+        sharedId: z.number(),
+      }),
+    ]),
+  ),
 });
 
 export type EditGameInputType = z.infer<typeof editGameInput>;
