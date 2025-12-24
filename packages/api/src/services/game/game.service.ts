@@ -1156,18 +1156,20 @@ class GameService {
     tx: TransactionType;
   }) {
     const { roundsToEdit, tx } = args;
-    await scoresheetRepository.updateRounds({
-      input: roundsToEdit.map((round) => ({
+    for (const round of roundsToEdit) {
+      await scoresheetRepository.updateRound({
         id: round.id,
-        name: round.name,
-        score: round.score,
-        type: round.type,
-        color: round.color,
-        lookup: round.lookup,
-        modifier: round.modifier,
-      })),
-      tx,
-    });
+        input: {
+          name: round.name,
+          score: round.score,
+          type: round.type,
+          color: round.color,
+          lookup: round.lookup,
+          modifier: round.modifier,
+        },
+        tx,
+      });
+    }
   }
 
   private async deleteScoresheets(args: {

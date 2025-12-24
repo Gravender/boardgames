@@ -18,6 +18,7 @@ import type {
   InsertRoundInputType,
   InsertScoreSheetInputType,
   InsertSharedScoreSheetInputType,
+  UpdateRoundType,
 } from "./scoresheet.repository.types";
 
 class ScoresheetRepository {
@@ -286,6 +287,17 @@ class ScoresheetRepository {
       .where(eq(sharedScoresheet.id, id))
       .returning();
     return updatedSharedScoresheet;
+  }
+
+  public async updateRound(args: UpdateRoundType) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [updatedRound] = await database
+      .update(round)
+      .set(input)
+      .where(eq(round.id, args.id))
+      .returning();
+    return updatedRound;
   }
 
   public async updateRounds(args: {
