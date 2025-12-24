@@ -185,6 +185,7 @@ class DateMatchRepository {
       .select({
         id: vMatchCanonical.matchId,
         sharedMatchId: vMatchCanonical.sharedMatchId,
+        permissions: vMatchCanonical.permission,
         name: vMatchCanonical.name,
         date: vMatchCanonical.matchDate,
         duration: match.duration,

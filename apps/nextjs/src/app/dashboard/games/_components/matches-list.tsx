@@ -14,6 +14,7 @@ import {
   XIcon,
 } from "lucide-react";
 
+import type { RouterOutputs } from "@board-games/api";
 import { formatDuration } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
@@ -38,35 +39,7 @@ import { cn } from "@board-games/ui/utils";
 import { FormattedDate } from "~/components/formatted-date";
 import { MatchDropDown } from "./matchesDropDown";
 
-interface BaseMatch {
-  id: number;
-  gameId: number;
-  date: Date;
-  name: string;
-  finished: boolean;
-
-  won: boolean;
-  duration: number;
-}
-
-interface OriginalMatch extends BaseMatch {
-  type: "original";
-  location: {
-    type: "original";
-    name: string;
-  } | null;
-}
-
-interface SharedMatch extends BaseMatch {
-  type: "shared";
-  permissions: "view" | "edit";
-  location: {
-    type: "shared" | "linked";
-    name: string;
-  } | null;
-}
-
-type Match = OriginalMatch | SharedMatch;
+type Match = NonNullable<RouterOutputs["newGame"]["gameMatches"]>[number];
 
 interface MatchesListProps {
   matches: Match[];
@@ -442,8 +415,8 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
                         prefetch={true}
                         href={
                           match.finished
-                            ? `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}/summary`
-                            : `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}`
+                            ? `/dashboard/games/${match.type === "shared" ? `shared/${match.game.sharedGameId}` : match.game.id}/${match.id}/summary`
+                            : `/dashboard/games/${match.type === "shared" ? `shared/${match.game.sharedGameId}` : match.game.id}/${match.id}`
                         }
                       >
                         {match.finished ? (
@@ -466,8 +439,8 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
                           prefetch={true}
                           href={
                             match.finished
-                              ? `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}/summary`
-                              : `/dashboard/games/${match.type === "shared" ? "shared/" : ""}${match.gameId}/${match.id}`
+                              ? `/dashboard/games/${match.type === "shared" ? `shared/${match.game.sharedGameId}` : match.game.id}/${match.id}/summary`
+                              : `/dashboard/games/${match.type === "shared" ? `shared/${match.game.sharedGameId}` : match.game.id}/${match.id}`
                           }
                         >
                           <h3 className="xs:text-lg text-base font-medium">
@@ -511,16 +484,6 @@ export function MatchesList({ matches, isShared = false }: MatchesListProps) {
                           <div className="flex items-center gap-1 text-sm sm:text-base">
                             <MapPinIcon className="h-4 w-4" />
                             <span>{match.location.name}</span>
-                            {match.location.type === "linked" && (
-                              <Badge variant="outline" className="text-xs">
-                                Linked
-                              </Badge>
-                            )}
-                            {match.location.type === "shared" && (
-                              <Badge variant="outline" className="text-xs">
-                                Shared
-                              </Badge>
-                            )}
                           </div>
                         )}
 

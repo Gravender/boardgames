@@ -67,7 +67,10 @@ export function AddGameForm({
                   }
                 : null,
             scoresheets: scoreSheets,
-            roles: gameValues.roles,
+            roles: gameValues.roles.map((role) => ({
+              name: role.name,
+              description: role.description,
+            })),
           },
           {
             onSuccess: () => {
@@ -192,6 +195,8 @@ export function AddGameForm({
                   onBack={() => {
                     form.setFieldValue("activeForm", "game");
                   }}
+                  roundsEditable={true}
+                  scoresheetEditable={true}
                 />
               )}
               {activeForm === "game" && (

@@ -54,3 +54,14 @@ export const isSameLocation = (a: Location, b: Location) => {
   }
   return b.type === a.type && a.sharedId === b.sharedId;
 };
+
+type Scoresheet =
+  | { type: "original"; id: number }
+  | { type: "shared"; sharedId: number };
+
+export const isSameScoresheet = (a: Scoresheet, b: Scoresheet): boolean => {
+  if (a.type === "original") {
+    return b.type === "original" && "scoresheet" in b && a.id === b.id;
+  }
+  return b.type === "shared" && "sharedId" in b && a.sharedId === b.sharedId;
+};

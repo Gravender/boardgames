@@ -6,7 +6,7 @@ import { insertGameRoleSchema } from "@board-games/db/zodSchema";
 import type {
   CreateGameInputType,
   GetGameInputType,
-} from "../../../routers/game/game.input";
+} from "../../routers/game/game.input";
 
 export interface GetGameArgs {
   input: GetGameInputType;
@@ -94,4 +94,51 @@ export interface GetGameRolesArgs {
   };
   userId: string;
   tx: TransactionType;
+}
+
+export interface UpdateGameArgs {
+  input: {
+    id: number;
+    name?: string;
+    ownedBy?: boolean | null;
+    playersMin?: number | null;
+    playersMax?: number | null;
+    playtimeMin?: number | null;
+    playtimeMax?: number | null;
+    yearPublished?: number | null;
+    imageId?: number | null;
+  };
+  tx?: TransactionType;
+}
+
+export interface UpdateGameRoleArgs {
+  input: {
+    id: number;
+    name: string;
+    description: string | null;
+  };
+  tx?: TransactionType;
+}
+
+export interface DeleteGameRoleArgs {
+  input: {
+    gameId: number;
+    roleIds: number[];
+  };
+  tx?: TransactionType;
+}
+
+export interface GetSharedRoleArgs {
+  input: {
+    sharedRoleId: number;
+  };
+  userId: string;
+  tx?: TransactionType;
+}
+
+export interface DeleteSharedGameRoleArgs {
+  input: {
+    sharedRoleIds: number[];
+  };
+  tx?: TransactionType;
 }

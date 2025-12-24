@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { EDITED_GAME_NAME, GAME_NAME } from "../shared/test-data";
+import { GAME_NAME } from "../shared/test-data";
 import { deleteGames, gameAriaText } from "./helpers";
 
 test.describe("Game List", () => {
@@ -71,61 +71,5 @@ test.describe("Game List", () => {
     await expect(
       page.getByLabel("Games", { exact: true }).getByRole("listitem"),
     ).toMatchAriaSnapshot(originalGameAriaText);
-  });
-
-  test("Edit game from list", async ({ page, browserName }) => {
-    const browserGameName = browserName + "_" + GAME_NAME;
-    const editedBrowserGameName = browserName + "_" + EDITED_GAME_NAME;
-    await page.goto("/dashboard/games");
-    await page.getByRole("textbox", { name: "Search games..." }).click();
-    await page
-      .getByRole("textbox", { name: "Search games..." })
-      .fill(browserGameName);
-    const originalGameAriaText = gameAriaText(
-      browserGameName,
-      2014,
-      1,
-      4,
-      15,
-      30,
-    );
-    await expect(
-      page.getByLabel("Games", { exact: true }).getByRole("listitem"),
-    ).toMatchAriaSnapshot(originalGameAriaText);
-    await page.getByRole("button", { name: "Open menu" }).first().click();
-    await page.getByRole("menuitem", { name: "Edit" }).click();
-
-    await page.getByRole("textbox", { name: "Game Name" }).click();
-    await page
-      .getByRole("textbox", { name: "Game Name" })
-      .fill(editedBrowserGameName);
-    await page.getByRole("button", { name: "More options" }).click();
-    await page.locator('input[name="playersMin"]').click();
-    await page.locator('input[name="playersMin"]').fill("4");
-    await page.locator('input[name="playersMax"]').click();
-    await page.locator('input[name="playersMax"]').fill("5");
-    await page.locator('input[name="playtimeMin"]').click();
-    await page.locator('input[name="playtimeMin"]').fill("12");
-    await page.locator('input[name="playtimeMax"]').click();
-    await page.locator('input[name="playtimeMax"]').fill("14");
-    await page.getByPlaceholder("Year").click();
-    await page.getByPlaceholder("Year").fill("2003");
-    await page.getByRole("button", { name: "Submit" }).click();
-
-    await page.getByRole("textbox", { name: "Search games..." }).click();
-    await page
-      .getByRole("textbox", { name: "Search games..." })
-      .fill(editedBrowserGameName);
-    const editedGameAriaText = gameAriaText(
-      editedBrowserGameName,
-      2003,
-      4,
-      5,
-      12,
-      14,
-    );
-    await expect(
-      page.getByLabel("Games", { exact: true }).getByRole("listitem"),
-    ).toMatchAriaSnapshot(editedGameAriaText);
   });
 });

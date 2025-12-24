@@ -44,6 +44,7 @@ export const defaultValues: ScoreSheetWithRounds = {
     name: "Default",
     winCondition: "Highest Score",
     isCoop: false,
+    isDefault: false,
     roundsScore: "Aggregate",
     targetScore: 0,
   },
@@ -66,8 +67,16 @@ export const ScoresheetForm = withFieldGroup({
     onBack: () => {
       /* empty */
     },
+    roundsEditable: true,
+    scoresheetEditable: true,
   },
-  render: function Render({ group, onSave, onBack }) {
+  render: function Render({
+    group,
+    onSave,
+    onBack,
+    roundsEditable,
+    scoresheetEditable,
+  }) {
     const posthog = usePostHog();
 
     return (
@@ -98,6 +107,7 @@ export const ScoresheetForm = withFieldGroup({
                           aria-invalid={isInvalid}
                           placeholder="Sheet name"
                           autoComplete="off"
+                          disabled={!scoresheetEditable}
                         />
                         {isInvalid && (
                           <FieldError errors={field.state.meta.errors} />
@@ -119,6 +129,7 @@ export const ScoresheetForm = withFieldGroup({
                           onCheckedChange={(checked) =>
                             field.handleChange(checked as boolean)
                           }
+                          disabled={!scoresheetEditable}
                         />
                         <FieldLabel
                           htmlFor={field.name}
@@ -184,6 +195,7 @@ export const ScoresheetForm = withFieldGroup({
                               );
                             }
                           }}
+                          disabled={!scoresheetEditable}
                         >
                           <SelectTrigger
                             aria-invalid={isInvalid}
@@ -228,6 +240,7 @@ export const ScoresheetForm = withFieldGroup({
                             type="number"
                             className="text-center"
                             aria-invalid={isInvalid}
+                            disabled={!scoresheetEditable}
                           />
                           {isInvalid && (
                             <FieldError errors={field.state.meta.errors} />
@@ -304,6 +317,7 @@ export const ScoresheetForm = withFieldGroup({
                               );
                             }
                           }}
+                          disabled={!scoresheetEditable}
                         >
                           <SelectTrigger
                             aria-invalid={isInvalid}
@@ -333,6 +347,7 @@ export const ScoresheetForm = withFieldGroup({
                   fields={{
                     rounds: `rounds`,
                   }}
+                  editable={roundsEditable}
                 />
               </CardContent>
             );

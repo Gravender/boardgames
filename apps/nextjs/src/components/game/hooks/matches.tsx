@@ -11,6 +11,7 @@ type useGameMatchesInputType =
       type: "shared";
       sharedGameId: number;
     };
+
 export function useGameMatches(input: useGameMatchesInputType) {
   const trpc = useTRPC();
   const { data: gameMatches } = useSuspenseQuery(

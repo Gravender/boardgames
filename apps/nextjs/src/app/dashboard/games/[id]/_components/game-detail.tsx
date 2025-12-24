@@ -1,23 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { BarChart2 } from "lucide-react";
 
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 
 import { GameImage } from "~/components/game-image";
+import { useGame } from "~/components/game/hooks/game";
+import { useGameMatches } from "~/components/game/hooks/matches";
 import { AddMatchDialog } from "~/components/match/add/index";
-import { useTRPC } from "~/trpc/react";
 import { GameDetails as GameDetailsComponent } from "../../_components/game-details";
 import { MatchesList } from "../../_components/matches-list";
 
 export default function GameDetails({ gameId }: { gameId: number }) {
-  const trpc = useTRPC();
-  const { data: game } = useSuspenseQuery(
-    trpc.game.getGame.queryOptions({ id: gameId }),
-  );
+  const { game } = useGame({ id: gameId, type: "original" });
+  const matches = useGameMatches({ id: gameId, type: "original" });
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -58,7 +56,7 @@ export default function GameDetails({ gameId }: { gameId: number }) {
             players={game.players}
             playtime={game.playtime}
             yearPublished={game.yearPublished}
-            matchesCount={game.matches.length}
+            matchesCount={matches.gameMatches.length}
           />
         </div>
       </div>
@@ -68,7 +66,7 @@ export default function GameDetails({ gameId }: { gameId: number }) {
         <div className="mb-3 flex items-center justify-between md:mb-4">
           <h2 className="text-xl font-semibold md:text-2xl">Match History</h2>
         </div>
-        <MatchesList matches={game.matches} />
+        <MatchesList matches={matches.gameMatches} />
         <div className="absolute right-6 bottom-4 z-10 sm:right-10">
           <AddMatchDialog
             game={{
@@ -76,7 +74,7 @@ export default function GameDetails({ gameId }: { gameId: number }) {
               id: gameId,
             }}
             gameName={game.name}
-            matches={game.matches.length}
+            matches={matches.gameMatches.length}
           />
         </div>
       </div>

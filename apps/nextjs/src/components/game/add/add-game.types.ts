@@ -7,7 +7,9 @@ import {
 } from "@board-games/shared";
 
 export const scoreSheetWithRoundsSchema = z.object({
-  scoresheet: scoreSheetSchema,
+  scoresheet: scoreSheetSchema.safeExtend({
+    isDefault: z.boolean().optional(),
+  }),
   rounds: z.array(baseRoundSchema),
 });
 
