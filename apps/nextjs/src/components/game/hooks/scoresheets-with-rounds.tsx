@@ -18,18 +18,12 @@ type GameScoreSheetsWithRoundsType =
   RouterOutputs["newGame"]["gameScoreSheetsWithRounds"];
 
 export function useGameScoreSheetsWithRounds(
-  input: Extract<
-    useGameScoreSheetsWithRoundsInputType,
-    { type: "original" }
-  >,
+  input: Extract<useGameScoreSheetsWithRoundsInputType, { type: "original" }>,
 ): {
   gameScoreSheetsWithRounds: GameScoreSheetsWithRoundsType;
 };
 export function useGameScoreSheetsWithRounds(
-  input: Extract<
-    useGameScoreSheetsWithRoundsInputType,
-    { type: "shared" }
-  >,
+  input: Extract<useGameScoreSheetsWithRoundsInputType, { type: "shared" }>,
 ): {
   gameScoreSheetsWithRounds: Extract<
     GameScoreSheetsWithRoundsType[number],
@@ -58,4 +52,3 @@ export function useGameScoreSheetsWithRounds(
     gameScoreSheetsWithRounds,
   };
 }
-

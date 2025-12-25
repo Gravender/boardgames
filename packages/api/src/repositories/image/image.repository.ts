@@ -1,3 +1,5 @@
+import { eq } from "drizzle-orm";
+
 import type {
   Filter,
   InferQueryResult,
@@ -6,7 +8,6 @@ import type {
 } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 import { image } from "@board-games/db/schema";
-import { eq } from "drizzle-orm";
 
 class ImageRepository {
   public async findFirst<TConfig extends QueryConfig<"image">>(
@@ -83,4 +84,3 @@ class ImageRepository {
 }
 
 export const imageRepository = new ImageRepository();
-
