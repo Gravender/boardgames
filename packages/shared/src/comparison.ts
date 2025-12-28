@@ -61,7 +61,7 @@ type Scoresheet =
 
 export const isSameScoresheet = (a: Scoresheet, b: Scoresheet): boolean => {
   if (a.type === "original") {
-    return b.type === "original" && "scoresheet" in b && a.id === b.id;
+    return b.type === "original" && a.id === b.id;
   }
-  return b.type === "shared" && "sharedId" in b && a.sharedId === b.sharedId;
+  return b.type === "shared" && a.sharedId === b.sharedId;
 };

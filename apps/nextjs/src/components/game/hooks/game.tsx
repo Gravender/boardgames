@@ -41,10 +41,6 @@ export function useGame(
     trpc.game.getGame.queryOptions(gameInput),
   );
 
-  if (!game) {
-    throw new Error("Game not found");
-  }
-
   return {
     game,
   };

@@ -214,6 +214,7 @@ export const RolesForm = withFieldGroup({
                             const canEdit =
                               role.type === "new" ||
                               role.type === "original" ||
+                              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                               (role.type === "shared" &&
                                 role.permission === "edit");
 

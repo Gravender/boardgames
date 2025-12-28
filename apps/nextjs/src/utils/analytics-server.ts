@@ -13,7 +13,7 @@ export function getPosthogServerClient() {
       flushInterval: 0,
     });
 
-    if (process.env.NODE_ENV === "development") {
+    if (env.NODE_ENV === "development") {
       posthogClient.debug(true);
     }
   }
