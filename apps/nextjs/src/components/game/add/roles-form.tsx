@@ -206,9 +206,30 @@ export const RolesForm = withFieldGroup({
                               return false;
                             });
 
-                            // If not found, it might be a new role that hasn't been added yet
-                            const actualRoleIndex =
-                              roleIndex >= 0 ? roleIndex : roles.length;
+                            // Handle unexpected state: roleIndex < 0 indicates a bug in the comparison logic
+                            if (roleIndex < 0) {
+                              console.error(
+                                "[RolesForm] Failed to find role index in original array. This indicates a bug in the comparison function.",
+                                {
+                                  role: {
+                                    type: role.type,
+                                    id: role.type === "new" ? role.id : undefined,
+                                    sharedId:
+                                      role.type === "shared"
+                                        ? role.sharedId
+                                        : undefined,
+                                    name: role.name,
+                                    description: role.description,
+                                  },
+                                  rolesLength: roles.length,
+                                  filteredRolesLength: filteredRoles.length,
+                                },
+                              );
+                              // Skip processing this role to prevent errors
+                              return null;
+                            }
+
+                            const actualRoleIndex = roleIndex;
 
                             const isShared = role.type === "shared";
                             const canEdit =

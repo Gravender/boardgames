@@ -142,6 +142,85 @@ export const ScoresheetForm = withForm({
                   </form.AppField>
 
                   <form.AppField
+                    name={`scoresheets[${scoresheetIndex}].scoresheet.isDefault`}
+                  >
+                    {(field) => {
+                      const isInvalid =
+                        field.state.meta.isTouched && !field.state.meta.isValid;
+                      return (
+                        <Field
+                          data-invalid={isInvalid}
+                          orientation="horizontal"
+                        >
+                          <Checkbox
+                            id={field.name}
+                            checked={field.state.value}
+                            onCheckedChange={(checked) => {
+                              const scoresheets =
+                                form.getFieldValue(`scoresheets`);
+                              if (checked) {
+                                const temp: EditGameFormValues["scoresheets"] =
+                                  scoresheets.map((s, index) => {
+                                    if (s.scoresheetType === "new") {
+                                      return {
+                                        scoresheetType: "new",
+                                        scoresheet: {
+                                          ...s.scoresheet,
+                                          isDefault:
+                                            index === scoresheetIndex
+                                              ? true
+                                              : false,
+                                        },
+                                        rounds: s.rounds,
+                                      };
+                                    }
+                                    const scoreSheetChanged =
+                                      s.scoresheet.isDefault ??
+                                      s.scoreSheetChanged;
+                                    const roundChanged = s.roundChanged;
+                                    if (index === scoresheetIndex) {
+                                      return {
+                                        ...s,
+                                        scoresheet: {
+                                          ...s.scoresheet,
+                                          isDefault: true,
+                                        },
+                                        scoreSheetChanged: true,
+                                        roundChanged: roundChanged,
+                                      };
+                                    }
+                                    return {
+                                      ...s,
+                                      scoresheet: {
+                                        ...s.scoresheet,
+                                        isDefault: false,
+                                      },
+                                      scoreSheetChanged: scoreSheetChanged,
+                                      roundChanged: roundChanged,
+                                    };
+                                  });
+                                form.setFieldValue(`scoresheets`, temp);
+                              } else {
+                                field.handleChange(false);
+                              }
+                            }}
+                            disabled={!scoresheetEditable}
+                          />
+                          <FieldLabel
+                            htmlFor={field.name}
+                            className="font-normal"
+                          >
+                            Is Default?
+                          </FieldLabel>
+                          {isInvalid && (
+                            <FieldError errors={field.state.meta.errors} />
+                          )}
+                        </Field>
+                      );
+                    }}
+                  </form.AppField>
+
+                  <form.AppField
                     name={`scoresheets[${scoresheetIndex}].scoresheet.winCondition`}
                     validators={{
                       onChangeListenTo: [

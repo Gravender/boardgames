@@ -140,6 +140,7 @@ export const RoundsForm = withFieldGroup({
                 </div>
                 <div className="flex items-center justify-end gap-2">
                   <Button
+                    name="addRound"
                     type="button"
                     variant="secondary"
                     size={"icon"}
@@ -155,6 +156,7 @@ export const RoundsForm = withFieldGroup({
                     <Plus />
                   </Button>
                   <Button
+                    name="removeRound"
                     type="button"
                     variant="secondary"
                     size={"icon"}

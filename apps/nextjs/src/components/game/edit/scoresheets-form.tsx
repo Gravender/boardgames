@@ -165,6 +165,7 @@ export const ScoresheetsForm = withForm({
                                                     </div>
                                                   </button>
                                                   <Button
+                                                    name={`removeScoresheet-${scoresheet.scoresheet.name}`}
                                                     variant="destructive"
                                                     size="icon"
                                                     type="button"
