@@ -5,38 +5,34 @@ import { Table, Trash } from "lucide-react";
 import { Button } from "@board-games/ui/button";
 import { Separator } from "@board-games/ui/separator";
 
-import type { ScoreSheetWithRounds } from "./add-game.types";
-import { withFieldGroup } from "~/hooks/form";
-import { defaultRound } from "./add-game.types";
+import type { AddGameFormValues } from "./add-game.types";
+import { withForm } from "~/hooks/form";
+import { addGameFormSchema, defaultRound } from "./add-game.types";
 
-const defaultValues: {
-  scoreSheets: ScoreSheetWithRounds[];
-  activeScoreSheetIndex?: number;
-} = {
-  scoreSheets: [],
-  activeScoreSheetIndex: 0,
-};
-export const ScoresheetsForm = withFieldGroup({
-  defaultValues: defaultValues,
+export const ScoresheetsForm = withForm({
+  defaultValues: {} as AddGameFormValues,
+  validators: {
+    onSubmit: addGameFormSchema,
+  },
   props: {
     onOpenScoresheet: () => {
       /* empty */
     },
   },
-  render: function Render({ group, onOpenScoresheet }) {
+  render: function Render({ form, onOpenScoresheet }) {
     return (
-      <group.Subscribe
+      <form.Subscribe
         selector={(state) => ({
-          scoreSheetsLength: state.values.scoreSheets.length,
+          scoreSheetsLength: state.values.scoresheets.length,
         })}
       >
         {({ scoreSheetsLength }) => {
           return (
             <>
-              <group.AppField name="activeScoreSheetIndex">
+              <form.AppField name="activeScoreSheetIndex">
                 {(activeScoreSheetField) => {
                   return (
-                    <group.AppField name="scoreSheets" mode="array">
+                    <form.AppField name="scoresheets" mode="array">
                       {(scoreSheetsField) => {
                         return (
                           <div className="flex flex-col">
@@ -53,6 +49,9 @@ export const ScoresheetsForm = withFieldGroup({
                                       name: `Scoresheet ${scoreSheetsLength + 1}`,
                                       winCondition: "Highest Score",
                                       isCoop: false,
+                                      isDefault: false,
+                                      roundsScore: "Aggregate",
+                                      targetScore: 0,
                                     },
                                     rounds: [defaultRound],
                                   });
@@ -130,14 +129,14 @@ export const ScoresheetsForm = withFieldGroup({
                           </div>
                         );
                       }}
-                    </group.AppField>
+                    </form.AppField>
                   );
                 }}
-              </group.AppField>
+              </form.AppField>
             </>
           );
         }}
-      </group.Subscribe>
+      </form.Subscribe>
     );
   },
 });

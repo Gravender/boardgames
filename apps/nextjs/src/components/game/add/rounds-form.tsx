@@ -19,7 +19,10 @@ export const defaultValues: {
 };
 export const RoundsForm = withFieldGroup({
   defaultValues: defaultValues,
-  render: function Render({ group }) {
+  props: {
+    editable: true,
+  },
+  render: function Render({ group, editable }) {
     return (
       <div className="flex flex-col gap-2 pb-4">
         <div className="text-xl font-semibold">Rounds</div>
@@ -27,7 +30,7 @@ export const RoundsForm = withFieldGroup({
           {(field) => {
             return (
               <>
-                <div className="flex max-h-[25vh] flex-col gap-2 overflow-auto">
+                <div className="flex max-h-[25vh] flex-col gap-2 overflow-auto py-1">
                   {field.state.value.map((_, index) => {
                     return (
                       <div
@@ -51,6 +54,7 @@ export const RoundsForm = withFieldGroup({
                                   <GradientPicker
                                     color={field.state.value ?? null}
                                     setColor={field.handleChange}
+                                    disabled={!editable}
                                   />
                                   {isInvalid && (
                                     <FieldError
@@ -82,6 +86,7 @@ export const RoundsForm = withFieldGroup({
                                       field.handleChange(e.target.value)
                                     }
                                     aria-invalid={isInvalid}
+                                    disabled={!editable}
                                   />
                                   {isInvalid && (
                                     <FieldError
@@ -100,6 +105,7 @@ export const RoundsForm = withFieldGroup({
                               fields={{
                                 round: `rounds[${index}]`,
                               }}
+                              disabled={!editable}
                             />
                           )}
                           <Button
@@ -111,9 +117,11 @@ export const RoundsForm = withFieldGroup({
                                 ...field.state.value[index],
                                 name: `Round ${field.state.value.length + 1}`,
                                 order: field.state.value.length + 1,
+                                roundId: null,
                               };
                               field.pushValue(newRound);
                             }}
+                            disabled={!editable}
                           >
                             <Copy />
                           </Button>
@@ -122,6 +130,7 @@ export const RoundsForm = withFieldGroup({
                             size="icon"
                             type="button"
                             onClick={() => field.removeValue(index)}
+                            disabled={!editable}
                           >
                             <Trash />
                           </Button>
@@ -132,6 +141,7 @@ export const RoundsForm = withFieldGroup({
                 </div>
                 <div className="flex items-center justify-end gap-2">
                   <Button
+                    name="addRound"
                     type="button"
                     variant="secondary"
                     size={"icon"}
@@ -140,12 +150,15 @@ export const RoundsForm = withFieldGroup({
                         ...defaultRound,
                         name: `Round ${field.state.value.length + 1}`,
                         order: field.state.value.length + 1,
+                        roundId: null,
                       })
                     }
+                    disabled={!editable}
                   >
                     <Plus />
                   </Button>
                   <Button
+                    name="removeRound"
                     type="button"
                     variant="secondary"
                     size={"icon"}
@@ -154,6 +167,7 @@ export const RoundsForm = withFieldGroup({
                         field.removeValue(field.state.value.length - 1);
                       }
                     }}
+                    disabled={!editable}
                   >
                     <Minus />
                   </Button>

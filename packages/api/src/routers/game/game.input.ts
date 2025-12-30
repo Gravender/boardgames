@@ -5,6 +5,7 @@ import {
   insertRoundSchema,
   insertScoreSheetSchema,
 } from "@board-games/db/zodSchema";
+import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 export const getGameInput = z.discriminatedUnion("type", [
   z.object({
@@ -78,3 +79,81 @@ export const createGameInput = z.object({
 });
 
 export type CreateGameInputType = z.infer<typeof createGameInput>;
+
+export const editGameInput = z.object({
+  game: z.discriminatedUnion("type", [
+    z.object({
+      type: z.literal("updateGame"),
+      id: z.number(),
+      name: z.string().optional(),
+      ownedBy: z.boolean().nullish(),
+      image: z
+        .discriminatedUnion("type", [
+          z.object({
+            type: z.literal("file"),
+            imageId: z.number(),
+          }),
+          z.object({
+            type: z.literal("svg"),
+            name: z.string(),
+          }),
+        ])
+        .nullish(),
+      playersMin: z.number().nullish(),
+      playersMax: z.number().nullish(),
+      playtimeMin: z.number().nullish(),
+      playtimeMax: z.number().nullish(),
+      yearPublished: z.number().nullish(),
+    }),
+    z.object({ type: z.literal("default"), id: z.number() }),
+  ]),
+  scoresheets: z.array(editScoresheetSchemaApiInput),
+  scoresheetsToDelete: z.array(
+    z.discriminatedUnion("scoresheetType", [
+      z.object({
+        scoresheetType: z.literal("original"),
+        id: z.number(),
+      }),
+      z.object({
+        scoresheetType: z.literal("shared"),
+        sharedId: z.number(),
+      }),
+    ]),
+  ),
+  updatedRoles: z.array(
+    z.discriminatedUnion("type", [
+      z.object({
+        type: z.literal("original"),
+        id: z.number(),
+        name: z.string(),
+        description: z.string().nullable(),
+      }),
+      z.object({
+        type: z.literal("shared"),
+        sharedId: z.number(),
+        name: z.string(),
+        description: z.string().nullable(),
+      }),
+    ]),
+  ),
+  newRoles: z.array(
+    z.object({
+      name: z.string(),
+      description: z.string().nullable(),
+    }),
+  ),
+  deletedRoles: z.array(
+    z.discriminatedUnion("type", [
+      z.object({
+        type: z.literal("original"),
+        id: z.number(),
+      }),
+      z.object({
+        type: z.literal("shared"),
+        sharedId: z.number(),
+      }),
+    ]),
+  ),
+});
+
+export type EditGameInputType = z.infer<typeof editGameInput>;

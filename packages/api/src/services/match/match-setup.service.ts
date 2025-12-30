@@ -4,7 +4,7 @@ import type { TransactionType } from "@board-games/db/client";
 
 import type { InsertRoundInputType } from "../../routers/scoresheet/repository/scoresheet.repository.types";
 import type { CreateMatchArgs } from "./match.service.types";
-import { gameRepository } from "../../routers/game/repository/game.repository";
+import { gameRepository } from "../../repositories/game/game.repository";
 import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
 import { locationRepository } from "../../routers/location/repository/location.repository";
 import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";

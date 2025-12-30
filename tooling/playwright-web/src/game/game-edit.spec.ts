@@ -1,7 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 import { GAME_NAME } from "../shared/test-data";
-import { createGameViaTrpc } from "../trpc/procedures";
+import {
+  createGameViaTrpc,
+  createGameWithScoresheetViaTrpc,
+} from "../trpc/procedures";
 import { deleteGames, findGameCard, findGameLink } from "./helpers";
 
 test.describe("Game Edit Page", () => {
@@ -131,7 +134,7 @@ test.describe("Game Edit Page", () => {
     await expect(editedGameCard).toBeVisible();
   });
 
-  /* test("Change default scoresheet", async ({ page, browserName }) => {
+  test("Change default scoresheet", async ({ page, browserName }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
 
     // Create game with multiple scoresheets
@@ -226,18 +229,15 @@ test.describe("Game Edit Page", () => {
     await scoresheetButton.click();
 
     // Add a new round
-    const addRoundButton = page
-      .getByRole("button", { name: /Add Round|^\+$/i })
-      .last();
-    await addRoundButton.click();
 
-    // Fill in the new round details
+    await page.locator('button[name="addRound"]').click(); // Fill in the new round details
     const roundInputs = page.locator('input[placeholder*="Round" i]');
     const roundCount = await roundInputs.count();
     const newRoundInput = roundInputs.nth(roundCount - 1);
     await newRoundInput.fill("Round 3");
 
     // Submit
+    await page.getByRole("button", { name: "Submit" }).click();
     await page.getByRole("button", { name: "Submit" }).click();
 
     // Verify change persisted
@@ -278,11 +278,8 @@ test.describe("Game Edit Page", () => {
     await nameInput.fill("New Scoresheet");
 
     // Set win condition
-    const winConditionSelect = page.getByRole("combobox", {
-      name: "Win Condition",
-    });
-    await winConditionSelect.click();
-    await page.getByText("Highest Score", { exact: true }).click();
+    await page.locator('button[name="winCondition"]').click();
+    await page.getByRole("option", { name: "Highest Score" }).click();
 
     // Add a round
     const roundInput = page
@@ -294,9 +291,6 @@ test.describe("Game Edit Page", () => {
     // Submit scoresheet form
     const submitButton = page.getByRole("button", { name: "Submit" });
     await submitButton.click();
-
-    // Wait for form to close and main form to be visible again
-    await page.waitForTimeout(500);
 
     // Submit the main form
     await page.getByRole("button", { name: "Submit" }).click();
@@ -339,24 +333,7 @@ test.describe("Game Edit Page", () => {
     // Navigate to edit page
     await page.goto(`/dashboard/games/${gameId}/edit`);
 
-    // Navigate to the scoresheet to delete
-    const scoresheetButton = page.getByText("Scoresheet 2");
-    await scoresheetButton.click();
-
-    // Find and click delete button (might be in a menu or as a button)
-    const deleteButton = page
-      .getByRole("button", { name: /Delete|Remove/i })
-      .or(page.locator('button[aria-label*="delete" i]'))
-      .first();
-    await deleteButton.click();
-
-    // Confirm deletion if there's a confirmation dialog
-    const confirmButton = page
-      .getByRole("button", { name: /Confirm|Yes|Delete/i })
-      .first();
-    if (await confirmButton.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await confirmButton.click();
-    }
+    await page.locator('button[name="removeScoresheet-Scoresheet 2"]').click();
 
     // Submit the main form
     await page.getByRole("button", { name: "Submit" }).click();
@@ -375,5 +352,4 @@ test.describe("Game Edit Page", () => {
     // But Scoresheet 1 should still be there
     await expect(page.getByText("Scoresheet 1")).toBeVisible();
   });
- */
 });

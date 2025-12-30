@@ -27,10 +27,10 @@ import {
 import { Separator } from "@board-games/ui/separator";
 import { toast } from "@board-games/ui/toast";
 
-import type { AddGameFormValues } from "./add-game.types";
+import type { EditGameFormValues } from "./edit-game.types";
 import { withForm } from "~/hooks/form";
-import { addGameFormSchema } from "./add-game.types";
-import { RoundsForm } from "./rounds-form";
+import { RoundsForm } from "../add/rounds-form";
+import { editGameFormSchema } from "./edit-game.types";
 
 const winConditionOptions = scoreSheetWinConditions;
 const roundsScoreOptions: (typeof scoreSheetRoundsScore)[number][] =
@@ -41,9 +41,9 @@ const coopWinConditionOptions: (typeof scoreSheetWinConditions)[number][] = [
   "Target Score",
 ];
 export const ScoresheetForm = withForm({
-  defaultValues: {} as AddGameFormValues,
+  defaultValues: {} as EditGameFormValues,
   validators: {
-    onSubmit: addGameFormSchema,
+    onSubmit: editGameFormSchema,
   },
   props: {
     onSave: () => {
@@ -132,6 +132,84 @@ export const ScoresheetForm = withForm({
                             className="font-normal"
                           >
                             Is Co-op?
+                          </FieldLabel>
+                          {isInvalid && (
+                            <FieldError errors={field.state.meta.errors} />
+                          )}
+                        </Field>
+                      );
+                    }}
+                  </form.AppField>
+
+                  <form.AppField
+                    name={`scoresheets[${scoresheetIndex}].scoresheet.isDefault`}
+                  >
+                    {(field) => {
+                      const isInvalid =
+                        field.state.meta.isTouched && !field.state.meta.isValid;
+                      return (
+                        <Field
+                          data-invalid={isInvalid}
+                          orientation="horizontal"
+                        >
+                          <Checkbox
+                            id={field.name}
+                            checked={field.state.value}
+                            onCheckedChange={(checked) => {
+                              const scoresheets =
+                                form.getFieldValue(`scoresheets`);
+                              if (checked) {
+                                const temp: EditGameFormValues["scoresheets"] =
+                                  scoresheets.map((s, index) => {
+                                    if (s.scoresheetType === "new") {
+                                      return {
+                                        scoresheetType: "new",
+                                        scoresheet: {
+                                          ...s.scoresheet,
+                                          isDefault:
+                                            index === scoresheetIndex
+                                              ? true
+                                              : false,
+                                        },
+                                        rounds: s.rounds,
+                                      };
+                                    }
+                                    const roundChanged = s.roundChanged;
+                                    if (index === scoresheetIndex) {
+                                      return {
+                                        ...s,
+                                        scoresheet: {
+                                          ...s.scoresheet,
+                                          isDefault: true,
+                                        },
+                                        scoreSheetChanged: true,
+                                        roundChanged: roundChanged,
+                                      };
+                                    }
+                                    return {
+                                      ...s,
+                                      scoresheet: {
+                                        ...s.scoresheet,
+                                        isDefault: false,
+                                      },
+                                      scoreSheetChanged:
+                                        s.scoresheet.isDefault ??
+                                        s.scoreSheetChanged,
+                                      roundChanged: roundChanged,
+                                    };
+                                  });
+                                form.setFieldValue(`scoresheets`, temp);
+                              } else {
+                                field.handleChange(false);
+                              }
+                            }}
+                            disabled={!scoresheetEditable}
+                          />
+                          <FieldLabel
+                            htmlFor={field.name}
+                            className="font-normal"
+                          >
+                            Is Default?
                           </FieldLabel>
                           {isInvalid && (
                             <FieldError errors={field.state.meta.errors} />

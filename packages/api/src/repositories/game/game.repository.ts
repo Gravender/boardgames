@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, isNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { caseWhen } from "drizzle-plus";
 import { jsonAgg, jsonAggNotNull, jsonBuildObject } from "drizzle-plus/pg";
 
@@ -17,6 +17,7 @@ import {
   location,
   match,
   player,
+  sharedGameRole,
   team,
 } from "@board-games/db/schema";
 import {
@@ -29,9 +30,13 @@ import type {
   CreateGameArgs,
   CreateGameRoleArgs,
   CreateGameRolesArgs,
+  DeleteGameRoleArgs,
+  DeleteSharedGameRoleArgs,
   GetGameArgs,
-  GetGameMatchesOutputType,
   GetGameRolesArgs,
+  GetSharedRoleArgs,
+  UpdateGameArgs,
+  UpdateGameRoleArgs,
 } from "./game.repository.types";
 
 interface GameBaseFilter {
@@ -134,9 +139,7 @@ class GameRepository {
     return returningGameRoles;
   }
 
-  public async getGameMatches(
-    args: GetGameArgs,
-  ): Promise<GetGameMatchesOutputType> {
+  public async getGameMatches(args: GetGameArgs) {
     const { input } = args;
     const teamsByMatch = db.$with("teams_by_match").as(
       db
@@ -290,6 +293,7 @@ class GameRepository {
         .select({
           id: vMatchCanonical.matchId,
           sharedMatchId: vMatchCanonical.sharedMatchId,
+          permissions: vMatchCanonical.permission,
           name: vMatchCanonical.name,
           date: vMatchCanonical.matchDate,
           comment: vMatchCanonical.comment,
@@ -372,6 +376,7 @@ class GameRepository {
         .select({
           id: vMatchCanonical.matchId,
           sharedMatchId: vMatchCanonical.sharedMatchId,
+          permissions: vMatchCanonical.permission,
           name: vMatchCanonical.name,
           date: vMatchCanonical.matchDate,
           comment: vMatchCanonical.comment,
@@ -466,6 +471,77 @@ class GameRepository {
     return {
       rows,
     };
+  }
+
+  public async updateGame(args: UpdateGameArgs) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [updatedGame] = await database
+      .update(game)
+      .set({
+        name: input.name,
+        ownedBy: input.ownedBy,
+        playersMin: input.playersMin,
+        playersMax: input.playersMax,
+        playtimeMin: input.playtimeMin,
+        playtimeMax: input.playtimeMax,
+        yearPublished: input.yearPublished,
+        imageId: input.imageId,
+      })
+      .where(eq(game.id, input.id))
+      .returning();
+    return updatedGame;
+  }
+
+  public async updateGameRole(args: UpdateGameRoleArgs) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    await database
+      .update(gameRole)
+      .set({
+        name: input.name,
+        description: input.description,
+      })
+      .where(eq(gameRole.id, input.id));
+  }
+
+  public async deleteGameRole(args: DeleteGameRoleArgs) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    await database
+      .update(gameRole)
+      .set({
+        deletedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(gameRole.gameId, input.gameId),
+          inArray(gameRole.id, input.roleIds),
+        ),
+      );
+  }
+
+  public async getSharedRole(args: GetSharedRoleArgs) {
+    const { input, userId, tx } = args;
+    const database = tx ?? db;
+    const returnedSharedRole = await database.query.sharedGameRole.findFirst({
+      where: {
+        id: input.sharedRoleId,
+        sharedWithId: userId,
+      },
+      with: {
+        gameRole: true,
+      },
+    });
+    return returnedSharedRole;
+  }
+
+  public async deleteSharedGameRole(args: DeleteSharedGameRoleArgs) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    await database
+      .delete(sharedGameRole)
+      .where(inArray(sharedGameRole.id, input.sharedRoleIds));
   }
 }
 export const gameRepository = new GameRepository();

@@ -113,6 +113,7 @@ class DateMatchService {
         }
         return {
           ...match,
+          permissions: match.permissions,
           sharedMatchId: match.sharedMatchId,
           game: {
             id: match.game.id,

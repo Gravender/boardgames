@@ -2,8 +2,10 @@ import z from "zod/v4";
 
 import { selectGameSchema } from "@board-games/db/zodSchema";
 import {
+  baseRoundSchema,
   matchWithGameAndPlayersSchema,
   originalRoleSchema,
+  scoreSheetSchema,
   sharedRoleSchema,
 } from "@board-games/shared";
 
@@ -36,16 +38,15 @@ export type GetGameRolesOutputType = z.infer<typeof getGameRolesOutput>;
 
 export const getGameScoresheetsOutput = z.array(
   z.discriminatedUnion("type", [
-    z.object({
-      id: z.number(),
-      name: z.string(),
+    scoreSheetSchema.safeExtend({
       type: z.literal("original"),
+      id: z.number(),
       isDefault: z.boolean(),
     }),
-    z.object({
-      sharedId: z.number(),
-      name: z.string(),
+    scoreSheetSchema.safeExtend({
       type: z.literal("shared"),
+      sharedId: z.number(),
+      permission: z.literal("view").or(z.literal("edit")),
       isDefault: z.boolean(),
     }),
   ]),
@@ -53,3 +54,76 @@ export const getGameScoresheetsOutput = z.array(
 export type GetGameScoresheetsOutputType = z.infer<
   typeof getGameScoresheetsOutput
 >;
+
+export const roundWithIdSchema = baseRoundSchema.extend({
+  id: z.number(),
+});
+
+export const getGameScoreSheetsWithRoundsOutput = z.array(
+  z.discriminatedUnion("type", [
+    scoreSheetSchema.safeExtend({
+      type: z.literal("original"),
+      id: z.number(),
+      isDefault: z.boolean(),
+      rounds: z.array(roundWithIdSchema),
+    }),
+    scoreSheetSchema.safeExtend({
+      type: z.literal("shared"),
+      sharedId: z.number(),
+      permission: z.literal("view").or(z.literal("edit")),
+      isDefault: z.boolean(),
+      rounds: z.array(roundWithIdSchema),
+    }),
+  ]),
+);
+export type GetGameScoreSheetsWithRoundsOutputType = z.infer<
+  typeof getGameScoreSheetsWithRoundsOutput
+>;
+
+export const editGameOutput = z.void();
+export type EditGameOutputType = z.infer<typeof editGameOutput>;
+
+const imageSchema = z.object({
+  name: z.string(),
+  url: z.string().nullable(),
+  type: z.enum(["file", "svg"]),
+  usageType: z.literal("game"),
+});
+
+export const getGameOutput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    id: z.number(),
+    name: z.string(),
+    image: imageSchema.nullable(),
+    players: z.object({
+      min: z.number().nullable(),
+      max: z.number().nullable(),
+    }),
+    playtime: z.object({
+      min: z.number().nullable(),
+      max: z.number().nullable(),
+    }),
+    yearPublished: z.number().nullable(),
+    ownedBy: z.boolean().nullable(),
+  }),
+  z.object({
+    type: z.literal("shared"),
+    id: z.number(),
+    sharedGameId: z.number(),
+    name: z.string(),
+    image: imageSchema.nullable(),
+    players: z.object({
+      min: z.number().nullable(),
+      max: z.number().nullable(),
+    }),
+    playtime: z.object({
+      min: z.number().nullable(),
+      max: z.number().nullable(),
+    }),
+    yearPublished: z.number().nullable(),
+    ownedBy: z.boolean().nullable(),
+    permission: z.enum(["view", "edit"]),
+  }),
+]);
+export type GetGameOutputType = z.infer<typeof getGameOutput>;

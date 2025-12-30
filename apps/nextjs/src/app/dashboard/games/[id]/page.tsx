@@ -45,7 +45,9 @@ export default async function Page({ params }: Props) {
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
-  void prefetch(trpc.game.getGame.queryOptions({ id: Number(id) }));
+  void prefetch(
+    trpc.newGame.getGame.queryOptions({ type: "original", id: Number(id) }),
+  );
   void prefetch(trpc.location.getLocations.queryOptions());
   void prefetch(trpc.newPlayer.getPlayersForMatch.queryOptions());
   void prefetch(trpc.newPlayer.getRecentMatchWithPlayers.queryOptions());

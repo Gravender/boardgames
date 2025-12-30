@@ -37,7 +37,7 @@ const matchSchema = insertMatchSchema
     date: true,
   })
   .required({ name: true, date: true });
-type Match = NonNullable<RouterOutputs["game"]["getGame"]>["matches"][number];
+type Match = NonNullable<RouterOutputs["newGame"]["gameMatches"]>[number];
 export function EditSharedMatchForm({
   match,
   setIsOpen,

@@ -481,10 +481,6 @@ export const GameDetailsForm = withForm({
                   <Separator className="w-full" orientation="horizontal" />
                   <ScoresheetsForm
                     form={form}
-                    fields={{
-                      scoreSheets: "scoresheets",
-                      activeScoreSheetIndex: "activeScoreSheetIndex",
-                    }}
                     onOpenScoresheet={() =>
                       form.setFieldValue("activeForm", "scoresheet")
                     }
