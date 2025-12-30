@@ -15,7 +15,7 @@ test.describe("Game Detail Page", () => {
   test("Navigate to game detail page", async ({ page, browserName }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
     // First create a game
-    const createdGame = await createGameViaTrpc(browserName, browserGameName);
+    await createGameViaTrpc(browserName, browserGameName);
     // Navigate to games list and click on game
     await page.goto("/dashboard/games");
     await page

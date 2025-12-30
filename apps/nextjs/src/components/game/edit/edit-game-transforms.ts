@@ -186,7 +186,7 @@ export function transformToApiInput(
   // Build scoresheets updates
   let changedScoresheets: RouterInputs["game"]["updateGame"]["scoresheets"] =
     [];
-  
+
   // Calculate deleted scoresheets - this should always be checked, not just when scoresheetChanged is true
   const scoresheetsToDelete: RouterInputs["game"]["updateGame"]["scoresheetsToDelete"] =
     initialScoresheets

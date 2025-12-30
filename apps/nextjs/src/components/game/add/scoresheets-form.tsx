@@ -7,8 +7,7 @@ import { Separator } from "@board-games/ui/separator";
 
 import type { AddGameFormValues } from "./add-game.types";
 import { withForm } from "~/hooks/form";
-import { defaultRound } from "./add-game.types";
-import { addGameFormSchema } from "./add-game.types";
+import { addGameFormSchema, defaultRound } from "./add-game.types";
 
 export const ScoresheetsForm = withForm({
   defaultValues: {} as AddGameFormValues,
@@ -25,10 +24,9 @@ export const ScoresheetsForm = withForm({
       <form.Subscribe
         selector={(state) => ({
           scoreSheetsLength: state.values.scoresheets.length,
-          scoreSheets: state.values.scoresheets,
         })}
       >
-        {({ scoreSheetsLength, scoreSheets }) => {
+        {({ scoreSheetsLength }) => {
           return (
             <>
               <form.AppField name="activeScoreSheetIndex">

@@ -1,18 +1,8 @@
 import type { TRPCRouterRecord } from "@trpc/server";
-import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { compareAsc } from "date-fns";
-import { eq, inArray, sql } from "drizzle-orm";
-import { z } from "zod/v4";
 
-import {
-  game,
-  round,
-  scoresheet,
-  sharedScoresheet,
-} from "@board-games/db/schema";
 import { selectSharedGameSchema } from "@board-games/db/zodSchema";
-import { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 import type { PlayerMatch } from "../../utils/gameStats";
 import { protectedUserProcedure } from "../../trpc";
