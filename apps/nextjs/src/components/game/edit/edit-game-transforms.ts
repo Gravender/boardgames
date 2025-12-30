@@ -186,8 +186,31 @@ export function transformToApiInput(
   // Build scoresheets updates
   let changedScoresheets: RouterInputs["game"]["updateGame"]["scoresheets"] =
     [];
-  let scoresheetsToDelete: RouterInputs["game"]["updateGame"]["scoresheetsToDelete"] =
-    [];
+  
+  // Calculate deleted scoresheets - this should always be checked, not just when scoresheetChanged is true
+  const scoresheetsToDelete: RouterInputs["game"]["updateGame"]["scoresheetsToDelete"] =
+    initialScoresheets
+      .filter(
+        (foundScoresheet) =>
+          !formScoresheets.find(
+            (scoresheet) =>
+              scoresheet.scoresheetType !== "new" &&
+              isSameScoresheet(
+                foundScoresheet,
+                scoresheet.scoresheetType === "original"
+                  ? { type: "original" as const, id: scoresheet.scoresheet.id }
+                  : { type: "shared" as const, sharedId: scoresheet.sharedId },
+              ),
+          ),
+      )
+      .map((foundScoresheet) => {
+        return foundScoresheet.type === "original"
+          ? { scoresheetType: "original" as const, id: foundScoresheet.id }
+          : {
+              scoresheetType: "shared" as const,
+              sharedId: foundScoresheet.sharedId,
+            };
+      });
 
   if (scoresheetChanged) {
     changedScoresheets = formScoresheets
@@ -419,29 +442,6 @@ export function transformToApiInput(
         ): scoresheet is RouterInputs["game"]["updateGame"]["scoresheets"][number] =>
           scoresheet !== undefined,
       );
-
-    scoresheetsToDelete = initialScoresheets
-      .filter(
-        (foundScoresheet) =>
-          !formScoresheets.find(
-            (scoresheet) =>
-              scoresheet.scoresheetType !== "new" &&
-              isSameScoresheet(
-                foundScoresheet,
-                scoresheet.scoresheetType === "original"
-                  ? { type: "original" as const, id: scoresheet.scoresheet.id }
-                  : { type: "shared" as const, sharedId: scoresheet.sharedId },
-              ),
-          ),
-      )
-      .map((foundScoresheet) => {
-        return foundScoresheet.type === "original"
-          ? { scoresheetType: "original" as const, id: foundScoresheet.id }
-          : {
-              scoresheetType: "shared" as const,
-              sharedId: foundScoresheet.sharedId,
-            };
-      });
   }
 
   return {
