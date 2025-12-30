@@ -238,7 +238,6 @@ test.describe("Game Edit Page", () => {
 
     // Submit
     await page.getByRole("button", { name: "Submit" }).click();
-    await page.waitForTimeout(500);
     await page.getByRole("button", { name: "Submit" }).click();
 
     // Verify change persisted

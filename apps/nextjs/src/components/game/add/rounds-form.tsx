@@ -117,6 +117,7 @@ export const RoundsForm = withFieldGroup({
                                 ...field.state.value[index],
                                 name: `Round ${field.state.value.length + 1}`,
                                 order: field.state.value.length + 1,
+                                roundId: null,
                               };
                               field.pushValue(newRound);
                             }}
@@ -149,6 +150,7 @@ export const RoundsForm = withFieldGroup({
                         ...defaultRound,
                         name: `Round ${field.state.value.length + 1}`,
                         order: field.state.value.length + 1,
+                        roundId: null,
                       })
                     }
                     disabled={!editable}
