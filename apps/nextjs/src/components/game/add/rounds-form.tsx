@@ -30,7 +30,7 @@ export const RoundsForm = withFieldGroup({
           {(field) => {
             return (
               <>
-                <div className="flex max-h-[25vh] flex-col gap-2 overflow-auto">
+                <div className="flex max-h-[25vh] flex-col gap-2 overflow-auto py-1">
                   {field.state.value.map((_, index) => {
                     return (
                       <div

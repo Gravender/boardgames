@@ -1,7 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 import { GAME_NAME } from "../shared/test-data";
-import { createGameViaTrpc } from "../trpc/procedures";
+import {
+  createGameViaTrpc,
+  createGameWithScoresheetViaTrpc,
+} from "../trpc/procedures";
 import { deleteGames, findGameCard, findGameLink } from "./helpers";
 
 test.describe("Game Edit Page", () => {
@@ -131,7 +134,7 @@ test.describe("Game Edit Page", () => {
     await expect(editedGameCard).toBeVisible();
   });
 
-  /* test("Change default scoresheet", async ({ page, browserName }) => {
+  test("Change default scoresheet", async ({ page, browserName }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
 
     // Create game with multiple scoresheets
@@ -375,5 +378,4 @@ test.describe("Game Edit Page", () => {
     // But Scoresheet 1 should still be there
     await expect(page.getByText("Scoresheet 1")).toBeVisible();
   });
- */
 });

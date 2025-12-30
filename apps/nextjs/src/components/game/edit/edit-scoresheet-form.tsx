@@ -27,10 +27,10 @@ import {
 import { Separator } from "@board-games/ui/separator";
 import { toast } from "@board-games/ui/toast";
 
-import type { AddGameFormValues } from "./add-game.types";
+import type { EditGameFormValues } from "./edit-game.types";
 import { withForm } from "~/hooks/form";
-import { addGameFormSchema } from "./add-game.types";
-import { RoundsForm } from "./rounds-form";
+import { RoundsForm } from "../add/rounds-form";
+import { editGameFormSchema } from "./edit-game.types";
 
 const winConditionOptions = scoreSheetWinConditions;
 const roundsScoreOptions: (typeof scoreSheetRoundsScore)[number][] =
@@ -41,9 +41,9 @@ const coopWinConditionOptions: (typeof scoreSheetWinConditions)[number][] = [
   "Target Score",
 ];
 export const ScoresheetForm = withForm({
-  defaultValues: {} as AddGameFormValues,
+  defaultValues: {} as EditGameFormValues,
   validators: {
-    onSubmit: addGameFormSchema,
+    onSubmit: editGameFormSchema,
   },
   props: {
     onSave: () => {

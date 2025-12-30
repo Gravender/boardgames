@@ -18,10 +18,14 @@ import { cn } from "@board-games/ui/utils";
 import type { EditGameFormValues } from "./edit-game.types";
 import { GameImage } from "~/components/game-image";
 import { withForm } from "~/hooks/form";
+import { editGameFormSchema } from "./edit-game.types";
 import { ScoresheetsForm } from "./scoresheets-form";
 
 export const GameDetailsForm = withForm({
   defaultValues: {} as EditGameFormValues,
+  validators: {
+    onSubmit: editGameFormSchema,
+  },
   props: {
     imagePreview: null as ImagePreviewType | null,
     setImagePreview: (_: ImagePreviewType | null) => {
@@ -446,10 +450,6 @@ export const GameDetailsForm = withForm({
                 <Separator className="w-full" orientation="horizontal" />
                 <ScoresheetsForm
                   form={form}
-                  fields={{
-                    scoreSheets: "scoresheets",
-                    activeScoreSheetIndex: "activeScoreSheetIndex",
-                  }}
                   onOpenScoresheet={() =>
                     form.setFieldValue("activeForm", "scoresheet")
                   }

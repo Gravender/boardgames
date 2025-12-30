@@ -185,10 +185,6 @@ export function AddGameForm({
               {activeForm === "scoresheet" && (
                 <ScoresheetForm
                   form={form}
-                  fields={{
-                    scoresheet: `scoresheets[${activeScoreSheetIndex}].scoresheet`,
-                    rounds: `scoresheets[${activeScoreSheetIndex}].rounds`,
-                  }}
                   onSave={() => {
                     form.setFieldValue("activeForm", "game");
                   }}
