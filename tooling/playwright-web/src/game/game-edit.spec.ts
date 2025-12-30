@@ -292,9 +292,6 @@ test.describe("Game Edit Page", () => {
     const submitButton = page.getByRole("button", { name: "Submit" });
     await submitButton.click();
 
-    // Wait for form to close and main form to be visible again
-    await page.waitForTimeout(500);
-
     // Submit the main form
     await page.getByRole("button", { name: "Submit" }).click();
 

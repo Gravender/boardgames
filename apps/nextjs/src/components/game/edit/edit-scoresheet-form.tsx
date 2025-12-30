@@ -174,9 +174,6 @@ export const ScoresheetForm = withForm({
                                         rounds: s.rounds,
                                       };
                                     }
-                                    const scoreSheetChanged =
-                                      s.scoresheet.isDefault ??
-                                      s.scoreSheetChanged;
                                     const roundChanged = s.roundChanged;
                                     if (index === scoresheetIndex) {
                                       return {
@@ -195,7 +192,9 @@ export const ScoresheetForm = withForm({
                                         ...s.scoresheet,
                                         isDefault: false,
                                       },
-                                      scoreSheetChanged: scoreSheetChanged,
+                                      scoreSheetChanged:
+                                        s.scoresheet.isDefault ??
+                                        s.scoreSheetChanged,
                                       roundChanged: roundChanged,
                                     };
                                   });
