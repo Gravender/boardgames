@@ -29,7 +29,6 @@ export default function GameDetail({ game }: GameDetailProps) {
   void prefetch(trpc.location.getLocations.queryOptions());
   void prefetch(trpc.newPlayer.getPlayersForMatch.queryOptions());
   void prefetch(trpc.newGroup.getGroupsWithPlayers.queryOptions());
-  void prefetch(trpc.newGroup.getGroupsWithPlayers.queryOptions());
   return (
     <div className="space-y-6 md:space-y-8">
       {/* Game details section */}

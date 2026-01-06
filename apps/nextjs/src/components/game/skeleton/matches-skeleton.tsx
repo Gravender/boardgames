@@ -1,6 +1,6 @@
-import { Skeleton } from "@board-games/ui/skeleton";
-import { ScrollArea } from "@board-games/ui/scroll-area";
 import { ItemGroup } from "@board-games/ui/item";
+import { ScrollArea } from "@board-games/ui/scroll-area";
+import { Skeleton } from "@board-games/ui/skeleton";
 
 export function GameMatchesSkeleton() {
   return (

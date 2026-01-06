@@ -133,6 +133,7 @@ export function MatchDropdown({ match }: { match: Matches[number] }) {
               <DropdownMenuItem
                 className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground flex items-center gap-2"
                 onClick={() => setIsDeleteDialogOpen(true)}
+                disabled={deleteMatch.isPending}
               >
                 <Trash2Icon className="mr-2 h-4 w-4" />
                 <span>Delete</span>
@@ -158,6 +159,7 @@ export function MatchDropdown({ match }: { match: Matches[number] }) {
             <AlertDialogAction
               className={buttonVariants({ variant: "destructive" })}
               onClick={onDelete}
+              disabled={deleteMatch.isPending}
             >
               Delete
             </AlertDialogAction>

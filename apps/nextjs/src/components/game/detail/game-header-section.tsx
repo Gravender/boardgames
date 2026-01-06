@@ -84,7 +84,17 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
                 )}
                 {isShared && (
                   <p className="text-muted-foreground text-sm">
-                    Shared by {game.name}
+                    Shared by {game.sharedBy.name}
+                    {game.sharedBy.username && (
+                      <span className="text-muted-foreground text-xs">
+                        @{game.sharedBy.username}
+                      </span>
+                    )}
+                    {game.sharedBy.player && (
+                      <span className="text-muted-foreground text-xs">
+                        {game.sharedBy.player.name}
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
@@ -92,7 +102,7 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" asChild>
                   <Link
-                    href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.id}/stats`}
+                    href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/stats`}
                   >
                     <BarChart3 className="mr-2 h-4 w-4" />
                     Stats
@@ -111,7 +121,7 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
                       <>
                         <DropdownMenuItem asChild>
                           <Link
-                            href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.id}/edit`}
+                            href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/edit`}
                           >
                             <PencilIcon className="mr-2 h-4 w-4" />
                             Edit Game
