@@ -117,7 +117,6 @@ export const AddRoundsForm = withFieldGroup({
                                 ...field.state.value[index],
                                 name: `Round ${field.state.value.length + 1}`,
                                 order: field.state.value.length + 1,
-                                roundId: null,
                               };
                               field.pushValue(newRound);
                             }}
