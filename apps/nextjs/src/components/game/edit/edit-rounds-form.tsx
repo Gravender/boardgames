@@ -6,18 +6,18 @@ import { Button } from "@board-games/ui/button";
 import { Field, FieldError, FieldLabel } from "@board-games/ui/field";
 import { Input } from "@board-games/ui/input";
 
-import type { Rounds } from "./add-game.types";
+import type { Rounds } from "./edit-game.types";
 import { GradientPicker } from "~/components/color-picker";
 import { withFieldGroup } from "~/hooks/form";
-import { defaultRound } from "./add-game.types";
-import { RoundPopOver } from "./round-popover";
+import { RoundPopOver } from "../add/round-popover";
+import { defaultEditRound } from "./edit-game.types";
 
 export const defaultValues: {
   rounds: Rounds;
 } = {
-  rounds: [defaultRound],
+  rounds: [defaultEditRound],
 };
-export const RoundsForm = withFieldGroup({
+export const EditRoundsForm = withFieldGroup({
   defaultValues: defaultValues,
   props: {
     editable: true,
@@ -147,10 +147,9 @@ export const RoundsForm = withFieldGroup({
                     size={"icon"}
                     onClick={() =>
                       field.pushValue({
-                        ...defaultRound,
+                        ...defaultEditRound,
                         name: `Round ${field.state.value.length + 1}`,
                         order: field.state.value.length + 1,
-                        roundId: null,
                       })
                     }
                     disabled={!editable}

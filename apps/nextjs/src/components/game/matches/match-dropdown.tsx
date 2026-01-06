@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
-import { Button } from "@board-games/ui/button";
+import { Button, buttonVariants } from "@board-games/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -38,11 +38,11 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
+import { EditSharedMatchForm } from "~/app/dashboard/games/_components/edit-shared-match-dialog-content";
 import { useTRPC } from "~/trpc/react";
-import { EditSharedMatchForm } from "./edit-shared-match-dialog-content";
 
 type Matches = NonNullable<RouterOutputs["newGame"]["gameMatches"]>;
-export function MatchDropDown({ match }: { match: Matches[number] }) {
+export function MatchDropdown({ match }: { match: Matches[number] }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isSharingEditDialog, setIsSharingEditDialogOpen] = useState(false);
 
@@ -63,9 +63,9 @@ export function MatchDropDown({ match }: { match: Matches[number] }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
             <MoreVertical className="h-4 w-4" />
+            <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
@@ -133,6 +133,7 @@ export function MatchDropDown({ match }: { match: Matches[number] }) {
               <DropdownMenuItem
                 className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground flex items-center gap-2"
                 onClick={() => setIsDeleteDialogOpen(true)}
+                disabled={deleteMatch.isPending}
               >
                 <Trash2Icon className="mr-2 h-4 w-4" />
                 <span>Delete</span>
@@ -155,7 +156,13 @@ export function MatchDropDown({ match }: { match: Matches[number] }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction
+              className={buttonVariants({ variant: "destructive" })}
+              onClick={onDelete}
+              disabled={deleteMatch.isPending}
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

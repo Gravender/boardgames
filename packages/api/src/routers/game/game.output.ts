@@ -111,6 +111,17 @@ export const getGameOutput = z.discriminatedUnion("type", [
     type: z.literal("shared"),
     id: z.number(),
     sharedGameId: z.number(),
+    sharedBy: z.object({
+      id: z.string(),
+      name: z.string(),
+      username: z.string().nullable(),
+      player: z
+        .object({
+          id: z.number(),
+          name: z.string(),
+        })
+        .nullable(),
+    }),
     name: z.string(),
     image: imageSchema.nullable(),
     players: z.object({

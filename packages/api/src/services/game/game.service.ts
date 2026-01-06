@@ -22,6 +22,7 @@ import type {
 } from "./game.service.types";
 import { gameRepository } from "../../repositories/game/game.repository";
 import { imageRepository } from "../../repositories/image/image.repository";
+import { friendRepository } from "../../repositories/social/friend.repository";
 import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
@@ -264,6 +265,36 @@ class GameService {
           },
           "Shared game not found",
         );
+        const sharedBy = await friendRepository.get(
+          {
+            userId: ctx.userId,
+            friendId: returnedSharedGame.ownerId,
+            with: {
+              friendPlayer: {
+                columns: {
+                  id: true,
+                  name: true,
+                },
+              },
+              friend: {
+                columns: {
+                  id: true,
+                  name: true,
+                  username: true,
+                },
+              },
+            },
+          },
+          tx,
+        );
+        assertFound(
+          sharedBy,
+          {
+            userId: ctx.userId,
+            value: input,
+          },
+          "Shared by not found",
+        );
         if (returnedSharedGame.game.image?.usageType !== "game") {
           await ctx.posthog.captureImmediate({
             distinctId: ctx.userId,
@@ -298,6 +329,17 @@ class GameService {
           yearPublished: returnedSharedGame.game.yearPublished,
           ownedBy: returnedSharedGame.game.ownedBy,
           permission: returnedSharedGame.permission,
+          sharedBy: {
+            id: sharedBy.friend.id,
+            name: sharedBy.friend.name,
+            username: sharedBy.friend.username,
+            player: sharedBy.friendPlayer
+              ? {
+                  id: sharedBy.friendPlayer.id,
+                  name: sharedBy.friendPlayer.name,
+                }
+              : null,
+          },
         };
       }
     });

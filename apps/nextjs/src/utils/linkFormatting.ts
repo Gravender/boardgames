@@ -9,7 +9,7 @@ type formatMatchLinkType =
       sharedMatchId: number;
       sharedGameId: number;
       type: "shared" | "linked";
-      linkedGameId: number | null;
+      linkedGameId?: number | null;
       finished: boolean;
     };
 export function formatMatchLink(input: formatMatchLinkType) {

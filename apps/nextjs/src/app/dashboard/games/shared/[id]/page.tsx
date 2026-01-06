@@ -1,37 +1,47 @@
-import { Suspense } from "react";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { TRPCError } from "@trpc/server";
 
-import { HydrateClient, prefetch, trpc } from "~/trpc/server";
-import { GamePageSkeleton } from "../../_components/game-page-skeleton";
-import SharedGameDetails from "./_components/share-game-details";
+import GameDetail from "~/components/game/detail";
+import { caller, HydrateClient } from "~/trpc/server";
 
 interface Props {
   params: Promise<{ id: string }>;
+}
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  // read route params
+  const id = (await params).id;
+
+  if (isNaN(Number(id))) redirect("/dashboard/games");
+  try {
+    const game = await caller.newGame.getGame({
+      sharedGameId: Number(id),
+      type: "shared",
+    });
+    if (!game.image?.url)
+      return { title: game.name, description: `${game.name} Match Tracker` };
+    return {
+      title: game.name,
+      description: `${game.name} Match Tracker`,
+      openGraph: {
+        images: [game.image.url],
+      },
+    };
+  } catch (error) {
+    if (error instanceof TRPCError && error.code === "NOT_FOUND") {
+      return { title: "Game Not Found" };
+    }
+    return { title: "Games" };
+  }
 }
 export default async function SharedGamePage({ params }: Props) {
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
-  void prefetch(trpc.sharing.getSharedGame.queryOptions({ id: Number(id) }));
-  void prefetch(
-    trpc.game.getGameScoresheets.queryOptions({
-      gameId: Number(id),
-      type: "shared",
-    }),
-  );
-  void prefetch(trpc.location.getLocations.queryOptions());
-  void prefetch(
-    trpc.player.getPlayersByGame.queryOptions({
-      id: Number(id),
-      type: "shared",
-    }),
-  );
   return (
     <HydrateClient>
       <div className="container px-3 py-1 md:px-6 md:py-2">
-        <Suspense fallback={<GamePageSkeleton />}>
-          <SharedGameDetails gameId={Number(id)} />
-        </Suspense>
+        <GameDetail game={{ sharedGameId: Number(id), type: "shared" }} />
       </div>
     </HydrateClient>
   );

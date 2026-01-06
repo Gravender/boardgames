@@ -57,8 +57,9 @@ export function AddMatchDialog({
   return (
     <Dialog open={showAddMatchDialog} onOpenChange={setShowAddMatchDialog}>
       <DialogTrigger asChild>
-        <Button className="rounded-full" size="icon" aria-label="add match">
-          <Plus />
+        <Button aria-label="add match">
+          <Plus className="mr-2 h-4 w-4" />
+          Add Match
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl">
