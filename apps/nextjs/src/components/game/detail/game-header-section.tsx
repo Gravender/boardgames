@@ -5,7 +5,6 @@ import {
   BarChart3,
   Calendar,
   Clock,
-  EyeIcon,
   MoreHorizontal,
   PencilIcon,
   Share2,
