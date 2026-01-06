@@ -25,10 +25,14 @@ import { cn } from "@board-games/ui/utils";
 import type { AddGameFormValues } from "./add-game.types";
 import { GameImage } from "~/components/game-image";
 import { withForm } from "~/hooks/form";
+import { addGameFormSchema } from "./add-game.types";
 import { ScoresheetsForm } from "./scoresheets-form";
 
 export const GameDetailsForm = withForm({
   defaultValues: {} as AddGameFormValues,
+  validators: {
+    onSubmit: addGameFormSchema,
+  },
   props: {
     imagePreview: null as ImagePreviewType | null,
     setImagePreview: (_: ImagePreviewType | null) => {

@@ -30,7 +30,7 @@ import { toast } from "@board-games/ui/toast";
 import type { AddGameFormValues } from "./add-game.types";
 import { withForm } from "~/hooks/form";
 import { addGameFormSchema } from "./add-game.types";
-import { RoundsForm } from "./rounds-form";
+import { AddRoundsForm } from "./add-rounds-form";
 
 const winConditionOptions = scoreSheetWinConditions;
 const roundsScoreOptions: (typeof scoreSheetRoundsScore)[number][] =
@@ -355,7 +355,7 @@ export const ScoresheetForm = withForm({
                   </form.AppField>
 
                   <Separator className="w-full" orientation="horizontal" />
-                  <RoundsForm
+                  <AddRoundsForm
                     form={form}
                     fields={{
                       rounds: `scoresheets[${scoresheetIndex}].rounds`,

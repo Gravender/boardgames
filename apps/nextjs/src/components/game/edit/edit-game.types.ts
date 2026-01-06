@@ -13,6 +13,11 @@ import {
 
 import { defaultRound } from "../add/add-game.types";
 
+export type Rounds = z.infer<typeof roundsSchema>;
+export const defaultEditRound = {
+  ...defaultRound,
+  roundId: null,
+};
 // Form schema for edit game - similar structure to add game but with edit-specific fields
 export const editScoresheetSchema = z.discriminatedUnion("scoresheetType", [
   z.object({
@@ -91,36 +96,19 @@ export const defaultScoresheetFormValues: EditScoresheetForm = {
     roundsScore: "Aggregate",
     targetScore: 0,
   },
-  rounds: [
-    {
-      name: "Round 1",
-      type: "Numeric",
-      color: "#cbd5e1",
-      score: 0,
-      order: 0,
-      roundId: null,
-    },
-  ],
+  rounds: [defaultEditRound],
 };
 
 export const defaultRoundsFormValues: {
   rounds: EditScoresheetForm["rounds"];
 } = {
-  rounds: [
-    {
-      ...defaultRound,
-      roundId: null,
-    },
-  ],
+  rounds: [defaultEditRound],
 };
 
 export const defaultRoundPopoverValues: {
   round: EditScoresheetForm["rounds"][number];
 } = {
-  round: {
-    ...defaultRound,
-    roundId: null,
-  },
+  round: defaultEditRound,
 };
 
 export const defaultScoresheetsFormValues: {
