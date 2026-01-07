@@ -2,17 +2,20 @@ import { db } from "@board-games/db/client";
 import {
   game,
   gameRole,
+  groupPlayer,
   match,
   matchPlayer,
   matchPlayerRole,
+  player,
   round,
   roundPlayer,
   scoresheet,
+  sharedPlayer,
   team,
   user,
   userSharingPreference,
 } from "@board-games/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, or } from "drizzle-orm";
 
 /**
  * Helper function to delete a test user from the database and all related data
@@ -69,6 +72,36 @@ export async function deleteTestUser(userId: string) {
         const gameIds = returnedGames.map((g) => g.id);
         await tx.delete(gameRole).where(inArray(gameRole.gameId, gameIds));
         await tx.delete(game).where(inArray(game.id, gameIds));
+      });
+    }
+
+    // Clean up players created by the user
+    const returnedPlayers = await db
+      .select()
+      .from(player)
+      .where(eq(player.createdBy, returnedUser.id));
+
+    if (returnedPlayers.length > 0) {
+      const playerIds = returnedPlayers.map((p) => p.id);
+
+      await db.transaction(async (tx) => {
+        // Delete groupPlayers that reference these players
+        await tx
+          .delete(groupPlayer)
+          .where(inArray(groupPlayer.playerId, playerIds));
+
+        // Delete sharedPlayers that reference these players (as playerId or linkedPlayerId)
+        await tx
+          .delete(sharedPlayer)
+          .where(
+            or(
+              inArray(sharedPlayer.playerId, playerIds),
+              inArray(sharedPlayer.linkedPlayerId, playerIds),
+            ),
+          );
+
+        // Delete players (matchPlayers are already cleaned up through match deletion)
+        await tx.delete(player).where(inArray(player.id, playerIds));
       });
     }
   }

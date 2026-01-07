@@ -854,7 +854,15 @@ export const playerRouter = {
       };
     }),
   create: protectedUserProcedure
-    .input(insertPlayerSchema.pick({ name: true, imageId: true }))
+    .input(insertPlayerSchema.pick({ name: true, imageId: true }).check((ctx) => {
+      if (!ctx.value.name) {
+        ctx.issues.push({
+          code: "custom",
+          input: ctx.value,
+          message: "Name is required",
+        });
+      }
+    }))
     .mutation(async ({ ctx, input }) => {
       const [returnedPlayer] = await ctx.db
         .insert(player)
