@@ -98,9 +98,9 @@ describe("Player Create - Basic Tests", () => {
       ]);
 
       expect(players).toHaveLength(3);
-      expect(players[0]?.name).toBe("Player 1");
-      expect(players[1]?.name).toBe("Player 2");
-      expect(players[2]?.name).toBe("Player 3");
+      expect(players[0].name).toBe("Player 1");
+      expect(players[1].name).toBe("Player 2");
+      expect(players[2].name).toBe("Player 3");
 
       // Verify all players have unique IDs
       const playerIds = players.map((p) => p.id);
