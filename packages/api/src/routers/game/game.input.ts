@@ -21,17 +21,44 @@ export const getGameInput = z.discriminatedUnion("type", [
 export type GetGameInputType = z.infer<typeof getGameInput>;
 
 export const createGameInput = z.object({
-  game: insertGameSchema.pick({
-    description: true,
-    name: true,
-    playersMin: true,
-    playersMax: true,
-    playtimeMin: true,
-    playtimeMax: true,
-    yearPublished: true,
-    ownedBy: true,
-    rules: true,
-  }),
+  game: insertGameSchema
+    .pick({
+      description: true,
+      name: true,
+      playersMin: true,
+      playersMax: true,
+      playtimeMin: true,
+      playtimeMax: true,
+      yearPublished: true,
+      ownedBy: true,
+      rules: true,
+    })
+    .check((ctx) => {
+      if (
+        ctx.value.playersMin &&
+        ctx.value.playersMax &&
+        ctx.value.playersMin > ctx.value.playersMax
+      ) {
+        ctx.issues.push({
+          code: "custom",
+          input: ctx.value,
+          message: "Players min must be less than players max",
+          path: ["playersMin"],
+        });
+      }
+      if (
+        ctx.value.playtimeMin &&
+        ctx.value.playtimeMax &&
+        ctx.value.playtimeMin > ctx.value.playtimeMax
+      ) {
+        ctx.issues.push({
+          code: "custom",
+          input: ctx.value,
+          message: "Playtime min must be less than playtime max",
+          path: ["playtimeMin"],
+        });
+      }
+    }),
   image: z
     .discriminatedUnion("type", [
       z.object({
