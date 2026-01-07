@@ -20,7 +20,7 @@ export const createMatchInput = insertMatchSchema
     name: true,
     date: true,
   })
-  .required({ name: true })
+  .required({ name: true, date: true })
   .extend({
     game: z.discriminatedUnion("type", [
       z.object({
