@@ -1,11 +1,23 @@
 import type { inferProcedureInput } from "@trpc/server";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "vitest";
 
-import { createContextInner } from "../context";
 import type { AppRouter } from "../root";
+import { createContextInner } from "../context";
 import { appRouter } from "../root";
+import {
+  createTestSession,
+  createTestUser,
+  deleteTestUser,
+} from "../test-helpers";
 import { createCallerFactory } from "../trpc";
-import { createTestSession, createTestUser, deleteTestUser } from "../test-helpers";
 
 describe("Game Create - Scoresheet Tests", () => {
   const testUserId = "test-user-1-game-scoresheets";
@@ -54,11 +66,14 @@ describe("Game Create - Scoresheet Tests", () => {
       expect(result.id).toBeDefined();
 
       // Verify default scoresheet is created
-      const scoresheetsInput: inferProcedureInput<AppRouter["newGame"]["gameScoreSheetsWithRounds"]> = {
+      const scoresheetsInput: inferProcedureInput<
+        AppRouter["newGame"]["gameScoreSheetsWithRounds"]
+      > = {
         type: "original",
         id: result.id,
       };
-      const scoresheets = await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
+      const scoresheets =
+        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
 
       expect(scoresheets).toHaveLength(1);
       expect(scoresheets[0]).toMatchObject({
@@ -124,11 +139,14 @@ describe("Game Create - Scoresheet Tests", () => {
       expect(result.name).toBe("Game with Scoresheet and Rounds");
 
       // Verify scoresheets and rounds are created correctly
-      const scoresheetsInput: inferProcedureInput<AppRouter["newGame"]["gameScoreSheetsWithRounds"]> = {
+      const scoresheetsInput: inferProcedureInput<
+        AppRouter["newGame"]["gameScoreSheetsWithRounds"]
+      > = {
         type: "original",
         id: result.id,
       };
-      const scoresheets = await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
+      const scoresheets =
+        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
 
       expect(scoresheets).toHaveLength(1);
       expect(scoresheets[0]).toMatchObject({
@@ -219,11 +237,14 @@ describe("Game Create - Scoresheet Tests", () => {
       expect(result.id).toBeDefined();
 
       // Verify scoresheets are created correctly
-      const scoresheetsInput: inferProcedureInput<AppRouter["newGame"]["gameScoreSheetsWithRounds"]> = {
+      const scoresheetsInput: inferProcedureInput<
+        AppRouter["newGame"]["gameScoreSheetsWithRounds"]
+      > = {
         type: "original",
         id: result.id,
       };
-      const scoresheets = await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
+      const scoresheets =
+        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
 
       expect(scoresheets).toHaveLength(2);
       expect(scoresheets[0]).toMatchObject({
@@ -261,4 +282,3 @@ describe("Game Create - Scoresheet Tests", () => {
     });
   });
 });
-

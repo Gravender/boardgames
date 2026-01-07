@@ -2,8 +2,8 @@ import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
 import { createContextInner } from "./context";
 import { appRouter } from "./root";
-import { createCallerFactory } from "./trpc";
 import { createTestSession, deleteTestUser } from "./test-helpers";
+import { createCallerFactory } from "./trpc";
 
 describe("tRPC Integration Tests", () => {
   const testUserId = "test-user-1-root-test";

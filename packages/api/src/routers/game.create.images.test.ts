@@ -1,11 +1,23 @@
 import type { inferProcedureInput } from "@trpc/server";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "vitest";
 
-import { createContextInner } from "../context";
 import type { AppRouter } from "../root";
+import { createContextInner } from "../context";
 import { appRouter } from "../root";
+import {
+  createTestSession,
+  createTestUser,
+  deleteTestUser,
+} from "../test-helpers";
 import { createCallerFactory } from "../trpc";
-import { createTestSession, createTestUser, deleteTestUser } from "../test-helpers";
 
 describe("Game Create - Image Tests", () => {
   const testUserId = "test-user-1-game-images";
@@ -111,4 +123,3 @@ describe("Game Create - Image Tests", () => {
     });
   });
 });
-

@@ -1,8 +1,9 @@
-import type { PostHog } from "posthog-node";
 import type { inferRouterContext } from "@trpc/server";
+import type { PostHog } from "posthog-node";
 
 import { db } from "@board-games/db/client";
-import { appRouter } from "./root";
+
+import type { appRouter } from "./root";
 
 type RouterContext = inferRouterContext<typeof appRouter>;
 type PosthogContext = RouterContext["posthog"];
@@ -20,28 +21,24 @@ type PosthogContext = RouterContext["posthog"];
  * const caller = createCallerFactory(appRouter)(ctx);
  * ```
  */
-export async function createContextInner(
-  opts?: {
-    session?: RouterContext["session"] | null;
-    posthog?: PostHog;
-    deleteFiles?: (
-      keys: string | string[],
-    ) => Promise<{ readonly success: boolean; readonly deletedCount: number }>;
-  },
-): Promise<RouterContext> {
+// eslint-disable-next-line @typescript-eslint/require-await
+export async function createContextInner(opts?: {
+  session?: RouterContext["session"] | null;
+  posthog?: PostHog;
+  deleteFiles?: (
+    keys: string | string[],
+  ) => Promise<{ readonly success: boolean; readonly deletedCount: number }>;
+}): Promise<RouterContext> {
   return {
     session: opts?.session ?? null,
     db,
-    posthog:
-      (opts?.posthog as unknown as PosthogContext) ??
-      ({
-        captureImmediate: async () => {
-          await Promise.resolve();
-        },
-      } as unknown as PosthogContext),
+    posthog: {
+      captureImmediate: async () => {
+        await Promise.resolve();
+      },
+    } as unknown as PosthogContext,
     deleteFiles:
       opts?.deleteFiles ??
       (async () => Promise.resolve({ success: true, deletedCount: 0 })),
   };
 }
-

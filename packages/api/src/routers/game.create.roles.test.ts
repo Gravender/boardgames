@@ -1,11 +1,23 @@
 import type { inferProcedureInput } from "@trpc/server";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "vitest";
 
-import { createContextInner } from "../context";
 import type { AppRouter } from "../root";
+import { createContextInner } from "../context";
 import { appRouter } from "../root";
+import {
+  createTestSession,
+  createTestUser,
+  deleteTestUser,
+} from "../test-helpers";
 import { createCallerFactory } from "../trpc";
-import { createTestSession, createTestUser, deleteTestUser } from "../test-helpers";
 
 describe("Game Create - Role Tests", () => {
   const testUserId = "test-user-1-game-roles";
@@ -59,10 +71,11 @@ describe("Game Create - Role Tests", () => {
       expect(result.id).toBeDefined();
 
       // Verify role is created correctly
-      const rolesInput: inferProcedureInput<AppRouter["newGame"]["gameRoles"]> = {
-        type: "original",
-        id: result.id,
-      };
+      const rolesInput: inferProcedureInput<AppRouter["newGame"]["gameRoles"]> =
+        {
+          type: "original",
+          id: result.id,
+        };
       const roles = await caller.newGame.gameRoles(rolesInput);
 
       expect(roles).toHaveLength(1);
@@ -106,10 +119,11 @@ describe("Game Create - Role Tests", () => {
       expect(result.id).toBeDefined();
 
       // Verify role is created correctly
-      const rolesInput: inferProcedureInput<AppRouter["newGame"]["gameRoles"]> = {
-        type: "original",
-        id: result.id,
-      };
+      const rolesInput: inferProcedureInput<AppRouter["newGame"]["gameRoles"]> =
+        {
+          type: "original",
+          id: result.id,
+        };
       const roles = await caller.newGame.gameRoles(rolesInput);
 
       expect(roles).toHaveLength(1);
@@ -161,10 +175,11 @@ describe("Game Create - Role Tests", () => {
       expect(result.id).toBeDefined();
 
       // Verify roles are created correctly
-      const rolesInput: inferProcedureInput<AppRouter["newGame"]["gameRoles"]> = {
-        type: "original",
-        id: result.id,
-      };
+      const rolesInput: inferProcedureInput<AppRouter["newGame"]["gameRoles"]> =
+        {
+          type: "original",
+          id: result.id,
+        };
       const roles = await caller.newGame.gameRoles(rolesInput);
 
       expect(roles).toHaveLength(3);
@@ -189,4 +204,3 @@ describe("Game Create - Role Tests", () => {
     });
   });
 });
-

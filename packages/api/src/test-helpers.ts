@@ -1,3 +1,5 @@
+import { eq, inArray, or } from "drizzle-orm";
+
 import { db } from "@board-games/db/client";
 import {
   game,
@@ -15,7 +17,6 @@ import {
   user,
   userSharingPreference,
 } from "@board-games/db/schema";
-import { eq, inArray, or } from "drizzle-orm";
 
 /**
  * Helper function to delete all games and related data created by a user
@@ -55,7 +56,9 @@ async function deleteUserGames(userId: string) {
         await tx
           .delete(roundPlayer)
           .where(inArray(roundPlayer.matchPlayerId, matchPlayers));
-        await tx.delete(matchPlayer).where(inArray(matchPlayer.id, matchPlayers));
+        await tx
+          .delete(matchPlayer)
+          .where(inArray(matchPlayer.id, matchPlayers));
       }
       if (matches.length > 0) {
         await tx.delete(team).where(inArray(team.matchId, matches));
@@ -63,8 +66,12 @@ async function deleteUserGames(userId: string) {
       }
       if (returnedScoresheets.length > 0) {
         const scoresheetIds = returnedScoresheets.map((s) => s.id);
-        await tx.delete(round).where(inArray(round.scoresheetId, scoresheetIds));
-        await tx.delete(scoresheet).where(inArray(scoresheet.id, scoresheetIds));
+        await tx
+          .delete(round)
+          .where(inArray(round.scoresheetId, scoresheetIds));
+        await tx
+          .delete(scoresheet)
+          .where(inArray(scoresheet.id, scoresheetIds));
       }
       const gameIds = returnedGames.map((g) => g.id);
       await tx.delete(gameRole).where(inArray(gameRole.gameId, gameIds));
@@ -111,7 +118,9 @@ async function deleteUserPlayers(userId: string) {
  * Helper function to delete the user record and sharing preferences
  */
 async function deleteUserRecord(userId: string) {
-  await db.delete(userSharingPreference).where(eq(userSharingPreference.userId, userId));
+  await db
+    .delete(userSharingPreference)
+    .where(eq(userSharingPreference.userId, userId));
   await db.delete(user).where(eq(user.id, userId));
 }
 
@@ -119,7 +128,10 @@ async function deleteUserRecord(userId: string) {
  * Helper function to delete a test user from the database and all related data
  */
 export async function deleteTestUser(userId: string) {
-  const [returnedUser] = await db.select().from(user).where(eq(user.id, userId));
+  const [returnedUser] = await db
+    .select()
+    .from(user)
+    .where(eq(user.id, userId));
 
   if (returnedUser) {
     await deleteUserGames(returnedUser.id);
@@ -185,4 +197,3 @@ export function createTestSession(userId = "test-user-1") {
     },
   };
 }
-

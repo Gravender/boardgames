@@ -1,11 +1,23 @@
 import type { inferProcedureInput } from "@trpc/server";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "vitest";
 
-import { createContextInner } from "../context";
 import type { AppRouter } from "../root";
+import { createContextInner } from "../context";
 import { appRouter } from "../root";
+import {
+  createTestSession,
+  createTestUser,
+  deleteTestUser,
+} from "../test-helpers";
 import { createCallerFactory } from "../trpc";
-import { createTestSession, createTestUser, deleteTestUser } from "../test-helpers";
 
 describe("Match Create - Advanced Tests", () => {
   const testUserId = "test-user-1-match-advanced";
@@ -60,9 +72,8 @@ describe("Match Create - Advanced Tests", () => {
         type: "original",
         id: createdGame.id,
       };
-      const scoresheets = await caller.newGame.gameScoreSheetsWithRounds(
-        scoresheetsInput,
-      );
+      const scoresheets =
+        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
 
       expect(scoresheets.length).toBeGreaterThan(0);
       const defaultScoresheet = scoresheets[0];
@@ -198,9 +209,8 @@ describe("Match Create - Advanced Tests", () => {
         type: "original",
         id: createdGame.id,
       };
-      const scoresheets = await caller.newGame.gameScoreSheetsWithRounds(
-        scoresheetsInput,
-      );
+      const scoresheets =
+        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
 
       expect(scoresheets.length).toBeGreaterThan(0);
       const defaultScoresheet = scoresheets[0];
@@ -284,9 +294,8 @@ describe("Match Create - Advanced Tests", () => {
         type: "original",
         id: createdGame.id,
       };
-      const scoresheets = await caller.newGame.gameScoreSheetsWithRounds(
-        scoresheetsInput,
-      );
+      const scoresheets =
+        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
 
       expect(scoresheets.length).toBeGreaterThan(0);
       const defaultScoresheet = scoresheets[0];
@@ -379,4 +388,3 @@ describe("Match Create - Advanced Tests", () => {
     });
   });
 });
-

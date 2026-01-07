@@ -1,11 +1,23 @@
 import type { inferProcedureInput } from "@trpc/server";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "vitest";
 
-import { createContextInner } from "../context";
 import type { AppRouter } from "../root";
+import { createContextInner } from "../context";
 import { appRouter } from "../root";
+import {
+  createTestSession,
+  createTestUser,
+  deleteTestUser,
+} from "../test-helpers";
 import { createCallerFactory } from "../trpc";
-import { createTestSession, createTestUser, deleteTestUser } from "../test-helpers";
 
 describe("Match Create - Invalid Reference Error Tests", () => {
   const testUserId = "test-user-1-match-errors-refs";
@@ -59,9 +71,8 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         type: "original",
         id: createdGame.id,
       };
-      const scoresheets = await caller.newGame.gameScoreSheetsWithRounds(
-        scoresheetsInput,
-      );
+      const scoresheets =
+        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
 
       const defaultScoresheet = scoresheets[0];
       if (defaultScoresheet?.type !== "original") {
@@ -73,29 +84,28 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         imageId: null,
       });
 
-      const input: inferProcedureInput<AppRouter["newMatch"]["createMatch"]> =
-        {
-          name: "Test Match",
-          date: new Date(),
-          game: {
+      const input: inferProcedureInput<AppRouter["newMatch"]["createMatch"]> = {
+        name: "Test Match",
+        date: new Date(),
+        game: {
+          type: "original",
+          id: 999999, // Non-existent game ID
+        },
+        scoresheet: {
+          type: "original",
+          id: defaultScoresheet.id,
+        },
+        players: [
+          {
             type: "original",
-            id: 999999, // Non-existent game ID
+            id: player.id,
+            roles: [],
+            teamId: null,
           },
-          scoresheet: {
-            type: "original",
-            id: defaultScoresheet.id,
-          },
-          players: [
-            {
-              type: "original",
-              id: player.id,
-              roles: [],
-              teamId: null,
-            },
-          ],
-          teams: [],
-          location: null,
-        };
+        ],
+        teams: [],
+        location: null,
+      };
 
       await expect(caller.newMatch.createMatch(input)).rejects.toThrow();
     });
@@ -131,29 +141,28 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         imageId: null,
       });
 
-      const input: inferProcedureInput<AppRouter["newMatch"]["createMatch"]> =
-        {
-          name: "Test Match",
-          date: new Date(),
-          game: {
+      const input: inferProcedureInput<AppRouter["newMatch"]["createMatch"]> = {
+        name: "Test Match",
+        date: new Date(),
+        game: {
+          type: "original",
+          id: createdGame.id,
+        },
+        scoresheet: {
+          type: "original",
+          id: 999999, // Non-existent scoresheet ID
+        },
+        players: [
+          {
             type: "original",
-            id: createdGame.id,
+            id: player.id,
+            roles: [],
+            teamId: null,
           },
-          scoresheet: {
-            type: "original",
-            id: 999999, // Non-existent scoresheet ID
-          },
-          players: [
-            {
-              type: "original",
-              id: player.id,
-              roles: [],
-              teamId: null,
-            },
-          ],
-          teams: [],
-          location: null,
-        };
+        ],
+        teams: [],
+        location: null,
+      };
 
       await expect(caller.newMatch.createMatch(input)).rejects.toThrow();
     });
@@ -190,38 +199,36 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         type: "original",
         id: createdGame.id,
       };
-      const scoresheets = await caller.newGame.gameScoreSheetsWithRounds(
-        scoresheetsInput,
-      );
+      const scoresheets =
+        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
 
       const defaultScoresheet = scoresheets[0];
       if (defaultScoresheet?.type !== "original") {
         throw new Error("No scoresheet found");
       }
 
-      const input: inferProcedureInput<AppRouter["newMatch"]["createMatch"]> =
-        {
-          name: "Test Match",
-          date: new Date(),
-          game: {
+      const input: inferProcedureInput<AppRouter["newMatch"]["createMatch"]> = {
+        name: "Test Match",
+        date: new Date(),
+        game: {
+          type: "original",
+          id: createdGame.id,
+        },
+        scoresheet: {
+          type: "original",
+          id: defaultScoresheet.id,
+        },
+        players: [
+          {
             type: "original",
-            id: createdGame.id,
+            id: 999999, // Non-existent player ID
+            roles: [],
+            teamId: null,
           },
-          scoresheet: {
-            type: "original",
-            id: defaultScoresheet.id,
-          },
-          players: [
-            {
-              type: "original",
-              id: 999999, // Non-existent player ID
-              roles: [],
-              teamId: null,
-            },
-          ],
-          teams: [],
-          location: null,
-        };
+        ],
+        teams: [],
+        location: null,
+      };
 
       await expect(caller.newMatch.createMatch(input)).rejects.toThrow();
     });
@@ -258,9 +265,8 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         type: "original",
         id: createdGame.id,
       };
-      const scoresheets = await caller.newGame.gameScoreSheetsWithRounds(
-        scoresheetsInput,
-      );
+      const scoresheets =
+        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
 
       const defaultScoresheet = scoresheets[0];
       if (defaultScoresheet?.type !== "original") {
@@ -272,35 +278,33 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         imageId: null,
       });
 
-      const input: inferProcedureInput<AppRouter["newMatch"]["createMatch"]> =
-        {
-          name: "Test Match",
-          date: new Date(),
-          game: {
+      const input: inferProcedureInput<AppRouter["newMatch"]["createMatch"]> = {
+        name: "Test Match",
+        date: new Date(),
+        game: {
+          type: "original",
+          id: createdGame.id,
+        },
+        scoresheet: {
+          type: "original",
+          id: defaultScoresheet.id,
+        },
+        players: [
+          {
             type: "original",
-            id: createdGame.id,
+            id: player.id,
+            roles: [],
+            teamId: null,
           },
-          scoresheet: {
-            type: "original",
-            id: defaultScoresheet.id,
-          },
-          players: [
-            {
-              type: "original",
-              id: player.id,
-              roles: [],
-              teamId: null,
-            },
-          ],
-          teams: [],
-          location: {
-            type: "original",
-            id: 999999, // Non-existent location ID
-          },
-        };
+        ],
+        teams: [],
+        location: {
+          type: "original",
+          id: 999999, // Non-existent location ID
+        },
+      };
 
       await expect(caller.newMatch.createMatch(input)).rejects.toThrow();
     });
   });
 });
-
