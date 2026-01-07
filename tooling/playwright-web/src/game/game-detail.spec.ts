@@ -46,9 +46,10 @@ test.describe("Game Detail Page", () => {
     );
 
     // Verify game details are visible (players, playtime, year)
-    await expect(page.getByText(/1-4 players/)).toBeVisible();
-    await expect(page.getByText(/15-30 min/)).toBeVisible();
-    await expect(page.getByText(/2014/)).toBeVisible();
+
+    await expect(page.getByRole("main")).toContainText("15-30 min");
+    await expect(page.getByRole("main")).toContainText("2014");
+    await expect(page.getByRole("main")).toContainText("1-4 Players");
   });
 
   test("Verify statistics link", async ({ page, browserName }) => {
@@ -61,9 +62,8 @@ test.describe("Game Detail Page", () => {
     await gameLink.click();
 
     // Verify statistics link exists
-    const statsLink = page.getByRole("link", { name: /View Statistics/i });
-    await expect(statsLink).toBeVisible();
-    await statsLink.click();
+    await expect(page.getByRole("link", { name: "Stats" })).toBeVisible();
+    await page.getByRole("link", { name: "Stats" }).click();
     await expect(page).toHaveURL(/\/dashboard\/games\/\d+\/stats/);
   });
 
