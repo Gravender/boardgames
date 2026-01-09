@@ -10,7 +10,7 @@ import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { Skeleton } from "@board-games/ui/skeleton";
 
 import type { GameInput } from "../types/input";
-import { useGameMatches } from "~/components/game/hooks/matches";
+import { useGameMatches } from "~/hooks/queries/game/matches";
 import { formatMatchLink } from "~/utils/linkFormatting";
 
 export function GamePreviousMatches(input: { game: GameInput }) {
