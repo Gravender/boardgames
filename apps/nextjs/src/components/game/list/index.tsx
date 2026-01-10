@@ -25,16 +25,22 @@ import {
 import { ItemGroup } from "@board-games/ui/item";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 
+import { AddGameDialog } from "~/components/game/add";
 import { useGetGames } from "~/hooks/queries/game/get-games";
 import { GameItem } from "./game-item";
 
-export default function GamesList() {
+export default function GamesList({
+  defaultIsOpen = false,
+}: {
+  defaultIsOpen?: boolean;
+} = {}) {
   const { games } = useGetGames();
-  return <GamesListContent games={games} />;
+  return <GamesListContent games={games} defaultIsOpen={defaultIsOpen} />;
 }
 
 interface GamesListContentProps {
   games: RouterOutputs["game"]["getGames"];
+  defaultIsOpen?: boolean;
 }
 
 type SortOption =
@@ -67,7 +73,7 @@ const getDefaultFilters = (
   maxPlaytime: games.reduce((a, b) => Math.max(a, b.playtime.max ?? 0), 10),
 });
 
-function GamesListContent({ games }: GamesListContentProps) {
+function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("lastPlayed-desc");
   const [filters, setFilters] = useState<Filters>(getDefaultFilters(games));
@@ -191,11 +197,14 @@ function GamesListContent({ games }: GamesListContentProps) {
   return (
     <div className="bg-card w-full rounded-lg border shadow-sm">
       <div className="border-b p-4">
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold">Game Collection</h2>
-          <p className="text-muted-foreground text-sm">
-            {filteredGames.length} games found
-          </p>
+        <div className="mb-3 flex items-center justify-between md:mb-4">
+          <div>
+            <h2 className="text-xl font-semibold md:text-2xl">Game Collection</h2>
+            <p className="text-muted-foreground text-sm">
+              {filteredGames.length} games found
+            </p>
+          </div>
+          <AddGameDialog defaultIsOpen={defaultIsOpen} />
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row">
