@@ -1,6 +1,12 @@
 import Link from "next/link";
-import { format, formatDistanceToNow } from "date-fns";
-import { CalendarIcon, ClockIcon, MapPinIcon, UsersIcon } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import {
+  CalendarIcon,
+  ClockIcon,
+  GamepadIcon,
+  MapPinIcon,
+  UsersIcon,
+} from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
@@ -46,7 +52,9 @@ export function GameItem({ game }: GameCardProps) {
   };
   return (
     <Item asChild>
-      <Link href={`/games/${game.id}`}>
+      <Link
+        href={`/dashboard/games/${game.type === "shared" ? "shared/" : ""}${game.id}`}
+      >
         <GameImage
           image={game.image}
           alt={`${game.name} game image`}
@@ -71,7 +79,14 @@ export function GameItem({ game }: GameCardProps) {
         </GameImage>
 
         <ItemContent>
-          <ItemTitle>{game.name}</ItemTitle>
+          <div className="flex items-center gap-2">
+            <ItemTitle>{game.name}</ItemTitle>
+            {game.yearPublished && (
+              <span className="text-muted-foreground mr-auto shrink-0 text-xs">
+                ({game.yearPublished})
+              </span>
+            )}
+          </div>
 
           <div className="text-muted-foreground mt-1 flex items-center gap-4 text-sm">
             {game.yearPublished && (
@@ -95,9 +110,13 @@ export function GameItem({ game }: GameCardProps) {
               {formattedLastPlayed}
               {game.lastPlayed.location &&
                 ` at ${game.lastPlayed.location.name}`}
-              {" • "}
-              {game.games} {game.games === 1 ? "play" : "plays"}
             </span>
+            <div className="flex items-center gap-1">
+              <GamepadIcon className="h-3 w-3 shrink-0" />
+              <span>
+                {game.games} {game.games === 1 ? "play" : "plays"}
+              </span>
+            </div>
           </div>
         </ItemContent>
 

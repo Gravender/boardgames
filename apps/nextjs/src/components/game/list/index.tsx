@@ -2,31 +2,30 @@
 
 import { useMemo, useState } from "react";
 import { compareAsc } from "date-fns";
-import {
-  ArrowDownAZ,
-  ArrowUpAZ,
-  Calendar,
-  CalendarClock,
-  GamepadIcon,
-  Search,
-} from "lucide-react";
+import { ArrowUpDown, Filter, SearchIcon, X } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
-import { Input } from "@board-games/ui/input";
+import { Badge } from "@board-games/ui/badge";
+import { Button } from "@board-games/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@board-games/ui/dropdown-menu";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@board-games/ui/input-group";
 import { ItemGroup } from "@board-games/ui/item";
 import { ScrollArea } from "@board-games/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@board-games/ui/select";
 
 import { useGetGames } from "~/hooks/queries/game/get-games";
-import { GameFilters } from "./game-filters";
 import { GameItem } from "./game-item";
 
 export default function GamesList() {
@@ -38,245 +37,367 @@ interface GamesListContentProps {
   games: RouterOutputs["game"]["getGames"];
 }
 
-type SortField = "name" | "yearPublished" | "lastPlayed" | "matches";
-type SortDirection = "asc" | "desc";
-type SortOption = `${SortField}-${SortDirection}`;
+type SortOption =
+  | "name-asc"
+  | "name-desc"
+  | "yearPublished-asc"
+  | "yearPublished-desc"
+  | "lastPlayed-asc"
+  | "lastPlayed-desc"
+  | "matches-asc"
+  | "matches-desc";
+
+interface Filters {
+  showOriginal: boolean;
+  showShared: boolean;
+  minPlayers: number;
+  maxPlayers: number;
+  minPlaytime: number;
+  maxPlaytime: number;
+}
+
+const getDefaultFilters = (
+  games: RouterOutputs["game"]["getGames"],
+): Filters => ({
+  showOriginal: true,
+  showShared: true,
+  minPlayers: 0,
+  maxPlayers: games.reduce((a, b) => Math.max(a, b.players.max ?? 0), 10),
+  minPlaytime: 0,
+  maxPlaytime: games.reduce((a, b) => Math.max(a, b.playtime.max ?? 0), 10),
+});
 
 function GamesListContent({ games }: GamesListContentProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("name-asc");
-  const [filters, setFilters] = useState({
-    type: "all",
-    minPlayers: 0,
-    maxPlayers: games.reduce((a, b) => Math.max(a, b.players.max ?? 0), 10),
-    minPlaytime: 0,
-    maxPlaytime: games.reduce((a, b) => Math.max(a, b.playtime.max ?? 0), 10),
-  });
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("lastPlayed-desc");
+  const [filters, setFilters] = useState<Filters>(getDefaultFilters(games));
 
-  // Parse sort option into field and direction
-  const [sortField, sortDirection] = useMemo(() => {
-    const [field, direction] = sortBy.split("-") as [SortField, SortDirection];
-    return [field, direction];
-  }, [sortBy]);
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (!filters.showOriginal || !filters.showShared) count++;
+    const defaultFilters = getDefaultFilters(games);
+    if (
+      filters.minPlayers !== defaultFilters.minPlayers ||
+      filters.maxPlayers !== defaultFilters.maxPlayers
+    )
+      count++;
+    if (
+      filters.minPlaytime !== defaultFilters.minPlaytime ||
+      filters.maxPlaytime !== defaultFilters.maxPlaytime
+    )
+      count++;
+    return count;
+  }, [filters, games]);
 
   // Apply search, sort, and filters
   const filteredGames = useMemo(() => {
-    return games
-      .filter((game) => {
-        // Search filter
-        if (
-          searchQuery &&
-          !game.name.toLowerCase().includes(searchQuery.toLowerCase())
-        ) {
-          return false;
-        }
+    let result = [...games];
 
-        // Type filter
-        if (filters.type !== "all" && game.type !== filters.type) {
-          return false;
-        }
+    // Apply search filter
+    if (search) {
+      const searchLower = search.toLowerCase();
+      result = result.filter((game) =>
+        game.name.toLowerCase().includes(searchLower),
+      );
+    }
 
-        // Player count filter
-        const maxPlayers = game.players.max;
-        if (maxPlayers !== null && maxPlayers < filters.minPlayers) {
-          return false;
-        }
+    // Apply filters
+    result = result.filter((game) => {
+      // Type filter
+      if (game.type === "original" && !filters.showOriginal) return false;
+      if (game.type === "shared" && !filters.showShared) return false;
 
-        if (maxPlayers !== null && maxPlayers > filters.maxPlayers) {
-          return false;
-        }
+      // Player count filter - check if ranges overlap
+      const gameMinPlayers = game.players.min;
+      const gameMaxPlayers = game.players.max;
+      if (
+        (gameMaxPlayers && gameMaxPlayers < filters.minPlayers) ||
+        (gameMinPlayers && gameMinPlayers > filters.maxPlayers)
+      ) {
+        return false;
+      }
 
-        // Playtime filter
-        const minPlaytime = game.playtime.min;
-        if (minPlaytime !== null && minPlaytime < filters.minPlaytime) {
-          return false;
-        }
+      // Playtime filter - check if ranges overlap
+      const gameMinPlaytime = game.playtime.min;
+      const gameMaxPlaytime = game.playtime.max;
+      if (
+        (gameMaxPlaytime && gameMaxPlaytime < filters.minPlaytime) ||
+        (gameMinPlaytime && gameMinPlaytime > filters.maxPlaytime)
+      ) {
+        return false;
+      }
+      return true;
+    });
 
-        const maxPlaytime = game.playtime.max;
-        if (maxPlaytime !== null && maxPlaytime > filters.maxPlaytime) {
-          return false;
-        }
-
-        return true;
-      })
-      .sort((a, b) => {
-        let comparison = 0;
-
-        if (sortField === "name") {
-          comparison = a.name.localeCompare(b.name);
-        } else if (sortField === "yearPublished") {
+    // Apply sorting
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case "name-asc":
+          return a.name.localeCompare(b.name);
+        case "name-desc":
+          return b.name.localeCompare(a.name);
+        case "yearPublished-asc": {
           const yearA = a.yearPublished ?? 0;
           const yearB = b.yearPublished ?? 0;
-          comparison = yearA - yearB;
-        } else if (sortField === "lastPlayed") {
-          if (!a.lastPlayed.date) return -1;
-          if (!b.lastPlayed.date) return 1;
-          comparison = compareAsc(a.lastPlayed.date, b.lastPlayed.date);
+          return yearA - yearB;
         }
-        if (sortField === "matches") {
-          comparison = a.games - b.games;
+        case "yearPublished-desc": {
+          const yearA = a.yearPublished ?? 0;
+          const yearB = b.yearPublished ?? 0;
+          return yearB - yearA;
         }
-        if (comparison === 0) {
-          if (
-            filters.minPlayers > 0 &&
-            (a.players.max === null || b.players.max === null) &&
-            a.players.max !== b.players.max
-          ) {
-            if (a.players.max === null) {
-              return 1;
-            }
-            return -1;
+        case "lastPlayed-asc": {
+          if (a.lastPlayed.date && b.lastPlayed.date) {
+            return compareAsc(a.lastPlayed.date, b.lastPlayed.date);
           }
-          if (
-            filters.maxPlayers <
-              games.reduce((a, b) => Math.max(a, b.players.max ?? 0), 10) &&
-            (a.players.max === null || b.players.max === null) &&
-            a.players.max !== b.players.max
-          ) {
-            if (a.players.max === null) {
-              return 1;
-            }
-            return -1;
-          }
-          if (
-            filters.minPlaytime > 0 &&
-            (a.playtime.min === null || b.playtime.min === null) &&
-            a.playtime.min !== b.playtime.min
-          ) {
-            if (a.playtime.min === null) {
-              return 1;
-            }
-            return -1;
-          }
-          if (
-            filters.maxPlaytime <
-              games.reduce((a, b) => Math.max(a, b.playtime.max ?? 0), 10) &&
-            (a.playtime.max === null || b.playtime.max === null) &&
-            a.playtime.max !== b.playtime.max
-          ) {
-            if (a.playtime.max === null) {
-              return 1;
-            }
-            return -1;
-          }
+          if (!a.lastPlayed.date && b.lastPlayed.date) return 1;
+          if (a.lastPlayed.date && !b.lastPlayed.date) return -1;
+          return compareAsc(a.createdAt, b.createdAt);
         }
+        case "lastPlayed-desc": {
+          if (a.lastPlayed.date && b.lastPlayed.date) {
+            return compareAsc(b.lastPlayed.date, a.lastPlayed.date);
+          }
+          if (!a.lastPlayed.date && b.lastPlayed.date) return 1;
+          if (a.lastPlayed.date && !b.lastPlayed.date) return -1;
+          return compareAsc(a.createdAt, b.createdAt);
+        }
+        case "matches-asc":
+          return a.games - b.games;
+        case "matches-desc":
+          return b.games - a.games;
+        default:
+          return 0;
+      }
+    });
 
-        // Apply sort direction
-        return sortDirection === "asc" ? comparison : -comparison;
-      });
-  }, [games, searchQuery, sortField, sortDirection, filters]);
+    return result;
+  }, [games, search, sortBy, filters]);
 
-  // Get the appropriate icon for the current sort
-  const getSortIcon = () => {
-    if (sortField === "name") {
-      return sortDirection === "asc" ? (
-        <ArrowDownAZ className="mr-2 h-4 w-4" />
-      ) : (
-        <ArrowUpAZ className="mr-2 h-4 w-4" />
-      );
-    } else if (sortField === "yearPublished") {
-      return <Calendar className="mr-2 h-4 w-4" />;
-    }
-    if (sortField === "lastPlayed") {
-      return <CalendarClock className="mr-2 h-4 w-4" />;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (sortField === "matches") {
-      return <GamepadIcon className="mr-2 h-4 w-4" />;
-    }
+  const resetFilters = () => {
+    setFilters(getDefaultFilters(games));
+    setSearch("");
   };
+
+  const maxPlayers = games.reduce(
+    (a, b) => Math.max(a, b.players.max ?? 0),
+    10,
+  );
+  const maxPlaytime = games.reduce(
+    (a, b) => Math.max(a, b.playtime.max ?? 0),
+    10,
+  );
 
   return (
     <div className="bg-card w-full rounded-lg border shadow-sm">
       <div className="border-b p-4">
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-          <div>
-            <h2 className="text-xl font-semibold">Game Collection</h2>
-            <p className="text-muted-foreground text-sm">
-              {filteredGames.length} games found
-            </p>
-          </div>
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold">Game Collection</h2>
+          <p className="text-muted-foreground text-sm">
+            {filteredGames.length} games found
+          </p>
+        </div>
 
-          <div className="xs:flex-row flex w-full flex-col gap-2 md:w-auto">
-            <div className="flex w-auto gap-2">
-              <div className="relative flex-grow">
-                <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
-                <Input
-                  placeholder="Search games..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <InputGroup>
+            <InputGroupInput
+              placeholder="Search games..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <InputGroupAddon>
+              <SearchIcon />
+            </InputGroupAddon>
+          </InputGroup>
 
-            <Select
-              value={sortBy}
-              onValueChange={(value) => setSortBy(value as SortOption)}
-            >
-              <SelectTrigger className="w-24">
-                <SelectValue placeholder="Sort by">
-                  <div className="flex items-center">
-                    {getSortIcon()}
-                    <span>Sort</span>
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="shrink-0 bg-transparent">
+                  <ArrowUpDown className="mr-2 h-4 w-4" />
+                  Sort
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                  value={sortBy}
+                  onValueChange={(value) => setSortBy(value as SortOption)}
+                >
+                  <DropdownMenuRadioItem value="name-asc">
+                    Name (A-Z)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="name-desc">
+                    Name (Z-A)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="yearPublished-asc">
+                    Year (Oldest)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="yearPublished-desc">
+                    Year (Newest)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="lastPlayed-asc">
+                    Last Played (Oldest)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="lastPlayed-desc">
+                    Last Played (Recent)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="matches-desc">
+                    Matches (Most)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="matches-asc">
+                    Matches (Least)
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="shrink-0 bg-transparent">
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filter
+                  {activeFilterCount > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 flex h-5 w-5 items-center justify-center p-0"
+                    >
+                      {activeFilterCount}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>Type</DropdownMenuLabel>
+                <DropdownMenuCheckboxItem
+                  checked={filters.showOriginal}
+                  onCheckedChange={(checked) =>
+                    setFilters({ ...filters, showOriginal: checked })
+                  }
+                >
+                  Original
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={filters.showShared}
+                  onCheckedChange={(checked) =>
+                    setFilters({ ...filters, showShared: checked })
+                  }
+                >
+                  Shared
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Player Count</DropdownMenuLabel>
+                <div className="px-2 py-1">
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {filters.minPlayers} - {filters.maxPlayers} players
+                    </span>
                   </div>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Name</SelectLabel>
-                  <SelectItem value="name-asc">
-                    <div className="flex items-center">
-                      <ArrowDownAZ className="mr-2 h-4 w-4" />
-                      <span>A to Z</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <label className="text-muted-foreground text-xs">
+                        Min:
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max={maxPlayers}
+                        value={filters.minPlayers}
+                        onChange={(e) =>
+                          setFilters({
+                            ...filters,
+                            minPlayers: Number.parseInt(e.target.value) || 0,
+                          })
+                        }
+                        className="bg-background h-8 w-20 rounded border px-2 text-sm"
+                      />
                     </div>
-                  </SelectItem>
-                  <SelectItem value="name-desc">
-                    <div className="flex items-center">
-                      <ArrowUpAZ className="mr-2 h-4 w-4" />
-                      <span>Z to A</span>
+                    <div className="flex items-center gap-2">
+                      <label className="text-muted-foreground text-xs">
+                        Max:
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max={maxPlayers}
+                        value={filters.maxPlayers}
+                        onChange={(e) =>
+                          setFilters({
+                            ...filters,
+                            maxPlayers:
+                              Number.parseInt(e.target.value) || maxPlayers,
+                          })
+                        }
+                        className="bg-background h-8 w-20 rounded border px-2 text-sm"
+                      />
                     </div>
-                  </SelectItem>
-                </SelectGroup>
-                <SelectGroup>
-                  <SelectLabel>Year Published</SelectLabel>
-                  <SelectItem value="yearPublished-asc">
-                    Oldest first
-                  </SelectItem>
-                  <SelectItem value="yearPublished-desc">
-                    Newest first
-                  </SelectItem>
-                </SelectGroup>
-                <SelectGroup>
-                  <SelectLabel>Last Played</SelectLabel>
-                  <SelectItem value="lastPlayed-asc">Oldest first</SelectItem>
-                  <SelectItem value="lastPlayed-desc">Recent first</SelectItem>
-                </SelectGroup>
-                <SelectGroup>
-                  <SelectLabel>Matches</SelectLabel>
-                  <SelectItem value="matches-desc">Most first</SelectItem>
-                  <SelectItem value="matches-asc">Least first</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Playtime</DropdownMenuLabel>
+                <div className="px-2 py-1">
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {filters.minPlaytime} - {filters.maxPlaytime} minutes
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <label className="text-muted-foreground text-xs">
+                        Min:
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max={maxPlaytime}
+                        value={filters.minPlaytime}
+                        onChange={(e) =>
+                          setFilters({
+                            ...filters,
+                            minPlaytime: Number.parseInt(e.target.value) || 0,
+                          })
+                        }
+                        className="bg-background h-8 w-20 rounded border px-2 text-sm"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-muted-foreground text-xs">
+                        Max:
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max={maxPlaytime}
+                        value={filters.maxPlaytime}
+                        onChange={(e) =>
+                          setFilters({
+                            ...filters,
+                            maxPlaytime:
+                              Number.parseInt(e.target.value) || maxPlaytime,
+                          })
+                        }
+                        className="bg-background h-8 w-20 rounded border px-2 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
-        <GameFilters
-          filters={filters}
-          setFilters={setFilters}
-          isOpen={isFilterOpen}
-          setIsOpen={setIsFilterOpen}
-          players={games.reduce(
-            (a, b) => ({ max: Math.max(a.max, b.players.max ?? 0) }),
-            { max: 10 },
-          )}
-          playtime={games.reduce(
-            (a, b) => ({ max: Math.max(a.max, b.playtime.max ?? 0) }),
-            { max: 120 },
-          )}
-        />
+        {(search || activeFilterCount > 0) && (
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-muted-foreground text-sm">
+              {filteredGames.length} of {games.length} games
+            </span>
+            <Button variant="ghost" size="sm" onClick={resetFilters}>
+              <X className="mr-1 h-3 w-3" />
+              Clear
+            </Button>
+          </div>
+        )}
       </div>
 
       {filteredGames.length > 0 ? (
@@ -288,10 +409,13 @@ function GamesListContent({ games }: GamesListContentProps) {
           </ItemGroup>
         </ScrollArea>
       ) : (
-        <div className="flex flex-col items-center justify-center py-12">
-          <p className="text-muted-foreground">
-            No games found matching your criteria
-          </p>
+        <div className="text-muted-foreground py-12 text-center">
+          <p>No games found</p>
+          {(search || activeFilterCount > 0) && (
+            <Button variant="link" onClick={resetFilters} className="mt-2">
+              Clear filters
+            </Button>
+          )}
         </div>
       )}
     </div>
