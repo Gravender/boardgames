@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { compareAsc } from "date-fns";
 import {
   ArrowDownAZ,
@@ -14,6 +13,7 @@ import {
 
 import type { RouterOutputs } from "@board-games/api";
 import { Input } from "@board-games/ui/input";
+import { ItemGroup } from "@board-games/ui/item";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import {
   Select,
@@ -25,17 +25,16 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 
-import { useTRPC } from "~/trpc/react";
-import { GameCard } from "./game-card";
+import { useGetGames } from "~/hooks/queries/game/get-games";
 import { GameFilters } from "./game-filters";
+import { GameItem } from "./game-item";
 
-export function GamesData() {
-  const trpc = useTRPC();
-  const { data: games } = useSuspenseQuery(trpc.game.getGames.queryOptions());
-  return <GamesList games={games} />;
+export default function GamesList() {
+  const { games } = useGetGames();
+  return <GamesListContent games={games} />;
 }
 
-interface GamesListProps {
+interface GamesListContentProps {
   games: RouterOutputs["game"]["getGames"];
 }
 
@@ -43,7 +42,7 @@ type SortField = "name" | "yearPublished" | "lastPlayed" | "matches";
 type SortDirection = "asc" | "desc";
 type SortOption = `${SortField}-${SortDirection}`;
 
-function GamesList({ games }: GamesListProps) {
+function GamesListContent({ games }: GamesListContentProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("name-asc");
   const [filters, setFilters] = useState({
@@ -280,23 +279,21 @@ function GamesList({ games }: GamesListProps) {
         />
       </div>
 
-      <ScrollArea>
-        <div className="max-h-[60vh] min-h-[500px] p-4 md:max-h-[80vh] md:min-h-[600px]">
-          {filteredGames.length > 0 ? (
-            <ul className={"grid gap-4 pb-20"} aria-label="Games">
-              {filteredGames.map((game) => (
-                <GameCard key={`type-${game.type}-id-${game.id}`} game={game} />
-              ))}
-            </ul>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12">
-              <p className="text-muted-foreground">
-                No games found matching your criteria
-              </p>
-            </div>
-          )}
+      {filteredGames.length > 0 ? (
+        <ScrollArea className="xs:h-[60vh] h-[80vh] sm:h-[65vh]">
+          <ItemGroup className="space-y-3 p-1" aria-label="Games">
+            {filteredGames.map((game) => (
+              <GameItem key={`type-${game.type}-id-${game.id}`} game={game} />
+            ))}
+          </ItemGroup>
+        </ScrollArea>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12">
+          <p className="text-muted-foreground">
+            No games found matching your criteria
+          </p>
         </div>
-      </ScrollArea>
+      )}
     </div>
   );
 }
