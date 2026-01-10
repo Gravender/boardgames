@@ -42,7 +42,7 @@ import {
 } from "@board-games/ui/select";
 
 import type { MatchInput } from "../types/input";
-import { useGameRoles } from "~/components/game/hooks/roles";
+import { useGameRoles } from "~/hooks/queries/game/roles";
 import {
   useMatch,
   usePlayersAndTeams,

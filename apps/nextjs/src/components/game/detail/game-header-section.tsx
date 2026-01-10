@@ -24,7 +24,7 @@ import {
 } from "@board-games/ui/dropdown-menu";
 
 import { GameImage } from "~/components/game-image";
-import { useGame } from "~/components/game/hooks/game";
+import { useGame } from "~/hooks/queries/game/game";
 
 interface GameHeaderSectionProps {
   game:

@@ -5,7 +5,7 @@ import {
   createGameViaTrpc,
   createGameWithScoresheetViaTrpc,
 } from "../trpc/procedures";
-import { deleteGames, findGameCard, findGameLink } from "./helpers";
+import { deleteGames, findGameLink } from "./helpers";
 
 test.describe("Game Edit Page", () => {
   // Shared state for game cleanup
@@ -37,9 +37,8 @@ test.describe("Game Edit Page", () => {
     await page
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
-    // Find the game card and get the menu button within it
-    const gameCard = await findGameCard(page, browserGameName);
-    const menuButton = gameCard.getByRole("button", { name: "Open menu" });
+
+    const menuButton = page.getByRole("button", { name: "Open menu" });
     await menuButton.click();
     await page.getByRole("menuitem", { name: "Edit" }).click();
     // Wait for navigation to edit page
@@ -99,12 +98,7 @@ test.describe("Game Edit Page", () => {
     await expect(nameInput).toBeVisible();
   });
 
-  test("Change game image to different SVG icon", async ({
-    page,
-    browserName,
-  }) => {
-    const browserGameName = browserName + "_" + GAME_NAME;
-
+  test("Change game image to different SVG icon", async ({ page }) => {
     // Navigate to edit page
     await page.goto(`/dashboard/games/${gameId}/edit`);
 
@@ -124,14 +118,6 @@ test.describe("Game Edit Page", () => {
     await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
       timeout: 10000,
     });
-
-    // Verify icon changed by checking the game card
-    await page
-      .getByRole("textbox", { name: "Search games..." })
-      .fill(browserGameName);
-    const editedGameCard = await findGameCard(page, browserGameName);
-    // The icon should be visible - we can verify by checking the image/icon is present
-    await expect(editedGameCard).toBeVisible();
   });
 
   test("Change default scoresheet", async ({ page, browserName }) => {

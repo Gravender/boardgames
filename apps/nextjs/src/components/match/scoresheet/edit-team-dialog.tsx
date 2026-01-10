@@ -38,7 +38,7 @@ import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 
 import type { MatchInput } from "../types/input";
-import { useGameRoles } from "~/components/game/hooks/roles";
+import { useGameRoles } from "~/hooks/queries/game/roles";
 import {
   useMatch,
   usePlayersAndTeams,

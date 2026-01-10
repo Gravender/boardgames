@@ -1,8 +1,8 @@
 "use client";
 
-import { useGame } from "../hooks/game";
-import { useGameRoles } from "../hooks/roles";
-import { useGameScoreSheetsWithRounds } from "../hooks/scoresheets-with-rounds";
+import { useGame } from "~/hooks/queries/game/game";
+import { useGameRoles } from "~/hooks/queries/game/roles";
+import { useGameScoreSheetsWithRounds } from "~/hooks/queries/game/scoresheets-with-rounds";
 import { EditGameForm } from "./edit-game-form";
 
 export function EditGameFormWithSuspense({

@@ -16,8 +16,8 @@ import type {
   ScoresheetType,
   TeamType,
 } from "./schema";
-import { useGameRoles } from "~/components/game/hooks/roles";
-import { useScoresheets } from "~/components/game/hooks/scoresheets";
+import { useGameRoles } from "~/hooks/queries/game/roles";
+import { useScoresheets } from "~/hooks/queries/game/scoresheets";
 import { useAppForm } from "~/hooks/form";
 import { useAddMatchMutation } from "~/hooks/mutations/match/add";
 import { useLocations } from "~/hooks/queries/locations";

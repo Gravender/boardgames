@@ -394,8 +394,8 @@ export function MatchesList({ matches }: MatchListProps) {
       )}
 
       {filteredAndSortedMatches.length > 0 ? (
-        <ScrollArea className="xs:h-[60vh] h-[50vh] sm:h-[65vh]">
-          <ItemGroup className="space-y-3 p-1">
+        <ScrollArea className="xs:h-[60vh] h-[80vh] sm:h-[65vh]">
+          <ItemGroup className="space-y-3 p-1" aria-label="Game Matches">
             {filteredAndSortedMatches.map((match) => (
               <MatchItem key={match.id} match={match} />
             ))}

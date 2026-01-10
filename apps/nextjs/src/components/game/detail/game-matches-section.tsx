@@ -1,8 +1,8 @@
 "use client";
 
-import { useGame } from "~/components/game/hooks/game";
-import { useGameMatches } from "~/components/game/hooks/matches";
 import { AddMatchDialog } from "~/components/match/add/index";
+import { useGame } from "~/hooks/queries/game/game";
+import { useGameMatches } from "~/hooks/queries/game/matches";
 import { MatchesList } from "../matches";
 
 interface GameMatchesSectionProps {
