@@ -68,9 +68,9 @@ const getDefaultFilters = (
   showOriginal: true,
   showShared: true,
   minPlayers: 0,
-  maxPlayers: games.reduce((a, b) => Math.max(a, b.players.max ?? 0), 10),
+  maxPlayers: games.reduce((a, b) => Math.max(a, b.players.max ?? 0), 0),
   minPlaytime: 0,
-  maxPlaytime: games.reduce((a, b) => Math.max(a, b.playtime.max ?? 0), 10),
+  maxPlaytime: games.reduce((a, b) => Math.max(a, b.playtime.max ?? 0), 0),
 });
 
 function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
@@ -117,8 +117,8 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
       const gameMinPlayers = game.players.min;
       const gameMaxPlayers = game.players.max;
       if (
-        (gameMaxPlayers && gameMaxPlayers < filters.minPlayers) ||
-        (gameMinPlayers && gameMinPlayers > filters.maxPlayers)
+        (gameMaxPlayers !== null && gameMaxPlayers < filters.minPlayers) ||
+        (gameMinPlayers !== null && gameMinPlayers > filters.maxPlayers)
       ) {
         return false;
       }
@@ -127,8 +127,8 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
       const gameMinPlaytime = game.playtime.min;
       const gameMaxPlaytime = game.playtime.max;
       if (
-        (gameMaxPlaytime && gameMaxPlaytime < filters.minPlaytime) ||
-        (gameMinPlaytime && gameMinPlaytime > filters.maxPlaytime)
+        (gameMaxPlaytime !== null && gameMaxPlaytime < filters.minPlaytime) ||
+        (gameMinPlaytime !== null && gameMinPlaytime > filters.maxPlaytime)
       ) {
         return false;
       }
@@ -166,7 +166,7 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
           }
           if (!a.lastPlayed.date && b.lastPlayed.date) return 1;
           if (a.lastPlayed.date && !b.lastPlayed.date) return -1;
-          return compareAsc(a.createdAt, b.createdAt);
+          return compareAsc(b.createdAt, a.createdAt);
         }
         case "matches-asc":
           return a.games - b.games;
@@ -185,18 +185,15 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
     setSearch("");
   };
 
-  const maxPlayers = games.reduce(
-    (a, b) => Math.max(a, b.players.max ?? 0),
-    10,
-  );
+  const maxPlayers = games.reduce((a, b) => Math.max(a, b.players.max ?? 0), 0);
   const maxPlaytime = games.reduce(
     (a, b) => Math.max(a, b.playtime.max ?? 0),
-    10,
+    0,
   );
 
   return (
-    <div className="bg-card w-full rounded-lg border shadow-sm">
-      <div className="border-b p-4">
+    <div>
+      <div className="p-4">
         <div className="mb-3 flex items-center justify-between md:mb-4">
           <div>
             <h2 className="text-xl font-semibold md:text-2xl">

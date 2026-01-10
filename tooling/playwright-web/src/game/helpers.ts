@@ -202,7 +202,7 @@ export function gameAriaText(
     .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   // Generate regex pattern matching: gameName (yearPublished) yearPublished players playtime "Never played" plays
   // Uses specific values for year and players, regex for playtime range
-  const pattern = `${escapedGameName} \\(${escapedYear}\\) ${yearPublished} ${playersMin}-${playersMax} players ${playtimeMin}-${playtimeMax} min Never played 0 plays`;
+  const pattern = `${escapedGameName} \\(${escapedYear}\\) ${playersMin}-${playersMax} players ${playtimeMin}-${playtimeMax} min Never played 0 plays`;
   return `- text: /${pattern}/`;
 }
 

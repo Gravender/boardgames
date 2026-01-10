@@ -14,6 +14,7 @@ import {
   Item,
   ItemActions,
   ItemContent,
+  ItemDescription,
   ItemTitle,
 } from "@board-games/ui/item";
 
@@ -51,14 +52,19 @@ export function GameItem({ game }: GameCardProps) {
     return `${game.playtime.min}-${game.playtime.max} min`;
   };
   return (
-    <Item asChild aria-label={`${game.name} game item`}>
+    <Item
+      variant="outline"
+      aria-label={`${game.name} game item`}
+      className="hover:bg-muted/50 transition-colors"
+    >
       <Link
         href={`/dashboard/games/${game.type === "shared" ? "shared/" : ""}${game.id}`}
+        className="flex min-w-0 flex-1 items-center gap-4"
       >
         <GameImage
           image={game.image}
           alt={`${game.name} game image`}
-          containerClassName="h-20 w-20 "
+          containerClassName="h-16 w-16 sm:h-24 sm:w-24"
         >
           {game.type === "shared" && (
             <>
@@ -79,7 +85,7 @@ export function GameItem({ game }: GameCardProps) {
         </GameImage>
 
         <ItemContent>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-row items-center gap-2">
             <ItemTitle>{game.name}</ItemTitle>
             {game.yearPublished && (
               <span className="text-muted-foreground mr-auto shrink-0 text-xs">
@@ -87,43 +93,34 @@ export function GameItem({ game }: GameCardProps) {
               </span>
             )}
           </div>
-
-          <div className="text-muted-foreground mt-1 flex items-center gap-4 text-sm">
-            {game.yearPublished && (
-              <div className="flex items-center gap-1.5">
-                <CalendarIcon className="h-3.5 w-3.5" />
-                <span>{game.yearPublished}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-1.5">
-              <UsersIcon className="h-3.5 w-3.5" />
-              <span>{playerCount()}</span>
+          <ItemDescription className="text-xs sm:text-sm">
+            <div className="xs:flex-row flex flex-col gap-2 sm:flex-row">
+              <span className="flex items-center gap-1">
+                <UsersIcon className="h-3 w-3" />
+                {playerCount()}
+              </span>
+              <span className="flex items-center gap-1">
+                <ClockIcon className="h-3 w-3" />
+                {playtime()}
+              </span>
+              <span className="col-span-2 flex items-center gap-1 sm:col-span-1">
+                <GamepadIcon className="h-3 w-3 shrink-0" />
+                {game.games} {game.games === 1 ? "play" : "plays"}
+              </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <ClockIcon className="h-3.5 w-3.5" />
-              <span>{playtime()}</span>
-            </div>
-          </div>
-          <div className="text-muted-foreground mt-1 flex items-center gap-1.5 text-sm">
-            {game.lastPlayed.location && <MapPinIcon className="h-3.5 w-3.5" />}
-            <span>
+            <span className="col-span-2 flex items-center gap-1 sm:col-span-1">
+              <MapPinIcon className="h-3 w-3" />
               {formattedLastPlayed}
               {game.lastPlayed.location &&
                 ` at ${game.lastPlayed.location.name}`}
             </span>
-            <div className="flex items-center gap-1">
-              <GamepadIcon className="h-3 w-3 shrink-0" />
-              <span>
-                {game.games} {game.games === 1 ? "play" : "plays"}
-              </span>
-            </div>
-          </div>
+          </ItemDescription>
         </ItemContent>
-
-        <ItemActions>
-          <GamesDropDown data={game} />
-        </ItemActions>
       </Link>
+
+      <ItemActions>
+        <GamesDropDown data={game} />
+      </ItemActions>
     </Item>
   );
 }

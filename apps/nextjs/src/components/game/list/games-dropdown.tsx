@@ -134,6 +134,7 @@ export function GamesDropDown({
             <AlertDialogAction
               className={buttonVariants({ variant: "destructive" })}
               onClick={() => onDelete()}
+              disabled={deleteGameMutation.isPending}
             >
               Delete
             </AlertDialogAction>
