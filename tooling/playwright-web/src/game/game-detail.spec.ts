@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { GAME_NAME } from "../shared/test-data";
 import { createGameViaTrpc } from "../trpc/procedures";
-import { deleteGames, findGameLink } from "./helpers";
+import { deleteGames } from "./helpers";
 
 test.describe("Game Detail Page", () => {
   test.beforeAll(async ({ browserName }) => {
@@ -21,8 +21,12 @@ test.describe("Game Detail Page", () => {
     await page
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
-    const gameLink = await findGameLink(page, browserGameName);
-    await gameLink.click();
+    await expect(
+      page.getByRole("link", { name: `${browserGameName} game item` }),
+    ).toBeVisible();
+    await page
+      .getByRole("link", { name: `${browserGameName} game item` })
+      .click();
 
     // Verify we're on the game detail page
     await expect(page).toHaveURL(/\/dashboard\/games\/\d+/);
@@ -37,8 +41,12 @@ test.describe("Game Detail Page", () => {
     await page
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
-    const gameLink = await findGameLink(page, browserGameName);
-    await gameLink.click();
+    await expect(
+      page.getByRole("link", { name: `${browserGameName} game item` }),
+    ).toBeVisible();
+    await page
+      .getByRole("link", { name: `${browserGameName} game item` })
+      .click();
 
     // Verify game name is displayed
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
@@ -58,8 +66,12 @@ test.describe("Game Detail Page", () => {
     await page
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
-    const gameLink = await findGameLink(page, browserGameName);
-    await gameLink.click();
+    await expect(
+      page.getByRole("link", { name: `${browserGameName} game item` }),
+    ).toBeVisible();
+    await page
+      .getByRole("link", { name: `${browserGameName} game item` })
+      .click();
 
     // Verify statistics link exists
     await expect(page.getByRole("link", { name: "Stats" })).toBeVisible();
@@ -73,8 +85,12 @@ test.describe("Game Detail Page", () => {
     await page
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
-    const gameLink = await findGameLink(page, browserGameName);
-    await gameLink.click();
+    await expect(
+      page.getByRole("link", { name: `${browserGameName} game item` }),
+    ).toBeVisible();
+    await page
+      .getByRole("link", { name: `${browserGameName} game item` })
+      .click();
 
     // Verify match history section exists
     await expect(
@@ -88,8 +104,12 @@ test.describe("Game Detail Page", () => {
     await page
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
-    const gameLink = await findGameLink(page, browserGameName);
-    await gameLink.click();
+    await expect(
+      page.getByRole("link", { name: `${browserGameName} game item` }),
+    ).toBeVisible();
+    await page
+      .getByRole("link", { name: `${browserGameName} game item` })
+      .click();
 
     // Verify add match button exists (it's a floating button)
     const addMatchButton = page.getByRole("button", {

@@ -199,7 +199,9 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
       <div className="border-b p-4">
         <div className="mb-3 flex items-center justify-between md:mb-4">
           <div>
-            <h2 className="text-xl font-semibold md:text-2xl">Game Collection</h2>
+            <h2 className="text-xl font-semibold md:text-2xl">
+              Game Collection
+            </h2>
             <p className="text-muted-foreground text-sm">
               {filteredGames.length} games found
             </p>
@@ -360,6 +362,7 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
                         type="number"
                         min="0"
                         max={maxPlaytime}
+                        step="5"
                         value={filters.minPlaytime}
                         onChange={(e) =>
                           setFilters({
@@ -378,6 +381,7 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
                         type="number"
                         min="0"
                         max={maxPlaytime}
+                        step="5"
                         value={filters.maxPlaytime}
                         onChange={(e) =>
                           setFilters({

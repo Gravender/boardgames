@@ -51,7 +51,7 @@ export function GameItem({ game }: GameCardProps) {
     return `${game.playtime.min}-${game.playtime.max} min`;
   };
   return (
-    <Item asChild>
+    <Item asChild aria-label={`${game.name} game item`}>
       <Link
         href={`/dashboard/games/${game.type === "shared" ? "shared/" : ""}${game.id}`}
       >

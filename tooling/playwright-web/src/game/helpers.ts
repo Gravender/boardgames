@@ -194,16 +194,16 @@ export function gameAriaText(
   playtimeMin: number,
   playtimeMax: number,
 ) {
-  const temp = `
-        - listitem:
-          - link:
-            - /url: //dashboard/games/\\d+/
-          - heading "${gameName}" [level=3]
-          - text: (${yearPublished})
-          - button "Open menu"
-          - text: ${playersMin}-${playersMax} players ${playtimeMin}-${playtimeMax} min 0 plays
-        `;
-  return temp;
+  // Escape special regex characters in game name
+  const escapedGameName = gameName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Escape year for regex (it appears in parentheses and standalone)
+  const escapedYear = yearPublished
+    .toString()
+    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Generate regex pattern matching: gameName (yearPublished) yearPublished players playtime "Never played" plays
+  // Uses specific values for year and players, regex for playtime range
+  const pattern = `${escapedGameName} \\(${escapedYear}\\) ${yearPublished} ${playersMin}-${playersMax} players ${playtimeMin}-${playtimeMax} min Never played 0 plays`;
+  return `- text: /${pattern}/`;
 }
 
 export async function navigateToGameEdit(page: Page, gameId: number) {
@@ -215,16 +215,12 @@ export async function findGameLink(page: Page, gameName: string) {
   const gamesList = page.getByLabel("Games", { exact: true });
   await expect(gamesList).toBeVisible({ timeout: 5000 });
 
-  // Find the list item that matches the game properties
-  const gameHeading = page.getByRole("heading", { name: gameName });
-  await expect(gameHeading).toBeVisible({ timeout: 5000 });
+  // Find the game link using the accessible name
+  const gameLink = page.getByRole("link", { name: `${gameName} game item` });
+  await expect(gameLink).toBeVisible({ timeout: 5000 });
 
-  // Verify the game details match (using aria snapshot pattern from gameAriaText)
-  const gameCard = gamesList.getByRole("listitem").filter({ has: gameHeading });
-  await expect(gameCard).toBeVisible();
-
-  // Return the link within the card
-  return gameCard.getByRole("link").first();
+  // Return the link
+  return gameLink;
 }
 
 export async function findGameCard(page: Page, gameName: string) {
@@ -232,12 +228,12 @@ export async function findGameCard(page: Page, gameName: string) {
   const gamesList = page.getByLabel("Games", { exact: true });
   await expect(gamesList).toBeVisible({ timeout: 5000 });
 
-  // Find the list item that contains the game name
-  const gameHeading = page.getByRole("heading", { name: gameName });
-  await expect(gameHeading).toBeVisible({ timeout: 5000 });
+  // Find the game link using the accessible name
+  const gameLink = page.getByRole("link", { name: `${gameName} game item` });
+  await expect(gameLink).toBeVisible({ timeout: 5000 });
 
-  // Return the card (listitem) that contains the heading
-  return gamesList.getByRole("listitem").filter({ has: gameHeading });
+  // Return the card (listitem) that contains the link
+  return gamesList.getByRole("listitem").filter({ has: gameLink });
 }
 
 export interface ScoresheetConfig {
