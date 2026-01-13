@@ -22,10 +22,10 @@ test.describe("Game Detail Page", () => {
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
     await expect(
-      page.getByRole("link", { name: `${browserGameName} game item` }),
+      page.getByRole("link", { name: browserGameName }),
     ).toBeVisible();
     await page
-      .getByRole("link", { name: `${browserGameName} game item` })
+      .getByRole("link", { name: browserGameName })
       .click();
 
     // Verify we're on the game detail page
@@ -42,10 +42,10 @@ test.describe("Game Detail Page", () => {
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
     await expect(
-      page.getByRole("link", { name: `${browserGameName} game item` }),
+      page.getByRole("link", { name: browserGameName }),
     ).toBeVisible();
     await page
-      .getByRole("link", { name: `${browserGameName} game item` })
+      .getByRole("link", { name: browserGameName })
       .click();
 
     // Verify game name is displayed
@@ -67,10 +67,10 @@ test.describe("Game Detail Page", () => {
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
     await expect(
-      page.getByRole("link", { name: `${browserGameName} game item` }),
+      page.getByRole("link", { name: browserGameName }),
     ).toBeVisible();
     await page
-      .getByRole("link", { name: `${browserGameName} game item` })
+      .getByRole("link", { name: browserGameName })
       .click();
 
     // Verify statistics link exists
@@ -86,10 +86,10 @@ test.describe("Game Detail Page", () => {
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
     await expect(
-      page.getByRole("link", { name: `${browserGameName} game item` }),
+      page.getByRole("link", { name: browserGameName }),
     ).toBeVisible();
     await page
-      .getByRole("link", { name: `${browserGameName} game item` })
+      .getByRole("link", { name: browserGameName })
       .click();
 
     // Verify match history section exists
@@ -105,10 +105,10 @@ test.describe("Game Detail Page", () => {
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
     await expect(
-      page.getByRole("link", { name: `${browserGameName} game item` }),
+      page.getByRole("link", { name: browserGameName }),
     ).toBeVisible();
     await page
-      .getByRole("link", { name: `${browserGameName} game item` })
+      .getByRole("link", { name: browserGameName })
       .click();
 
     // Verify add match button exists (it's a floating button)

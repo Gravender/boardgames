@@ -69,7 +69,7 @@ test.describe("Game List", () => {
       30,
     );
     await expect(
-      page.getByRole("link", { name: `${browserGameName} game item` }),
+      page.getByLabel("Games").getByRole("link"),
     ).toMatchAriaSnapshot(originalGameAriaText);
   });
 });

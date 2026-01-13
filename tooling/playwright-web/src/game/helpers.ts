@@ -202,8 +202,12 @@ export function gameAriaText(
     .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   // Generate regex pattern matching: gameName (yearPublished) yearPublished players playtime "Never played" plays
   // Uses specific values for year and players, regex for playtime range
-  const pattern = `${escapedGameName} \\(${escapedYear}\\) ${playersMin}-${playersMax} players ${playtimeMin}-${playtimeMax} min Never played 0 plays`;
-  return `- text: /${pattern}/`;
+
+  const pattern = `${escapedGameName} \\(${escapedYear}\\)`;
+  return `
+  - text: /${pattern}/
+  - paragraph: /${playersMin}-${playersMax} players ${playtimeMin}-${playtimeMax} min 0 plays Never played/
+  `;
 }
 
 export async function navigateToGameEdit(page: Page, gameId: number) {
@@ -216,7 +220,7 @@ export async function findGameLink(page: Page, gameName: string) {
   await expect(gamesList).toBeVisible({ timeout: 5000 });
 
   // Find the game link using the accessible name
-  const gameLink = page.getByRole("link", { name: `${gameName} game item` });
+  const gameLink = page.getByRole("link", { name: gameName });
   await expect(gameLink).toBeVisible({ timeout: 5000 });
 
   // Return the link
@@ -229,7 +233,7 @@ export async function findGameCard(page: Page, gameName: string) {
   await expect(gamesList).toBeVisible({ timeout: 5000 });
 
   // Find the game link using the accessible name
-  const gameLink = page.getByRole("link", { name: `${gameName} game item` });
+  const gameLink = page.getByRole("link", { name: gameName });
   await expect(gameLink).toBeVisible({ timeout: 5000 });
 
   // Return the card (listitem) that contains the link

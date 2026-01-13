@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
+import { DualRangeSlider } from "@board-games/ui/dual-range-slider";
 import {
   InputGroup,
   InputGroupAddon,
@@ -296,101 +297,41 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Player Count</DropdownMenuLabel>
-                <div className="px-2 py-1">
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      {filters.minPlayers} - {filters.maxPlayers} players
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <label className="text-muted-foreground text-xs">
-                        Min:
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max={maxPlayers}
-                        value={filters.minPlayers}
-                        onChange={(e) =>
-                          setFilters({
-                            ...filters,
-                            minPlayers: Number.parseInt(e.target.value) || 0,
-                          })
-                        }
-                        className="bg-background h-8 w-20 rounded border px-2 text-sm"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <label className="text-muted-foreground text-xs">
-                        Max:
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max={maxPlayers}
-                        value={filters.maxPlayers}
-                        onChange={(e) =>
-                          setFilters({
-                            ...filters,
-                            maxPlayers:
-                              Number.parseInt(e.target.value) || maxPlayers,
-                          })
-                        }
-                        className="bg-background h-8 w-20 rounded border px-2 text-sm"
-                      />
-                    </div>
-                  </div>
+                <div className="px-3 pt-5 pb-3">
+                  <DualRangeSlider
+                    value={[filters.minPlayers, filters.maxPlayers]}
+                    min={0}
+                    max={maxPlayers}
+                    step={1}
+                    onValueChange={(values) =>
+                      setFilters({
+                        ...filters,
+                        minPlayers: values[0] ?? 0,
+                        maxPlayers: values[1] ?? maxPlayers,
+                      })
+                    }
+                    label={(value) => value?.toString() ?? ""}
+                    labelPosition="top"
+                  />
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Playtime</DropdownMenuLabel>
-                <div className="px-2 py-1">
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      {filters.minPlaytime} - {filters.maxPlaytime} minutes
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <label className="text-muted-foreground text-xs">
-                        Min:
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max={maxPlaytime}
-                        step="5"
-                        value={filters.minPlaytime}
-                        onChange={(e) =>
-                          setFilters({
-                            ...filters,
-                            minPlaytime: Number.parseInt(e.target.value) || 0,
-                          })
-                        }
-                        className="bg-background h-8 w-20 rounded border px-2 text-sm"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <label className="text-muted-foreground text-xs">
-                        Max:
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max={maxPlaytime}
-                        step="5"
-                        value={filters.maxPlaytime}
-                        onChange={(e) =>
-                          setFilters({
-                            ...filters,
-                            maxPlaytime:
-                              Number.parseInt(e.target.value) || maxPlaytime,
-                          })
-                        }
-                        className="bg-background h-8 w-20 rounded border px-2 text-sm"
-                      />
-                    </div>
-                  </div>
+                <div className="px-3 pt-5 pb-3">
+                  <DualRangeSlider
+                    value={[filters.minPlaytime, filters.maxPlaytime]}
+                    min={0}
+                    max={maxPlaytime}
+                    step={5}
+                    onValueChange={(values) =>
+                      setFilters({
+                        ...filters,
+                        minPlaytime: values[0] ?? 0,
+                        maxPlaytime: values[1] ?? maxPlaytime,
+                      })
+                    }
+                    label={(value) => value?.toString() ?? ""}
+                    labelPosition="top"
+                  />
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
