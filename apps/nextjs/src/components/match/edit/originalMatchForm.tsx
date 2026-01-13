@@ -39,11 +39,11 @@ import { Skeleton } from "@board-games/ui/skeleton";
 
 import type { GameInput, MatchInput } from "../types/input";
 import type { LocationType, PlayerType, TeamType } from "./schema";
-import { useGameRoles } from "~/components/game/hooks/roles";
 import { InputFieldSkeleton } from "~/components/input-field-skeleton";
 import { Spinner } from "~/components/spinner";
 import { useAppForm } from "~/hooks/form";
 import { useAddLocationMutation } from "~/hooks/mutations/location/add";
+import { useGameRoles } from "~/hooks/queries/game/roles";
 import { useSuspenseLocations } from "~/hooks/queries/locations";
 import { formatMatchLink } from "~/utils/linkFormatting";
 import { AddPlayerForm } from "../add/add-player-form";

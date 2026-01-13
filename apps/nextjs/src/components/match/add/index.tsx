@@ -16,10 +16,10 @@ import type {
   ScoresheetType,
   TeamType,
 } from "./schema";
-import { useGameRoles } from "~/components/game/hooks/roles";
-import { useScoresheets } from "~/components/game/hooks/scoresheets";
 import { useAppForm } from "~/hooks/form";
 import { useAddMatchMutation } from "~/hooks/mutations/match/add";
+import { useGameRoles } from "~/hooks/queries/game/roles";
+import { useScoresheets } from "~/hooks/queries/game/scoresheets";
 import { useLocations } from "~/hooks/queries/locations";
 import { formatMatchLink } from "~/utils/linkFormatting";
 import { useSuspensePlayers } from "../hooks/players";

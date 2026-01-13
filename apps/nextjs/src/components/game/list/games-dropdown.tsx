@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   BarChart2Icon,
   Link2Icon,
@@ -32,7 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import { useTRPC } from "~/trpc/react";
+import { useDeleteGameMutation } from "~/hooks/mutations/game/delete";
 
 export function GamesDropDown({
   data,
@@ -41,18 +40,10 @@ export function GamesDropDown({
 }) {
   const [isDeleteGameDialogOpen, setIsDeleteGameDialogOpen] = useState(false);
 
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
+  const { deleteGameMutation } = useDeleteGameMutation();
 
-  const deleteGame = useMutation(
-    trpc.game.deleteGame.mutationOptions({
-      onSuccess: async () => {
-        return queryClient.invalidateQueries();
-      },
-    }),
-  );
   const onDelete = () => {
-    deleteGame.mutate({ id: data.id });
+    deleteGameMutation.mutate({ id: data.id });
   };
   return (
     <>
@@ -143,6 +134,7 @@ export function GamesDropDown({
             <AlertDialogAction
               className={buttonVariants({ variant: "destructive" })}
               onClick={() => onDelete()}
+              disabled={deleteGameMutation.isPending}
             >
               Delete
             </AlertDialogAction>

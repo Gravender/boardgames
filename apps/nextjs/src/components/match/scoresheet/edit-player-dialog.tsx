@@ -42,12 +42,12 @@ import {
 } from "@board-games/ui/select";
 
 import type { MatchInput } from "../types/input";
-import { useGameRoles } from "~/components/game/hooks/roles";
 import {
   useMatch,
   usePlayersAndTeams,
 } from "~/components/match/hooks/suspenseQueries";
 import { Spinner } from "~/components/spinner";
+import { useGameRoles } from "~/hooks/queries/game/roles";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useUpdateMatchPlayerTeamAndRolesMutation } from "../hooks/scoresheet";
 

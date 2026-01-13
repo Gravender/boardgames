@@ -69,7 +69,7 @@ test.describe("Game List", () => {
       30,
     );
     await expect(
-      page.getByLabel("Games", { exact: true }).getByRole("listitem"),
+      page.getByLabel("Games").getByRole("link"),
     ).toMatchAriaSnapshot(originalGameAriaText);
   });
 });

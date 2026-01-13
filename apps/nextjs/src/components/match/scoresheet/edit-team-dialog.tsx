@@ -38,13 +38,13 @@ import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 
 import type { MatchInput } from "../types/input";
-import { useGameRoles } from "~/components/game/hooks/roles";
 import {
   useMatch,
   usePlayersAndTeams,
 } from "~/components/match/hooks/suspenseQueries";
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
+import { useGameRoles } from "~/hooks/queries/game/roles";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useUpdateMatchTeamMutation } from "../hooks/scoresheet";
 
