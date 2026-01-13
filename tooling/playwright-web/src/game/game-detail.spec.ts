@@ -24,9 +24,7 @@ test.describe("Game Detail Page", () => {
     await expect(
       page.getByRole("link", { name: browserGameName }),
     ).toBeVisible();
-    await page
-      .getByRole("link", { name: browserGameName })
-      .click();
+    await page.getByRole("link", { name: browserGameName }).click();
 
     // Verify we're on the game detail page
     await expect(page).toHaveURL(/\/dashboard\/games\/\d+/);
@@ -44,9 +42,7 @@ test.describe("Game Detail Page", () => {
     await expect(
       page.getByRole("link", { name: browserGameName }),
     ).toBeVisible();
-    await page
-      .getByRole("link", { name: browserGameName })
-      .click();
+    await page.getByRole("link", { name: browserGameName }).click();
 
     // Verify game name is displayed
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
@@ -69,9 +65,7 @@ test.describe("Game Detail Page", () => {
     await expect(
       page.getByRole("link", { name: browserGameName }),
     ).toBeVisible();
-    await page
-      .getByRole("link", { name: browserGameName })
-      .click();
+    await page.getByRole("link", { name: browserGameName }).click();
 
     // Verify statistics link exists
     await expect(page.getByRole("link", { name: "Stats" })).toBeVisible();
@@ -88,9 +82,7 @@ test.describe("Game Detail Page", () => {
     await expect(
       page.getByRole("link", { name: browserGameName }),
     ).toBeVisible();
-    await page
-      .getByRole("link", { name: browserGameName })
-      .click();
+    await page.getByRole("link", { name: browserGameName }).click();
 
     // Verify match history section exists
     await expect(
@@ -107,9 +99,7 @@ test.describe("Game Detail Page", () => {
     await expect(
       page.getByRole("link", { name: browserGameName }),
     ).toBeVisible();
-    await page
-      .getByRole("link", { name: browserGameName })
-      .click();
+    await page.getByRole("link", { name: browserGameName }).click();
 
     // Verify add match button exists (it's a floating button)
     const addMatchButton = page.getByRole("button", {

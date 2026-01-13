@@ -171,10 +171,9 @@ export function AddGameForm({
       <form.Subscribe
         selector={(state) => ({
           activeForm: state.values.activeForm,
-          activeScoreSheetIndex: state.values.activeScoreSheetIndex ?? 0,
         })}
       >
-        {({ activeForm, activeScoreSheetIndex }) => {
+        {({ activeForm }) => {
           return (
             <>
               <DialogHeader>

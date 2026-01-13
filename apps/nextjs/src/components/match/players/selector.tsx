@@ -44,8 +44,8 @@ import { Skeleton } from "@board-games/ui/skeleton";
 import { cn } from "@board-games/ui/utils";
 
 import type { GameInput } from "../types/input";
-import { useGameRoles } from "~/hooks/queries/game/roles";
 import { PlayerImage } from "~/components/player-image";
+import { useGameRoles } from "~/hooks/queries/game/roles";
 import { useTRPC } from "~/trpc/react";
 import { AddPlayerForm } from "./add-player";
 import { PlayerGroupSelector } from "./group-selector";

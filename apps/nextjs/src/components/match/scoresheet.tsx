@@ -38,9 +38,9 @@ import { MatchImages } from "~/components/match/scoresheet/match-images";
 import { ScoreSheetTable } from "~/components/match/scoresheet/table";
 import { TieBreakerDialog } from "~/components/match/scoresheet/TieBreakerDialog";
 import { Spinner } from "~/components/spinner";
+import { useGameRoles } from "~/hooks/queries/game/roles";
 import { formatMatchLink } from "~/utils/linkFormatting";
 import { FormattedDate } from "../formatted-date";
-import { useGameRoles } from "~/hooks/queries/game/roles";
 import {
   useDurationMutation,
   useUpdateFinalScores,
