@@ -99,12 +99,13 @@ function PerformanceComparison({
               <p className="text-xs">
                 <strong>Competitive Win Rate</strong>
               </p>
-              <p className="text-xs mt-1">
+              <p className="mt-1 text-xs">
                 Wins ÷ (Wins + Losses). Ties excluded.
               </p>
-              <p className="text-xs mt-1">
+              <p className="mt-1 text-xs">
                 {opponent.competitiveWins}W - {opponent.competitiveLosses}L
-                {opponent.competitiveTies > 0 && ` - ${opponent.competitiveTies}T`}
+                {opponent.competitiveTies > 0 &&
+                  ` - ${opponent.competitiveTies}T`}
               </p>
             </TooltipContent>
           </Tooltip>
@@ -131,7 +132,7 @@ function PerformanceComparison({
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex flex-col gap-2 cursor-help">
+          <div className="flex cursor-help flex-col gap-2">
             <div className="flex justify-between text-sm">
               <span>Comp Win Rate vs {opponent.player.name}</span>
               <span>{Math.round(competitiveWinRate * 100)}%</span>
@@ -143,10 +144,8 @@ function PerformanceComparison({
           <p className="text-xs">
             <strong>Competitive Win Rate</strong>
           </p>
-          <p className="text-xs mt-1">
-            Wins ÷ (Wins + Losses). Ties excluded.
-          </p>
-          <p className="text-xs mt-1">
+          <p className="mt-1 text-xs">Wins ÷ (Wins + Losses). Ties excluded.</p>
+          <p className="mt-1 text-xs">
             {opponent.competitiveWins}W - {opponent.competitiveLosses}L
             {opponent.competitiveTies > 0 && ` - ${opponent.competitiveTies}T`}
           </p>
@@ -212,7 +211,7 @@ function OpponentCard({ opponent }: { opponent: Opponent }) {
                   <p className="text-xs">
                     <strong>Wins - Losses - Ties</strong>
                   </p>
-                  <p className="text-xs mt-1">
+                  <p className="mt-1 text-xs">
                     Win rate excludes ties (wins ÷ (wins + losses)). Ties don't
                     count as losses since you didn't lose against this opponent.
                   </p>
@@ -245,7 +244,7 @@ function OpponentCard({ opponent }: { opponent: Opponent }) {
         {totalCompetitiveGames > 0 && totalCooperativeGames > 0 && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="rounded-lg border p-3 text-center cursor-help">
+              <div className="cursor-help rounded-lg border p-3 text-center">
                 <div className="mb-1 flex items-center justify-center gap-1">
                   <Swords className="h-3 w-3 text-blue-500" />
                   <span className="text-lg font-bold text-blue-600">
@@ -255,7 +254,8 @@ function OpponentCard({ opponent }: { opponent: Opponent }) {
                 <div className="text-muted-foreground text-xs">Competitive</div>
                 <div className="text-muted-foreground text-xs">
                   {opponent.competitiveWins}W - {opponent.competitiveLosses}L
-                  {opponent.competitiveTies > 0 && ` - ${opponent.competitiveTies}T`}
+                  {opponent.competitiveTies > 0 &&
+                    ` - ${opponent.competitiveTies}T`}
                 </div>
                 <div className="text-muted-foreground text-xs">
                   {totalCompetitiveGames} games
@@ -266,13 +266,15 @@ function OpponentCard({ opponent }: { opponent: Opponent }) {
               <p className="text-xs">
                 <strong>Competitive Win Rate</strong>
               </p>
-              <p className="text-xs mt-1">
+              <p className="mt-1 text-xs">
                 Wins ÷ (Wins + Losses). Ties are excluded since they don't count
                 as losses.
               </p>
-              <p className="text-xs mt-1">
+              <p className="mt-1 text-xs">
                 {opponent.competitiveWins} wins, {opponent.competitiveLosses}{" "}
-                losses{opponent.competitiveTies > 0 && `, ${opponent.competitiveTies} ties`}
+                losses
+                {opponent.competitiveTies > 0 &&
+                  `, ${opponent.competitiveTies} ties`}
               </p>
             </TooltipContent>
           </Tooltip>

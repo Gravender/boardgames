@@ -21,7 +21,7 @@ type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type Player = GameStats["players"][number];
 type Scoresheet = GameStats["scoresheets"][number];
 
-type CurrentPlayer = {
+interface CurrentPlayer {
   id: number;
   type: "original" | "shared";
   name: string;
@@ -35,7 +35,7 @@ type CurrentPlayer = {
   wins: number;
   rounds: Player["scoresheets"][number]["rounds"];
   scores: Player["scoresheets"][number]["scores"];
-};
+}
 
 type SortField =
   | "name"
@@ -229,7 +229,9 @@ export function ScoresheetPlayerTable({
                   <TableCell className="text-center font-medium text-green-600">
                     {player.wins}
                   </TableCell>
-                  <TableCell className="text-center">{Math.round(player.winRate * 100)}%</TableCell>
+                  <TableCell className="text-center">
+                    {Math.round(player.winRate * 100)}%
+                  </TableCell>
                   {!(
                     currentScoresheet.winCondition === "Manual" ||
                     currentScoresheet.winCondition === "No Winner"

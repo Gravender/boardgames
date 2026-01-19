@@ -21,7 +21,7 @@ type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type Player = GameStats["players"][number];
 type Scoresheet = GameStats["scoresheets"][number];
 
-type CurrentPlayer = {
+interface CurrentPlayer {
   id: number;
   type: "original" | "shared";
   name: string;
@@ -35,7 +35,7 @@ type CurrentPlayer = {
   wins: number;
   rounds: Player["scoresheets"][number]["rounds"];
   scores: Player["scoresheets"][number]["scores"];
-};
+}
 
 export function RoundByRoundTable({
   currentScoresheet,
@@ -79,26 +79,26 @@ export function RoundByRoundTable({
                   Player
                 </TableHead>
                 {sortedRounds.map((round) => (
-                    <TableHead
-                      key={round.id}
-                      className="min-w-[100px] text-center"
-                    >
-                      <div className="flex flex-col items-center gap-1">
-                        <span>{round.name}</span>
-                        <Badge
-                          variant="outline"
-                          className="text-xs"
-                          style={{
-                            borderColor: round.color ?? "",
-                            color: round.color ?? "",
-                          }}
-                        >
-                          {round.type}
-                          {round.type === "Checkbox" && ` (${round.score})`}
-                        </Badge>
-                      </div>
-                    </TableHead>
-                  ))}
+                  <TableHead
+                    key={round.id}
+                    className="min-w-[100px] text-center"
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <span>{round.name}</span>
+                      <Badge
+                        variant="outline"
+                        className="text-xs"
+                        style={{
+                          borderColor: round.color ?? "",
+                          color: round.color ?? "",
+                        }}
+                      >
+                        {round.type}
+                        {round.type === "Checkbox" && ` (${round.score})`}
+                      </Badge>
+                    </div>
+                  </TableHead>
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -132,55 +132,55 @@ export function RoundByRoundTable({
                       </div>
                     </TableCell>
                     {sortedRounds.map((round) => {
-                        const playerRound = player.rounds.find(
-                          (r) => r.id === round.id,
-                        );
-                        const checkedRounds =
-                          playerRound?.scores.filter(
-                            (s) => s.score === round.score,
-                          ).length ?? 0;
-                        return (
-                          <TableCell key={round.id} className="text-center">
-                            {playerRound ? (
-                              round.type === "Numeric" ? (
-                                <div className="space-y-1">
-                                  <div className="font-semibold">
-                                    {playerRound.avgScore
-                                      ? playerRound.avgScore.toFixed(1)
-                                      : "N/A"}
-                                  </div>
-                                  <div className="flex items-center justify-center gap-1 text-xs">
-                                    <span className="text-green-600">
-                                      {playerRound.bestScore ?? "N/A"}
-                                    </span>
-                                    <span className="text-muted-foreground">
-                                      /
-                                    </span>
-                                    <span className="text-red-600">
-                                      {playerRound.worstScore ?? "N/A"}
-                                    </span>
-                                  </div>
-                                  <div className="text-muted-foreground text-xs">
-                                    {`${
-                                      playerRound.scores.filter(
-                                        (s) => s.score !== null,
-                                      ).length
-                                    } games`}
-                                  </div>
+                      const playerRound = player.rounds.find(
+                        (r) => r.id === round.id,
+                      );
+                      const checkedRounds =
+                        playerRound?.scores.filter(
+                          (s) => s.score === round.score,
+                        ).length ?? 0;
+                      return (
+                        <TableCell key={round.id} className="text-center">
+                          {playerRound ? (
+                            round.type === "Numeric" ? (
+                              <div className="space-y-1">
+                                <div className="font-semibold">
+                                  {playerRound.avgScore
+                                    ? playerRound.avgScore.toFixed(1)
+                                    : "N/A"}
                                 </div>
-                              ) : (
-                                <div className="space-y-1">
-                                  <div className="text-xs font-semibold">
-                                    {`${checkedRounds} time${checkedRounds !== 1 ? "s" : ""}`}
-                                  </div>
+                                <div className="flex items-center justify-center gap-1 text-xs">
+                                  <span className="text-green-600">
+                                    {playerRound.bestScore ?? "N/A"}
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    /
+                                  </span>
+                                  <span className="text-red-600">
+                                    {playerRound.worstScore ?? "N/A"}
+                                  </span>
                                 </div>
-                              )
+                                <div className="text-muted-foreground text-xs">
+                                  {`${
+                                    playerRound.scores.filter(
+                                      (s) => s.score !== null,
+                                    ).length
+                                  } games`}
+                                </div>
+                              </div>
                             ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                        );
-                      })}
+                              <div className="space-y-1">
+                                <div className="text-xs font-semibold">
+                                  {`${checkedRounds} time${checkedRounds !== 1 ? "s" : ""}`}
+                                </div>
+                              </div>
+                            )
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))}
             </TableBody>

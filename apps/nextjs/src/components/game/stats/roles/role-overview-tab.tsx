@@ -1,6 +1,6 @@
 "use client";
 
-import {  Shuffle, Star } from "lucide-react";
+import { Shuffle, Star } from "lucide-react";
 import {
   Bar,
   BarChart,

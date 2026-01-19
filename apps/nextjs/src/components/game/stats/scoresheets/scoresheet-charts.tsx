@@ -25,7 +25,7 @@ type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type Player = GameStats["players"][number];
 type Scoresheet = GameStats["scoresheets"][number];
 
-type UserScore = {
+interface UserScore {
   id: number;
   type: "original" | "shared";
   name: string;
@@ -39,18 +39,18 @@ type UserScore = {
   wins: number;
   rounds: Player["scoresheets"][number]["rounds"];
   scores: Player["scoresheets"][number]["scores"];
-};
+}
 
-type ScoreData = {
+interface ScoreData {
   date: string;
   score: number | null;
   isWin: boolean;
-};
+}
 
-type WinRateData = {
+interface WinRateData {
   date: string;
   winRate: number;
-};
+}
 
 export function ScoresheetCharts({
   currentScoresheet,

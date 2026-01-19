@@ -15,7 +15,6 @@ type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type RoleCombos = GameStats["roleCombos"];
 
 export function RoleCombosTab({ roleCombos }: { roleCombos: RoleCombos }) {
-
   return (
     <Card>
       <CardHeader>
@@ -44,7 +43,10 @@ export function RoleCombosTab({ roleCombos }: { roleCombos: RoleCombos }) {
                 const avgPlacement = formatPlacementDistribution(
                   combo.placements,
                 );
-                const comboKey = combo.roles.map((r) => r.id).sort().join('-');
+                const comboKey = combo.roles
+                  .map((r) => r.id)
+                  .sort()
+                  .join("-");
                 return (
                   <div key={comboKey} className="rounded-lg border p-4">
                     <div className="mb-3 flex items-center justify-between">

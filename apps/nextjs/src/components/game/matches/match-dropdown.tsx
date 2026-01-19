@@ -24,7 +24,6 @@ import {
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
 import { Button, buttonVariants } from "@board-games/ui/button";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,8 +80,8 @@ export function MatchDropdown({ match }: { match: Matches[number] }) {
                 href={`/dashboard/games/shared/${match.game.sharedGameId}/${match.id}/edit`}
                 className="flex items-center gap-2"
               >
-              <PencilIcon className="mr-2 h-4 w-4" />
-              Edit
+                <PencilIcon className="mr-2 h-4 w-4" />
+                Edit
               </Link>
             </DropdownMenuItem>
           )}

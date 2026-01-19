@@ -1,8 +1,6 @@
 "use client";
 
-
 import type { RouterOutputs } from "@board-games/api";
-
 
 import { PlayerStatsTable } from "./player-stats-table";
 import { RecentMatchesList } from "./recent-matches-list";
@@ -18,10 +16,8 @@ export default function OverviewTab({
   matches: Matches;
   players: Players;
 }) {
-
   return (
     <>
-      
       <PlayerStatsTable players={players} />
       <div className="grid grid-cols-1 gap-6">
         <RecentMatchesList matches={matches} />

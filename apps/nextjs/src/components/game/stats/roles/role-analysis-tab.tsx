@@ -1,6 +1,6 @@
 "use client";
 
-import {  Check, ChevronsUpDown, Users } from "lucide-react";
+import { Check, ChevronsUpDown, Users } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";

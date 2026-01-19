@@ -1,17 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { Award, Calendar, ChevronDown, Clock, Info, MapPin, Medal, Trophy, Users } from "lucide-react";
+import {
+  Award,
+  Calendar,
+  ChevronDown,
+  Clock,
+  Info,
+  MapPin,
+  Medal,
+  Trophy,
+  Users,
+} from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { formatDuration, getOrdinalSuffix } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
-import { ScrollArea } from "@board-games/ui/scroll-area";
-
-import { FormattedDate } from "~/components/formatted-date";
-import { Collapsible,CollapsibleContent, CollapsibleTrigger } from "@board-games/ui/collapsible";
 import { Button } from "@board-games/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@board-games/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -20,9 +31,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@board-games/ui/dialog";
+import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
 import { cn } from "@board-games/ui/utils";
 
+import { FormattedDate } from "~/components/formatted-date";
 import { PlayerImage } from "~/components/player-image";
 
 type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
@@ -61,7 +74,7 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                         href={`/dashboard/games/${
                           match.type === "shared" ? "shared/" : ""
                         }${match.gameId}/${match.id}/summary`}
-                        className="max-w-40 truncate font-medium sm:max-w-64 hover:underline"
+                        className="max-w-40 truncate font-medium hover:underline sm:max-w-64"
                       >
                         {match.name}
                       </Link>
@@ -157,30 +170,33 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
 
                   {match.players.length > 0 && (
                     <Collapsible>
-                      <CollapsibleTrigger className="w-full justify-between text-muted-foreground flex flex-row items-center">
-                          <span className="text-sm font-medium">Players</span>
-                          <ChevronDown className="h-4 w-4" />
-
-                      </CollapsibleTrigger> 
+                      <CollapsibleTrigger className="text-muted-foreground flex w-full flex-row items-center justify-between">
+                        <span className="text-sm font-medium">Players</span>
+                        <ChevronDown className="h-4 w-4" />
+                      </CollapsibleTrigger>
                       <CollapsibleContent>
-                    <ScrollArea className="border-t pt-3">
-                      <div className="flex max-h-20 flex-wrap gap-2">
-                        {match.players.map((player) => (
-                          <div
-                            key={player.id}
-                            className={`flex items-center gap-1 rounded px-2 py-1 text-xs ${
-                              player.isWinner
-                                ? "bg-green-100 text-green-800"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            <span>{player.name}</span>
-                            {player.score != null && <span>({player.score})</span>}
-                            {player.isWinner && <Trophy className="h-3 w-3" />}
+                        <ScrollArea className="border-t pt-3">
+                          <div className="flex max-h-20 flex-wrap gap-2">
+                            {match.players.map((player) => (
+                              <div
+                                key={player.id}
+                                className={`flex items-center gap-1 rounded px-2 py-1 text-xs ${
+                                  player.isWinner
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-muted text-muted-foreground"
+                                }`}
+                              >
+                                <span>{player.name}</span>
+                                {player.score != null && (
+                                  <span>({player.score})</span>
+                                )}
+                                {player.isWinner && (
+                                  <Trophy className="h-3 w-3" />
+                                )}
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
+                        </ScrollArea>
                       </CollapsibleContent>
                     </Collapsible>
                   )}
@@ -240,100 +256,115 @@ function MatchInfoDialog({ match }: { match: Match }) {
         <DialogHeader>
           <DialogTitle>{match.name}</DialogTitle>
           <DialogDescription className="flex flex-row gap-x-4 gap-y-1 text-sm">
-              <FormattedDate date={match.date} Icon={Calendar} />
+            <FormattedDate date={match.date} Icon={Calendar} />
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {formatDuration(match.duration)}
+            </span>
+            {match.location && (
               <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {formatDuration(match.duration)}
+                <MapPin className="h-3 w-3" />
+                {match.location.name}
               </span>
-              {match.location && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {match.location.name}
-                </span>
-              )}
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           {teams.length > 0 && (
             <div className="flex flex-col gap-3">
-              {teams.map(({ team, players: teamPlayers, placement, isWinner, score: teamScore }) => {
-                if (teamPlayers.length === 0) return null;
+              {teams.map(
+                ({
+                  team,
+                  players: teamPlayers,
+                  placement,
+                  isWinner,
+                  score: teamScore,
+                }) => {
+                  if (teamPlayers.length === 0) return null;
 
-                return (
-                  <div
-                    key={team.id}
-                    className={cn(
-                      "rounded-lg border p-4",
-                      isWinner
-                        ? "border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20"
-                        : "",
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-2 pb-4">
-                      <div className="flex items-center gap-2">
-                        <Users className="text-muted-foreground h-5 w-5" />
-                        <h3 className="font-semibold">{`Team: ${team.name}`}</h3>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {teamScore !== null && (
-                          <div className="text-sm font-medium">
-                            {teamScore} pts
-                          </div>
-                        )}
-                        {isManualWinCondition ? (
-                          isWinner ? (
-                            "✔️"
+                  return (
+                    <div
+                      key={team.id}
+                      className={cn(
+                        "rounded-lg border p-4",
+                        isWinner
+                          ? "border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20"
+                          : "",
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-2 pb-4">
+                        <div className="flex items-center gap-2">
+                          <Users className="text-muted-foreground h-5 w-5" />
+                          <h3 className="font-semibold">{`Team: ${team.name}`}</h3>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {teamScore !== null && (
+                            <div className="text-sm font-medium">
+                              {teamScore} pts
+                            </div>
+                          )}
+                          {isManualWinCondition ? (
+                            isWinner ? (
+                              "✔️"
+                            ) : (
+                              "❌"
+                            )
                           ) : (
-                            "❌"
-                          )
-                        ) : (
-                          <>
-                            {placement === 1 && (
-                              <Trophy className="h-5 w-5 text-yellow-500" />
-                            )}
-                            {placement === 2 && (
-                              <Medal className="h-5 w-5 text-gray-400" />
-                            )}
-                            {placement === 3 && (
-                              <Award className="h-5 w-5 text-amber-700" />
-                            )}
-                            {placement && placement > 3 && (
-                              <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
-                                {placement}
-                                {getOrdinalSuffix(placement)}
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <ul className="grid grid-cols-1 gap-3 border-l-2 border-muted-foreground/20 pl-2 sm:grid-cols-2">
-                      {teamPlayers.map((player) => (
-                        <li key={player.id} className="flex items-center gap-3">
-                          <PlayerImage
-                            className="h-8 w-8"
-                            image={player.image}
-                            alt={player.name}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate font-medium">{player.name}</p>
-                            {player.score !== null &&
-                              match.scoresheet.winCondition !== "Manual" && (
-                                <p className="text-muted-foreground text-sm">
-                                  Score: {player.score}
-                                </p>
+                            <>
+                              {placement === 1 && (
+                                <Trophy className="h-5 w-5 text-yellow-500" />
                               )}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
+                              {placement === 2 && (
+                                <Medal className="h-5 w-5 text-gray-400" />
+                              )}
+                              {placement === 3 && (
+                                <Award className="h-5 w-5 text-amber-700" />
+                              )}
+                              {placement && placement > 3 && (
+                                <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
+                                  {placement}
+                                  {getOrdinalSuffix(placement)}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <ul className="border-muted-foreground/20 grid grid-cols-1 gap-3 border-l-2 pl-2 sm:grid-cols-2">
+                        {teamPlayers.map((player) => (
+                          <li
+                            key={player.id}
+                            className="flex items-center gap-3"
+                          >
+                            <PlayerImage
+                              className="h-8 w-8"
+                              image={player.image}
+                              alt={player.name}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate font-medium">
+                                {player.name}
+                              </p>
+                              {player.score !== null &&
+                                match.scoresheet.winCondition !== "Manual" && (
+                                  <p className="text-muted-foreground text-sm">
+                                    Score: {player.score}
+                                  </p>
+                                )}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                },
+              )}
             </div>
           )}
           {noTeamPlayers.length > 0 && (
-            <div className={cn("flex flex-col gap-3", teams.length > 0 && "mt-2")}>
+            <div
+              className={cn("flex flex-col gap-3", teams.length > 0 && "mt-2")}
+            >
               {teams.length > 0 && (
                 <>
                   <Separator />
