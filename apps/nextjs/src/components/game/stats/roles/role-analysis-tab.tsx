@@ -29,6 +29,9 @@ type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type RoleStats = GameStats["roleStats"][number];
 
 export function RoleAnalysisTab({ roleStats }: { roleStats: RoleStats[] }) {
+  // Filter out roles with no matches to ensure selectedRole is always in the combobox
+  const filteredRoles = roleStats.filter((role) => role.matchCount > 0);
+
   const {
     selectedRole,
     setSelectedRole,
@@ -37,7 +40,7 @@ export function RoleAnalysisTab({ roleStats }: { roleStats: RoleStats[] }) {
     selectedRoleAvgPlacement,
     formatPlacementDistribution,
   } = useRoleStats({
-    roleStats,
+    roleStats: filteredRoles,
     userStats: undefined,
     players: [],
   });
@@ -84,36 +87,34 @@ export function RoleAnalysisTab({ roleStats }: { roleStats: RoleStats[] }) {
                 <CommandList>
                   <CommandEmpty>No role found.</CommandEmpty>
                   <CommandGroup>
-                    {roleStats
-                      .filter((role) => role.matchCount > 0)
-                      .map((role) => (
-                        <CommandItem
-                          key={role.roleId}
-                          value={`${role.name} ${role.description ?? ""}`}
-                          onSelect={() => {
-                            setSelectedRole(role);
-                            setRoleComboboxOpen(false);
-                          }}
-                          className="flex items-start gap-2"
-                        >
-                          <Check
-                            className={cn(
-                              "mt-0.5 h-4 w-4 shrink-0",
-                              selectedRole?.roleId === role.roleId
-                                ? "opacity-100"
-                                : "opacity-0",
-                            )}
-                          />
-                          <div className="min-w-0 flex-1 space-y-0.5">
-                            <div className="font-medium">{role.name}</div>
-                            {role.description && (
-                              <div className="text-muted-foreground text-sm wrap-break-word">
-                                {role.description}
-                              </div>
-                            )}
-                          </div>
-                        </CommandItem>
-                      ))}
+                    {filteredRoles.map((role) => (
+                      <CommandItem
+                        key={role.roleId}
+                        value={`${role.name} ${role.description ?? ""}`}
+                        onSelect={() => {
+                          setSelectedRole(role);
+                          setRoleComboboxOpen(false);
+                        }}
+                        className="flex items-start gap-2"
+                      >
+                        <Check
+                          className={cn(
+                            "mt-0.5 h-4 w-4 shrink-0",
+                            selectedRole?.roleId === role.roleId
+                              ? "opacity-100"
+                              : "opacity-0",
+                          )}
+                        />
+                        <div className="min-w-0 flex-1 space-y-0.5">
+                          <div className="font-medium">{role.name}</div>
+                          {role.description && (
+                            <div className="text-muted-foreground text-sm wrap-break-word">
+                              {role.description}
+                            </div>
+                          )}
+                        </div>
+                      </CommandItem>
+                    ))}
                   </CommandGroup>
                 </CommandList>
               </Command>

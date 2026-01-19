@@ -122,15 +122,18 @@ export function RolePlayerTab({ players }: { players: PlayerStats[] }) {
                 <CommandList>
                   <CommandEmpty>No player found.</CommandEmpty>
                   <CommandGroup>
-                    {players
-                      .filter((player) => player.roles.length > 0)
-                      .map((player) => (
+                    {players.map((player) => {
+                      const hasRoles = player.roles.length > 0;
+                      return (
                         <CommandItem
                           key={player.id}
                           value={`${player.name} ${player.isUser ? "you" : ""}`}
+                          disabled={!hasRoles}
                           onSelect={() => {
-                            setSelectedPlayer(player);
-                            setPlayerComboboxOpen(false);
+                            if (hasRoles) {
+                              setSelectedPlayer(player);
+                              setPlayerComboboxOpen(false);
+                            }
                           }}
                         >
                           <Check
@@ -153,9 +156,15 @@ export function RolePlayerTab({ players }: { players: PlayerStats[] }) {
                                 You
                               </Badge>
                             )}
+                            {!hasRoles && (
+                              <span className="text-muted-foreground text-xs">
+                                (No roles)
+                              </span>
+                            )}
                           </div>
                         </CommandItem>
-                      ))}
+                      );
+                    })}
                   </CommandGroup>
                 </CommandList>
               </Command>
