@@ -1,8 +1,6 @@
-/* eslint-disable react-hooks/static-components */
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
@@ -25,6 +23,7 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@board-games/ui/toggle-group";
 
 import { PlayerImage } from "~/components/player-image";
+import { SortIcon } from "~/components/sort-icon";
 
 type Player = NonNullable<
   RouterOutputs["game"]["getGameStats"]
@@ -138,16 +137,6 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
       setSortOrder("asc");
     }
   };
-  //TODO: fix lint error
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field)
-      return <div className="ml-1 h-3 w-3 sm:ml-2 sm:h-4 sm:w-4" />;
-    return sortOrder === "asc" ? (
-      <ChevronUp className="ml-1 h-3 w-3 sm:ml-2 sm:h-4 sm:w-4" />
-    ) : (
-      <ChevronDown className="ml-1 h-3 w-3 sm:ml-2 sm:h-4 sm:w-4" />
-    );
-  };
   return (
     <Card>
       <CardHeader>
@@ -191,36 +180,64 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
                   <button
                     onClick={() => toggleSort("name")}
                     className="flex items-center font-bold"
+                    aria-label={
+                      sortField === "name"
+                        ? `Sort by name ${sortOrder === "asc" ? "ascending" : "descending"}`
+                        : "Sort by name"
+                    }
                   >
                     <span>Name</span>
-                    <SortIcon field="name" />
+                    <SortIcon
+                      sortOrder={sortField === "name" ? sortOrder : "none"}
+                    />
                   </button>
                 </TableHead>
                 <TableHead className="w-8 px-0 sm:px-4">
                   <button
                     onClick={() => toggleSort("plays")}
                     className="flex items-center font-bold"
+                    aria-label={
+                      sortField === "plays"
+                        ? `Sort by plays ${sortOrder === "asc" ? "ascending" : "descending"}`
+                        : "Sort by plays"
+                    }
                   >
                     <span>Plays</span>
-                    <SortIcon field="plays" />
+                    <SortIcon
+                      sortOrder={sortField === "plays" ? sortOrder : "none"}
+                    />
                   </button>
                 </TableHead>
                 <TableHead className="w-8 px-0 sm:px-4">
                   <button
                     onClick={() => toggleSort("wins")}
                     className="flex items-center font-bold"
+                    aria-label={
+                      sortField === "wins"
+                        ? `Sort by wins ${sortOrder === "asc" ? "ascending" : "descending"}`
+                        : "Sort by wins"
+                    }
                   >
                     <span>Wins</span>
-                    <SortIcon field="wins" />
+                    <SortIcon
+                      sortOrder={sortField === "wins" ? sortOrder : "none"}
+                    />
                   </button>
                 </TableHead>
                 <TableHead className="w-16 px-1 sm:px-4">
                   <button
                     onClick={() => toggleSort("winRate")}
                     className="flex items-center font-bold"
+                    aria-label={
+                      sortField === "winRate"
+                        ? `Sort by win rate ${sortOrder === "asc" ? "ascending" : "descending"}`
+                        : "Sort by win rate"
+                    }
                   >
                     <span className="flex w-16">Win Rate</span>
-                    <SortIcon field="winRate" />
+                    <SortIcon
+                      sortOrder={sortField === "winRate" ? sortOrder : "none"}
+                    />
                   </button>
                 </TableHead>
               </TableRow>
@@ -262,21 +279,21 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       {coopOrCompetitive === "coop"
                         ? player.coopMatches
                         : coopOrCompetitive === "competitive"
                           ? player.competitiveMatches
                           : totalMatches}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       {coopOrCompetitive === "coop"
                         ? player.coopWins
                         : coopOrCompetitive === "competitive"
                           ? player.competitiveWins
                           : totalWins}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       {(
                         (coopOrCompetitive === "coop"
                           ? player.coopWinRate

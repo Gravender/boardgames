@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
+import GameStats from "~/components/game/stats/game-stats";
+import { GameStatsSkeleton } from "~/components/game/stats/game-stats-skeleton";
 import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
-import { StatsPageSkeleton } from "../../_components/game-stats-skeleton";
-import GameStats from "./_components/game-stats";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -34,7 +34,7 @@ export default async function GameStatsPage({ params }: Props) {
   return (
     <HydrateClient>
       <div className="container flex w-full items-center justify-center px-3 py-4 md:px-6 md:py-8">
-        <Suspense fallback={<StatsPageSkeleton />}>
+        <Suspense fallback={<GameStatsSkeleton />}>
           <GameStats gameId={Number(id)} />
         </Suspense>
       </div>

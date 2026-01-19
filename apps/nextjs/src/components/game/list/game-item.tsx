@@ -1,12 +1,6 @@
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import {
-  CalendarIcon,
-  ClockIcon,
-  GamepadIcon,
-  MapPinIcon,
-  UsersIcon,
-} from "lucide-react";
+import { ClockIcon, GamepadIcon, MapPinIcon, UsersIcon } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
@@ -94,7 +88,7 @@ export function GameItem({ game }: GameCardProps) {
             )}
           </div>
           <ItemDescription className="text-xs sm:text-sm">
-            <div className="xs:flex-row flex flex-col gap-2 sm:flex-row">
+            <span className="xs:flex-row flex flex-col gap-2 sm:flex-row">
               <span className="flex items-center gap-1">
                 <UsersIcon className="h-3 w-3" />
                 {playerCount()}
@@ -107,7 +101,7 @@ export function GameItem({ game }: GameCardProps) {
                 <GamepadIcon className="h-3 w-3 shrink-0" />
                 {game.games} {game.games === 1 ? "play" : "plays"}
               </span>
-            </div>
+            </span>
             <span className="col-span-2 flex items-center gap-1 sm:col-span-1">
               <MapPinIcon className="h-3 w-3" />
               {formattedLastPlayed}

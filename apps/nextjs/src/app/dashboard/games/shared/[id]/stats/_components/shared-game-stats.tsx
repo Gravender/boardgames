@@ -44,10 +44,10 @@ import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
 import { GameImage } from "~/components/game-image";
+import { PlayerStatsTable } from "~/components/game/stats/overview/player-stats-table";
 import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 import { MatchDurationTrendChart } from "../../../../_components/match-duration-trend-chart";
-import { PlayerStatsTable } from "../../../../_components/player-stats-table";
 import { WinLoseRatioChart } from "../../../../_components/win-lose-chart";
 
 // Colors for charts

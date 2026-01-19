@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
+import { GameStatsSkeleton } from "~/components/game/stats/game-stats-skeleton";
 import { HydrateClient, prefetch, trpc } from "~/trpc/server";
-import { StatsPageSkeleton } from "../../../_components/game-stats-skeleton";
 import SharedGameStats from "./_components/shared-game-stats";
 
 interface Props {
@@ -16,7 +16,7 @@ export default async function SharedGameStatsPage({ params }: Props) {
   return (
     <HydrateClient>
       <div className="container flex w-full items-center justify-center px-3 py-4 md:px-6 md:py-8">
-        <Suspense fallback={<StatsPageSkeleton />}>
+        <Suspense fallback={<GameStatsSkeleton />}>
           <SharedGameStats gameId={Number(id)} />
         </Suspense>
       </div>

@@ -1,8 +1,6 @@
-/* eslint-disable react-hooks/static-components */
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { ScrollArea } from "@board-games/ui/scroll-area";
@@ -16,6 +14,7 @@ import {
 } from "@board-games/ui/table";
 
 import { GameImage } from "~/components/game-image";
+import { SortIcon } from "~/components/sort-icon";
 
 type Games = NonNullable<RouterOutputs["player"]["getPlayer"]>["games"];
 type SortField =
@@ -54,16 +53,6 @@ export function GameDetails({ data }: { data: Games }) {
       setSortOrder("asc");
     }
   };
-  //TODO: fix lint error
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field)
-      return <div className="ml-1 h-3 w-3 sm:ml-2 sm:h-4 sm:w-4" />;
-    return sortOrder === "asc" ? (
-      <ChevronUp className="ml-1 h-3 w-3 sm:ml-2 sm:h-4 sm:w-4" />
-    ) : (
-      <ChevronDown className="ml-1 h-3 w-3 sm:ml-2 sm:h-4 sm:w-4" />
-    );
-  };
   return (
     <ScrollArea className="h-72 w-1 flex-1 md:h-120">
       <Table>
@@ -75,7 +64,9 @@ export function GameDetails({ data }: { data: Games }) {
                 className="flex items-center font-bold"
               >
                 <span>Name</span>
-                <SortIcon field="name" />
+                <SortIcon
+                  sortOrder={sortField === "name" ? sortOrder : "none"}
+                />
               </button>
             </TableHead>
             <TableHead className="w-8 px-0 sm:px-4">
@@ -84,7 +75,9 @@ export function GameDetails({ data }: { data: Games }) {
                 className="flex items-center font-bold"
               >
                 <span>Plays</span>
-                <SortIcon field="plays" />
+                <SortIcon
+                  sortOrder={sortField === "plays" ? sortOrder : "none"}
+                />
               </button>
             </TableHead>
             <TableHead className="w-8 px-0 sm:px-4">
@@ -93,7 +86,9 @@ export function GameDetails({ data }: { data: Games }) {
                 className="flex items-center font-bold"
               >
                 <span>Best</span>
-                <SortIcon field="bestScore" />
+                <SortIcon
+                  sortOrder={sortField === "bestScore" ? sortOrder : "none"}
+                />
               </button>
             </TableHead>
             <TableHead className="w-8 px-0 sm:px-4">
@@ -102,7 +97,9 @@ export function GameDetails({ data }: { data: Games }) {
                 className="flex items-center font-bold"
               >
                 <span>Worst</span>
-                <SortIcon field="worstScore" />
+                <SortIcon
+                  sortOrder={sortField === "worstScore" ? sortOrder : "none"}
+                />
               </button>
             </TableHead>
             <TableHead className="w-8 px-0 sm:px-4">
@@ -111,7 +108,9 @@ export function GameDetails({ data }: { data: Games }) {
                 className="flex items-center font-bold"
               >
                 <span>Wins</span>
-                <SortIcon field="wins" />
+                <SortIcon
+                  sortOrder={sortField === "wins" ? sortOrder : "none"}
+                />
               </button>
             </TableHead>
             <TableHead className="xs:table-cell hidden w-16 px-1 sm:px-4">
@@ -120,7 +119,9 @@ export function GameDetails({ data }: { data: Games }) {
                 className="flex items-center font-bold"
               >
                 <span>Win Rate</span>
-                <SortIcon field="winRate" />
+                <SortIcon
+                  sortOrder={sortField === "winRate" ? sortOrder : "none"}
+                />
               </button>
             </TableHead>
           </TableRow>
