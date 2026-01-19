@@ -24,12 +24,7 @@ import {
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
 import { Button, buttonVariants } from "@board-games/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@board-games/ui/dialog";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,13 +33,11 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import { EditSharedMatchForm } from "~/app/dashboard/games/_components/edit-shared-match-dialog-content";
 import { useTRPC } from "~/trpc/react";
 
 type Matches = NonNullable<RouterOutputs["newGame"]["gameMatches"]>;
 export function MatchDropdown({ match }: { match: Matches[number] }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isSharingEditDialog, setIsSharingEditDialogOpen] = useState(false);
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -82,9 +75,15 @@ export function MatchDropdown({ match }: { match: Matches[number] }) {
             </DropdownMenuItem>
           )}
           {match.type === "shared" && match.permissions === "edit" && (
-            <DropdownMenuItem onClick={() => setIsSharingEditDialogOpen(true)}>
+            <DropdownMenuItem asChild>
+              <Link
+                prefetch={true}
+                href={`/dashboard/games/shared/${match.game.sharedGameId}/${match.id}/edit`}
+                className="flex items-center gap-2"
+              >
               <PencilIcon className="mr-2 h-4 w-4" />
               Edit
+              </Link>
             </DropdownMenuItem>
           )}
           <DropdownMenuItem asChild>
@@ -166,22 +165,6 @@ export function MatchDropdown({ match }: { match: Matches[number] }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      {match.type === "shared" && match.permissions === "edit" && (
-        <Dialog
-          open={isSharingEditDialog}
-          onOpenChange={setIsSharingEditDialogOpen}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit {match.name}</DialogTitle>
-            </DialogHeader>
-            <EditSharedMatchForm
-              match={match}
-              setIsOpen={setIsSharingEditDialogOpen}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
     </>
   );
 }
