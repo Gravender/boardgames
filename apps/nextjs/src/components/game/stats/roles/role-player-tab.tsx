@@ -388,9 +388,9 @@ export function RolePlayerTab({ players }: { players: PlayerStats[] }) {
                         }
                         return b.matchCount - a.matchCount;
                       })
-                      .map((combo, index) => (
+                      .map((combo) => (
                         <div
-                          key={index}
+                          key={combo.roles.map((role) => role.id).join("+")}
                           className="flex items-center justify-between rounded-lg border p-3"
                         >
                           <div className="flex items-center gap-3">
