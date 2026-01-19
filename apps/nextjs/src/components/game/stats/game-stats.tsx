@@ -11,10 +11,10 @@ import { cn } from "@board-games/ui/utils";
 
 import { GameImage } from "~/components/game-image";
 import { useGameStats } from "~/hooks/queries/game/game-stats";
-import AdvancedTab from "./advanced-tab";
-import OverviewTab from "./overview-tab";
-import RolesTab from "./roles-tab";
-import { ScoreSheetsStats } from "./scoresheets-stats";
+import AdvancedTab from "./advanced/advanced-tab";
+import OverviewTab from "./overview/overview-tab";
+import RolesTab from "./roles/roles-tab";
+import { ScoreSheetsStats } from "./scoresheets/scoresheets-stats";
 
 export default function GameStats({ gameId }: { gameId: number }) {
   const { gameStats } = useGameStats({ id: gameId });
