@@ -255,6 +255,15 @@ export function RolePlayerTab({ players }: { players: PlayerStats[] }) {
                         fill="var(--color-winRate)"
                         fillOpacity={0.6}
                       />
+                      {selectedPlayerAvgPlacement !== null && (
+                        <Radar
+                          name="Placement"
+                          dataKey="placement"
+                          stroke="var(--color-placement)"
+                          fill="var(--color-placement)"
+                          fillOpacity={0.6}
+                        />
+                      )}
                       <ChartTooltip content={<ChartTooltipContent />} />
                     </RadarChart>
                   </ResponsiveContainer>

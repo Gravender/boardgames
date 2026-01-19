@@ -180,11 +180,12 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                             {match.players.map((player) => (
                               <div
                                 key={player.id}
-                                className={`flex items-center gap-1 rounded px-2 py-1 text-xs ${
-                                  player.isWinner
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-muted text-muted-foreground"
-                                }`}
+                                className={cn(
+                                                                   "flex items-center gap-1 rounded px-2 py-1 text-xs",
+                                                                   player.isWinner
+                                                                     ? "bg-green-100 text-green-800"
+                                                                     : "bg-muted text-muted-foreground"
+                                                                 )}
                               >
                                 <span>{player.name}</span>
                                 {player.score != null && (

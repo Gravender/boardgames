@@ -60,6 +60,7 @@ export function ScoresheetPlayerTable({
   sortField: SortField;
   sortOrder: SortOrder;
 }) {
+  const showScoreColumns = currentScoresheet.winCondition !== "Manual" && currentScoresheet.winCondition !== "No Winner";
   return (
     <Card>
       <CardHeader>
@@ -137,10 +138,7 @@ export function ScoresheetPlayerTable({
                     />
                   </button>
                 </TableHead>
-                {!(
-                  currentScoresheet.winCondition === "Manual" ||
-                  currentScoresheet.winCondition === "No Winner"
-                ) && (
+                    {showScoreColumns && (
                   <>
                     <TableHead className="w-16 px-1 sm:px-4">
                       <button
@@ -232,13 +230,12 @@ export function ScoresheetPlayerTable({
                   <TableCell className="text-center">
                     {Math.round(player.winRate * 100)}%
                   </TableCell>
-                  {!(
-                    currentScoresheet.winCondition === "Manual" ||
-                    currentScoresheet.winCondition === "No Winner"
-                  ) && (
+                  {showScoreColumns && (
                     <>
                       <TableCell className="text-center font-semibold">
-                        {player.avgScore ? player.avgScore.toFixed(1) : "N/A"}
+                        {player.avgScore != null
+                          ? player.avgScore.toFixed(1)
+                          : "N/A"}
                       </TableCell>
                       <TableCell className="text-center font-semibold text-green-600">
                         {player.bestScore ?? "N/A"}
