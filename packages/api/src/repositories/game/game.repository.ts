@@ -34,6 +34,8 @@ import type {
   DeleteSharedGameRoleArgs,
   GetGameArgs,
   GetGameRolesArgs,
+  GetGameStatsHeaderArgs,
+  GetGameStatsHeaderOutputType,
   GetSharedRoleArgs,
   UpdateGameArgs,
   UpdateGameRoleArgs,
@@ -441,6 +443,103 @@ class GameRepository {
         userPlayer: userPlayer,
       };
     }
+  }
+
+  public async getGameStatsHeader(
+    args: GetGameStatsHeaderArgs,
+  ): Promise<GetGameStatsHeaderOutputType> {
+    const { input, userId } = args;
+
+    // Get user player
+    const userPlayer = await db.query.player.findFirst({
+      where: {
+        isUser: true,
+        createdBy: userId,
+      },
+    });
+    if (!userPlayer) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Current user not found.",
+      });
+    }
+
+    // Create a CTE for user match players to check participation and wins
+    const userMatchPlayers = db.$with("user_match_players").as(
+      db
+        .select({
+          matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
+          winner: vMatchPlayerCanonicalForUser.winner,
+        })
+        .from(vMatchPlayerCanonicalForUser)
+        .where(
+          and(
+            eq(
+              vMatchPlayerCanonicalForUser.canonicalPlayerId,
+              userPlayer.id,
+            ),
+            or(
+              and(
+                eq(vMatchPlayerCanonicalForUser.ownerId, userId),
+                eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
+              ),
+              and(
+                eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
+                eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
+              ),
+            ),
+          ),
+        ),
+    );
+
+    // Aggregate stats from matches
+    const [stats] = await db
+      .with(userMatchPlayers)
+      .select({
+        overallMatchesPlayed: sql<number>`COUNT(*) FILTER (WHERE ${match.finished} = true)`,
+        userMatchesPlayed: sql<number>`COUNT(*) FILTER (WHERE ${match.finished} = true AND ${userMatchPlayers.matchId} IS NOT NULL)`,
+        userWins: sql<number>`COUNT(*) FILTER (WHERE ${match.finished} = true AND ${userMatchPlayers.winner} IS TRUE)`,
+        totalPlaytime: sql<number>`COALESCE(SUM(${match.duration}) FILTER (WHERE ${match.finished} = true AND ${match.duration} >= 300), 0)`,
+        userTotalPlaytime: sql<number>`COALESCE(SUM(${match.duration}) FILTER (WHERE ${match.finished} = true AND ${match.duration} >= 300 AND ${userMatchPlayers.matchId} IS NOT NULL), 0)`,
+        avgPlaytime: sql<number>`COALESCE(AVG(${match.duration}) FILTER (WHERE ${match.finished} = true AND ${match.duration} >= 300), 0)`,
+      })
+      .from(vMatchCanonical)
+      .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
+      .leftJoin(
+        userMatchPlayers,
+        eq(userMatchPlayers.matchId, vMatchCanonical.matchId),
+      )
+      .where(
+        and(
+          input.type === "original" ? eq(vMatchCanonical.canonicalGameId, input.id) : eq(vMatchCanonical.sharedGameId, input.sharedGameId),
+          eq(vMatchCanonical.visibleToUserId, userId),
+        ),
+      );
+
+    if (!stats) {
+      return {
+        winRate: 0,
+        avgPlaytime: 0,
+        totalPlaytime: 0,
+        userTotalPlaytime: 0,
+        overallMatchesPlayed: 0,
+        userMatchesPlayed: 0,
+      };
+    }
+
+    const winRate =
+      stats.userMatchesPlayed > 0
+        ? (stats.userWins / stats.userMatchesPlayed) * 100
+        : 0;
+
+    return {
+      winRate: Number(Number(winRate).toFixed(2)),
+      avgPlaytime: Number(Number(stats.avgPlaytime).toFixed(0)),
+      totalPlaytime: Number(stats.totalPlaytime),
+      userTotalPlaytime: Number(stats.userTotalPlaytime),
+      overallMatchesPlayed: Number(stats.overallMatchesPlayed),
+      userMatchesPlayed: Number(stats.userMatchesPlayed),
+    };
   }
 
   public async getGameRoles(args: GetGameRolesArgs) {

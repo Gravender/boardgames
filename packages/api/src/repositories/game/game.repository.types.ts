@@ -142,3 +142,17 @@ export interface DeleteSharedGameRoleArgs {
   };
   tx?: TransactionType;
 }
+
+export interface GetGameStatsHeaderArgs {
+  input: GetGameInputType;
+  userId: string;
+}
+
+export interface GetGameStatsHeaderOutputType {
+  winRate: number; // 0-100 percentage
+  avgPlaytime: number; // seconds, or 0 if no valid matches
+  totalPlaytime: number; // seconds
+  userTotalPlaytime: number; // seconds (only user matches, excluding < 5 min)
+  overallMatchesPlayed: number;
+  userMatchesPlayed: number;
+}
