@@ -2,12 +2,11 @@
 
 import { Award, Medal, Trophy, Users } from "lucide-react";
 
+import type { RouterOutputs } from "@board-games/api";
 import { getOrdinalSuffix } from "@board-games/shared";
 import { cn } from "@board-games/ui/utils";
 
 import { PlayerImage } from "~/components/player-image";
-
-import type { RouterOutputs } from "@board-games/api";
 
 type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type Match = GameStats["matches"][number];

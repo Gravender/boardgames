@@ -9,10 +9,9 @@ import { Card, CardContent } from "@board-games/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { cn } from "@board-games/ui/utils";
 
+import { PlayerStatsTable } from "~/app/dashboard/games/_components/player-stats-table";
 import { GameImage } from "~/components/game-image";
 import { useGameStats } from "~/hooks/queries/game/game-stats";
-import { PlayerStatsTable } from "~/app/dashboard/games/_components/player-stats-table";
-
 import AdvancedTab from "./advanced-tab";
 import OverviewTab from "./overview-tab";
 import RolesTab from "./roles-tab";

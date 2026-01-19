@@ -30,8 +30,7 @@ export function HeadToHeadSection({ headToHead }: { headToHead: HeadToHead }) {
                 opponent.competitiveTies;
               const totalCooperativeGames =
                 opponent.coopWins + opponent.coopLosses;
-              const totalGames =
-                totalCompetitiveGames + totalCooperativeGames;
+              const totalGames = totalCompetitiveGames + totalCooperativeGames;
               const competitiveWinRate =
                 opponent.competitiveWins + opponent.competitiveLosses > 0
                   ? opponent.competitiveWins /
@@ -109,40 +108,38 @@ export function HeadToHeadSection({ headToHead }: { headToHead: HeadToHead }) {
                         </div>
                       </div>
                     )}
-                    {totalCompetitiveGames > 0 &&
-                      totalCooperativeGames > 0 && (
-                        <div className="rounded-lg border p-3 text-center">
-                          <div className="mb-1 flex items-center justify-center gap-1">
-                            <Swords className="h-3 w-3 text-blue-500" />
-                            <span className="text-lg font-bold text-blue-600">
-                              {Math.round(competitiveWinRate * 100)}%
-                            </span>
-                          </div>
-                          <div className="text-muted-foreground text-xs">
-                            Competitive
-                          </div>
-                          <div className="text-muted-foreground text-xs">
-                            {totalCompetitiveGames} games
-                          </div>
+                    {totalCompetitiveGames > 0 && totalCooperativeGames > 0 && (
+                      <div className="rounded-lg border p-3 text-center">
+                        <div className="mb-1 flex items-center justify-center gap-1">
+                          <Swords className="h-3 w-3 text-blue-500" />
+                          <span className="text-lg font-bold text-blue-600">
+                            {Math.round(competitiveWinRate * 100)}%
+                          </span>
                         </div>
-                      )}
-                    {totalCooperativeGames > 0 &&
-                      totalCompetitiveGames > 0 && (
-                        <div className="rounded-lg border p-3 text-center">
-                          <div className="mb-1 flex items-center justify-center gap-1">
-                            <Shield className="h-3 w-3 text-green-500" />
-                            <span className="text-lg font-bold text-green-600">
-                              {Math.round(cooperativeSuccessRate * 100)}%
-                            </span>
-                          </div>
-                          <div className="text-muted-foreground text-xs">
-                            Co-op
-                          </div>
-                          <div className="text-muted-foreground text-xs">
-                            {totalCooperativeGames} games
-                          </div>
+                        <div className="text-muted-foreground text-xs">
+                          Competitive
                         </div>
-                      )}
+                        <div className="text-muted-foreground text-xs">
+                          {totalCompetitiveGames} games
+                        </div>
+                      </div>
+                    )}
+                    {totalCooperativeGames > 0 && totalCompetitiveGames > 0 && (
+                      <div className="rounded-lg border p-3 text-center">
+                        <div className="mb-1 flex items-center justify-center gap-1">
+                          <Shield className="h-3 w-3 text-green-500" />
+                          <span className="text-lg font-bold text-green-600">
+                            {Math.round(cooperativeSuccessRate * 100)}%
+                          </span>
+                        </div>
+                        <div className="text-muted-foreground text-xs">
+                          Co-op
+                        </div>
+                        <div className="text-muted-foreground text-xs">
+                          {totalCooperativeGames} games
+                        </div>
+                      </div>
+                    )}
 
                     {opponent.teamWins > 0 && (
                       <div className="rounded-lg border p-3 text-center">
@@ -173,9 +170,7 @@ export function HeadToHeadSection({ headToHead }: { headToHead: HeadToHead }) {
                         <div>
                           <div className="flex justify-between text-sm">
                             <span>Comp vs {opponent.player.name}</span>
-                            <span>
-                              {Math.round(competitiveWinRate * 100)}%
-                            </span>
+                            <span>{Math.round(competitiveWinRate * 100)}%</span>
                           </div>
                           <Progress
                             value={competitiveWinRate * 100}
@@ -220,9 +215,7 @@ export function HeadToHeadSection({ headToHead }: { headToHead: HeadToHead }) {
                       <div className="flex justify-between text-sm">
                         <span>Coop Win Rate with {opponent.player.name}</span>
 
-                        <span>
-                          {Math.round(cooperativeSuccessRate * 100)}%
-                        </span>
+                        <span>{Math.round(cooperativeSuccessRate * 100)}%</span>
                       </div>
                       <Progress
                         value={cooperativeSuccessRate * 100}

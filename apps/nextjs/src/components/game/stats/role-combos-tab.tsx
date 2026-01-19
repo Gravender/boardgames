@@ -14,11 +14,7 @@ import { useRoleStats } from "~/hooks/game-stats/use-role-stats";
 type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type RoleCombos = GameStats["roleCombos"];
 
-export function RoleCombosTab({
-  roleCombos,
-}: {
-  roleCombos: RoleCombos;
-}) {
+export function RoleCombosTab({ roleCombos }: { roleCombos: RoleCombos }) {
   const { formatPlacementDistribution } = useRoleStats({
     roleStats: [],
     userStats: undefined,
@@ -66,25 +62,18 @@ export function RoleCombosTab({
                               key={role.id}
                               className="flex items-center gap-1"
                             >
-                              <Badge
-                                variant="outline"
-                                className="text-sm"
-                              >
+                              <Badge variant="outline" className="text-sm">
                                 {role.name}
                               </Badge>
                               {roleIndex < combo.roles.length - 1 && (
-                                <span className="text-muted-foreground">
-                                  +
-                                </span>
+                                <span className="text-muted-foreground">+</span>
                               )}
                             </div>
                           ))}
                         </div>
                       </div>
                       <Badge
-                        variant={
-                          combo.winRate >= 0.5 ? "default" : "secondary"
-                        }
+                        variant={combo.winRate >= 0.5 ? "default" : "secondary"}
                       >
                         {Math.round(combo.winRate * 100)}% Win Rate
                       </Badge>
@@ -128,10 +117,7 @@ export function RoleCombosTab({
                       )}
                     </div>
 
-                    <Progress
-                      value={combo.winRate * 100}
-                      className="mt-3"
-                    />
+                    <Progress value={combo.winRate * 100} className="mt-3" />
 
                     {/* Show role descriptions if available */}
                     {combo.roles.some((role) => role.description) && (

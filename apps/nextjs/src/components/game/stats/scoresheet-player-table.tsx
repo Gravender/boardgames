@@ -22,14 +22,7 @@ type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type Player = GameStats["players"][number];
 type Scoresheet = GameStats["scoresheets"][number];
 
-type SortField =
-  | "name"
-  | "plays"
-  | "wins"
-  | "winRate"
-  | "bestScore"
-  | "worstScore"
-  | "avgScore";
+
 
 export function ScoresheetPlayerTable({
   players,
@@ -38,16 +31,11 @@ export function ScoresheetPlayerTable({
   players: Player[];
   scoresheets: Scoresheet[];
 }) {
-  const {
-    currentScoresheet,
-    sortedPlayers,
-    toggleSort,
-    sortField,
-    sortOrder,
-  } = useScoresheetStats({
-    players,
-    scoresheets,
-  });
+  const { currentScoresheet, sortedPlayers, toggleSort, sortField, sortOrder } =
+    useScoresheetStats({
+      players,
+      scoresheets,
+    });
 
   if (!currentScoresheet) {
     return null;
@@ -73,9 +61,7 @@ export function ScoresheetPlayerTable({
                   >
                     <span>Player</span>
                     <SortIcon
-                      sortOrder={
-                        sortField === "name" ? sortOrder : "none"
-                      }
+                      sortOrder={sortField === "name" ? sortOrder : "none"}
                     />
                   </button>
                 </TableHead>
@@ -86,9 +72,7 @@ export function ScoresheetPlayerTable({
                   >
                     <span>Plays</span>
                     <SortIcon
-                      sortOrder={
-                        sortField === "plays" ? sortOrder : "none"
-                      }
+                      sortOrder={sortField === "plays" ? sortOrder : "none"}
                     />
                   </button>
                 </TableHead>
@@ -99,9 +83,7 @@ export function ScoresheetPlayerTable({
                   >
                     <span>Wins</span>
                     <SortIcon
-                      sortOrder={
-                        sortField === "wins" ? sortOrder : "none"
-                      }
+                      sortOrder={sortField === "wins" ? sortOrder : "none"}
                     />
                   </button>
                 </TableHead>
@@ -112,9 +94,7 @@ export function ScoresheetPlayerTable({
                   >
                     <span className="flex w-16">Win Rate</span>
                     <SortIcon
-                      sortOrder={
-                        sortField === "winRate" ? sortOrder : "none"
-                      }
+                      sortOrder={sortField === "winRate" ? sortOrder : "none"}
                     />
                   </button>
                 </TableHead>

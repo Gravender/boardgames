@@ -49,17 +49,13 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                         {match.name}
                       </span>
                       <div className="flex items-center gap-2">
-                        {isCoop && (
-                          <Badge variant={"secondary"}>Co-op</Badge>
-                        )}
+                        {isCoop && <Badge variant={"secondary"}>Co-op</Badge>}
                         {!userInMatch ? (
                           <Badge variant="secondary" className="text-xs">
                             View
                           </Badge>
                         ) : (
-                          <Badge
-                            variant={match.won ? "default" : "secondary"}
-                          >
+                          <Badge variant={match.won ? "default" : "secondary"}>
                             {match.won ? "Won" : "Lost"}
                           </Badge>
                         )}
@@ -145,9 +141,7 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                           >
                             <span>{player.name}</span>
                             {player.score && <span>({player.score})</span>}
-                            {player.isWinner && (
-                              <Trophy className="h-3 w-3" />
-                            )}
+                            {player.isWinner && <Trophy className="h-3 w-3" />}
                           </div>
                         ))}
                       </div>

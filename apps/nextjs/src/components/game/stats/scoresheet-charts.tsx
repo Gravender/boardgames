@@ -34,15 +34,11 @@ export function ScoresheetCharts({
   players: Player[];
   scoresheets: Scoresheet[];
 }) {
-  const {
-    currentScoresheet,
-    userScore,
-    userScoresSorted,
-    winRateOverTime,
-  } = useScoresheetStats({
-    players,
-    scoresheets,
-  });
+  const { currentScoresheet, userScore, userScoresSorted, winRateOverTime } =
+    useScoresheetStats({
+      players,
+      scoresheets,
+    });
 
   if (!userScore || userScore.scores.length === 0 || !currentScoresheet) {
     return null;

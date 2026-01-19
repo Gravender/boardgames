@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, Check, ChevronsUpDown, Users } from "lucide-react";
+import {  Check, ChevronsUpDown, Users } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
@@ -28,11 +28,7 @@ import { useRoleStats } from "~/hooks/game-stats/use-role-stats";
 type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type RoleStats = GameStats["roleStats"][number];
 
-export function RoleAnalysisTab({
-  roleStats,
-}: {
-  roleStats: RoleStats[];
-}) {
+export function RoleAnalysisTab({ roleStats }: { roleStats: RoleStats[] }) {
   const {
     selectedRole,
     setSelectedRole,
@@ -54,10 +50,7 @@ export function RoleAnalysisTab({
           <CardTitle className="text-base">Select Role</CardTitle>
         </CardHeader>
         <CardContent>
-          <Popover
-            open={roleComboboxOpen}
-            onOpenChange={setRoleComboboxOpen}
-          >
+          <Popover open={roleComboboxOpen} onOpenChange={setRoleComboboxOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -165,9 +158,7 @@ export function RoleAnalysisTab({
                   <div className="text-2xl font-bold text-green-600">
                     {Math.round(selectedRole.winRate * 100)}%
                   </div>
-                  <div className="text-muted-foreground text-sm">
-                    Win Rate
-                  </div>
+                  <div className="text-muted-foreground text-sm">Win Rate</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">

@@ -183,9 +183,7 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
                   >
                     <span>Name</span>
                     <SortIcon
-                      sortOrder={
-                        sortField === "name" ? sortOrder : "none"
-                      }
+                      sortOrder={sortField === "name" ? sortOrder : "none"}
                     />
                   </button>
                 </TableHead>
@@ -196,9 +194,7 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
                   >
                     <span>Plays</span>
                     <SortIcon
-                      sortOrder={
-                        sortField === "plays" ? sortOrder : "none"
-                      }
+                      sortOrder={sortField === "plays" ? sortOrder : "none"}
                     />
                   </button>
                 </TableHead>
@@ -209,9 +205,7 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
                   >
                     <span>Wins</span>
                     <SortIcon
-                      sortOrder={
-                        sortField === "wins" ? sortOrder : "none"
-                      }
+                      sortOrder={sortField === "wins" ? sortOrder : "none"}
                     />
                   </button>
                 </TableHead>
@@ -222,9 +216,7 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
                   >
                     <span className="flex w-16">Win Rate</span>
                     <SortIcon
-                      sortOrder={
-                        sortField === "winRate" ? sortOrder : "none"
-                      }
+                      sortOrder={sortField === "winRate" ? sortOrder : "none"}
                     />
                   </button>
                 </TableHead>

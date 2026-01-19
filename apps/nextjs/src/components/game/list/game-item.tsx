@@ -1,11 +1,6 @@
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import {
-  ClockIcon,
-  GamepadIcon,
-  MapPinIcon,
-  UsersIcon,
-} from "lucide-react";
+import { ClockIcon, GamepadIcon, MapPinIcon, UsersIcon } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";

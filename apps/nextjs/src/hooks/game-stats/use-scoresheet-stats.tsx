@@ -17,7 +17,7 @@ type SortField =
   | "avgScore";
 type SortOrder = "asc" | "desc";
 
-type CurrentPlayer = {
+interface CurrentPlayer {
   id: number;
   type: "original" | "shared";
   name: string;
@@ -31,7 +31,7 @@ type CurrentPlayer = {
   wins: number;
   rounds: Player["scoresheets"][number]["rounds"];
   scores: Player["scoresheets"][number]["scores"];
-};
+}
 
 export function useScoresheetStats({
   players,
@@ -59,12 +59,12 @@ export function useScoresheetStats({
           plays,
         };
       })
-      .filter((s) => s !== null) as Array<Scoresheet & { plays: number }>;
+      .filter((s) => s !== null) as (Scoresheet & { plays: number })[];
   }, [players, scoresheets]);
 
-  const [currentScoresheet, setCurrentScoresheet] = useState<
-    Scoresheet | null
-  >(scoreSheetsWithGames[0] ?? null);
+  const [currentScoresheet, setCurrentScoresheet] = useState<Scoresheet | null>(
+    scoreSheetsWithGames[0] ?? null,
+  );
 
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");

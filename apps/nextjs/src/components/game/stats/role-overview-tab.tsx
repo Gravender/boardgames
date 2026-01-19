@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Shuffle, Star } from "lucide-react";
+import {  Shuffle, Star } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -36,12 +36,16 @@ export function RoleOverviewTab({
   roleStats: RoleStats[];
   userStats: PlayerStats | undefined;
 }) {
-  const { topFiveRoles, roleRecommendations, bestRoleCombos, formatPlacementDistribution } =
-    useRoleStats({
-      roleStats,
-      userStats,
-      players: userStats ? [] : [],
-    });
+  const {
+    topFiveRoles,
+    roleRecommendations,
+    bestRoleCombos,
+    formatPlacementDistribution,
+  } = useRoleStats({
+    roleStats,
+    userStats,
+    players: userStats ? [] : [],
+  });
 
   return (
     <>
@@ -125,9 +129,7 @@ export function RoleOverviewTab({
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, matchCount }) =>
-                      `${name} (${matchCount})`
-                    }
+                    label={({ name, matchCount }) => `${name} (${matchCount})`}
                     outerRadius={80}
                     fill="var(--chart-1)"
                     dataKey="matchCount"
@@ -162,9 +164,7 @@ export function RoleOverviewTab({
                 <div key={role.roleId} className="rounded-lg border p-4">
                   <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold">
-                        {role.name}
-                      </span>
+                      <span className="text-sm font-semibold">{role.name}</span>
                     </div>
                     <Badge
                       variant={
@@ -188,9 +188,7 @@ export function RoleOverviewTab({
 
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Win Rate:
-                      </span>
+                      <span className="text-muted-foreground">Win Rate:</span>
                       <span
                         className={`font-semibold ${
                           role.winRate >= 0.7
@@ -204,18 +202,14 @@ export function RoleOverviewTab({
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Avg Place:
-                      </span>
+                      <span className="text-muted-foreground">Avg Place:</span>
                       <span className="font-semibold">
                         {formatPlacementDistribution(role.placements)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Games:</span>
-                      <span className="font-semibold">
-                        {role.matchCount}
-                      </span>
+                      <span className="font-semibold">{role.matchCount}</span>
                     </div>
                   </div>
 
@@ -263,10 +257,7 @@ export function RoleOverviewTab({
                   <div className="flex items-center gap-3">
                     <div className="flex flex-wrap items-center gap-2">
                       {combo.roles.map((role, roleIndex) => (
-                        <div
-                          key={role.id}
-                          className="flex items-center gap-1"
-                        >
+                        <div key={role.id} className="flex items-center gap-1">
                           <Badge variant="outline" className="text-xs">
                             {role.name}
                           </Badge>
@@ -287,8 +278,7 @@ export function RoleOverviewTab({
                       {Math.round(combo.winRate * 100)}%
                     </div>
                     <div className="text-muted-foreground text-xs">
-                      Avg place:{" "}
-                      {formatPlacementDistribution(combo.placements)}
+                      Avg place: {formatPlacementDistribution(combo.placements)}
                     </div>
                   </div>
                 </div>

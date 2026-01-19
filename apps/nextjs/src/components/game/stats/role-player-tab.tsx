@@ -1,6 +1,14 @@
 "use client";
 
-import { BarChart3, Check, ChevronsUpDown, Shuffle, Target, TrendingDown, TrendingUp, Users } from "lucide-react";
+import {
+  BarChart3,
+  Check,
+  ChevronsUpDown,
+  Shuffle,
+  Target,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -49,11 +57,7 @@ import { useRoleStats } from "~/hooks/game-stats/use-role-stats";
 type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type PlayerStats = GameStats["players"][number];
 
-export function RolePlayerTab({
-  players,
-}: {
-  players: PlayerStats[];
-}) {
+export function RolePlayerTab({ players }: { players: PlayerStats[] }) {
   const {
     selectedPlayer,
     setSelectedPlayer,
@@ -145,10 +149,7 @@ export function RolePlayerTab({
                             />
                             <span>{player.name}</span>
                             {player.isUser && (
-                              <Badge
-                                variant="secondary"
-                                className="text-xs"
-                              >
+                              <Badge variant="secondary" className="text-xs">
                                 You
                               </Badge>
                             )}
@@ -359,10 +360,7 @@ export function RolePlayerTab({
                                   key={role.id}
                                   className="flex items-center gap-1"
                                 >
-                                  <Badge
-                                    variant="outline"
-                                    className="text-xs"
-                                  >
+                                  <Badge variant="outline" className="text-xs">
                                     {role.name}
                                   </Badge>
                                   {roleIndex < combo.roles.length - 1 && (
@@ -384,9 +382,7 @@ export function RolePlayerTab({
                             {selectedPlayerAvgPlacement !== null && (
                               <div className="text-muted-foreground text-xs">
                                 Avg place:{" "}
-                                {formatPlacementDistribution(
-                                  combo.placements,
-                                )}
+                                {formatPlacementDistribution(combo.placements)}
                               </div>
                             )}
                           </div>

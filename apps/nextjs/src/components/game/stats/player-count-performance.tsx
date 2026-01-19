@@ -46,9 +46,7 @@ export function PlayerCountPerformance({
                     <div className="text-primary text-2xl font-bold">
                       {playerCount}
                     </div>
-                    <div className="text-muted-foreground text-sm">
-                      Players
-                    </div>
+                    <div className="text-muted-foreground text-sm">Players</div>
                   </div>
 
                   {/* stats */}

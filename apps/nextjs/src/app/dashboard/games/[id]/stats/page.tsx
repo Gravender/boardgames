@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
+import GameStats from "~/components/game/stats/game-stats";
 import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { StatsPageSkeleton } from "../../_components/game-stats-skeleton";
-import GameStats from "~/components/game/stats/game-stats";
 
 interface Props {
   params: Promise<{ id: string }>;

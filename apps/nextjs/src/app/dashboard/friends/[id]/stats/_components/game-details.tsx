@@ -61,9 +61,7 @@ export function GameDetails({ data }: { data: Games }) {
               >
                 <span>Name</span>
                 <SortIcon
-                  sortOrder={
-                    sortField === "name" ? sortOrder : "none"
-                  }
+                  sortOrder={sortField === "name" ? sortOrder : "none"}
                 />
               </button>
             </TableHead>
@@ -74,9 +72,7 @@ export function GameDetails({ data }: { data: Games }) {
               >
                 <span>Plays</span>
                 <SortIcon
-                  sortOrder={
-                    sortField === "plays" ? sortOrder : "none"
-                  }
+                  sortOrder={sortField === "plays" ? sortOrder : "none"}
                 />
               </button>
             </TableHead>
@@ -87,9 +83,7 @@ export function GameDetails({ data }: { data: Games }) {
               >
                 <span>Wins</span>
                 <SortIcon
-                  sortOrder={
-                    sortField === "wins" ? sortOrder : "none"
-                  }
+                  sortOrder={sortField === "wins" ? sortOrder : "none"}
                 />
               </button>
             </TableHead>
@@ -100,9 +94,7 @@ export function GameDetails({ data }: { data: Games }) {
               >
                 <span>Win Rate</span>
                 <SortIcon
-                  sortOrder={
-                    sortField === "winRate" ? sortOrder : "none"
-                  }
+                  sortOrder={sortField === "winRate" ? sortOrder : "none"}
                 />
               </button>
             </TableHead>

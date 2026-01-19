@@ -52,26 +52,20 @@ export function RolePerformanceSection({
                 return b.matchCount - a.matchCount;
               })
               .map((role) => {
-                const averagePlacement = getAveragePlacement(
-                  role.placements,
-                );
+                const averagePlacement = getAveragePlacement(role.placements);
                 return (
                   <div key={role.roleId} className="rounded-lg border p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <h3 className="font-semibold">{role.name}</h3>
                       <Badge
-                        variant={
-                          role.winRate >= 0.5 ? "default" : "secondary"
-                        }
+                        variant={role.winRate >= 0.5 ? "default" : "secondary"}
                       >
                         {Math.round(role.winRate * 100)}% Win Rate
                       </Badge>
                     </div>
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
-                        <span className="text-muted-foreground">
-                          Matches:
-                        </span>
+                        <span className="text-muted-foreground">Matches:</span>
                         <div className="font-medium">{role.matchCount}</div>
                       </div>
                       <div>
