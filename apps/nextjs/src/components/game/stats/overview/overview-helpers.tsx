@@ -109,9 +109,12 @@ function TeamGroups({
                 <h3 className="font-semibold">{`Team: ${team.name}`}</h3>
               </div>
               <div className="flex items-center gap-3">
-                <div className="text-sm font-medium">
-                  {teamPlayers[0]?.score} pts
-                </div>
+                {teamPlayers[0]?.score !== null &&
+                  scoresheet.winCondition !== "Manual" && (
+                    <div className="text-sm font-medium">
+                      {teamPlayers[0]?.score} pts
+                    </div>
+                  )}
                 <PlacementIndicator
                   placement={teamPlayers[0]?.placement}
                   isManual={scoresheet.winCondition === "Manual"}

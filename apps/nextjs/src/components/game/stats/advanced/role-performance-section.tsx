@@ -44,7 +44,7 @@ export function RolePerformanceSection({
       <CardContent className="p-2 sm:p-4">
         <ScrollArea>
           <div className="flex max-h-[40vh] w-full flex-col gap-2">
-            {userStats.roles
+            {[...userStats.roles]
               .sort((a, b) => {
                 if (a.matchCount > 10 && b.matchCount > 10) {
                   return b.winRate - a.winRate;

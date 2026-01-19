@@ -60,10 +60,6 @@ export function ScoresheetPlayerTable({
   sortField: SortField;
   sortOrder: SortOrder;
 }) {
-  if (!currentScoresheet) {
-    return null;
-  }
-
   return (
     <Card>
       <CardHeader>

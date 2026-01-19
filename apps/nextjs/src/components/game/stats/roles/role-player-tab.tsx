@@ -213,10 +213,20 @@ export function RolePlayerTab({ players }: { players: PlayerStats[] }) {
                         }
 
                         // Calculate max players from placements keys
-                        const maxPlayers = Math.max(
-                          ...Object.keys(role.placements).map(Number),
-                        );
+                        const placementKeys = Object.keys(role.placements);
+                        const maxPlayers =
+                          placementKeys.length > 0
+                            ? Math.max(...placementKeys.map(Number))
+                            : 1;
                         const placementNum = Number.parseFloat(avgPlacement);
+                        // Guard against NaN
+                        if (Number.isNaN(placementNum) || maxPlayers < 1) {
+                          return {
+                            role: role.name,
+                            winRate: role.winRate * 100,
+                            placement: 100,
+                          };
+                        }
                         // Normalize placement 1..maxPlayers to 100..0
                         const normalized =
                           maxPlayers > 1

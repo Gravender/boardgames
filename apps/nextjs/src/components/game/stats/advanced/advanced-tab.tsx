@@ -140,7 +140,7 @@ export default function AdvancedTab({
           <CardContent>
             <div className="space-y-2">
               {(() => {
-                const bestPlayerCount = playerCounts.sort(
+                const bestPlayerCount = [...playerCounts].sort(
                   (a, b) =>
                     (b.plays > 0 ? b.wins / b.plays : 0) -
                     (a.plays > 0 ? a.wins / a.plays : 0),

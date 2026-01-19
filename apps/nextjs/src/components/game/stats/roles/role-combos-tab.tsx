@@ -27,7 +27,7 @@ export function RoleCombosTab({ roleCombos }: { roleCombos: RoleCombos }) {
       <CardContent>
         <ScrollArea>
           <div className="flex max-h-[40vh] flex-col gap-2">
-            {roleCombos
+            {[...roleCombos]
               .sort((a, b) => {
                 if (a.matchCount > 10 && b.matchCount > 10) {
                   return b.winRate - a.winRate;
@@ -44,8 +44,9 @@ export function RoleCombosTab({ roleCombos }: { roleCombos: RoleCombos }) {
                 const avgPlacement = formatPlacementDistribution(
                   combo.placements,
                 );
+                const comboKey = combo.roles.map((r) => r.id).sort().join('-');
                 return (
-                  <div key={index} className="rounded-lg border p-4">
+                  <div key={comboKey} className="rounded-lg border p-4">
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="text-muted-foreground text-lg font-bold">

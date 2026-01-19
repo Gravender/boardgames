@@ -127,7 +127,7 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                         (isManualWinCondition ? (
                           <div>{match.won ? "✔️" : "❌"}</div>
                         ) : (
-                          match.score && (
+                          match.score != null && (
                             <div className="flex items-center gap-2">
                               <Trophy className="text-muted-foreground h-4 w-4" />
                               <span className="font-semibold">
