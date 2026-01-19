@@ -205,16 +205,28 @@ export function RolePlayerTab({ players }: { players: PlayerStats[] }) {
                         const avgPlacement = formatPlacementDistribution(
                           role.placements,
                         );
-                        const formattedPlacement =
-                          avgPlacement === null
-                            ? 0
-                            : (5 - Number.parseFloat(avgPlacement)) * 25;
-                        if (selectedPlayerAvgPlacement === null) {
+                        if (avgPlacement === null) {
                           return {
                             role: role.name,
                             winRate: role.winRate * 100,
                           };
                         }
+
+                        // Calculate max players from placements keys
+                        const maxPlayers = Math.max(
+                          ...Object.keys(role.placements).map(Number),
+                        );
+                        const placementNum = Number.parseFloat(avgPlacement);
+                        // Normalize placement 1..maxPlayers to 100..0
+                        const normalized =
+                          maxPlayers > 1
+                            ? ((maxPlayers - placementNum) / (maxPlayers - 1)) *
+                              100
+                            : 100;
+                        const formattedPlacement = Math.max(
+                          0,
+                          Math.min(100, normalized),
+                        );
 
                         return {
                           role: role.name,
@@ -271,10 +283,10 @@ export function RolePlayerTab({ players }: { players: PlayerStats[] }) {
                         return b.winRate - a.winRate;
                       }
                       if (a.matchCount > 10 && b.matchCount <= 10) {
-                        return 1;
+                        return -1;
                       }
                       if (a.matchCount <= 10 && b.matchCount > 10) {
-                        return -1;
+                        return 1;
                       }
                       return b.matchCount - a.matchCount;
                     })
@@ -341,10 +353,10 @@ export function RolePlayerTab({ players }: { players: PlayerStats[] }) {
                           return b.winRate - a.winRate;
                         }
                         if (a.matchCount > 10 && b.matchCount <= 10) {
-                          return 1;
+                          return -1;
                         }
                         if (a.matchCount <= 10 && b.matchCount > 10) {
-                          return -1;
+                          return 1;
                         }
                         return b.matchCount - a.matchCount;
                       })

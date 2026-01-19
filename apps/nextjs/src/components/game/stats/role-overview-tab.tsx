@@ -116,7 +116,7 @@ export function RoleOverviewTab({
                   role.name,
                   {
                     label: role.name,
-                    color: `var(--chart-${index + 1})`,
+                    color: `var(--chart-${(index % 5) + 1})`,
                   },
                 ]),
               )}
@@ -134,10 +134,10 @@ export function RoleOverviewTab({
                     fill="var(--chart-1)"
                     dataKey="matchCount"
                   >
-                    {roleStats.map((entry, index) => (
+                    {topFiveRoles.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={`var(--chart-${index + 1})`}
+                        fill={`var(--chart-${(index % 5) + 1})`}
                       />
                     ))}
                   </Pie>

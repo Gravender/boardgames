@@ -48,7 +48,7 @@ export function HeadToHeadSection({ headToHead }: { headToHead: HeadToHead }) {
               const totalCards =
                 (totalCooperativeGames > 0 ? 1 : 0) +
                 (totalCompetitiveGames > 0 ? 1 : 0) +
-                opponent.teamWins;
+                (opponent.teamWins > 0 ? 1 : 0);
               return (
                 <div
                   key={`${opponent.player.id}-${opponent.player.type}`}

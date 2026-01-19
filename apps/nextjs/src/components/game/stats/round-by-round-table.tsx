@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { BarChart3, FileText } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -37,6 +38,11 @@ export function RoundByRoundTable({
     return null;
   }
 
+  const sortedRounds = useMemo(
+    () => [...currentScoresheet.rounds].sort((a, b) => a.order - b.order),
+    [currentScoresheet.rounds],
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -59,9 +65,7 @@ export function RoundByRoundTable({
                 <TableHead className="w-16 px-2 sm:w-full sm:px-4">
                   Player
                 </TableHead>
-                {currentScoresheet.rounds
-                  .sort((a, b) => a.order - b.order)
-                  .map((round) => (
+                {sortedRounds.map((round) => (
                     <TableHead
                       key={round.id}
                       className="min-w-[100px] text-center"
@@ -114,9 +118,7 @@ export function RoundByRoundTable({
                         )}
                       </div>
                     </TableCell>
-                    {currentScoresheet.rounds
-                      .sort((a, b) => a.order - b.order)
-                      .map((round) => {
+                    {sortedRounds.map((round) => {
                         const playerRound = player.rounds.find(
                           (r) => r.id === round.id,
                         );

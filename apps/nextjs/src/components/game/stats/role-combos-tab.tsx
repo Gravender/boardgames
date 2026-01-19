@@ -9,17 +9,12 @@ import { Progress } from "@board-games/ui/progress";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
-import { useRoleStats } from "~/hooks/game-stats/use-role-stats";
+import { formatPlacementDistribution } from "~/hooks/game-stats/use-role-stats";
 
 type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type RoleCombos = GameStats["roleCombos"];
 
 export function RoleCombosTab({ roleCombos }: { roleCombos: RoleCombos }) {
-  const { formatPlacementDistribution } = useRoleStats({
-    roleStats: [],
-    userStats: undefined,
-    players: [],
-  });
 
   return (
     <Card>
@@ -38,10 +33,10 @@ export function RoleCombosTab({ roleCombos }: { roleCombos: RoleCombos }) {
                   return b.winRate - a.winRate;
                 }
                 if (a.matchCount > 10 && b.matchCount <= 10) {
-                  return 1;
+                  return -1;
                 }
                 if (a.matchCount <= 10 && b.matchCount > 10) {
-                  return -1;
+                  return 1;
                 }
                 return b.matchCount - a.matchCount;
               })

@@ -30,7 +30,10 @@ export default function OverviewTab({
   players: Players;
 }) {
   const finishedMatches = matches.filter((match) => match.finished);
-  const lastMatch = finishedMatches[0];
+  const sortedFinishedMatches = [...finishedMatches].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
+  const lastMatch = sortedFinishedMatches[0];
   return (
     <>
       {lastMatch && (
@@ -120,7 +123,7 @@ export default function OverviewTab({
           </CardContent>
         </Card>
       )}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6">
         <RecentMatchesList matches={matches} />
       </div>
       <PlayerStatsTable players={players} />

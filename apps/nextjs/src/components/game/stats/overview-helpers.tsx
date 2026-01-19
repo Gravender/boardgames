@@ -118,7 +118,10 @@ function TeamGroups({
                 />
               </div>
             </div>
-            <div className="border-muted-foreground/20 grid grid-cols-1 gap-3 border-l-2 pl-2 sm:grid-cols-2">
+            <ul
+              className="border-muted-foreground/20 grid grid-cols-1 gap-3 border-l-2 pl-2 sm:grid-cols-2"
+              aria-label="Team players"
+            >
               {teamPlayers.map((player) => (
                 <li key={player.id} className="flex items-center">
                   <PlayerImage
@@ -134,7 +137,7 @@ function TeamGroups({
                   </div>
                 </li>
               ))}
-            </div>
+            </ul>
           </div>
         );
       })}

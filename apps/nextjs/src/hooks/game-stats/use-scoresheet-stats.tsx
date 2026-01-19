@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { compareAsc, format } from "date-fns";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -65,6 +65,19 @@ export function useScoresheetStats({
   const [currentScoresheet, setCurrentScoresheet] = useState<Scoresheet | null>(
     scoreSheetsWithGames[0] ?? null,
   );
+
+  useEffect(() => {
+    if (currentScoresheet) {
+      const stillExists = scoreSheetsWithGames.some(
+        (s) => s.id === currentScoresheet.id,
+      );
+      if (!stillExists) {
+        setCurrentScoresheet(scoreSheetsWithGames[0] ?? null);
+      }
+    } else {
+      setCurrentScoresheet(scoreSheetsWithGames[0] ?? null);
+    }
+  }, [scoreSheetsWithGames, currentScoresheet]);
 
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");

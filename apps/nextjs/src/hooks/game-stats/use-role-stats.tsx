@@ -6,7 +6,9 @@ type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type RoleStats = GameStats["roleStats"][number];
 type PlayerStats = GameStats["players"][number];
 
-function formatPlacementDistribution(placements: Record<number, number>) {
+export function formatPlacementDistribution(
+  placements: Record<number, number>,
+) {
   const total = Object.values(placements).reduce(
     (sum, count) => sum + count,
     0,
@@ -49,10 +51,10 @@ export function useRoleStats({
         return b.winRate - a.winRate;
       }
       if (a.matchCount > 10 && b.matchCount <= 10) {
-        return 1;
+        return -1;
       }
       if (a.matchCount <= 10 && b.matchCount > 10) {
-        return -1;
+        return 1;
       }
       return b.matchCount - a.matchCount;
     });

@@ -140,7 +140,7 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                             }`}
                           >
                             <span>{player.name}</span>
-                            {player.score && <span>({player.score})</span>}
+                            {player.score != null && <span>({player.score})</span>}
                             {player.isWinner && <Trophy className="h-3 w-3" />}
                           </div>
                         ))}

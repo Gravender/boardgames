@@ -197,10 +197,10 @@ export function RoleAnalysisTab({ roleStats }: { roleStats: RoleStats[] }) {
                         return b.winRate - a.winRate;
                       }
                       if (a.matchCount > 10 && b.matchCount <= 10) {
-                        return 1;
+                        return -1;
                       }
                       if (a.matchCount <= 10 && b.matchCount > 10) {
-                        return -1;
+                        return 1;
                       }
                       return b.matchCount - a.matchCount;
                     })
