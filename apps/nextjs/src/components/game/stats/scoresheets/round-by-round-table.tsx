@@ -16,32 +16,45 @@ import {
 } from "@board-games/ui/table";
 
 import { PlayerImage } from "~/components/player-image";
-import { useScoresheetStats } from "~/hooks/game-stats/use-scoresheet-stats";
 
 type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type Player = GameStats["players"][number];
 type Scoresheet = GameStats["scoresheets"][number];
 
-export function RoundByRoundTable({
-  players,
-  scoresheets,
-}: {
-  players: Player[];
-  scoresheets: Scoresheet[];
-}) {
-  const { currentScoresheet, currentPlayers } = useScoresheetStats({
-    players,
-    scoresheets,
-  });
+type CurrentPlayer = {
+  id: number;
+  type: "original" | "shared";
+  name: string;
+  image: Player["image"];
+  isUser: boolean;
+  bestScore: number | null;
+  worstScore: number | null;
+  avgScore: number | null;
+  winRate: number;
+  plays: number;
+  wins: number;
+  rounds: Player["scoresheets"][number]["rounds"];
+  scores: Player["scoresheets"][number]["scores"];
+};
 
-  if (!currentScoresheet || currentScoresheet.rounds.length <= 1) {
+export function RoundByRoundTable({
+  currentScoresheet,
+  currentPlayers,
+}: {
+  currentScoresheet: Scoresheet;
+  currentPlayers: CurrentPlayer[];
+}) {
+  const sortedRounds = useMemo(
+    () =>
+      currentScoresheet?.rounds
+        ? [...currentScoresheet.rounds].sort((a, b) => a.order - b.order)
+        : [],
+    [currentScoresheet?.rounds],
+  );
+
+  if (!currentScoresheet || sortedRounds.length <= 1) {
     return null;
   }
-
-  const sortedRounds = useMemo(
-    () => [...currentScoresheet.rounds].sort((a, b) => a.order - b.order),
-    [currentScoresheet.rounds],
-  );
 
   return (
     <Card>

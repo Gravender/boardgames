@@ -16,27 +16,50 @@ import {
 
 import { PlayerImage } from "~/components/player-image";
 import { SortIcon } from "~/components/sort-icon";
-import { useScoresheetStats } from "~/hooks/game-stats/use-scoresheet-stats";
 
 type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type Player = GameStats["players"][number];
 type Scoresheet = GameStats["scoresheets"][number];
 
+type CurrentPlayer = {
+  id: number;
+  type: "original" | "shared";
+  name: string;
+  image: Player["image"];
+  isUser: boolean;
+  bestScore: number | null;
+  worstScore: number | null;
+  avgScore: number | null;
+  winRate: number;
+  plays: number;
+  wins: number;
+  rounds: Player["scoresheets"][number]["rounds"];
+  scores: Player["scoresheets"][number]["scores"];
+};
 
+type SortField =
+  | "name"
+  | "plays"
+  | "wins"
+  | "winRate"
+  | "bestScore"
+  | "worstScore"
+  | "avgScore";
+type SortOrder = "asc" | "desc";
 
 export function ScoresheetPlayerTable({
-  players,
-  scoresheets,
+  currentScoresheet,
+  sortedPlayers,
+  toggleSort,
+  sortField,
+  sortOrder,
 }: {
-  players: Player[];
-  scoresheets: Scoresheet[];
+  currentScoresheet: Scoresheet;
+  sortedPlayers: CurrentPlayer[];
+  toggleSort: (field: SortField) => void;
+  sortField: SortField;
+  sortOrder: SortOrder;
 }) {
-  const { currentScoresheet, sortedPlayers, toggleSort, sortField, sortOrder } =
-    useScoresheetStats({
-      players,
-      scoresheets,
-    });
-
   if (!currentScoresheet) {
     return null;
   }

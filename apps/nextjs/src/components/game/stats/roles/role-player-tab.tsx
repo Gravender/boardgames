@@ -277,7 +277,7 @@ export function RolePlayerTab({ players }: { players: PlayerStats[] }) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {selectedPlayer.roles
+                  {[...selectedPlayer.roles]
                     .sort((a, b) => {
                       if (a.matchCount > 10 && b.matchCount > 10) {
                         return b.winRate - a.winRate;
@@ -347,7 +347,7 @@ export function RolePlayerTab({ players }: { players: PlayerStats[] }) {
               <CardContent>
                 <ScrollArea>
                   <div className="flex max-h-[40vh] flex-col gap-2">
-                    {selectedPlayer.roleCombos
+                    {[...selectedPlayer.roleCombos]
                       .sort((a, b) => {
                         if (a.matchCount > 10 && b.matchCount > 10) {
                           return b.winRate - a.winRate;

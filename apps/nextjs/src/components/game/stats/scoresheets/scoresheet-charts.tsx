@@ -21,25 +21,48 @@ import {
 } from "@board-games/ui/chart";
 import { cn } from "@board-games/ui/utils";
 
-import { useScoresheetStats } from "~/hooks/game-stats/use-scoresheet-stats";
-
 type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
 type Player = GameStats["players"][number];
 type Scoresheet = GameStats["scoresheets"][number];
 
-export function ScoresheetCharts({
-  players,
-  scoresheets,
-}: {
-  players: Player[];
-  scoresheets: Scoresheet[];
-}) {
-  const { currentScoresheet, userScore, userScoresSorted, winRateOverTime } =
-    useScoresheetStats({
-      players,
-      scoresheets,
-    });
+type UserScore = {
+  id: number;
+  type: "original" | "shared";
+  name: string;
+  image: Player["image"];
+  isUser: boolean;
+  bestScore: number | null;
+  worstScore: number | null;
+  avgScore: number | null;
+  winRate: number;
+  plays: number;
+  wins: number;
+  rounds: Player["scoresheets"][number]["rounds"];
+  scores: Player["scoresheets"][number]["scores"];
+};
 
+type ScoreData = {
+  date: string;
+  score: number | null;
+  isWin: boolean;
+};
+
+type WinRateData = {
+  date: string;
+  winRate: number;
+};
+
+export function ScoresheetCharts({
+  currentScoresheet,
+  userScore,
+  userScoresSorted,
+  winRateOverTime,
+}: {
+  currentScoresheet: Scoresheet;
+  userScore: UserScore | null;
+  userScoresSorted: ScoreData[];
+  winRateOverTime: WinRateData[];
+}) {
   if (!userScore || userScore.scores.length === 0 || !currentScoresheet) {
     return null;
   }

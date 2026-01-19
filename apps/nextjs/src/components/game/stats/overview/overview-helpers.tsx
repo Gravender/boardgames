@@ -56,7 +56,8 @@ export function PlayerGroupDisplay({
     .filter(
       (team, index, self) =>
         self.findIndex((t) => t?.id === team?.id) === index,
-    );
+    )
+    .filter((team): team is NonNullable<typeof team> => team !== null);
 
   const noTeamPlayers = players.filter((p) => p.team === null);
 
@@ -81,7 +82,7 @@ function TeamGroups({
   players,
   scoresheet,
 }: {
-  teams: Match["players"][number]["team"][];
+  teams: NonNullable<Match["players"][number]["team"]>[];
   players: Match["players"];
   scoresheet: Match["scoresheet"];
 }) {
@@ -89,12 +90,12 @@ function TeamGroups({
     <div className="flex flex-col gap-2">
       {teams.map((team) => {
         const teamPlayers = players.filter(
-          (player) => player.team?.id === team?.id,
+          (player) => player.team?.id === team.id,
         );
         if (teamPlayers.length === 0) return null;
         return (
           <div
-            key={team?.id}
+            key={team.id}
             className={cn(
               "rounded-lg border p-4",
               teamPlayers[0]?.isWinner
@@ -105,7 +106,7 @@ function TeamGroups({
             <div className="flex items-center justify-between gap-2 pb-4">
               <div className="flex items-center gap-2">
                 <Users className="text-muted-foreground h-5 w-5" />
-                <h3 className="font-semibold">{`Team: ${team?.name}`}</h3>
+                <h3 className="font-semibold">{`Team: ${team.name}`}</h3>
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-sm font-medium">

@@ -34,6 +34,13 @@ export function ScoreSheetsStats({
     setCurrentScoresheet,
     scoreSheetsWithGames,
     userScore,
+    sortedPlayers,
+    toggleSort,
+    sortField,
+    sortOrder,
+    currentPlayers,
+    userScoresSorted,
+    winRateOverTime,
   } = useScoresheetStats({
     players,
     scoresheets,
@@ -241,9 +248,27 @@ export function ScoreSheetsStats({
         )}
       </div>
 
-      <ScoresheetPlayerTable players={players} scoresheets={scoresheets} />
-      <ScoresheetCharts players={players} scoresheets={scoresheets} />
-      <RoundByRoundTable players={players} scoresheets={scoresheets} />
+      {currentScoresheet && (
+        <>
+          <ScoresheetPlayerTable
+            currentScoresheet={currentScoresheet}
+            sortedPlayers={sortedPlayers}
+            toggleSort={toggleSort}
+            sortField={sortField}
+            sortOrder={sortOrder}
+          />
+          <ScoresheetCharts
+            currentScoresheet={currentScoresheet}
+            userScore={userScore}
+            userScoresSorted={userScoresSorted}
+            winRateOverTime={winRateOverTime}
+          />
+          <RoundByRoundTable
+            currentScoresheet={currentScoresheet}
+            currentPlayers={currentPlayers}
+          />
+        </>
+      )}
     </div>
   );
 }
