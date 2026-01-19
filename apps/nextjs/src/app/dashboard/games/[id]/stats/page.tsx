@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
 import { StatsPageSkeleton } from "../../_components/game-stats-skeleton";
-import GameStats from "./_components/game-stats";
+import GameStats from "~/components/game/stats/game-stats";
 
 interface Props {
   params: Promise<{ id: string }>;

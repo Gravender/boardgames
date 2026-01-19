@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { Clock, Gamepad2, Share2, Trophy } from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
@@ -12,23 +10,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { cn } from "@board-games/ui/utils";
 
 import { GameImage } from "~/components/game-image";
-import { useTRPC } from "~/trpc/react";
-import { PlayerStatsTable } from "../../../_components/player-stats-table";
+import { useGameStats } from "~/hooks/queries/game/game-stats";
+import { PlayerStatsTable } from "~/app/dashboard/games/_components/player-stats-table";
+
 import AdvancedTab from "./advanced-tab";
 import OverviewTab from "./overview-tab";
 import RolesTab from "./roles-tab";
 import { ScoreSheetsStats } from "./scoresheets-stats";
 
 export default function GameStats({ gameId }: { gameId: number }) {
-  const trpc = useTRPC();
-  const { data: gameStats } = useSuspenseQuery(
-    trpc.game.getGameStats.queryOptions({ id: gameId }),
-  );
-  const router = useRouter();
-  if (gameStats === null) {
-    router.push("/dashboard/games");
-    return null;
-  }
+  const { gameStats } = useGameStats({ id: gameId });
 
   // Calculate overall stats
   const totalMatches = gameStats.totalMatches;
@@ -176,7 +167,10 @@ export default function GameStats({ gameId }: { gameId: number }) {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <OverviewTab matches={gameStats.matches} />
+          <OverviewTab
+            matches={gameStats.matches}
+            players={gameStats.players}
+          />
         </TabsContent>
         <TabsContent value="players" className="space-y-6">
           <PlayerStatsTable players={gameStats.players} />
