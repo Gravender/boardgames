@@ -210,7 +210,7 @@ export function ScoresheetPlayerTable({
                   <TableCell className="text-center font-medium text-green-600">
                     {player.wins}
                   </TableCell>
-                  <TableCell>{Math.round(player.winRate * 100)}%</TableCell>
+                  <TableCell className="text-center">{Math.round(player.winRate * 100)}%</TableCell>
                   {!(
                     currentScoresheet.winCondition === "Manual" ||
                     currentScoresheet.winCondition === "No Winner"

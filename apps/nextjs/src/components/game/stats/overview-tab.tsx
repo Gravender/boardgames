@@ -4,7 +4,7 @@
 import type { RouterOutputs } from "@board-games/api";
 
 
-import { PlayerStatsTable } from "~/app/dashboard/games/_components/player-stats-table";
+import { PlayerStatsTable } from "./player-stats-table";
 import { RecentMatchesList } from "./recent-matches-list";
 
 type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;

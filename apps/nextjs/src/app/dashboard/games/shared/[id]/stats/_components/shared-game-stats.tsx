@@ -47,7 +47,7 @@ import { GameImage } from "~/components/game-image";
 import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 import { MatchDurationTrendChart } from "../../../../_components/match-duration-trend-chart";
-import { PlayerStatsTable } from "../../../../_components/player-stats-table";
+import { PlayerStatsTable } from "~/components/game/stats/player-stats-table";
 import { WinLoseRatioChart } from "../../../../_components/win-lose-chart";
 
 // Colors for charts

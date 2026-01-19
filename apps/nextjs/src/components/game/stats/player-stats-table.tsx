@@ -279,21 +279,21 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       {coopOrCompetitive === "coop"
                         ? player.coopMatches
                         : coopOrCompetitive === "competitive"
                           ? player.competitiveMatches
                           : totalMatches}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       {coopOrCompetitive === "coop"
                         ? player.coopWins
                         : coopOrCompetitive === "competitive"
                           ? player.competitiveWins
                           : totalWins}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       {(
                         (coopOrCompetitive === "coop"
                           ? player.coopWinRate

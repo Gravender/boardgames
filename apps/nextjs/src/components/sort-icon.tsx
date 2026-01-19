@@ -8,7 +8,7 @@ export function SortIcon({
   sortOrder: "asc" | "desc" | "none";
 }) {
   if (sortOrder === "none") {
-    return <div className="ml-1 h-3 w-3 sm:ml-2 sm:h-4 sm:w-4" />;
+    return null;
   }
   return sortOrder === "asc" ? (
     <ChevronUp className="ml-1 h-3 w-3 sm:ml-2 sm:h-4 sm:w-4" />
