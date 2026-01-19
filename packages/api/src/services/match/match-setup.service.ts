@@ -346,6 +346,7 @@ class MatchSetupService {
       modifier: round.modifier,
       lookup: round.lookup,
       order: round.order,
+      parentId: round.id,
       scoresheetId,
     }));
     if (mappedRounds.length === 0) return [];

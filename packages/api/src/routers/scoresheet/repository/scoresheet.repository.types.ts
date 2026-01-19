@@ -26,7 +26,6 @@ export type InsertSharedScoreSheetInputType = z.infer<
 >;
 
 export const insertRoundSchemaInput = insertRoundSchema.omit({
-  id: true,
   createdAt: true,
   updatedAt: true,
   deletedAt: true,
