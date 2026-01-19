@@ -9,7 +9,6 @@ import { Card, CardContent } from "@board-games/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { cn } from "@board-games/ui/utils";
 
-import { PlayerStatsTable } from "~/app/dashboard/games/_components/player-stats-table";
 import { GameImage } from "~/components/game-image";
 import { useGameStats } from "~/hooks/queries/game/game-stats";
 import AdvancedTab from "./advanced-tab";
@@ -153,11 +152,10 @@ export default function GameStats({ gameId }: { gameId: number }) {
         <TabsList
           className={cn(
             "grid w-full",
-            gameStats.roleStats.length > 0 ? "grid-cols-5" : "grid-cols-4",
+            gameStats.roleStats.length > 0 ? "grid-cols-4" : "grid-cols-3",
           )}
         >
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="players">Stats</TabsTrigger>
           <TabsTrigger value="scoresheet">Scoresheets</TabsTrigger>
           <TabsTrigger value="advanced">Advanced</TabsTrigger>
           {gameStats.roleStats.length > 0 && (
@@ -170,9 +168,6 @@ export default function GameStats({ gameId }: { gameId: number }) {
             matches={gameStats.matches}
             players={gameStats.players}
           />
-        </TabsContent>
-        <TabsContent value="players" className="space-y-6">
-          <PlayerStatsTable players={gameStats.players} />
         </TabsContent>
         <TabsContent value="scoresheet" className="space-y-6">
           <ScoreSheetsStats
