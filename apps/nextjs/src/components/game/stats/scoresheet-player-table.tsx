@@ -58,6 +58,11 @@ export function ScoresheetPlayerTable({
                   <button
                     onClick={() => toggleSort("name")}
                     className="flex items-center font-bold"
+                    aria-label={
+                      sortField === "name"
+                        ? `Sort by player name ${sortOrder === "asc" ? "ascending" : "descending"}`
+                        : "Sort by player name"
+                    }
                   >
                     <span>Player</span>
                     <SortIcon
@@ -69,6 +74,11 @@ export function ScoresheetPlayerTable({
                   <button
                     onClick={() => toggleSort("plays")}
                     className="flex items-center font-bold"
+                    aria-label={
+                      sortField === "plays"
+                        ? `Sort by plays ${sortOrder === "asc" ? "ascending" : "descending"}`
+                        : "Sort by plays"
+                    }
                   >
                     <span>Plays</span>
                     <SortIcon
@@ -80,6 +90,11 @@ export function ScoresheetPlayerTable({
                   <button
                     onClick={() => toggleSort("wins")}
                     className="flex items-center font-bold"
+                    aria-label={
+                      sortField === "wins"
+                        ? `Sort by wins ${sortOrder === "asc" ? "ascending" : "descending"}`
+                        : "Sort by wins"
+                    }
                   >
                     <span>Wins</span>
                     <SortIcon
@@ -91,6 +106,11 @@ export function ScoresheetPlayerTable({
                   <button
                     onClick={() => toggleSort("winRate")}
                     className="flex items-center font-bold"
+                    aria-label={
+                      sortField === "winRate"
+                        ? `Sort by win rate ${sortOrder === "asc" ? "ascending" : "descending"}`
+                        : "Sort by win rate"
+                    }
                   >
                     <span className="flex w-16">Win Rate</span>
                     <SortIcon
@@ -107,6 +127,11 @@ export function ScoresheetPlayerTable({
                       <button
                         onClick={() => toggleSort("avgScore")}
                         className="flex items-center font-bold"
+                        aria-label={
+                          sortField === "avgScore"
+                            ? `Sort by average score ${sortOrder === "asc" ? "ascending" : "descending"}`
+                            : "Sort by average score"
+                        }
                       >
                         <span className="flex w-16">Avg Score</span>
                         <SortIcon
@@ -120,6 +145,11 @@ export function ScoresheetPlayerTable({
                       <button
                         onClick={() => toggleSort("bestScore")}
                         className="flex items-center font-bold"
+                        aria-label={
+                          sortField === "bestScore"
+                            ? `Sort by best score ${sortOrder === "asc" ? "ascending" : "descending"}`
+                            : "Sort by best score"
+                        }
                       >
                         <span className="flex w-16">Best Score</span>
                         <SortIcon
@@ -133,6 +163,11 @@ export function ScoresheetPlayerTable({
                       <button
                         onClick={() => toggleSort("worstScore")}
                         className="flex items-center font-bold"
+                        aria-label={
+                          sortField === "worstScore"
+                            ? `Sort by worst score ${sortOrder === "asc" ? "ascending" : "descending"}`
+                            : "Sort by worst score"
+                        }
                       >
                         <span className="flex w-16">Worst Score</span>
                         <SortIcon

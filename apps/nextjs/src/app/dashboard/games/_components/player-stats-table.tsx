@@ -180,6 +180,11 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
                   <button
                     onClick={() => toggleSort("name")}
                     className="flex items-center font-bold"
+                    aria-label={
+                      sortField === "name"
+                        ? `Sort by name ${sortOrder === "asc" ? "ascending" : "descending"}`
+                        : "Sort by name"
+                    }
                   >
                     <span>Name</span>
                     <SortIcon
@@ -191,6 +196,11 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
                   <button
                     onClick={() => toggleSort("plays")}
                     className="flex items-center font-bold"
+                    aria-label={
+                      sortField === "plays"
+                        ? `Sort by plays ${sortOrder === "asc" ? "ascending" : "descending"}`
+                        : "Sort by plays"
+                    }
                   >
                     <span>Plays</span>
                     <SortIcon
@@ -202,6 +212,11 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
                   <button
                     onClick={() => toggleSort("wins")}
                     className="flex items-center font-bold"
+                    aria-label={
+                      sortField === "wins"
+                        ? `Sort by wins ${sortOrder === "asc" ? "ascending" : "descending"}`
+                        : "Sort by wins"
+                    }
                   >
                     <span>Wins</span>
                     <SortIcon
@@ -213,6 +228,11 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
                   <button
                     onClick={() => toggleSort("winRate")}
                     className="flex items-center font-bold"
+                    aria-label={
+                      sortField === "winRate"
+                        ? `Sort by win rate ${sortOrder === "asc" ? "ascending" : "descending"}`
+                        : "Sort by win rate"
+                    }
                   >
                     <span className="flex w-16">Win Rate</span>
                     <SortIcon
