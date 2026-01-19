@@ -1,12 +1,17 @@
 "use client";
 
-import { Shield, Swords } from "lucide-react";
+import { Info, Shield, Swords } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { Progress } from "@board-games/ui/progress";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@board-games/ui/tooltip";
 import { cn } from "@board-games/ui/utils";
 
 import { PlayerImage } from "~/components/player-image";
@@ -34,9 +39,9 @@ function calculateOpponentStats(opponent: Opponent): OpponentStats {
     opponent.competitiveWins + opponent.competitiveLosses;
   const totalCooperativeGames = opponent.coopWins + opponent.coopLosses;
   const totalGames = totalCompetitiveGames + totalCooperativeGames;
-  // Win rate is when you beat the opponent ties don't count
+  // Win rate is when you beat the opponent, ties don't count as losses
   const competitiveWinRate =
-    totalCompetitiveGames > 0
+    totalCompetitiveGamesWithoutTies > 0
       ? opponent.competitiveWins / totalCompetitiveGamesWithoutTies
       : 0;
   const cooperativeSuccessRate =
@@ -80,13 +85,29 @@ function PerformanceComparison({
       <div className="bg-muted/30 rounded-lg p-3">
         <div className="text-sm font-medium">Performance Comparison</div>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <div className="flex justify-between text-sm">
-              <span>Comp vs {opponent.player.name}</span>
-              <span>{Math.round(competitiveWinRate * 100)}%</span>
-            </div>
-            <Progress value={competitiveWinRate * 100} className="h-2" />
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="cursor-help">
+                <div className="flex justify-between text-sm">
+                  <span>Comp vs {opponent.player.name}</span>
+                  <span>{Math.round(competitiveWinRate * 100)}%</span>
+                </div>
+                <Progress value={competitiveWinRate * 100} className="h-2" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p className="text-xs">
+                <strong>Competitive Win Rate</strong>
+              </p>
+              <p className="text-xs mt-1">
+                Wins ÷ (Wins + Losses). Ties excluded.
+              </p>
+              <p className="text-xs mt-1">
+                {opponent.competitiveWins}W - {opponent.competitiveLosses}L
+                {opponent.competitiveTies > 0 && ` - ${opponent.competitiveTies}T`}
+              </p>
+            </TooltipContent>
+          </Tooltip>
           <div>
             <div className="flex justify-between text-sm">
               <span>Coop with {opponent.player.name}</span>
@@ -108,13 +129,29 @@ function PerformanceComparison({
 
   if (totalCompetitiveGames > 0) {
     return (
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between text-sm">
-          <span>Comp Win Rate vs {opponent.player.name}</span>
-          <span>{Math.round(competitiveWinRate * 100)}%</span>
-        </div>
-        <Progress value={competitiveWinRate * 100} className="h-2" />
-      </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex flex-col gap-2 cursor-help">
+            <div className="flex justify-between text-sm">
+              <span>Comp Win Rate vs {opponent.player.name}</span>
+              <span>{Math.round(competitiveWinRate * 100)}%</span>
+            </div>
+            <Progress value={competitiveWinRate * 100} className="h-2" />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">
+          <p className="text-xs">
+            <strong>Competitive Win Rate</strong>
+          </p>
+          <p className="text-xs mt-1">
+            Wins ÷ (Wins + Losses). Ties excluded.
+          </p>
+          <p className="text-xs mt-1">
+            {opponent.competitiveWins}W - {opponent.competitiveLosses}L
+            {opponent.competitiveTies > 0 && ` - ${opponent.competitiveTies}T`}
+          </p>
+        </TooltipContent>
+      </Tooltip>
     );
   }
 
@@ -161,9 +198,27 @@ function OpponentCard({ opponent }: { opponent: Opponent }) {
         </div>
 
         <div className="text-right">
-          <div className="text-lg font-bold">
-            {opponent.competitiveWins} - {opponent.competitiveLosses} -{" "}
-            {opponent.competitiveTies}
+          <div className="flex items-center justify-end gap-1">
+            <div className="text-lg font-bold">
+              {opponent.competitiveWins} - {opponent.competitiveLosses} -{" "}
+              {opponent.competitiveTies}
+            </div>
+            {totalCompetitiveGames > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="text-muted-foreground h-3 w-3 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="text-xs">
+                    <strong>Wins - Losses - Ties</strong>
+                  </p>
+                  <p className="text-xs mt-1">
+                    Win rate excludes ties (wins ÷ (wins + losses)). Ties don't
+                    count as losses since you didn't lose against this opponent.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
           <div className="text-muted-foreground text-xs">Comp Record</div>
         </div>
@@ -188,18 +243,39 @@ function OpponentCard({ opponent }: { opponent: Opponent }) {
           </div>
         )}
         {totalCompetitiveGames > 0 && totalCooperativeGames > 0 && (
-          <div className="rounded-lg border p-3 text-center">
-            <div className="mb-1 flex items-center justify-center gap-1">
-              <Swords className="h-3 w-3 text-blue-500" />
-              <span className="text-lg font-bold text-blue-600">
-                {Math.round(competitiveWinRate * 100)}%
-              </span>
-            </div>
-            <div className="text-muted-foreground text-xs">Competitive</div>
-            <div className="text-muted-foreground text-xs">
-              {totalCompetitiveGames} games
-            </div>
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="rounded-lg border p-3 text-center cursor-help">
+                <div className="mb-1 flex items-center justify-center gap-1">
+                  <Swords className="h-3 w-3 text-blue-500" />
+                  <span className="text-lg font-bold text-blue-600">
+                    {Math.round(competitiveWinRate * 100)}%
+                  </span>
+                </div>
+                <div className="text-muted-foreground text-xs">Competitive</div>
+                <div className="text-muted-foreground text-xs">
+                  {opponent.competitiveWins}W - {opponent.competitiveLosses}L
+                  {opponent.competitiveTies > 0 && ` - ${opponent.competitiveTies}T`}
+                </div>
+                <div className="text-muted-foreground text-xs">
+                  {totalCompetitiveGames} games
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p className="text-xs">
+                <strong>Competitive Win Rate</strong>
+              </p>
+              <p className="text-xs mt-1">
+                Wins ÷ (Wins + Losses). Ties are excluded since they don't count
+                as losses.
+              </p>
+              <p className="text-xs mt-1">
+                {opponent.competitiveWins} wins, {opponent.competitiveLosses}{" "}
+                losses{opponent.competitiveTies > 0 && `, ${opponent.competitiveTies} ties`}
+              </p>
+            </TooltipContent>
+          </Tooltip>
         )}
         {totalCooperativeGames > 0 && totalCompetitiveGames > 0 && (
           <div className="rounded-lg border p-3 text-center">
