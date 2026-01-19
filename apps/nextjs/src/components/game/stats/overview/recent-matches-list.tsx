@@ -181,11 +181,11 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                               <div
                                 key={player.id}
                                 className={cn(
-                                                                   "flex items-center gap-1 rounded px-2 py-1 text-xs",
-                                                                   player.isWinner
-                                                                     ? "bg-green-100 text-green-800"
-                                                                     : "bg-muted text-muted-foreground"
-                                                                 )}
+                                  "flex items-center gap-1 rounded px-2 py-1 text-xs",
+                                  player.isWinner
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-muted text-muted-foreground",
+                                )}
                               >
                                 <span>{player.name}</span>
                                 {player.score != null && (

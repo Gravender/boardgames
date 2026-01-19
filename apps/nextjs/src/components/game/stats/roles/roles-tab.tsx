@@ -41,7 +41,10 @@ export default function RolesTab({
       <CardContent>
         <Tabs defaultValue="overview">
           <TabsList
-            className={cn("grid w-full", hasRoleCombos ? "grid-cols-4" : "grid-cols-3")}
+            className={cn(
+              "grid w-full",
+              hasRoleCombos ? "grid-cols-4" : "grid-cols-3",
+            )}
           >
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />

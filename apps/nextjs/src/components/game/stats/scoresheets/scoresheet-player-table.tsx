@@ -60,7 +60,9 @@ export function ScoresheetPlayerTable({
   sortField: SortField;
   sortOrder: SortOrder;
 }) {
-  const showScoreColumns = currentScoresheet.winCondition !== "Manual" && currentScoresheet.winCondition !== "No Winner";
+  const showScoreColumns =
+    currentScoresheet.winCondition !== "Manual" &&
+    currentScoresheet.winCondition !== "No Winner";
   return (
     <Card>
       <CardHeader>
@@ -138,7 +140,7 @@ export function ScoresheetPlayerTable({
                     />
                   </button>
                 </TableHead>
-                    {showScoreColumns && (
+                {showScoreColumns && (
                   <>
                     <TableHead className="w-16 px-1 sm:px-4">
                       <button

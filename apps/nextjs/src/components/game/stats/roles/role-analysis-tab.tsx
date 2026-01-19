@@ -75,9 +75,7 @@ export function RoleAnalysisTab({ roleStats }: { roleStats: RoleStats[] }) {
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent
-              align="start"
-            >
+            <PopoverContent align="start">
               <Command>
                 <CommandInput
                   className="hover:border-none focus:outline-none"
@@ -109,7 +107,7 @@ export function RoleAnalysisTab({ roleStats }: { roleStats: RoleStats[] }) {
                           <div className="min-w-0 flex-1 space-y-0.5">
                             <div className="font-medium">{role.name}</div>
                             {role.description && (
-                              <div className="text-muted-foreground wrap-break-word text-sm">
+                              <div className="text-muted-foreground text-sm wrap-break-word">
                                 {role.description}
                               </div>
                             )}
