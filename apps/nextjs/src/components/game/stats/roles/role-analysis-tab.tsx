@@ -59,10 +59,12 @@ export function RoleAnalysisTab({ roleStats }: { roleStats: RoleStats[] }) {
                 className="w-full justify-between bg-transparent"
               >
                 {selectedRole ? (
-                  <div className="flex items-center gap-2">
-                    <span>{selectedRole.name}</span>
+                  <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+                    <span className="truncate font-medium">
+                      {selectedRole.name}
+                    </span>
                     {selectedRole.description && (
-                      <span className="text-muted-foreground text-sm">
+                      <span className="text-muted-foreground truncate text-sm">
                         - {selectedRole.description}
                       </span>
                     )}
@@ -74,7 +76,6 @@ export function RoleAnalysisTab({ roleStats }: { roleStats: RoleStats[] }) {
               </Button>
             </PopoverTrigger>
             <PopoverContent
-              className="max-h-[300px] w-[--radix-popover-trigger-width]"
               align="start"
             >
               <Command>
@@ -95,21 +96,22 @@ export function RoleAnalysisTab({ roleStats }: { roleStats: RoleStats[] }) {
                             setSelectedRole(role);
                             setRoleComboboxOpen(false);
                           }}
+                          className="flex items-start gap-2"
                         >
                           <Check
                             className={cn(
-                              "mr-2 h-4 w-4",
+                              "mt-0.5 h-4 w-4 shrink-0",
                               selectedRole?.roleId === role.roleId
                                 ? "opacity-100"
                                 : "opacity-0",
                             )}
                           />
-                          <div className="flex items-center gap-2">
-                            <span>{role.name}</span>
+                          <div className="min-w-0 flex-1 space-y-0.5">
+                            <div className="font-medium">{role.name}</div>
                             {role.description && (
-                              <span className="text-muted-foreground text-sm">
-                                - {role.description}
-                              </span>
+                              <div className="text-muted-foreground wrap-break-word text-sm">
+                                {role.description}
+                              </div>
                             )}
                           </div>
                         </CommandItem>

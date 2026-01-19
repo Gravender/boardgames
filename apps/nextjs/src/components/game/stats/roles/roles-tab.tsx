@@ -5,6 +5,7 @@ import { Award, BarChart3, Shuffle, UserCheck, Users } from "lucide-react";
 import type { RouterOutputs } from "@board-games/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
+import { cn } from "@board-games/ui/utils";
 
 import { RoleAnalysisTab } from "./role-analysis-tab";
 import { RoleCombosTab } from "./role-combos-tab";
@@ -27,6 +28,8 @@ export default function RolesTab({
   userStats: PlayerStats | undefined;
   players: PlayerStats[];
 }) {
+  const hasRoleCombos = Array.isArray(roleCombos) && roleCombos.length > 0;
+
   return (
     <Card>
       <CardHeader>
@@ -37,7 +40,9 @@ export default function RolesTab({
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="overview">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList
+            className={cn("grid w-full", hasRoleCombos ? "grid-cols-4" : "grid-cols-3")}
+          >
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Overview
@@ -50,10 +55,12 @@ export default function RolesTab({
               <Award className="h-4 w-4" />
               By Role
             </TabsTrigger>
-            <TabsTrigger value="combos" className="flex items-center gap-2">
-              <Shuffle className="h-4 w-4" />
-              Role Combos
-            </TabsTrigger>
+            {hasRoleCombos && (
+              <TabsTrigger value="combos" className="flex items-center gap-2">
+                <Shuffle className="h-4 w-4" />
+                Role Combos
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -68,9 +75,11 @@ export default function RolesTab({
             <RoleAnalysisTab roleStats={roleStats} />
           </TabsContent>
 
-          <TabsContent value="combos" className="space-y-6">
-            <RoleCombosTab roleCombos={roleCombos} />
-          </TabsContent>
+          {hasRoleCombos && (
+            <TabsContent value="combos" className="space-y-6">
+              <RoleCombosTab roleCombos={roleCombos} />
+            </TabsContent>
+          )}
         </Tabs>
       </CardContent>
     </Card>
