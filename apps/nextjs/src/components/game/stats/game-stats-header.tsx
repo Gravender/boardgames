@@ -14,13 +14,15 @@ import { useGame } from "~/hooks/queries/game/game";
 import { useGameStatsHeader } from "~/hooks/queries/game/game-stats-header";
 
 interface GameStatsHeaderProps {
-  gameInput: {
-    id: number;
-    type: "original";
-  } | {
-    sharedGameId: number;
-    type: "shared";
-  };
+  gameInput:
+    | {
+        id: number;
+        type: "original";
+      }
+    | {
+        sharedGameId: number;
+        type: "shared";
+      };
 }
 
 function GameStatsHeaderContent({ gameInput }: GameStatsHeaderProps) {
@@ -54,9 +56,9 @@ function GameStatsHeaderContent({ gameInput }: GameStatsHeaderProps) {
                 )}
               </div>
               {gameInput.type === "original" && (
-              <Button className="gap-2" asChild>
-                <Link href={`/dashboard/games/${gameInput.id}/share`}>
-                  <Share2 className="h-4 w-4" />
+                <Button className="gap-2" asChild>
+                  <Link href={`/dashboard/games/${gameInput.id}/share`}>
+                    <Share2 className="h-4 w-4" />
                     Share
                   </Link>
                 </Button>
@@ -76,7 +78,9 @@ function GameStatsHeaderContent({ gameInput }: GameStatsHeaderProps) {
             </div>
 
             <div className="flex flex-col items-center md:items-start">
-              <p className="text-muted-foreground text-xs">Your Avg Play Time</p>
+              <p className="text-muted-foreground text-xs">
+                Your Avg Play Time
+              </p>
               <div className="flex items-center gap-1">
                 <Clock className="h-4 w-4 text-green-500" />
                 <span className="text-xl font-bold">
@@ -86,7 +90,11 @@ function GameStatsHeaderContent({ gameInput }: GameStatsHeaderProps) {
                 </span>
               </div>
               <p className="text-muted-foreground text-xs">
-                of {stats.avgPlaytime > 0 ? formatDuration(stats.avgPlaytime) : "0m"} overall
+                of{" "}
+                {stats.avgPlaytime > 0
+                  ? formatDuration(stats.avgPlaytime)
+                  : "0m"}{" "}
+                overall
               </p>
             </div>
 
@@ -149,7 +157,7 @@ function GameStatsHeaderSkeleton() {
                 className="flex flex-col items-center md:items-start"
               >
                 <Skeleton className="h-3 w-20" />
-                <div className="flex items-center gap-1 mt-1">
+                <div className="mt-1 flex items-center gap-1">
                   <Skeleton className="h-4 w-4" />
                   <Skeleton className="h-7 w-16" />
                 </div>

@@ -474,10 +474,7 @@ class GameRepository {
         .from(vMatchPlayerCanonicalForUser)
         .where(
           and(
-            eq(
-              vMatchPlayerCanonicalForUser.canonicalPlayerId,
-              userPlayer.id,
-            ),
+            eq(vMatchPlayerCanonicalForUser.canonicalPlayerId, userPlayer.id),
             or(
               and(
                 eq(vMatchPlayerCanonicalForUser.ownerId, userId),
@@ -513,7 +510,9 @@ class GameRepository {
       )
       .where(
         and(
-          input.type === "original" ? eq(vMatchCanonical.canonicalGameId, input.id) : eq(vMatchCanonical.sharedGameId, input.sharedGameId),
+          input.type === "original"
+            ? eq(vMatchCanonical.canonicalGameId, input.id)
+            : eq(vMatchCanonical.sharedGameId, input.sharedGameId),
           eq(vMatchCanonical.visibleToUserId, userId),
         ),
       );

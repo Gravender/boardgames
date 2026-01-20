@@ -10,10 +10,14 @@ import OverviewTab from "./overview/overview-tab";
 import RolesTab from "./roles/roles-tab";
 import { ScoreSheetsStats } from "./scoresheets/scoresheets-stats";
 
-export default function GameStats({ game }: { game: {
-  id: number;
-  type: "original"
-} }) {
+export default function GameStats({
+  game,
+}: {
+  game: {
+    id: number;
+    type: "original";
+  };
+}) {
   const { gameStats } = useGameStats({ id: game.id });
 
   const userStats = gameStats.players.find((player) => player.isUser);

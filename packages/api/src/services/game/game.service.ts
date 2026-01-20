@@ -5,6 +5,7 @@ import type { TransactionType } from "@board-games/db/client";
 import type { editScoresheetSchemaApiInput } from "@board-games/shared";
 import { db } from "@board-games/db/client";
 
+import type { GetGameStatsHeaderOutputType } from "../../repositories/game/game.repository.types";
 import type {
   GetGameMatchesOutputType,
   GetGameOutputType,
@@ -12,7 +13,6 @@ import type {
   GetGameScoresheetsOutputType,
   GetGameScoreSheetsWithRoundsOutputType,
 } from "../../routers/game/game.output";
-import type { GetGameStatsHeaderOutputType } from "../../repositories/game/game.repository.types";
 import type {
   CreateGameArgs,
   EditGameArgs,

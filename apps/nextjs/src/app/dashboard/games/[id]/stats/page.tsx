@@ -42,7 +42,7 @@ export default async function GameStatsPage({ params }: Props) {
       <div className="container flex w-full items-center justify-center px-3 py-4 md:px-6 md:py-8">
         <Suspense fallback={<GameStatsSkeleton />}>
           <GameStats game={{ id: Number(id), type: "original" }} />
-        </Suspense> 
+        </Suspense>
       </div>
     </HydrateClient>
   );
