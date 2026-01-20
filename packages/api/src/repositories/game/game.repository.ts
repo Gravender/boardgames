@@ -467,7 +467,7 @@ class GameRepository {
     // Create a CTE for user match players to check participation and wins
     const userMatchPlayers = db.$with("user_match_players").as(
       db
-        .select({
+        .selectDistinctOn([vMatchPlayerCanonicalForUser.canonicalMatchId], {
           matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
           winner: vMatchPlayerCanonicalForUser.winner,
         })
@@ -489,7 +489,8 @@ class GameRepository {
               ),
             ),
           ),
-        ),
+        )
+        .orderBy(vMatchPlayerCanonicalForUser.canonicalMatchId),
     );
 
     // Aggregate stats from matches
