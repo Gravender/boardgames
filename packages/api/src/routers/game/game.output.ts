@@ -31,6 +31,7 @@ export const getGameStatsHeaderOutput = z.object({
   avgPlaytime: z.number(), // seconds
   totalPlaytime: z.number(), // seconds
   userTotalPlaytime: z.number(), // seconds (only user matches, excluding < 5 min)
+  userAvgPlaytime: z.number(), // seconds (only user matches, excluding < 5 min)
   overallMatchesPlayed: z.number(),
   userMatchesPlayed: z.number(),
 });

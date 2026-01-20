@@ -66,45 +66,54 @@ function GameStatsHeaderContent({ gameInput }: GameStatsHeaderProps) {
 
           <div className="grid w-full grid-cols-2 gap-4 md:grid-cols-4">
             <div className="flex flex-col items-center md:items-start">
+              <p className="text-muted-foreground text-xs">Win Rate</p>
               <div className="flex items-center gap-1">
                 <Trophy className="h-4 w-4 text-yellow-500" />
                 <span className="text-xl font-bold">
                   {stats.winRate.toFixed(2)}%
                 </span>
               </div>
-              <p className="text-muted-foreground text-xs">Win Rate</p>
             </div>
 
             <div className="flex flex-col items-center md:items-start">
+              <p className="text-muted-foreground text-xs">Your Avg Play Time</p>
               <div className="flex items-center gap-1">
                 <Clock className="h-4 w-4 text-green-500" />
                 <span className="text-xl font-bold">
-                  {stats.avgPlaytime > 0
-                    ? formatDuration(stats.avgPlaytime)
+                  {stats.userAvgPlaytime > 0
+                    ? formatDuration(stats.userAvgPlaytime)
                     : "0m"}
                 </span>
               </div>
-              <p className="text-muted-foreground text-xs">Avg Play Time</p>
+              <p className="text-muted-foreground text-xs">
+                of {stats.avgPlaytime > 0 ? formatDuration(stats.avgPlaytime) : "0m"} overall
+              </p>
             </div>
 
             <div className="flex flex-col items-center md:items-start">
+              <p className="text-muted-foreground text-xs">Your Plays</p>
               <div className="flex items-center gap-1">
                 <Gamepad2 className="h-4 w-4 text-blue-500" />
                 <span className="text-xl font-bold">
-                  {stats.overallMatchesPlayed}
+                  {stats.userMatchesPlayed}
                 </span>
               </div>
-              <p className="text-muted-foreground text-xs">Games Played</p>
+              <p className="text-muted-foreground text-xs">
+                of {stats.overallMatchesPlayed} total
+              </p>
             </div>
 
             <div className="flex flex-col items-center md:items-start">
+              <p className="text-muted-foreground text-xs">Your Play Time</p>
               <div className="flex items-center gap-1">
                 <Clock className="h-4 w-4 text-green-500" />
                 <span className="text-xl font-bold">
                   {formatDuration(stats.userTotalPlaytime)}
                 </span>
               </div>
-              <p className="text-muted-foreground text-xs">Total Play Time</p>
+              <p className="text-muted-foreground text-xs">
+                of {formatDuration(stats.totalPlaytime)} total
+              </p>
             </div>
           </div>
         </div>
@@ -139,11 +148,12 @@ function GameStatsHeaderSkeleton() {
                 key={i}
                 className="flex flex-col items-center md:items-start"
               >
-                <div className="flex items-center gap-1">
+                <Skeleton className="h-3 w-20" />
+                <div className="flex items-center gap-1 mt-1">
                   <Skeleton className="h-4 w-4" />
                   <Skeleton className="h-7 w-16" />
                 </div>
-                <Skeleton className="mt-1 h-3 w-20" />
+                <Skeleton className="mt-1 h-3 w-24" />
               </div>
             ))}
           </div>

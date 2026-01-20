@@ -502,6 +502,7 @@ class GameRepository {
         totalPlaytime: sql<number>`COALESCE(SUM(${match.duration}) FILTER (WHERE ${match.finished} = true AND ${match.duration} >= 300), 0)`,
         userTotalPlaytime: sql<number>`COALESCE(SUM(${match.duration}) FILTER (WHERE ${match.finished} = true AND ${match.duration} >= 300 AND ${userMatchPlayers.matchId} IS NOT NULL), 0)`,
         avgPlaytime: sql<number>`COALESCE(AVG(${match.duration}) FILTER (WHERE ${match.finished} = true AND ${match.duration} >= 300), 0)`,
+        userAvgPlaytime: sql<number>`COALESCE(AVG(${match.duration}) FILTER (WHERE ${match.finished} = true AND ${match.duration} >= 300 AND ${userMatchPlayers.matchId} IS NOT NULL), 0)`,
       })
       .from(vMatchCanonical)
       .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
@@ -522,6 +523,7 @@ class GameRepository {
         avgPlaytime: 0,
         totalPlaytime: 0,
         userTotalPlaytime: 0,
+        userAvgPlaytime: 0,
         overallMatchesPlayed: 0,
         userMatchesPlayed: 0,
       };
@@ -537,6 +539,7 @@ class GameRepository {
       avgPlaytime: Number(Number(stats.avgPlaytime).toFixed(0)),
       totalPlaytime: Number(stats.totalPlaytime),
       userTotalPlaytime: Number(stats.userTotalPlaytime),
+      userAvgPlaytime: Number(Number(stats.userAvgPlaytime).toFixed(0)),
       overallMatchesPlayed: Number(stats.overallMatchesPlayed),
       userMatchesPlayed: Number(stats.userMatchesPlayed),
     };
