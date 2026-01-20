@@ -5,6 +5,7 @@ import type { TransactionType } from "@board-games/db/client";
 import type { editScoresheetSchemaApiInput } from "@board-games/shared";
 import { db } from "@board-games/db/client";
 
+import type { GetGameStatsHeaderOutputType } from "../../repositories/game/game.repository.types";
 import type {
   GetGameMatchesOutputType,
   GetGameOutputType,
@@ -19,6 +20,7 @@ import type {
   GetGameRolesArgs,
   GetGameScoresheetsArgs,
   GetGameScoreSheetsWithRoundsArgs,
+  GetGameStatsHeaderArgs,
 } from "./game.service.types";
 import { gameRepository } from "../../repositories/game/game.repository";
 import { imageRepository } from "../../repositories/image/image.repository";
@@ -553,6 +555,15 @@ class GameService {
         };
       });
     }
+  }
+
+  public async getGameStatsHeader(
+    args: GetGameStatsHeaderArgs,
+  ): Promise<GetGameStatsHeaderOutputType> {
+    return gameRepository.getGameStatsHeader({
+      input: args.input,
+      userId: args.ctx.userId,
+    });
   }
 
   public async getGameRoles(

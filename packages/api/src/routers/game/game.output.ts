@@ -26,6 +26,19 @@ export const createGameOutput = selectGameSchema.pick({
 export const getGameMatchesOutput = z.array(matchWithGameAndPlayersSchema);
 export type GetGameMatchesOutputType = z.infer<typeof getGameMatchesOutput>;
 
+export const getGameStatsHeaderOutput = z.object({
+  winRate: z.number(), // 0-100
+  avgPlaytime: z.number(), // seconds
+  totalPlaytime: z.number(), // seconds
+  userTotalPlaytime: z.number(), // seconds (only user matches, excluding < 5 min)
+  userAvgPlaytime: z.number(), // seconds (only user matches, excluding < 5 min)
+  overallMatchesPlayed: z.number(),
+  userMatchesPlayed: z.number(),
+});
+export type GetGameStatsHeaderOutputType = z.infer<
+  typeof getGameStatsHeaderOutput
+>;
+
 export const getGameRolesOutput = z.array(
   z.discriminatedUnion("type", [
     originalRoleSchema.extend({ permission: z.literal("edit") }),

@@ -51,3 +51,10 @@ export interface EditGameArgs {
     deleteFiles: (fileId: string) => Promise<{ success: boolean }>;
   };
 }
+
+export interface GetGameStatsHeaderArgs {
+  input: GetGameInputType;
+  ctx: {
+    userId: string;
+  };
+}

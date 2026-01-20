@@ -31,11 +31,17 @@ export default async function GameStatsPage({ params }: Props) {
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
   void prefetch(trpc.game.getGameStats.queryOptions({ id: Number(id) }));
+  void prefetch(
+    trpc.newGame.getGameStatsHeader.queryOptions({
+      id: Number(id),
+      type: "original",
+    }),
+  );
   return (
     <HydrateClient>
       <div className="container flex w-full items-center justify-center px-3 py-4 md:px-6 md:py-8">
         <Suspense fallback={<GameStatsSkeleton />}>
-          <GameStats gameId={Number(id)} />
+          <GameStats game={{ id: Number(id), type: "original" }} />
         </Suspense>
       </div>
     </HydrateClient>
