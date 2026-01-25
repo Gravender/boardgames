@@ -1,26 +1,32 @@
 "use client";
 
+import { Suspense } from "react";
+
 import type { RouterOutputs } from "@board-games/api";
 
 import { PlayerStatsTable } from "./player-stats-table";
-import { RecentMatchesList } from "./recent-matches-list";
+import {
+  RecentMatchesListSkeleton,
+  RecentMatchesListWithData,
+} from "./recent-matches-list";
 
 type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
-type Matches = NonNullable<RouterOutputs["newGame"]["gameMatches"]>;
 type Players = GameStats["players"];
 
 export default function OverviewTab({
-  matches,
+  game,
   players,
 }: {
-  matches: Matches;
+  game: { type: "original"; id: number };
   players: Players;
 }) {
   return (
     <>
       <PlayerStatsTable players={players} />
       <div className="grid grid-cols-1 gap-6">
-        <RecentMatchesList matches={matches} />
+        <Suspense fallback={<RecentMatchesListSkeleton />}>
+          <RecentMatchesListWithData game={game} />
+        </Suspense>
       </div>
     </>
   );

@@ -33,14 +33,48 @@ import {
 } from "@board-games/ui/dialog";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Separator } from "@board-games/ui/separator";
+import { Skeleton } from "@board-games/ui/skeleton";
 import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
 import { PlayerImage } from "~/components/player-image";
+import { useGameMatches } from "~/hooks/queries/game/matches";
 import { formatMatchLink } from "~/utils/linkFormatting";
 
 type Matches = NonNullable<RouterOutputs["newGame"]["gameMatches"]>;
 type Match = Matches[number];
+
+export function RecentMatchesListSkeleton() {
+  return (
+    <Card className="md:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Skeleton className="h-5 w-5 rounded" />
+          <Skeleton className="h-6 w-40" />
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-1 sm:px-4">
+        <ScrollArea className="h-[40vh]">
+          <div className="flex w-full flex-col gap-2 p-1 sm:px-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-lg" />
+            ))}
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface GameInput {
+  type: "original";
+  id: number;
+}
+
+export function RecentMatchesListWithData({ game }: { game: GameInput }) {
+  const { gameMatches } = useGameMatches(game);
+  return <RecentMatchesList matches={gameMatches} />;
+}
 
 export function RecentMatchesList({ matches }: { matches: Matches }) {
   return (
@@ -61,6 +95,21 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
               const userMatchPlayer = match.matchPlayers.find((p) => p.isUser);
               const isCoop = match.isCoop;
               const isManualWinCondition = match.winCondition === "Manual";
+              const matchHref = formatMatchLink(
+                match.type === "original"
+                  ? {
+                      type: "original",
+                      gameId: match.game.id,
+                      matchId: match.id,
+                      finished: match.finished,
+                    }
+                  : {
+                      type: "shared",
+                      sharedGameId: match.game.sharedGameId,
+                      sharedMatchId: match.id,
+                      finished: match.finished,
+                    },
+              );
 
               return (
                 <div
@@ -70,21 +119,7 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                   <div className="flex flex-col gap-1">
                     <div className="flex items-start justify-between gap-2">
                       <Link
-                        href={formatMatchLink(
-                          match.type === "original"
-                            ? {
-                                type: "original",
-                                gameId: match.game.id,
-                                matchId: match.id,
-                                finished: match.finished,
-                              }
-                            : {
-                                type: "shared",
-                                sharedGameId: match.game.sharedGameId,
-                                sharedMatchId: match.id,
-                                finished: match.finished,
-                              },
-                        )}
+                        href={matchHref}
                         className="max-w-40 truncate font-medium hover:underline sm:max-w-64"
                       >
                         {match.name}
@@ -105,21 +140,7 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                       </div>
                     </div>
                     <Link
-                      href={formatMatchLink(
-                        match.type === "original"
-                          ? {
-                              type: "original",
-                              gameId: match.game.id,
-                              matchId: match.id,
-                              finished: match.finished,
-                            }
-                          : {
-                              type: "shared",
-                              sharedGameId: match.game.sharedGameId,
-                              sharedMatchId: match.id,
-                              finished: match.finished,
-                            },
-                      )}
+                      href={matchHref}
                       className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
@@ -182,21 +203,7 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                   </div>
                   {match.comment && (
                     <Link
-                      href={formatMatchLink(
-                        match.type === "original"
-                          ? {
-                              type: "original",
-                              gameId: match.game.id,
-                              matchId: match.id,
-                              finished: match.finished,
-                            }
-                          : {
-                              type: "shared",
-                              sharedGameId: match.game.sharedGameId,
-                              sharedMatchId: match.id,
-                              finished: match.finished,
-                            },
-                      )}
+                      href={matchHref}
                       className="text-muted-foreground max-h-10 overflow-scroll text-sm text-wrap hover:underline"
                     >
                       <b className="font-semibold">{"Comment: "}</b>
