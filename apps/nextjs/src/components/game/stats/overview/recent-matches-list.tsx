@@ -95,6 +95,8 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                           <Badge variant="secondary" className="text-xs">
                             View
                           </Badge>
+                        ) : !match.finished ? (
+                          <Badge variant="outline">In Progress</Badge>
                         ) : (
                           <Badge variant={match.won ? "default" : "secondary"}>
                             {match.won ? "Won" : "Lost"}
@@ -216,7 +218,7 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                                 key={`${player.id}-${player.type}`}
                                 className={cn(
                                   "flex items-center gap-1 rounded px-2 py-1 text-xs",
-                                  player.winner
+                                  player.winner && match.finished
                                     ? "bg-green-100 text-green-800"
                                     : "bg-muted text-muted-foreground",
                                 )}
@@ -317,7 +319,7 @@ function MatchInfoDialog({ match }: { match: Match }) {
                       key={team.id}
                       className={cn(
                         "rounded-lg border p-4",
-                        isWinner
+                        isWinner && match.finished
                           ? "border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20"
                           : "",
                       )}
@@ -327,38 +329,40 @@ function MatchInfoDialog({ match }: { match: Match }) {
                           <Users className="text-muted-foreground h-5 w-5" />
                           <h3 className="font-semibold">{`Team: ${team.name}`}</h3>
                         </div>
-                        <div className="flex items-center gap-3">
-                          {teamScore !== null && (
-                            <div className="text-sm font-medium">
-                              {teamScore} pts
-                            </div>
-                          )}
-                          {isManualWinCondition ? (
-                            isWinner ? (
-                              "✔️"
+                        {match.finished && (
+                          <div className="flex items-center gap-3">
+                            {teamScore !== null && (
+                              <div className="text-sm font-medium">
+                                {teamScore} pts
+                              </div>
+                            )}
+                            {isManualWinCondition ? (
+                              isWinner ? (
+                                "✔️"
+                              ) : (
+                                "❌"
+                              )
                             ) : (
-                              "❌"
-                            )
-                          ) : (
-                            <>
-                              {placement === 1 && (
-                                <Trophy className="h-5 w-5 text-yellow-500" />
-                              )}
-                              {placement === 2 && (
-                                <Medal className="h-5 w-5 text-gray-400" />
-                              )}
-                              {placement === 3 && (
-                                <Award className="h-5 w-5 text-amber-700" />
-                              )}
-                              {placement && placement > 3 && (
-                                <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
-                                  {placement}
-                                  {getOrdinalSuffix(placement)}
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
+                              <>
+                                {placement === 1 && (
+                                  <Trophy className="h-5 w-5 text-yellow-500" />
+                                )}
+                                {placement === 2 && (
+                                  <Medal className="h-5 w-5 text-gray-400" />
+                                )}
+                                {placement === 3 && (
+                                  <Award className="h-5 w-5 text-amber-700" />
+                                )}
+                                {placement && placement > 3 && (
+                                  <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
+                                    {placement}
+                                    {getOrdinalSuffix(placement)}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <ul className="border-muted-foreground/20 grid grid-cols-1 gap-3 border-l-2 pl-2 sm:grid-cols-2">
                         {teamPlayers.map((player) => (
@@ -375,7 +379,8 @@ function MatchInfoDialog({ match }: { match: Match }) {
                               <p className="truncate font-medium">
                                 {player.name}
                               </p>
-                              {player.score !== null &&
+                              {match.finished &&
+                                player.score !== null &&
                                 match.winCondition !== "Manual" && (
                                   <p className="text-muted-foreground text-sm">
                                     Score: {player.score}
@@ -407,7 +412,7 @@ function MatchInfoDialog({ match }: { match: Match }) {
                     key={player.id}
                     className={cn(
                       "flex items-center gap-3 rounded-lg border p-3",
-                      player.winner
+                      match.finished && player.winner
                         ? "border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20"
                         : "",
                     )}
@@ -419,7 +424,8 @@ function MatchInfoDialog({ match }: { match: Match }) {
                     />
                     <div className="min-w-0 flex-1">
                       <p className="font-medium">{player.name}</p>
-                      {player.score !== null &&
+                      {match.finished &&
+                        player.score !== null &&
                         match.winCondition !== "Manual" && (
                           <p className="text-muted-foreground text-sm">
                             Score: {player.score}
@@ -427,7 +433,7 @@ function MatchInfoDialog({ match }: { match: Match }) {
                         )}
                     </div>
                     <div className="flex items-center gap-2">
-                      {isManualWinCondition ? (
+                      {match.finished && isManualWinCondition ? (
                         player.winner ? (
                           "✔️"
                         ) : (
