@@ -6,7 +6,7 @@ import { PlayerStatsTable } from "./player-stats-table";
 import { RecentMatchesList } from "./recent-matches-list";
 
 type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
-type Matches = GameStats["matches"];
+type Matches = NonNullable<RouterOutputs["newGame"]["gameMatches"]>;
 type Players = GameStats["players"];
 
 export default function OverviewTab({

@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { cn } from "@board-games/ui/utils";
 
 import { useGameStats } from "~/hooks/queries/game/game-stats";
+import { useGameMatches } from "~/hooks/queries/game/matches";
 import AdvancedTab from "./advanced/advanced-tab";
 import { GameStatsHeader } from "./game-stats-header";
 import OverviewTab from "./overview/overview-tab";
@@ -19,6 +20,7 @@ export default function GameStats({
   };
 }) {
   const { gameStats } = useGameStats({ id: game.id });
+  const { gameMatches } = useGameMatches(game);
 
   const userStats = gameStats.players.find((player) => player.isUser);
   return (
@@ -43,10 +45,7 @@ export default function GameStats({
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <OverviewTab
-            matches={gameStats.matches}
-            players={gameStats.players}
-          />
+          <OverviewTab matches={gameMatches} players={gameStats.players} />
         </TabsContent>
         <TabsContent value="scoresheet" className="space-y-6">
           <ScoreSheetsStats

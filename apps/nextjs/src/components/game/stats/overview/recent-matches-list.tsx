@@ -37,9 +37,9 @@ import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
 import { PlayerImage } from "~/components/player-image";
+import { formatMatchLink } from "~/utils/linkFormatting";
 
-type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
-type Matches = GameStats["matches"];
+type Matches = NonNullable<RouterOutputs["newGame"]["gameMatches"]>;
 type Match = Matches[number];
 
 export function RecentMatchesList({ matches }: { matches: Matches }) {
@@ -56,12 +56,11 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
           <div className="flex w-full flex-col gap-2 p-1 sm:px-4">
             {matches.map((match) => {
               const isWinner = match.won;
-              const isCoop = match.scoresheet.isCoop;
-              const isManualWinCondition =
-                match.scoresheet.winCondition === "Manual";
 
-              const userInMatch =
-                match.players.find((p) => p.isUser) !== undefined;
+              const userInMatch = match.hasUser;
+              const userMatchPlayer = match.matchPlayers.find((p) => p.isUser);
+              const isCoop = match.isCoop;
+              const isManualWinCondition = match.winCondition === "Manual";
 
               return (
                 <div
@@ -71,16 +70,27 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                   <div className="flex flex-col gap-1">
                     <div className="flex items-start justify-between gap-2">
                       <Link
-                        href={`/dashboard/games/${
-                          match.type === "shared" ? "shared/" : ""
-                        }${match.gameId}/${match.id}/summary`}
+                        href={formatMatchLink(
+                          match.type === "original"
+                            ? {
+                                type: "original",
+                                gameId: match.game.id,
+                                matchId: match.id,
+                                finished: match.finished,
+                              }
+                            : {
+                                type: "shared",
+                                sharedGameId: match.game.sharedGameId,
+                                sharedMatchId: match.id,
+                                finished: match.finished,
+                              },
+                        )}
                         className="max-w-40 truncate font-medium hover:underline sm:max-w-64"
                       >
                         {match.name}
                       </Link>
                       <div className="flex items-center gap-2">
                         <MatchInfoDialog match={match} />
-                        {isCoop && <Badge variant={"secondary"}>Co-op</Badge>}
                         {!userInMatch ? (
                           <Badge variant="secondary" className="text-xs">
                             View
@@ -93,9 +103,21 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                       </div>
                     </div>
                     <Link
-                      href={`/dashboard/games/${
-                        match.type === "shared" ? "shared/" : ""
-                      }${match.gameId}/${match.id}/summary`}
+                      href={formatMatchLink(
+                        match.type === "original"
+                          ? {
+                              type: "original",
+                              gameId: match.game.id,
+                              matchId: match.id,
+                              finished: match.finished,
+                            }
+                          : {
+                              type: "shared",
+                              sharedGameId: match.game.sharedGameId,
+                              sharedMatchId: match.id,
+                              finished: match.finished,
+                            },
+                      )}
                       className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
@@ -129,7 +151,7 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                             <div className="flex items-center gap-2">
                               <Users className="text-muted-foreground h-4 w-4" />
                               <span className="text-sm">
-                                {match.players.length} players
+                                {match.matchPlayers.length} players
                               </span>
                             </div>
                           )}
@@ -140,15 +162,15 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                         (isManualWinCondition ? (
                           <div>{match.won ? "✔️" : "❌"}</div>
                         ) : (
-                          match.score != null && (
+                          userMatchPlayer && (
                             <div className="flex items-center gap-2">
                               <Trophy className="text-muted-foreground h-4 w-4" />
                               <span className="font-semibold">
-                                Score: {match.score}
+                                Score: {userMatchPlayer.score}
                               </span>
-                              {match.placement && (
+                              {userMatchPlayer.placement && (
                                 <Badge variant="outline">
-                                  #{match.placement}
+                                  #{userMatchPlayer.placement}
                                 </Badge>
                               )}
                             </div>
@@ -158,9 +180,21 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                   </div>
                   {match.comment && (
                     <Link
-                      href={`/dashboard/games/${
-                        match.type === "shared" ? "shared/" : ""
-                      }${match.gameId}/${match.id}/summary`}
+                      href={formatMatchLink(
+                        match.type === "original"
+                          ? {
+                              type: "original",
+                              gameId: match.game.id,
+                              matchId: match.id,
+                              finished: match.finished,
+                            }
+                          : {
+                              type: "shared",
+                              sharedGameId: match.game.sharedGameId,
+                              sharedMatchId: match.id,
+                              finished: match.finished,
+                            },
+                      )}
                       className="text-muted-foreground max-h-10 overflow-scroll text-sm text-wrap hover:underline"
                     >
                       <b className="font-semibold">{"Comment: "}</b>
@@ -168,7 +202,7 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                     </Link>
                   )}
 
-                  {match.players.length > 0 && (
+                  {match.matchPlayers.length > 0 && (
                     <Collapsible>
                       <CollapsibleTrigger className="text-muted-foreground flex w-full flex-row items-center justify-between">
                         <span className="text-sm font-medium">Players</span>
@@ -177,12 +211,12 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                       <CollapsibleContent>
                         <ScrollArea className="border-t pt-3">
                           <div className="flex max-h-20 flex-wrap gap-2">
-                            {match.players.map((player) => (
+                            {match.matchPlayers.map((player) => (
                               <div
-                                key={player.id}
+                                key={`${player.id}-${player.type}`}
                                 className={cn(
                                   "flex items-center gap-1 rounded px-2 py-1 text-xs",
-                                  player.isWinner
+                                  player.winner
                                     ? "bg-green-100 text-green-800"
                                     : "bg-muted text-muted-foreground",
                                 )}
@@ -191,7 +225,7 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                                 {player.score != null && (
                                   <span>({player.score})</span>
                                 )}
-                                {player.isWinner && (
+                                {player.winner && (
                                   <Trophy className="h-3 w-3" />
                                 )}
                               </div>
@@ -212,33 +246,28 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
 }
 
 function MatchInfoDialog({ match }: { match: Match }) {
-  const teams = match.players
-    .filter((p) => p.team !== null)
-    .map((p) => p.team)
-    .filter(
-      (team, index, self) =>
-        self.findIndex((t) => t?.id === team?.id) === index,
-    )
-    .filter((team): team is NonNullable<typeof team> => team !== null)
+  const teams = match.teams
     .map((team) => {
-      const teamPlayers = match.players.filter(
-        (player) => player.team?.id === team.id,
+      const teamPlayers = match.matchPlayers.filter(
+        (player) => player.teamId === team.id,
       );
+      if (teamPlayers.length === 0) return null;
       const firstPlayer = teamPlayers[0];
       return {
         team,
         players: teamPlayers,
         placement: firstPlayer?.placement ?? 0,
-        isWinner: firstPlayer?.isWinner ?? false,
+        isWinner: firstPlayer?.winner ?? false,
         score: firstPlayer?.score ?? null,
       };
     })
+    .filter((team) => team !== null)
     .toSorted((a, b) => a.placement - b.placement);
 
-  const noTeamPlayers = match.players
-    .filter((p) => p.team === null)
-    .toSorted((a, b) => a.placement - b.placement);
-  const isManualWinCondition = match.scoresheet.winCondition === "Manual";
+  const noTeamPlayers = match.matchPlayers
+    .filter((p) => p.teamId === null)
+    .toSorted((a, b) => (a.placement ?? 0) - (b.placement ?? 0));
+  const isManualWinCondition = match.winCondition === "Manual";
 
   return (
     <Dialog>
@@ -347,7 +376,7 @@ function MatchInfoDialog({ match }: { match: Match }) {
                                 {player.name}
                               </p>
                               {player.score !== null &&
-                                match.scoresheet.winCondition !== "Manual" && (
+                                match.winCondition !== "Manual" && (
                                   <p className="text-muted-foreground text-sm">
                                     Score: {player.score}
                                   </p>
@@ -378,7 +407,7 @@ function MatchInfoDialog({ match }: { match: Match }) {
                     key={player.id}
                     className={cn(
                       "flex items-center gap-3 rounded-lg border p-3",
-                      player.isWinner
+                      player.winner
                         ? "border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20"
                         : "",
                     )}
@@ -391,7 +420,7 @@ function MatchInfoDialog({ match }: { match: Match }) {
                     <div className="min-w-0 flex-1">
                       <p className="font-medium">{player.name}</p>
                       {player.score !== null &&
-                        match.scoresheet.winCondition !== "Manual" && (
+                        match.winCondition !== "Manual" && (
                           <p className="text-muted-foreground text-sm">
                             Score: {player.score}
                           </p>
@@ -399,7 +428,7 @@ function MatchInfoDialog({ match }: { match: Match }) {
                     </div>
                     <div className="flex items-center gap-2">
                       {isManualWinCondition ? (
-                        player.isWinner ? (
+                        player.winner ? (
                           "✔️"
                         ) : (
                           "❌"
