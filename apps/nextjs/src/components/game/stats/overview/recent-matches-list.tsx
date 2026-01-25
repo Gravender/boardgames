@@ -106,7 +106,7 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                   : {
                       type: "shared",
                       sharedGameId: match.game.sharedGameId,
-                      sharedMatchId: match.id,
+                      sharedMatchId: match.sharedMatchId,
                       finished: match.finished,
                     },
               );
