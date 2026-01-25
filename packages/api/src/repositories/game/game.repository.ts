@@ -17,6 +17,7 @@ import {
   location,
   match,
   player,
+  scoresheet,
   sharedGameRole,
   team,
 } from "@board-games/db/schema";
@@ -208,6 +209,7 @@ class GameRepository {
             playerType: vMatchPlayerCanonicalForUser.playerSourceType,
             sharedPlayerId: vMatchPlayerCanonicalForUser.sharedPlayerId,
             linkedPlayerId: vMatchPlayerCanonicalForUser.linkedPlayerId,
+            isUser: player.isUser,
           },
         )
         .from(vMatchPlayerCanonicalForUser)
@@ -252,6 +254,7 @@ class GameRepository {
               sharedPlayerId: playersByMatch.sharedPlayerId,
               linkedPlayerId: playersByMatch.linkedPlayerId,
               image: playersByMatch.playerImage,
+              isUser: playersByMatch.isUser,
             }),
             { orderBy: asc(playersByMatch.baseMatchPlayerId) },
           ).as("match_players"),
@@ -302,6 +305,8 @@ class GameRepository {
           type: vMatchCanonical.visibilitySource,
           finished: vMatchCanonical.finished,
           duration: match.duration,
+          winCondition: scoresheet.winCondition,
+          isCoop: scoresheet.isCoop,
           game: jsonBuildObject({
             id: vMatchCanonical.canonicalGameId,
             linkedGameId: vMatchCanonical.linkedGameId,
@@ -347,6 +352,10 @@ class GameRepository {
         )
         .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
         .innerJoin(game, eq(game.id, vMatchCanonical.canonicalGameId))
+        .innerJoin(
+          scoresheet,
+          eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
+        )
         .leftJoin(image, eq(image.id, game.imageId))
         .leftJoin(
           location,
@@ -385,6 +394,8 @@ class GameRepository {
           type: vMatchCanonical.visibilitySource,
           finished: vMatchCanonical.finished,
           duration: match.duration,
+          winCondition: scoresheet.winCondition,
+          isCoop: scoresheet.isCoop,
           game: jsonBuildObject({
             id: vMatchCanonical.canonicalGameId,
             linkedGameId: vMatchCanonical.linkedGameId,
@@ -430,6 +441,10 @@ class GameRepository {
         )
         .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
         .innerJoin(game, eq(game.id, vMatchCanonical.canonicalGameId))
+        .innerJoin(
+          scoresheet,
+          eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
+        )
         .leftJoin(image, eq(image.id, game.imageId))
         .leftJoin(
           location,

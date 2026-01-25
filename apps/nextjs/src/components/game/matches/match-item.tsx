@@ -22,7 +22,6 @@ import {
   ItemActions,
   ItemContent,
   ItemDescription,
-  ItemMedia,
   ItemTitle,
 } from "@board-games/ui/item";
 
@@ -56,17 +55,21 @@ export function MatchItem({ match }: MatchItemProps) {
                 finished: match.finished,
               },
         )}
-        className="flex min-w-0 flex-1 items-center"
+        className="flex min-w-0 flex-1 items-center gap-4"
       >
-        <ItemMedia>
+        <div className="flex items-center gap-4">
           {!match.finished ? (
-            <PlayCircle className="h-5 w-5 text-blue-500" />
-          ) : match.won ? (
-            <Trophy className="h-5 w-5 text-yellow-500" />
+            <PlayCircle className="size-6 text-blue-500" />
+          ) : match.hasUser ? (
+            match.won ? (
+              <Trophy className="size-6 text-yellow-500" />
+            ) : (
+              <XCircle className="size-6 text-red-500" />
+            )
           ) : (
-            <XCircle className="h-5 w-5 text-red-500" />
+            <Eye className="size-6 text-gray-500" />
           )}
-        </ItemMedia>
+        </div>
 
         <ItemContent>
           <ItemTitle>
@@ -85,12 +88,17 @@ export function MatchItem({ match }: MatchItemProps) {
                 In Progress
               </Badge>
             )}
-            {match.won && match.finished && (
+            {!match.hasUser && (
+              <Badge className="border-stone-500/20 bg-stone-500/10 text-xs text-stone-600">
+                View
+              </Badge>
+            )}
+            {match.won && match.finished && match.hasUser && (
               <Badge className="border-yellow-500/20 bg-yellow-500/10 text-xs text-yellow-600">
                 Won
               </Badge>
             )}
-            {!match.won && match.finished && (
+            {!match.won && match.finished && match.hasUser && (
               <Badge className="border-red-500/20 bg-red-500/10 text-xs text-red-600">
                 Lost
               </Badge>
@@ -117,7 +125,7 @@ export function MatchItem({ match }: MatchItemProps) {
         </ItemContent>
       </Link>
 
-      <ItemActions className="flex items-center gap-2">
+      <ItemActions className="flex items-center gap-2 pl-2 sm:pl-4">
         {isShared && (
           <Badge variant="outline" className="text-xs">
             {match.permissions === "edit" ? (

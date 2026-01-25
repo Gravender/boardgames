@@ -45,14 +45,11 @@ export function RoundByRoundTable({
   currentPlayers: CurrentPlayer[];
 }) {
   const sortedRounds = useMemo(
-    () =>
-      currentScoresheet?.rounds
-        ? [...currentScoresheet.rounds].sort((a, b) => a.order - b.order)
-        : [],
-    [currentScoresheet?.rounds],
+    () => [...currentScoresheet.rounds].sort((a, b) => a.order - b.order),
+    [currentScoresheet.rounds],
   );
 
-  if (!currentScoresheet || sortedRounds.length <= 1) {
+  if (sortedRounds.length <= 1) {
     return null;
   }
 

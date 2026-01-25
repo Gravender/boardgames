@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 
+import { scoresheet } from "@board-games/db/schema";
 import {
   insertImageSchema,
   insertMatchSchema,
@@ -391,6 +392,7 @@ export const baseMatchPlayerSchema = selectMatchPlayerSchema
   .extend({
     name: z.string(),
     image: imageSchema.nullable(),
+    isUser: z.boolean(),
   });
 export const baseGameForMatchSchema = selectGameSchema
   .pick({
@@ -412,6 +414,8 @@ export const baseMatchSchema = selectMatchSchema
   .extend({
     won: z.boolean(),
     hasUser: z.boolean(),
+    isCoop: z.boolean(),
+    winCondition: z.enum(scoresheet.winCondition.enumValues),
     type: sharedOrOriginalSchema,
     teams: z.array(
       selectTeamSchema.pick({

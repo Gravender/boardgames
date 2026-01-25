@@ -248,27 +248,23 @@ export function ScoreSheetsStats({
         )}
       </div>
 
-      {currentScoresheet && (
-        <>
-          <ScoresheetPlayerTable
-            currentScoresheet={currentScoresheet}
-            sortedPlayers={sortedPlayers}
-            toggleSort={toggleSort}
-            sortField={sortField}
-            sortOrder={sortOrder}
-          />
-          <ScoresheetCharts
-            currentScoresheet={currentScoresheet}
-            userScore={userScore}
-            userScoresSorted={userScoresSorted}
-            winRateOverTime={winRateOverTime}
-          />
-          <RoundByRoundTable
-            currentScoresheet={currentScoresheet}
-            currentPlayers={currentPlayers}
-          />
-        </>
-      )}
+      <ScoresheetPlayerTable
+        currentScoresheet={currentScoresheet}
+        sortedPlayers={sortedPlayers}
+        toggleSort={toggleSort}
+        sortField={sortField}
+        sortOrder={sortOrder}
+      />
+      <ScoresheetCharts
+        currentScoresheet={currentScoresheet}
+        userScore={userScore}
+        userScoresSorted={userScoresSorted}
+        winRateOverTime={winRateOverTime}
+      />
+      <RoundByRoundTable
+        currentScoresheet={currentScoresheet}
+        currentPlayers={currentPlayers}
+      />
     </div>
   );
 }

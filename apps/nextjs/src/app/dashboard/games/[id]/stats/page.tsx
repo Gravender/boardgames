@@ -37,6 +37,9 @@ export default async function GameStatsPage({ params }: Props) {
       type: "original",
     }),
   );
+  void prefetch(
+    trpc.newGame.gameMatches.queryOptions({ id: Number(id), type: "original" }),
+  );
   return (
     <HydrateClient>
       <div className="container flex w-full items-center justify-center px-3 py-4 md:px-6 md:py-8">

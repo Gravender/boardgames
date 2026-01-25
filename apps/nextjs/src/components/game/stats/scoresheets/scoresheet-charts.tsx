@@ -63,7 +63,7 @@ export function ScoresheetCharts({
   userScoresSorted: ScoreData[];
   winRateOverTime: WinRateData[];
 }) {
-  if (!userScore || userScore.scores.length === 0 || !currentScoresheet) {
+  if (!userScore || userScore.scores.length === 0) {
     return null;
   }
 

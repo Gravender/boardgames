@@ -357,9 +357,7 @@ class GameService {
     });
     if (args.input.type === "original") {
       return response.matches.map((match) => {
-        const userMatchPlayer = match.matchPlayers.find(
-          (mp) => mp.playerId === response.userPlayer.id,
-        );
+        const userMatchPlayer = match.matchPlayers.find((mp) => mp.isUser);
         if (match.type === "original") {
           if (match.game.type !== "original") {
             throw new TRPCError({
@@ -391,6 +389,7 @@ class GameService {
                 id: mp.id,
                 playerId: mp.playerId,
                 type: "original" as const,
+                isUser: mp.isUser,
                 name: mp.name,
                 score: mp.score,
                 teamId: mp.teamId,
@@ -455,6 +454,7 @@ class GameService {
                 id: mp.id,
                 playerId: mp.playerId,
                 type: "shared" as const,
+                isUser: mp.isUser,
                 name: mp.name,
                 score: mp.score,
                 teamId: mp.teamId,
@@ -481,9 +481,7 @@ class GameService {
       });
     } else {
       return response.matches.map((match) => {
-        const userMatchPlayer = match.matchPlayers.find(
-          (mp) => mp.playerId === response.userPlayer.id,
-        );
+        const userMatchPlayer = match.matchPlayers.find((mp) => mp.isUser);
 
         if (match.game.type === "original") {
           throw new TRPCError({
@@ -531,6 +529,7 @@ class GameService {
               id: mp.id,
               playerId: mp.playerId,
               type: "shared" as const,
+              isUser: mp.isUser,
               name: mp.name,
               score: mp.score,
               teamId: mp.teamId,
