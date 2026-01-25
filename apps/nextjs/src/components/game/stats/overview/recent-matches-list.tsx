@@ -36,6 +36,7 @@ import { Separator } from "@board-games/ui/separator";
 import { Skeleton } from "@board-games/ui/skeleton";
 import { cn } from "@board-games/ui/utils";
 
+import type { GameInput } from "~/components/match/types/input";
 import { FormattedDate } from "~/components/formatted-date";
 import { PlayerImage } from "~/components/player-image";
 import { useGameMatches } from "~/hooks/queries/game/matches";
@@ -64,11 +65,6 @@ export function RecentMatchesListSkeleton() {
       </CardContent>
     </Card>
   );
-}
-
-interface GameInput {
-  type: "original";
-  id: number;
 }
 
 export function RecentMatchesListWithData({ game }: { game: GameInput }) {

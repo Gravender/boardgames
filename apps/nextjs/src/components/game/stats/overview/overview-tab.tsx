@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import type { RouterOutputs } from "@board-games/api";
 
+import type { GameInput } from "~/components/match/types/input";
 import { PlayerStatsTable } from "./player-stats-table";
 import {
   RecentMatchesListSkeleton,
@@ -17,7 +18,7 @@ export default function OverviewTab({
   game,
   players,
 }: {
-  game: { type: "original"; id: number };
+  game: GameInput;
   players: Players;
 }) {
   return (

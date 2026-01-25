@@ -357,9 +357,7 @@ class GameService {
     });
     if (args.input.type === "original") {
       return response.matches.map((match) => {
-        const userMatchPlayer = match.matchPlayers.find(
-          (mp) => mp.isUser,
-        );
+        const userMatchPlayer = match.matchPlayers.find((mp) => mp.isUser);
         if (match.type === "original") {
           if (match.game.type !== "original") {
             throw new TRPCError({
