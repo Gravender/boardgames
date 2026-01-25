@@ -234,7 +234,7 @@ export function RecentMatchesList({ matches }: { matches: Matches }) {
                                 {player.score != null && (
                                   <span>({player.score})</span>
                                 )}
-                                {player.winner && (
+                                {player.winner && match.finished && (
                                   <Trophy className="h-3 w-3" />
                                 )}
                               </div>
