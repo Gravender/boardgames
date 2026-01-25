@@ -209,6 +209,7 @@ class GameRepository {
             playerType: vMatchPlayerCanonicalForUser.playerSourceType,
             sharedPlayerId: vMatchPlayerCanonicalForUser.sharedPlayerId,
             linkedPlayerId: vMatchPlayerCanonicalForUser.linkedPlayerId,
+            isUser: player.isUser,
           },
         )
         .from(vMatchPlayerCanonicalForUser)
@@ -253,6 +254,7 @@ class GameRepository {
               sharedPlayerId: playersByMatch.sharedPlayerId,
               linkedPlayerId: playersByMatch.linkedPlayerId,
               image: playersByMatch.playerImage,
+              isUser: playersByMatch.isUser,
             }),
             { orderBy: asc(playersByMatch.baseMatchPlayerId) },
           ).as("match_players"),
