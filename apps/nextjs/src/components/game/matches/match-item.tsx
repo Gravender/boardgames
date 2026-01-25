@@ -88,13 +88,11 @@ export function MatchItem({ match }: MatchItemProps) {
                 In Progress
               </Badge>
             )}
-            {!match.hasUser && 
-                (
-                  <Badge className="border-stone-500/20 bg-stone-500/10 text-xs text-stone-600">
-                    View
-                  </Badge>
-                )
-            }
+            {!match.hasUser && (
+              <Badge className="border-stone-500/20 bg-stone-500/10 text-xs text-stone-600">
+                View
+              </Badge>
+            )}
             {match.won && match.finished && match.hasUser && (
               <Badge className="border-yellow-500/20 bg-yellow-500/10 text-xs text-yellow-600">
                 Won

@@ -193,9 +193,17 @@ class DateMatchRepository {
         type: vMatchCanonical.visibilitySource,
         finished: vMatchCanonical.finished,
         winCondition: sql<
-          "Manual" | "Highest Score" | "Lowest Score" | "No Winner" | "Target Score"
-        >`COALESCE(${scoresheet.winCondition}, 'Highest Score')`.as("winCondition"),
-        isCoop: sql<boolean>`COALESCE(${scoresheet.isCoop}, false)`.as("isCoop"),
+          | "Manual"
+          | "Highest Score"
+          | "Lowest Score"
+          | "No Winner"
+          | "Target Score"
+        >`COALESCE(${scoresheet.winCondition}, 'Highest Score')`.as(
+          "winCondition",
+        ),
+        isCoop: sql<boolean>`COALESCE(${scoresheet.isCoop}, false)`.as(
+          "isCoop",
+        ),
         game: sql<{
           id: number;
           linkedGameId: number | null;
