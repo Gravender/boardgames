@@ -526,7 +526,7 @@ class GameRepository {
           input.type === "original"
             ? and(
                 eq(vMatchCanonical.canonicalGameId, input.id),
-                eq(vMatchCanonical.ownerId, userId),
+                eq(vMatchCanonical.visibleToUserId, userId),
               )
             : and(
                 eq(vMatchCanonical.sharedGameId, input.sharedGameId),
