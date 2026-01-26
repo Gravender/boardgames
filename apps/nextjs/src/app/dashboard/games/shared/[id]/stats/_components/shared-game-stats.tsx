@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
@@ -44,7 +45,10 @@ import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
 import { GameImage } from "~/components/game-image";
-import { PlayerStatsTable } from "~/components/game/stats/overview/player-stats-table";
+import {
+  PlayerStatsTableSkeleton,
+  PlayerStatsTableWithData,
+} from "~/components/game/stats/overview/player-stats-table";
 import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
 import { MatchDurationTrendChart } from "../../../../_components/match-duration-trend-chart";
@@ -488,7 +492,11 @@ export default function SharedGameStats({ gameId }: { gameId: number }) {
         </TabsContent>
 
         <TabsContent value="players" className="space-y-6">
-          <PlayerStatsTable players={gameStats.players} />
+          <Suspense fallback={<PlayerStatsTableSkeleton />}>
+            <PlayerStatsTableWithData
+              game={{ type: "shared", sharedGameId: gameId }}
+            />
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="personal" className="space-y-6">

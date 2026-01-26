@@ -1,10 +1,12 @@
 import type { PostHog } from "posthog-node";
+import { z } from "zod/v4";
 
 import type {
   CreateGameInputType,
   EditGameInputType,
   GetGameInputType,
 } from "../../routers/game/game.input";
+import { getGameInput } from "../../routers/game/game.input";
 
 export interface CreateGameArgs {
   input: CreateGameInputType;
@@ -58,3 +60,11 @@ export interface GetGameStatsHeaderArgs {
     userId: string;
   };
 }
+
+export const getGamePlayerStatsArgsSchema = z.object({
+  input: getGameInput,
+  ctx: z.object({ userId: z.string() }),
+});
+export type GetGamePlayerStatsArgs = z.infer<
+  typeof getGamePlayerStatsArgsSchema
+>;

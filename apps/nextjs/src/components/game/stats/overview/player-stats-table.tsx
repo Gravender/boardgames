@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@board-games/ui/card";
+import { Skeleton } from "@board-games/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -22,14 +23,80 @@ import {
 } from "@board-games/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@board-games/ui/toggle-group";
 
+import type { GameInput } from "~/components/match/types/input";
 import { PlayerImage } from "~/components/player-image";
 import { SortIcon } from "~/components/sort-icon";
+import { useGamePlayerStats } from "~/hooks/queries/game/player-stats";
 
 type Player = NonNullable<
-  RouterOutputs["game"]["getGameStats"]
+  RouterOutputs["newGame"]["getGamePlayerStats"]
 >["players"][number];
 type SortField = "name" | "plays" | "wins" | "winRate";
 type SortOrder = "asc" | "desc";
+
+export function PlayerStatsTableSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Skeleton className="h-6 w-40" />
+        </CardTitle>
+        <CardDescription>
+          <Skeleton className="h-4 w-56" />
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-2">
+        <div className="flex">
+          <Table containerClassname="overflow-y-scroll max-h-[60vh] rounded-lg">
+            <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20">
+              <TableRow>
+                <TableHead className="w-16 px-2 sm:w-full sm:px-4">
+                  <Skeleton className="h-4 w-16" />
+                </TableHead>
+                <TableHead className="w-8 px-0 sm:px-4">
+                  <Skeleton className="h-4 w-12" />
+                </TableHead>
+                <TableHead className="w-8 px-0 sm:px-4">
+                  <Skeleton className="h-4 w-12" />
+                </TableHead>
+                <TableHead className="w-16 px-1 sm:px-4">
+                  <Skeleton className="h-4 w-16" />
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <TableRow key={i}>
+                  <TableCell className="p-2 sm:p-4">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-7 w-7 rounded-full sm:h-10 sm:w-10" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Skeleton className="mx-auto h-4 w-8" />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Skeleton className="mx-auto h-4 w-8" />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Skeleton className="mx-auto h-4 w-12" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function PlayerStatsTableWithData({ game }: { game: GameInput }) {
+  const { players } = useGamePlayerStats(game);
+  return <PlayerStatsTable players={players} />;
+}
+
 export function PlayerStatsTable({ players }: { players: Player[] }) {
   const [coopOrCompetitive, setCoopOrCompetitive] = useState<
     "overall" | "coop" | "competitive"
@@ -250,7 +317,11 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
                 const totalWinRate =
                   totalMatches > 0 ? totalWins / totalMatches : 0;
                 return (
-                  <TableRow key={`${player.id}-${player.type}`}>
+                  <TableRow
+                    key={`${player.type}-${
+                      player.type === "original" ? player.id : player.sharedId
+                    }`}
+                  >
                     <TableCell className="p-2 sm:p-4">
                       <div className="flex w-full items-center gap-2 text-xs sm:gap-4">
                         <PlayerImage

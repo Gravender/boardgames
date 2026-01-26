@@ -3,8 +3,10 @@ import z from "zod/v4";
 import { selectGameSchema } from "@board-games/db/zodSchema";
 import {
   baseRoundSchema,
+  gameImageSchema,
   matchWithGameAndPlayersSchema,
   originalRoleSchema,
+  playerImageSchema,
   scoreSheetSchema,
   sharedRoleSchema,
 } from "@board-games/shared";
@@ -96,19 +98,46 @@ export type GetGameScoreSheetsWithRoundsOutputType = z.infer<
 export const editGameOutput = z.void();
 export type EditGameOutputType = z.infer<typeof editGameOutput>;
 
-const imageSchema = z.object({
-  name: z.string(),
-  url: z.string().nullable(),
-  type: z.enum(["file", "svg"]),
-  usageType: z.literal("game"),
+export const getGamePlayerStatsPlayerSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    id: z.number(),
+    name: z.string(),
+    image: playerImageSchema.nullable(),
+    coopMatches: z.number(),
+    competitiveMatches: z.number(),
+    coopWins: z.number(),
+    competitiveWins: z.number(),
+    coopWinRate: z.number(),
+    competitiveWinRate: z.number(),
+  }),
+  z.object({
+    type: z.literal("shared"),
+    sharedId: z.number(),
+    name: z.string(),
+    image: playerImageSchema.nullable(),
+    coopMatches: z.number(),
+    competitiveMatches: z.number(),
+    coopWins: z.number(),
+    competitiveWins: z.number(),
+    coopWinRate: z.number(),
+    competitiveWinRate: z.number(),
+  }),
+]);
+
+export const getGamePlayerStatsOutput = z.object({
+  players: z.array(getGamePlayerStatsPlayerSchema),
 });
+export type GetGamePlayerStatsOutputType = z.infer<
+  typeof getGamePlayerStatsOutput
+>;
 
 export const getGameOutput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("original"),
     id: z.number(),
     name: z.string(),
-    image: imageSchema.nullable(),
+    image: gameImageSchema.nullable(),
     players: z.object({
       min: z.number().nullable(),
       max: z.number().nullable(),
@@ -136,7 +165,7 @@ export const getGameOutput = z.discriminatedUnion("type", [
         .nullable(),
     }),
     name: z.string(),
-    image: imageSchema.nullable(),
+    image: gameImageSchema.nullable(),
     players: z.object({
       min: z.number().nullable(),
       max: z.number().nullable(),

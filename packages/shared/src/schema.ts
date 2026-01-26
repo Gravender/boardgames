@@ -303,7 +303,13 @@ export const editScoresheetSchemaApiInput = z.discriminatedUnion("type", [
     roundsToDelete: z.array(z.number()),
   }),
 ]);
-
+const baseImageSchema = insertImageSchema
+  .pick({
+    name: true,
+    url: true,
+    type: true,
+  })
+  .required({ name: true, url: true });
 export const imageSchema = insertImageSchema
   .pick({
     name: true,
@@ -312,6 +318,15 @@ export const imageSchema = insertImageSchema
     usageType: true,
   })
   .required({ name: true, url: true });
+export const playerImageSchema = baseImageSchema.extend({
+  usageType: z.literal("player"),
+});
+export const matchImageSchema = baseImageSchema.extend({
+  usageType: z.literal("match"),
+});
+export const gameImageSchema = baseImageSchema.extend({
+  usageType: z.literal("game"),
+});
 
 export const matchLocationSchema = z
   .object({
