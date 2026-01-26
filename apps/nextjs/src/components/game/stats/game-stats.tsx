@@ -43,7 +43,7 @@ export default function GameStats({
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <OverviewTab game={game} players={gameStats.players} />
+          <OverviewTab game={game} />
         </TabsContent>
         <TabsContent value="scoresheet" className="space-y-6">
           <ScoreSheetsStats
