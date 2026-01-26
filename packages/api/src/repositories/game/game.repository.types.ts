@@ -1,4 +1,4 @@
-import type z from "zod";
+import type { z } from "zod/v4";
 
 import type { TransactionType } from "@board-games/db/client";
 import { insertGameRoleSchema } from "@board-games/db/zodSchema";

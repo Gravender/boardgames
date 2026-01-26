@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { caseWhen } from "drizzle-plus";
 import { jsonAgg, jsonAggNotNull, jsonBuildObject } from "drizzle-plus/pg";
 
@@ -458,6 +458,83 @@ class GameRepository {
         userPlayer: userPlayer,
       };
     }
+  }
+
+  public async getGamePlayerStatsData(args: GetGameArgs) {
+    const { input, userId } = args;
+
+    const matchPlayers = await db
+      .select({
+        matchId: vMatchCanonical.matchId,
+        isCoop: scoresheet.isCoop,
+        playerId: vMatchPlayerCanonicalForUser.canonicalPlayerId,
+        type: vMatchPlayerCanonicalForUser.playerSourceType,
+        sharedId: vMatchPlayerCanonicalForUser.sharedPlayerId,
+        name: player.name,
+        image: caseWhen<{
+          name: string;
+          url: string | null;
+          type: "file" | "svg";
+          usageType: "player" | "match" | "game";
+        } | null>(sql`${image.id} IS NULL`, sql`NULL`)
+          .else(
+            jsonBuildObject({
+              name: image.name,
+              url: image.url,
+              type: image.type,
+              usageType: image.usageType,
+            }),
+          )
+          .as("image"),
+        winner: vMatchPlayerCanonicalForUser.winner,
+        score: vMatchPlayerCanonicalForUser.score,
+        placement: vMatchPlayerCanonicalForUser.placement,
+      })
+      .from(vMatchCanonical)
+      .innerJoin(
+        scoresheet,
+        eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
+      )
+      .innerJoin(
+        vMatchPlayerCanonicalForUser,
+        and(
+          eq(
+            vMatchPlayerCanonicalForUser.canonicalMatchId,
+            vMatchCanonical.matchId,
+          ),
+          or(
+            and(
+              eq(vMatchPlayerCanonicalForUser.ownerId, userId),
+              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
+            ),
+            and(
+              eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
+              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
+              ne(vMatchPlayerCanonicalForUser.playerSourceType, "not-shared"),
+            ),
+          ),
+        ),
+      )
+      .innerJoin(
+        player,
+        eq(player.id, vMatchPlayerCanonicalForUser.canonicalPlayerId),
+      )
+      .leftJoin(image, eq(image.id, player.imageId))
+      .where(
+        and(
+          eq(vMatchCanonical.finished, true),
+          input.type === "original"
+            ? and(
+                eq(vMatchCanonical.canonicalGameId, input.id),
+                eq(vMatchCanonical.ownerId, userId),
+              )
+            : and(
+                eq(vMatchCanonical.sharedGameId, input.sharedGameId),
+                eq(vMatchCanonical.visibleToUserId, userId),
+              ),
+        ),
+      );
+    return matchPlayers;
   }
 
   public async getGameStatsHeader(
