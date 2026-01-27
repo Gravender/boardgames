@@ -181,6 +181,9 @@ class GameStatsService {
           {
             sharedWithId: ctx.userId,
             where: {
+              linkedScoresheetId: {
+                isNull: true,
+              },
               sharedGameId: {
                 in: returnedGame.linkedGames.map((lg) => lg.id),
               },
@@ -190,7 +193,7 @@ class GameStatsService {
         );
         for (const originalScoresheet of originalScoresheets) {
           scoresheets.push({
-            scoresheetType: "original",
+            type: "original",
             scoresheetId: originalScoresheet.id,
             name: originalScoresheet.name,
             isDefault: originalScoresheet.type === "Default",
@@ -203,7 +206,7 @@ class GameStatsService {
         for (const sharedScoresheet of sharedScoresheets) {
           scoresheets.push({
             scoresheetId: sharedScoresheet.scoresheet.id,
-            scoresheetType: "shared",
+            type: "shared",
             sharedId: sharedScoresheet.id,
             name: sharedScoresheet.scoresheet.name,
             isDefault: sharedScoresheet.isDefault,
@@ -239,8 +242,8 @@ class GameStatsService {
         );
         for (const sharedScoresheet of sharedScoresheets) {
           scoresheets.push({
-            scoresheetId: sharedScoresheet.id,
-            scoresheetType: "shared",
+            scoresheetId: sharedScoresheet.scoresheet.id,
+            type: "shared",
             sharedId: sharedScoresheet.id,
             name: sharedScoresheet.scoresheet.name,
             isDefault: sharedScoresheet.isDefault,
@@ -268,6 +271,7 @@ class GameStatsService {
       return [];
     }
 
+    //TODO: need to add sharedRound so we can link rounds to the correct parent round when we link shared scoresheets
     // First pass: aggregate data
     const scoresheetMap = this.aggregateScoresheetData(response.rawData);
 
@@ -630,7 +634,7 @@ class GameStatsService {
           (s) => s.scoresheetId === scoresheetId,
         );
         if (parentScoresheet) {
-          if (parentScoresheet.scoresheetType === "original") {
+          if (parentScoresheet.type === "original") {
             result.push({
               type: "original",
               id: scoresheetId,
@@ -662,7 +666,7 @@ class GameStatsService {
           (s) => s.scoresheetId === scoresheetId,
         );
         if (parentScoresheet) {
-          if (parentScoresheet.scoresheetType === "shared") {
+          if (parentScoresheet.type === "shared") {
             result.push({
               type: "shared",
               sharedId: parentScoresheet.sharedId,

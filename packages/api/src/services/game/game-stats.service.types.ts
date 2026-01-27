@@ -6,13 +6,13 @@ import { scoreSheetSchema } from "@board-games/shared";
 const getGameScoresheetStatsScoreSheet = z.array(
   z.discriminatedUnion("type", [
     scoreSheetSchema.safeExtend({
+      type: z.literal("original"),
       scoresheetId: z.number(),
-      scoresheetType: z.literal("original"),
       isDefault: z.boolean(),
     }),
     scoreSheetSchema.safeExtend({
+      type: z.literal("shared"),
       scoresheetId: z.number(),
-      scoresheetType: z.literal("shared"),
       sharedId: z.number(),
       permission: z.literal("view").or(z.literal("edit")),
       isDefault: z.boolean(),

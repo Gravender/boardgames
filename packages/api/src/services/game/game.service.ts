@@ -698,6 +698,9 @@ class GameService {
           {
             sharedWithId: ctx.userId,
             where: {
+              linkedScoresheetId: {
+                isNull: true,
+              },
               sharedGameId: {
                 in: returnedGame.linkedGames.map((lg) => lg.id),
               },
