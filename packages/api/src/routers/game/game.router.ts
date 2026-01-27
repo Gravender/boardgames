@@ -1,5 +1,6 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
+import { gameStatsService } from "../../services/game/game-stats.service";
 import { gameService } from "../../services/game/game.service";
 import { protectedUserProcedure } from "../../trpc";
 import { getGameInput } from "./game.input";
@@ -9,6 +10,7 @@ import {
   getGamePlayerStatsOutput,
   getGameRolesOutput,
   getGameScoresheetsOutput,
+  getGameScoresheetStatsOutput,
   getGameScoreSheetsWithRoundsOutput,
   getGameStatsHeaderOutput,
 } from "./game.output";
@@ -36,7 +38,7 @@ export const gameRouter = {
     .input(getGameInput)
     .output(getGameStatsHeaderOutput)
     .query(async ({ ctx, input }) => {
-      return gameService.getGameStatsHeader({
+      return gameStatsService.getGameStatsHeader({
         ctx,
         input,
       });
@@ -45,7 +47,7 @@ export const gameRouter = {
     .input(getGameInput)
     .output(getGamePlayerStatsOutput)
     .query(async ({ ctx, input }) => {
-      return gameService.getGamePlayerStats({ ctx, input });
+      return gameStatsService.getGamePlayerStats({ ctx, input });
     }),
   gameRoles: protectedUserProcedure
     .input(getGameInput)
@@ -70,6 +72,15 @@ export const gameRouter = {
     .output(getGameScoreSheetsWithRoundsOutput)
     .query(async ({ ctx, input }) => {
       return gameService.getGameScoreSheetsWithRounds({
+        ctx,
+        input,
+      });
+    }),
+  getGameScoresheetStats: protectedUserProcedure
+    .input(getGameInput)
+    .output(getGameScoresheetStatsOutput)
+    .query(async ({ ctx, input }) => {
+      return gameStatsService.getGameScoresheetStats({
         ctx,
         input,
       });

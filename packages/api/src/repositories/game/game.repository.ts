@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { caseWhen } from "drizzle-plus";
 import { jsonAgg, jsonAggNotNull, jsonBuildObject } from "drizzle-plus/pg";
 
@@ -16,7 +17,10 @@ import {
   image,
   location,
   match,
+  matchPlayer,
   player,
+  round,
+  roundPlayer,
   scoresheet,
   sharedGameRole,
   team,
@@ -35,6 +39,7 @@ import type {
   DeleteSharedGameRoleArgs,
   GetGameArgs,
   GetGameRolesArgs,
+  GetGameScoresheetStatsDataArgs,
   GetGameStatsHeaderArgs,
   GetGameStatsHeaderOutputType,
   GetSharedRoleArgs,
@@ -736,6 +741,96 @@ class GameRepository {
     await database
       .delete(sharedGameRole)
       .where(inArray(sharedGameRole.id, input.sharedRoleIds));
+  }
+
+  public async getGameScoresheetStatsData(
+    args: GetGameScoresheetStatsDataArgs,
+  ) {
+    const { input, userId, tx } = args;
+    const database = tx ?? db;
+
+    // Create aliases for parent scoresheet and round
+    const parentScoresheet = alias(scoresheet, "parent_scoresheet");
+    const parentRound = alias(round, "parent_round");
+
+    const rows = await database
+      .select({
+        matchId: vMatchCanonical.matchId,
+        matchDate: vMatchCanonical.matchDate,
+        scoresheetParentId: scoresheet.parentId,
+        scoresheetParentName: parentScoresheet.name,
+        scoresheetRoundsScore: scoresheet.roundsScore,
+        scoresheetWinCondition: scoresheet.winCondition,
+        roundParentId: round.parentId,
+        roundParentName: parentRound.name,
+        roundParentType: parentRound.type,
+        roundParentColor: parentRound.color,
+        roundParentLookup: parentRound.lookup,
+        roundParentModifier: parentRound.modifier,
+        roundParentScore: parentRound.score,
+        roundOrder: round.order,
+        roundPlayerScore: roundPlayer.score,
+        matchPlayerId: matchPlayer.id,
+        playerId: player.id,
+        playerName: player.name,
+        playerType: vMatchPlayerCanonicalForUser.playerSourceType,
+        playerSharedId: vMatchPlayerCanonicalForUser.sharedPlayerId,
+        playerLinkedId: vMatchPlayerCanonicalForUser.linkedPlayerId,
+        matchPlayerWinner: matchPlayer.winner,
+        matchPlayerScore: matchPlayer.score,
+      })
+      .from(vMatchCanonical)
+      .innerJoin(
+        scoresheet,
+        eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
+      )
+      .innerJoin(parentScoresheet, eq(parentScoresheet.id, scoresheet.parentId))
+      .innerJoin(round, eq(round.scoresheetId, scoresheet.id))
+      .innerJoin(parentRound, eq(parentRound.id, round.parentId))
+      .innerJoin(roundPlayer, eq(roundPlayer.roundId, round.id))
+      .innerJoin(matchPlayer, eq(matchPlayer.id, roundPlayer.matchPlayerId))
+      .innerJoin(
+        vMatchPlayerCanonicalForUser,
+        and(
+          eq(
+            vMatchPlayerCanonicalForUser.canonicalMatchId,
+            vMatchCanonical.matchId,
+          ),
+          eq(vMatchPlayerCanonicalForUser.baseMatchPlayerId, matchPlayer.id),
+        ),
+      )
+      .innerJoin(
+        player,
+        eq(player.id, vMatchPlayerCanonicalForUser.canonicalPlayerId),
+      )
+      .where(
+        and(
+          eq(vMatchCanonical.finished, true),
+          input.type === "original"
+            ? and(
+                eq(vMatchCanonical.canonicalGameId, input.id),
+                eq(vMatchCanonical.visibleToUserId, userId),
+              )
+            : and(
+                eq(vMatchCanonical.sharedGameId, input.sharedGameId),
+                eq(vMatchCanonical.visibleToUserId, userId),
+              ),
+          or(
+            and(
+              eq(vMatchPlayerCanonicalForUser.ownerId, userId),
+              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
+            ),
+            and(
+              eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
+              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
+              ne(vMatchPlayerCanonicalForUser.playerSourceType, "not-shared"),
+            ),
+          ),
+        ),
+      )
+      .orderBy(vMatchCanonical.matchDate, round.order, matchPlayer.id);
+
+    return rows;
   }
 }
 export const gameRepository = new GameRepository();

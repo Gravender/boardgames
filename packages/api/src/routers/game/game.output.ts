@@ -180,3 +180,82 @@ export const getGameOutput = z.discriminatedUnion("type", [
   }),
 ]);
 export type GetGameOutputType = z.infer<typeof getGameOutput>;
+
+const getGameScoresheetStatsPlayerSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    playerId: z.number(),
+    name: z.string(),
+    // For Numeric rounds
+    avgScore: z.number().nullable(),
+    bestScore: z.number().nullable(),
+    worstScore: z.number().nullable(),
+    // For Checkbox rounds
+    checkRate: z.number().nullable(), // Percentage of times checked (0-100)
+    plays: z.number(),
+    scores: z.array(
+      z.object({
+        date: z.date(),
+        score: z.number().nullable(),
+      }),
+    ),
+  }),
+  z.object({
+    type: z.literal("shared"),
+    sharedId: z.number(),
+    name: z.string(),
+    // For Numeric rounds
+    avgScore: z.number().nullable(),
+    bestScore: z.number().nullable(),
+    worstScore: z.number().nullable(),
+    // For Checkbox rounds
+    checkRate: z.number().nullable(), // Percentage of times checked (0-100)
+    plays: z.number(),
+    scores: z.array(
+      z.object({
+        date: z.date(),
+        score: z.number().nullable(),
+      }),
+    ),
+  }),
+]);
+export type GetGameScoresheetStatsPlayerSchemaType = z.infer<
+  typeof getGameScoresheetStatsPlayerSchema
+>;
+const getGameScoresheetStatsRoundSchema = baseRoundSchema
+  .extend({
+    id: z.number(),
+    // For Numeric rounds
+    avgScore: z.number().nullable(),
+    volatility: z.number().nullable(),
+    // For Checkbox rounds
+    checkRate: z.number().nullable(), // Percentage of times checked (0-100)
+    // Common stats
+    players: z.array(getGameScoresheetStatsPlayerSchema),
+  })
+  .required({ name: true, type: true, order: true, score: true });
+
+export type GetGameScoresheetStatsRoundSchemaType = z.infer<
+  typeof getGameScoresheetStatsRoundSchema
+>;
+
+export const getGameScoresheetStatsOutput = z.array(
+  z.discriminatedUnion("type", [
+    scoreSheetSchema.safeExtend({
+      type: z.literal("original"),
+      id: z.number(),
+      isDefault: z.boolean(),
+      rounds: z.array(getGameScoresheetStatsRoundSchema),
+    }),
+    scoreSheetSchema.safeExtend({
+      type: z.literal("shared"),
+      sharedId: z.number(),
+      permission: z.literal("view").or(z.literal("edit")),
+      isDefault: z.boolean(),
+      rounds: z.array(getGameScoresheetStatsRoundSchema),
+    }),
+  ]),
+);
+export type GetGameScoresheetStatsOutputType = z.infer<
+  typeof getGameScoresheetStatsOutput
+>;
