@@ -157,3 +157,8 @@ export interface GetGameStatsHeaderOutputType {
   overallMatchesPlayed: number;
   userMatchesPlayed: number;
 }
+
+export interface GetGameScoresheetStatsDataArgs {
+  input: GetGameInputType;
+  userId: string;
+}

@@ -5,11 +5,9 @@ import type { TransactionType } from "@board-games/db/client";
 import type { editScoresheetSchemaApiInput } from "@board-games/shared";
 import { db } from "@board-games/db/client";
 
-import type { GetGameStatsHeaderOutputType } from "../../repositories/game/game.repository.types";
 import type {
   GetGameMatchesOutputType,
   GetGameOutputType,
-  GetGamePlayerStatsOutputType,
   GetGameRolesOutputType,
   GetGameScoresheetsOutputType,
   GetGameScoreSheetsWithRoundsOutputType,
@@ -18,11 +16,9 @@ import type {
   CreateGameArgs,
   EditGameArgs,
   GetGameArgs,
-  GetGamePlayerStatsArgs,
   GetGameRolesArgs,
   GetGameScoresheetsArgs,
   GetGameScoreSheetsWithRoundsArgs,
-  GetGameStatsHeaderArgs,
 } from "./game.service.types";
 import { gameRepository } from "../../repositories/game/game.repository";
 import { imageRepository } from "../../repositories/image/image.repository";
@@ -558,127 +554,6 @@ class GameService {
     }
   }
 
-  public async getGameStatsHeader(
-    args: GetGameStatsHeaderArgs,
-  ): Promise<GetGameStatsHeaderOutputType> {
-    return gameRepository.getGameStatsHeader({
-      input: args.input,
-      userId: args.ctx.userId,
-    });
-  }
-
-  public async getGamePlayerStats(
-    args: GetGamePlayerStatsArgs,
-  ): Promise<GetGamePlayerStatsOutputType> {
-    const matchPlayers = await gameRepository.getGamePlayerStatsData({
-      input: args.input,
-      userId: args.ctx.userId,
-    });
-
-    const acc = new Map<
-      string,
-      | {
-          id: number;
-          type: "original";
-          name: string;
-          image: {
-            name: string;
-            url: string | null;
-            type: "file" | "svg";
-            usageType: "player";
-          } | null;
-          coopMatches: number;
-          competitiveMatches: number;
-          coopWins: number;
-          competitiveWins: number;
-        }
-      | {
-          sharedId: number;
-          type: "shared";
-          name: string;
-          image: {
-            name: string;
-            url: string | null;
-            type: "file" | "svg";
-            usageType: "player";
-          } | null;
-          coopMatches: number;
-          competitiveMatches: number;
-          coopWins: number;
-          competitiveWins: number;
-        }
-    >();
-
-    for (const mp of matchPlayers) {
-      const key = `${mp.playerId}`;
-      let p = acc.get(key);
-      if (!p) {
-        if (mp.image !== null && mp.image.usageType !== "player") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Image is not of type player.",
-          });
-        }
-        if (mp.type === "shared") {
-          if (mp.sharedId === null) {
-            continue;
-          }
-          p = {
-            sharedId: mp.sharedId,
-            type: "shared",
-            name: mp.name,
-            image: mp.image
-              ? {
-                  name: mp.image.name,
-                  url: mp.image.url,
-                  type: mp.image.type,
-                  usageType: "player" as const,
-                }
-              : null,
-            coopMatches: 0,
-            competitiveMatches: 0,
-            coopWins: 0,
-            competitiveWins: 0,
-          };
-        } else {
-          p = {
-            id: mp.playerId,
-            type: "original",
-            name: mp.name,
-            image: mp.image
-              ? {
-                  name: mp.image.name,
-                  url: mp.image.url,
-                  type: mp.image.type,
-                  usageType: "player" as const,
-                }
-              : null,
-            coopMatches: 0,
-            competitiveMatches: 0,
-            coopWins: 0,
-            competitiveWins: 0,
-          };
-        }
-        acc.set(key, p);
-      }
-      if (mp.isCoop) {
-        p.coopMatches++;
-        if (mp.winner) p.coopWins++;
-      } else {
-        p.competitiveMatches++;
-        if (mp.winner) p.competitiveWins++;
-      }
-    }
-
-    const players = Array.from(acc.values()).map((p) => ({
-      ...p,
-      coopWinRate: p.coopMatches > 0 ? p.coopWins / p.coopMatches : 0,
-      competitiveWinRate:
-        p.competitiveMatches > 0 ? p.competitiveWins / p.competitiveMatches : 0,
-    }));
-
-    return { players };
-  }
 
   public async getGameRoles(
     args: GetGameRolesArgs,
@@ -1143,6 +1018,7 @@ class GameService {
     });
     return response;
   }
+
 
   public async editGame(args: EditGameArgs) {
     const {

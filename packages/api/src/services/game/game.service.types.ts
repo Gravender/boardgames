@@ -68,3 +68,10 @@ export const getGamePlayerStatsArgsSchema = z.object({
 export type GetGamePlayerStatsArgs = z.infer<
   typeof getGamePlayerStatsArgsSchema
 >;
+
+export interface GetGameScoresheetStatsArgs {
+  input: GetGameInputType;
+  ctx: {
+    userId: string;
+  };
+}
