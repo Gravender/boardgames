@@ -161,4 +161,5 @@ export interface GetGameStatsHeaderOutputType {
 export interface GetGameScoresheetStatsDataArgs {
   input: GetGameInputType;
   userId: string;
+  tx?: TransactionType;
 }

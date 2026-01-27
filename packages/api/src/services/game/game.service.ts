@@ -554,7 +554,6 @@ class GameService {
     }
   }
 
-
   public async getGameRoles(
     args: GetGameRolesArgs,
   ): Promise<GetGameRolesOutputType> {
@@ -1018,7 +1017,6 @@ class GameService {
     });
     return response;
   }
-
 
   public async editGame(args: EditGameArgs) {
     const {

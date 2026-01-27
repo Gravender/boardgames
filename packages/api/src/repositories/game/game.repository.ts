@@ -746,13 +746,14 @@ class GameRepository {
   public async getGameScoresheetStatsData(
     args: GetGameScoresheetStatsDataArgs,
   ) {
-    const { input, userId } = args;
+    const { input, userId, tx } = args;
+    const database = tx ?? db;
 
     // Create aliases for parent scoresheet and round
     const parentScoresheet = alias(scoresheet, "parent_scoresheet");
     const parentRound = alias(round, "parent_round");
 
-    const rows = await db
+    const rows = await database
       .select({
         matchId: vMatchCanonical.matchId,
         matchDate: vMatchCanonical.matchDate,
@@ -783,9 +784,9 @@ class GameRepository {
         scoresheet,
         eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
-      .leftJoin(parentScoresheet, eq(parentScoresheet.id, scoresheet.parentId))
+      .innerJoin(parentScoresheet, eq(parentScoresheet.id, scoresheet.parentId))
       .innerJoin(round, eq(round.scoresheetId, scoresheet.id))
-      .leftJoin(parentRound, eq(parentRound.id, round.parentId))
+      .innerJoin(parentRound, eq(parentRound.id, round.parentId))
       .innerJoin(roundPlayer, eq(roundPlayer.roundId, round.id))
       .innerJoin(matchPlayer, eq(matchPlayer.id, roundPlayer.matchPlayerId))
       .innerJoin(
@@ -825,9 +826,6 @@ class GameRepository {
               ne(vMatchPlayerCanonicalForUser.playerSourceType, "not-shared"),
             ),
           ),
-          // Only include scoresheets and rounds with parentId (match-level that reference game-level)
-          sql`${scoresheet.parentId} IS NOT NULL`,
-          sql`${round.parentId} IS NOT NULL`,
         ),
       )
       .orderBy(vMatchCanonical.matchDate, round.order, matchPlayer.id);
