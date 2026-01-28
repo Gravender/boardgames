@@ -172,7 +172,12 @@ export const shareAcceptanceRouter = {
                   type: "game",
                 })
                 .returning();
-              if (createdSharedScoresheet) {
+              if (!createdSharedScoresheet) {
+                throw new Error(
+                  `Failed to create shared scoresheet for request ${returnedScoresheetRequest.id}`,
+                );
+              }
+              if (returnedScoresheet.rounds.length > 0) {
                 const sharedScoresheetRoundsInput =
                   returnedScoresheet.rounds.map((round) => ({
                     roundId: round.id,
@@ -1561,7 +1566,12 @@ export const shareAcceptanceRouter = {
                         type: "game",
                       })
                       .returning();
-                    if (createdSharedScoresheet) {
+                    if (!createdSharedScoresheet) {
+                      throw new Error(
+                        `Failed to create shared scoresheet for request ${scoresheetShareRequest.id}`,
+                      );
+                    }
+                    if (returnedScoresheet.rounds.length > 0) {
                       const sharedScoresheetRoundsInput =
                         returnedScoresheet.rounds.map((round) => ({
                           roundId: round.id,

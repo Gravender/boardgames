@@ -2409,6 +2409,8 @@ async function shareScoresheetsWithFriend(
           {
             where: {
               id: scoresheetToShare.scoresheetId,
+              createdBy: userId,
+              gameId: gameId,
             },
           },
         );
@@ -2421,7 +2423,7 @@ async function shareScoresheetsWithFriend(
         await createSharedScoresheetWithRounds(
           transaction,
           scoresheetToShare.scoresheetId,
-          returnedScoresheet.createdBy,
+          userId,
           userId,
           friendId,
           scoresheetToShare.permission,
