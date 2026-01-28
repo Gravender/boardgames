@@ -68,7 +68,7 @@ export const matchRelations = defineRelationsPart(schema, (r) => ({
     }),
   },
   match: {
-    createdBy: r.one.user({
+    creator: r.one.user({
       from: r.match.createdBy,
       to: r.user.id,
     }),

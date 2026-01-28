@@ -8,8 +8,8 @@ export const imageRelations = defineRelationsPart(schema, (r) => ({
       from: r.image.id,
       to: r.player.imageId,
     }),
-    createdBy: r.many.user({
-      from: r.image.id,
+    creator: r.one.user({
+      from: r.image.createdBy,
       to: r.user.id,
     }),
     games: r.many.game({

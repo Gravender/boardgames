@@ -321,7 +321,7 @@ export const shareMetaRouter = {
           },
           with: {
             image: true,
-            createdBy: {
+            creator: {
               columns: {
                 name: true,
               },

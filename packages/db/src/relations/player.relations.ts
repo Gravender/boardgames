@@ -4,7 +4,7 @@ import * as schema from "../schema";
 
 export const playerRelations = defineRelationsPart(schema, (r) => ({
   player: {
-    createdBy: r.one.user({
+    creator: r.one.user({
       from: r.player.createdBy,
       to: r.user.id,
       optional: false,
@@ -49,7 +49,7 @@ export const playerRelations = defineRelationsPart(schema, (r) => ({
     }),
   },
   group: {
-    createdBy: r.one.user({
+    creator: r.one.user({
       from: r.group.createdBy,
       to: r.user.id,
     }),

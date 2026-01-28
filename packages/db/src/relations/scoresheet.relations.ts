@@ -4,7 +4,7 @@ import * as schema from "../schema";
 
 export const scoresheetRelations = defineRelationsPart(schema, (r) => ({
   scoresheet: {
-    createdBy: r.one.user({
+    creator: r.one.user({
       from: r.scoresheet.createdBy,
       to: r.user.id,
     }),

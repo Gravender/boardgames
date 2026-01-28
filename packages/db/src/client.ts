@@ -6,8 +6,14 @@ import type {
 import { sql } from "@vercel/postgres";
 import { drizzle as LocalDrizzle } from "drizzle-orm/node-postgres";
 import { drizzle as VercelDrizzle } from "drizzle-orm/vercel-postgres";
+import { Pool } from "pg";
 
 import { relations } from "./relations";
+
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+  ssl: false,
+});
 
 /**
  * Cache the database connection in development. This avoids creating a new connection on every HMR
@@ -21,7 +27,7 @@ if (!process.env.NODE_ENV || !process.env.POSTGRES_URL) {
 export const db =
   process.env.NODE_ENV === "development"
     ? LocalDrizzle({
-        connection: { connectionString: process.env.POSTGRES_URL },
+        client: pool,
         relations,
         logger: false,
       })

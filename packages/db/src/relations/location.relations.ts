@@ -4,7 +4,7 @@ import * as schema from "../schema";
 
 export const locationRelations = defineRelationsPart(schema, (r) => ({
   location: {
-    createdBy: r.one.user({
+    creator: r.one.user({
       from: r.location.createdBy,
       to: r.user.id,
     }),

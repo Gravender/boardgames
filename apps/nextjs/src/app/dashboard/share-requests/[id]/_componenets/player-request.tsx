@@ -341,7 +341,7 @@ export default function PlayerRequestPage({
                     )}
                   </CardTitle>
                   <CardDescription>
-                    Shared by {player.item.createdBy.name}
+                    Shared by {player.item.creator.name}
                     <p className="text-muted-foreground text-sm">
                       {player.games.length} games, {player.players.length} other
                       players
