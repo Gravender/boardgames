@@ -268,7 +268,7 @@ class MatchSetupService {
             input: {
               sharedRoundId: sharedRound.id,
               linkedRoundId: round.id,
-              sharedScoresheetId: insertedMatchScoresheet.id,
+              sharedScoresheetId: sharedRound.sharedScoresheetId,
             },
             tx,
           });

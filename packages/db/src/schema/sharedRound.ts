@@ -1,11 +1,5 @@
 import { sql } from "drizzle-orm";
-import {
-  index,
-  integer,
-  serial,
-  text,
-  timestamp,
-} from "drizzle-orm/pg-core";
+import { index, integer, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 import { createTable } from "./baseTable";
 import round from "./round";

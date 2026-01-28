@@ -188,6 +188,9 @@ class GameStatsService {
                 in: returnedGame.linkedGames.map((lg) => lg.id),
               },
             },
+            with: {
+              scoresheet: true,
+            },
           },
           tx,
         );
@@ -236,6 +239,9 @@ class GameStatsService {
             sharedWithId: ctx.userId,
             where: {
               sharedGameId: returnedSharedGame.id,
+            },
+            with: {
+              scoresheet: true,
             },
           },
           tx,

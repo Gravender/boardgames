@@ -1,5 +1,4 @@
 import type { SQL } from "drizzle-orm";
-import { TRPCError } from "@trpc/server";
 import { and, eq, inArray, sql } from "drizzle-orm";
 
 import type {
@@ -270,10 +269,7 @@ class ScoresheetRepository {
     const { input } = args;
     const database = tx ?? db;
     if (input.length === 0) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "No input provided",
-      });
+      return [];
     }
     const insertedSharedRounds = await database
       .insert(sharedRound)

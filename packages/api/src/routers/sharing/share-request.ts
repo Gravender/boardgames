@@ -21,8 +21,8 @@ import {
   shareRequest,
 } from "@board-games/db/schema";
 
-import { protectedUserProcedure } from "../../trpc";
 import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
+import { protectedUserProcedure } from "../../trpc";
 import { handleLocationSharing } from "../../utils/sharing";
 
 export const shareRequestRouter = {
@@ -554,14 +554,15 @@ export const shareRequestRouter = {
                         },
                       });
                     if (!existingSharedScoresheet && returnedShareGame) {
-                      const returnedScoresheet = await tx2.query.scoresheet.findFirst({
-                        where: {
-                          id: defaultScoreSheet.id,
-                        },
-                        with: {
-                          rounds: true,
-                        },
-                      });
+                      const returnedScoresheet =
+                        await tx2.query.scoresheet.findFirst({
+                          where: {
+                            id: defaultScoreSheet.id,
+                          },
+                          with: {
+                            rounds: true,
+                          },
+                        });
                       if (!returnedScoresheet) {
                         throw new TRPCError({
                           code: "NOT_FOUND",
@@ -627,14 +628,15 @@ export const shareRequestRouter = {
                         },
                       });
                     if (!existingSharedScoresheet && returnedShareGame) {
-                      const returnedScoresheet = await tx2.query.scoresheet.findFirst({
-                        where: {
-                          id: gamesScoreSheets[0].id,
-                        },
-                        with: {
-                          rounds: true,
-                        },
-                      });
+                      const returnedScoresheet =
+                        await tx2.query.scoresheet.findFirst({
+                          where: {
+                            id: gamesScoreSheets[0].id,
+                          },
+                          with: {
+                            rounds: true,
+                          },
+                        });
                       if (!returnedScoresheet) {
                         throw new TRPCError({
                           code: "NOT_FOUND",
@@ -710,15 +712,16 @@ export const shareRequestRouter = {
                     },
                   });
                 if (!existingSharedMatch) {
-                  const returnedScoresheet = await tx2.query.scoresheet.findFirst({
-                    where: {
-                      id: returnedMatch.scoresheetId,
-                      createdBy: returnedMatch.createdBy,
-                    },
-                    with: {
-                      rounds: true,
-                    },
-                  });
+                  const returnedScoresheet =
+                    await tx2.query.scoresheet.findFirst({
+                      where: {
+                        id: returnedMatch.scoresheetId,
+                        createdBy: returnedMatch.createdBy,
+                      },
+                      with: {
+                        rounds: true,
+                      },
+                    });
                   if (!returnedScoresheet) {
                     throw new TRPCError({
                       code: "NOT_FOUND",
@@ -1404,14 +1407,15 @@ export const shareRequestRouter = {
                             },
                           });
                         if (!existingSharedScoresheet) {
-                          const returnedScoresheet = await tx2.query.scoresheet.findFirst({
-                            where: {
-                              id: defaultScoreSheet.id,
-                            },
-                            with: {
-                              rounds: true,
-                            },
-                          });
+                          const returnedScoresheet =
+                            await tx2.query.scoresheet.findFirst({
+                              where: {
+                                id: defaultScoreSheet.id,
+                              },
+                              with: {
+                                rounds: true,
+                              },
+                            });
                           if (!returnedScoresheet) {
                             throw new TRPCError({
                               code: "NOT_FOUND",
@@ -1492,14 +1496,15 @@ export const shareRequestRouter = {
                             },
                           });
                         if (!existingSharedScoresheet) {
-                          const returnedScoresheet = await tx2.query.scoresheet.findFirst({
-                            where: {
-                              id: gamesScoreSheets[0].id,
-                            },
-                            with: {
-                              rounds: true,
-                            },
-                          });
+                          const returnedScoresheet =
+                            await tx2.query.scoresheet.findFirst({
+                              where: {
+                                id: gamesScoreSheets[0].id,
+                              },
+                              with: {
+                                rounds: true,
+                              },
+                            });
                           if (!returnedScoresheet) {
                             throw new TRPCError({
                               code: "NOT_FOUND",
@@ -2475,14 +2480,16 @@ async function shareScoresheetsWithFriend(
         },
       });
       if (!existingSharedScoresheet && returnedSharedGame) {
-        const returnedScoresheet = await transaction.query.scoresheet.findFirst({
-          where: {
-            id: scoresheetToShare.scoresheetId,
+        const returnedScoresheet = await transaction.query.scoresheet.findFirst(
+          {
+            where: {
+              id: scoresheetToShare.scoresheetId,
+            },
+            with: {
+              rounds: true,
+            },
           },
-          with: {
-            rounds: true,
-          },
-        });
+        );
         if (!returnedScoresheet) {
           throw new TRPCError({
             code: "NOT_FOUND",
