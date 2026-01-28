@@ -1337,6 +1337,30 @@ class GameService {
     return undefined;
   }
 
+  private async getSharedScoresheetForUpdate(args: {
+    sharedId: number;
+    userId: string;
+    tx: TransactionType;
+  }) {
+    const { sharedId, userId, tx } = args;
+    const returnedSharedScoresheet = await scoresheetRepository.getShared(
+      {
+        id: sharedId,
+        sharedWithId: userId,
+      },
+      tx,
+    );
+    assertFound(
+      returnedSharedScoresheet,
+      {
+        userId,
+        value: { sharedId },
+      },
+      "Shared scoresheet not found.",
+    );
+    return returnedSharedScoresheet;
+  }
+
   private async updateScoresheets(args: {
     input: EditGameArgs["input"]["scoresheets"];
     gameId: number;
@@ -1419,21 +1443,12 @@ class GameService {
           });
         } else {
           const sharedScoresheetInput = inputScoresheet.scoresheet;
-          const returnedSharedScoresheet = await scoresheetRepository.getShared(
-            {
-              id: sharedScoresheetInput.sharedId,
-              sharedWithId: userId,
-            },
-            tx,
-          );
-          assertFound(
-            returnedSharedScoresheet,
-            {
+          const returnedSharedScoresheet =
+            await this.getSharedScoresheetForUpdate({
+              sharedId: sharedScoresheetInput.sharedId,
               userId,
-              value: sharedScoresheetInput,
-            },
-            "Shared scoresheet not found.",
-          );
+              tx,
+            });
           if (returnedSharedScoresheet.permission === "edit") {
             await scoresheetRepository.update({
               input: {
@@ -1483,21 +1498,12 @@ class GameService {
           scoresheetId = returnedOriginalScoresheet.id;
         } else {
           const sharedScoresheetInput = inputScoresheet.scoresheet;
-          const returnedSharedScoresheet = await scoresheetRepository.getShared(
-            {
-              id: sharedScoresheetInput.sharedId,
-              sharedWithId: userId,
-            },
-            tx,
-          );
-          assertFound(
-            returnedSharedScoresheet,
-            {
+          const returnedSharedScoresheet =
+            await this.getSharedScoresheetForUpdate({
+              sharedId: sharedScoresheetInput.sharedId,
               userId,
-              value: sharedScoresheetInput,
-            },
-            "Shared scoresheet not found.",
-          );
+              tx,
+            });
           if (returnedSharedScoresheet.permission !== "edit") {
             throw new TRPCError({
               code: "UNAUTHORIZED",

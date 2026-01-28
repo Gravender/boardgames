@@ -17,6 +17,7 @@ import {
 
 import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
 import { protectedUserProcedure } from "../../trpc";
+import { createSharedScoresheetWithRounds } from "../../utils/sharing";
 
 export const shareAcceptanceRouter = {
   acceptGameShareRequest: protectedUserProcedure
@@ -304,54 +305,17 @@ export const shareAcceptanceRouter = {
                   sharedLocationForMatch = existingSharedLocation;
                 }
               }
-              const returnedScoresheet = await tx.query.scoresheet.findFirst({
-                where: {
-                  id: returnedMatch.scoresheetId,
-                  createdBy: returnedMatch.createdBy,
-                },
-                with: {
-                  rounds: true,
-                },
-              });
-              if (!returnedScoresheet) {
-                throw new TRPCError({
-                  code: "NOT_FOUND",
-                  message: "Scoresheet not found.",
-                });
-              }
-              const [returnedSharedScoresheet] = await tx
-                .insert(sharedScoresheet)
-                .values({
-                  ownerId: returnedMatchRequest.ownerId,
-                  sharedWithId: ctx.userId,
-                  scoresheetId: returnedMatch.scoresheetId,
-                  permission: returnedMatchRequest.permission,
-                  sharedGameId: sharedGameExists.id,
-                  type: "match",
-                })
-                .returning();
-              if (!returnedSharedScoresheet) {
-                throw new TRPCError({
-                  code: "INTERNAL_SERVER_ERROR",
-                  message: "Shared Scoresheet not created successfully",
-                });
-              }
-              const sharedScoresheetRoundsInput = returnedScoresheet.rounds.map(
-                (round) => ({
-                  roundId: round.id,
-                  linkedRoundId: null,
-                  sharedScoresheetId: returnedSharedScoresheet.id,
-                  ownerId: returnedMatchRequest.ownerId,
-                  sharedWithId: ctx.userId,
-                  permission: returnedMatchRequest.permission,
-                }),
-              );
-              if (sharedScoresheetRoundsInput.length > 0) {
-                await scoresheetRepository.insertSharedRounds(
-                  { input: sharedScoresheetRoundsInput },
+              const returnedSharedScoresheet =
+                await createSharedScoresheetWithRounds(
                   tx,
+                  returnedMatch.scoresheetId,
+                  returnedMatch.createdBy,
+                  returnedMatchRequest.ownerId,
+                  ctx.userId,
+                  returnedMatchRequest.permission,
+                  sharedGameExists.id,
+                  "match",
                 );
-              }
               const [returnedSharedMatch] = await tx
                 .insert(sharedMatch)
                 .values({
@@ -731,54 +695,17 @@ export const shareAcceptanceRouter = {
                 sharedLocationForMatch = existingSharedLocation;
               }
             }
-            const returnedScoresheet = await tx.query.scoresheet.findFirst({
-              where: {
-                id: returnedMatch.scoresheetId,
-                createdBy: returnedMatch.createdBy,
-              },
-              with: {
-                rounds: true,
-              },
-            });
-            if (!returnedScoresheet) {
-              throw new TRPCError({
-                code: "NOT_FOUND",
-                message: "Scoresheet not found.",
-              });
-            }
-            const [returnedSharedScoresheet] = await tx
-              .insert(sharedScoresheet)
-              .values({
-                ownerId: existingRequest.ownerId,
-                sharedWithId: ctx.userId,
-                scoresheetId: returnedMatch.scoresheetId,
-                permission: existingRequest.permission,
-                sharedGameId: sharedGameExists.id,
-                type: "match",
-              })
-              .returning();
-            if (!returnedSharedScoresheet) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Shared Scoresheet not created successfully",
-              });
-            }
-            const sharedScoresheetRoundsInput = returnedScoresheet.rounds.map(
-              (round) => ({
-                roundId: round.id,
-                linkedRoundId: null,
-                sharedScoresheetId: returnedSharedScoresheet.id,
-                ownerId: existingRequest.ownerId,
-                sharedWithId: ctx.userId,
-                permission: existingRequest.permission,
-              }),
-            );
-            if (sharedScoresheetRoundsInput.length > 0) {
-              await scoresheetRepository.insertSharedRounds(
-                { input: sharedScoresheetRoundsInput },
+            const returnedSharedScoresheet =
+              await createSharedScoresheetWithRounds(
                 tx,
+                returnedMatch.scoresheetId,
+                returnedMatch.createdBy,
+                existingRequest.ownerId,
+                ctx.userId,
+                existingRequest.permission,
+                sharedGameExists.id,
+                "match",
               );
-            }
             const [returnedSharedMatch] = await tx
               .insert(sharedMatch)
               .values({
@@ -841,21 +768,6 @@ export const shareAcceptanceRouter = {
                 })
                 .where(eq(shareRequest.id, returnedScoresheetRequest.id));
               if (scoresheetShareRequest.accept) {
-                const returnedScoresheet = await tx.query.scoresheet.findFirst({
-                  where: {
-                    id: returnedScoresheetRequest.itemId,
-                    createdBy: returnedScoresheetRequest.ownerId,
-                  },
-                  with: {
-                    rounds: true,
-                  },
-                });
-                if (!returnedScoresheet) {
-                  throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "Scoresheet not found.",
-                  });
-                }
                 const existingSharedScoresheet =
                   await tx.query.sharedScoresheet.findFirst({
                     where: {
@@ -865,32 +777,16 @@ export const shareAcceptanceRouter = {
                     },
                   });
                 if (!existingSharedScoresheet) {
-                  const [createdSharedScoresheet] = await tx
-                    .insert(sharedScoresheet)
-                    .values({
-                      ownerId: returnedScoresheetRequest.ownerId,
-                      sharedWithId: ctx.userId,
-                      scoresheetId: returnedScoresheetRequest.itemId,
-                      permission: returnedScoresheetRequest.permission,
-                      sharedGameId: sharedGameExists.id,
-                      type: "game",
-                    })
-                    .returning();
-                  if (createdSharedScoresheet) {
-                    const sharedScoresheetRoundsInput =
-                      returnedScoresheet.rounds.map((round) => ({
-                        roundId: round.id,
-                        linkedRoundId: null,
-                        sharedScoresheetId: createdSharedScoresheet.id,
-                        ownerId: returnedScoresheetRequest.ownerId,
-                        sharedWithId: ctx.userId,
-                        permission: returnedScoresheetRequest.permission,
-                      }));
-                    await scoresheetRepository.insertSharedRounds(
-                      { input: sharedScoresheetRoundsInput },
-                      tx,
-                    );
-                  }
+                  await createSharedScoresheetWithRounds(
+                    tx,
+                    returnedScoresheetRequest.itemId,
+                    returnedScoresheetRequest.ownerId,
+                    returnedScoresheetRequest.ownerId,
+                    ctx.userId,
+                    returnedScoresheetRequest.permission,
+                    sharedGameExists.id,
+                    "game",
+                  );
                 }
               }
             }
@@ -937,21 +833,6 @@ export const shareAcceptanceRouter = {
                 sharedLocationForMatch = existingSharedLocation;
               }
             }
-            const returnedScoresheet = await tx.query.scoresheet.findFirst({
-              where: {
-                id: returnedMatch.scoresheetId,
-                createdBy: returnedMatch.createdBy,
-              },
-              with: {
-                rounds: true,
-              },
-            });
-            if (!returnedScoresheet) {
-              throw new TRPCError({
-                code: "NOT_FOUND",
-                message: "Scoresheet not found.",
-              });
-            }
             const existingSharedScoresheet =
               await tx.query.sharedScoresheet.findFirst({
                 where: {
@@ -964,38 +845,17 @@ export const shareAcceptanceRouter = {
             if (existingSharedScoresheet) {
               sharedScoresheetId = existingSharedScoresheet.id;
             } else {
-              const [createdSharedScoresheet] = await tx
-                .insert(sharedScoresheet)
-                .values({
-                  ownerId: returnedMatch.createdBy,
-                  sharedWithId: ctx.userId,
-                  scoresheetId: returnedMatch.scoresheetId,
-                  permission: "view",
-                  sharedGameId: returnedSharedGame.id,
-                  type: "game",
-                })
-                .returning();
-              if (!createdSharedScoresheet) {
-                throw new TRPCError({
-                  code: "INTERNAL_SERVER_ERROR",
-                  message: "Shared Scoresheet not created successfully",
-                });
-              }
-              const sharedScoresheetRoundsInput = returnedScoresheet.rounds.map(
-                (round) => ({
-                  roundId: round.id,
-                  linkedRoundId: null,
-                  sharedScoresheetId: createdSharedScoresheet.id,
-                  ownerId: returnedMatch.createdBy,
-                  sharedWithId: ctx.userId,
-                  permission: "view" as const,
-                }),
-              );
-              await scoresheetRepository.insertSharedRounds(
-                { input: sharedScoresheetRoundsInput },
-                tx,
-              );
-
+              const createdSharedScoresheet =
+                await createSharedScoresheetWithRounds(
+                  tx,
+                  returnedMatch.scoresheetId,
+                  returnedMatch.createdBy,
+                  returnedMatch.createdBy,
+                  ctx.userId,
+                  "view",
+                  returnedSharedGame.id,
+                  "game",
+                );
               sharedScoresheetId = createdSharedScoresheet.id;
             }
             const [returnedSharedMatch] = await tx

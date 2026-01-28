@@ -20,4 +20,3 @@ CREATE INDEX "boardgames_shared_round_linked_round_id_index" ON "boardgames_shar
 CREATE INDEX "boardgames_shared_round_shared_scoresheet_id_index" ON "boardgames_shared_round" USING btree ("shared_scoresheet_id");--> statement-breakpoint
 CREATE INDEX "boardgames_shared_round_owner_id_index" ON "boardgames_shared_round" USING btree ("owner_id");--> statement-breakpoint
 CREATE INDEX "boardgames_shared_round_shared_with_id_index" ON "boardgames_shared_round" USING btree ("shared_with_id");--> statement-breakpoint
-CREATE INDEX "boardgames_shared_round_id_index" ON "boardgames_shared_round" USING btree ("id");
