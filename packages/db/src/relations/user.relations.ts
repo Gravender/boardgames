@@ -20,7 +20,7 @@ export const userRelations = defineRelationsPart(schema, (r) => ({
     }),
     groups: r.many.group({
       from: r.user.id,
-      to: r.group.id,
+      to: r.group.createdBy,
     }),
     locations: r.many.location({
       from: r.user.id,

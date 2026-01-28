@@ -60,7 +60,7 @@
     "@types/pg": "^8.16.0",
     "d3": "^7.9.0",
     "date-fns": "^4.1.0",
-    "drizzle-kit": "1.0.0-beta.1-5e64efc",
+    "drizzle-kit": "1.0.0-beta.12-a5629fb",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
