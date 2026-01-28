@@ -252,7 +252,7 @@ export const dashboardRouter = {
       .where(and(eq(game.createdBy, ctx.userId), isNull(game.deletedAt)))
       .leftJoin(match, eq(game.id, match.gameId))
       .groupBy(game.id)
-      .orderBy(desc(count(match)), asc(game.name))
+      .orderBy(desc(count(match.id)), asc(game.name))
       .limit(5);
     return games;
   }),
@@ -266,7 +266,7 @@ export const dashboardRouter = {
       .where(eq(group.createdBy, ctx.userId))
       .innerJoin(groupPlayer, eq(groupPlayer.groupId, group.id))
       .groupBy(group.id)
-      .orderBy(desc(count(groupPlayer)), group.name)
+      .orderBy(desc(count(groupPlayer.id)), group.name)
       .limit(5);
     return groups;
   }),
@@ -285,7 +285,7 @@ export const dashboardRouter = {
         and(eq(match.locationId, location.id), isNull(match.deletedAt)),
       )
       .groupBy(location.id)
-      .orderBy(desc(count(match)), location.name)
+      .orderBy(desc(count(match.id)), location.name)
       .limit(5);
     return locations;
   }),
