@@ -265,6 +265,36 @@ export const sharedRelations = defineRelationsPart(schema, (r) => ({
       to: r.game.id.through(r.sharedGame.gameId),
       optional: false,
     }),
+    sharedRounds: r.many.sharedRound({
+      from: r.sharedScoresheet.id,
+      to: r.sharedRound.sharedScoresheetId,
+    }),
+  },
+  sharedRound: {
+    owner: r.one.user({
+      from: r.sharedRound.ownerId,
+      to: r.user.id,
+      optional: false,
+    }),
+    sharedWith: r.one.user({
+      from: r.sharedRound.sharedWithId,
+      to: r.user.id,
+      optional: false,
+    }),
+    round: r.one.round({
+      from: r.sharedRound.roundId,
+      to: r.round.id,
+      optional: false,
+    }),
+    linkedRound: r.one.round({
+      from: r.sharedRound.linkedRoundId,
+      to: r.round.id,
+    }),
+    sharedScoresheet: r.one.sharedScoresheet({
+      from: r.sharedRound.sharedScoresheetId,
+      to: r.sharedScoresheet.id,
+      optional: false,
+    }),
   },
   shareRequest: {
     owner: r.one.user({

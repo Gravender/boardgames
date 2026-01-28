@@ -3,7 +3,9 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 
 import type {
   Filter,
+  InferManyQueryResult,
   InferQueryResult,
+  ManyQueryConfig,
   QueryConfig,
   TransactionType,
 } from "@board-games/db/client";
@@ -12,7 +14,12 @@ import type {
   scoreSheetWinConditions,
 } from "@board-games/db/constants";
 import { db } from "@board-games/db/client";
-import { round, scoresheet, sharedScoresheet } from "@board-games/db/schema";
+import {
+  round,
+  scoresheet,
+  sharedRound,
+  sharedScoresheet,
+} from "@board-games/db/schema";
 
 import type {
   InsertRoundInputType,
@@ -149,16 +156,16 @@ class ScoresheetRepository {
     });
     return result as InferQueryResult<"sharedScoresheet", TConfig> | undefined;
   }
-  public async getAll(
+  public async getAll<TConfig extends ManyQueryConfig<"scoresheet">>(
     filters: {
       createdBy: NonNullable<Filter<"scoresheet">["createdBy"]>;
       gameId: NonNullable<Filter<"scoresheet">["gameId"]>;
       where?: QueryConfig<"scoresheet">["where"];
       with?: QueryConfig<"scoresheet">["with"];
       orderBy?: QueryConfig<"scoresheet">["orderBy"];
-    },
+    } & TConfig,
     tx?: TransactionType,
-  ) {
+  ): Promise<InferManyQueryResult<"scoresheet", TConfig>> {
     const database = tx ?? db;
     const result = await database.query.scoresheet.findMany({
       where: {
@@ -182,17 +189,19 @@ class ScoresheetRepository {
       with: filters.with,
       orderBy: filters.orderBy,
     });
-    return result;
+    return result as InferManyQueryResult<"scoresheet", TConfig>;
   }
-  public async getAllShared(
+  public async getAllShared<
+    TConfig extends ManyQueryConfig<"sharedScoresheet">,
+  >(
     filters: {
       sharedWithId: NonNullable<Filter<"sharedScoresheet">["sharedWithId"]>;
       where?: QueryConfig<"sharedScoresheet">["where"];
       with?: QueryConfig<"sharedScoresheet">["with"];
       orderBy?: QueryConfig<"sharedScoresheet">["orderBy"];
-    },
+    } & TConfig,
     tx?: TransactionType,
-  ) {
+  ): Promise<InferManyQueryResult<"sharedScoresheet", TConfig>> {
     const database = tx ?? db;
     const result = await database.query.sharedScoresheet.findMany({
       where: {
@@ -205,6 +214,24 @@ class ScoresheetRepository {
         scoresheet: true,
       },
       orderBy: filters.orderBy,
+    });
+    return result as unknown as InferManyQueryResult<
+      "sharedScoresheet",
+      TConfig
+    >;
+  }
+  public async getRounds(args: {
+    input: {
+      scoresheetId: number;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const result = await database.query.round.findMany({
+      where: {
+        scoresheetId: input.scoresheetId,
+      },
     });
     return result;
   }
@@ -225,6 +252,61 @@ class ScoresheetRepository {
       .where(eq(sharedScoresheet.id, input.sharedScoresheetId))
       .returning();
     return linkedScoresheet;
+  }
+  public async insertSharedRounds(
+    args: {
+      input: {
+        roundId: number;
+        linkedRoundId: number | null;
+        sharedScoresheetId: number;
+        ownerId: string;
+        sharedWithId: string;
+        permission?: "view" | "edit";
+      }[];
+    },
+    tx?: TransactionType,
+  ) {
+    const { input } = args;
+    const database = tx ?? db;
+    if (input.length === 0) {
+      return [];
+    }
+    const insertedSharedRounds = await database
+      .insert(sharedRound)
+      .values(
+        input.map((item) => ({
+          roundId: item.roundId,
+          linkedRoundId: item.linkedRoundId ?? null,
+          sharedScoresheetId: item.sharedScoresheetId,
+          ownerId: item.ownerId,
+          sharedWithId: item.sharedWithId,
+          permission: item.permission ?? "view",
+        })),
+      )
+      .returning();
+    return insertedSharedRounds;
+  }
+  public async linkSharedRound(args: {
+    input: {
+      sharedRoundId: number;
+      linkedRoundId: number | null;
+      sharedScoresheetId: number;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [linkedSharedRound] = await database
+      .update(sharedRound)
+      .set({ linkedRoundId: input.linkedRoundId ?? null })
+      .where(
+        and(
+          eq(sharedRound.id, input.sharedRoundId),
+          eq(sharedRound.sharedScoresheetId, input.sharedScoresheetId),
+        ),
+      )
+      .returning();
+    return linkedSharedRound;
   }
   public async deleteScoresheet(args: {
     input: {
