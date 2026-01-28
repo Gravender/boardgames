@@ -22,6 +22,7 @@ import {
   sharedMatchPlayer,
   sharedMatchPlayerRole,
   sharedPlayer,
+  sharedRound,
   sharedScoresheet,
   shareRequest,
   team,
@@ -81,6 +82,9 @@ export const insertSharedScoresheetSchema =
   createInsertSchema(sharedScoresheet);
 export const selectSharedScoresheetSchema =
   createSelectSchema(sharedScoresheet);
+
+export const insertSharedRoundSchema = createInsertSchema(sharedRound);
+export const selectSharedRoundSchema = createSelectSchema(sharedRound);
 
 export const insertShareRequestSchema = createInsertSchema(shareRequest);
 export const selectShareRequestSchema = createSelectSchema(shareRequest);

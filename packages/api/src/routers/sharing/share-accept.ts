@@ -15,6 +15,7 @@ import {
   shareRequest,
 } from "@board-games/db/schema";
 
+import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
 import { protectedUserProcedure } from "../../trpc";
 
 export const shareAcceptanceRouter = {
@@ -133,6 +134,9 @@ export const shareAcceptanceRouter = {
               id: returnedScoresheetRequest.itemId,
               createdBy: existingRequest.ownerId,
             },
+            with: {
+              rounds: true,
+            },
           });
           if (!returnedScoresheet) {
             throw new TRPCError({
@@ -156,15 +160,32 @@ export const shareAcceptanceRouter = {
                 },
               });
             if (!sharedScoresheetExists) {
-              await tx.insert(sharedScoresheet).values({
-                ownerId: returnedScoresheetRequest.ownerId,
-                sharedWithId: ctx.userId,
-                scoresheetId: returnedScoresheetRequest.itemId,
-                permission: returnedScoresheetRequest.permission,
-
-                sharedGameId: sharedGameExists.id,
-                type: "game",
-              });
+              const [createdSharedScoresheet] = await tx
+                .insert(sharedScoresheet)
+                .values({
+                  ownerId: returnedScoresheetRequest.ownerId,
+                  sharedWithId: ctx.userId,
+                  scoresheetId: returnedScoresheetRequest.itemId,
+                  permission: returnedScoresheetRequest.permission,
+                  sharedGameId: sharedGameExists.id,
+                  type: "game",
+                })
+                .returning();
+              if (createdSharedScoresheet) {
+                const sharedScoresheetRoundsInput =
+                  returnedScoresheet.rounds.map((round) => ({
+                    roundId: round.id,
+                    linkedRoundId: null,
+                    sharedScoresheetId: createdSharedScoresheet.id,
+                    ownerId: returnedScoresheetRequest.ownerId,
+                    sharedWithId: ctx.userId,
+                    permission: returnedScoresheetRequest.permission,
+                  }));
+                await scoresheetRepository.insertSharedRounds(
+                  { input: sharedScoresheetRoundsInput },
+                  tx,
+                );
+              }
             }
           }
         }
@@ -283,6 +304,21 @@ export const shareAcceptanceRouter = {
                   sharedLocationForMatch = existingSharedLocation;
                 }
               }
+              const returnedScoresheet = await tx.query.scoresheet.findFirst({
+                where: {
+                  id: returnedMatch.scoresheetId,
+                  createdBy: returnedMatch.createdBy,
+                },
+                with: {
+                  rounds: true,
+                },
+              });
+              if (!returnedScoresheet) {
+                throw new TRPCError({
+                  code: "NOT_FOUND",
+                  message: "Scoresheet not found.",
+                });
+              }
               const [returnedSharedScoresheet] = await tx
                 .insert(sharedScoresheet)
                 .values({
@@ -299,6 +335,22 @@ export const shareAcceptanceRouter = {
                   code: "INTERNAL_SERVER_ERROR",
                   message: "Shared Scoresheet not created successfully",
                 });
+              }
+              const sharedScoresheetRoundsInput = returnedScoresheet.rounds.map(
+                (round) => ({
+                  roundId: round.id,
+                  linkedRoundId: null,
+                  sharedScoresheetId: returnedSharedScoresheet.id,
+                  ownerId: returnedMatchRequest.ownerId,
+                  sharedWithId: ctx.userId,
+                  permission: returnedMatchRequest.permission,
+                }),
+              );
+              if (sharedScoresheetRoundsInput.length > 0) {
+                await scoresheetRepository.insertSharedRounds(
+                  { input: sharedScoresheetRoundsInput },
+                  tx,
+                );
               }
               const [returnedSharedMatch] = await tx
                 .insert(sharedMatch)
@@ -679,6 +731,21 @@ export const shareAcceptanceRouter = {
                 sharedLocationForMatch = existingSharedLocation;
               }
             }
+            const returnedScoresheet = await tx.query.scoresheet.findFirst({
+              where: {
+                id: returnedMatch.scoresheetId,
+                createdBy: returnedMatch.createdBy,
+              },
+              with: {
+                rounds: true,
+              },
+            });
+            if (!returnedScoresheet) {
+              throw new TRPCError({
+                code: "NOT_FOUND",
+                message: "Scoresheet not found.",
+              });
+            }
             const [returnedSharedScoresheet] = await tx
               .insert(sharedScoresheet)
               .values({
@@ -695,6 +762,22 @@ export const shareAcceptanceRouter = {
                 code: "INTERNAL_SERVER_ERROR",
                 message: "Shared Scoresheet not created successfully",
               });
+            }
+            const sharedScoresheetRoundsInput = returnedScoresheet.rounds.map(
+              (round) => ({
+                roundId: round.id,
+                linkedRoundId: null,
+                sharedScoresheetId: returnedSharedScoresheet.id,
+                ownerId: existingRequest.ownerId,
+                sharedWithId: ctx.userId,
+                permission: existingRequest.permission,
+              }),
+            );
+            if (sharedScoresheetRoundsInput.length > 0) {
+              await scoresheetRepository.insertSharedRounds(
+                { input: sharedScoresheetRoundsInput },
+                tx,
+              );
             }
             const [returnedSharedMatch] = await tx
               .insert(sharedMatch)
@@ -763,6 +846,9 @@ export const shareAcceptanceRouter = {
                     id: returnedScoresheetRequest.itemId,
                     createdBy: returnedScoresheetRequest.ownerId,
                   },
+                  with: {
+                    rounds: true,
+                  },
                 });
                 if (!returnedScoresheet) {
                   throw new TRPCError({
@@ -779,14 +865,32 @@ export const shareAcceptanceRouter = {
                     },
                   });
                 if (!existingSharedScoresheet) {
-                  await tx.insert(sharedScoresheet).values({
-                    ownerId: returnedScoresheetRequest.ownerId,
-                    sharedWithId: ctx.userId,
-                    scoresheetId: returnedScoresheetRequest.itemId,
-                    permission: returnedScoresheetRequest.permission,
-                    sharedGameId: sharedGameExists.id,
-                    type: "game",
-                  });
+                  const [createdSharedScoresheet] = await tx
+                    .insert(sharedScoresheet)
+                    .values({
+                      ownerId: returnedScoresheetRequest.ownerId,
+                      sharedWithId: ctx.userId,
+                      scoresheetId: returnedScoresheetRequest.itemId,
+                      permission: returnedScoresheetRequest.permission,
+                      sharedGameId: sharedGameExists.id,
+                      type: "game",
+                    })
+                    .returning();
+                  if (createdSharedScoresheet) {
+                    const sharedScoresheetRoundsInput =
+                      returnedScoresheet.rounds.map((round) => ({
+                        roundId: round.id,
+                        linkedRoundId: null,
+                        sharedScoresheetId: createdSharedScoresheet.id,
+                        ownerId: returnedScoresheetRequest.ownerId,
+                        sharedWithId: ctx.userId,
+                        permission: returnedScoresheetRequest.permission,
+                      }));
+                    await scoresheetRepository.insertSharedRounds(
+                      { input: sharedScoresheetRoundsInput },
+                      tx,
+                    );
+                  }
                 }
               }
             }
@@ -833,22 +937,66 @@ export const shareAcceptanceRouter = {
                 sharedLocationForMatch = existingSharedLocation;
               }
             }
-            const [returnedSharedScoresheet] = await tx
-              .insert(sharedScoresheet)
-              .values({
-                ownerId: existingRequest.ownerId,
-                sharedWithId: ctx.userId,
-                scoresheetId: returnedMatch.scoresheetId,
-                permission: existingRequest.permission,
-                sharedGameId: returnedSharedGame.id,
-                type: "match",
-              })
-              .returning();
-            if (!returnedSharedScoresheet) {
+            const returnedScoresheet = await tx.query.scoresheet.findFirst({
+              where: {
+                id: returnedMatch.scoresheetId,
+                createdBy: returnedMatch.createdBy,
+              },
+              with: {
+                rounds: true,
+              },
+            });
+            if (!returnedScoresheet) {
               throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Shared Scoresheet not created successfully",
+                code: "NOT_FOUND",
+                message: "Scoresheet not found.",
               });
+            }
+            const existingSharedScoresheet =
+              await tx.query.sharedScoresheet.findFirst({
+                where: {
+                  ownerId: returnedMatch.createdBy,
+                  sharedWithId: ctx.userId,
+                  scoresheetId: returnedMatch.scoresheetId,
+                },
+              });
+            let sharedScoresheetId: number | null = null;
+            if (existingSharedScoresheet) {
+              sharedScoresheetId = existingSharedScoresheet.id;
+            } else {
+              const [createdSharedScoresheet] = await tx
+                .insert(sharedScoresheet)
+                .values({
+                  ownerId: returnedMatch.createdBy,
+                  sharedWithId: ctx.userId,
+                  scoresheetId: returnedMatch.scoresheetId,
+                  permission: "view",
+                  sharedGameId: returnedSharedGame.id,
+                  type: "game",
+                })
+                .returning();
+              if (!createdSharedScoresheet) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: "Shared Scoresheet not created successfully",
+                });
+              }
+              const sharedScoresheetRoundsInput = returnedScoresheet.rounds.map(
+                (round) => ({
+                  roundId: round.id,
+                  linkedRoundId: null,
+                  sharedScoresheetId: createdSharedScoresheet.id,
+                  ownerId: returnedMatch.createdBy,
+                  sharedWithId: ctx.userId,
+                  permission: "view" as const,
+                }),
+              );
+              await scoresheetRepository.insertSharedRounds(
+                { input: sharedScoresheetRoundsInput },
+                tx,
+              );
+
+              sharedScoresheetId = createdSharedScoresheet.id;
             }
             const [returnedSharedMatch] = await tx
               .insert(sharedMatch)
@@ -858,7 +1006,7 @@ export const shareAcceptanceRouter = {
                 matchId: existingRequest.itemId,
                 sharedGameId: returnedSharedGame.id,
                 sharedLocationId: sharedLocationForMatch?.id ?? null,
-                sharedScoresheetId: returnedSharedScoresheet.id,
+                sharedScoresheetId: sharedScoresheetId,
                 permission: existingRequest.permission,
               })
               .returning();
@@ -1397,6 +1545,21 @@ export const shareAcceptanceRouter = {
                         sharedLocationForMatch = existingSharedLocation;
                       }
                     }
+                    const returnedScoresheet = await tx.query.scoresheet.findFirst({
+                      where: {
+                        id: returnedMatch.scoresheetId,
+                        createdBy: returnedMatch.createdBy,
+                      },
+                      with: {
+                        rounds: true,
+                      },
+                    });
+                    if (!returnedScoresheet) {
+                      throw new TRPCError({
+                        code: "NOT_FOUND",
+                        message: "Scoresheet not found.",
+                      });
+                    }
                     const [returnedSharedScoresheet] = await tx
                       .insert(sharedScoresheet)
                       .values({
@@ -1413,6 +1576,22 @@ export const shareAcceptanceRouter = {
                         code: "INTERNAL_SERVER_ERROR",
                         message: "Shared Scoresheet not created successfully",
                       });
+                    }
+                    const sharedScoresheetRoundsInput = returnedScoresheet.rounds.map(
+                      (round) => ({
+                        roundId: round.id,
+                        linkedRoundId: null,
+                        sharedScoresheetId: returnedSharedScoresheet.id,
+                        ownerId: matchShareRequest.ownerId,
+                        sharedWithId: ctx.userId,
+                        permission: matchShareRequest.permission,
+                      }),
+                    );
+                    if (sharedScoresheetRoundsInput.length > 0) {
+                      await scoresheetRepository.insertSharedRounds(
+                        { input: sharedScoresheetRoundsInput },
+                        tx,
+                      );
                     }
                     const [returnedSharedMatch] = await tx
                       .insert(sharedMatch)
@@ -1492,6 +1671,9 @@ export const shareAcceptanceRouter = {
                         id: scoresheetShareRequest.itemId,
                         createdBy: scoresheetShareRequest.ownerId,
                       },
+                      with: {
+                        rounds: true,
+                      },
                     });
                   if (!returnedScoresheet) {
                     throw new TRPCError({
@@ -1508,14 +1690,32 @@ export const shareAcceptanceRouter = {
                       },
                     });
                   if (!shareScoresheetExists) {
-                    await tx.insert(sharedScoresheet).values({
-                      ownerId: scoresheetShareRequest.ownerId,
-                      sharedWithId: ctx.userId,
-                      scoresheetId: returnedScoresheet.id,
-                      permission: scoresheetShareRequest.permission,
-                      sharedGameId: shareGameExists.id,
-                      type: "game",
-                    });
+                    const [createdSharedScoresheet] = await tx
+                      .insert(sharedScoresheet)
+                      .values({
+                        ownerId: scoresheetShareRequest.ownerId,
+                        sharedWithId: ctx.userId,
+                        scoresheetId: returnedScoresheet.id,
+                        permission: scoresheetShareRequest.permission,
+                        sharedGameId: shareGameExists.id,
+                        type: "game",
+                      })
+                      .returning();
+                    if (createdSharedScoresheet) {
+                      const sharedScoresheetRoundsInput =
+                        returnedScoresheet.rounds.map((round) => ({
+                          roundId: round.id,
+                          linkedRoundId: null,
+                          sharedScoresheetId: createdSharedScoresheet.id,
+                          ownerId: scoresheetShareRequest.ownerId,
+                          sharedWithId: ctx.userId,
+                          permission: scoresheetShareRequest.permission,
+                        }));
+                      await scoresheetRepository.insertSharedRounds(
+                        { input: sharedScoresheetRoundsInput },
+                        tx,
+                      );
+                    }
                   }
                 }
               }
@@ -1592,28 +1792,59 @@ export const shareAcceptanceRouter = {
                             locationId: returnedMatch.locationId,
                           },
                         });
-                      if (existingSharedLocation) {
-                        sharedLocationForMatch = existingSharedLocation;
-                      }
+                    if (existingSharedLocation) {
+                      sharedLocationForMatch = existingSharedLocation;
                     }
-                    const [returnedSharedScoresheet] = await tx
-                      .insert(sharedScoresheet)
-                      .values({
-                        ownerId: matchShareRequest.ownerId,
-                        sharedWithId: ctx.userId,
-                        scoresheetId: returnedMatch.scoresheetId,
-                        permission: matchShareRequest.permission,
-                        sharedGameId: returnedSharedGame.id,
-                        type: "match",
-                      })
-                      .returning();
-                    if (!returnedSharedScoresheet) {
-                      throw new TRPCError({
-                        code: "INTERNAL_SERVER_ERROR",
-                        message: "Shared Scoresheet not created successfully",
-                      });
-                    }
-                    const [returnedSharedMatch] = await tx
+                  }
+                  const returnedScoresheet = await tx.query.scoresheet.findFirst({
+                    where: {
+                      id: returnedMatch.scoresheetId,
+                      createdBy: returnedMatch.createdBy,
+                    },
+                    with: {
+                      rounds: true,
+                    },
+                  });
+                  if (!returnedScoresheet) {
+                    throw new TRPCError({
+                      code: "NOT_FOUND",
+                      message: "Scoresheet not found.",
+                    });
+                  }
+                  const [returnedSharedScoresheet] = await tx
+                    .insert(sharedScoresheet)
+                    .values({
+                      ownerId: matchShareRequest.ownerId,
+                      sharedWithId: ctx.userId,
+                      scoresheetId: returnedMatch.scoresheetId,
+                      permission: matchShareRequest.permission,
+                      sharedGameId: returnedSharedGame.id,
+                      type: "match",
+                    })
+                    .returning();
+                  if (!returnedSharedScoresheet) {
+                    throw new TRPCError({
+                      code: "INTERNAL_SERVER_ERROR",
+                      message: "Shared Scoresheet not created successfully",
+                    });
+                  }
+                  const sharedScoresheetRoundsInput = returnedScoresheet.rounds.map(
+                    (round) => ({
+                      roundId: round.id,
+                      linkedRoundId: null,
+                      sharedScoresheetId: returnedSharedScoresheet.id,
+                      ownerId: matchShareRequest.ownerId,
+                      sharedWithId: ctx.userId,
+                      permission: matchShareRequest.permission,
+                    }),
+                  );
+                  if (sharedScoresheetRoundsInput.length > 0) {
+                    await scoresheetRepository.insertSharedRounds(
+                      { input: sharedScoresheetRoundsInput },
+                      tx,
+                    );
+                  }
+                  const [returnedSharedMatch] = await tx
                       .insert(sharedMatch)
                       .values({
                         ownerId: matchShareRequest.ownerId,

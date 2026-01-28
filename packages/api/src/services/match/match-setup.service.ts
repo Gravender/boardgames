@@ -160,9 +160,10 @@ class MatchSetupService {
           id: scoresheetInput.sharedId,
           sharedWithId: userId,
           with: {
-            scoresheet: {
+            scoresheet: true,
+            sharedRounds: {
               with: {
-                rounds: true,
+                round: true,
               },
             },
           },
@@ -237,10 +238,47 @@ class MatchSetupService {
       );
 
       const rounds = await this.insertRoundsFromTemplate(
-        returnedSharedScoresheet.scoresheet.rounds,
+        returnedSharedScoresheet.sharedRounds.map(
+          (sharedRound) => sharedRound.round,
+        ),
         insertedMatchScoresheet.id,
         tx,
       );
+      if (rounds.length !== returnedSharedScoresheet.sharedRounds.length) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            "Rounds not inserted successfully. For Create Match. Based on Shared Scoresheet.",
+        });
+      } else {
+        for (const round of rounds) {
+          const sharedRound = returnedSharedScoresheet.sharedRounds.find(
+            (sharedRound) =>
+              sharedRound.round.order === round.order &&
+              sharedRound.round.name === round.name,
+          );
+          if (!sharedRound) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message:
+                "Shared round not found. For Create Match. Based on Shared Scoresheet.",
+            });
+          }
+          const linkedSharedRound = await scoresheetRepository.linkSharedRound({
+            input: {
+              sharedRoundId: sharedRound.id,
+              linkedRoundId: round.id,
+              sharedScoresheetId: insertedMatchScoresheet.id,
+            },
+            tx,
+          });
+          assertInserted(
+            linkedSharedRound,
+            { userId: userId, value: scoresheetInput },
+            "Shared round not linked successfully. For Create Match. Based on Shared Scoresheet.",
+          );
+        }
+      }
       return { id: insertedMatchScoresheet.id, rounds };
     }
     throw new TRPCError({
@@ -335,7 +373,7 @@ class MatchSetupService {
     rounds: InsertRoundInputType[],
     scoresheetId: number,
     tx: TransactionType,
-  ): Promise<{ id: number }[]> {
+  ) {
     const mappedRounds = rounds.map((round) => ({
       name: round.name,
       type: round.type,
@@ -354,7 +392,7 @@ class MatchSetupService {
       mappedRounds,
       tx,
     );
-    return insertedRounds.map((round) => ({ id: round.id }));
+    return insertedRounds;
   }
 }
 

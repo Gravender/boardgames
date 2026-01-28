@@ -705,6 +705,9 @@ class GameService {
                 in: returnedGame.linkedGames.map((lg) => lg.id),
               },
             },
+            with: {
+              scoresheet: true,
+            },
           },
           tx,
         );
@@ -766,6 +769,14 @@ class GameService {
             sharedWithId: ctx.userId,
             where: {
               sharedGameId: returnedSharedGame.id,
+            },
+            with: {
+              scoresheet: true,
+              sharedRounds: {
+                with: {
+                  round: true,
+                },
+              },
             },
           },
           tx,
@@ -841,15 +852,15 @@ class GameService {
               sharedGameId: {
                 in: returnedGame.linkedGames.map((lg) => lg.id),
               },
+              linkedScoresheetId: {
+                isNull: true,
+              },
             },
             with: {
-              scoresheet: {
+              scoresheet: true,
+              sharedRounds: {
                 with: {
-                  rounds: {
-                    orderBy: {
-                      order: "asc",
-                    },
-                  },
+                  round: true,
                 },
               },
             },
@@ -858,28 +869,16 @@ class GameService {
         );
         const mappedOriginalScoresheets = originalScoresheets.map(
           (scoresheet) => {
-            const scoresheetWithRounds = scoresheet as typeof scoresheet & {
-              rounds?: {
-                id: number;
-                name: string;
-                type: "Checkbox" | "Numeric";
-                order: number;
-                score: number;
-                color: string | null;
-                lookup: number | null;
-                modifier: number | null;
-              }[];
-            };
             return {
-              id: scoresheetWithRounds.id,
-              name: scoresheetWithRounds.name,
+              id: scoresheet.id,
+              name: scoresheet.name,
               type: "original" as const,
-              isDefault: scoresheetWithRounds.type === "Default",
-              winCondition: scoresheetWithRounds.winCondition,
-              isCoop: scoresheetWithRounds.isCoop,
-              roundsScore: scoresheetWithRounds.roundsScore,
-              targetScore: scoresheetWithRounds.targetScore,
-              rounds: (scoresheetWithRounds.rounds ?? []).map((round) => ({
+              isDefault: scoresheet.type === "Default",
+              winCondition: scoresheet.winCondition,
+              isCoop: scoresheet.isCoop,
+              roundsScore: scoresheet.roundsScore,
+              targetScore: scoresheet.targetScore,
+              rounds: scoresheet.rounds.map((round) => ({
                 id: round.id,
                 name: round.name,
                 type: round.type,
@@ -894,38 +893,25 @@ class GameService {
         );
         const mappedSharedScoresheets = sharedScoresheets.map(
           (sharedScoresheet) => {
-            const scoresheetWithRounds =
-              sharedScoresheet.scoresheet as typeof sharedScoresheet.scoresheet & {
-                rounds?: {
-                  id: number;
-                  name: string;
-                  type: "Checkbox" | "Numeric";
-                  order: number;
-                  score: number;
-                  color: string | null;
-                  lookup: number | null;
-                  modifier: number | null;
-                }[];
-              };
             return {
               sharedId: sharedScoresheet.id,
-              name: scoresheetWithRounds.name,
+              name: sharedScoresheet.scoresheet.name,
               type: "shared" as const,
               permission: sharedScoresheet.permission,
               isDefault: sharedScoresheet.isDefault,
-              winCondition: scoresheetWithRounds.winCondition,
-              isCoop: scoresheetWithRounds.isCoop,
-              roundsScore: scoresheetWithRounds.roundsScore,
-              targetScore: scoresheetWithRounds.targetScore,
-              rounds: (scoresheetWithRounds.rounds ?? []).map((round) => ({
-                id: round.id,
-                name: round.name,
-                type: round.type,
-                order: round.order,
-                score: round.score,
-                color: round.color,
-                lookup: round.lookup,
-                modifier: round.modifier,
+              winCondition: sharedScoresheet.scoresheet.winCondition,
+              isCoop: sharedScoresheet.scoresheet.isCoop,
+              roundsScore: sharedScoresheet.scoresheet.roundsScore,
+              targetScore: sharedScoresheet.scoresheet.targetScore,
+              rounds: sharedScoresheet.sharedRounds.map((sharedRound) => ({
+                id: sharedRound.round.id,
+                name: sharedRound.round.name,
+                type: sharedRound.round.type,
+                order: sharedRound.round.order,
+                score: sharedRound.round.score,
+                color: sharedRound.round.color,
+                lookup: sharedRound.round.lookup,
+                modifier: sharedRound.round.modifier,
               })),
             };
           },
@@ -961,13 +947,10 @@ class GameService {
               sharedGameId: returnedSharedGame.id,
             },
             with: {
-              scoresheet: {
+              scoresheet: true,
+              sharedRounds: {
                 with: {
-                  rounds: {
-                    orderBy: {
-                      order: "asc",
-                    },
-                  },
+                  round: true,
                 },
               },
             },
@@ -976,38 +959,25 @@ class GameService {
         );
         return sharedScoresheets
           .map((sharedScoresheet) => {
-            const scoresheetWithRounds =
-              sharedScoresheet.scoresheet as typeof sharedScoresheet.scoresheet & {
-                rounds?: {
-                  id: number;
-                  name: string;
-                  type: "Checkbox" | "Numeric";
-                  order: number;
-                  score: number;
-                  color: string | null;
-                  lookup: number | null;
-                  modifier: number | null;
-                }[];
-              };
             return {
               sharedId: sharedScoresheet.id,
-              name: scoresheetWithRounds.name,
+              name: sharedScoresheet.scoresheet.name,
               type: "shared" as const,
               permission: sharedScoresheet.permission,
               isDefault: sharedScoresheet.isDefault,
-              winCondition: scoresheetWithRounds.winCondition,
-              isCoop: scoresheetWithRounds.isCoop,
-              roundsScore: scoresheetWithRounds.roundsScore,
-              targetScore: scoresheetWithRounds.targetScore,
-              rounds: (scoresheetWithRounds.rounds ?? []).map((round) => ({
-                id: round.id,
-                name: round.name,
-                type: round.type,
-                order: round.order,
-                score: round.score,
-                color: round.color,
-                lookup: round.lookup,
-                modifier: round.modifier,
+              winCondition: sharedScoresheet.scoresheet.winCondition,
+              isCoop: sharedScoresheet.scoresheet.isCoop,
+              roundsScore: sharedScoresheet.scoresheet.roundsScore,
+              targetScore: sharedScoresheet.scoresheet.targetScore,
+              rounds: sharedScoresheet.sharedRounds.map((sharedRound) => ({
+                id: sharedRound.round.id,
+                name: sharedRound.round.name,
+                type: sharedRound.round.type,
+                order: sharedRound.round.order,
+                score: sharedRound.round.score,
+                color: sharedRound.round.color,
+                lookup: sharedRound.round.lookup,
+                modifier: sharedRound.round.modifier,
               })),
             };
           })
