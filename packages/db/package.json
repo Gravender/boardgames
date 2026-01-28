@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
-    "drizzle-orm": "1.0.0-beta.1-5e64efc",
+    "drizzle-orm": "1.0.0-beta.12-a5629fb",
     "drizzle-zod": "^0.8.3",
     "postgres": "^3.4.5",
     "tsx": "^4.19.2",
