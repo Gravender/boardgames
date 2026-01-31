@@ -684,6 +684,7 @@ export const shareMatchRouter = {
           .update(roundPlayer)
           .set({
             score: input.round.score,
+            updatedBy: ctx.userId,
           })
           .where(
             and(
@@ -749,6 +750,7 @@ export const shareMatchRouter = {
           .update(roundPlayer)
           .set({
             score: input.round.score,
+            updatedBy: ctx.userId,
           })
           .where(
             and(

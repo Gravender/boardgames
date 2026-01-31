@@ -24,6 +24,11 @@ export const scoresheetRelations = defineRelationsPart(schema, (r) => ({
     rounds: r.many.round({
       from: r.scoresheet.id,
       to: r.round.scoresheetId,
+      where: {
+        deletedAt: {
+          isNull: true,
+        },
+      },
     }),
     parent: r.one.scoresheet({
       from: r.scoresheet.parentId,

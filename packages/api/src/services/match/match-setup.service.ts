@@ -102,7 +102,11 @@ class MatchSetupService {
     userId: string;
     gameId: number;
     tx: TransactionType;
-  }): Promise<{ id: number; rounds: { id: number }[] }> {
+  }): Promise<{
+    id: number;
+    rounds: { id: number }[];
+    type: "Match";
+  }> {
     const { scoresheetInput, userId, gameId, tx } = args;
     if (scoresheetInput.type === "original") {
       const returnedScoresheet = await scoresheetRepository.get(
@@ -131,6 +135,8 @@ class MatchSetupService {
           targetScore: returnedScoresheet.targetScore,
           roundsScore: returnedScoresheet.roundsScore,
           parentId: returnedScoresheet.id,
+          forkedFromScoresheetId: returnedScoresheet.id,
+          forkedFromTemplateVersion: returnedScoresheet.templateVersion,
           createdBy: userId,
           gameId: gameId,
           type: "Match",
@@ -151,7 +157,7 @@ class MatchSetupService {
         insertedScoresheet.id,
         tx,
       );
-      return { id: insertedScoresheet.id, rounds };
+      return { id: insertedScoresheet.id, rounds, type: "Match" };
     }
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (scoresheetInput.type === "shared") {
@@ -222,6 +228,8 @@ class MatchSetupService {
           targetScore: insertedNewScoresheet.targetScore,
           roundsScore: insertedNewScoresheet.roundsScore,
           parentId: insertedNewScoresheet.id,
+          forkedFromScoresheetId: insertedNewScoresheet.id,
+          forkedFromTemplateVersion: insertedNewScoresheet.templateVersion,
           createdBy: userId,
           gameId: gameId,
           type: "Match",
@@ -251,11 +259,12 @@ class MatchSetupService {
             "Rounds not inserted successfully. For Create Match. Based on Shared Scoresheet.",
         });
       } else {
-        for (const round of rounds) {
+        for (const insertedRound of rounds) {
           const sharedRound = returnedSharedScoresheet.sharedRounds.find(
-            (sharedRound) =>
-              sharedRound.round.order === round.order &&
-              sharedRound.round.name === round.name,
+            (sr) =>
+              sr.round.roundKey === insertedRound.roundKey ||
+              (sr.round.order === insertedRound.order &&
+                sr.round.name === insertedRound.name),
           );
           if (!sharedRound) {
             throw new TRPCError({
@@ -267,7 +276,7 @@ class MatchSetupService {
           const linkedSharedRound = await scoresheetRepository.linkSharedRound({
             input: {
               sharedRoundId: sharedRound.id,
-              linkedRoundId: round.id,
+              linkedRoundId: insertedRound.id,
               sharedScoresheetId: sharedRound.sharedScoresheetId,
             },
             tx,
@@ -279,7 +288,7 @@ class MatchSetupService {
           );
         }
       }
-      return { id: insertedMatchScoresheet.id, rounds };
+      return { id: insertedMatchScoresheet.id, rounds, type: "Match" };
     }
     throw new TRPCError({
       code: "BAD_REQUEST",
@@ -370,21 +379,23 @@ class MatchSetupService {
     });
   }
   private async insertRoundsFromTemplate(
-    rounds: InsertRoundInputType[],
+    rounds: (InsertRoundInputType & { id: number; roundKey?: string })[],
     scoresheetId: number,
     tx: TransactionType,
   ) {
-    const mappedRounds = rounds.map((round) => ({
-      name: round.name,
-      type: round.type,
-      color: round.color,
-      score: round.score,
-      winCondition: round.winCondition,
-      toggleScore: round.toggleScore,
-      modifier: round.modifier,
-      lookup: round.lookup,
-      order: round.order,
-      parentId: round.id,
+    const mappedRounds = rounds.map((templateRound) => ({
+      name: templateRound.name,
+      type: templateRound.type,
+      color: templateRound.color,
+      score: templateRound.score,
+      winCondition: templateRound.winCondition,
+      toggleScore: templateRound.toggleScore,
+      modifier: templateRound.modifier,
+      lookup: templateRound.lookup,
+      order: templateRound.order,
+      parentId: templateRound.id,
+      roundKey: templateRound.roundKey ?? crypto.randomUUID(),
+      templateRoundId: templateRound.id,
       scoresheetId,
     }));
     if (mappedRounds.length === 0) return [];

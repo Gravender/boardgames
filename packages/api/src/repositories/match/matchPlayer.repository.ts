@@ -267,6 +267,7 @@ class MatchPlayerRepository {
       .update(roundPlayer)
       .set({
         score: input.score,
+        ...(input.updatedBy !== undefined && { updatedBy: input.updatedBy }),
       })
       .where(eq(roundPlayer.id, input.id))
       .returning();
@@ -279,6 +280,7 @@ class MatchPlayerRepository {
       .update(roundPlayer)
       .set({
         score: input.score,
+        ...(input.updatedBy !== undefined && { updatedBy: input.updatedBy }),
       })
       .where(
         and(

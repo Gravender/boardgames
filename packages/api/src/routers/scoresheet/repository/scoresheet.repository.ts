@@ -231,6 +231,9 @@ class ScoresheetRepository {
     const result = await database.query.round.findMany({
       where: {
         scoresheetId: input.scoresheetId,
+        deletedAt: {
+          isNull: true,
+        },
       },
     });
     return result;
@@ -339,6 +342,7 @@ class ScoresheetRepository {
       type?: "Template" | "Default" | "Match" | "Game";
       roundsScore?: (typeof scoreSheetRoundsScore)[number];
       targetScore?: number;
+      forkedForMatchId?: number | null;
     };
     tx?: TransactionType;
   }) {
@@ -476,6 +480,7 @@ class ScoresheetRepository {
     return updatedRounds;
   }
 
+  /** Soft-delete (archive) rounds by setting deletedAt. Preserves match forks and history. */
   public async deleteRounds(args: {
     input: {
       ids: number[];
@@ -487,11 +492,12 @@ class ScoresheetRepository {
       return [];
     }
     const database = tx ?? db;
-    const deletedRounds = await database
-      .delete(round)
+    const archivedRounds = await database
+      .update(round)
+      .set({ deletedAt: new Date() })
       .where(inArray(round.id, input.ids))
       .returning();
-    return deletedRounds;
+    return archivedRounds;
   }
 
   public async deleteSharedScoresheet(args: {

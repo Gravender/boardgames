@@ -120,6 +120,14 @@ tooling/
 - **Analytics**: PostHog for product analytics, Sentry for error tracking
 - **File Uploads**: UploadThing integration for images
 
+### Scoresheet sharing and versioning
+
+- **Live (match share)**: `shared_scoresheet.type = "match"` wraps the owner’s match scoresheet; the shared user sees the same match/scoresheet/rounds (same DB rows). No linked copy; `linkedScoresheetId` / `linkedRoundId` stay null for that flow.
+- **Template (game share)**: `shared_scoresheet.type = "game"` wraps a Game/Default/Template scoresheet; the shared user may create their own copy when creating a match (linked scoresheet and rounds via `linkedScoresheetId` / `linkedRoundId`).
+- **Save as new template**: Do not mutate the original template. If you add “Save as new template,” implement it as: create a **new** scoresheet (type Game or Template), copy structure (and optionally set `forkedFromScoresheetId` to the match scoresheet), and link that new scoresheet; never update the old template so historic matches stay unambiguous.
+- **Versioning**: Template scoresheets use `scoresheetKey` (template family), `templateVersion`, and `forkedFromTemplateVersion` on match forks. When editing a template that has match forks, create a new template row with the same `scoresheetKey`, bump `templateVersion`, and set `templateRevisionOfScoresheetId` to the previous template id.
+- **Round archive**: Rounds are soft-deleted (`deletedAt`). “Deleting” a round in a template archives it so old match forks and history remain consistent. Queries list rounds with `deletedAt` null unless including archived.
+
 ### Common Commands
 
 ```bash

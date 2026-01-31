@@ -243,6 +243,13 @@ class DateMatchRepository {
         scoresheet: sql<{
           id: number;
           parentId: number | null;
+          scoresheetKey: string;
+          templateVersion: number;
+          forkedFromTemplateVersion: number | null;
+          templateRevisionOfScoresheetId: number | null;
+          forkedFromScoresheetId: number | null;
+          forkedFromGameId: number | null;
+          forkedForMatchId: number | null;
           name: string;
           gameId: number;
           createdBy: string;
@@ -257,6 +264,13 @@ class DateMatchRepository {
         }>`json_build_object(
                     'id', ${scoresheet.id},
                     'parentId', ${scoresheet.parentId},
+                    'scoresheetKey', ${scoresheet.scoresheetKey},
+                    'templateVersion', ${scoresheet.templateVersion},
+                    'forkedFromTemplateVersion', ${scoresheet.forkedFromTemplateVersion},
+                    'templateRevisionOfScoresheetId', ${scoresheet.templateRevisionOfScoresheetId},
+                    'forkedFromScoresheetId', ${scoresheet.forkedFromScoresheetId},
+                    'forkedFromGameId', ${scoresheet.forkedFromGameId},
+                    'forkedForMatchId', ${scoresheet.forkedForMatchId},
                     'name', ${scoresheet.name},
                     'gameId', ${scoresheet.gameId},
                     'createdBy', ${scoresheet.createdBy},

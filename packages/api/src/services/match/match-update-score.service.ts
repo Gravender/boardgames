@@ -70,6 +70,7 @@ class MatchUpdateScoreService {
           input: {
             id: returnedRoundPlayer.id,
             score: input.round.score,
+            updatedBy: ctx.userId,
           },
           tx,
         });
@@ -129,6 +130,7 @@ class MatchUpdateScoreService {
               (mp) => mp.baseMatchPlayerId,
             ),
             score: input.round.score,
+            updatedBy: ctx.userId,
           },
           tx,
         });

@@ -6,6 +6,7 @@ import {
   serial,
   text,
   timestamp,
+  uuid,
   varchar,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
@@ -19,6 +20,17 @@ const scoresheets = createTable(
   {
     id: serial("id").primaryKey(),
     parentId: integer("parent_id"),
+    scoresheetKey: uuid("scoresheet_key")
+      .notNull()
+      .default(sql`gen_random_uuid()`),
+    templateVersion: integer("template_version").notNull().default(1),
+    forkedFromTemplateVersion: integer("forked_from_template_version"),
+    templateRevisionOfScoresheetId: integer(
+      "template_revision_of_scoresheet_id",
+    ),
+    forkedFromScoresheetId: integer("forked_from_scoresheet_id"),
+    forkedFromGameId: integer("forked_from_game_id").references(() => game.id),
+    forkedForMatchId: integer("forked_for_match_id"),
     name: varchar("name", { length: 256 }).notNull(),
     gameId: integer("game_id")
       .references(() => game.id)

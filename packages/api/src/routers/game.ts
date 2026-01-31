@@ -1370,6 +1370,13 @@ export const gameRouter = {
           if (!insertedRound) {
             throw new Error("Failed to create round");
           }
+          if (playScoresheet.type !== "Match") {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message:
+                "Match must use a scoresheet with type Match. Invalid scoresheet type.",
+            });
+          }
           const matchToInsert: z.infer<typeof insertMatchSchema> = {
             createdBy: ctx.userId,
             scoresheetId: playScoresheet.id,
@@ -1386,6 +1393,10 @@ export const gameRouter = {
           if (!returningMatch) {
             throw new Error("Failed to create match");
           }
+          await ctx.db
+            .update(scoresheet)
+            .set({ forkedForMatchId: returningMatch.id })
+            .where(eq(scoresheet.id, playScoresheet.id));
           const playersToInsert: z.infer<typeof insertPlayerSchema>[] =
             play.participants.map((player) => ({
               name: player.name ?? "Unknown",
@@ -1521,6 +1532,7 @@ export const gameRouter = {
               roundId: insertedRound.id,
               matchPlayerId: matchPlayer.id,
               score: Number(matchPlayer.score),
+              updatedBy: ctx.userId,
             };
           });
           await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);
