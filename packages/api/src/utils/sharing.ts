@@ -2,7 +2,13 @@ import { TRPCError } from "@trpc/server";
 
 import type { TransactionType } from "@board-games/db/client";
 import type { scoreSheetRoundsScore } from "@board-games/db/constants";
-import { sharedLocation, shareRequest } from "@board-games/db/schema";
+import {
+  sharedLocation,
+  sharedScoresheet,
+  shareRequest,
+} from "@board-games/db/schema";
+
+import { scoresheetRepository } from "../routers/scoresheet/repository/scoresheet.repository";
 
 export interface FriendSharingSettings {
   id: number;
@@ -115,6 +121,110 @@ export async function handleLocationSharing(
   }
 
   return created;
+}
+
+/**
+ * Creates shared rounds for a shared scoresheet.
+ * @param transaction - Database transaction
+ * @param rounds - Array of rounds from the original scoresheet
+ * @param sharedScoresheetId - ID of the created shared scoresheet
+ * @param ownerId - Owner ID
+ * @param sharedWithId - ID of user sharing with
+ * @param permission - Permission level ("view" | "edit")
+ */
+export async function createSharedRoundsForScoresheet(
+  transaction: TransactionType,
+  rounds: { id: number }[],
+  sharedScoresheetId: number,
+  ownerId: string,
+  sharedWithId: string,
+  permission: "view" | "edit",
+) {
+  const sharedScoresheetRoundsInput = rounds.map((round) => ({
+    roundId: round.id,
+    linkedRoundId: null,
+    sharedScoresheetId,
+    ownerId,
+    sharedWithId,
+    permission,
+  }));
+
+  if (sharedScoresheetRoundsInput.length > 0) {
+    await scoresheetRepository.insertSharedRounds(
+      { input: sharedScoresheetRoundsInput },
+      transaction,
+    );
+  }
+}
+
+/**
+ * Fetches a scoresheet, creates a shared scoresheet, and inserts shared rounds.
+ * @param transaction - Database transaction
+ * @param scoresheetId - ID of the scoresheet to share
+ * @param createdBy - ID of the user who created the scoresheet
+ * @param ownerId - Owner ID for the shared scoresheet
+ * @param sharedWithId - ID of user sharing with
+ * @param permission - Permission level ("view" | "edit")
+ * @param sharedGameId - ID of the shared game
+ * @param type - Type of shared scoresheet ("match" | "game")
+ * @returns The created shared scoresheet
+ */
+export async function createSharedScoresheetWithRounds(
+  transaction: TransactionType,
+  scoresheetId: number,
+  createdBy: string,
+  ownerId: string,
+  sharedWithId: string,
+  permission: "view" | "edit",
+  sharedGameId: number,
+  type: "match" | "game",
+) {
+  const returnedScoresheet = await transaction.query.scoresheet.findFirst({
+    where: {
+      id: scoresheetId,
+      createdBy,
+    },
+    with: {
+      rounds: true,
+    },
+  });
+
+  if (!returnedScoresheet) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Scoresheet not found.",
+    });
+  }
+
+  const [returnedSharedScoresheet] = await transaction
+    .insert(sharedScoresheet)
+    .values({
+      ownerId,
+      sharedWithId,
+      scoresheetId,
+      permission,
+      sharedGameId,
+      type,
+    })
+    .returning();
+
+  if (!returnedSharedScoresheet) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Shared Scoresheet not created successfully",
+    });
+  }
+
+  await createSharedRoundsForScoresheet(
+    transaction,
+    returnedScoresheet.rounds,
+    returnedSharedScoresheet.id,
+    ownerId,
+    sharedWithId,
+    permission,
+  );
+
+  return returnedSharedScoresheet;
 }
 
 export type SharedEntry = {

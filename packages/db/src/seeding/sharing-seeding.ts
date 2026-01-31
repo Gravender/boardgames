@@ -16,6 +16,7 @@ import {
   sharedMatchPlayer,
   sharedMatchPlayerRole,
   sharedPlayer,
+  sharedRound,
   sharedScoresheet,
   shareRequest,
 } from "@board-games/db/schema";
@@ -33,6 +34,7 @@ export async function seedSharing(d3Seed: number) {
   await resetTable(sharedMatch);
   await resetTable(sharedPlayer);
   await resetTable(sharedScoresheet);
+  await resetTable(sharedRound);
   await resetTable(shareRequest);
   const users = await db.query.user.findMany({
     with: {
@@ -479,6 +481,28 @@ export async function seedSharing(d3Seed: number) {
                     if (!returnedSharedScoresheet) {
                       throw new Error("Shared Scoresheet not created");
                     }
+                    // Create sharedRound entries for the scoresheet's rounds
+                    if (returnedUserShareRequest.sharedWithId) {
+                      const scoresheetRounds = await db.query.round.findMany({
+                        where: {
+                          scoresheetId: existingMatch.scoresheetId,
+                        },
+                      });
+                      if (scoresheetRounds.length > 0) {
+                        const sharedWithId =
+                          returnedUserShareRequest.sharedWithId;
+                        await db.insert(sharedRound).values(
+                          scoresheetRounds.map((round) => ({
+                            roundId: round.id,
+                            linkedRoundId: null,
+                            sharedScoresheetId: returnedSharedScoresheet.id,
+                            ownerId: returnedUserShareRequest.ownerId,
+                            sharedWithId: sharedWithId,
+                            permission: cShareRequest.permission,
+                          })),
+                        );
+                      }
+                    }
                     const [returnedSharedMatch] = await db
                       .insert(sharedMatch)
                       .values({
@@ -544,14 +568,42 @@ export async function seedSharing(d3Seed: number) {
                 (cShareRequest) => cShareRequest.itemType === "scoresheet",
               )) {
                 if (cShareRequest.itemType === "scoresheet") {
-                  await db.insert(sharedScoresheet).values({
-                    ownerId: returnedUserShareRequest.ownerId,
-                    sharedWithId: returnedUserShareRequest.sharedWithId,
-                    scoresheetId: cShareRequest.itemId,
-                    permission: cShareRequest.permission,
-                    sharedGameId: returnedSharedGame.id,
-                    type: "game",
-                  });
+                  const [createdSharedScoresheet] = await db
+                    .insert(sharedScoresheet)
+                    .values({
+                      ownerId: returnedUserShareRequest.ownerId,
+                      sharedWithId: returnedUserShareRequest.sharedWithId,
+                      scoresheetId: cShareRequest.itemId,
+                      permission: cShareRequest.permission,
+                      sharedGameId: returnedSharedGame.id,
+                      type: "game",
+                    })
+                    .returning();
+                  if (
+                    createdSharedScoresheet &&
+                    returnedUserShareRequest.sharedWithId
+                  ) {
+                    // Create sharedRound entries for the scoresheet's rounds
+                    const scoresheetRounds = await db.query.round.findMany({
+                      where: {
+                        scoresheetId: cShareRequest.itemId,
+                      },
+                    });
+                    if (scoresheetRounds.length > 0) {
+                      const sharedWithId =
+                        returnedUserShareRequest.sharedWithId;
+                      await db.insert(sharedRound).values(
+                        scoresheetRounds.map((round) => ({
+                          roundId: round.id,
+                          linkedRoundId: null,
+                          sharedScoresheetId: createdSharedScoresheet.id,
+                          ownerId: returnedUserShareRequest.ownerId,
+                          sharedWithId: sharedWithId,
+                          permission: cShareRequest.permission,
+                        })),
+                      );
+                    }
+                  }
                 }
               }
             }
@@ -773,14 +825,41 @@ export async function seedSharing(d3Seed: number) {
                   (c) => c.itemType === "scoresheet",
                 )) {
                   if (cShareRequest.itemType === "scoresheet") {
-                    await db.insert(sharedScoresheet).values({
-                      ownerId: returnedUserShareRequest.ownerId,
-                      sharedWithId: returnedUserShareRequest.sharedWithId,
-                      scoresheetId: cShareRequest.itemId,
-                      permission: cShareRequest.permission,
-                      sharedGameId: returnedSharedGame.id,
-                      type: "game",
-                    });
+                    const [createdSharedScoresheet] = await db
+                      .insert(sharedScoresheet)
+                      .values({
+                        ownerId: returnedUserShareRequest.ownerId,
+                        sharedWithId: returnedUserShareRequest.sharedWithId,
+                        scoresheetId: cShareRequest.itemId,
+                        permission: cShareRequest.permission,
+                        sharedGameId: returnedSharedGame.id,
+                        type: "game",
+                      })
+                      .returning();
+                    if (
+                      createdSharedScoresheet &&
+                      returnedUserShareRequest.sharedWithId
+                    ) {
+                      const scoresheetRounds = await db.query.round.findMany({
+                        where: {
+                          scoresheetId: cShareRequest.itemId,
+                        },
+                      });
+                      if (scoresheetRounds.length > 0) {
+                        const sharedWithId =
+                          returnedUserShareRequest.sharedWithId;
+                        await db.insert(sharedRound).values(
+                          scoresheetRounds.map((round) => ({
+                            roundId: round.id,
+                            linkedRoundId: null,
+                            sharedScoresheetId: createdSharedScoresheet.id,
+                            ownerId: returnedUserShareRequest.ownerId,
+                            sharedWithId: sharedWithId,
+                            permission: cShareRequest.permission,
+                          })),
+                        );
+                      }
+                    }
                   }
                 }
                 const existingMatch = await db.query.match.findFirst({
@@ -830,6 +909,28 @@ export async function seedSharing(d3Seed: number) {
                     .returning();
                   if (!returnedSharedScoresheet) {
                     throw new Error("Shared Scoresheet not created");
+                  }
+                  // Create sharedRound entries for the scoresheet's rounds
+                  if (returnedUserShareRequest.sharedWithId) {
+                    const scoresheetRounds = await db.query.round.findMany({
+                      where: {
+                        scoresheetId: existingMatch.scoresheetId,
+                      },
+                    });
+                    if (scoresheetRounds.length > 0) {
+                      const sharedWithId =
+                        returnedUserShareRequest.sharedWithId;
+                      await db.insert(sharedRound).values(
+                        scoresheetRounds.map((round) => ({
+                          roundId: round.id,
+                          linkedRoundId: null,
+                          sharedScoresheetId: returnedSharedScoresheet.id,
+                          ownerId: returnedUserShareRequest.ownerId,
+                          sharedWithId: sharedWithId,
+                          permission: returnedUserShareRequest.permission,
+                        })),
+                      );
+                    }
                   }
                   const [returnedSharedMatch] = await db
                     .insert(sharedMatch)
@@ -1191,14 +1292,41 @@ export async function seedSharing(d3Seed: number) {
                       },
                     });
                   if (returnedSharedGame) {
-                    await db.insert(sharedScoresheet).values({
-                      ownerId: returnedUserShareRequest.ownerId,
-                      sharedWithId: returnedUserShareRequest.sharedWithId,
-                      scoresheetId: cShareRequest.itemId,
-                      permission: cShareRequest.permission,
-                      sharedGameId: returnedSharedGame.id,
-                      type: "game",
-                    });
+                    const [createdSharedScoresheet] = await db
+                      .insert(sharedScoresheet)
+                      .values({
+                        ownerId: returnedUserShareRequest.ownerId,
+                        sharedWithId: returnedUserShareRequest.sharedWithId,
+                        scoresheetId: cShareRequest.itemId,
+                        permission: cShareRequest.permission,
+                        sharedGameId: returnedSharedGame.id,
+                        type: "game",
+                      })
+                      .returning();
+                    if (
+                      createdSharedScoresheet &&
+                      returnedUserShareRequest.sharedWithId
+                    ) {
+                      const scoresheetRounds = await db.query.round.findMany({
+                        where: {
+                          scoresheetId: cShareRequest.itemId,
+                        },
+                      });
+                      if (scoresheetRounds.length > 0) {
+                        const sharedWithId =
+                          returnedUserShareRequest.sharedWithId;
+                        await db.insert(sharedRound).values(
+                          scoresheetRounds.map((round) => ({
+                            roundId: round.id,
+                            linkedRoundId: null,
+                            sharedScoresheetId: createdSharedScoresheet.id,
+                            ownerId: returnedUserShareRequest.ownerId,
+                            sharedWithId: sharedWithId,
+                            permission: cShareRequest.permission,
+                          })),
+                        );
+                      }
+                    }
                   }
                 }
                 if (cShareRequest.itemType === "match") {
@@ -1268,6 +1396,28 @@ export async function seedSharing(d3Seed: number) {
                         .returning();
                       if (!returnedSharedScoresheet) {
                         throw new Error("Shared Scoresheet not created");
+                      }
+                      // Create sharedRound entries for the scoresheet's rounds
+                      if (returnedUserShareRequest.sharedWithId) {
+                        const scoresheetRounds = await db.query.round.findMany({
+                          where: {
+                            scoresheetId: existingMatch.scoresheetId,
+                          },
+                        });
+                        if (scoresheetRounds.length > 0) {
+                          const sharedWithId =
+                            returnedUserShareRequest.sharedWithId;
+                          await db.insert(sharedRound).values(
+                            scoresheetRounds.map((round) => ({
+                              roundId: round.id,
+                              linkedRoundId: null,
+                              sharedScoresheetId: returnedSharedScoresheet.id,
+                              ownerId: returnedUserShareRequest.ownerId,
+                              sharedWithId: sharedWithId,
+                              permission: returnedUserShareRequest.permission,
+                            })),
+                          );
+                        }
                       }
                       const [returnedSharedMatch] = await db
                         .insert(sharedMatch)

@@ -21,8 +21,12 @@ import {
   shareRequest,
 } from "@board-games/db/schema";
 
+import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
 import { protectedUserProcedure } from "../../trpc";
-import { handleLocationSharing } from "../../utils/sharing";
+import {
+  createSharedScoresheetWithRounds,
+  handleLocationSharing,
+} from "../../utils/sharing";
 
 export const shareRequestRouter = {
   requestShareGame: protectedUserProcedure
@@ -553,6 +557,21 @@ export const shareRequestRouter = {
                         },
                       });
                     if (!existingSharedScoresheet && returnedShareGame) {
+                      const returnedScoresheet =
+                        await tx2.query.scoresheet.findFirst({
+                          where: {
+                            id: defaultScoreSheet.id,
+                          },
+                          with: {
+                            rounds: true,
+                          },
+                        });
+                      if (!returnedScoresheet) {
+                        throw new TRPCError({
+                          code: "NOT_FOUND",
+                          message: "Scoresheet not found.",
+                        });
+                      }
                       const [createdSharedScoresheet] = await tx2
                         .insert(sharedScoresheet)
                         .values({
@@ -570,6 +589,22 @@ export const shareRequestRouter = {
                           code: "INTERNAL_SERVER_ERROR",
                           message: "Failed to generate share.",
                         });
+                      }
+                      const sharedScoresheetRoundsInput =
+                        returnedScoresheet.rounds.map((round) => ({
+                          roundId: round.id,
+                          linkedRoundId: null,
+                          sharedScoresheetId: createdSharedScoresheet.id,
+                          ownerId: ctx.userId,
+                          sharedWithId: friendToShareTo.id,
+                          permission:
+                            friendSettings.defaultPermissionForMatches,
+                        }));
+                      if (sharedScoresheetRoundsInput.length > 0) {
+                        await scoresheetRepository.insertSharedRounds(
+                          { input: sharedScoresheetRoundsInput },
+                          tx2,
+                        );
                       }
                     }
                   }
@@ -596,6 +631,21 @@ export const shareRequestRouter = {
                         },
                       });
                     if (!existingSharedScoresheet && returnedShareGame) {
+                      const returnedScoresheet =
+                        await tx2.query.scoresheet.findFirst({
+                          where: {
+                            id: gamesScoreSheets[0].id,
+                          },
+                          with: {
+                            rounds: true,
+                          },
+                        });
+                      if (!returnedScoresheet) {
+                        throw new TRPCError({
+                          code: "NOT_FOUND",
+                          message: "Scoresheet not found.",
+                        });
+                      }
                       const [createdSharedScoresheet] = await tx2
                         .insert(sharedScoresheet)
                         .values({
@@ -613,6 +663,22 @@ export const shareRequestRouter = {
                           code: "INTERNAL_SERVER_ERROR",
                           message: "Failed to generate share.",
                         });
+                      }
+                      const sharedScoresheetRoundsInput =
+                        returnedScoresheet.rounds.map((round) => ({
+                          roundId: round.id,
+                          linkedRoundId: null,
+                          sharedScoresheetId: createdSharedScoresheet.id,
+                          ownerId: ctx.userId,
+                          sharedWithId: friendToShareTo.id,
+                          permission:
+                            friendSettings.defaultPermissionForMatches,
+                        }));
+                      if (sharedScoresheetRoundsInput.length > 0) {
+                        await scoresheetRepository.insertSharedRounds(
+                          { input: sharedScoresheetRoundsInput },
+                          tx2,
+                        );
                       }
                     }
                   }
@@ -649,6 +715,22 @@ export const shareRequestRouter = {
                     },
                   });
                 if (!existingSharedMatch) {
+                  const returnedScoresheet =
+                    await tx2.query.scoresheet.findFirst({
+                      where: {
+                        id: returnedMatch.scoresheetId,
+                        createdBy: returnedMatch.createdBy,
+                      },
+                      with: {
+                        rounds: true,
+                      },
+                    });
+                  if (!returnedScoresheet) {
+                    throw new TRPCError({
+                      code: "NOT_FOUND",
+                      message: "Scoresheet not found.",
+                    });
+                  }
                   const [createdSharedScoresheet] = await tx2
                     .insert(sharedScoresheet)
                     .values({
@@ -665,6 +747,21 @@ export const shareRequestRouter = {
                       code: "INTERNAL_SERVER_ERROR",
                       message: "Failed to generate share.",
                     });
+                  }
+                  const sharedScoresheetRoundsInput =
+                    returnedScoresheet.rounds.map((round) => ({
+                      roundId: round.id,
+                      linkedRoundId: null,
+                      sharedScoresheetId: createdSharedScoresheet.id,
+                      ownerId: ctx.userId,
+                      sharedWithId: friendToShareTo.id,
+                      permission: friendSettings.defaultPermissionForMatches,
+                    }));
+                  if (sharedScoresheetRoundsInput.length > 0) {
+                    await scoresheetRepository.insertSharedRounds(
+                      { input: sharedScoresheetRoundsInput },
+                      tx2,
+                    );
                   }
                   const [createdSharedMatch] = await tx2
                     .insert(sharedMatch)
@@ -1313,6 +1410,21 @@ export const shareRequestRouter = {
                             },
                           });
                         if (!existingSharedScoresheet) {
+                          const returnedScoresheet =
+                            await tx2.query.scoresheet.findFirst({
+                              where: {
+                                id: defaultScoreSheet.id,
+                              },
+                              with: {
+                                rounds: true,
+                              },
+                            });
+                          if (!returnedScoresheet) {
+                            throw new TRPCError({
+                              code: "NOT_FOUND",
+                              message: "Scoresheet not found.",
+                            });
+                          }
                           const [createdSharedScoresheet] = await tx2
                             .insert(sharedScoresheet)
                             .values({
@@ -1330,6 +1442,22 @@ export const shareRequestRouter = {
                               code: "INTERNAL_SERVER_ERROR",
                               message: "Failed to generate share.",
                             });
+                          }
+                          const sharedScoresheetRoundsInput =
+                            returnedScoresheet.rounds.map((round) => ({
+                              roundId: round.id,
+                              linkedRoundId: null,
+                              sharedScoresheetId: createdSharedScoresheet.id,
+                              ownerId: ctx.userId,
+                              sharedWithId: friendToShareTo.id,
+                              permission:
+                                friendSettings.defaultPermissionForMatches,
+                            }));
+                          if (sharedScoresheetRoundsInput.length > 0) {
+                            await scoresheetRepository.insertSharedRounds(
+                              { input: sharedScoresheetRoundsInput },
+                              tx2,
+                            );
                           }
                         }
                       }
@@ -1371,6 +1499,21 @@ export const shareRequestRouter = {
                             },
                           });
                         if (!existingSharedScoresheet) {
+                          const returnedScoresheet =
+                            await tx2.query.scoresheet.findFirst({
+                              where: {
+                                id: gamesScoreSheets[0].id,
+                              },
+                              with: {
+                                rounds: true,
+                              },
+                            });
+                          if (!returnedScoresheet) {
+                            throw new TRPCError({
+                              code: "NOT_FOUND",
+                              message: "Scoresheet not found.",
+                            });
+                          }
                           const [createdSharedScoresheet] = await tx2
                             .insert(sharedScoresheet)
                             .values({
@@ -1388,6 +1531,22 @@ export const shareRequestRouter = {
                               code: "INTERNAL_SERVER_ERROR",
                               message: "Failed to generate share.",
                             });
+                          }
+                          const sharedScoresheetRoundsInput =
+                            returnedScoresheet.rounds.map((round) => ({
+                              roundId: round.id,
+                              linkedRoundId: null,
+                              sharedScoresheetId: createdSharedScoresheet.id,
+                              ownerId: ctx.userId,
+                              sharedWithId: friendToShareTo.id,
+                              permission:
+                                friendSettings.defaultPermissionForMatches,
+                            }));
+                          if (sharedScoresheetRoundsInput.length > 0) {
+                            await scoresheetRepository.insertSharedRounds(
+                              { input: sharedScoresheetRoundsInput },
+                              tx2,
+                            );
                           }
                         }
                       }
@@ -1952,23 +2111,16 @@ async function sharedMatchWithFriends(
       },
     });
     if (!existingSharedMatch && returnedSharedGame) {
-      const [createdSharedScoresheet] = await transaction
-        .insert(sharedScoresheet)
-        .values({
-          ownerId: userId,
-          sharedWithId: friendId,
-          scoresheetId: returnedMatch.scoresheetId,
-          permission: friendSettings.defaultPermissionForMatches,
-          sharedGameId: returnedSharedGame.id,
-          type: "match",
-        })
-        .returning();
-      if (!createdSharedScoresheet) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to generate share.",
-        });
-      }
+      const createdSharedScoresheet = await createSharedScoresheetWithRounds(
+        transaction,
+        returnedMatch.scoresheetId,
+        returnedMatch.createdBy,
+        userId,
+        friendId,
+        friendSettings.defaultPermissionForMatches,
+        returnedSharedGame.id,
+        "match",
+      );
       const [createdSharedMatch] = await transaction
         .insert(sharedMatch)
         .values({
@@ -2175,24 +2327,16 @@ async function handleMatchSharing(
   }
 
   // Create the shared scoresheet
-  const [createdSharedScoresheet] = await transaction
-    .insert(sharedScoresheet)
-    .values({
-      ownerId: ownerId,
-      sharedWithId: friendId,
-      scoresheetId: returnedMatch.scoresheetId,
-      permission: friendSettings.defaultPermissionForMatches,
-      sharedGameId: sharedGameRef.id,
-      type: "match",
-    })
-    .returning();
-
-  if (!createdSharedScoresheet) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Failed to generate share.",
-    });
-  }
+  const createdSharedScoresheet = await createSharedScoresheetWithRounds(
+    transaction,
+    returnedMatch.scoresheetId,
+    returnedMatch.createdBy,
+    ownerId,
+    friendId,
+    friendSettings.defaultPermissionForMatches,
+    sharedGameRef.id,
+    "match",
+  );
 
   // Create the shared match
   const [createdSharedMatch] = await transaction
@@ -2261,23 +2405,31 @@ async function shareScoresheetsWithFriend(
         },
       });
       if (!existingSharedScoresheet && returnedSharedGame) {
-        const [createdSharedScoresheet] = await transaction
-          .insert(sharedScoresheet)
-          .values({
-            ownerId: userId,
-            sharedWithId: friendId,
-            scoresheetId: scoresheetToShare.scoresheetId,
-            sharedGameId: returnedSharedGame.id,
-            permission: scoresheetToShare.permission,
-            type: "game",
-          })
-          .returning();
-        if (!createdSharedScoresheet) {
+        const returnedScoresheet = await transaction.query.scoresheet.findFirst(
+          {
+            where: {
+              id: scoresheetToShare.scoresheetId,
+              createdBy: userId,
+              gameId: gameId,
+            },
+          },
+        );
+        if (!returnedScoresheet) {
           throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to generate share.",
+            code: "NOT_FOUND",
+            message: "Scoresheet not found.",
           });
         }
+        await createSharedScoresheetWithRounds(
+          transaction,
+          scoresheetToShare.scoresheetId,
+          userId,
+          userId,
+          friendId,
+          scoresheetToShare.permission,
+          returnedSharedGame.id,
+          "game",
+        );
       }
     }
   }
