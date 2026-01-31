@@ -1342,18 +1342,19 @@ export const gameRouter = {
           const currentLocation = createdLocations.find(
             (location) => location.bggLocationId === play.locationRefId,
           );
+          const playScoresheetValues = {
+            name: returnedScoresheet.name,
+            gameId: returnedScoresheet.gameId,
+            createdBy: ctx.userId,
+            isCoop: returnedScoresheet.isCoop,
+            winCondition: returnedScoresheet.winCondition,
+            targetScore: returnedScoresheet.targetScore,
+            roundsScore: returnedScoresheet.roundsScore,
+            type: "Match" as const,
+          };
           const [playScoresheet] = await ctx.db
             .insert(scoresheet)
-            .values({
-              name: returnedScoresheet.name,
-              gameId: returnedScoresheet.gameId,
-              createdBy: ctx.userId,
-              isCoop: returnedScoresheet.isCoop,
-              winCondition: returnedScoresheet.winCondition,
-              targetScore: returnedScoresheet.targetScore,
-              roundsScore: returnedScoresheet.roundsScore,
-              type: "Match",
-            })
+            .values(playScoresheetValues)
             .returning();
           if (!playScoresheet) {
             throw new Error("Failed to create scoresheet");

@@ -27,6 +27,9 @@ ALTER TABLE "boardgames_scoresheet" ADD COLUMN IF NOT EXISTS "forked_from_scores
 ALTER TABLE "boardgames_scoresheet" ADD COLUMN IF NOT EXISTS "forked_from_game_id" integer;
 ALTER TABLE "boardgames_scoresheet" ADD COLUMN IF NOT EXISTS "forked_for_match_id" integer;
 --> statement-breakpoint
+-- Ensure scoresheet_key is unique (stable external identifier)
+ALTER TABLE "boardgames_scoresheet" ADD CONSTRAINT "boardgames_scoresheet_scoresheet_key_unique" UNIQUE ("scoresheet_key");
+--> statement-breakpoint
 ALTER TABLE "boardgames_scoresheet" ADD CONSTRAINT "boardgames_scoresheet_template_revision_of_scoresheet_id_boardgames_scoresheet_id_fk" FOREIGN KEY ("template_revision_of_scoresheet_id") REFERENCES "public"."boardgames_scoresheet"("id") ON DELETE no action ON UPDATE no action;
 --> statement-breakpoint
 ALTER TABLE "boardgames_scoresheet" ADD CONSTRAINT "boardgames_scoresheet_forked_from_scoresheet_id_boardgames_scoresheet_id_fk" FOREIGN KEY ("forked_from_scoresheet_id") REFERENCES "public"."boardgames_scoresheet"("id") ON DELETE no action ON UPDATE no action;

@@ -109,190 +109,195 @@ class MatchSetupService {
   }> {
     const { scoresheetInput, userId, gameId, tx } = args;
     if (scoresheetInput.type === "original") {
-      const returnedScoresheet = await scoresheetRepository.get(
-        {
-          id: scoresheetInput.id,
-          createdBy: userId,
-          with: {
-            rounds: true,
-          },
-        },
+      return this.resolveOriginalScoresheet({
+        scoresheetInput,
+        userId,
+        gameId,
         tx,
-      );
-      assertFound(
-        returnedScoresheet,
-        {
-          userId: userId,
-          value: scoresheetInput,
-        },
-        "Scoresheet not found. For Create Match.",
-      );
-      const insertedScoresheet = await scoresheetRepository.insert(
-        {
-          name: returnedScoresheet.name,
-          isCoop: returnedScoresheet.isCoop,
-          winCondition: returnedScoresheet.winCondition,
-          targetScore: returnedScoresheet.targetScore,
-          roundsScore: returnedScoresheet.roundsScore,
-          parentId: returnedScoresheet.id,
-          forkedFromScoresheetId: returnedScoresheet.id,
-          forkedFromTemplateVersion: returnedScoresheet.templateVersion,
-          createdBy: userId,
-          gameId: gameId,
-          type: "Match",
-        },
-        tx,
-      );
-      assertInserted(
-        insertedScoresheet,
-        {
-          userId: userId,
-          value: scoresheetInput,
-        },
-        "Scoresheet Not Created Successfully. For Create Match.",
-      );
-
-      const rounds = await this.insertRoundsFromTemplate(
-        returnedScoresheet.rounds,
-        insertedScoresheet.id,
-        tx,
-      );
-      return { id: insertedScoresheet.id, rounds, type: "Match" };
+      });
     }
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (scoresheetInput.type === "shared") {
-      const returnedSharedScoresheet = await scoresheetRepository.getShared(
-        {
-          id: scoresheetInput.sharedId,
-          sharedWithId: userId,
-          with: {
-            scoresheet: true,
-            sharedRounds: {
-              with: {
-                round: true,
-              },
-            },
-          },
-        },
-        tx,
-      );
-      assertFound(
-        returnedSharedScoresheet,
-        {
-          userId: userId,
-          value: scoresheetInput,
-        },
-        "Shared scoresheet not found. For Create Match",
-      );
-      const insertedNewScoresheet = await scoresheetRepository.insert(
-        {
-          name: returnedSharedScoresheet.scoresheet.name,
-          isCoop: returnedSharedScoresheet.scoresheet.isCoop,
-          winCondition: returnedSharedScoresheet.scoresheet.winCondition,
-          targetScore: returnedSharedScoresheet.scoresheet.targetScore,
-          roundsScore: returnedSharedScoresheet.scoresheet.roundsScore,
-          createdBy: userId,
-          gameId: gameId,
-          type: "Game",
-        },
-        tx,
-      );
-      assertInserted(
-        insertedNewScoresheet,
-        {
-          userId: userId,
-          value: scoresheetInput,
-        },
-        "Scoresheet Not Created Successfully. For Create Match. Based on Shared Scoresheet.",
-      );
-      const linkScoresheet = await scoresheetRepository.linkSharedScoresheet({
-        input: {
-          sharedScoresheetId: returnedSharedScoresheet.id,
-          linkedScoresheetId: insertedNewScoresheet.id,
-        },
+      return this.resolveSharedScoresheet({
+        scoresheetInput,
+        userId,
+        gameId,
         tx,
       });
-      assertInserted(
-        linkScoresheet,
-        {
-          userId: userId,
-          value: scoresheetInput,
-        },
-        "Scoresheet Not Linked Successfully. For Create Match. Based on Shared Scoresheet.",
-      );
-      const insertedMatchScoresheet = await scoresheetRepository.insert(
-        {
-          name: insertedNewScoresheet.name,
-          isCoop: insertedNewScoresheet.isCoop,
-          winCondition: insertedNewScoresheet.winCondition,
-          targetScore: insertedNewScoresheet.targetScore,
-          roundsScore: insertedNewScoresheet.roundsScore,
-          parentId: insertedNewScoresheet.id,
-          forkedFromScoresheetId: insertedNewScoresheet.id,
-          forkedFromTemplateVersion: insertedNewScoresheet.templateVersion,
-          createdBy: userId,
-          gameId: gameId,
-          type: "Match",
-        },
-        tx,
-      );
-      assertInserted(
-        insertedMatchScoresheet,
-        {
-          userId: userId,
-          value: scoresheetInput,
-        },
-        "Match Scoresheet Not Created Successfully. For Create Match.",
-      );
-
-      const rounds = await this.insertRoundsFromTemplate(
-        returnedSharedScoresheet.sharedRounds.map(
-          (sharedRound) => sharedRound.round,
-        ),
-        insertedMatchScoresheet.id,
-        tx,
-      );
-      if (rounds.length !== returnedSharedScoresheet.sharedRounds.length) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message:
-            "Rounds not inserted successfully. For Create Match. Based on Shared Scoresheet.",
-        });
-      } else {
-        for (const insertedRound of rounds) {
-          const sharedRound = returnedSharedScoresheet.sharedRounds.find(
-            (sr) =>
-              sr.round.roundKey === insertedRound.roundKey ||
-              (sr.round.order === insertedRound.order &&
-                sr.round.name === insertedRound.name),
-          );
-          if (!sharedRound) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message:
-                "Shared round not found. For Create Match. Based on Shared Scoresheet.",
-            });
-          }
-          const linkedSharedRound = await scoresheetRepository.linkSharedRound({
-            input: {
-              sharedRoundId: sharedRound.id,
-              linkedRoundId: insertedRound.id,
-              sharedScoresheetId: sharedRound.sharedScoresheetId,
-            },
-            tx,
-          });
-          assertInserted(
-            linkedSharedRound,
-            { userId: userId, value: scoresheetInput },
-            "Shared round not linked successfully. For Create Match. Based on Shared Scoresheet.",
-          );
-        }
-      }
-      return { id: insertedMatchScoresheet.id, rounds, type: "Match" };
     }
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "Unknown scoresheet type.",
+    });
+  }
+
+  private async resolveOriginalScoresheet(args: {
+    scoresheetInput: Extract<
+      CreateMatchArgs["input"]["scoresheet"],
+      { type: "original" }
+    >;
+    userId: string;
+    gameId: number;
+    tx: TransactionType;
+  }): Promise<{
+    id: number;
+    rounds: { id: number }[];
+    type: "Match";
+  }> {
+    const { scoresheetInput, userId, gameId, tx } = args;
+    const returnedScoresheet = await scoresheetRepository.get(
+      {
+        id: scoresheetInput.id,
+        createdBy: userId,
+        with: { rounds: true },
+      },
+      tx,
+    );
+    assertFound(
+      returnedScoresheet,
+      { userId, value: scoresheetInput },
+      "Scoresheet not found. For Create Match.",
+    );
+    const insertedScoresheet = await scoresheetRepository.insert(
+      {
+        name: returnedScoresheet.name,
+        isCoop: returnedScoresheet.isCoop,
+        winCondition: returnedScoresheet.winCondition,
+        targetScore: returnedScoresheet.targetScore,
+        roundsScore: returnedScoresheet.roundsScore,
+        parentId: returnedScoresheet.id,
+        forkedFromScoresheetId: returnedScoresheet.id,
+        forkedFromTemplateVersion: returnedScoresheet.templateVersion,
+        createdBy: userId,
+        gameId,
+        type: "Match",
+      },
+      tx,
+    );
+    assertInserted(
+      insertedScoresheet,
+      { userId, value: scoresheetInput },
+      "Scoresheet Not Created Successfully. For Create Match.",
+    );
+    const rounds = await this.insertRoundsFromTemplate(
+      returnedScoresheet.rounds,
+      insertedScoresheet.id,
+      tx,
+    );
+    return { id: insertedScoresheet.id, rounds, type: "Match" };
+  }
+
+  private async resolveSharedScoresheet(args: {
+    scoresheetInput: Extract<
+      CreateMatchArgs["input"]["scoresheet"],
+      { type: "shared" }
+    >;
+    userId: string;
+    gameId: number;
+    tx: TransactionType;
+  }): Promise<{
+    id: number;
+    rounds: { id: number }[];
+    type: "Match";
+  }> {
+    const { scoresheetInput, userId, gameId, tx } = args;
+    const returnedSharedScoresheet = await scoresheetRepository.getShared(
+      {
+        id: scoresheetInput.sharedId,
+        sharedWithId: userId,
+        with: {
+          scoresheet: true,
+          sharedRounds: { with: { round: true } },
+        },
+      },
+      tx,
+    );
+    assertFound(
+      returnedSharedScoresheet,
+      { userId, value: scoresheetInput },
+      "Shared scoresheet not found. For Create Match",
+    );
+    if (returnedSharedScoresheet.linkedScoresheetId !== null) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          "Shared scoresheet already has a linked copy. Cannot create another match from this shared scoresheet.",
+      });
+    }
+    const insertedNewScoresheet = await scoresheetRepository.insert(
+      {
+        name: returnedSharedScoresheet.scoresheet.name,
+        isCoop: returnedSharedScoresheet.scoresheet.isCoop,
+        winCondition: returnedSharedScoresheet.scoresheet.winCondition,
+        targetScore: returnedSharedScoresheet.scoresheet.targetScore,
+        roundsScore: returnedSharedScoresheet.scoresheet.roundsScore,
+        createdBy: userId,
+        gameId,
+        type: "Game",
+      },
+      tx,
+    );
+    assertInserted(
+      insertedNewScoresheet,
+      { userId, value: scoresheetInput },
+      "Scoresheet Not Created Successfully. For Create Match. Based on Shared Scoresheet.",
+    );
+    const newScoresheetRounds = await this.insertRoundsFromTemplate(
+      returnedSharedScoresheet.sharedRounds.map((sr) => sr.round),
+      insertedNewScoresheet.id,
+      tx,
+    );
+    if (newScoresheetRounds.length !== returnedSharedScoresheet.sharedRounds.length) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message:
+          "Rounds not inserted successfully for linked scoresheet. For Create Match. Based on Shared Scoresheet.",
+      });
+    }
+    for (let i = 0; i < returnedSharedScoresheet.sharedRounds.length; i++) {
+      const sharedRound = returnedSharedScoresheet.sharedRounds[i];
+      const newRound = newScoresheetRounds[i];
+      if (!sharedRound || !newRound) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            "Shared round not found. For Create Match. Based on Shared Scoresheet.",
+        });
+      }
+      const linkedSharedRound = await scoresheetRepository.linkSharedRound({
+        input: {
+          sharedRoundId: sharedRound.id,
+          linkedRoundId: newRound.id,
+          sharedScoresheetId: sharedRound.sharedScoresheetId,
+        },
+        tx,
+      });
+      assertInserted(
+        linkedSharedRound,
+        { userId, value: scoresheetInput },
+        "Shared round not linked successfully. For Create Match. Based on Shared Scoresheet.",
+      );
+    }
+    const linkScoresheet = await scoresheetRepository.linkSharedScoresheet({
+      input: {
+        sharedScoresheetId: returnedSharedScoresheet.id,
+        linkedScoresheetId: insertedNewScoresheet.id,
+      },
+      tx,
+    });
+    assertInserted(
+      linkScoresheet,
+      { userId, value: scoresheetInput },
+      "Scoresheet Not Linked Successfully. For Create Match. Based on Shared Scoresheet.",
+    );
+    return this.resolveOriginalScoresheet({
+      scoresheetInput: {
+        id: insertedNewScoresheet.id,
+        type: "original",
+      },
+      userId,
+      gameId,
+      tx,
     });
   }
 
