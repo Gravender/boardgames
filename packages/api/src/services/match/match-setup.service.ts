@@ -247,7 +247,10 @@ class MatchSetupService {
       insertedNewScoresheet.id,
       tx,
     );
-    if (newScoresheetRounds.length !== returnedSharedScoresheet.sharedRounds.length) {
+    if (
+      newScoresheetRounds.length !==
+      returnedSharedScoresheet.sharedRounds.length
+    ) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message:

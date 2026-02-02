@@ -45,7 +45,9 @@ const rounds = createTable(
     /** Engine contract: canonical kind for compute/UI; aligns with config shape. */
     kind: text("kind", { enum: ROUND_KINDS }),
     /** Engine contract: JSONB config per kind; validated by Zod per kind. */
-    config: jsonb("config").notNull().default(sql`'{}'::jsonb`),
+    config: jsonb("config")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     color: varchar("color", { length: 256 }),
     score: integer("score").default(0).notNull(),
     winCondition: integer("win_condition"),

@@ -17,7 +17,6 @@ import {
   sharedMatch,
   sharedMatchPlayer,
   sharedPlayer,
-  sharedScoresheet,
   shareRequest,
 } from "@board-games/db/schema";
 
