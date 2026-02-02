@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 
+import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 
 import type { GetGameStatsHeaderOutputType } from "../../repositories/game/game.repository.types";
@@ -28,6 +29,156 @@ import type {
 } from "./game.service.types";
 import { gameRepository } from "../../repositories/game/game.repository";
 import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
+
+/** One shared round from getAllSharedScoresheetsWithRounds (round + optional linked id). */
+type SharedRoundWithRound = Awaited<
+  ReturnType<typeof scoresheetRepository.getAllSharedScoresheetsWithRounds>
+>[number]["sharedRounds"][number];
+
+/** One shared scoresheet from getAllSharedScoresheetsWithRounds. */
+type SharedScoresheetWithRounds = Awaited<
+  ReturnType<typeof scoresheetRepository.getAllSharedScoresheetsWithRounds>
+>[number];
+
+/** One scoresheet from getAllScoresheetsWithRounds. */
+type OriginalScoresheetWithRounds = Awaited<
+  ReturnType<typeof scoresheetRepository.getAllScoresheetsWithRounds>
+>[number];
+
+function buildOriginalScoresheetEntry(
+  originalScoresheet: OriginalScoresheetWithRounds,
+): Extract<GetGameScoresheetStatsScoreSheetType[number], { type: "original" }> {
+  return {
+    type: "original",
+    scoresheetId: originalScoresheet.id,
+    canonicalScoresheetId: originalScoresheet.parentId ?? originalScoresheet.id,
+    name: originalScoresheet.name,
+    isDefault: originalScoresheet.type === "Default",
+    targetScore: originalScoresheet.targetScore,
+    roundsScore: originalScoresheet.roundsScore,
+    winCondition: originalScoresheet.winCondition,
+    isCoop: originalScoresheet.isCoop,
+    rounds: originalScoresheet.rounds.map((round) => ({
+      id: round.id,
+      name: round.name,
+      type: round.type,
+      order: round.order,
+      score: round.score,
+      color: round.color,
+      lookup: round.lookup,
+      modifier: round.modifier,
+    })),
+  };
+}
+
+function mapSharedRounds(
+  sharedRounds: SharedRoundWithRound[],
+): GetGameScoresheetStatsScoreSheetType[number]["rounds"] {
+  return sharedRounds.map((sharedRound) => {
+    const round = sharedRound.round;
+    const id = sharedRound.linkedRoundId ?? round.id;
+    return {
+      id,
+      name: round.name,
+      type: round.type,
+      order: round.order,
+      score: round.score,
+      color: round.color,
+      lookup: round.lookup,
+      modifier: round.modifier,
+    };
+  });
+}
+
+function buildSharedScoresheetEntry(
+  sharedScoresheet: SharedScoresheetWithRounds,
+  rounds: GetGameScoresheetStatsScoreSheetType[number]["rounds"],
+): GetGameScoresheetStatsScoreSheetType[number] {
+  const s = sharedScoresheet.scoresheet;
+  return {
+    type: "shared",
+    scoresheetId: s.id,
+    canonicalScoresheetId: s.parentId ?? s.id,
+    sharedId: sharedScoresheet.id,
+    name: s.name,
+    isDefault: sharedScoresheet.isDefault,
+    permission: sharedScoresheet.permission,
+    isCoop: s.isCoop,
+    targetScore: s.targetScore,
+    roundsScore: s.roundsScore,
+    winCondition: s.winCondition,
+    rounds,
+  };
+}
+
+async function collectScoresheetsForOriginalGame(
+  userId: string,
+  gameId: number,
+  tx: TransactionType,
+): Promise<GetGameScoresheetStatsScoreSheetType> {
+  const returnedGame = await gameRepository.getGameWithLinkedGames(
+    { id: gameId, createdBy: userId },
+    tx,
+  );
+  if (!returnedGame) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Game not found.",
+    });
+  }
+  const originalScoresheets =
+    await scoresheetRepository.getAllScoresheetsWithRounds(
+      { createdBy: userId, gameId: returnedGame.id },
+      tx,
+    );
+  const sharedScoresheets =
+    await scoresheetRepository.getAllSharedScoresheetsWithRounds(
+      {
+        sharedWithId: userId,
+        sharedGameIds: returnedGame.linkedGames.map((lg) => lg.id),
+      },
+      tx,
+    );
+  const scoresheets: GetGameScoresheetStatsScoreSheetType = [];
+  for (const s of originalScoresheets) {
+    scoresheets.push(buildOriginalScoresheetEntry(s));
+  }
+  for (const s of sharedScoresheets) {
+    scoresheets.push(
+      buildSharedScoresheetEntry(s, mapSharedRounds(s.sharedRounds)),
+    );
+  }
+  return scoresheets;
+}
+
+async function collectScoresheetsForSharedGame(
+  userId: string,
+  sharedGameId: number,
+  tx: TransactionType,
+): Promise<GetGameScoresheetStatsScoreSheetType> {
+  const returnedSharedGame = await gameRepository.getSharedGame(
+    { id: sharedGameId, sharedWithId: userId },
+    tx,
+  );
+  if (!returnedSharedGame) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Shared game not found.",
+    });
+  }
+  const sharedScoresheets =
+    await scoresheetRepository.getAllSharedScoresheetsWithRounds(
+      { sharedWithId: userId, sharedGameIds: [returnedSharedGame.id] },
+      tx,
+    );
+  const scoresheets: GetGameScoresheetStatsScoreSheetType = [];
+  for (const s of sharedScoresheets) {
+    scoresheets.push(
+      buildSharedScoresheetEntry(s, mapSharedRounds(s.sharedRounds)),
+    );
+  }
+  return scoresheets;
+}
 
 class GameStatsService {
   public async getGameStatsHeader(
@@ -125,191 +276,26 @@ class GameStatsService {
   ): Promise<GetGameScoresheetStatsOutputType> {
     const { input, ctx } = args;
 
-    // Get accessible scoresheets using the service
     const response = await db.transaction(async (tx) => {
-      const scoresheets: GetGameScoresheetStatsScoreSheetType = [];
-      if (input.type === "original") {
-        const returnedGame = await gameRepository.getGameWithLinkedGames(
-          {
-            id: input.id,
-            createdBy: ctx.userId,
-          },
-          tx,
-        );
-        if (!returnedGame) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Game not found.",
-          });
-        }
-        const originalScoresheets =
-          await scoresheetRepository.getAllScoresheetsWithRounds(
-            {
-              createdBy: ctx.userId,
-              gameId: returnedGame.id,
-            },
-            tx,
-          );
-        const sharedScoresheets =
-          await scoresheetRepository.getAllSharedScoresheetsWithRounds(
-            {
-              sharedWithId: ctx.userId,
-              sharedGameIds: returnedGame.linkedGames.map((lg) => lg.id),
-            },
-            tx,
-          );
-        for (const originalScoresheet of originalScoresheets) {
-          scoresheets.push({
-            type: "original",
-            scoresheetId: originalScoresheet.id,
-            canonicalScoresheetId:
-              originalScoresheet.parentId ?? originalScoresheet.id,
-            name: originalScoresheet.name,
-            isDefault: originalScoresheet.type === "Default",
-            targetScore: originalScoresheet.targetScore,
-            roundsScore: originalScoresheet.roundsScore,
-            winCondition: originalScoresheet.winCondition,
-            isCoop: originalScoresheet.isCoop,
-            rounds: originalScoresheet.rounds.map((round) => ({
-              id: round.id,
-              name: round.name,
-              type: round.type,
-              order: round.order,
-              score: round.score,
-              color: round.color,
-              lookup: round.lookup,
-              modifier: round.modifier,
-            })),
-          });
-        }
-        for (const sharedScoresheet of sharedScoresheets) {
-          const rounds = sharedScoresheet.sharedRounds.map((sharedRound) => {
-            if (sharedRound.linkedRoundId) {
-              return {
-                id: sharedRound.linkedRoundId,
-                name: sharedRound.round.name,
-                type: sharedRound.round.type,
-                order: sharedRound.round.order,
-                score: sharedRound.round.score,
-                color: sharedRound.round.color,
-                lookup: sharedRound.round.lookup,
-                modifier: sharedRound.round.modifier,
-              };
-            }
-            return {
-              id: sharedRound.round.id,
-              name: sharedRound.round.name,
-              type: sharedRound.round.type,
-              order: sharedRound.round.order,
-              score: sharedRound.round.score,
-              color: sharedRound.round.color,
-              lookup: sharedRound.round.lookup,
-              modifier: sharedRound.round.modifier,
-            };
-          });
-          scoresheets.push({
-            scoresheetId: sharedScoresheet.scoresheet.id,
-            type: "shared",
-            canonicalScoresheetId:
-              sharedScoresheet.scoresheet.parentId ??
-              sharedScoresheet.scoresheet.id,
-            sharedId: sharedScoresheet.id,
-            name: sharedScoresheet.scoresheet.name,
-            isDefault: sharedScoresheet.isDefault,
-            permission: sharedScoresheet.permission,
-            isCoop: sharedScoresheet.scoresheet.isCoop,
-            targetScore: sharedScoresheet.scoresheet.targetScore,
-            roundsScore: sharedScoresheet.scoresheet.roundsScore,
-            winCondition: sharedScoresheet.scoresheet.winCondition,
-            rounds,
-          });
-        }
-      } else {
-        const returnedSharedGame = await gameRepository.getSharedGame(
-          {
-            id: input.sharedGameId,
-            sharedWithId: ctx.userId,
-          },
-          tx,
-        );
-        if (!returnedSharedGame) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Shared game not found.",
-          });
-        }
-        const sharedScoresheets =
-          await scoresheetRepository.getAllSharedScoresheetsWithRounds(
-            {
-              sharedWithId: ctx.userId,
-              sharedGameIds: [returnedSharedGame.id],
-            },
-            tx,
-          );
-        for (const sharedScoresheet of sharedScoresheets) {
-          const rounds = sharedScoresheet.sharedRounds.map((sharedRound) => {
-            if (sharedRound.linkedRoundId) {
-              return {
-                id: sharedRound.linkedRoundId,
-                name: sharedRound.round.name,
-                type: sharedRound.round.type,
-                order: sharedRound.round.order,
-                score: sharedRound.round.score,
-                color: sharedRound.round.color,
-                lookup: sharedRound.round.lookup,
-                modifier: sharedRound.round.modifier,
-              };
-            }
-            return {
-              id: sharedRound.round.id,
-              name: sharedRound.round.name,
-              type: sharedRound.round.type,
-              order: sharedRound.round.order,
-              score: sharedRound.round.score,
-              color: sharedRound.round.color,
-              lookup: sharedRound.round.lookup,
-              modifier: sharedRound.round.modifier,
-            };
-          });
-          scoresheets.push({
-            scoresheetId: sharedScoresheet.scoresheet.id,
-            type: "shared",
-            canonicalScoresheetId:
-              sharedScoresheet.scoresheet.parentId ??
-              sharedScoresheet.scoresheet.id,
-            sharedId: sharedScoresheet.id,
-            name: sharedScoresheet.scoresheet.name,
-            isDefault: sharedScoresheet.isDefault,
-            permission: sharedScoresheet.permission,
-            isCoop: sharedScoresheet.scoresheet.isCoop,
-            targetScore: sharedScoresheet.scoresheet.targetScore,
-            roundsScore: sharedScoresheet.scoresheet.roundsScore,
-            winCondition: sharedScoresheet.scoresheet.winCondition,
-            rounds,
-          });
-        }
-      }
-
+      const scoresheets =
+        input.type === "original"
+          ? await collectScoresheetsForOriginalGame(ctx.userId, input.id, tx)
+          : await collectScoresheetsForSharedGame(
+              ctx.userId,
+              input.sharedGameId,
+              tx,
+            );
       const rawData = await gameRepository.getGameScoresheetStatsData({
         input,
         userId: ctx.userId,
         tx,
       });
-      return {
-        scoresheets,
-        rawData,
-      };
+      return { scoresheets, rawData };
     });
 
-    if (response.rawData.length === 0) {
-      return [];
-    }
+    if (response.rawData.length === 0) return [];
 
-    // Canonical round/scoresheet are resolved in the repository (parent_id or shared_round.linked_round_id).
-    // First pass: aggregate data
     const scoresheetMap = this.aggregateScoresheetData(response.rawData);
-
-    // Second pass: calculate stats
     return this.calculateScoresheetStats(scoresheetMap, response.scoresheets);
   }
 

@@ -220,6 +220,11 @@ class ScoresheetRepository {
       },
       with: {
         rounds: {
+          where: {
+            deletedAt: {
+              isNull: true,
+            },
+          },
           orderBy: {
             order: "asc",
           },
@@ -275,6 +280,7 @@ class ScoresheetRepository {
         sharedGameId: {
           in: sharedGameIds,
         },
+        type: "game",
       },
       with: {
         scoresheet: true,
