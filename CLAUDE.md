@@ -151,6 +151,28 @@ pnpm clean                 # Clean all node_modules
 pnpm clean:workspaces      # Clean workspace build artifacts
 ```
 
+### Package-Specific Commands
+
+After making changes in a specific package, run its check (lint + typecheck + format) or format-fix via Turbo. Replace `<filter>` with the package name from the table.
+
+- **Check**: `pnpm turbo run lint typecheck format --filter=<filter>` (for ESLint/Prettier cache, use the Lint/Format commands below)
+- **Lint (check)**: `pnpm turbo run lint --filter=<filter> -- --cache --cache-location .cache/.eslintcache`
+- **Lint (fix)**: `pnpm turbo run lint --filter=<filter> -- --fix --cache --cache-location .cache/.eslintcache`
+- **Format (fix)**: `pnpm turbo run format --filter=<filter> -- --write --cache --cache-location .cache/.prettiercache`
+
+| Package                | Check filter               | Format filter              |
+| ---------------------- | -------------------------- | -------------------------- |
+| `apps/nextjs`          | `@board-games/nextjs`      | `@board-games/nextjs`      |
+| `apps/expo`            | `@board-games/expo`        | `@board-games/expo`        |
+| `packages/api`         | `@board-games/api`         | `@board-games/api`         |
+| `packages/db`          | `@board-games/db`          | `@board-games/db`          |
+| `packages/ui`          | `@board-games/ui`          | `@board-games/ui`          |
+| `packages/shared`      | `@board-games/shared`      | `@board-games/shared`      |
+| `packages/auth`        | `@board-games/auth`        | `@board-games/auth`        |
+| `packages/file-upload` | `@board-games/file-upload` | `@board-games/file-upload` |
+
+From the package directory you can also run `pnpm run lint`, `pnpm run typecheck`, `pnpm run format` (check only), or `pnpm exec prettier --write .` to fix formatting.
+
 ### Important Notes
 
 - Expo app may be behind web app in features
