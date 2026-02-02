@@ -3,8 +3,10 @@ ALTER TABLE "boardgames_round" ADD COLUMN IF NOT EXISTS "round_key" uuid DEFAULT
 ALTER TABLE "boardgames_round" ADD COLUMN IF NOT EXISTS "template_round_id" integer;
 ALTER TABLE "boardgames_round" ADD COLUMN IF NOT EXISTS "deleted_at" timestamp with time zone;
 --> statement-breakpoint
--- Backfill round: template_round_id from parent_id
-UPDATE "boardgames_round" SET "template_round_id" = "parent_id" WHERE "parent_id" IS NOT NULL;
+-- Backfill round: template_round_id from parent_id only where parent round exists (avoids FK violation for orphan parent_id)
+UPDATE "boardgames_round" r SET "template_round_id" = r."parent_id"
+WHERE r."parent_id" IS NOT NULL
+AND EXISTS (SELECT 1 FROM "boardgames_round" p WHERE p.id = r.parent_id);
 --> statement-breakpoint
 -- Ensure round_key is unique (backfill already set default; add constraint)
 ALTER TABLE "boardgames_round" ADD CONSTRAINT "boardgames_round_round_key_unique" UNIQUE ("round_key");
