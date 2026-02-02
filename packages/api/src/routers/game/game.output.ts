@@ -222,6 +222,50 @@ const getGameScoresheetStatsPlayerSchema = z.discriminatedUnion("type", [
 export type GetGameScoresheetStatsPlayerSchemaType = z.infer<
   typeof getGameScoresheetStatsPlayerSchema
 >;
+
+/** Overall scoresheet-level stats per player: match count, wins, final scores. */
+const getGameScoresheetStatsOverallPlayerSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    playerId: z.number(),
+    name: z.string(),
+    numMatches: z.number(),
+    wins: z.number(),
+    winRate: z.number(),
+    avgScore: z.number().nullable(),
+    bestScore: z.number().nullable(),
+    worstScore: z.number().nullable(),
+    /** Final score per match; null when no score (N/A). */
+    scores: z.array(
+      z.object({
+        date: z.date(),
+        score: z.number().nullable(),
+      }),
+    ),
+  }),
+  z.object({
+    type: z.literal("shared"),
+    sharedId: z.number(),
+    name: z.string(),
+    numMatches: z.number(),
+    wins: z.number(),
+    winRate: z.number(),
+    avgScore: z.number().nullable(),
+    bestScore: z.number().nullable(),
+    worstScore: z.number().nullable(),
+    /** Final score per match; null when no score (N/A). */
+    scores: z.array(
+      z.object({
+        date: z.date(),
+        score: z.number().nullable(),
+      }),
+    ),
+  }),
+]);
+export type GetGameScoresheetStatsOverallPlayerSchemaType = z.infer<
+  typeof getGameScoresheetStatsOverallPlayerSchema
+>;
+
 const getGameScoresheetStatsRoundSchema = baseRoundSchema
   .extend({
     id: z.number(),
@@ -245,6 +289,8 @@ export const getGameScoresheetStatsOutput = z.array(
       type: z.literal("original"),
       id: z.number(),
       isDefault: z.boolean(),
+      /** Overall stats per player (match count, wins, final scores). */
+      players: z.array(getGameScoresheetStatsOverallPlayerSchema),
       rounds: z.array(getGameScoresheetStatsRoundSchema),
     }),
     scoreSheetSchema.safeExtend({
@@ -252,6 +298,8 @@ export const getGameScoresheetStatsOutput = z.array(
       sharedId: z.number(),
       permission: z.literal("view").or(z.literal("edit")),
       isDefault: z.boolean(),
+      /** Overall stats per player (match count, wins, final scores). */
+      players: z.array(getGameScoresheetStatsOverallPlayerSchema),
       rounds: z.array(getGameScoresheetStatsRoundSchema),
     }),
   ]),

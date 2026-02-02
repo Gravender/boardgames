@@ -6,10 +6,21 @@ import type { GetGameStatsHeaderOutputType } from "../../repositories/game/game.
 import type {
   GetGamePlayerStatsOutputType,
   GetGameScoresheetStatsOutputType,
+  GetGameScoresheetStatsOverallPlayerSchemaType,
   GetGameScoresheetStatsPlayerSchemaType,
   GetGameScoresheetStatsRoundSchemaType,
 } from "../../routers/game/game.output";
-import type { GetGameScoresheetStatsScoreSheetType } from "./game-stats.service.types";
+import type {
+  AggregatedRound,
+  AggregatedRoundPlayer,
+  AggregatedScoresheet,
+  AggregatedScoresheetMap,
+  GamePlayerStatsAccEntry,
+  GetGameScoresheetStatsScoreSheetType,
+  MatchResult,
+  MatchResultByPlayerEntry,
+  MatchRoundEntry,
+} from "./game-stats.service.types";
 import type {
   GetGamePlayerStatsArgs,
   GetGameScoresheetStatsArgs,
@@ -36,39 +47,7 @@ class GameStatsService {
       userId: args.ctx.userId,
     });
 
-    const acc = new Map<
-      string,
-      | {
-          id: number;
-          type: "original";
-          name: string;
-          image: {
-            name: string;
-            url: string | null;
-            type: "file" | "svg";
-            usageType: "player";
-          } | null;
-          coopMatches: number;
-          competitiveMatches: number;
-          coopWins: number;
-          competitiveWins: number;
-        }
-      | {
-          sharedId: number;
-          type: "shared";
-          name: string;
-          image: {
-            name: string;
-            url: string | null;
-            type: "file" | "svg";
-            usageType: "player";
-          } | null;
-          coopMatches: number;
-          competitiveMatches: number;
-          coopWins: number;
-          competitiveWins: number;
-        }
-    >();
+    const acc = new Map<string, GamePlayerStatsAccEntry>();
 
     for (const mp of matchPlayers) {
       const key = `${mp.playerId}`;
@@ -150,17 +129,10 @@ class GameStatsService {
     const response = await db.transaction(async (tx) => {
       const scoresheets: GetGameScoresheetStatsScoreSheetType = [];
       if (input.type === "original") {
-        const returnedGame = await gameRepository.getGame(
+        const returnedGame = await gameRepository.getGameWithLinkedGames(
           {
             id: input.id,
             createdBy: ctx.userId,
-            with: {
-              linkedGames: {
-                where: {
-                  sharedWithId: ctx.userId,
-                },
-              },
-            },
           },
           tx,
         );
@@ -170,46 +142,77 @@ class GameStatsService {
             message: "Game not found.",
           });
         }
-        const originalScoresheets = await scoresheetRepository.getAll(
-          {
-            createdBy: ctx.userId,
-            gameId: returnedGame.id,
-          },
-          tx,
-        );
-        const sharedScoresheets = await scoresheetRepository.getAllShared(
-          {
-            sharedWithId: ctx.userId,
-            where: {
-              linkedScoresheetId: {
-                isNull: true,
-              },
-              sharedGameId: {
-                in: returnedGame.linkedGames.map((lg) => lg.id),
-              },
+        const originalScoresheets =
+          await scoresheetRepository.getAllScoresheetsWithRounds(
+            {
+              createdBy: ctx.userId,
+              gameId: returnedGame.id,
             },
-            with: {
-              scoresheet: true,
+            tx,
+          );
+        const sharedScoresheets =
+          await scoresheetRepository.getAllSharedScoresheetsWithRounds(
+            {
+              sharedWithId: ctx.userId,
+              sharedGameIds: returnedGame.linkedGames.map((lg) => lg.id),
             },
-          },
-          tx,
-        );
+            tx,
+          );
         for (const originalScoresheet of originalScoresheets) {
           scoresheets.push({
             type: "original",
             scoresheetId: originalScoresheet.id,
+            canonicalScoresheetId:
+              originalScoresheet.parentId ?? originalScoresheet.id,
             name: originalScoresheet.name,
             isDefault: originalScoresheet.type === "Default",
             targetScore: originalScoresheet.targetScore,
             roundsScore: originalScoresheet.roundsScore,
             winCondition: originalScoresheet.winCondition,
             isCoop: originalScoresheet.isCoop,
+            rounds: originalScoresheet.rounds.map((round) => ({
+              id: round.id,
+              name: round.name,
+              type: round.type,
+              order: round.order,
+              score: round.score,
+              color: round.color,
+              lookup: round.lookup,
+              modifier: round.modifier,
+            })),
           });
         }
         for (const sharedScoresheet of sharedScoresheets) {
+          const rounds = sharedScoresheet.sharedRounds.map((sharedRound) => {
+            if (sharedRound.linkedRoundId) {
+              return {
+                id: sharedRound.linkedRoundId,
+                name: sharedRound.round.name,
+                type: sharedRound.round.type,
+                order: sharedRound.round.order,
+                score: sharedRound.round.score,
+                color: sharedRound.round.color,
+                lookup: sharedRound.round.lookup,
+                modifier: sharedRound.round.modifier,
+              };
+            }
+            return {
+              id: sharedRound.round.id,
+              name: sharedRound.round.name,
+              type: sharedRound.round.type,
+              order: sharedRound.round.order,
+              score: sharedRound.round.score,
+              color: sharedRound.round.color,
+              lookup: sharedRound.round.lookup,
+              modifier: sharedRound.round.modifier,
+            };
+          });
           scoresheets.push({
             scoresheetId: sharedScoresheet.scoresheet.id,
             type: "shared",
+            canonicalScoresheetId:
+              sharedScoresheet.scoresheet.parentId ??
+              sharedScoresheet.scoresheet.id,
             sharedId: sharedScoresheet.id,
             name: sharedScoresheet.scoresheet.name,
             isDefault: sharedScoresheet.isDefault,
@@ -218,6 +221,7 @@ class GameStatsService {
             targetScore: sharedScoresheet.scoresheet.targetScore,
             roundsScore: sharedScoresheet.scoresheet.roundsScore,
             winCondition: sharedScoresheet.scoresheet.winCondition,
+            rounds,
           });
         }
       } else {
@@ -234,22 +238,45 @@ class GameStatsService {
             message: "Shared game not found.",
           });
         }
-        const sharedScoresheets = await scoresheetRepository.getAllShared(
-          {
-            sharedWithId: ctx.userId,
-            where: {
-              sharedGameId: returnedSharedGame.id,
+        const sharedScoresheets =
+          await scoresheetRepository.getAllSharedScoresheetsWithRounds(
+            {
+              sharedWithId: ctx.userId,
+              sharedGameIds: [returnedSharedGame.id],
             },
-            with: {
-              scoresheet: true,
-            },
-          },
-          tx,
-        );
+            tx,
+          );
         for (const sharedScoresheet of sharedScoresheets) {
+          const rounds = sharedScoresheet.sharedRounds.map((sharedRound) => {
+            if (sharedRound.linkedRoundId) {
+              return {
+                id: sharedRound.linkedRoundId,
+                name: sharedRound.round.name,
+                type: sharedRound.round.type,
+                order: sharedRound.round.order,
+                score: sharedRound.round.score,
+                color: sharedRound.round.color,
+                lookup: sharedRound.round.lookup,
+                modifier: sharedRound.round.modifier,
+              };
+            }
+            return {
+              id: sharedRound.round.id,
+              name: sharedRound.round.name,
+              type: sharedRound.round.type,
+              order: sharedRound.round.order,
+              score: sharedRound.round.score,
+              color: sharedRound.round.color,
+              lookup: sharedRound.round.lookup,
+              modifier: sharedRound.round.modifier,
+            };
+          });
           scoresheets.push({
             scoresheetId: sharedScoresheet.scoresheet.id,
             type: "shared",
+            canonicalScoresheetId:
+              sharedScoresheet.scoresheet.parentId ??
+              sharedScoresheet.scoresheet.id,
             sharedId: sharedScoresheet.id,
             name: sharedScoresheet.scoresheet.name,
             isDefault: sharedScoresheet.isDefault,
@@ -258,6 +285,7 @@ class GameStatsService {
             targetScore: sharedScoresheet.scoresheet.targetScore,
             roundsScore: sharedScoresheet.scoresheet.roundsScore,
             winCondition: sharedScoresheet.scoresheet.winCondition,
+            rounds,
           });
         }
       }
@@ -277,16 +305,12 @@ class GameStatsService {
       return [];
     }
 
-    //TODO: need to add sharedRound so we can link rounds to the correct parent round when we link shared scoresheets
+    // Canonical round/scoresheet are resolved in the repository (parent_id or shared_round.linked_round_id).
     // First pass: aggregate data
     const scoresheetMap = this.aggregateScoresheetData(response.rawData);
 
     // Second pass: calculate stats
-    return this.calculateScoresheetStats(
-      scoresheetMap,
-      response.scoresheets,
-      input,
-    );
+    return this.calculateScoresheetStats(scoresheetMap, response.scoresheets);
   }
 
   private calculateStdDev(scores: number[]): number | null {
@@ -302,104 +326,8 @@ class GameStatsService {
     rawData: Awaited<
       ReturnType<typeof gameRepository.getGameScoresheetStatsData>
     >,
-  ): Map<
-    number,
-    {
-      id: number;
-      name: string;
-      rounds: Map<
-        number,
-        {
-          id: number;
-          name: string;
-          type: "Numeric" | "Checkbox";
-          order: number;
-          color: string | null;
-          lookup: number | null;
-          modifier: number | null;
-          score: number;
-          players: Map<
-            string,
-            {
-              playerId: number;
-              playerSharedId: number | null;
-              playerLinkedId: number | null;
-              name: string;
-              type: "original" | "shared";
-              scores: { date: Date; score: number | null }[];
-              plays: number;
-            }
-          >;
-          allScores: number[];
-          allChecked: number;
-          matchRounds: Map<
-            number,
-            {
-              roundParentId: number;
-              roundOrder: number;
-              playerRounds: { score: number | null }[];
-            }[]
-          >;
-        }
-      >;
-      scoresheetRoundsScore: "Aggregate" | "Manual" | "Best Of" | "None";
-      scoresheetWinCondition:
-        | "Manual"
-        | "Highest Score"
-        | "Lowest Score"
-        | "No Winner"
-        | "Target Score";
-    }
-  > {
-    const scoresheetMap = new Map<
-      number,
-      {
-        id: number;
-        name: string;
-        rounds: Map<
-          number,
-          {
-            id: number;
-            name: string;
-            type: "Numeric" | "Checkbox";
-            order: number;
-            color: string | null;
-            lookup: number | null;
-            modifier: number | null;
-            score: number;
-            players: Map<
-              string,
-              {
-                playerId: number;
-                playerSharedId: number | null;
-                playerLinkedId: number | null;
-                name: string;
-                type: "original" | "shared";
-                scores: { date: Date; score: number | null }[];
-                plays: number;
-              }
-            >;
-            allScores: number[];
-            allChecked: number;
-            matchRounds: Map<
-              number,
-              {
-                roundParentId: number;
-                roundOrder: number;
-                playerRounds: { score: number | null }[];
-              }[]
-            >;
-          }
-        >;
-        scoresheetRoundsScore: "Aggregate" | "Manual" | "Best Of" | "None";
-        scoresheetWinCondition:
-          | "Manual"
-          | "Highest Score"
-          | "Lowest Score"
-          | "No Winner"
-          | "Target Score";
-      }
-    >();
+  ): AggregatedScoresheetMap {
+    const scoresheetMap = new Map<number, AggregatedScoresheet>();
 
     for (const row of rawData) {
       if (!row.scoresheetParentId || !row.roundParentId) continue;
@@ -415,9 +343,10 @@ class GameStatsService {
         scoresheet = {
           id: row.scoresheetParentId,
           name: row.scoresheetParentName,
-          rounds: new Map(),
+          rounds: new Map<number, AggregatedRound>(),
           scoresheetRoundsScore: row.scoresheetRoundsScore,
           scoresheetWinCondition: row.scoresheetWinCondition,
+          matchResultsByPlayer: new Map<string, MatchResultByPlayerEntry>(),
         };
         scoresheetMap.set(row.scoresheetParentId, scoresheet);
       }
@@ -439,10 +368,10 @@ class GameStatsService {
           lookup: row.roundParentLookup,
           modifier: row.roundParentModifier,
           score: row.roundParentScore,
-          players: new Map(),
+          players: new Map<string, AggregatedRoundPlayer>(),
           allScores: [],
           allChecked: 0,
-          matchRounds: new Map(),
+          matchRounds: new Map<number, MatchRoundEntry[]>(),
         };
         scoresheet.rounds.set(row.roundParentId, round);
       }
@@ -505,29 +434,54 @@ class GameStatsService {
         matchRounds.push(matchRound);
       }
       matchRound.playerRounds.push({ score: row.roundPlayerScore });
+
+      // Track match-level result per player for overall scoresheet stats (final score, winner)
+      let matchPlayerEntry = scoresheet.matchResultsByPlayer.get(playerKey);
+      if (!matchPlayerEntry) {
+        matchPlayerEntry = {
+          type: player.type,
+          playerId: row.playerId,
+          playerSharedId: row.playerSharedId,
+          name: row.playerName,
+          matches: new Map<number, MatchResult>(),
+        };
+        scoresheet.matchResultsByPlayer.set(playerKey, matchPlayerEntry);
+      }
+      matchPlayerEntry.matches.set(row.matchId, {
+        date: row.matchDate,
+        score: row.matchPlayerScore,
+        winner: row.matchPlayerWinner ?? false,
+      });
     }
 
     return scoresheetMap;
   }
 
   private calculateScoresheetStats(
-    scoresheetMap: ReturnType<typeof this.aggregateScoresheetData>,
+    scoresheetMap: AggregatedScoresheetMap,
     accessibleScoresheets: GetGameScoresheetStatsScoreSheetType,
-    input: GetGameScoresheetStatsArgs["input"],
   ): GetGameScoresheetStatsOutputType {
     const result: GetGameScoresheetStatsOutputType = [];
 
-    for (const [scoresheetId, scoresheet] of scoresheetMap) {
+    // Stats are keyed by canonical scoresheet id (parent or self); match each
+    // accessible scoresheet to its canonical stats and output one item per accessible entry.
+    for (const s of accessibleScoresheets) {
+      const scoresheet = scoresheetMap.get(s.canonicalScoresheetId);
+      if (!scoresheet) continue;
+
+      // Only include rounds that match this scoresheet's round list (linked or parent id).
+      const allowedRoundIds = new Set(s.rounds.map((r) => r.id));
+
       const rounds: GetGameScoresheetStatsRoundSchemaType[] = [];
 
       for (const [roundId, round] of scoresheet.rounds) {
+        if (!allowedRoundIds.has(roundId)) continue;
         // Calculate round-level stats based on round type
         let avgScore: number | null = null;
         let volatility: number | null = null;
         let checkRate: number | null = null;
 
         if (round.type === "Numeric") {
-          // For numeric rounds, calculate average and volatility
           avgScore =
             round.allScores.length > 0
               ? round.allScores.reduce((a, b) => a + b, 0) /
@@ -535,7 +489,6 @@ class GameStatsService {
               : null;
           volatility = this.calculateStdDev(round.allScores);
         } else {
-          // For checkbox rounds, calculate check rate (percentage of times checked)
           const totalPlays = Array.from(round.players.values()).reduce(
             (sum, player) => sum + player.plays,
             0,
@@ -544,7 +497,6 @@ class GameStatsService {
             totalPlays > 0 ? (round.allChecked / totalPlays) * 100 : null;
         }
 
-        // Calculate player stats
         const players: GetGameScoresheetStatsPlayerSchemaType[] = Array.from(
           round.players.values(),
         )
@@ -556,8 +508,8 @@ class GameStatsService {
 
             if (round.type === "Numeric") {
               const validScores = player.scores
-                .map((s) => s.score)
-                .filter((s): s is number => s !== null);
+                .map((p) => p.score)
+                .filter((p): p is number => p !== null);
 
               if (validScores.length > 0) {
                 if (scoresheet.scoresheetWinCondition === "Lowest Score") {
@@ -567,14 +519,12 @@ class GameStatsService {
                   bestScore = Math.max(...validScores);
                   worstScore = Math.min(...validScores);
                 }
-
                 avgScore =
                   validScores.reduce((a, b) => a + b, 0) / validScores.length;
               }
             } else {
-              // For checkbox rounds, calculate check rate (percentage of times checked)
               const checkedCount = player.scores.filter(
-                (s) => s.score !== null && s.score > 0,
+                (p) => p.score !== null && p.score > 0,
               ).length;
               checkRate =
                 player.plays > 0 ? (checkedCount / player.plays) * 100 : null;
@@ -592,26 +542,24 @@ class GameStatsService {
                 plays: player.plays,
                 scores: player.scores,
               };
-            } else {
-              const sharedId = player.playerSharedId;
-              if (!sharedId) {
-                // Skip players without sharedId for shared type
-                return null;
-              }
-              return {
-                type: "shared" as const,
-                sharedId,
-                name: player.name,
-                avgScore,
-                bestScore,
-                worstScore,
-                checkRate,
-                plays: player.plays,
-                scores: player.scores,
-              };
             }
+            const sharedId = player.playerSharedId;
+            if (!sharedId) return null;
+            return {
+              type: "shared" as const,
+              sharedId,
+              name: player.name,
+              avgScore,
+              bestScore,
+              worstScore,
+              checkRate,
+              plays: player.plays,
+              scores: player.scores,
+            };
           })
-          .filter((p) => p !== null);
+          .filter(
+            (p): p is GetGameScoresheetStatsPlayerSchemaType => p !== null,
+          );
 
         rounds.push({
           id: roundId,
@@ -625,80 +573,96 @@ class GameStatsService {
           avgScore,
           volatility,
           checkRate,
-          players: players,
+          players,
         });
       }
 
-      // Sort rounds by order
-      rounds.sort((a, b) => {
-        return a.order - b.order;
-      });
+      rounds.sort((a, b) => a.order - b.order);
 
-      // Determine if scoresheet is original or shared using pre-fetched data
-      if (input.type === "original") {
-        const parentScoresheet = accessibleScoresheets.find(
-          (s) => s.scoresheetId === scoresheetId,
+      // Overall stats per player: match count, wins, final score per match (N/A when no score)
+      const overallPlayers: GetGameScoresheetStatsOverallPlayerSchemaType[] =
+        [];
+      for (const p of scoresheet.matchResultsByPlayer.values()) {
+        const matchList = Array.from(p.matches.values()).sort(
+          (a, b) => a.date.getTime() - b.date.getTime(),
         );
-        if (parentScoresheet) {
-          if (parentScoresheet.type === "original") {
-            result.push({
-              type: "original",
-              id: scoresheetId,
-              name: scoresheet.name,
-              isDefault: parentScoresheet.isDefault,
-              winCondition: scoresheet.scoresheetWinCondition,
-              isCoop: parentScoresheet.isCoop,
-              roundsScore: scoresheet.scoresheetRoundsScore,
-              targetScore: parentScoresheet.targetScore,
-              rounds,
-            });
+        const numMatches = matchList.length;
+        const wins = matchList.filter((m) => m.winner).length;
+        const winRate = numMatches > 0 ? wins / numMatches : 0;
+        const scores = matchList.map((m) => ({ date: m.date, score: m.score }));
+        const validScores = matchList
+          .map((m) => m.score)
+          .filter((x): x is number => x !== null);
+        let avgScore: number | null = null;
+        let bestScore: number | null = null;
+        let worstScore: number | null = null;
+        if (validScores.length > 0) {
+          avgScore =
+            validScores.reduce((a, b) => a + b, 0) / validScores.length;
+          if (scoresheet.scoresheetWinCondition === "Lowest Score") {
+            bestScore = Math.min(...validScores);
+            worstScore = Math.max(...validScores);
           } else {
-            result.push({
-              type: "shared",
-              sharedId: parentScoresheet.sharedId,
-              name: scoresheet.name,
-              permission: parentScoresheet.permission,
-              isDefault: parentScoresheet.isDefault,
-              winCondition: scoresheet.scoresheetWinCondition,
-              isCoop: parentScoresheet.isCoop,
-              roundsScore: scoresheet.scoresheetRoundsScore,
-              targetScore: parentScoresheet.targetScore,
-              rounds,
-            });
+            bestScore = Math.max(...validScores);
+            worstScore = Math.min(...validScores);
           }
         }
+        if (p.type === "original") {
+          overallPlayers.push({
+            type: "original",
+            playerId: p.playerId,
+            name: p.name,
+            numMatches,
+            wins,
+            winRate,
+            avgScore,
+            bestScore,
+            worstScore,
+            scores,
+          });
+        } else if (p.playerSharedId !== null) {
+          overallPlayers.push({
+            type: "shared",
+            sharedId: p.playerSharedId,
+            name: p.name,
+            numMatches,
+            wins,
+            winRate,
+            avgScore,
+            bestScore,
+            worstScore,
+            scores,
+          });
+        }
+      }
+
+      if (s.type === "original") {
+        result.push({
+          type: "original",
+          id: s.scoresheetId,
+          name: s.name,
+          isDefault: s.isDefault,
+          winCondition: scoresheet.scoresheetWinCondition,
+          isCoop: s.isCoop,
+          roundsScore: scoresheet.scoresheetRoundsScore,
+          targetScore: s.targetScore,
+          players: overallPlayers,
+          rounds,
+        });
       } else {
-        const parentScoresheet = accessibleScoresheets.find(
-          (s) => s.scoresheetId === scoresheetId,
-        );
-        if (parentScoresheet) {
-          if (parentScoresheet.type === "shared") {
-            result.push({
-              type: "shared",
-              sharedId: parentScoresheet.sharedId,
-              name: scoresheet.name,
-              permission: parentScoresheet.permission,
-              isDefault: parentScoresheet.isDefault,
-              winCondition: scoresheet.scoresheetWinCondition,
-              isCoop: parentScoresheet.isCoop,
-              roundsScore: scoresheet.scoresheetRoundsScore,
-              targetScore: parentScoresheet.targetScore,
-              rounds,
-            });
-          } else {
-            result.push({
-              type: "original",
-              id: scoresheetId,
-              name: scoresheet.name,
-              isDefault: parentScoresheet.isDefault,
-              winCondition: scoresheet.scoresheetWinCondition,
-              isCoop: parentScoresheet.isCoop,
-              roundsScore: scoresheet.scoresheetRoundsScore,
-              targetScore: parentScoresheet.targetScore,
-              rounds,
-            });
-          }
-        }
+        result.push({
+          type: "shared",
+          sharedId: s.sharedId,
+          name: s.name,
+          permission: s.permission,
+          isDefault: s.isDefault,
+          winCondition: scoresheet.scoresheetWinCondition,
+          isCoop: s.isCoop,
+          roundsScore: scoresheet.scoresheetRoundsScore,
+          targetScore: s.targetScore,
+          players: overallPlayers,
+          rounds,
+        });
       }
     }
 

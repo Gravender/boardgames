@@ -191,6 +191,43 @@ class ScoresheetRepository {
     });
     return result as InferManyQueryResult<"scoresheet", TConfig>;
   }
+  public async getAllScoresheetsWithRounds(
+    filters: {
+      createdBy: NonNullable<Filter<"scoresheet">["createdBy"]>;
+      gameId: NonNullable<Filter<"scoresheet">["gameId"]>;
+    },
+    tx?: TransactionType,
+  ) {
+    const database = tx ?? db;
+    const { createdBy, gameId } = filters;
+    const result = await database.query.scoresheet.findMany({
+      where: {
+        createdBy: createdBy,
+        gameId: gameId,
+        deletedAt: {
+          isNull: true,
+        },
+        type: {
+          OR: [
+            {
+              eq: "Game",
+            },
+            {
+              eq: "Default",
+            },
+          ],
+        },
+      },
+      with: {
+        rounds: {
+          orderBy: {
+            order: "asc",
+          },
+        },
+      },
+    });
+    return result;
+  }
   public async getAllShared<
     TConfig extends ManyQueryConfig<"sharedScoresheet">,
   >(
@@ -219,6 +256,36 @@ class ScoresheetRepository {
       "sharedScoresheet",
       TConfig
     >;
+  }
+  public async getAllSharedScoresheetsWithRounds(
+    filters: {
+      sharedWithId: NonNullable<Filter<"sharedScoresheet">["sharedWithId"]>;
+      sharedGameIds: number[];
+    },
+    tx?: TransactionType,
+  ) {
+    const database = tx ?? db;
+    const { sharedWithId, sharedGameIds } = filters;
+    const result = await database.query.sharedScoresheet.findMany({
+      where: {
+        linkedScoresheetId: {
+          isNull: true,
+        },
+        sharedWithId: sharedWithId,
+        sharedGameId: {
+          in: sharedGameIds,
+        },
+      },
+      with: {
+        scoresheet: true,
+        sharedRounds: {
+          with: {
+            round: true,
+          },
+        },
+      },
+    });
+    return result;
   }
   public async getRounds(args: {
     input: {

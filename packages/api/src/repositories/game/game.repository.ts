@@ -23,6 +23,8 @@ import {
   roundPlayer,
   scoresheet,
   sharedGameRole,
+  sharedMatch,
+  sharedRound,
   team,
 } from "@board-games/db/schema";
 import {
@@ -68,6 +70,27 @@ class GameRepository {
       },
     });
     return result as InferQueryResult<"game", TConfig> | undefined;
+  }
+  public async getGameWithLinkedGames(
+    filters: GameBaseFilter,
+    tx?: TransactionType,
+  ) {
+    const database = tx ?? db;
+    const { id, createdBy } = filters;
+    const result = await database.query.game.findFirst({
+      where: {
+        id: id,
+        createdBy: createdBy,
+      },
+      with: {
+        linkedGames: {
+          where: {
+            sharedWithId: createdBy,
+          },
+        },
+      },
+    });
+    return result;
   }
   public async getSharedGame<TConfig extends QueryConfig<"sharedGame">>(
     filters: {
@@ -749,25 +772,55 @@ class GameRepository {
     const { input, userId, tx } = args;
     const database = tx ?? db;
 
-    // Create aliases for parent scoresheet and round
-    const parentScoresheet = alias(scoresheet, "parent_scoresheet");
+    // Match scoresheet and rounds; canonical resolution via parent_id or shared_round
+    const matchScoresheet = alias(scoresheet, "match_scoresheet");
     const parentRound = alias(round, "parent_round");
+    const linkedRound = alias(round, "linked_round");
+    const canonicalScoresheet = alias(scoresheet, "canonical_scoresheet");
 
     const rows = await database
       .select({
         matchId: vMatchCanonical.matchId,
         matchDate: vMatchCanonical.matchDate,
-        scoresheetParentId: scoresheet.parentId,
-        scoresheetParentName: parentScoresheet.name,
-        scoresheetRoundsScore: scoresheet.roundsScore,
-        scoresheetWinCondition: scoresheet.winCondition,
-        roundParentId: round.parentId,
-        roundParentName: parentRound.name,
-        roundParentType: parentRound.type,
-        roundParentColor: parentRound.color,
-        roundParentLookup: parentRound.lookup,
-        roundParentModifier: parentRound.modifier,
-        roundParentScore: parentRound.score,
+        scoresheetParentId:
+          sql<number>`COALESCE(${canonicalScoresheet.parentId}, ${canonicalScoresheet.id})`.as(
+            "scoresheet_parent_id",
+          ),
+        scoresheetParentName: canonicalScoresheet.name,
+        scoresheetRoundsScore: canonicalScoresheet.roundsScore,
+        scoresheetWinCondition: canonicalScoresheet.winCondition,
+        roundParentId:
+          sql<number>`COALESCE(${sharedRound.linkedRoundId}, ${round.parentId}, ${round.id})`.as(
+            "round_parent_id",
+          ),
+        roundParentName:
+          sql<string>`COALESCE(${linkedRound.name}, ${parentRound.name}, ${round.name})`.as(
+            "round_parent_name",
+          ),
+        roundParentType: sql<
+          "Numeric" | "Checkbox"
+        >`COALESCE(${linkedRound.type}, ${parentRound.type}, ${round.type})`.as(
+          "round_parent_type",
+        ),
+        roundParentColor: sql<
+          string | null
+        >`COALESCE(${linkedRound.color}, ${parentRound.color}, ${round.color})`.as(
+          "round_parent_color",
+        ),
+        roundParentLookup: sql<
+          number | null
+        >`COALESCE(${linkedRound.lookup}, ${parentRound.lookup}, ${round.lookup})`.as(
+          "round_parent_lookup",
+        ),
+        roundParentModifier: sql<
+          number | null
+        >`COALESCE(${linkedRound.modifier}, ${parentRound.modifier}, ${round.modifier})`.as(
+          "round_parent_modifier",
+        ),
+        roundParentScore:
+          sql<number>`COALESCE(${linkedRound.score}, ${parentRound.score}, ${round.score})`.as(
+            "round_parent_score",
+          ),
         roundOrder: round.order,
         roundPlayerScore: roundPlayer.score,
         matchPlayerId: matchPlayer.id,
@@ -780,15 +833,23 @@ class GameRepository {
         matchPlayerScore: matchPlayer.score,
       })
       .from(vMatchCanonical)
+      .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
+      .innerJoin(matchScoresheet, eq(matchScoresheet.id, match.scoresheetId))
       .innerJoin(
-        scoresheet,
-        eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
+        round,
+        and(
+          eq(round.scoresheetId, matchScoresheet.id),
+          isNull(round.deletedAt),
+        ),
       )
-      .innerJoin(parentScoresheet, eq(parentScoresheet.id, scoresheet.parentId))
-      .innerJoin(round, eq(round.scoresheetId, scoresheet.id))
-      .innerJoin(parentRound, eq(parentRound.id, round.parentId))
       .innerJoin(roundPlayer, eq(roundPlayer.roundId, round.id))
-      .innerJoin(matchPlayer, eq(matchPlayer.id, roundPlayer.matchPlayerId))
+      .innerJoin(
+        matchPlayer,
+        and(
+          eq(matchPlayer.id, roundPlayer.matchPlayerId),
+          eq(matchPlayer.matchId, match.id),
+        ),
+      )
       .innerJoin(
         vMatchPlayerCanonicalForUser,
         and(
@@ -802,6 +863,26 @@ class GameRepository {
       .innerJoin(
         player,
         eq(player.id, vMatchPlayerCanonicalForUser.canonicalPlayerId),
+      )
+      .leftJoin(
+        sharedMatch,
+        and(
+          eq(sharedMatch.matchId, match.id),
+          eq(sharedMatch.sharedWithId, userId),
+        ),
+      )
+      .leftJoin(
+        sharedRound,
+        and(
+          eq(sharedRound.roundId, round.id),
+          eq(sharedRound.sharedScoresheetId, sharedMatch.sharedScoresheetId),
+        ),
+      )
+      .leftJoin(linkedRound, eq(linkedRound.id, sharedRound.linkedRoundId))
+      .leftJoin(parentRound, eq(parentRound.id, round.parentId))
+      .innerJoin(
+        canonicalScoresheet,
+        eq(canonicalScoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
       .where(
         and(
