@@ -54,24 +54,28 @@ export type GetRoundPlayersArgs = BaseRepoArgs<{
 export type InsertRoundArgs = BaseRepoArgs<{
   roundId: number;
   matchPlayerId: number;
+  updatedBy?: string | null;
 }>;
 
 export type InsertRoundsArgs = BaseRepoArgs<
   {
     roundId: number;
     matchPlayerId: number;
+    updatedBy?: string | null;
   }[]
 >;
 
 export type UpdateRoundPlayerArgs = BaseRepoArgs<{
   id: number;
   score: number | null;
+  updatedBy?: string | null;
 }>;
 
 export type UpdateRoundPlayersArgs = BaseRepoArgs<{
   roundId: number;
   matchPlayerIds: number[];
   score: number | null;
+  updatedBy?: string | null;
 }>;
 
 export type InsertMatchPlayerRoleArgs = BaseRepoArgs<{

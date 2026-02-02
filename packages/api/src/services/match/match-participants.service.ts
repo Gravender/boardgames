@@ -121,6 +121,7 @@ class MatchParticipantsService {
         mappedMatchPlayers.map((player) => ({
           roundId,
           matchPlayerId: player.matchPlayerId,
+          updatedBy: userId,
         })),
       );
 

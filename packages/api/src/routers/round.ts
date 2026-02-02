@@ -18,6 +18,7 @@ export const roundRouter = {
           id: true,
           updatedAt: true,
           createdAt: true,
+          deletedAt: true,
         }),
         players: z.array(insertRoundPlayerSchema.pick({ matchPlayerId: true })),
       }),
@@ -36,6 +37,7 @@ export const roundRouter = {
         input.players.map((player) => ({
           roundId: returnedRoundId,
           matchPlayerId: player.matchPlayerId,
+          updatedBy: ctx.userId,
         }));
       await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);
     }),

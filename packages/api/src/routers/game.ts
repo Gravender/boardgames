@@ -1342,18 +1342,19 @@ export const gameRouter = {
           const currentLocation = createdLocations.find(
             (location) => location.bggLocationId === play.locationRefId,
           );
+          const playScoresheetValues = {
+            name: returnedScoresheet.name,
+            gameId: returnedScoresheet.gameId,
+            createdBy: ctx.userId,
+            isCoop: returnedScoresheet.isCoop,
+            winCondition: returnedScoresheet.winCondition,
+            targetScore: returnedScoresheet.targetScore,
+            roundsScore: returnedScoresheet.roundsScore,
+            type: "Match" as const,
+          };
           const [playScoresheet] = await ctx.db
             .insert(scoresheet)
-            .values({
-              name: returnedScoresheet.name,
-              gameId: returnedScoresheet.gameId,
-              createdBy: ctx.userId,
-              isCoop: returnedScoresheet.isCoop,
-              winCondition: returnedScoresheet.winCondition,
-              targetScore: returnedScoresheet.targetScore,
-              roundsScore: returnedScoresheet.roundsScore,
-              type: "Match",
-            })
+            .values(playScoresheetValues)
             .returning();
           if (!playScoresheet) {
             throw new Error("Failed to create scoresheet");
@@ -1369,6 +1370,13 @@ export const gameRouter = {
             .returning();
           if (!insertedRound) {
             throw new Error("Failed to create round");
+          }
+          if (playScoresheet.type !== "Match") {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message:
+                "Match must use a scoresheet with type Match. Invalid scoresheet type.",
+            });
           }
           const matchToInsert: z.infer<typeof insertMatchSchema> = {
             createdBy: ctx.userId,
@@ -1386,6 +1394,10 @@ export const gameRouter = {
           if (!returningMatch) {
             throw new Error("Failed to create match");
           }
+          await ctx.db
+            .update(scoresheet)
+            .set({ forkedForMatchId: returningMatch.id })
+            .where(eq(scoresheet.id, playScoresheet.id));
           const playersToInsert: z.infer<typeof insertPlayerSchema>[] =
             play.participants.map((player) => ({
               name: player.name ?? "Unknown",
@@ -1521,6 +1533,7 @@ export const gameRouter = {
               roundId: insertedRound.id,
               matchPlayerId: matchPlayer.id,
               score: Number(matchPlayer.score),
+              updatedBy: ctx.userId,
             };
           });
           await ctx.db.insert(roundPlayer).values(roundPlayersToInsert);

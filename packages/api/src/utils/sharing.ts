@@ -196,6 +196,32 @@ export async function createSharedScoresheetWithRounds(
     });
   }
 
+  if (type === "game") {
+    const allowed: ("Game" | "Default" | "Template")[] = [
+      "Game",
+      "Default",
+      "Template",
+    ];
+    if (
+      !allowed.includes(
+        returnedScoresheet.type as "Game" | "Default" | "Template",
+      )
+    ) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          "Game share requires a template scoresheet (Game, Default, or Template type).",
+      });
+    }
+  } else {
+    if (returnedScoresheet.type !== "Match") {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Match share requires a Match-type scoresheet.",
+      });
+    }
+  }
+
   const [returnedSharedScoresheet] = await transaction
     .insert(sharedScoresheet)
     .values({

@@ -59,6 +59,13 @@ class MatchService {
           gameId,
           tx,
         });
+        if (matchScoresheet.type !== "Match") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Match must use a scoresheet with type Match. Invalid scoresheet type.",
+          });
+        }
 
         const locationId = await matchSetupService.resolveLocationForMatch({
           locationInput: input.location,
@@ -86,6 +93,16 @@ class MatchService {
             value: args.input,
           },
           "Match not created.",
+        );
+
+        await scoresheetRepository.update(
+          {
+            input: {
+              id: matchScoresheet.id,
+              forkedForMatchId: insertedMatch.id,
+            },
+            tx,
+          },
         );
 
         const { mappedMatchPlayers } =
@@ -914,6 +931,7 @@ class MatchService {
                   teamPlayer?.rounds.find(
                     (pRound) => pRound.roundId === round.id,
                   )?.score ?? null,
+                updatedBy: ctx.userId,
               };
             }),
         );
