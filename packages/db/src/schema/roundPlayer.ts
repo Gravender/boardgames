@@ -19,7 +19,9 @@ const roundPlayers = createTable(
   {
     id: serial("id").primaryKey(),
     score: integer("score"),
-    value: jsonb("value").notNull().default(sql`'{}'::jsonb`),
+    value: jsonb("value")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     roundId: integer("round")
       .notNull()
       .references(() => round.id),

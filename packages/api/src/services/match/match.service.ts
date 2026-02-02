@@ -59,6 +59,7 @@ class MatchService {
           gameId,
           tx,
         });
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (matchScoresheet.type !== "Match") {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -95,15 +96,13 @@ class MatchService {
           "Match not created.",
         );
 
-        await scoresheetRepository.update(
-          {
-            input: {
-              id: matchScoresheet.id,
-              forkedForMatchId: insertedMatch.id,
-            },
-            tx,
+        await scoresheetRepository.update({
+          input: {
+            id: matchScoresheet.id,
+            forkedForMatchId: insertedMatch.id,
           },
-        );
+          tx,
+        });
 
         const { mappedMatchPlayers } =
           await matchParticipantsService.createTeamsPlayersAndRounds({

@@ -59,7 +59,9 @@ export function parseRoundConfig(
   config: unknown,
 ): Record<string, unknown> {
   if (kind == null || !ROUND_KINDS.includes(kind)) {
-    return typeof config === "object" && config !== null && !Array.isArray(config)
+    return typeof config === "object" &&
+      config !== null &&
+      !Array.isArray(config)
       ? (config as Record<string, unknown>)
       : {};
   }
