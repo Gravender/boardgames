@@ -358,6 +358,9 @@ class GameStatsService {
           allScores: [],
           allChecked: 0,
           matchRounds: new Map<number, MatchRoundEntry[]>(),
+          winningRoundScores: [],
+          winningCheckedCount: 0,
+          winningTotalPlays: 0,
         };
         scoresheet.rounds.set(row.roundParentId, round);
       }
@@ -400,6 +403,18 @@ class GameStatsService {
           score: null,
         });
         player.plays++;
+      }
+
+      // Winning round stats: only when this player won the match
+      if (row.matchPlayerWinner) {
+        if (round.type === "Numeric" && row.roundPlayerScore !== null) {
+          round.winningRoundScores.push(row.roundPlayerScore);
+        } else if (round.type === "Checkbox") {
+          round.winningTotalPlays++;
+          if (row.roundPlayerScore !== null && row.roundPlayerScore > 0) {
+            round.winningCheckedCount++;
+          }
+        }
       }
 
       // Track rounds per match for deciding round analysis
@@ -478,6 +493,9 @@ class GameStatsService {
         let volatility: number | null = null;
         let checkRate: number | null = null;
 
+        let winningAvgScore: number | null = null;
+        let winningCheckRate: number | null = null;
+
         if (round.type === "Numeric") {
           avgScore =
             round.allScores.length > 0
@@ -485,6 +503,11 @@ class GameStatsService {
                 round.allScores.length
               : null;
           volatility = this.calculateStdDev(round.allScores);
+          winningAvgScore =
+            round.winningRoundScores.length > 0
+              ? round.winningRoundScores.reduce((a, b) => a + b, 0) /
+                round.winningRoundScores.length
+              : null;
         } else {
           const totalPlays = Array.from(round.players.values()).reduce(
             (sum, player) => sum + player.plays,
@@ -492,6 +515,10 @@ class GameStatsService {
           );
           checkRate =
             totalPlays > 0 ? (round.allChecked / totalPlays) * 100 : null;
+          winningCheckRate =
+            round.winningTotalPlays > 0
+              ? (round.winningCheckedCount / round.winningTotalPlays) * 100
+              : null;
         }
 
         const players: GetGameScoresheetStatsPlayerSchemaType[] = Array.from(
@@ -569,7 +596,9 @@ class GameStatsService {
           score: round.score,
           avgScore,
           volatility,
+          winningAvgScore: round.type === "Numeric" ? winningAvgScore : null,
           checkRate,
+          winningCheckRate: round.type === "Checkbox" ? winningCheckRate : null,
           players,
         });
       }
@@ -651,6 +680,28 @@ class GameStatsService {
         return matchIds.size;
       })();
 
+      const allFinalScores: number[] = [];
+      const winningFinalScores: number[] = [];
+      for (const p of scoresheet.matchResultsByPlayer.values()) {
+        for (const m of p.matches.values()) {
+          if (m.score !== null) {
+            allFinalScores.push(m.score);
+            if (m.winner) {
+              winningFinalScores.push(m.score);
+            }
+          }
+        }
+      }
+      const sheetAvgScore =
+        allFinalScores.length > 0
+          ? allFinalScores.reduce((a, b) => a + b, 0) / allFinalScores.length
+          : null;
+      const sheetWinningAvgScore =
+        winningFinalScores.length > 0
+          ? winningFinalScores.reduce((a, b) => a + b, 0) /
+            winningFinalScores.length
+          : null;
+
       if (s.type === "original") {
         result.push({
           type: "original",
@@ -658,6 +709,8 @@ class GameStatsService {
           name: s.name,
           isDefault: s.isDefault,
           plays,
+          avgScore: sheetAvgScore,
+          winningAvgScore: sheetWinningAvgScore,
           winCondition: scoresheet.scoresheetWinCondition,
           isCoop: s.isCoop,
           roundsScore: scoresheet.scoresheetRoundsScore,
@@ -673,6 +726,8 @@ class GameStatsService {
           permission: s.permission,
           isDefault: s.isDefault,
           plays,
+          avgScore: sheetAvgScore,
+          winningAvgScore: sheetWinningAvgScore,
           winCondition: scoresheet.scoresheetWinCondition,
           isCoop: s.isCoop,
           roundsScore: scoresheet.scoresheetRoundsScore,

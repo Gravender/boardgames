@@ -2,12 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { compareAsc, format } from "date-fns";
 
 import type { RouterOutputs } from "@board-games/api";
-import { isSamePlayer } from "@board-games/shared";
 
 type ScoresheetStats = RouterOutputs["newGame"]["getGameScoresheetStats"];
 type ScoresheetStatsItem = ScoresheetStats[number];
 type OverallPlayer = ScoresheetStatsItem["players"][number];
-type RoundWithPlayerStats = ScoresheetStatsItem["rounds"][number];
 
 type SortField =
   | "name"
@@ -18,16 +16,6 @@ type SortField =
   | "worstScore"
   | "avgScore";
 type SortOrder = "asc" | "desc";
-
-function toPlayerRef(
-  p:
-    | { type: "original"; playerId: number }
-    | { type: "shared"; sharedId: number },
-): { type: "original"; id: number } | { type: "shared"; sharedId: number } {
-  return p.type === "original"
-    ? { type: "original", id: p.playerId }
-    : { type: "shared", sharedId: p.sharedId };
-}
 
 function getScoresheetKey(s: ScoresheetStatsItem): string {
   return `${s.type}-${s.type === "original" ? s.id : s.sharedId}`;

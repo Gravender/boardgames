@@ -53,14 +53,14 @@ export function RoundByRoundTable({
         <div className="flex">
           <Table containerClassname=" overflow-scroll max-h-[35vh] rounded-lg">
             <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20">
-              <TableRow>
-                <TableHead className="w-16 px-2 sm:w-full sm:px-4">
+              <TableRow className="">
+                <TableHead className="w-16 px-2 py-2 sm:w-full sm:px-4">
                   Player
                 </TableHead>
                 {sortedRounds.map((round) => (
                   <TableHead
                     key={round.id}
-                    className="min-w-[100px] text-center"
+                    className="min-w-[100px] py-2 text-center"
                   >
                     <div className="flex flex-col items-center gap-1">
                       <span>{round.name}</span>
@@ -81,6 +81,55 @@ export function RoundByRoundTable({
               </TableRow>
             </TableHeader>
             <TableBody>
+              <TableRow className="font-medium">
+                <TableCell className="p-2 sm:p-4">
+                  <span className="text-sm">Round average</span>
+                </TableCell>
+                {sortedRounds.map((round) => (
+                  <TableCell key={round.id} className="text-center">
+                    {round.type === "Numeric" ? (
+                      <div className="space-y-1 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">Avg: </span>
+                          <span className="font-semibold">
+                            {round.avgScore != null
+                              ? round.avgScore.toFixed(1)
+                              : "-"}
+                          </span>
+                        </div>
+                        {round.volatility != null && (
+                          <div className="text-muted-foreground">
+                            σ: {round.volatility.toFixed(1)}
+                          </div>
+                        )}
+                        {round.winningAvgScore != null && (
+                          <div className="text-muted-foreground">
+                            Winning avg: {round.winningAvgScore.toFixed(1)}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-1 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">
+                            Checked:{" "}
+                          </span>
+                          <span className="font-semibold">
+                            {round.checkRate != null
+                              ? `${round.checkRate.toFixed(0)}%`
+                              : "-"}
+                          </span>
+                        </div>
+                        {round.winningCheckRate != null && (
+                          <div className="text-muted-foreground">
+                            Winning: {round.winningCheckRate.toFixed(0)}%
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
               {currentScoresheet.players
                 .toSorted((a, b) => b.numMatches - a.numMatches)
                 .map((player) => (

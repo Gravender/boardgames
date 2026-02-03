@@ -174,6 +174,30 @@ export function ScoreSheetsStats({
                 </div>
               </div>
             )}
+            {currentScoresheet.avgScore != null &&
+              currentScoresheet.winCondition !== "Manual" &&
+              currentScoresheet.winCondition !== "No Winner" && (
+                <div className="space-y-2 border-t pt-2">
+                  <div>
+                    <span className="text-muted-foreground text-sm">
+                      Overall average final score:
+                    </span>
+                    <div className="font-semibold">
+                      {currentScoresheet.avgScore.toFixed(1)}
+                    </div>
+                  </div>
+                  {currentScoresheet.winningAvgScore != null && (
+                    <div>
+                      <span className="text-muted-foreground text-sm">
+                        Average score when winning:
+                      </span>
+                      <div className="font-semibold text-green-600">
+                        {currentScoresheet.winningAvgScore.toFixed(1)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
           </CardContent>
         </Card>
 

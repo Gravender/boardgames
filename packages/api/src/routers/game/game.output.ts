@@ -278,8 +278,11 @@ const getGameScoresheetStatsRoundSchema = baseRoundSchema
     // For Numeric rounds
     avgScore: z.number().nullable(),
     volatility: z.number().nullable(),
+    // Winning stats: average score in this round when the player won the match
+    winningAvgScore: z.number().nullable(),
     // For Checkbox rounds
     checkRate: z.number().nullable(), // Percentage of times checked (0-100)
+    winningCheckRate: z.number().nullable(), // Among winners, % checked (0-100)
     // Common stats
     players: z.array(getGameScoresheetStatsPlayerSchema),
   })
@@ -297,6 +300,10 @@ export const getGameScoresheetStatsOutput = z.array(
       isDefault: z.boolean(),
       /** Number of finished matches played using this scoresheet. */
       plays: z.number(),
+      /** Overall average final score across all match results. */
+      avgScore: z.number().nullable(),
+      /** Average final score when the result was a win. */
+      winningAvgScore: z.number().nullable(),
       /** Overall stats per player (match count, wins, final scores). */
       players: z.array(getGameScoresheetStatsOverallPlayerSchema),
       rounds: z.array(getGameScoresheetStatsRoundSchema),
@@ -308,6 +315,10 @@ export const getGameScoresheetStatsOutput = z.array(
       isDefault: z.boolean(),
       /** Number of finished matches played using this scoresheet. */
       plays: z.number(),
+      /** Overall average final score across all match results. */
+      avgScore: z.number().nullable(),
+      /** Average final score when the result was a win. */
+      winningAvgScore: z.number().nullable(),
       /** Overall stats per player (match count, wins, final scores). */
       players: z.array(getGameScoresheetStatsOverallPlayerSchema),
       rounds: z.array(getGameScoresheetStatsRoundSchema),

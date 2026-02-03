@@ -84,6 +84,12 @@ export interface AggregatedRound {
   allScores: number[];
   allChecked: number;
   matchRounds: Map<number, MatchRoundEntry[]>;
+  /** Numeric: round scores when the player won the match. */
+  winningRoundScores: number[];
+  /** Checkbox: count of winning performances where this round was checked. */
+  winningCheckedCount: number;
+  /** Checkbox: total winning performances for this round. */
+  winningTotalPlays: number;
 }
 
 export interface MatchResult {
