@@ -16,27 +16,11 @@ import {
 
 import { PlayerImage } from "~/components/player-image";
 import { SortIcon } from "~/components/sort-icon";
+import { getCurrentPlayerKey } from "~/hooks/game-stats/use-scoresheet-stats";
 
-type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
-type Player = GameStats["players"][number];
-type Scoresheet = GameStats["scoresheets"][number];
-
-interface CurrentPlayer {
-  id: number;
-  type: "original" | "shared";
-  name: string;
-  image: Player["image"];
-  isUser: boolean;
-  bestScore: number | null;
-  worstScore: number | null;
-  avgScore: number | null;
-  winRate: number;
-  plays: number;
-  wins: number;
-  rounds: Player["scoresheets"][number]["rounds"];
-  scores: Player["scoresheets"][number]["scores"];
-}
-
+type ScoresheetStatsItem =
+  RouterOutputs["newGame"]["getGameScoresheetStats"][number];
+type OverallPlayer = ScoresheetStatsItem["players"][number];
 type SortField =
   | "name"
   | "plays"
@@ -54,8 +38,8 @@ export function ScoresheetPlayerTable({
   sortField,
   sortOrder,
 }: {
-  currentScoresheet: Scoresheet;
-  sortedPlayers: CurrentPlayer[];
+  currentScoresheet: ScoresheetStatsItem;
+  sortedPlayers: OverallPlayer[];
   toggleSort: (field: SortField) => void;
   sortField: SortField;
   sortOrder: SortOrder;
@@ -202,7 +186,7 @@ export function ScoresheetPlayerTable({
             </TableHeader>
             <TableBody>
               {sortedPlayers.map((player) => (
-                <TableRow key={`${player.id}-${player.type}`}>
+                <TableRow key={getCurrentPlayerKey(player)}>
                   <TableCell className="p-2 sm:p-4">
                     <div className="flex w-full items-center gap-2 text-xs sm:gap-4">
                       <PlayerImage
@@ -224,7 +208,7 @@ export function ScoresheetPlayerTable({
                     </div>
                   </TableCell>
                   <TableCell className="text-center font-medium">
-                    {player.plays}
+                    {player.numMatches}
                   </TableCell>
                   <TableCell className="text-center font-medium text-green-600">
                     {player.wins}

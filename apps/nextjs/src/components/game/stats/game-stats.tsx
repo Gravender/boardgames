@@ -3,6 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { cn } from "@board-games/ui/utils";
 
+import { useGameScoresheetStats } from "~/hooks/queries/game/game-scoresheet-stats";
 import { useGameStats } from "~/hooks/queries/game/game-stats";
 import AdvancedTab from "./advanced/advanced-tab";
 import { GameStatsHeader } from "./game-stats-header";
@@ -19,6 +20,10 @@ export default function GameStats({
   };
 }) {
   const { gameStats } = useGameStats({ id: game.id });
+  const scoresheetStats = useGameScoresheetStats({
+    type: game.type,
+    id: game.id,
+  });
 
   const userStats = gameStats.players.find((player) => player.isUser);
   return (
@@ -46,10 +51,7 @@ export default function GameStats({
           <OverviewTab game={game} />
         </TabsContent>
         <TabsContent value="scoresheet" className="space-y-6">
-          <ScoreSheetsStats
-            players={gameStats.players}
-            scoresheets={gameStats.scoresheets}
-          />
+          <ScoreSheetsStats scoresheetStats={scoresheetStats} />
         </TabsContent>
         <TabsContent value="advanced" className="space-y-6">
           <AdvancedTab

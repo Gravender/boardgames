@@ -21,25 +21,8 @@ import {
 } from "@board-games/ui/chart";
 import { cn } from "@board-games/ui/utils";
 
-type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
-type Player = GameStats["players"][number];
-type Scoresheet = GameStats["scoresheets"][number];
-
-interface UserScore {
-  id: number;
-  type: "original" | "shared";
-  name: string;
-  image: Player["image"];
-  isUser: boolean;
-  bestScore: number | null;
-  worstScore: number | null;
-  avgScore: number | null;
-  winRate: number;
-  plays: number;
-  wins: number;
-  rounds: Player["scoresheets"][number]["rounds"];
-  scores: Player["scoresheets"][number]["scores"];
-}
+type ScoresheetStatsItem =
+  RouterOutputs["newGame"]["getGameScoresheetStats"][number];
 
 interface ScoreData {
   date: string;
@@ -58,8 +41,8 @@ export function ScoresheetCharts({
   userScoresSorted,
   winRateOverTime,
 }: {
-  currentScoresheet: Scoresheet;
-  userScore: UserScore | null;
+  currentScoresheet: ScoresheetStatsItem;
+  userScore: ScoresheetStatsItem["players"][number] | null;
   userScoresSorted: ScoreData[];
   winRateOverTime: WinRateData[];
 }) {

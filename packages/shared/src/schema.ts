@@ -181,13 +181,12 @@ export const sharedEditGameSchema = baseGameSchema.omit({
 });
 
 export const scoreSheetSchema = insertScoreSheetSchema
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdBy: true,
-    type: true,
-    gameId: true,
+  .pick({
+    name: true,
+    isCoop: true,
+    winCondition: true,
+    roundsScore: true,
+    targetScore: true,
   })
   .required({ name: true, isCoop: true })
   .check((ctx) => {

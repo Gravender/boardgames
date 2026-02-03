@@ -358,6 +358,9 @@ class GameStatsService {
           allScores: [],
           allChecked: 0,
           matchRounds: new Map<number, MatchRoundEntry[]>(),
+          winningRoundScores: [],
+          winningCheckedCount: 0,
+          winningTotalPlays: 0,
         };
         scoresheet.rounds.set(row.roundParentId, round);
       }
@@ -402,6 +405,18 @@ class GameStatsService {
         player.plays++;
       }
 
+      // Winning round stats: only when this player won the match
+      if (row.matchPlayerWinner) {
+        if (round.type === "Numeric" && row.roundPlayerScore !== null) {
+          round.winningRoundScores.push(row.roundPlayerScore);
+        } else if (round.type === "Checkbox") {
+          round.winningTotalPlays++;
+          if (row.roundPlayerScore !== null && row.roundPlayerScore > 0) {
+            round.winningCheckedCount++;
+          }
+        }
+      }
+
       // Track rounds per match for deciding round analysis
       let matchRounds = round.matchRounds.get(row.matchId);
       if (!matchRounds) {
@@ -424,11 +439,22 @@ class GameStatsService {
       // Track match-level result per player for overall scoresheet stats (final score, winner)
       let matchPlayerEntry = scoresheet.matchResultsByPlayer.get(playerKey);
       if (!matchPlayerEntry) {
+        const image =
+          row.playerImageName != null
+            ? {
+                name: row.playerImageName,
+                url: row.playerImageUrl,
+                type: row.playerImageType ?? "file",
+                usageType: "player" as const,
+              }
+            : null;
         matchPlayerEntry = {
           type: player.type,
           playerId: row.playerId,
           playerSharedId: row.playerSharedId,
           name: row.playerName,
+          image,
+          isUser: row.playerIsUser,
           matches: new Map<number, MatchResult>(),
         };
         scoresheet.matchResultsByPlayer.set(playerKey, matchPlayerEntry);
@@ -467,6 +493,9 @@ class GameStatsService {
         let volatility: number | null = null;
         let checkRate: number | null = null;
 
+        let winningAvgScore: number | null = null;
+        let winningCheckRate: number | null = null;
+
         if (round.type === "Numeric") {
           avgScore =
             round.allScores.length > 0
@@ -474,6 +503,11 @@ class GameStatsService {
                 round.allScores.length
               : null;
           volatility = this.calculateStdDev(round.allScores);
+          winningAvgScore =
+            round.winningRoundScores.length > 0
+              ? round.winningRoundScores.reduce((a, b) => a + b, 0) /
+                round.winningRoundScores.length
+              : null;
         } else {
           const totalPlays = Array.from(round.players.values()).reduce(
             (sum, player) => sum + player.plays,
@@ -481,6 +515,10 @@ class GameStatsService {
           );
           checkRate =
             totalPlays > 0 ? (round.allChecked / totalPlays) * 100 : null;
+          winningCheckRate =
+            round.winningTotalPlays > 0
+              ? (round.winningCheckedCount / round.winningTotalPlays) * 100
+              : null;
         }
 
         const players: GetGameScoresheetStatsPlayerSchemaType[] = Array.from(
@@ -558,7 +596,9 @@ class GameStatsService {
           score: round.score,
           avgScore,
           volatility,
+          winningAvgScore: round.type === "Numeric" ? winningAvgScore : null,
           checkRate,
+          winningCheckRate: round.type === "Checkbox" ? winningCheckRate : null,
           players,
         });
       }
@@ -575,7 +615,11 @@ class GameStatsService {
         const numMatches = matchList.length;
         const wins = matchList.filter((m) => m.winner).length;
         const winRate = numMatches > 0 ? wins / numMatches : 0;
-        const scores = matchList.map((m) => ({ date: m.date, score: m.score }));
+        const scores = matchList.map((m) => ({
+          date: m.date,
+          score: m.score,
+          isWin: m.winner,
+        }));
         const validScores = matchList
           .map((m) => m.score)
           .filter((x): x is number => x !== null);
@@ -604,6 +648,8 @@ class GameStatsService {
             avgScore,
             bestScore,
             worstScore,
+            image: p.image,
+            isUser: p.isUser,
             scores,
           });
         } else if (p.playerSharedId !== null) {
@@ -617,10 +663,44 @@ class GameStatsService {
             avgScore,
             bestScore,
             worstScore,
+            image: p.image,
+            isUser: p.isUser,
             scores,
           });
         }
       }
+
+      const plays = (() => {
+        const matchIds = new Set<number>();
+        for (const p of scoresheet.matchResultsByPlayer.values()) {
+          for (const matchId of p.matches.keys()) {
+            matchIds.add(matchId);
+          }
+        }
+        return matchIds.size;
+      })();
+
+      const allFinalScores: number[] = [];
+      const winningFinalScores: number[] = [];
+      for (const p of scoresheet.matchResultsByPlayer.values()) {
+        for (const m of p.matches.values()) {
+          if (m.score !== null) {
+            allFinalScores.push(m.score);
+            if (m.winner) {
+              winningFinalScores.push(m.score);
+            }
+          }
+        }
+      }
+      const sheetAvgScore =
+        allFinalScores.length > 0
+          ? allFinalScores.reduce((a, b) => a + b, 0) / allFinalScores.length
+          : null;
+      const sheetWinningAvgScore =
+        winningFinalScores.length > 0
+          ? winningFinalScores.reduce((a, b) => a + b, 0) /
+            winningFinalScores.length
+          : null;
 
       if (s.type === "original") {
         result.push({
@@ -628,6 +708,9 @@ class GameStatsService {
           id: s.scoresheetId,
           name: s.name,
           isDefault: s.isDefault,
+          plays,
+          avgScore: sheetAvgScore,
+          winningAvgScore: sheetWinningAvgScore,
           winCondition: scoresheet.scoresheetWinCondition,
           isCoop: s.isCoop,
           roundsScore: scoresheet.scoresheetRoundsScore,
@@ -642,6 +725,9 @@ class GameStatsService {
           name: s.name,
           permission: s.permission,
           isDefault: s.isDefault,
+          plays,
+          avgScore: sheetAvgScore,
+          winningAvgScore: sheetWinningAvgScore,
           winCondition: scoresheet.scoresheetWinCondition,
           isCoop: s.isCoop,
           roundsScore: scoresheet.scoresheetRoundsScore,
