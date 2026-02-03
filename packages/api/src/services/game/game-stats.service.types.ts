@@ -97,6 +97,13 @@ export interface MatchResultByPlayerEntry {
   playerId: number;
   playerSharedId: number | null;
   name: string;
+  image: {
+    name: string;
+    url: string | null;
+    type: "file" | "svg";
+    usageType: "player";
+  } | null;
+  isUser: boolean;
   matches: Map<number, MatchResult>;
 }
 

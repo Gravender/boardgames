@@ -16,33 +16,15 @@ import {
 } from "@board-games/ui/table";
 
 import { PlayerImage } from "~/components/player-image";
+import { getCurrentPlayerKey } from "~/hooks/game-stats/use-scoresheet-stats";
 
-type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
-type Player = GameStats["players"][number];
-type Scoresheet = GameStats["scoresheets"][number];
-
-interface CurrentPlayer {
-  id: number;
-  type: "original" | "shared";
-  name: string;
-  image: Player["image"];
-  isUser: boolean;
-  bestScore: number | null;
-  worstScore: number | null;
-  avgScore: number | null;
-  winRate: number;
-  plays: number;
-  wins: number;
-  rounds: Player["scoresheets"][number]["rounds"];
-  scores: Player["scoresheets"][number]["scores"];
-}
+type ScoresheetStatsItem =
+  RouterOutputs["newGame"]["getGameScoresheetStats"][number];
 
 export function RoundByRoundTable({
   currentScoresheet,
-  currentPlayers,
 }: {
-  currentScoresheet: Scoresheet;
-  currentPlayers: CurrentPlayer[];
+  currentScoresheet: ScoresheetStatsItem;
 }) {
   const sortedRounds = useMemo(
     () => [...currentScoresheet.rounds].sort((a, b) => a.order - b.order),
@@ -99,10 +81,10 @@ export function RoundByRoundTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {currentPlayers
-                .toSorted((a, b) => b.plays - a.plays)
+              {currentScoresheet.players
+                .toSorted((a, b) => b.numMatches - a.numMatches)
                 .map((player) => (
-                  <TableRow key={`${player.id}-${player.type}`}>
+                  <TableRow key={getCurrentPlayerKey(player)}>
                     <TableCell className="p-2 sm:p-4">
                       <div className="flex w-full items-center gap-2 text-xs sm:gap-4">
                         <PlayerImage
@@ -115,7 +97,7 @@ export function RoundByRoundTable({
                             {player.name}
                           </span>
                           <div className="text-muted-foreground text-xs">
-                            {`(${player.plays} games)`}
+                            {`(${player.numMatches} games)`}
                           </div>
                         </div>
                         {player.type === "shared" && (
@@ -129,8 +111,14 @@ export function RoundByRoundTable({
                       </div>
                     </TableCell>
                     {sortedRounds.map((round) => {
-                      const playerRound = player.rounds.find(
-                        (r) => r.id === round.id,
+                      const playerRound = round.players.find(
+                        (p) =>
+                          (player.type === "original" &&
+                            p.type === "original" &&
+                            p.playerId === player.playerId) ||
+                          (player.type === "shared" &&
+                            p.type === "shared" &&
+                            p.sharedId === player.sharedId),
                       );
                       const checkedRounds =
                         playerRound?.scores.filter(

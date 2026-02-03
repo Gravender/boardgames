@@ -777,6 +777,7 @@ class GameRepository {
     const parentRound = alias(round, "parent_round");
     const linkedRound = alias(round, "linked_round");
     const canonicalScoresheet = alias(scoresheet, "canonical_scoresheet");
+    const playerImage = alias(image, "player_image");
 
     const rows = await database
       .select({
@@ -829,6 +830,10 @@ class GameRepository {
         playerType: vMatchPlayerCanonicalForUser.playerSourceType,
         playerSharedId: vMatchPlayerCanonicalForUser.sharedPlayerId,
         playerLinkedId: vMatchPlayerCanonicalForUser.linkedPlayerId,
+        playerIsUser: player.isUser,
+        playerImageName: playerImage.name,
+        playerImageUrl: playerImage.url,
+        playerImageType: playerImage.type,
         matchPlayerWinner: matchPlayer.winner,
         matchPlayerScore: matchPlayer.score,
       })
@@ -864,6 +869,7 @@ class GameRepository {
         player,
         eq(player.id, vMatchPlayerCanonicalForUser.canonicalPlayerId),
       )
+      .leftJoin(playerImage, eq(playerImage.id, player.imageId))
       .leftJoin(
         sharedMatch,
         and(

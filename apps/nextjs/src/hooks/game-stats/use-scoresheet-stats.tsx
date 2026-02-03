@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { compareAsc, format } from "date-fns";
 
 import type { RouterOutputs } from "@board-games/api";
+import { isSamePlayer } from "@board-games/shared";
 
-type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
-type Player = GameStats["players"][number];
-type Scoresheet = GameStats["scoresheets"][number];
+type ScoresheetStats = RouterOutputs["newGame"]["getGameScoresheetStats"];
+type ScoresheetStatsItem = ScoresheetStats[number];
+type OverallPlayer = ScoresheetStatsItem["players"][number];
+type RoundWithPlayerStats = ScoresheetStatsItem["rounds"][number];
 
 type SortField =
   | "name"
@@ -17,107 +19,76 @@ type SortField =
   | "avgScore";
 type SortOrder = "asc" | "desc";
 
-interface CurrentPlayer {
-  id: number;
-  type: "original" | "shared";
-  name: string;
-  image: Player["image"];
-  isUser: boolean;
-  bestScore: number | null;
-  worstScore: number | null;
-  avgScore: number | null;
-  winRate: number;
-  plays: number;
-  wins: number;
-  rounds: Player["scoresheets"][number]["rounds"];
-  scores: Player["scoresheets"][number]["scores"];
+function toPlayerRef(
+  p:
+    | { type: "original"; playerId: number }
+    | { type: "shared"; sharedId: number },
+): { type: "original"; id: number } | { type: "shared"; sharedId: number } {
+  return p.type === "original"
+    ? { type: "original", id: p.playerId }
+    : { type: "shared", sharedId: p.sharedId };
+}
+
+function getScoresheetKey(s: ScoresheetStatsItem): string {
+  return `${s.type}-${s.type === "original" ? s.id : s.sharedId}`;
+}
+
+export function getCurrentPlayerKey(player: OverallPlayer): string {
+  return player.type === "original"
+    ? `original-${player.playerId}`
+    : `shared-${player.sharedId}`;
 }
 
 export function useScoresheetStats({
-  players,
-  scoresheets,
+  scoresheetStats,
 }: {
-  players: Player[];
-  scoresheets: Scoresheet[];
+  scoresheetStats: ScoresheetStats;
 }) {
-  const scoreSheetsWithGames = useMemo(() => {
-    const temp = [...scoresheets];
-    return temp
-      .map((s) => {
-        const plays = players.reduce((acc, p) => {
-          const foundScoresheet = p.scoresheets.find((ps) => ps.id === s.id);
-          if (foundScoresheet !== undefined) {
-            return Math.max(acc, foundScoresheet.plays);
-          }
-          return acc;
-        }, 0);
-        if (plays === 0) {
-          return null;
-        }
-        return {
-          ...s,
-          plays,
-        };
-      })
-      .filter((s) => s !== null) as (Scoresheet & { plays: number })[];
-  }, [players, scoresheets]);
-
-  const [currentScoresheet, setCurrentScoresheet] = useState<Scoresheet | null>(
-    scoreSheetsWithGames[0] ?? null,
+  const [selectedKey, setSelectedKey] = useState<string | null>(() =>
+    scoresheetStats[0] ? getScoresheetKey(scoresheetStats[0]) : null,
   );
+
+  const currentScoresheet: ScoresheetStatsItem | null = useMemo(() => {
+    if (selectedKey === null) return scoresheetStats[0] ?? null;
+    return (
+      scoresheetStats.find((s) => getScoresheetKey(s) === selectedKey) ??
+      scoresheetStats[0] ??
+      null
+    );
+  }, [scoresheetStats, selectedKey]);
+
+  const setCurrentScoresheet = (s: ScoresheetStatsItem | null) => {
+    setSelectedKey(s ? getScoresheetKey(s) : null);
+  };
 
   useEffect(() => {
     if (currentScoresheet) {
-      const stillExists = scoreSheetsWithGames.some(
-        (s) => s.id === currentScoresheet.id,
+      const key = getScoresheetKey(currentScoresheet);
+      const stillExists = scoresheetStats.some(
+        (s) => getScoresheetKey(s) === key,
       );
       if (!stillExists) {
-        setCurrentScoresheet(scoreSheetsWithGames[0] ?? null);
+        setSelectedKey(
+          scoresheetStats[0] ? getScoresheetKey(scoresheetStats[0]) : null,
+        );
       }
     } else {
-      setCurrentScoresheet(scoreSheetsWithGames[0] ?? null);
+      setSelectedKey(
+        scoresheetStats[0] ? getScoresheetKey(scoresheetStats[0]) : null,
+      );
     }
-  }, [scoreSheetsWithGames, currentScoresheet]);
+  }, [scoresheetStats, currentScoresheet]);
 
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
-  const currentPlayers = useMemo(() => {
-    if (!currentScoresheet) return [];
-    const mappedPlayers = players
-      .map((player) => {
-        const playerScoresheet = player.scoresheets.find(
-          (pScoresheet) => pScoresheet.id === currentScoresheet.id,
-        );
-        if (!playerScoresheet) return null;
-
-        return {
-          id: player.id,
-          type: player.type,
-          name: player.name,
-          image: player.image,
-          isUser: player.isUser,
-          bestScore: playerScoresheet.bestScore,
-          worstScore: playerScoresheet.worstScore,
-          avgScore: playerScoresheet.avgScore,
-          winRate: playerScoresheet.winRate,
-          plays: playerScoresheet.plays,
-          wins: playerScoresheet.wins,
-          rounds: playerScoresheet.rounds,
-          scores: playerScoresheet.scores,
-        };
-      })
-      .filter((player): player is CurrentPlayer => player !== null);
-    return mappedPlayers;
-  }, [currentScoresheet, players]);
-
   const userScore = useMemo(() => {
-    const temp = currentPlayers.find((p) => p.isUser);
+    const temp = currentScoresheet?.players.find((p) => p.isUser);
     return temp ?? null;
-  }, [currentPlayers]);
+  }, [currentScoresheet]);
 
   const sortedPlayers = useMemo(() => {
-    const temp = [...currentPlayers];
+    const temp = [...(currentScoresheet?.players ?? [])];
     temp.sort((a, b) => {
       let aValue: number | string | null;
       let bValue: number | string | null;
@@ -128,8 +99,8 @@ export function useScoresheetStats({
           bValue = b.name.toLowerCase();
           break;
         case "plays":
-          aValue = a.plays;
-          bValue = b.plays;
+          aValue = a.numMatches;
+          bValue = b.numMatches;
           break;
         case "wins":
           aValue = a.wins;
@@ -182,7 +153,12 @@ export function useScoresheetStats({
         : (bValue as number) - (aValue as number);
     });
     return temp;
-  }, [currentPlayers, currentScoresheet?.winCondition, sortField, sortOrder]);
+  }, [
+    currentScoresheet?.players,
+    currentScoresheet?.winCondition,
+    sortField,
+    sortOrder,
+  ]);
 
   const userScoresSorted = useMemo(() => {
     if (!userScore) return [];
@@ -197,7 +173,7 @@ export function useScoresheetStats({
   const winRateOverTime = useMemo(() => {
     let wins = 0;
     let totalGames = 0;
-    const winRateOverTime = userScoresSorted.map((score) => {
+    return userScoresSorted.map((score) => {
       if (score.isWin) {
         wins++;
       }
@@ -207,7 +183,6 @@ export function useScoresheetStats({
         winRate: (wins / totalGames) * 100,
       };
     });
-    return winRateOverTime;
   }, [userScoresSorted]);
 
   const toggleSort = (field: SortField) => {
@@ -222,13 +197,13 @@ export function useScoresheetStats({
   return {
     currentScoresheet,
     setCurrentScoresheet,
+    getScoresheetKey,
+    getCurrentPlayerKey,
     sortField,
     sortOrder,
     toggleSort,
-    currentPlayers,
     userScore,
     sortedPlayers,
-    scoreSheetsWithGames,
     userScoresSorted,
     winRateOverTime,
   };

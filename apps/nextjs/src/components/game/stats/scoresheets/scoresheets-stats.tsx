@@ -18,32 +18,26 @@ import { RoundByRoundTable } from "./round-by-round-table";
 import { ScoresheetCharts } from "./scoresheet-charts";
 import { ScoresheetPlayerTable } from "./scoresheet-player-table";
 
-type GameStats = NonNullable<RouterOutputs["game"]["getGameStats"]>;
-type Player = GameStats["players"][number];
-type Scoresheet = GameStats["scoresheets"][number];
+type ScoresheetStats = RouterOutputs["newGame"]["getGameScoresheetStats"];
 
 export function ScoreSheetsStats({
-  players,
-  scoresheets,
+  scoresheetStats,
 }: {
-  players: Player[];
-  scoresheets: Scoresheet[];
+  scoresheetStats: ScoresheetStats;
 }) {
   const {
     currentScoresheet,
     setCurrentScoresheet,
-    scoreSheetsWithGames,
+    getScoresheetKey,
     userScore,
     sortedPlayers,
     toggleSort,
     sortField,
     sortOrder,
-    currentPlayers,
     userScoresSorted,
     winRateOverTime,
   } = useScoresheetStats({
-    players,
-    scoresheets,
+    scoresheetStats,
   });
 
   if (!currentScoresheet) {
@@ -68,7 +62,7 @@ export function ScoreSheetsStats({
             Scoresheet Analysis - {currentScoresheet.name}
           </CardTitle>
         </CardHeader>
-        {scoreSheetsWithGames.length > 1 && (
+        {scoresheetStats.length > 1 && (
           <CardContent>
             <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
               <div className="flex-1">
@@ -76,10 +70,10 @@ export function ScoreSheetsStats({
                   Select Scoresheet:
                 </label>
                 <Select
-                  value={currentScoresheet.id.toString()}
+                  value={getScoresheetKey(currentScoresheet)}
                   onValueChange={(value) => {
-                    const selectedScoresheet = scoresheets.find(
-                      (s) => s.id === Number.parseInt(value),
+                    const selectedScoresheet = scoresheetStats.find(
+                      (s) => getScoresheetKey(s) === value,
                     );
                     if (selectedScoresheet) {
                       setCurrentScoresheet(selectedScoresheet);
@@ -103,10 +97,10 @@ export function ScoreSheetsStats({
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {scoreSheetsWithGames.map((scoresheet) => (
+                    {scoresheetStats.map((scoresheet) => (
                       <SelectItem
-                        key={scoresheet.id}
-                        value={scoresheet.id.toString()}
+                        key={getScoresheetKey(scoresheet)}
+                        value={getScoresheetKey(scoresheet)}
                       >
                         <div className="flex items-center gap-2">
                           <span>{scoresheet.name}</span>
@@ -192,7 +186,7 @@ export function ScoreSheetsStats({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Matches Played:</span>
-                  <div className="font-semibold">{userScore.plays}</div>
+                  <div className="font-semibold">{userScore.numMatches}</div>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Games Won:</span>
@@ -261,10 +255,7 @@ export function ScoreSheetsStats({
         userScoresSorted={userScoresSorted}
         winRateOverTime={winRateOverTime}
       />
-      <RoundByRoundTable
-        currentScoresheet={currentScoresheet}
-        currentPlayers={currentPlayers}
-      />
+      <RoundByRoundTable currentScoresheet={currentScoresheet} />
     </div>
   );
 }

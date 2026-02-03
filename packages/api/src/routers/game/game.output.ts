@@ -235,11 +235,14 @@ const getGameScoresheetStatsOverallPlayerSchema = z.discriminatedUnion("type", [
     avgScore: z.number().nullable(),
     bestScore: z.number().nullable(),
     worstScore: z.number().nullable(),
+    image: playerImageSchema.nullable(),
+    isUser: z.boolean(),
     /** Final score per match; null when no score (N/A). */
     scores: z.array(
       z.object({
         date: z.date(),
         score: z.number().nullable(),
+        isWin: z.boolean(),
       }),
     ),
   }),
@@ -253,11 +256,14 @@ const getGameScoresheetStatsOverallPlayerSchema = z.discriminatedUnion("type", [
     avgScore: z.number().nullable(),
     bestScore: z.number().nullable(),
     worstScore: z.number().nullable(),
+    image: playerImageSchema.nullable(),
+    isUser: z.boolean(),
     /** Final score per match; null when no score (N/A). */
     scores: z.array(
       z.object({
         date: z.date(),
         score: z.number().nullable(),
+        isWin: z.boolean(),
       }),
     ),
   }),
@@ -289,6 +295,8 @@ export const getGameScoresheetStatsOutput = z.array(
       type: z.literal("original"),
       id: z.number(),
       isDefault: z.boolean(),
+      /** Number of finished matches played using this scoresheet. */
+      plays: z.number(),
       /** Overall stats per player (match count, wins, final scores). */
       players: z.array(getGameScoresheetStatsOverallPlayerSchema),
       rounds: z.array(getGameScoresheetStatsRoundSchema),
@@ -298,6 +306,8 @@ export const getGameScoresheetStatsOutput = z.array(
       sharedId: z.number(),
       permission: z.literal("view").or(z.literal("edit")),
       isDefault: z.boolean(),
+      /** Number of finished matches played using this scoresheet. */
+      plays: z.number(),
       /** Overall stats per player (match count, wins, final scores). */
       players: z.array(getGameScoresheetStatsOverallPlayerSchema),
       rounds: z.array(getGameScoresheetStatsRoundSchema),

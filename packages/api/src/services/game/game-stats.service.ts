@@ -424,11 +424,22 @@ class GameStatsService {
       // Track match-level result per player for overall scoresheet stats (final score, winner)
       let matchPlayerEntry = scoresheet.matchResultsByPlayer.get(playerKey);
       if (!matchPlayerEntry) {
+        const image =
+          row.playerImageName != null
+            ? {
+                name: row.playerImageName,
+                url: row.playerImageUrl,
+                type: row.playerImageType ?? "file",
+                usageType: "player" as const,
+              }
+            : null;
         matchPlayerEntry = {
           type: player.type,
           playerId: row.playerId,
           playerSharedId: row.playerSharedId,
           name: row.playerName,
+          image,
+          isUser: row.playerIsUser,
           matches: new Map<number, MatchResult>(),
         };
         scoresheet.matchResultsByPlayer.set(playerKey, matchPlayerEntry);
@@ -575,7 +586,11 @@ class GameStatsService {
         const numMatches = matchList.length;
         const wins = matchList.filter((m) => m.winner).length;
         const winRate = numMatches > 0 ? wins / numMatches : 0;
-        const scores = matchList.map((m) => ({ date: m.date, score: m.score }));
+        const scores = matchList.map((m) => ({
+          date: m.date,
+          score: m.score,
+          isWin: m.winner,
+        }));
         const validScores = matchList
           .map((m) => m.score)
           .filter((x): x is number => x !== null);
@@ -604,6 +619,8 @@ class GameStatsService {
             avgScore,
             bestScore,
             worstScore,
+            image: p.image,
+            isUser: p.isUser,
             scores,
           });
         } else if (p.playerSharedId !== null) {
@@ -617,10 +634,22 @@ class GameStatsService {
             avgScore,
             bestScore,
             worstScore,
+            image: p.image,
+            isUser: p.isUser,
             scores,
           });
         }
       }
+
+      const plays = (() => {
+        const matchIds = new Set<number>();
+        for (const p of scoresheet.matchResultsByPlayer.values()) {
+          for (const matchId of p.matches.keys()) {
+            matchIds.add(matchId);
+          }
+        }
+        return matchIds.size;
+      })();
 
       if (s.type === "original") {
         result.push({
@@ -628,6 +657,7 @@ class GameStatsService {
           id: s.scoresheetId,
           name: s.name,
           isDefault: s.isDefault,
+          plays,
           winCondition: scoresheet.scoresheetWinCondition,
           isCoop: s.isCoop,
           roundsScore: scoresheet.scoresheetRoundsScore,
@@ -642,6 +672,7 @@ class GameStatsService {
           name: s.name,
           permission: s.permission,
           isDefault: s.isDefault,
+          plays,
           winCondition: scoresheet.scoresheetWinCondition,
           isCoop: s.isCoop,
           roundsScore: scoresheet.scoresheetRoundsScore,
