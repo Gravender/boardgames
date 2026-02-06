@@ -29,7 +29,7 @@ export const db =
     ? LocalDrizzle({
         client: pool,
         relations,
-        logger: false,
+        logger: true,
       })
     : VercelDrizzle(sql, { relations });
 export type DatabaseType = typeof db;

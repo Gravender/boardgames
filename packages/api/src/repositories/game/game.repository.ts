@@ -779,51 +779,57 @@ class GameRepository {
     const canonicalScoresheet = alias(scoresheet, "canonical_scoresheet");
     const playerImage = alias(image, "player_image");
 
+    const viewerKey = sql<string>`
+    COALESCE(
+      ${vMatchPlayerCanonicalForUser.sharedWithId},
+      ${vMatchPlayerCanonicalForUser.ownerId}
+    )
+  `;
     const rows = await database
       .select({
         matchId: vMatchCanonical.matchId,
         matchDate: vMatchCanonical.matchDate,
-        scoresheetParentId:
-          sql<number>`COALESCE(${canonicalScoresheet.parentId}, ${canonicalScoresheet.id})`.as(
-            "scoresheet_parent_id",
-          ),
+
+        // ✅ Use the *match scoresheet* lineage as the top-level bucket
+        // (so all match copies roll up to the same template scoresheet)
+        scoresheetParentId: sql<number>`
+      COALESCE(${canonicalScoresheet.parentId}, ${canonicalScoresheet.id})
+    `.as("scoresheet_parent_id"),
+
+        // optional: template-ish metadata (kept from your original intent)
         scoresheetParentName: canonicalScoresheet.name,
         scoresheetRoundsScore: canonicalScoresheet.roundsScore,
         scoresheetWinCondition: canonicalScoresheet.winCondition,
-        roundParentId:
-          sql<number>`COALESCE(${sharedRound.linkedRoundId}, ${round.parentId}, ${round.id})`.as(
-            "round_parent_id",
-          ),
-        roundParentName:
-          sql<string>`COALESCE(${linkedRound.name}, ${parentRound.name}, ${round.name})`.as(
-            "round_parent_name",
-          ),
-        roundParentType: sql<
-          "Numeric" | "Checkbox"
-        >`COALESCE(${linkedRound.type}, ${parentRound.type}, ${round.type})`.as(
-          "round_parent_type",
-        ),
-        roundParentColor: sql<
-          string | null
-        >`COALESCE(${linkedRound.color}, ${parentRound.color}, ${round.color})`.as(
-          "round_parent_color",
-        ),
-        roundParentLookup: sql<
-          number | null
-        >`COALESCE(${linkedRound.lookup}, ${parentRound.lookup}, ${round.lookup})`.as(
-          "round_parent_lookup",
-        ),
-        roundParentModifier: sql<
-          number | null
-        >`COALESCE(${linkedRound.modifier}, ${parentRound.modifier}, ${round.modifier})`.as(
-          "round_parent_modifier",
-        ),
-        roundParentScore:
-          sql<number>`COALESCE(${linkedRound.score}, ${parentRound.score}, ${round.score})`.as(
-            "round_parent_score",
-          ),
+
+        // ✅ Viewer-canonical round identity (linked > fork parent > self)
+        roundParentId: sql<number>`
+      COALESCE(${sharedRound.linkedRoundId}, ${round.parentId}, ${round.id})
+    `.as("round_parent_id"),
+        roundParentName: sql<string>`
+      COALESCE(${linkedRound.name}, ${parentRound.name}, ${round.name})
+    `.as("round_parent_name"),
+        roundParentType: sql<"Numeric" | "Checkbox">`
+      COALESCE(${linkedRound.type}, ${parentRound.type}, ${round.type})
+    `.as("round_parent_type"),
+        roundParentColor: sql<string | null>`
+      COALESCE(${linkedRound.color}, ${parentRound.color}, ${round.color})
+    `.as("round_parent_color"),
+        roundParentLookup: sql<number | null>`
+      COALESCE(${linkedRound.lookup}, ${parentRound.lookup}, ${round.lookup})
+    `.as("round_parent_lookup"),
+        roundParentModifier: sql<number | null>`
+      COALESCE(${linkedRound.modifier}, ${parentRound.modifier}, ${round.modifier})
+    `.as("round_parent_modifier"),
+        roundParentScore: sql<number>`
+      COALESCE(${linkedRound.score}, ${parentRound.score}, ${round.score})
+    `.as("round_parent_score"),
+
         roundOrder: round.order,
+
+        // round-player stat
         roundPlayerScore: roundPlayer.score,
+
+        // match-player + player identity
         matchPlayerId: matchPlayer.id,
         playerId: player.id,
         playerName: player.name,
@@ -831,11 +837,14 @@ class GameRepository {
         playerSharedId: vMatchPlayerCanonicalForUser.sharedPlayerId,
         playerLinkedId: vMatchPlayerCanonicalForUser.linkedPlayerId,
         playerIsUser: player.isUser,
+
         playerImageName: playerImage.name,
         playerImageUrl: playerImage.url,
         playerImageType: playerImage.type,
+
         matchPlayerWinner: matchPlayer.winner,
         matchPlayerScore: matchPlayer.score,
+        matchPlayerPlacement: matchPlayer.placement,
       })
       .from(vMatchCanonical)
       .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
@@ -863,20 +872,18 @@ class GameRepository {
             vMatchCanonical.matchId,
           ),
           eq(vMatchPlayerCanonicalForUser.baseMatchPlayerId, matchPlayer.id),
+          eq(viewerKey, vMatchCanonical.visibleToUserId),
         ),
       )
       .innerJoin(
         player,
-        eq(player.id, vMatchPlayerCanonicalForUser.canonicalPlayerId),
-      )
-      .leftJoin(playerImage, eq(playerImage.id, player.imageId))
-      .leftJoin(
-        sharedMatch,
         and(
-          eq(sharedMatch.matchId, match.id),
-          eq(sharedMatch.sharedWithId, userId),
+          eq(player.id, vMatchPlayerCanonicalForUser.canonicalPlayerId),
+          isNull(player.deletedAt),
         ),
       )
+      .leftJoin(playerImage, eq(playerImage.id, player.imageId))
+      .leftJoin(sharedMatch, eq(sharedMatch.id, vMatchCanonical.sharedMatchId))
       .leftJoin(
         sharedRound,
         and(
@@ -893,26 +900,11 @@ class GameRepository {
       .where(
         and(
           eq(vMatchCanonical.finished, true),
+          eq(vMatchCanonical.visibleToUserId, userId),
           input.type === "original"
-            ? and(
-                eq(vMatchCanonical.canonicalGameId, input.id),
-                eq(vMatchCanonical.visibleToUserId, userId),
-              )
-            : and(
-                eq(vMatchCanonical.sharedGameId, input.sharedGameId),
-                eq(vMatchCanonical.visibleToUserId, userId),
-              ),
-          or(
-            and(
-              eq(vMatchPlayerCanonicalForUser.ownerId, userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
-            ),
-            and(
-              eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
-              ne(vMatchPlayerCanonicalForUser.playerSourceType, "not-shared"),
-            ),
-          ),
+            ? eq(vMatchCanonical.canonicalGameId, input.id)
+            : eq(vMatchCanonical.sharedGameId, input.sharedGameId),
+          ne(vMatchPlayerCanonicalForUser.playerSourceType, "not-shared"),
         ),
       )
       .orderBy(vMatchCanonical.matchDate, round.order, matchPlayer.id);
