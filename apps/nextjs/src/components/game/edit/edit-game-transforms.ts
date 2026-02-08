@@ -62,7 +62,7 @@ export function transformFormScoresheetsToEditFormat(
 // Transform form values to API input format
 export function transformToApiInput(
   formValues: EditGameFormValues,
-  initialGame: NonNullable<RouterOutputs["game"]["getGame"]>,
+  initialGame: NonNullable<RouterOutputs["newGame"]["getGame"]>,
   initialScoresheets: NonNullable<
     RouterOutputs["newGame"]["gameScoreSheetsWithRounds"]
   >,
@@ -72,7 +72,7 @@ export function transformToApiInput(
     | { type: "file"; imageId: number }
     | null
     | undefined,
-): RouterInputs["game"]["updateGame"] {
+): RouterInputs["newGame"]["updateGame"] {
   const gameValues = formValues.game;
   const formScoresheets = transformFormScoresheetsToEditFormat(
     formValues.scoresheets,
@@ -130,7 +130,7 @@ export function transformToApiInput(
 
   // Build roles updates
   const updatedRoles = gameValues.roles
-    .map<RouterInputs["game"]["updateGame"]["updatedRoles"][number] | null>(
+    .map<RouterInputs["newGame"]["updateGame"]["updatedRoles"][number] | null>(
       (role) => {
         const originalRole = initialRoles.find(
           (r) => role.type !== "new" && isSameRole(r, role),
@@ -163,7 +163,7 @@ export function transformToApiInput(
       name: role.name,
       description: role.description,
     }));
-  const deletedRoles: RouterInputs["game"]["updateGame"]["deletedRoles"] =
+  const deletedRoles: RouterInputs["newGame"]["updateGame"]["deletedRoles"] =
     initialRoles
       .filter(
         (role) =>
@@ -184,11 +184,11 @@ export function transformToApiInput(
       );
 
   // Build scoresheets updates
-  let changedScoresheets: RouterInputs["game"]["updateGame"]["scoresheets"] =
+  let changedScoresheets: RouterInputs["newGame"]["updateGame"]["scoresheets"] =
     [];
 
   // Calculate deleted scoresheets - this should always be checked, not just when scoresheetChanged is true
-  const scoresheetsToDelete: RouterInputs["game"]["updateGame"]["scoresheetsToDelete"] =
+  const scoresheetsToDelete: RouterInputs["newGame"]["updateGame"]["scoresheetsToDelete"] =
     initialScoresheets
       .filter(
         (foundScoresheet) =>
@@ -221,7 +221,7 @@ export function transformToApiInput(
           scoresheet.roundChanged,
       )
       .map<
-        RouterInputs["game"]["updateGame"]["scoresheets"][number] | undefined
+        RouterInputs["newGame"]["updateGame"]["scoresheets"][number] | undefined
       >((scoresheet) => {
         const foundScoresheet = initialScoresheets.find(
           (dataScoresheet) =>
@@ -236,7 +236,7 @@ export function transformToApiInput(
 
         if (!foundScoresheet || scoresheet.scoresheetType === "new") {
           const newScoresheet: Extract<
-            RouterInputs["game"]["updateGame"]["scoresheets"][number],
+            RouterInputs["newGame"]["updateGame"]["scoresheets"][number],
             { type: "New" }
           > = {
             type: "New" as const,
@@ -289,7 +289,7 @@ export function transformToApiInput(
 
         if (scoresheet.roundChanged) {
           type UpdateScoresheetAndRoundsType = Extract<
-            RouterInputs["game"]["updateGame"]["scoresheets"][number],
+            RouterInputs["newGame"]["updateGame"]["scoresheets"][number],
             { type: "Update Scoresheet & Rounds" }
           >;
 
@@ -368,7 +368,7 @@ export function transformToApiInput(
             targetScore: scoresheetTargetScore,
           };
           const updateScoresheetAndRounds: Extract<
-            RouterInputs["game"]["updateGame"]["scoresheets"][number],
+            RouterInputs["newGame"]["updateGame"]["scoresheets"][number],
             { type: "Update Scoresheet & Rounds" }
           > = {
             type: "Update Scoresheet & Rounds" as const,
@@ -414,7 +414,7 @@ export function transformToApiInput(
             targetScore: scoresheetTargetScore,
           };
           const updateScoresheet: Extract<
-            RouterInputs["game"]["updateGame"]["scoresheets"][number],
+            RouterInputs["newGame"]["updateGame"]["scoresheets"][number],
             { type: "Update Scoresheet" }
           > = {
             type: "Update Scoresheet" as const,
@@ -439,7 +439,7 @@ export function transformToApiInput(
       .filter(
         (
           scoresheet,
-        ): scoresheet is RouterInputs["game"]["updateGame"]["scoresheets"][number] =>
+        ): scoresheet is RouterInputs["newGame"]["updateGame"]["scoresheets"][number] =>
           scoresheet !== undefined,
       );
   }

@@ -3,8 +3,10 @@ import type { TRPCRouterRecord } from "@trpc/server";
 import { gameStatsService } from "../../services/game/game-stats.service";
 import { gameService } from "../../services/game/game.service";
 import { protectedUserProcedure } from "../../trpc";
-import { getGameInput } from "./game.input";
+import { createGameInput, editGameInput, getGameInput } from "./game.input";
 import {
+  createGameOutput,
+  editGameOutput,
   getGameMatchesOutput,
   getGameOutput,
   getGamePlayerStatsOutput,
@@ -16,6 +18,28 @@ import {
 } from "./game.output";
 
 export const gameRouter = {
+  create: protectedUserProcedure
+    .input(createGameInput)
+    .output(createGameOutput)
+    .mutation(async ({ ctx, input }) => {
+      return gameService.createGame({
+        ctx,
+        input,
+      });
+    }),
+  updateGame: protectedUserProcedure
+    .input(editGameInput)
+    .output(editGameOutput)
+    .mutation(async ({ ctx, input }) => {
+      await gameService.editGame({
+        ctx: {
+          userId: ctx.userId,
+          posthog: ctx.posthog,
+          deleteFiles: ctx.deleteFiles,
+        },
+        input,
+      });
+    }),
   getGame: protectedUserProcedure
     .input(getGameInput)
     .output(getGameOutput)

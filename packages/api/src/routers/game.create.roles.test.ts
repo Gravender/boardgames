@@ -45,7 +45,7 @@ describe("Game Create - Role Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["game"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["newGame"]["create"]> = {
         game: {
           name: "Game with Role",
           description: null,
@@ -67,7 +67,7 @@ describe("Game Create - Role Tests", () => {
         ],
       };
 
-      const result = await caller.game.create(input);
+      const result = await caller.newGame.create(input);
       expect(result.id).toBeDefined();
 
       // Verify role is created correctly
@@ -93,7 +93,7 @@ describe("Game Create - Role Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["game"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["newGame"]["create"]> = {
         game: {
           name: "Game with Role Description",
           description: null,
@@ -115,7 +115,7 @@ describe("Game Create - Role Tests", () => {
         ],
       };
 
-      const result = await caller.game.create(input);
+      const result = await caller.newGame.create(input);
       expect(result.id).toBeDefined();
 
       // Verify role is created correctly
@@ -141,7 +141,7 @@ describe("Game Create - Role Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["game"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["newGame"]["create"]> = {
         game: {
           name: "Game with Multiple Roles",
           description: "Test game",
@@ -171,7 +171,7 @@ describe("Game Create - Role Tests", () => {
         ],
       };
 
-      const result = await caller.game.create(input);
+      const result = await caller.newGame.create(input);
       expect(result.id).toBeDefined();
 
       // Verify roles are created correctly
