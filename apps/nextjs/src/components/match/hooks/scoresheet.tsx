@@ -20,9 +20,9 @@ export const useDurationMutation = (input: MatchInput) => {
   }: {
     action: "start" | "pause" | "reset";
   }) => {
-    await queryClient.cancelQueries(trpc.newMatch.getMatch.queryOptions(input));
+    await queryClient.cancelQueries(trpc.match.getMatch.queryOptions(input));
     const prevMatch = queryClient.getQueryData(
-      trpc.newMatch.getMatch.queryOptions(input).queryKey,
+      trpc.match.getMatch.queryOptions(input).queryKey,
     );
     if (prevMatch !== undefined) {
       if (action === "start") {
@@ -33,7 +33,7 @@ export const useDurationMutation = (input: MatchInput) => {
           finished: false,
         };
         queryClient.setQueryData(
-          trpc.newMatch.getMatch.queryOptions(input).queryKey,
+          trpc.match.getMatch.queryOptions(input).queryKey,
           newData,
         );
       } else if (action === "pause") {
@@ -49,7 +49,7 @@ export const useDurationMutation = (input: MatchInput) => {
           endTime: endTime,
         };
         queryClient.setQueryData(
-          trpc.newMatch.getMatch.queryOptions(input).queryKey,
+          trpc.match.getMatch.queryOptions(input).queryKey,
           newData,
         );
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -62,7 +62,7 @@ export const useDurationMutation = (input: MatchInput) => {
           endTime: null,
         };
         queryClient.setQueryData(
-          trpc.newMatch.getMatch.queryOptions(input).queryKey,
+          trpc.match.getMatch.queryOptions(input).queryKey,
           newData,
         );
       }
@@ -70,9 +70,9 @@ export const useDurationMutation = (input: MatchInput) => {
     return { previousData: prevMatch };
   };
   const invalidateMatch = async () =>
-    queryClient.invalidateQueries(trpc.newMatch.getMatch.queryOptions(input));
+    queryClient.invalidateQueries(trpc.match.getMatch.queryOptions(input));
   const startMatchDuration = useMutation(
-    trpc.newMatch.update.matchStart.mutationOptions({
+    trpc.match.update.matchStart.mutationOptions({
       onMutate: async (_) => updateMatch({ action: "start" }),
       onSuccess: invalidateMatch,
       onError: (error, _, context) => {
@@ -81,7 +81,7 @@ export const useDurationMutation = (input: MatchInput) => {
         });
         if (context?.previousData) {
           queryClient.setQueryData(
-            trpc.newMatch.getMatch.queryOptions(input).queryKey,
+            trpc.match.getMatch.queryOptions(input).queryKey,
             context.previousData,
           );
         }
@@ -89,7 +89,7 @@ export const useDurationMutation = (input: MatchInput) => {
     }),
   );
   const pauseMatchDuration = useMutation(
-    trpc.newMatch.update.matchPause.mutationOptions({
+    trpc.match.update.matchPause.mutationOptions({
       onMutate: async (_) => updateMatch({ action: "pause" }),
       onSuccess: invalidateMatch,
       onError: (error, _, context) => {
@@ -98,7 +98,7 @@ export const useDurationMutation = (input: MatchInput) => {
         });
         if (context?.previousData) {
           queryClient.setQueryData(
-            trpc.newMatch.getMatch.queryOptions(input).queryKey,
+            trpc.match.getMatch.queryOptions(input).queryKey,
             context.previousData,
           );
         }
@@ -106,7 +106,7 @@ export const useDurationMutation = (input: MatchInput) => {
     }),
   );
   const resetMatchDuration = useMutation(
-    trpc.newMatch.update.matchResetDuration.mutationOptions({
+    trpc.match.update.matchResetDuration.mutationOptions({
       onMutate: async (_) => updateMatch({ action: "reset" }),
       onSuccess: invalidateMatch,
       onError: (error, _, context) => {
@@ -115,7 +115,7 @@ export const useDurationMutation = (input: MatchInput) => {
         });
         if (context?.previousData) {
           queryClient.setQueryData(
-            trpc.newMatch.getMatch.queryOptions(input).queryKey,
+            trpc.match.getMatch.queryOptions(input).queryKey,
             context.previousData,
           );
         }
@@ -137,10 +137,10 @@ export const useUpdateFinalScores = (input: MatchInput) => {
   const queryClient = useQueryClient();
   const posthog = usePostHog();
   const updateFinalScoresMutation = useMutation(
-    trpc.newMatch.update.updateMatchFinalScores.mutationOptions({
+    trpc.match.update.updateMatchFinalScores.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
+          trpc.match.getMatchPlayersAndTeams.queryOptions(input),
         );
       },
       onError: (error) => {
@@ -159,7 +159,7 @@ export const useUpdateFinish = (input: MatchInput) => {
   const queryClient = useQueryClient();
   const posthog = usePostHog();
   const updateFinishMutation = useMutation(
-    trpc.newMatch.update.updateMatchFinish.mutationOptions({
+    trpc.match.update.updateMatchFinish.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries();
         posthog.capture("match finished", {
@@ -185,7 +185,7 @@ export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
   const queryClient = useQueryClient();
   const posthog = usePostHog();
   const updateMatchManualWinnerMutation = useMutation(
-    trpc.newMatch.update.updateMatchManualWinner.mutationOptions({
+    trpc.match.update.updateMatchManualWinner.mutationOptions({
       onMutate: async () => {
         await queryClient.invalidateQueries();
         posthog.capture("match finished", {
@@ -211,7 +211,7 @@ export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
   const queryClient = useQueryClient();
   const posthog = usePostHog();
   const updateMatchPlacementsMutation = useMutation(
-    trpc.newMatch.update.updateMatchPlacements.mutationOptions({
+    trpc.match.update.updateMatchPlacements.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries();
         posthog.capture("match finished", {
@@ -236,13 +236,13 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const updateMatchRoundScoreMutation = useMutation(
-    trpc.newMatch.update.updateMatchRoundScore.mutationOptions({
+    trpc.match.update.updateMatchRoundScore.mutationOptions({
       onMutate: async (newRoundScore) => {
         await queryClient.cancelQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
+          trpc.match.getMatchPlayersAndTeams.queryOptions(input),
         );
         const prevData = queryClient.getQueryData(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
+          trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
         );
         if (prevData) {
           const newData = {
@@ -284,7 +284,7 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
             }),
           };
           queryClient.setQueryData(
-            trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
+            trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
             newData,
           );
         }
@@ -334,14 +334,14 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
         }
         if (context?.previousData) {
           queryClient.setQueryData(
-            trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
+            trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
             context.previousData,
           );
         }
       },
       onSettled: async () => {
         return queryClient.invalidateQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
+          trpc.match.getMatchPlayersAndTeams.queryOptions(input),
         );
       },
     }),
@@ -354,13 +354,13 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const updateMatchPlayerOrTeamScoreMutation = useMutation(
-    trpc.newMatch.update.updateMatchPlayerScore.mutationOptions({
+    trpc.match.update.updateMatchPlayerScore.mutationOptions({
       onMutate: async (newScore) => {
         await queryClient.cancelQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
+          trpc.match.getMatchPlayersAndTeams.queryOptions(input),
         );
         const prevData = queryClient.getQueryData(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
+          trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
         );
         if (prevData) {
           const newData = {
@@ -386,7 +386,7 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
             }),
           };
           queryClient.setQueryData(
-            trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
+            trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
             newData,
           );
         }
@@ -423,14 +423,14 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
         }
         if (context?.previousData) {
           queryClient.setQueryData(
-            trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
+            trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
             context.previousData,
           );
         }
       },
       onSettled: async () => {
         return queryClient.invalidateQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
+          trpc.match.getMatchPlayersAndTeams.queryOptions(input),
         );
       },
     }),
@@ -444,13 +444,13 @@ export const useUpdateMatchCommentMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const updateMatchCommentMutation = useMutation(
-    trpc.newMatch.update.updateMatchComment.mutationOptions({
+    trpc.match.update.updateMatchComment.mutationOptions({
       onMutate: async (newComment) => {
         await queryClient.cancelQueries(
-          trpc.newMatch.getMatch.queryOptions(input),
+          trpc.match.getMatch.queryOptions(input),
         );
         const prevData = queryClient.getQueryData(
-          trpc.newMatch.getMatch.queryOptions(input).queryKey,
+          trpc.match.getMatch.queryOptions(input).queryKey,
         );
         if (prevData) {
           const newData = {
@@ -458,7 +458,7 @@ export const useUpdateMatchCommentMutation = (input: MatchInput) => {
             comment: newComment.comment,
           };
           queryClient.setQueryData(
-            trpc.newMatch.getMatch.queryOptions(input).queryKey,
+            trpc.match.getMatch.queryOptions(input).queryKey,
             newData,
           );
         }
@@ -466,7 +466,7 @@ export const useUpdateMatchCommentMutation = (input: MatchInput) => {
       },
       onSuccess: async () => {
         await queryClient.invalidateQueries(
-          trpc.newMatch.getMatch.queryOptions(input),
+          trpc.match.getMatch.queryOptions(input),
         );
       },
       onError: (error, newComment, context) => {
@@ -482,7 +482,7 @@ export const useUpdateMatchCommentMutation = (input: MatchInput) => {
         );
         if (context?.previousData) {
           queryClient.setQueryData(
-            trpc.newMatch.getMatch.queryOptions(input).queryKey,
+            trpc.match.getMatch.queryOptions(input).queryKey,
             context.previousData,
           );
         }
@@ -498,13 +498,13 @@ export const useUpdateMatchDetailsMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const updateMatchDetailsMutation = useMutation(
-    trpc.newMatch.update.updateMatchDetails.mutationOptions({
+    trpc.match.update.updateMatchDetails.mutationOptions({
       onMutate: async (newDetails) => {
         await queryClient.cancelQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
+          trpc.match.getMatchPlayersAndTeams.queryOptions(input),
         );
         const prevData = queryClient.getQueryData(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
+          trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
         );
         if (prevData) {
           if (newDetails.type === "player") {
@@ -521,8 +521,7 @@ export const useUpdateMatchDetailsMutation = (input: MatchInput) => {
               }),
             };
             queryClient.setQueryData(
-              trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input)
-                .queryKey,
+              trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
               newData,
             );
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -540,8 +539,7 @@ export const useUpdateMatchDetailsMutation = (input: MatchInput) => {
               }),
             };
             queryClient.setQueryData(
-              trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input)
-                .queryKey,
+              trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
               newData,
             );
           }
@@ -550,7 +548,7 @@ export const useUpdateMatchDetailsMutation = (input: MatchInput) => {
       },
       onSuccess: async () => {
         await queryClient.invalidateQueries(
-          trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
+          trpc.match.getMatchPlayersAndTeams.queryOptions(input),
         );
       },
       onError: (error, newDetails, context) => {
@@ -587,7 +585,7 @@ export const useUpdateMatchDetailsMutation = (input: MatchInput) => {
         }
         if (context?.previousData) {
           queryClient.setQueryData(
-            trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input).queryKey,
+            trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
             context.previousData,
           );
         }
@@ -603,7 +601,7 @@ export const useUpdateMatchPlayerTeamAndRolesMutation = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const updateMatchPlayerTeamAndRolesMutation = useMutation(
-    trpc.newMatch.update.updateMatchPlayerTeamAndRoles.mutationOptions({
+    trpc.match.update.updateMatchPlayerTeamAndRoles.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries();
       },
@@ -622,7 +620,7 @@ export const useUpdateMatchTeamMutation = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const updateMatchTeamMutation = useMutation(
-    trpc.newMatch.update.updateMatchTeam.mutationOptions({
+    trpc.match.update.updateMatchTeam.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries();
       },

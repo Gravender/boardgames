@@ -52,7 +52,7 @@ export const TieBreakerPlayerSchema = z
     }),
   )
   .min(1);
-type Scoresheet = RouterOutputs["newMatch"]["getMatchScoresheet"];
+type Scoresheet = RouterOutputs["match"]["getMatchScoresheet"];
 export function TieBreakerDialog({
   isOpen,
   setIsOpen,

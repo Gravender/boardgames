@@ -17,10 +17,10 @@ import { formatMatchLink } from "~/utils/linkFormatting";
 import { PlayerStats } from "./player-stats";
 
 type Matches = NonNullable<
-  RouterOutputs["newMatch"]["date"]["getMatchesByDate"]
+  RouterOutputs["match"]["date"]["getMatchesByDate"]
 >["matches"];
 type Players = NonNullable<
-  RouterOutputs["newMatch"]["date"]["getMatchesByDate"]
+  RouterOutputs["match"]["date"]["getMatchesByDate"]
 >["playerStats"];
 export function MatchesTable({
   data,

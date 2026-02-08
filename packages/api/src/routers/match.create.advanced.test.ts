@@ -106,58 +106,57 @@ describe("Match Create - Advanced Tests", () => {
 
       // Create match with teams
       const matchDate = new Date("2024-01-15");
-      const matchInput: inferProcedureInput<
-        AppRouter["newMatch"]["createMatch"]
-      > = {
-        name: "Full Test Match",
-        date: matchDate,
-        game: {
-          type: "original",
-          id: createdGame.id,
-        },
-        scoresheet: {
-          type: "original",
-          id: defaultScoresheet.id,
-        },
-        players: [
-          {
+      const matchInput: inferProcedureInput<AppRouter["match"]["createMatch"]> =
+        {
+          name: "Full Test Match",
+          date: matchDate,
+          game: {
             type: "original",
-            id: player1.id,
-            roles: [],
-            teamId: 1, // Will be created as part of teams
+            id: createdGame.id,
           },
-          {
+          scoresheet: {
             type: "original",
-            id: player2.id,
-            roles: [],
-            teamId: 1,
+            id: defaultScoresheet.id,
           },
-          {
+          players: [
+            {
+              type: "original",
+              id: player1.id,
+              roles: [],
+              teamId: 1, // Will be created as part of teams
+            },
+            {
+              type: "original",
+              id: player2.id,
+              roles: [],
+              teamId: 1,
+            },
+            {
+              type: "original",
+              id: player3.id,
+              roles: [],
+              teamId: 2,
+            },
+          ],
+          teams: [
+            {
+              id: 1,
+              name: "Team Alpha",
+              roles: [],
+            },
+            {
+              id: 2,
+              name: "Team Beta",
+              roles: [],
+            },
+          ],
+          location: {
             type: "original",
-            id: player3.id,
-            roles: [],
-            teamId: 2,
+            id: createdLocation.id,
           },
-        ],
-        teams: [
-          {
-            id: 1,
-            name: "Team Alpha",
-            roles: [],
-          },
-          {
-            id: 2,
-            name: "Team Beta",
-            roles: [],
-          },
-        ],
-        location: {
-          type: "original",
-          id: createdLocation.id,
-        },
-      };
+        };
 
-      const result = await caller.newMatch.createMatch(matchInput);
+      const result = await caller.match.createMatch(matchInput);
 
       expect(result).toMatchObject({
         name: "Full Test Match",
@@ -228,30 +227,29 @@ describe("Match Create - Advanced Tests", () => {
       ]);
 
       // Create match
-      const matchInput: inferProcedureInput<
-        AppRouter["newMatch"]["createMatch"]
-      > = {
-        name: "Multi-Player Match",
-        date: new Date(),
-        game: {
-          type: "original",
-          id: createdGame.id,
-        },
-        scoresheet: {
-          type: "original",
-          id: defaultScoresheet.id,
-        },
-        players: players.map((player) => ({
-          type: "original" as const,
-          id: player.id,
-          roles: [],
-          teamId: null,
-        })),
-        teams: [],
-        location: null,
-      };
+      const matchInput: inferProcedureInput<AppRouter["match"]["createMatch"]> =
+        {
+          name: "Multi-Player Match",
+          date: new Date(),
+          game: {
+            type: "original",
+            id: createdGame.id,
+          },
+          scoresheet: {
+            type: "original",
+            id: defaultScoresheet.id,
+          },
+          players: players.map((player) => ({
+            type: "original" as const,
+            id: player.id,
+            roles: [],
+            teamId: null,
+          })),
+          teams: [],
+          location: null,
+        };
 
-      const result = await caller.newMatch.createMatch(matchInput);
+      const result = await caller.match.createMatch(matchInput);
 
       expect(result.id).toBeDefined();
       expect(result.name).toBe("Multi-Player Match");
@@ -322,61 +320,60 @@ describe("Match Create - Advanced Tests", () => {
       });
 
       // Create match with teams
-      const matchInput: inferProcedureInput<
-        AppRouter["newMatch"]["createMatch"]
-      > = {
-        name: "Team Match",
-        date: new Date(),
-        game: {
-          type: "original",
-          id: createdGame.id,
-        },
-        scoresheet: {
-          type: "original",
-          id: defaultScoresheet.id,
-        },
-        players: [
-          {
+      const matchInput: inferProcedureInput<AppRouter["match"]["createMatch"]> =
+        {
+          name: "Team Match",
+          date: new Date(),
+          game: {
             type: "original",
-            id: player1.id,
-            roles: [],
-            teamId: 1,
+            id: createdGame.id,
           },
-          {
+          scoresheet: {
             type: "original",
-            id: player2.id,
-            roles: [],
-            teamId: 1,
+            id: defaultScoresheet.id,
           },
-          {
-            type: "original",
-            id: player3.id,
-            roles: [],
-            teamId: 2,
-          },
-          {
-            type: "original",
-            id: player4.id,
-            roles: [],
-            teamId: 2,
-          },
-        ],
-        teams: [
-          {
-            id: 1,
-            name: "Red Team",
-            roles: [],
-          },
-          {
-            id: 2,
-            name: "Blue Team",
-            roles: [],
-          },
-        ],
-        location: null,
-      };
+          players: [
+            {
+              type: "original",
+              id: player1.id,
+              roles: [],
+              teamId: 1,
+            },
+            {
+              type: "original",
+              id: player2.id,
+              roles: [],
+              teamId: 1,
+            },
+            {
+              type: "original",
+              id: player3.id,
+              roles: [],
+              teamId: 2,
+            },
+            {
+              type: "original",
+              id: player4.id,
+              roles: [],
+              teamId: 2,
+            },
+          ],
+          teams: [
+            {
+              id: 1,
+              name: "Red Team",
+              roles: [],
+            },
+            {
+              id: 2,
+              name: "Blue Team",
+              roles: [],
+            },
+          ],
+          location: null,
+        };
 
-      const result = await caller.newMatch.createMatch(matchInput);
+      const result = await caller.match.createMatch(matchInput);
 
       expect(result.id).toBeDefined();
       expect(result.name).toBe("Team Match");

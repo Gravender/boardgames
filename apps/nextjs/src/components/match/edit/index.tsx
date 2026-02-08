@@ -23,7 +23,7 @@ type EditMatchType =
       match: Extract<MatchInput, { type: "shared" }>;
     };
 export function EditMatch(input: EditMatchType) {
-  prefetch(trpc.newMatch.getMatch.queryOptions(input.match));
+  prefetch(trpc.match.getMatch.queryOptions(input.match));
   if (input.match.type === "shared") {
     prefetch(
       trpc.location.shared.getSharedLocationsFromSharedMatch.queryOptions({
@@ -31,7 +31,7 @@ export function EditMatch(input: EditMatchType) {
       }),
     );
   } else {
-    prefetch(trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input.match));
+    prefetch(trpc.match.getMatchPlayersAndTeams.queryOptions(input.match));
     prefetch(trpc.location.getLocations.queryOptions());
     prefetch(trpc.newPlayer.getRecentMatchWithPlayers.queryOptions());
     prefetch(trpc.newPlayer.getPlayersForMatch.queryOptions());
@@ -45,7 +45,6 @@ export function EditMatch(input: EditMatchType) {
         type: "original",
       }),
     );
-    prefetch(trpc.newPlayer.getPlayersForMatch.queryOptions());
   }
   return (
     <ErrorBoundary fallback={<MatchNotFound />}>

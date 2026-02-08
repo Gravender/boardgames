@@ -51,10 +51,10 @@ import PlayerEditorDialog from "./scoresheet/edit-player-dialog";
 import TeamEditorDialog from "./scoresheet/edit-team-dialog";
 
 type Player = NonNullable<
-  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+  RouterOutputs["match"]["getMatchPlayersAndTeams"]
 >["players"][number];
 type Team = NonNullable<
-  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+  RouterOutputs["match"]["getMatchPlayersAndTeams"]
 >["teams"][number];
 
 export function Scoresheet(input: { match: MatchInput }) {

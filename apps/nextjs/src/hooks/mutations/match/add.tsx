@@ -21,7 +21,7 @@ export const useAddMatchMutation = ({ input }: { input: GameInput }) => {
   const posthog = usePostHog();
   const queryClient = useQueryClient();
   const createMatchMutation = useMutation(
-    trpc.newMatch.createMatch.mutationOptions({
+    trpc.match.createMatch.mutationOptions({
       onSuccess: async (response) => {
         await queryClient.invalidateQueries();
         toast.success("Match added successfully.");

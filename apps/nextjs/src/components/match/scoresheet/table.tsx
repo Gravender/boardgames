@@ -39,10 +39,10 @@ import TeamEditorDialog from "~/components/match/scoresheet/edit-team-dialog";
 import { NumberInput } from "~/components/number-input";
 
 type Player = NonNullable<
-  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+  RouterOutputs["match"]["getMatchPlayersAndTeams"]
 >["players"][number];
 type Team = NonNullable<
-  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+  RouterOutputs["match"]["getMatchPlayersAndTeams"]
 >["teams"][number];
 export function ScoreSheetTable(input: { match: MatchInput }) {
   const { match } = useMatch(input.match);
@@ -215,7 +215,7 @@ const BodyRow = ({
   round,
 }: {
   match: MatchInput;
-  round: RouterOutputs["newMatch"]["getMatchScoresheet"]["rounds"][number];
+  round: RouterOutputs["match"]["getMatchScoresheet"]["rounds"][number];
 }) => {
   const { players, teams } = usePlayersAndTeams(match);
 

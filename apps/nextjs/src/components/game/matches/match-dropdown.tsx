@@ -41,7 +41,7 @@ export function MatchDropdown({ match }: { match: Matches[number] }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const deleteMatch = useMutation(
-    trpc.newMatch.deleteMatch.mutationOptions({
+    trpc.match.deleteMatch.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries();
         setIsDeleteDialogOpen(false);

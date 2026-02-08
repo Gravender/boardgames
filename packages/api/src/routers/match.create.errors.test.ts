@@ -104,9 +104,9 @@ describe("Match Create - Error Tests", () => {
         ],
         teams: [],
         location: null,
-      } as unknown as inferProcedureInput<AppRouter["newMatch"]["createMatch"]>;
+      } as unknown as inferProcedureInput<AppRouter["match"]["createMatch"]>;
 
-      await expect(caller.newMatch.createMatch(input)).rejects.toThrow();
+      await expect(caller.match.createMatch(input)).rejects.toThrow();
     });
 
     test("fails with missing required date", async () => {
@@ -174,9 +174,9 @@ describe("Match Create - Error Tests", () => {
         ],
         teams: [],
         location: null,
-      } as unknown as inferProcedureInput<AppRouter["newMatch"]["createMatch"]>;
+      } as unknown as inferProcedureInput<AppRouter["match"]["createMatch"]>;
 
-      await expect(caller.newMatch.createMatch(input)).rejects.toThrow();
+      await expect(caller.match.createMatch(input)).rejects.toThrow();
     });
 
     test("fails with missing required game", async () => {
@@ -241,9 +241,9 @@ describe("Match Create - Error Tests", () => {
         ],
         teams: [],
         location: null,
-      } as unknown as inferProcedureInput<AppRouter["newMatch"]["createMatch"]>;
+      } as unknown as inferProcedureInput<AppRouter["match"]["createMatch"]>;
 
-      await expect(caller.newMatch.createMatch(input)).rejects.toThrow();
+      await expect(caller.match.createMatch(input)).rejects.toThrow();
     });
 
     test("fails with missing required scoresheet", async () => {
@@ -294,9 +294,9 @@ describe("Match Create - Error Tests", () => {
         ],
         teams: [],
         location: null,
-      } as unknown as inferProcedureInput<AppRouter["newMatch"]["createMatch"]>;
+      } as unknown as inferProcedureInput<AppRouter["match"]["createMatch"]>;
 
-      await expect(caller.newMatch.createMatch(input)).rejects.toThrow();
+      await expect(caller.match.createMatch(input)).rejects.toThrow();
     });
 
     test("fails with missing required players", async () => {
@@ -352,9 +352,9 @@ describe("Match Create - Error Tests", () => {
         },
         teams: [],
         location: null,
-      } as unknown as inferProcedureInput<AppRouter["newMatch"]["createMatch"]>;
+      } as unknown as inferProcedureInput<AppRouter["match"]["createMatch"]>;
 
-      await expect(caller.newMatch.createMatch(input)).rejects.toThrow();
+      await expect(caller.match.createMatch(input)).rejects.toThrow();
     });
   });
 });
