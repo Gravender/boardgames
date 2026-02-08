@@ -92,38 +92,37 @@ describe("Match Create - Basic Tests", () => {
       });
 
       // Create match
-      const matchInput: inferProcedureInput<
-        AppRouter["newMatch"]["createMatch"]
-      > = {
-        name: "Test Match",
-        date: new Date(),
-        game: {
-          type: "original",
-          id: createdGame.id,
-        },
-        scoresheet: {
-          type: "original",
-          id: defaultScoresheet.id,
-        },
-        players: [
-          {
+      const matchInput: inferProcedureInput<AppRouter["match"]["createMatch"]> =
+        {
+          name: "Test Match",
+          date: new Date(),
+          game: {
             type: "original",
-            id: player1.id,
-            roles: [],
-            teamId: null,
+            id: createdGame.id,
           },
-          {
+          scoresheet: {
             type: "original",
-            id: player2.id,
-            roles: [],
-            teamId: null,
+            id: defaultScoresheet.id,
           },
-        ],
-        teams: [],
-        location: null,
-      };
+          players: [
+            {
+              type: "original",
+              id: player1.id,
+              roles: [],
+              teamId: null,
+            },
+            {
+              type: "original",
+              id: player2.id,
+              roles: [],
+              teamId: null,
+            },
+          ],
+          teams: [],
+          location: null,
+        };
 
-      const result = await caller.newMatch.createMatch(matchInput);
+      const result = await caller.match.createMatch(matchInput);
 
       expect(result).toMatchObject({
         name: "Test Match",
@@ -189,32 +188,31 @@ describe("Match Create - Basic Tests", () => {
       });
 
       // Create match
-      const matchInput: inferProcedureInput<
-        AppRouter["newMatch"]["createMatch"]
-      > = {
-        name: "Schema Test Match",
-        date: new Date("2024-06-15T10:00:00Z"),
-        game: {
-          type: "original",
-          id: createdGame.id,
-        },
-        scoresheet: {
-          type: "original",
-          id: defaultScoresheet.id,
-        },
-        players: [
-          {
+      const matchInput: inferProcedureInput<AppRouter["match"]["createMatch"]> =
+        {
+          name: "Schema Test Match",
+          date: new Date("2024-06-15T10:00:00Z"),
+          game: {
             type: "original",
-            id: player.id,
-            roles: [],
-            teamId: null,
+            id: createdGame.id,
           },
-        ],
-        teams: [],
-        location: null,
-      };
+          scoresheet: {
+            type: "original",
+            id: defaultScoresheet.id,
+          },
+          players: [
+            {
+              type: "original",
+              id: player.id,
+              roles: [],
+              teamId: null,
+            },
+          ],
+          teams: [],
+          location: null,
+        };
 
-      const result = await caller.newMatch.createMatch(matchInput);
+      const result = await caller.match.createMatch(matchInput);
 
       // Verify output structure matches createMatchOutput schema
       expect(result).toHaveProperty("id");

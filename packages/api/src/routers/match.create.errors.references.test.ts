@@ -84,7 +84,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         imageId: null,
       });
 
-      const input: inferProcedureInput<AppRouter["newMatch"]["createMatch"]> = {
+      const input: inferProcedureInput<AppRouter["match"]["createMatch"]> = {
         name: "Test Match",
         date: new Date(),
         game: {
@@ -107,7 +107,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         location: null,
       };
 
-      await expect(caller.newMatch.createMatch(input)).rejects.toThrow();
+      await expect(caller.match.createMatch(input)).rejects.toThrow();
     });
 
     test("fails with invalid scoresheet reference (non-existent scoresheet ID)", async () => {
@@ -141,7 +141,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         imageId: null,
       });
 
-      const input: inferProcedureInput<AppRouter["newMatch"]["createMatch"]> = {
+      const input: inferProcedureInput<AppRouter["match"]["createMatch"]> = {
         name: "Test Match",
         date: new Date(),
         game: {
@@ -164,7 +164,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         location: null,
       };
 
-      await expect(caller.newMatch.createMatch(input)).rejects.toThrow();
+      await expect(caller.match.createMatch(input)).rejects.toThrow();
     });
 
     test("fails with invalid player reference (non-existent player ID)", async () => {
@@ -207,7 +207,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         throw new Error("No scoresheet found");
       }
 
-      const input: inferProcedureInput<AppRouter["newMatch"]["createMatch"]> = {
+      const input: inferProcedureInput<AppRouter["match"]["createMatch"]> = {
         name: "Test Match",
         date: new Date(),
         game: {
@@ -230,7 +230,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         location: null,
       };
 
-      await expect(caller.newMatch.createMatch(input)).rejects.toThrow();
+      await expect(caller.match.createMatch(input)).rejects.toThrow();
     });
 
     test("fails with invalid location reference (non-existent location ID)", async () => {
@@ -278,7 +278,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         imageId: null,
       });
 
-      const input: inferProcedureInput<AppRouter["newMatch"]["createMatch"]> = {
+      const input: inferProcedureInput<AppRouter["match"]["createMatch"]> = {
         name: "Test Match",
         date: new Date(),
         game: {
@@ -304,7 +304,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         },
       };
 
-      await expect(caller.newMatch.createMatch(input)).rejects.toThrow();
+      await expect(caller.match.createMatch(input)).rejects.toThrow();
     });
   });
 });

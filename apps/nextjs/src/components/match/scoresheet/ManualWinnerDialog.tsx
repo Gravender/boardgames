@@ -41,7 +41,7 @@ const playerSchema = z.object({
 });
 export const ManualWinnerPlayerSchema = z.array(playerSchema);
 
-type Scoresheet = RouterOutputs["newMatch"]["getMatchScoresheet"];
+type Scoresheet = RouterOutputs["match"]["getMatchScoresheet"];
 export function ManualWinnerDialog({
   isOpen,
   setIsOpen,

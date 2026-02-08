@@ -15,9 +15,9 @@ export const useEditMatchMutation = (input: MatchInput) => {
   const queryClient = useQueryClient();
   const posthog = usePostHog();
   const editMatchMutation = useMutation(
-    trpc.newMatch.editMatch.mutationOptions({
+    trpc.match.editMatch.mutationOptions({
       onSuccess: async (result) => {
-        await queryClient.invalidateQueries(trpc.newMatch.pathFilter());
+        await queryClient.invalidateQueries(trpc.match.pathFilter());
         await queryClient.invalidateQueries(trpc.newGame.pathFilter());
         toast.success("Match updated successfully.");
         posthog.capture("match edited successfully", {
@@ -44,7 +44,7 @@ export const useMatchPlayerTeamAndRolesMutation = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const matchPlayerTeamAndRolesMutation = useMutation(
-    trpc.newMatch.update.updateMatchPlayerTeamAndRoles.mutationOptions({
+    trpc.match.update.updateMatchPlayerTeamAndRoles.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries();
       },

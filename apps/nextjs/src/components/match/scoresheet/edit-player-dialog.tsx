@@ -52,10 +52,10 @@ import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 import { useUpdateMatchPlayerTeamAndRolesMutation } from "../hooks/scoresheet";
 
 type Player = NonNullable<
-  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+  RouterOutputs["match"]["getMatchPlayersAndTeams"]
 >["players"][number];
 type Team = NonNullable<
-  RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]
+  RouterOutputs["match"]["getMatchPlayersAndTeams"]
 >["teams"][number];
 export default function PlayerEditorDialog({
   player,

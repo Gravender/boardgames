@@ -12,9 +12,9 @@ import {
 } from "@board-games/ui/table";
 
 type playerStats = NonNullable<
-  RouterOutputs["newMatch"]["getMatchSummary"]
+  RouterOutputs["match"]["getMatchSummary"]
 >["playerStats"];
-type Scoresheet = NonNullable<RouterOutputs["newMatch"]["getMatchScoresheet"]>;
+type Scoresheet = NonNullable<RouterOutputs["match"]["getMatchScoresheet"]>;
 export default function MatchSummaryPlayerStats({
   playerStats,
   scoresheet,

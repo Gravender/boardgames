@@ -19,13 +19,13 @@ export default async function Page({
   }
 
   prefetch(
-    trpc.newMatch.getMatch.queryOptions({
+    trpc.match.getMatch.queryOptions({
       id: Number(matchId),
       type: "original",
     }),
   );
   prefetch(
-    trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+    trpc.match.getMatchPlayersAndTeams.queryOptions({
       id: Number(matchId),
       type: "original",
     }),

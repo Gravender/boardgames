@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
   }
   try {
-    const match = await caller.newMatch.getMatch({
+    const match = await caller.match.getMatch({
       id: Number(matchId),
       type: "original",
     });
@@ -49,19 +49,19 @@ export default async function Page({ params }: Props) {
     }
   }
   void prefetch(
-    trpc.newMatch.getMatch.queryOptions({
+    trpc.match.getMatch.queryOptions({
       id: Number(matchId),
       type: "original",
     }),
   );
   void prefetch(
-    trpc.newMatch.getMatchScoresheet.queryOptions({
+    trpc.match.getMatchScoresheet.queryOptions({
       id: Number(matchId),
       type: "original",
     }),
   );
   void prefetch(
-    trpc.newMatch.getMatchPlayersAndTeams.queryOptions({
+    trpc.match.getMatchPlayersAndTeams.queryOptions({
       id: Number(matchId),
       type: "original",
     }),

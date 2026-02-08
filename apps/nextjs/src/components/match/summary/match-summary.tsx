@@ -17,12 +17,10 @@ export default function MatchSummary(input: {
   game: GameInput;
   match: MatchInput;
 }) {
-  void prefetch(trpc.newMatch.getMatch.queryOptions(input.match));
-  void prefetch(trpc.newMatch.getMatchScoresheet.queryOptions(input.match));
-  void prefetch(
-    trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input.match),
-  );
-  void prefetch(trpc.newMatch.getMatchSummary.queryOptions(input.match));
+  void prefetch(trpc.match.getMatch.queryOptions(input.match));
+  void prefetch(trpc.match.getMatchScoresheet.queryOptions(input.match));
+  void prefetch(trpc.match.getMatchPlayersAndTeams.queryOptions(input.match));
+  void prefetch(trpc.match.getMatchSummary.queryOptions(input.match));
   void prefetch(trpc.newGame.gameMatches.queryOptions(input.game));
   return (
     <div className="flex w-full items-center justify-center">

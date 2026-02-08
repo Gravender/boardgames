@@ -10,31 +10,31 @@ type MatchInput =
   | { type: "shared"; sharedMatchId: number }
   | { type: "original"; id: number };
 export function useMatch(input: Extract<MatchInput, { type: "shared" }>): {
-  match: Extract<RouterOutputs["newMatch"]["getMatch"], { type: "shared" }>;
+  match: Extract<RouterOutputs["match"]["getMatch"], { type: "shared" }>;
 };
 export function useMatch(input: Extract<MatchInput, { type: "original" }>): {
-  match: Extract<RouterOutputs["newMatch"]["getMatch"], { type: "original" }>;
+  match: Extract<RouterOutputs["match"]["getMatch"], { type: "original" }>;
 };
 export function useMatch(input: MatchInput): {
-  match: RouterOutputs["newMatch"]["getMatch"];
+  match: RouterOutputs["match"]["getMatch"];
 };
 export function useMatch(input: MatchInput): {
-  match: RouterOutputs["newMatch"]["getMatch"];
+  match: RouterOutputs["match"]["getMatch"];
 } {
   const trpc = useTRPC();
   const { data: match } = useSuspenseQuery(
-    trpc.newMatch.getMatch.queryOptions(input),
+    trpc.match.getMatch.queryOptions(input),
   );
   return {
     match,
   };
 }
 export function useScoresheet(input: MatchInput): {
-  scoresheet: RouterOutputs["newMatch"]["getMatchScoresheet"];
+  scoresheet: RouterOutputs["match"]["getMatchScoresheet"];
 } {
   const trpc = useTRPC();
   const { data: scoresheet } = useSuspenseQuery(
-    trpc.newMatch.getMatchScoresheet.queryOptions(input),
+    trpc.match.getMatchScoresheet.queryOptions(input),
   );
   return {
     scoresheet,
@@ -44,31 +44,31 @@ export function usePlayersAndTeams(
   input: Extract<MatchInput, { type: "shared" }>,
 ): {
   players: Extract<
-    RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["players"][number],
+    RouterOutputs["match"]["getMatchPlayersAndTeams"]["players"][number],
     { type: "shared" }
   >[];
-  teams: RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["teams"];
+  teams: RouterOutputs["match"]["getMatchPlayersAndTeams"]["teams"];
 };
 export function usePlayersAndTeams(
   input: Extract<MatchInput, { type: "original" }>,
 ): {
   players: Extract<
-    RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["players"][number],
+    RouterOutputs["match"]["getMatchPlayersAndTeams"]["players"][number],
     { type: "original" }
   >[];
-  teams: RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["teams"];
+  teams: RouterOutputs["match"]["getMatchPlayersAndTeams"]["teams"];
 };
 export function usePlayersAndTeams(input: MatchInput): {
-  players: RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["players"];
-  teams: RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["teams"];
+  players: RouterOutputs["match"]["getMatchPlayersAndTeams"]["players"];
+  teams: RouterOutputs["match"]["getMatchPlayersAndTeams"]["teams"];
 };
 export function usePlayersAndTeams(input: MatchInput): {
-  players: RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["players"];
-  teams: RouterOutputs["newMatch"]["getMatchPlayersAndTeams"]["teams"];
+  players: RouterOutputs["match"]["getMatchPlayersAndTeams"]["players"];
+  teams: RouterOutputs["match"]["getMatchPlayersAndTeams"]["teams"];
 } {
   const trpc = useTRPC();
   const { data: playersAndTeams } = useSuspenseQuery(
-    trpc.newMatch.getMatchPlayersAndTeams.queryOptions(input),
+    trpc.match.getMatchPlayersAndTeams.queryOptions(input),
   );
 
   return {
@@ -80,7 +80,7 @@ export function usePlayersAndTeams(input: MatchInput): {
 export const useMatchSummary = (input: MatchInput) => {
   const trpc = useTRPC();
   const { data: summary } = useSuspenseQuery(
-    trpc.newMatch.getMatchSummary.queryOptions(input),
+    trpc.match.getMatchSummary.queryOptions(input),
   );
   return {
     summary,

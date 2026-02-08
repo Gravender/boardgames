@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { PlayerImage } from "~/components/player-image";
 
 type Players = NonNullable<
-  RouterOutputs["newMatch"]["date"]["getMatchesByDate"]
+  RouterOutputs["match"]["date"]["getMatchesByDate"]
 >["playerStats"];
 
 interface PlayerStatsProps {

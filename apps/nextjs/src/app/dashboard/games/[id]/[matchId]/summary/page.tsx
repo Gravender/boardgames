@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // fetch data
   if (isNaN(Number(matchId))) return { title: "Games" };
   try {
-    const match = await caller.newMatch.getMatch({
+    const match = await caller.match.getMatch({
       id: Number(matchId),
       type: "original",
     });
