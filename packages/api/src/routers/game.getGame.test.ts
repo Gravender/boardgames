@@ -38,7 +38,7 @@ describe("Game GetGame Tests", () => {
     await deleteTestUser(testUserId);
   });
 
-  describe("game.getGame", () => {
+  describe("newGame.getGame", () => {
     test("retrieves a created game by id", async () => {
       const ctx = await createContextInner({
         session: createTestSession(testUserId),
@@ -46,7 +46,7 @@ describe("Game GetGame Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // First create a game
-      const createInput: inferProcedureInput<AppRouter["game"]["create"]> = {
+      const createInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
         game: {
           name: "Game to Retrieve",
           description: "This game will be retrieved",
@@ -63,15 +63,15 @@ describe("Game GetGame Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.game.create(createInput);
+      const createdGame = await caller.newGame.create(createInput);
 
       // Then retrieve it
-      const getInput: inferProcedureInput<AppRouter["game"]["getGame"]> = {
+      const getInput: inferProcedureInput<AppRouter["newGame"]["getGame"]> = {
         type: "original",
         id: createdGame.id,
       };
 
-      const retrievedGame = await caller.game.getGame(getInput);
+      const retrievedGame = await caller.newGame.getGame(getInput);
 
       expect(retrievedGame).toMatchObject({
         type: "original",
@@ -91,14 +91,14 @@ describe("Game GetGame Tests", () => {
     });
   });
 
-  describe("game.create and getGame (combined)", () => {
+  describe("newGame.create and getGame (combined)", () => {
     test("creates a game and retrieves it", async () => {
       const ctx = await createContextInner({
         session: createTestSession(testUserId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["game"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["newGame"]["create"]> = {
         game: {
           name: "Combined Test Game",
           description: "Test description",
@@ -115,14 +115,14 @@ describe("Game GetGame Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.game.create(input);
+      const createdGame = await caller.newGame.create(input);
 
-      const getInput: inferProcedureInput<AppRouter["game"]["getGame"]> = {
+      const getInput: inferProcedureInput<AppRouter["newGame"]["getGame"]> = {
         type: "original",
         id: createdGame.id,
       };
 
-      const retrievedGame = await caller.game.getGame(getInput);
+      const retrievedGame = await caller.newGame.getGame(getInput);
 
       // Verify the retrieved game matches the input
       expect(retrievedGame.type).toBe("original");

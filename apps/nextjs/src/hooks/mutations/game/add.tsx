@@ -12,7 +12,7 @@ export const useAddGameMutation = () => {
   const posthog = usePostHog();
   const queryClient = useQueryClient();
   const createGameMutation = useMutation(
-    trpc.game.create.mutationOptions({
+    trpc.newGame.create.mutationOptions({
       onSuccess: async (result) => {
         await queryClient.invalidateQueries(trpc.game.getGames.queryOptions());
         toast(`Game ${result.name} created successfully!`, {

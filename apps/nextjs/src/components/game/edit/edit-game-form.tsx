@@ -33,7 +33,7 @@ export function EditGameForm({
   initialScoresheets,
   initialRoles,
 }: {
-  initialGame: NonNullable<RouterOutputs["game"]["getGame"]>;
+  initialGame: NonNullable<RouterOutputs["newGame"]["getGame"]>;
   initialScoresheets: NonNullable<
     RouterOutputs["newGame"]["gameScoreSheetsWithRounds"]
   >;

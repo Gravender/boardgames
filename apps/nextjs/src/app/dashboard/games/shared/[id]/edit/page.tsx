@@ -17,7 +17,7 @@ export default async function Page({
 
   // Prefetch queries
   void prefetch(
-    trpc.game.getGame.queryOptions({
+    trpc.newGame.getGame.queryOptions({
       sharedGameId: sharedGameId,
       type: "shared",
     }),

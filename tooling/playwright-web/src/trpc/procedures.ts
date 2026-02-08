@@ -2,7 +2,7 @@ import type { RouterInputs } from "@board-games/api";
 
 import { createTrpcCaller } from "../trpc/trpc-helper";
 
-type CreateGameInputType = RouterInputs["game"]["create"];
+type CreateGameInputType = RouterInputs["newGame"]["create"];
 
 /**
  * Creates a game using tRPC directly (bypassing UI).
@@ -46,7 +46,7 @@ export async function createGameViaTrpc(
   };
 
   const caller = createTrpcCaller(browserName);
-  const result = await caller.game.create(gameData);
+  const result = await caller.newGame.create(gameData);
   return result;
 }
 

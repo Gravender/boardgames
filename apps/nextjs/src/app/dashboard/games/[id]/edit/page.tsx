@@ -17,7 +17,7 @@ export default async function Page({
 
   // Prefetch queries
   void prefetch(
-    trpc.game.getGame.queryOptions({ id: gameId, type: "original" }),
+    trpc.newGame.getGame.queryOptions({ id: gameId, type: "original" }),
   );
   void prefetch(
     trpc.newGame.gameScoreSheetsWithRounds.queryOptions({

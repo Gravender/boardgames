@@ -46,7 +46,7 @@ describe("Match Create - Basic Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // Create a game with default scoresheet
-      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
+      const gameInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
         game: {
           name: "Test Game",
           description: null,
@@ -63,7 +63,7 @@ describe("Match Create - Basic Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.game.create(gameInput);
+      const createdGame = await caller.newGame.create(gameInput);
 
       // Get scoresheets for the game
       const scoresheetsInput: inferProcedureInput<
@@ -146,7 +146,7 @@ describe("Match Create - Basic Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // Create a game
-      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
+      const gameInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
         game: {
           name: "Schema Test Game",
           description: null,
@@ -163,7 +163,7 @@ describe("Match Create - Basic Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.game.create(gameInput);
+      const createdGame = await caller.newGame.create(gameInput);
 
       // Get scoresheets
       const scoresheetsInput: inferProcedureInput<

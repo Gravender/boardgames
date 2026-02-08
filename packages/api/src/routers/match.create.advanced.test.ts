@@ -46,7 +46,7 @@ describe("Match Create - Advanced Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // Create a game
-      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
+      const gameInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
         game: {
           name: "Test Game Full",
           description: "Test description",
@@ -63,7 +63,7 @@ describe("Match Create - Advanced Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.game.create(gameInput);
+      const createdGame = await caller.newGame.create(gameInput);
 
       // Get scoresheets
       const scoresheetsInput: inferProcedureInput<
@@ -182,7 +182,7 @@ describe("Match Create - Advanced Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // Create a game
-      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
+      const gameInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
         game: {
           name: "Multi-Player Game",
           description: null,
@@ -199,7 +199,7 @@ describe("Match Create - Advanced Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.game.create(gameInput);
+      const createdGame = await caller.newGame.create(gameInput);
 
       // Get scoresheets
       const scoresheetsInput: inferProcedureInput<
@@ -266,7 +266,7 @@ describe("Match Create - Advanced Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // Create a game
-      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
+      const gameInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
         game: {
           name: "Team Game",
           description: null,
@@ -283,7 +283,7 @@ describe("Match Create - Advanced Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.game.create(gameInput);
+      const createdGame = await caller.newGame.create(gameInput);
 
       // Get scoresheets
       const scoresheetsInput: inferProcedureInput<
