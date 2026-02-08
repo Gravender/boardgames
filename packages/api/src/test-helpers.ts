@@ -62,6 +62,10 @@ async function deleteUserGames(userId: string) {
       }
       if (matches.length > 0) {
         await tx.delete(team).where(inArray(team.matchId, matches));
+        await tx
+          .update(scoresheet)
+          .set({ forkedForMatchId: null })
+          .where(inArray(scoresheet.forkedForMatchId, matches));
         await tx.delete(match).where(inArray(match.id, matches));
       }
       if (returnedScoresheets.length > 0) {

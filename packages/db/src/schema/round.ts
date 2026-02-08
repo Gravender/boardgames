@@ -6,7 +6,7 @@ import {
   serial,
   text,
   timestamp,
-  unique,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -65,7 +65,10 @@ const rounds = createTable(
   },
   (table) => [
     index("boardgames_round_scoresheet_id_index").on(table.scoresheetId),
-    unique("boardgames_round_round_key_unique").on(table.roundKey),
+    index("boardgames_round_round_key_index").on(table.roundKey),
+    uniqueIndex("boardgames_round_scoresheet_round_key_active_unique")
+      .on(table.scoresheetId, table.roundKey)
+      .where(sql`${table.deletedAt} IS NULL`),
   ],
 );
 
