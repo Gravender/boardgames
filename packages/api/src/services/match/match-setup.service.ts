@@ -168,6 +168,7 @@ class MatchSetupService {
         parentId: returnedScoresheet.id,
         forkedFromScoresheetId: returnedScoresheet.id,
         forkedFromTemplateVersion: returnedScoresheet.templateVersion,
+        scoresheetKey: returnedScoresheet.scoresheetKey,
         createdBy: userId,
         gameId,
         type: "Match",
@@ -231,6 +232,10 @@ class MatchSetupService {
         winCondition: returnedSharedScoresheet.scoresheet.winCondition,
         targetScore: returnedSharedScoresheet.scoresheet.targetScore,
         roundsScore: returnedSharedScoresheet.scoresheet.roundsScore,
+        forkedFromScoresheetId: returnedSharedScoresheet.scoresheet.id,
+        forkedFromTemplateVersion:
+          returnedSharedScoresheet.scoresheet.templateVersion,
+        scoresheetKey: returnedSharedScoresheet.scoresheet.scoresheetKey,
         createdBy: userId,
         gameId,
         type: "Game",
@@ -257,14 +262,14 @@ class MatchSetupService {
           "Rounds not inserted successfully for linked scoresheet. For Create Match. Based on Shared Scoresheet.",
       });
     }
-    for (let i = 0; i < returnedSharedScoresheet.sharedRounds.length; i++) {
-      const sharedRound = returnedSharedScoresheet.sharedRounds[i];
-      const newRound = newScoresheetRounds[i];
-      if (!sharedRound || !newRound) {
+    for (const sharedRound of returnedSharedScoresheet.sharedRounds) {
+      const newRound = newScoresheetRounds.find(
+        (r) => r.parentId === sharedRound.round.id,
+      );
+      if (!newRound) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message:
-            "Shared round not found. For Create Match. Based on Shared Scoresheet.",
+          message: `New round not found for shared round ${String(sharedRound.id)} (template round ${String(sharedRound.round.id)}). For Create Match. Based on Shared Scoresheet.`,
         });
       }
       const linkedSharedRound = await scoresheetRepository.linkSharedRound({
@@ -387,31 +392,40 @@ class MatchSetupService {
     });
   }
   private async insertRoundsFromTemplate(
-    rounds: (InsertRoundInputType & { id: number; roundKey?: string })[],
+    rounds: (InsertRoundInputType & {
+      id: number;
+      roundKey?: string | null;
+      templateRoundId?: number | null;
+    })[],
     scoresheetId: number,
     tx: TransactionType,
   ) {
-    const mappedRounds = rounds.map((templateRound) => ({
-      name: templateRound.name,
-      type: templateRound.type,
-      color: templateRound.color,
-      score: templateRound.score,
-      winCondition: templateRound.winCondition,
-      toggleScore: templateRound.toggleScore,
-      modifier: templateRound.modifier,
-      lookup: templateRound.lookup,
-      order: templateRound.order,
-      parentId: templateRound.id,
-      roundKey: templateRound.roundKey ?? crypto.randomUUID(),
-      templateRoundId: templateRound.id,
+    const mappedRounds = rounds.map((sourceRound) => ({
+      name: sourceRound.name,
+      type: sourceRound.type,
+      color: sourceRound.color,
+      score: sourceRound.score,
+      winCondition: sourceRound.winCondition,
+      toggleScore: sourceRound.toggleScore,
+      modifier: sourceRound.modifier,
+      lookup: sourceRound.lookup,
+      order: sourceRound.order,
+
+      // provenance
+      parentId: sourceRound.id,
+
+      // root template anchor (follow chain to original, or this is the root)
+      templateRoundId: sourceRound.templateRoundId ?? sourceRound.id,
+
+      // stable identity across forks
+      roundKey: sourceRound.roundKey ?? undefined,
+
+      kind: sourceRound.kind,
+      config: sourceRound.config,
       scoresheetId,
     }));
     if (mappedRounds.length === 0) return [];
-    const insertedRounds = await scoresheetRepository.insertRounds(
-      mappedRounds,
-      tx,
-    );
-    return insertedRounds;
+    return scoresheetRepository.insertRounds(mappedRounds, tx);
   }
 }
 

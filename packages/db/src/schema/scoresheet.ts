@@ -69,7 +69,10 @@ const scoresheets = createTable(
       .default("Default")
       .notNull(),
   },
-  (table) => [index("boardgames_scoresheet_game_id_index").on(table.gameId)],
+  (table) => [
+    index("boardgames_scoresheet_game_id_index").on(table.gameId),
+    index("boardgames_scoresheet_scoresheet_key_index").on(table.scoresheetKey),
+  ],
 );
 
 export const insertScoreSheetSchema = createInsertSchema(scoresheets);
