@@ -45,7 +45,6 @@ export function EditMatch(input: EditMatchType) {
         type: "original",
       }),
     );
-    prefetch(trpc.newPlayer.getPlayersForMatch.queryOptions());
   }
   return (
     <ErrorBoundary fallback={<MatchNotFound />}>
