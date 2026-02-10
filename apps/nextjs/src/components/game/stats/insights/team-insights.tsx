@@ -1,13 +1,22 @@
 "use client";
 
-import { Trophy, Users } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Swords, Trophy, Users } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { Progress } from "@board-games/ui/progress";
 import { ScrollArea } from "@board-games/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@board-games/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@board-games/ui/toggle-group";
 import { cn } from "@board-games/ui/utils";
 
 import { PlayerImage } from "~/components/player-image";
@@ -21,6 +30,42 @@ type CorePlayer = TeamCore["players"][number];
 interface TeamInsightsProps {
   teams: Teams;
 }
+
+type ViewMode = "same-team" | "opposing";
+
+// ─── Player avatar helper ────────────────────────────────────────
+
+const PlayerAvatar = ({
+  player,
+  className,
+}: {
+  player: CorePlayer;
+  className?: string;
+}) => (
+  <PlayerImage
+    image={
+      player.image
+        ? {
+            ...player.image,
+            type:
+              player.image.type === "file" || player.image.type === "svg"
+                ? player.image.type
+                : "file",
+            usageType: "player" as const,
+          }
+        : null
+    }
+    alt={player.playerName}
+    className={className}
+  />
+);
+
+// ─── Helpers ─────────────────────────────────────────────────────
+
+const deriveShapeLabel = (config: TeamConfig): string => {
+  const sizes = config.teams.map((t) => t.players.length).sort((a, b) => b - a);
+  return sizes.join("v");
+};
 
 // ─── Team Core Card ──────────────────────────────────────────────
 
@@ -109,18 +154,21 @@ const TeamGroupOrdering = ({
 }: {
   groupOrdering: TeamGroupOrderingEntry[];
 }) => {
-  // Only show placement ranking for team cores.
-  // Win rate ranking is meaningless since all team members share the same win/loss.
   const hasPlacementData = groupOrdering.some(
     (entry) => entry.avgPlacement > 0,
   );
+  const hasWinData = groupOrdering.some(
+    (entry) => entry.wins > 0 || entry.losses > 0,
+  );
 
-  if (!hasPlacementData) return null;
+  if (!hasPlacementData && !hasWinData) return null;
+
+  const title = hasPlacementData ? "Placement Ranking" : "Win Rate Ranking";
 
   return (
     <div className="bg-muted/30 rounded-lg p-2">
       <div className="text-muted-foreground mb-1 text-xs font-medium">
-        Placement Ranking
+        {title}
       </div>
       <div className="flex items-center gap-2">
         {groupOrdering.map((entry, idx) => (
@@ -131,9 +179,13 @@ const TeamGroupOrdering = ({
             <span className="text-sm font-medium">
               {entry.player.playerName}
             </span>
-            {entry.avgPlacement > 0 && (
+            {hasPlacementData && entry.avgPlacement > 0 ? (
               <span className="text-muted-foreground ml-1 text-xs">
                 ({entry.avgPlacement.toFixed(1)})
+              </span>
+            ) : (
+              <span className="text-muted-foreground ml-1 text-xs">
+                ({Math.round(entry.winRate * 100)}%)
               </span>
             )}
           </div>
@@ -143,21 +195,32 @@ const TeamGroupOrdering = ({
   );
 };
 
-// ─── Team Config Card ────────────────────────────────────────────
+// ─── Team Config Card (enhanced) ─────────────────────────────────
 
 const TeamConfigCard = ({ config }: { config: TeamConfig }) => {
+  const shapeLabel = deriveShapeLabel(config);
+  const totalWins = config.outcomes.reduce((acc, o) => acc + o.wins, 0);
+
   return (
-    <div className="flex flex-col gap-2 rounded-lg border p-3">
-      {/* Teams display */}
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col gap-3 rounded-lg border p-3">
+      {/* Shape badge + match count */}
+      <div className="flex items-center gap-2">
+        <Badge variant="outline" className="font-mono text-xs">
+          {shapeLabel}
+        </Badge>
+        <Badge variant="secondary">{config.matchCount} matches</Badge>
+      </div>
+
+      {/* Teams display with parenthesized names and "vs" */}
+      <div className="flex flex-wrap items-center gap-1">
         {config.teams.map((team, idx) => (
           <div key={team.teamName} className="flex items-center gap-1">
             {idx > 0 && (
-              <span className="text-muted-foreground mx-1 text-sm font-medium">
+              <span className="text-muted-foreground mx-1 text-sm font-semibold">
                 vs
               </span>
             )}
-            <div className="flex items-center gap-1 rounded-md border px-2 py-1">
+            <div className="flex items-center gap-1.5 rounded-md border px-2 py-1">
               <div className="flex -space-x-1">
                 {team.players.map((p) => (
                   <PlayerAvatar
@@ -167,124 +230,131 @@ const TeamConfigCard = ({ config }: { config: TeamConfig }) => {
                   />
                 ))}
               </div>
-              <span className="text-xs font-medium">
-                {team.players.map((p) => p.playerName).join(", ")}
+              <span className="text-xs">
+                ({team.players.map((p) => p.playerName).join(" + ")})
               </span>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Match count + outcomes */}
-      <div className="flex items-center gap-3">
-        <Badge variant="secondary">{config.matchCount} matches</Badge>
-        {config.outcomes.map((outcome) => {
-          const team = config.teams[outcome.teamIndex];
-          if (!team || outcome.wins === 0) return null;
-          return (
-            <span key={outcome.teamIndex} className="text-xs">
-              <span className="font-medium">
-                {team.players.map((p) => p.playerName).join("+")}
-              </span>
-              <span className="text-muted-foreground"> won {outcome.wins}</span>
-            </span>
-          );
-        })}
-      </div>
+      {/* Outcomes -- prominent win/loss display */}
+      {totalWins > 0 && (
+        <div className="bg-muted/30 flex flex-wrap items-center gap-3 rounded-md px-3 py-2">
+          {config.outcomes.map((outcome) => {
+            const team = config.teams[outcome.teamIndex];
+            if (!team) return null;
+            const winPercent =
+              config.matchCount > 0
+                ? Math.round((outcome.wins / config.matchCount) * 100)
+                : 0;
+            const isWinning = outcome.wins > config.matchCount / 2;
+            return (
+              <div
+                key={outcome.teamIndex}
+                className="flex items-center gap-1.5 text-sm"
+              >
+                <div className="flex -space-x-1">
+                  {team.players.slice(0, 3).map((p) => (
+                    <PlayerAvatar
+                      key={p.playerKey}
+                      player={p}
+                      className="h-4 w-4"
+                    />
+                  ))}
+                </div>
+                <span
+                  className={cn(
+                    "font-semibold",
+                    isWinning ? "text-green-600" : "text-muted-foreground",
+                  )}
+                >
+                  {outcome.wins}W
+                </span>
+                <span className="text-muted-foreground text-xs">
+                  ({winPercent}%)
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
 
-// ─── Player avatar helper ────────────────────────────────────────
+// ─── Opposing Teams View (with shape filter) ─────────────────────
 
-const PlayerAvatar = ({
-  player,
-  className,
+const OpposingTeamsView = ({
+  configurations,
 }: {
-  player: CorePlayer;
-  className?: string;
-}) => (
-  <PlayerImage
-    image={
-      player.image
-        ? {
-            ...player.image,
-            type:
-              player.image.type === "file" || player.image.type === "svg"
-                ? player.image.type
-                : "file",
-            usageType: "player" as const,
-          }
-        : null
+  configurations: TeamConfig[];
+}) => {
+  const [shapeFilter, setShapeFilter] = useState<string>("all");
+
+  const availableShapes = useMemo(() => {
+    const shapes = new Set<string>();
+    for (const config of configurations) {
+      shapes.add(deriveShapeLabel(config));
     }
-    alt={player.playerName}
-    className={className}
-  />
-);
+    return Array.from(shapes).sort();
+  }, [configurations]);
 
-// ─── Main Component ──────────────────────────────────────────────
+  const filteredConfigs = useMemo(() => {
+    if (shapeFilter === "all") return configurations;
+    return configurations.filter(
+      (config) => deriveShapeLabel(config) === shapeFilter,
+    );
+  }, [configurations, shapeFilter]);
 
-export function TeamInsights({ teams }: TeamInsightsProps) {
-  const hasCores =
-    teams.cores.pairs.length > 0 ||
-    teams.cores.trios.length > 0 ||
-    teams.cores.quartets.length > 0;
-  const hasConfigs = teams.configurations.length > 0;
+  const handleShapeFilterChange = (value: string) => {
+    setShapeFilter(value);
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Team Cores */}
-      {hasCores && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Team Cores
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <TeamCoreTabs cores={teams.cores} />
-          </CardContent>
-        </Card>
+    <div className="space-y-3">
+      {/* Shape filter */}
+      {availableShapes.length > 1 && (
+        <div className="flex items-center gap-2">
+          <Select value={shapeFilter} onValueChange={handleShapeFilterChange}>
+            <SelectTrigger
+              className="w-[130px]"
+              aria-label="Filter by team shape"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Shapes</SelectItem>
+              {availableShapes.map((shape) => (
+                <SelectItem key={shape} value={shape}>
+                  {shape}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       )}
 
-      {/* Team Configurations */}
-      {hasConfigs && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5" />
-              Common Matchup Configurations
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea>
-              <div className="flex max-h-[50vh] flex-col gap-2">
-                {teams.configurations.map((config) => {
-                  const configKey = config.teams
-                    .map((t) => t.players.map((p) => p.playerKey).join(","))
-                    .join("-vs-");
-                  return <TeamConfigCard key={configKey} config={config} />;
-                })}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
-
-      {!hasCores && !hasConfigs && (
-        <Card>
-          <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground text-sm">
-              Not enough team data to show insights. Need at least 3
-              co-appearances on the same team.
-            </p>
-          </CardContent>
-        </Card>
+      {/* Config list */}
+      {filteredConfigs.length > 0 ? (
+        <ScrollArea>
+          <div className="flex max-h-[50vh] flex-col gap-2">
+            {filteredConfigs.map((config) => {
+              const configKey = config.teams
+                .map((t) => t.players.map((p) => p.playerKey).join(","))
+                .join("-vs-");
+              return <TeamConfigCard key={configKey} config={config} />;
+            })}
+          </div>
+        </ScrollArea>
+      ) : (
+        <p className="text-muted-foreground text-sm">
+          No configurations match the selected shape.
+        </p>
       )}
     </div>
   );
-}
+};
 
 // ─── Team Core Tabs ──────────────────────────────────────────────
 
@@ -349,3 +419,127 @@ const TeamCoreList = ({ cores }: { cores: TeamCore[] }) => (
     </div>
   </ScrollArea>
 );
+
+// ─── Main Component ──────────────────────────────────────────────
+
+export function TeamInsights({ teams }: TeamInsightsProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>("same-team");
+
+  const hasCores =
+    teams.cores.pairs.length > 0 ||
+    teams.cores.trios.length > 0 ||
+    teams.cores.quartets.length > 0;
+  const hasConfigs = teams.configurations.length > 0;
+
+  const handleViewModeChange = (value: string) => {
+    if (value === "same-team" || value === "opposing") {
+      setViewMode(value);
+    }
+  };
+
+  if (!hasCores && !hasConfigs) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center">
+          <p className="text-muted-foreground text-sm">
+            Not enough team data to show insights. Need at least 3
+            co-appearances on the same team.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* View toggle */}
+      {hasCores && hasConfigs && (
+        <div className="flex items-center gap-3">
+          <ToggleGroup
+            type="single"
+            value={viewMode}
+            onValueChange={handleViewModeChange}
+            variant="outline"
+            aria-label="Toggle between Same Team and Opposing Teams view"
+          >
+            <ToggleGroupItem
+              value="same-team"
+              aria-label="Same Team"
+              className="gap-1.5 px-3"
+            >
+              <Users className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Same Team</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="opposing"
+              aria-label="Opposing Teams"
+              className="gap-1.5 px-3"
+            >
+              <Swords className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Opposing Teams</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+      )}
+
+      {/* Same Team view */}
+      {viewMode === "same-team" && hasCores && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Team Cores
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TeamCoreTabs cores={teams.cores} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Opposing Teams view */}
+      {viewMode === "opposing" && hasConfigs && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Swords className="h-5 w-5" />
+              Opposing Matchup Configurations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OpposingTeamsView configurations={teams.configurations} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Fallback: if only one section exists, show it regardless of toggle */}
+      {viewMode === "same-team" && !hasCores && hasConfigs && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Swords className="h-5 w-5" />
+              Opposing Matchup Configurations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OpposingTeamsView configurations={teams.configurations} />
+          </CardContent>
+        </Card>
+      )}
+
+      {viewMode === "opposing" && !hasConfigs && hasCores && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Team Cores
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TeamCoreTabs cores={teams.cores} />
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

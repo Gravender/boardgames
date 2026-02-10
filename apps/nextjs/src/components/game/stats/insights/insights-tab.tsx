@@ -50,7 +50,7 @@ export default function InsightsTab({ game }: InsightsTabProps) {
         </TabsContent>
 
         <TabsContent value="lineups" className="space-y-6">
-          <FrequentLineups lineups={insights.lineups} />
+          <FrequentLineups lineups={insights.lineups} cores={insights.cores} />
         </TabsContent>
 
         {hasTeams && insights.teams && (

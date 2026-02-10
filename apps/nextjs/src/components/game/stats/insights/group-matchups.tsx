@@ -175,8 +175,7 @@ const CoreCard = ({ core }: { core: DetectedCore }) => {
 
 // ─── Group Ordering Section ──────────────────────────────────────
 
-type GroupOrderingEntry =
-  DetectedCore["groupOrdering"][number];
+type GroupOrderingEntry = DetectedCore["groupOrdering"][number];
 
 const GroupOrderingSection = ({
   groupOrdering,
@@ -202,10 +201,7 @@ const GroupOrderingSection = ({
       </div>
       <div className="flex flex-col gap-1">
         {groupOrdering.map((entry) => (
-          <div
-            key={entry.player.playerKey}
-            className="flex items-center gap-2"
-          >
+          <div key={entry.player.playerKey} className="flex items-center gap-2">
             <RankBadge rank={entry.rank} />
             <span className="text-sm font-medium">
               {entry.player.playerName}
@@ -476,9 +472,7 @@ const PairwiseDetailSheet = ({
                     <TableHead className="text-right">Matches</TableHead>
                     <TableHead className="text-right">{rateLabel}</TableHead>
                     {!isManualWinner && (
-                      <TableHead className="text-right">
-                        Avg Place Δ
-                      </TableHead>
+                      <TableHead className="text-right">Avg Place Δ</TableHead>
                     )}
                   </TableRow>
                 </TableHeader>
