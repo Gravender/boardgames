@@ -328,3 +328,168 @@ export const getGameScoresheetStatsOutput = z.array(
 export type GetGameScoresheetStatsOutputType = z.infer<
   typeof getGameScoresheetStatsOutput
 >;
+
+// ─── Game Insights ───────────────────────────────────────────────
+
+const corePlayerSchema = z.object({
+  playerKey: z.string(),
+  playerId: z.number(),
+  playerName: z.string(),
+  playerType: z.enum(["original", "shared"]),
+  isUser: z.boolean(),
+  image: z
+    .object({
+      name: z.string(),
+      url: z.string().nullable(),
+      type: z.string(),
+    })
+    .nullable(),
+});
+
+const playerCountBucketStatSchema = z.object({
+  bucket: z.string(),
+  matchCount: z.number(),
+  finishesAboveRate: z.number(),
+  avgPlacementDelta: z.number(),
+  avgScoreDelta: z.number().nullable(),
+});
+
+const pairwiseStatSchema = z.object({
+  playerA: corePlayerSchema,
+  playerB: corePlayerSchema,
+  finishesAboveRate: z.number(),
+  avgPlacementDelta: z.number(),
+  avgScoreDelta: z.number().nullable(),
+  matchCount: z.number(),
+  confidence: z.enum(["low", "medium", "high"]),
+  byPlayerCount: z.array(playerCountBucketStatSchema),
+});
+
+const detectedCoreSchema = z.object({
+  coreKey: z.string(),
+  players: z.array(corePlayerSchema),
+  matchCount: z.number(),
+  matchIds: z.array(z.number()),
+  stability: z.number(),
+  guests: z.array(
+    z.object({
+      player: corePlayerSchema,
+      count: z.number(),
+    }),
+  ),
+  groupOrdering: z.array(
+    z.object({
+      player: corePlayerSchema,
+      avgPlacement: z.number(),
+      rank: z.number(),
+    }),
+  ),
+  pairwiseStats: z.array(pairwiseStatSchema),
+});
+
+const teamCoreSchema = detectedCoreSchema.extend({
+  teamWinRate: z.number(),
+  teamWins: z.number(),
+  teamMatches: z.number(),
+});
+
+const teamConfigSchema = z.object({
+  teams: z.array(
+    z.object({
+      players: z.array(corePlayerSchema),
+      teamName: z.string(),
+    }),
+  ),
+  matchCount: z.number(),
+  matchIds: z.array(z.number()),
+  outcomes: z.array(
+    z.object({
+      teamIndex: z.number(),
+      wins: z.number(),
+    }),
+  ),
+});
+
+const insightsSummarySchema = z.object({
+  mostCommonPlayerCount: z
+    .object({
+      count: z.number(),
+      percentage: z.number(),
+    })
+    .nullable(),
+  topRival: z
+    .object({
+      name: z.string(),
+      finishesAboveRate: z.number(),
+      matchCount: z.number(),
+    })
+    .nullable(),
+  topPair: z
+    .object({
+      names: z.array(z.string()),
+      matchCount: z.number(),
+    })
+    .nullable(),
+  topTrio: z
+    .object({
+      names: z.array(z.string()),
+      matchCount: z.number(),
+    })
+    .nullable(),
+  bestTeamCore: z
+    .object({
+      names: z.array(z.string()),
+      winRate: z.number(),
+      matchCount: z.number(),
+    })
+    .nullable(),
+  totalMatchesAnalyzed: z.number(),
+});
+
+export const getGameInsightsOutput = z.object({
+  summary: insightsSummarySchema,
+  distribution: z.object({
+    game: z.array(
+      z.object({
+        playerCount: z.number(),
+        matchCount: z.number(),
+        percentage: z.number(),
+      }),
+    ),
+    perPlayer: z.array(
+      z.object({
+        player: corePlayerSchema,
+        distribution: z.array(
+          z.object({
+            playerCount: z.number(),
+            matchCount: z.number(),
+          }),
+        ),
+      }),
+    ),
+  }),
+  cores: z.object({
+    pairs: z.array(detectedCoreSchema),
+    trios: z.array(detectedCoreSchema),
+    quartets: z.array(detectedCoreSchema),
+  }),
+  lineups: z.array(
+    z.object({
+      players: z.array(corePlayerSchema),
+      matchCount: z.number(),
+      matchIds: z.array(z.number()),
+    }),
+  ),
+  teams: z
+    .object({
+      cores: z.object({
+        pairs: z.array(teamCoreSchema),
+        trios: z.array(teamCoreSchema),
+        quartets: z.array(teamCoreSchema),
+      }),
+      configurations: z.array(teamConfigSchema),
+    })
+    .nullable(),
+});
+
+export type GetGameInsightsOutputType = z.infer<typeof getGameInsightsOutput>;

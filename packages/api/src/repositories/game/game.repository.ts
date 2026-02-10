@@ -40,6 +40,7 @@ import type {
   DeleteGameRoleArgs,
   DeleteSharedGameRoleArgs,
   GetGameArgs,
+  GetGameInsightsDataArgs,
   GetGameRolesArgs,
   GetGameScoresheetStatsDataArgs,
   GetGameStatsHeaderArgs,
@@ -908,6 +909,121 @@ class GameRepository {
         ),
       )
       .orderBy(vMatchCanonical.matchDate, round.order, matchPlayer.id);
+
+    return rows;
+  }
+
+  public async getGameInsightsData(args: GetGameInsightsDataArgs) {
+    const { input, userId } = args;
+
+    // Count players per match via a CTE
+    const matchPlayerCounts = db.$with("match_player_counts").as(
+      db
+        .select({
+          matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
+          playerCount:
+            sql<number>`COUNT(DISTINCT ${vMatchPlayerCanonicalForUser.canonicalPlayerId})`.as(
+              "player_count",
+            ),
+        })
+        .from(vMatchPlayerCanonicalForUser)
+        .innerJoin(
+          vMatchCanonical,
+          eq(
+            vMatchCanonical.matchId,
+            vMatchPlayerCanonicalForUser.canonicalMatchId,
+          ),
+        )
+        .where(
+          and(
+            eq(vMatchCanonical.finished, true),
+            eq(vMatchCanonical.visibleToUserId, userId),
+            input.type === "original"
+              ? eq(vMatchCanonical.canonicalGameId, input.id)
+              : eq(vMatchCanonical.sharedGameId, input.sharedGameId),
+            or(
+              and(
+                eq(vMatchPlayerCanonicalForUser.ownerId, userId),
+                eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
+              ),
+              and(
+                eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
+                eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
+                ne(vMatchPlayerCanonicalForUser.playerSourceType, "not-shared"),
+              ),
+            ),
+          ),
+        )
+        .groupBy(vMatchPlayerCanonicalForUser.canonicalMatchId),
+    );
+
+    const rows = await db
+      .with(matchPlayerCounts)
+      .select({
+        matchId: vMatchCanonical.matchId,
+        matchDate: vMatchCanonical.matchDate,
+        isCoop: scoresheet.isCoop,
+        playerId: vMatchPlayerCanonicalForUser.canonicalPlayerId,
+        playerName: player.name,
+        playerSourceType: vMatchPlayerCanonicalForUser.playerSourceType,
+        sharedPlayerId: vMatchPlayerCanonicalForUser.sharedPlayerId,
+        isUser: player.isUser,
+        winner: vMatchPlayerCanonicalForUser.winner,
+        score: vMatchPlayerCanonicalForUser.score,
+        placement: vMatchPlayerCanonicalForUser.placement,
+        teamId: vMatchPlayerCanonicalForUser.teamId,
+        teamName: team.name,
+        playerImageName: image.name,
+        playerImageUrl: image.url,
+        playerImageType: image.type,
+        playerCount: matchPlayerCounts.playerCount,
+      })
+      .from(vMatchCanonical)
+      .innerJoin(
+        scoresheet,
+        eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
+      )
+      .innerJoin(
+        vMatchPlayerCanonicalForUser,
+        and(
+          eq(
+            vMatchPlayerCanonicalForUser.canonicalMatchId,
+            vMatchCanonical.matchId,
+          ),
+          or(
+            and(
+              eq(vMatchPlayerCanonicalForUser.ownerId, userId),
+              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
+            ),
+            and(
+              eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
+              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
+              ne(vMatchPlayerCanonicalForUser.playerSourceType, "not-shared"),
+            ),
+          ),
+        ),
+      )
+      .innerJoin(
+        player,
+        eq(player.id, vMatchPlayerCanonicalForUser.canonicalPlayerId),
+      )
+      .leftJoin(image, eq(image.id, player.imageId))
+      .leftJoin(team, eq(team.id, vMatchPlayerCanonicalForUser.teamId))
+      .innerJoin(
+        matchPlayerCounts,
+        eq(matchPlayerCounts.matchId, vMatchCanonical.matchId),
+      )
+      .where(
+        and(
+          eq(vMatchCanonical.finished, true),
+          eq(vMatchCanonical.visibleToUserId, userId),
+          input.type === "original"
+            ? eq(vMatchCanonical.canonicalGameId, input.id)
+            : eq(vMatchCanonical.sharedGameId, input.sharedGameId),
+          ne(vMatchPlayerCanonicalForUser.playerSourceType, "not-shared"),
+        ),
+      )
+      .orderBy(vMatchCanonical.matchDate);
 
     return rows;
   }
