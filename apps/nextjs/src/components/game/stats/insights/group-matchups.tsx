@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Medal, Trophy } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
@@ -102,23 +102,24 @@ const CoreCard = ({ core }: { core: DetectedCore }) => {
           </div>
         )}
 
-        {/* Group ordering (meaningful for k >= 3) */}
+        {/* Group ordering podium (meaningful for k >= 3) */}
         {core.players.length >= 3 && core.groupOrdering.length > 0 && (
           <div className="bg-muted/30 rounded-lg p-2">
             <div className="text-muted-foreground mb-1 text-xs font-medium">
-              Group Ordering
+              Placement Ranking
             </div>
-            <div className="flex items-center gap-2">
-              {core.groupOrdering.map((entry, idx) => (
-                <div key={entry.player.playerKey} className="flex items-center">
-                  {idx > 0 && (
-                    <span className="text-muted-foreground mx-1">&gt;</span>
-                  )}
+            <div className="flex flex-col gap-1">
+              {core.groupOrdering.map((entry) => (
+                <div
+                  key={entry.player.playerKey}
+                  className="flex items-center gap-2"
+                >
+                  <RankBadge rank={entry.rank} />
                   <span className="text-sm font-medium">
                     {entry.player.playerName}
                   </span>
-                  <span className="text-muted-foreground ml-1 text-xs">
-                    ({entry.avgPlacement.toFixed(1)})
+                  <span className="text-muted-foreground text-xs">
+                    avg {entry.avgPlacement.toFixed(1)}
                   </span>
                 </div>
               ))}
@@ -256,6 +257,46 @@ const PairwiseRow = ({
         </div>
       </div>
     </div>
+  );
+};
+
+// ─── Rank Badge (for podium positions) ───────────────────────────
+
+const RankBadge = ({ rank }: { rank: number }) => {
+  if (rank === 1) {
+    return (
+      <span
+        className="flex h-5 w-5 items-center justify-center"
+        title="1st place"
+      >
+        <Trophy className="h-4 w-4 text-yellow-500" />
+      </span>
+    );
+  }
+  if (rank === 2) {
+    return (
+      <span
+        className="flex h-5 w-5 items-center justify-center"
+        title="2nd place"
+      >
+        <Medal className="h-4 w-4 text-slate-400" />
+      </span>
+    );
+  }
+  if (rank === 3) {
+    return (
+      <span
+        className="flex h-5 w-5 items-center justify-center"
+        title="3rd place"
+      >
+        <Medal className="h-4 w-4 text-amber-700" />
+      </span>
+    );
+  }
+  return (
+    <span className="text-muted-foreground flex h-5 w-5 items-center justify-center text-xs font-bold">
+      {rank}
+    </span>
   );
 };
 

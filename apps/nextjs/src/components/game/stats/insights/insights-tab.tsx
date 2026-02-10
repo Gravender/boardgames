@@ -1,12 +1,14 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
+import { cn } from "@board-games/ui/utils";
 
 import { useGameInsights } from "~/hooks/queries/game/game-insights";
 import { FrequentLineups } from "./frequent-lineups";
 import { GroupMatchups } from "./group-matchups";
 import { InsightsSummary } from "./insights-summary";
 import { PlayerCountDistribution } from "./player-count-distribution";
+import { TeamInsights } from "./team-insights";
 
 interface InsightsTabProps {
   game: {
@@ -18,7 +20,6 @@ interface InsightsTabProps {
 export default function InsightsTab({ game }: InsightsTabProps) {
   const insights = useGameInsights({ type: game.type, id: game.id });
 
-  // Determine which sub-tabs are available
   const hasTeams = insights.teams !== null;
 
   return (
@@ -28,11 +29,15 @@ export default function InsightsTab({ game }: InsightsTabProps) {
 
       {/* Sub-tabs for detail sections */}
       <Tabs defaultValue="matchups">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList
+          className={cn(
+            "grid w-full",
+            hasTeams ? "grid-cols-4" : "grid-cols-3",
+          )}
+        >
           <TabsTrigger value="matchups">Matchups</TabsTrigger>
           <TabsTrigger value="distribution">Distribution</TabsTrigger>
           <TabsTrigger value="lineups">Lineups</TabsTrigger>
-          {/* Phase Next: Teams sub-tab when data exists */}
           {hasTeams && <TabsTrigger value="teams">Teams</TabsTrigger>}
         </TabsList>
 
@@ -48,12 +53,9 @@ export default function InsightsTab({ game }: InsightsTabProps) {
           <FrequentLineups lineups={insights.lineups} />
         </TabsContent>
 
-        {/* Phase Next: Teams tab content */}
-        {hasTeams && (
+        {hasTeams && insights.teams && (
           <TabsContent value="teams" className="space-y-6">
-            <p className="text-muted-foreground text-sm">
-              Team insights coming soon.
-            </p>
+            <TeamInsights teams={insights.teams} />
           </TabsContent>
         )}
       </Tabs>

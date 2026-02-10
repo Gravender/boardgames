@@ -12,6 +12,8 @@ import type {
   PlayerCountBucketStat,
   PlayerCountDistributionEntry,
   RawCore,
+  TeamConfig,
+  TeamCore,
 } from "./game-insights.service.types";
 import { gameRepository } from "../../repositories/game/game.repository";
 
@@ -75,24 +77,70 @@ class GameInsightsService {
 
     const matchMap = this.groupMatchesByMatch(rows);
 
-    // Phase 1: only pairs (k=2), no team constraint
+    // Game cores (all players in match, regardless of team)
     const rawPairs = this.detectCores(matchMap, 2, 3, false);
     const pairs = rawPairs.map((raw) => this.computeCoreStats(raw, matchMap));
 
-    // Phase Next: empty for now
-    const trios: DetectedCore[] = [];
-    const quartets: DetectedCore[] = [];
+    const rawTrios = this.detectCores(matchMap, 3, 3, false);
+    const trios = rawTrios.map((raw) => this.computeCoreStats(raw, matchMap));
+
+    const rawQuartets = this.detectCores(matchMap, 4, 3, false);
+    const quartets = rawQuartets.map((raw) =>
+      this.computeCoreStats(raw, matchMap),
+    );
+
+    // Team cores (same team within match)
+    const rawTeamPairs = this.detectCores(matchMap, 2, 3, true);
+    const teamPairs = rawTeamPairs.map((raw) =>
+      this.computeTeamCoreStats(raw, matchMap),
+    );
+
+    const rawTeamTrios = this.detectCores(matchMap, 3, 3, true);
+    const teamTrios = rawTeamTrios.map((raw) =>
+      this.computeTeamCoreStats(raw, matchMap),
+    );
+
+    const rawTeamQuartets = this.detectCores(matchMap, 4, 3, true);
+    const teamQuartets = rawTeamQuartets.map((raw) =>
+      this.computeTeamCoreStats(raw, matchMap),
+    );
+
+    const teamConfigurations = this.computeTeamConfigurations(matchMap);
+
+    // Determine if any team data exists
+    const hasTeamData =
+      teamPairs.length > 0 ||
+      teamTrios.length > 0 ||
+      teamQuartets.length > 0 ||
+      teamConfigurations.length > 0;
+
+    const teams = hasTeamData
+      ? {
+          cores: {
+            pairs: teamPairs,
+            trios: teamTrios,
+            quartets: teamQuartets,
+          },
+          configurations: teamConfigurations,
+        }
+      : null;
 
     const distribution = this.computePlayerCountDistribution(matchMap);
     const lineups = this.computeFrequentLineups(matchMap);
-    const summary = this.computeSummary(distribution, pairs, lineups);
+    const summary = this.computeSummary(
+      distribution,
+      pairs,
+      trios,
+      teamPairs,
+      lineups,
+    );
 
     return {
       summary,
       distribution,
       cores: { pairs, trios, quartets },
       lineups,
-      teams: null, // Phase Next
+      teams,
     };
   }
 
@@ -478,6 +526,165 @@ class GameInsightsService {
     };
   }
 
+  // ─── Compute team core stats (extends core stats with win rate) ─
+
+  private computeTeamCoreStats(
+    raw: RawCore,
+    matchMap: Map<number, MatchInsightData>,
+  ): TeamCore {
+    const base = this.computeCoreStats(raw, matchMap);
+
+    // Compute team win rate: % of matches where the shared team won
+    let teamWins = 0;
+    let teamMatches = 0;
+
+    for (const matchId of raw.matchIds) {
+      const matchData = matchMap.get(matchId);
+      if (!matchData) continue;
+
+      // Find a core member and their teamId in this match
+      const firstCoreKey = raw.playerKeys[0];
+      if (!firstCoreKey) continue;
+
+      const corePlayer = matchData.players.find(
+        (p) => p.playerKey === firstCoreKey,
+      );
+      if (!corePlayer || corePlayer.teamId === null) continue;
+
+      const sharedTeamId = corePlayer.teamId;
+
+      // Check if the team won: all core members on the same team should have winner=true
+      const teamWon = matchData.players
+        .filter((p) => p.teamId === sharedTeamId)
+        .some((p) => p.winner);
+
+      teamMatches++;
+      if (teamWon) teamWins++;
+    }
+
+    return {
+      ...base,
+      teamWinRate: teamMatches > 0 ? teamWins / teamMatches : 0,
+      teamWins,
+      teamMatches,
+    };
+  }
+
+  // ─── Team configurations (team-vs-team matchups) ───────────────
+
+  private computeTeamConfigurations(
+    matchMap: Map<number, MatchInsightData>,
+  ): TeamConfig[] {
+    // Build a player info map for CorePlayer construction
+    const playerInfoMap = new Map<string, CorePlayer>();
+    for (const matchData of matchMap.values()) {
+      for (const p of matchData.players) {
+        if (!playerInfoMap.has(p.playerKey)) {
+          playerInfoMap.set(p.playerKey, buildCorePlayer(p));
+        }
+      }
+    }
+
+    // Group matches by team composition signature
+    const configMap = new Map<
+      string,
+      {
+        teams: {
+          playerKeys: string[];
+          teamName: string;
+          wins: number;
+        }[];
+        matchIds: number[];
+      }
+    >();
+
+    for (const matchData of matchMap.values()) {
+      // Group players by teamId
+      const teamGroups = new Map<
+        number,
+        { playerKeys: string[]; teamName: string; hasWinner: boolean }
+      >();
+      let hasTeams = false;
+
+      for (const p of matchData.players) {
+        if (p.teamId === null) continue;
+        hasTeams = true;
+        let group = teamGroups.get(p.teamId);
+        if (!group) {
+          group = {
+            playerKeys: [],
+            teamName: p.teamName ?? `Team ${p.teamId}`,
+            hasWinner: false,
+          };
+          teamGroups.set(p.teamId, group);
+        }
+        group.playerKeys.push(p.playerKey);
+        if (p.winner) group.hasWinner = true;
+      }
+
+      if (!hasTeams || teamGroups.size < 2) continue;
+
+      // Create a canonical signature: sort teams by their sorted player keys
+      const sortedTeams = Array.from(teamGroups.values())
+        .map((g) => ({
+          ...g,
+          playerKeys: g.playerKeys.sort(),
+        }))
+        .sort((a, b) =>
+          a.playerKeys.join("|").localeCompare(b.playerKeys.join("|")),
+        );
+
+      const configKey = sortedTeams
+        .map((t) => t.playerKeys.join(","))
+        .join(" vs ");
+
+      let entry = configMap.get(configKey);
+      if (!entry) {
+        entry = {
+          teams: sortedTeams.map((t) => ({
+            playerKeys: t.playerKeys,
+            teamName: t.teamName,
+            wins: 0,
+          })),
+          matchIds: [],
+        };
+        configMap.set(configKey, entry);
+      }
+      entry.matchIds.push(matchData.matchId);
+
+      // Record wins
+      for (let i = 0; i < sortedTeams.length; i++) {
+        const sortedTeam = sortedTeams[i];
+        const entryTeam = entry.teams[i];
+        if (sortedTeam?.hasWinner && entryTeam) {
+          entryTeam.wins++;
+        }
+      }
+    }
+
+    // Convert to TeamConfig[], filter by min 2 matches, sort by count desc
+    const configs: TeamConfig[] = Array.from(configMap.values())
+      .filter((entry) => entry.matchIds.length >= 2)
+      .map((entry) => ({
+        teams: entry.teams.map((t) => ({
+          players: t.playerKeys
+            .map((key) => playerInfoMap.get(key))
+            .filter((p): p is CorePlayer => p !== undefined),
+          teamName: t.teamName,
+        })),
+        matchCount: entry.matchIds.length,
+        matchIds: entry.matchIds,
+        outcomes: entry.teams.map((t, idx) => ({
+          teamIndex: idx,
+          wins: t.wins,
+        })),
+      }))
+      .sort((a, b) => b.matchCount - a.matchCount)
+      .slice(0, 15);
+
+    return configs;
+  }
+
   // ─── Player-count distribution ─────────────────────────────────
 
   private computePlayerCountDistribution(
@@ -595,6 +802,8 @@ class GameInsightsService {
       perPlayer: PerPlayerDistribution[];
     },
     pairs: DetectedCore[],
+    trios: DetectedCore[],
+    teamPairs: TeamCore[],
     _lineups: FrequentLineup[],
   ): InsightsSummary {
     // Most common player count
@@ -641,6 +850,28 @@ class GameInsightsService {
         }
       : null;
 
+    // Top trio: most frequent trio (sorted by match count already)
+    const topTrioCore = trios[0];
+    const topTrio: InsightsSummary["topTrio"] = topTrioCore
+      ? {
+          names: topTrioCore.players.map((p) => p.playerName),
+          matchCount: topTrioCore.matchCount,
+        }
+      : null;
+
+    // Best team core: highest win rate team pair with >= 3 matches
+    let bestTeamCore: InsightsSummary["bestTeamCore"] = null;
+    for (const tc of teamPairs) {
+      if (tc.teamMatches < 3) continue;
+      if (!bestTeamCore || tc.teamWinRate > bestTeamCore.winRate) {
+        bestTeamCore = {
+          names: tc.players.map((p) => p.playerName),
+          winRate: tc.teamWinRate,
+          matchCount: tc.teamMatches,
+        };
+      }
+    }
+
     const totalMatchesAnalyzed = distribution.game.reduce(
       (sum, e) => sum + e.matchCount,
       0,
@@ -652,8 +883,8 @@ class GameInsightsService {
         : null,
       topRival,
       topPair,
-      topTrio: null, // Phase Next
-      bestTeamCore: null, // Phase Next
+      topTrio,
+      bestTeamCore,
       totalMatchesAnalyzed,
     };
   }
