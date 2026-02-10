@@ -43,6 +43,11 @@ const CoreCard = ({ core }: { core: DetectedCore }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedPair, setSelectedPair] = useState<PairwiseStat | null>(null);
 
+  // Detect if this core is from manual winner games (no placement data)
+  const isManualWinner = !core.groupOrdering.some(
+    (entry) => entry.avgPlacement > 0,
+  );
+
   const handleToggleExpand = () => {
     setIsExpanded((prev) => !prev);
   };
@@ -96,6 +101,7 @@ const CoreCard = ({ core }: { core: DetectedCore }) => {
               <PairwiseRow
                 key={`${ps.playerA.playerKey}-${ps.playerB.playerKey}`}
                 pairwise={ps}
+                isManualWinner={isManualWinner}
                 onSelect={handlePairClick}
               />
             ))}
@@ -104,27 +110,7 @@ const CoreCard = ({ core }: { core: DetectedCore }) => {
 
         {/* Group ordering podium (meaningful for k >= 3) */}
         {core.players.length >= 3 && core.groupOrdering.length > 0 && (
-          <div className="bg-muted/30 rounded-lg p-2">
-            <div className="text-muted-foreground mb-1 text-xs font-medium">
-              Placement Ranking
-            </div>
-            <div className="flex flex-col gap-1">
-              {core.groupOrdering.map((entry) => (
-                <div
-                  key={entry.player.playerKey}
-                  className="flex items-center gap-2"
-                >
-                  <RankBadge rank={entry.rank} />
-                  <span className="text-sm font-medium">
-                    {entry.player.playerName}
-                  </span>
-                  <span className="text-muted-foreground text-xs">
-                    avg {entry.avgPlacement.toFixed(1)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <GroupOrderingSection groupOrdering={core.groupOrdering} />
         )}
 
         {/* Expandable section */}
@@ -178,8 +164,66 @@ const CoreCard = ({ core }: { core: DetectedCore }) => {
       </div>
 
       {/* Detail Sheet */}
-      <PairwiseDetailSheet pair={selectedPair} onClose={handleSheetClose} />
+      <PairwiseDetailSheet
+        pair={selectedPair}
+        isManualWinner={isManualWinner}
+        onClose={handleSheetClose}
+      />
     </>
+  );
+};
+
+// ─── Group Ordering Section ──────────────────────────────────────
+
+type GroupOrderingEntry =
+  DetectedCore["groupOrdering"][number];
+
+const GroupOrderingSection = ({
+  groupOrdering,
+}: {
+  groupOrdering: GroupOrderingEntry[];
+}) => {
+  // Determine if we have placement data: any entry with avgPlacement > 0
+  const hasPlacementData = groupOrdering.some(
+    (entry) => entry.avgPlacement > 0,
+  );
+  const hasWinData = groupOrdering.some(
+    (entry) => entry.wins > 0 || entry.losses > 0,
+  );
+
+  if (!hasPlacementData && !hasWinData) return null;
+
+  const title = hasPlacementData ? "Placement Ranking" : "Win Rate Ranking";
+
+  return (
+    <div className="bg-muted/30 rounded-lg p-2">
+      <div className="text-muted-foreground mb-1 text-xs font-medium">
+        {title}
+      </div>
+      <div className="flex flex-col gap-1">
+        {groupOrdering.map((entry) => (
+          <div
+            key={entry.player.playerKey}
+            className="flex items-center gap-2"
+          >
+            <RankBadge rank={entry.rank} />
+            <span className="text-sm font-medium">
+              {entry.player.playerName}
+            </span>
+            {hasPlacementData && entry.avgPlacement > 0 ? (
+              <span className="text-muted-foreground text-xs">
+                avg {entry.avgPlacement.toFixed(1)}
+              </span>
+            ) : (
+              <span className="text-muted-foreground text-xs">
+                {Math.round(entry.winRate * 100)}% win ({entry.wins}W-
+                {entry.losses}L)
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
@@ -187,13 +231,16 @@ const CoreCard = ({ core }: { core: DetectedCore }) => {
 
 const PairwiseRow = ({
   pairwise,
+  isManualWinner,
   onSelect,
 }: {
   pairwise: PairwiseStat;
+  isManualWinner: boolean;
   onSelect: (pair: PairwiseStat) => void;
 }) => {
   const rate = pairwise.finishesAboveRate;
   const ratePercent = Math.round(rate * 100);
+  const rateLabel = isManualWinner ? "win rate" : "finishes above rate";
 
   const handleClick = () => {
     onSelect(pairwise);
@@ -213,7 +260,7 @@ const PairwiseRow = ({
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
-      aria-label={`${pairwise.playerA.playerName} vs ${pairwise.playerB.playerName}: ${ratePercent}% finishes above rate`}
+      aria-label={`${pairwise.playerA.playerName} vs ${pairwise.playerB.playerName}: ${ratePercent}% ${rateLabel}`}
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 text-sm">
@@ -348,14 +395,17 @@ const PlayerAvatar = ({ player }: { player: CorePlayer }) => (
 
 const PairwiseDetailSheet = ({
   pair,
+  isManualWinner,
   onClose,
 }: {
   pair: PairwiseStat | null;
+  isManualWinner: boolean;
   onClose: () => void;
 }) => {
   if (!pair) return null;
 
   const ratePercent = Math.round(pair.finishesAboveRate * 100);
+  const rateLabel = isManualWinner ? "Win Rate" : "Finishes Above";
 
   return (
     <Sheet open={pair !== null} onOpenChange={(open) => !open && onClose()}>
@@ -383,9 +433,7 @@ const PairwiseDetailSheet = ({
               >
                 {ratePercent}%
               </div>
-              <div className="text-muted-foreground text-xs">
-                Finishes Above
-              </div>
+              <div className="text-muted-foreground text-xs">{rateLabel}</div>
             </div>
             <div className="rounded-lg border p-3 text-center">
               <div className="text-xl font-bold">{pair.matchCount}</div>
@@ -393,15 +441,17 @@ const PairwiseDetailSheet = ({
                 Matches Together
               </div>
             </div>
-            <div className="rounded-lg border p-3 text-center">
-              <div className="text-xl font-bold">
-                {pair.avgPlacementDelta > 0 ? "+" : ""}
-                {pair.avgPlacementDelta.toFixed(1)}
+            {!isManualWinner && (
+              <div className="rounded-lg border p-3 text-center">
+                <div className="text-xl font-bold">
+                  {pair.avgPlacementDelta > 0 ? "+" : ""}
+                  {pair.avgPlacementDelta.toFixed(1)}
+                </div>
+                <div className="text-muted-foreground text-xs">
+                  Avg Placement Delta
+                </div>
               </div>
-              <div className="text-muted-foreground text-xs">
-                Avg Placement Delta
-              </div>
-            </div>
+            )}
             {pair.avgScoreDelta !== null && (
               <div className="rounded-lg border p-3 text-center">
                 <div className="text-xl font-bold">
@@ -424,8 +474,12 @@ const PairwiseDetailSheet = ({
                   <TableRow>
                     <TableHead className="w-16">Count</TableHead>
                     <TableHead className="text-right">Matches</TableHead>
-                    <TableHead className="text-right">Finishes Above</TableHead>
-                    <TableHead className="text-right">Avg Place Δ</TableHead>
+                    <TableHead className="text-right">{rateLabel}</TableHead>
+                    {!isManualWinner && (
+                      <TableHead className="text-right">
+                        Avg Place Δ
+                      </TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -451,10 +505,12 @@ const PairwiseDetailSheet = ({
                           {Math.round(bucket.finishesAboveRate * 100)}%
                         </span>
                       </TableCell>
-                      <TableCell className="text-right">
-                        {bucket.avgPlacementDelta > 0 ? "+" : ""}
-                        {bucket.avgPlacementDelta.toFixed(1)}
-                      </TableCell>
+                      {!isManualWinner && (
+                        <TableCell className="text-right">
+                          {bucket.avgPlacementDelta > 0 ? "+" : ""}
+                          {bucket.avgPlacementDelta.toFixed(1)}
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>

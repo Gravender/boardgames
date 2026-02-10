@@ -381,6 +381,9 @@ const detectedCoreSchema = z.object({
     z.object({
       player: corePlayerSchema,
       avgPlacement: z.number(),
+      winRate: z.number(),
+      wins: z.number(),
+      losses: z.number(),
       rank: z.number(),
     }),
   ),
@@ -417,6 +420,13 @@ const insightsSummarySchema = z.object({
       percentage: z.number(),
     })
     .nullable(),
+  userPlayerCount: z
+    .object({
+      mostCommon: z.number(),
+      percentage: z.number(),
+      totalMatches: z.number(),
+    })
+    .nullable(),
   topRival: z
     .object({
       name: z.string(),
@@ -434,6 +444,13 @@ const insightsSummarySchema = z.object({
     .object({
       names: z.array(z.string()),
       matchCount: z.number(),
+    })
+    .nullable(),
+  topGroup: z
+    .object({
+      names: z.array(z.string()),
+      matchCount: z.number(),
+      playerCount: z.number(),
     })
     .nullable(),
   bestTeamCore: z
@@ -478,6 +495,12 @@ export const getGameInsightsOutput = z.object({
       players: z.array(corePlayerSchema),
       matchCount: z.number(),
       matchIds: z.array(z.number()),
+      matches: z.array(
+        z.object({
+          matchId: z.number(),
+          date: z.date(),
+        }),
+      ),
     }),
   ),
   teams: z

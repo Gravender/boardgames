@@ -158,6 +158,7 @@ class GameInsightsService {
           matchId: row.matchId,
           matchDate: row.matchDate,
           isCoop: row.isCoop,
+          winCondition: row.winCondition,
           playerCount: Number(row.playerCount),
           players: [],
         };
@@ -297,8 +298,14 @@ class GameInsightsService {
     >();
     let exactMatchCount = 0;
 
-    // Per-player placement accumulators (for non-coop matches only)
+    // Per-player placement accumulators (for non-coop, non-manual matches only)
     const placementSums = new Map<string, { total: number; count: number }>();
+
+    // Per-player win/loss accumulators (for non-coop matches)
+    const winLossMap = new Map<
+      string,
+      { wins: number; losses: number; total: number }
+    >();
 
     // Pairwise accumulators
     const pairKeys: [string, string][] = [];
@@ -375,17 +382,40 @@ class GameInsightsService {
         }
       }
 
-      // Placement accumulation (skip coop)
+      // Stats accumulation (skip coop)
       if (!matchData.isCoop) {
+        const isManualWinner = matchData.winCondition === "Manual";
+
+        // Win/loss tracking for all competitive matches
         for (const key of raw.playerKeys) {
           const p = matchPlayerMap.get(key);
-          if (!p || p.placement <= 0) continue;
-          const acc = placementSums.get(key);
+          if (!p) continue;
+          const acc = winLossMap.get(key);
           if (acc) {
-            acc.total += p.placement;
-            acc.count++;
+            acc.total++;
+            if (p.winner) acc.wins++;
+            else acc.losses++;
           } else {
-            placementSums.set(key, { total: p.placement, count: 1 });
+            winLossMap.set(key, {
+              wins: p.winner ? 1 : 0,
+              losses: p.winner ? 0 : 1,
+              total: 1,
+            });
+          }
+        }
+
+        // Placement accumulation (skip manual winner — placement is meaningless there)
+        if (!isManualWinner) {
+          for (const key of raw.playerKeys) {
+            const p = matchPlayerMap.get(key);
+            if (!p || p.placement <= 0) continue;
+            const acc = placementSums.get(key);
+            if (acc) {
+              acc.total += p.placement;
+              acc.count++;
+            } else {
+              placementSums.set(key, { total: p.placement, count: 1 });
+            }
           }
         }
 
@@ -399,31 +429,54 @@ class GameInsightsService {
           const pairAcc = pairAccMap.get(`${keyA}|${keyB}`);
           if (!pairAcc) continue;
 
-          // Only count if both have valid placements
-          if (pA.placement > 0 && pB.placement > 0) {
-            pairAcc.total++;
-            if (pA.placement < pB.placement) pairAcc.aAboveB++;
+          if (isManualWinner) {
+            // Manual winner: use winner boolean for head-to-head
+            // Only count when outcomes differ (one won, one didn't)
+            if (pA.winner !== pB.winner) {
+              pairAcc.total++;
+              if (pA.winner) pairAcc.aAboveB++;
 
-            const placementDelta = pA.placement - pB.placement;
-            pairAcc.placementDeltas.push(placementDelta);
-
-            // By bucket
-            let bucketAcc = pairAcc.byBucket.get(bucket);
-            if (!bucketAcc) {
-              bucketAcc = {
-                aAboveB: 0,
-                total: 0,
-                placementDeltas: [],
-                scoreDeltas: [],
-              };
-              pairAcc.byBucket.set(bucket, bucketAcc);
+              // By bucket
+              let bucketAcc = pairAcc.byBucket.get(bucket);
+              if (!bucketAcc) {
+                bucketAcc = {
+                  aAboveB: 0,
+                  total: 0,
+                  placementDeltas: [],
+                  scoreDeltas: [],
+                };
+                pairAcc.byBucket.set(bucket, bucketAcc);
+              }
+              bucketAcc.total++;
+              if (pA.winner) bucketAcc.aAboveB++;
             }
-            bucketAcc.total++;
-            if (pA.placement < pB.placement) bucketAcc.aAboveB++;
-            bucketAcc.placementDeltas.push(placementDelta);
+          } else {
+            // Placement-based: existing logic
+            if (pA.placement > 0 && pB.placement > 0) {
+              pairAcc.total++;
+              if (pA.placement < pB.placement) pairAcc.aAboveB++;
+
+              const placementDelta = pA.placement - pB.placement;
+              pairAcc.placementDeltas.push(placementDelta);
+
+              // By bucket
+              let bucketAcc = pairAcc.byBucket.get(bucket);
+              if (!bucketAcc) {
+                bucketAcc = {
+                  aAboveB: 0,
+                  total: 0,
+                  placementDeltas: [],
+                  scoreDeltas: [],
+                };
+                pairAcc.byBucket.set(bucket, bucketAcc);
+              }
+              bucketAcc.total++;
+              if (pA.placement < pB.placement) bucketAcc.aAboveB++;
+              bucketAcc.placementDeltas.push(placementDelta);
+            }
           }
 
-          // Score delta (independent of placement)
+          // Score delta (independent of win condition)
           if (pA.score !== null && pB.score !== null) {
             const scoreDelta = pA.score - pB.score;
             pairAcc.scoreDeltas.push(scoreDelta);
@@ -441,15 +494,35 @@ class GameInsightsService {
       .map((key) => playerInfoMap.get(key))
       .filter((p): p is CorePlayer => p !== undefined);
 
-    // Build group ordering
+    // Build group ordering with both placement and win/loss data
+    // avgPlacement of 0 means "no data" (valid placements are always >= 1)
+    const hasPlacementData = placementSums.size > 0;
     const groupOrdering = players
       .map((p) => {
-        const acc = placementSums.get(p.playerKey);
+        const plAcc = placementSums.get(p.playerKey);
         const avgPlacement =
-          acc && acc.count > 0 ? acc.total / acc.count : Infinity;
-        return { player: p, avgPlacement, rank: 0 };
+          plAcc && plAcc.count > 0 ? plAcc.total / plAcc.count : 0;
+
+        const wlAcc = winLossMap.get(p.playerKey);
+        const wins = wlAcc?.wins ?? 0;
+        const losses = wlAcc?.losses ?? 0;
+        const winRate =
+          wlAcc && wlAcc.total > 0 ? wlAcc.wins / wlAcc.total : 0;
+
+        return { player: p, avgPlacement, winRate, wins, losses, rank: 0 };
       })
-      .sort((a, b) => a.avgPlacement - b.avgPlacement)
+      .sort((a, b) => {
+        if (hasPlacementData) {
+          // Placement-based sort: lower avgPlacement = better
+          if (a.avgPlacement === 0 && b.avgPlacement !== 0) return 1;
+          if (b.avgPlacement === 0 && a.avgPlacement !== 0) return -1;
+          if (a.avgPlacement !== 0 && b.avgPlacement !== 0) {
+            return a.avgPlacement - b.avgPlacement;
+          }
+        }
+        // Win-rate-based sort (for manual winner or tie-breaking): higher = better
+        return b.winRate - a.winRate;
+      })
       .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
 
     // Build pairwise stats
@@ -754,7 +827,11 @@ class GameInsightsService {
   ): FrequentLineup[] {
     const lineupMap = new Map<
       string,
-      { playerKeys: string[]; matchIds: number[] }
+      {
+        playerKeys: string[];
+        matchIds: number[];
+        matches: { matchId: number; date: Date }[];
+      }
     >();
 
     for (const matchData of matchMap.values()) {
@@ -763,10 +840,14 @@ class GameInsightsService {
 
       let entry = lineupMap.get(lineupKey);
       if (!entry) {
-        entry = { playerKeys: sortedKeys, matchIds: [] };
+        entry = { playerKeys: sortedKeys, matchIds: [], matches: [] };
         lineupMap.set(lineupKey, entry);
       }
       entry.matchIds.push(matchData.matchId);
+      entry.matches.push({
+        matchId: matchData.matchId,
+        date: matchData.matchDate,
+      });
     }
 
     // Build player info map from all matches
@@ -787,6 +868,9 @@ class GameInsightsService {
           .filter((p): p is CorePlayer => p !== undefined),
         matchCount: entry.matchIds.length,
         matchIds: entry.matchIds,
+        matches: entry.matches.sort(
+          (a, b) => b.date.getTime() - a.date.getTime(),
+        ),
       }))
       .sort((a, b) => b.matchCount - a.matchCount)
       .slice(0, 10);
@@ -804,7 +888,7 @@ class GameInsightsService {
     pairs: DetectedCore[],
     trios: DetectedCore[],
     teamPairs: TeamCore[],
-    _lineups: FrequentLineup[],
+    lineups: FrequentLineup[],
   ): InsightsSummary {
     // Most common player count
     const mostCommon =
@@ -815,6 +899,27 @@ class GameInsightsService {
         },
         null,
       );
+
+    // User's player count info
+    let userPlayerCount: InsightsSummary["userPlayerCount"] = null;
+    const userDist = distribution.perPlayer.find((p) => p.player.isUser);
+    if (userDist && userDist.distribution.length > 0) {
+      const userTotal = userDist.distribution.reduce(
+        (s, d) => s + d.matchCount,
+        0,
+      );
+      const userMostCommon = userDist.distribution.reduce((best, d) =>
+        d.matchCount > best.matchCount ? d : best,
+      );
+      userPlayerCount = {
+        mostCommon: userMostCommon.playerCount,
+        percentage:
+          userTotal > 0
+            ? Math.round((userMostCommon.matchCount / userTotal) * 100)
+            : 0,
+        totalMatches: userTotal,
+      };
+    }
 
     // Top rival: highest finishes-above rate pair where user is a member, n >= 3
     let topRival: InsightsSummary["topRival"] = null;
@@ -859,6 +964,16 @@ class GameInsightsService {
         }
       : null;
 
+    // Top group: most frequent lineup with 3+ players
+    const topGroupLineup = lineups.find((l) => l.players.length >= 3);
+    const topGroup: InsightsSummary["topGroup"] = topGroupLineup
+      ? {
+          names: topGroupLineup.players.map((p) => p.playerName),
+          matchCount: topGroupLineup.matchCount,
+          playerCount: topGroupLineup.players.length,
+        }
+      : null;
+
     // Best team core: highest win rate team pair with >= 3 matches
     let bestTeamCore: InsightsSummary["bestTeamCore"] = null;
     for (const tc of teamPairs) {
@@ -881,9 +996,11 @@ class GameInsightsService {
       mostCommonPlayerCount: mostCommon
         ? { count: mostCommon.playerCount, percentage: mostCommon.percentage }
         : null,
+      userPlayerCount,
       topRival,
       topPair,
       topTrio,
+      topGroup,
       bestTeamCore,
       totalMatchesAnalyzed,
     };

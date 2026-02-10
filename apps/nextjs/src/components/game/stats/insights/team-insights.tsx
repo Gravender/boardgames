@@ -88,32 +88,56 @@ const TeamCoreCard = ({ core }: { core: TeamCore }) => {
 
       {/* Group ordering for trios+ */}
       {core.players.length >= 3 && core.groupOrdering.length > 0 && (
-        <div className="bg-muted/30 rounded-lg p-2">
-          <div className="text-muted-foreground mb-1 text-xs font-medium">
-            Placement Ranking
-          </div>
-          <div className="flex items-center gap-2">
-            {core.groupOrdering.map((entry, idx) => (
-              <div key={entry.player.playerKey} className="flex items-center">
-                {idx > 0 && (
-                  <span className="text-muted-foreground mx-1">&gt;</span>
-                )}
-                <span className="text-sm font-medium">
-                  {entry.player.playerName}
-                </span>
-                <span className="text-muted-foreground ml-1 text-xs">
-                  ({entry.avgPlacement.toFixed(1)})
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <TeamGroupOrdering groupOrdering={core.groupOrdering} />
       )}
 
       {/* Stability */}
       <div className="flex items-center justify-between text-xs">
         <span className="text-muted-foreground">Stability:</span>
         <span>{Math.round(core.stability * 100)}% exact lineup</span>
+      </div>
+    </div>
+  );
+};
+
+// ─── Team Group Ordering ─────────────────────────────────────────
+
+type TeamGroupOrderingEntry = TeamCore["groupOrdering"][number];
+
+const TeamGroupOrdering = ({
+  groupOrdering,
+}: {
+  groupOrdering: TeamGroupOrderingEntry[];
+}) => {
+  // Only show placement ranking for team cores.
+  // Win rate ranking is meaningless since all team members share the same win/loss.
+  const hasPlacementData = groupOrdering.some(
+    (entry) => entry.avgPlacement > 0,
+  );
+
+  if (!hasPlacementData) return null;
+
+  return (
+    <div className="bg-muted/30 rounded-lg p-2">
+      <div className="text-muted-foreground mb-1 text-xs font-medium">
+        Placement Ranking
+      </div>
+      <div className="flex items-center gap-2">
+        {groupOrdering.map((entry, idx) => (
+          <div key={entry.player.playerKey} className="flex items-center">
+            {idx > 0 && (
+              <span className="text-muted-foreground mx-1">&gt;</span>
+            )}
+            <span className="text-sm font-medium">
+              {entry.player.playerName}
+            </span>
+            {entry.avgPlacement > 0 && (
+              <span className="text-muted-foreground ml-1 text-xs">
+                ({entry.avgPlacement.toFixed(1)})
+              </span>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

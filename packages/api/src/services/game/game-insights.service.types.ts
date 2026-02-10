@@ -44,6 +44,7 @@ export interface MatchInsightData {
   matchId: number;
   matchDate: Date;
   isCoop: boolean;
+  winCondition: string;
   playerCount: number;
   players: MatchPlayerEntry[];
 }
@@ -89,6 +90,9 @@ export interface DetectedCore {
   groupOrdering: {
     player: CorePlayer;
     avgPlacement: number;
+    winRate: number;
+    wins: number;
+    losses: number;
     rank: number;
   }[];
   pairwiseStats: PairwiseStat[];
@@ -128,24 +132,31 @@ export interface FrequentLineup {
   players: CorePlayer[];
   matchCount: number;
   matchIds: number[];
+  matches: { matchId: number; date: Date }[];
 }
 
 // ─── Summary ─────────────────────────────────────────────────────
 
 export interface InsightsSummary {
   mostCommonPlayerCount: { count: number; percentage: number } | null;
+  userPlayerCount: {
+    mostCommon: number;
+    percentage: number;
+    totalMatches: number;
+  } | null;
   topRival: {
     name: string;
     finishesAboveRate: number;
     matchCount: number;
   } | null;
   topPair: { names: string[]; matchCount: number } | null;
-  topTrio: { names: string[]; matchCount: number } | null; // null in Phase 1
+  topTrio: { names: string[]; matchCount: number } | null;
+  topGroup: { names: string[]; matchCount: number; playerCount: number } | null;
   bestTeamCore: {
     names: string[];
     winRate: number;
     matchCount: number;
-  } | null; // null in Phase 1
+  } | null;
   totalMatchesAnalyzed: number;
 }
 

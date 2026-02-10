@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Swords, Users, Zap } from "lucide-react";
+import { BarChart3, Swords, User, Users, UsersRound, Zap } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
@@ -32,6 +32,31 @@ export function InsightsSummary({ summary }: InsightsSummaryProps) {
               </div>
               <p className="text-muted-foreground text-xs">
                 {summary.mostCommonPlayerCount.percentage}% of matches
+              </p>
+            </>
+          ) : (
+            <p className="text-muted-foreground text-sm">No data</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Your Player Count */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium">
+            <User className="h-4 w-4" />
+            Your Typical Size
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {summary.userPlayerCount ? (
+            <>
+              <div className="text-primary text-2xl font-bold">
+                {summary.userPlayerCount.mostCommon}p
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {summary.userPlayerCount.percentage}% of your{" "}
+                {summary.userPlayerCount.totalMatches} matches
               </p>
             </>
           ) : (
@@ -90,23 +115,28 @@ export function InsightsSummary({ summary }: InsightsSummaryProps) {
         </CardContent>
       </Card>
 
-      {/* Matches Analyzed */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-sm font-medium">
-            <BarChart3 className="h-4 w-4" />
-            Matches Analyzed
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-primary text-2xl font-bold">
-            {summary.totalMatchesAnalyzed}
-          </div>
-          <p className="text-muted-foreground text-xs">finished matches</p>
-        </CardContent>
-      </Card>
+      {/* Most Frequent Group (3+ players) */}
+      {summary.topGroup && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+              <UsersRound className="h-4 w-4" />
+              Top Group
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-primary truncate text-lg font-bold">
+              {summary.topGroup.names.join(" + ")}
+            </div>
+            <p className="text-muted-foreground text-xs">
+              {summary.topGroup.matchCount} matches (
+              {summary.topGroup.playerCount} players)
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Phase Next: Top Trio card (renders when data exists) */}
+      {/* Top Trio (renders when data exists) */}
       {summary.topTrio && (
         <Card>
           <CardHeader className="pb-2">
@@ -126,7 +156,23 @@ export function InsightsSummary({ summary }: InsightsSummaryProps) {
         </Card>
       )}
 
-      {/* Phase Next: Best Team Core card (renders when data exists) */}
+      {/* Matches Analyzed */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium">
+            <BarChart3 className="h-4 w-4" />
+            Matches Analyzed
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-primary text-2xl font-bold">
+            {summary.totalMatchesAnalyzed}
+          </div>
+          <p className="text-muted-foreground text-xs">finished matches</p>
+        </CardContent>
+      </Card>
+
+      {/* Best Team Core (renders when data exists) */}
       {summary.bestTeamCore && (
         <Card>
           <CardHeader className="pb-2">

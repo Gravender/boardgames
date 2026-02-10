@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Calendar } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
@@ -18,6 +19,14 @@ import { PlayerImage } from "~/components/player-image";
 type Insights = RouterOutputs["newGame"]["getGameInsights"];
 type Lineup = Insights["lineups"][number];
 type CorePlayer = Lineup["players"][number];
+
+const formatDate = (date: Date): string => {
+  return new Date(date).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
 
 interface FrequentLineupsProps {
   lineups: Insights["lineups"];
@@ -176,13 +185,22 @@ export function FrequentLineups({ lineups }: FrequentLineupsProps) {
                 </div>
               </div>
 
-              {/* Match IDs (basic info) */}
+              {/* Match History */}
               <div>
                 <h4 className="mb-2 text-sm font-medium">Match History</h4>
-                <p className="text-muted-foreground text-xs">
-                  {selectedLineup.matchCount} matches played with this exact
-                  lineup.
-                </p>
+                <ScrollArea>
+                  <div className="flex max-h-[40vh] flex-col gap-1.5">
+                    {selectedLineup.matches.map((m) => (
+                      <div
+                        key={m.matchId}
+                        className="flex items-center gap-2 rounded-md border px-3 py-2"
+                      >
+                        <Calendar className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+                        <span className="text-sm">{formatDate(m.date)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               </div>
             </div>
           </SheetContent>

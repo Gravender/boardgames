@@ -963,6 +963,7 @@ class GameRepository {
         matchId: vMatchCanonical.matchId,
         matchDate: vMatchCanonical.matchDate,
         isCoop: scoresheet.isCoop,
+        winCondition: scoresheet.winCondition,
         playerId: vMatchPlayerCanonicalForUser.canonicalPlayerId,
         playerName: player.name,
         playerSourceType: vMatchPlayerCanonicalForUser.playerSourceType,
