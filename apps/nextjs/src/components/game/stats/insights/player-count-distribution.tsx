@@ -68,6 +68,7 @@ export function PlayerCountDistribution({
                   content={
                     <ChartTooltipContent
                       formatter={(value, _name, item) =>
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
                         `${value} matches (${item.payload.percentage}%)`
                       }
                     />

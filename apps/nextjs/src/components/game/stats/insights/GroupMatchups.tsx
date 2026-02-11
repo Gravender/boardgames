@@ -1,20 +1,18 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Medal, Trophy } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@board-games/ui/collapsible";
 import { Progress } from "@board-games/ui/progress";
 import { ScrollArea } from "@board-games/ui/scroll-area";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@board-games/ui/sheet";
 import {
   Table,
   TableBody,
@@ -42,7 +40,6 @@ interface GroupMatchupsProps {
 
 const CoreCard = ({ core }: { core: DetectedCore }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [selectedPair, setSelectedPair] = useState<PairwiseStat | null>(null);
 
   // Detect if this core is from manual winner games (no placement data)
   const isManualWinner = !core.groupOrdering.some(
@@ -53,126 +50,106 @@ const CoreCard = ({ core }: { core: DetectedCore }) => {
     setIsExpanded((prev) => !prev);
   };
 
-  const handlePairClick = (pair: PairwiseStat) => {
-    setSelectedPair(pair);
-  };
-
-  const handleSheetClose = () => {
-    setSelectedPair(null);
-  };
-
   return (
-    <>
-      <div className="flex flex-col gap-2 rounded-lg border p-3">
-        {/* Header: player avatars + names */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex -space-x-2">
-              {core.players.map((p) => (
-                <PlayerImage
-                  key={p.playerKey}
-                  image={
-                    p.image
-                      ? {
-                          ...p.image,
-                          type:
-                            p.image.type === "file" || p.image.type === "svg"
-                              ? p.image.type
-                              : "file",
-                          usageType: "player" as const,
-                        }
-                      : null
-                  }
-                  alt={p.playerName}
-                  className="ring-background h-8 w-8 ring-2"
-                />
-              ))}
-            </div>
-            <span className="text-sm font-medium">
-              {core.players.map((p) => p.playerName).join(" + ")}
-            </span>
-          </div>
-          <Badge variant="secondary">{core.matchCount} matches</Badge>
-        </div>
-
-        {/* Stability */}
-        <div className="text-muted-foreground text-xs">
-          {Math.round(core.stability * 100)}% exact lineup
-        </div>
-
-        {/* Pairwise stats */}
-        {core.pairwiseStats.length > 0 && (
-          <div className="space-y-2">
-            {core.pairwiseStats.map((ps) => (
-              <PairwiseRow
-                key={`${ps.playerA.playerKey}-${ps.playerB.playerKey}`}
-                pairwise={ps}
-                isManualWinner={isManualWinner}
-                onSelect={handlePairClick}
+    <div className="flex flex-col gap-2 rounded-lg border p-3">
+      {/* Header: player avatars + names */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="flex -space-x-2">
+            {core.players.map((p) => (
+              <PlayerImage
+                key={p.playerKey}
+                image={
+                  p.image
+                    ? {
+                        ...p.image,
+                        type:
+                          p.image.type === "file" || p.image.type === "svg"
+                            ? p.image.type
+                            : "file",
+                        usageType: "player" as const,
+                      }
+                    : null
+                }
+                alt={p.playerName}
+                className="ring-background h-8 w-8 ring-2"
               />
             ))}
           </div>
-        )}
-
-        {/* Group ordering podium (meaningful for k >= 3) */}
-        {core.players.length >= 3 && core.groupOrdering.length > 0 && (
-          <GroupOrderingSection groupOrdering={core.groupOrdering} />
-        )}
-
-        {/* Expandable section - only show if there are guests */}
-        {core.guests.length > 0 && (
-          <>
-            <button
-              type="button"
-              className="text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 text-xs transition-colors"
-              onClick={handleToggleExpand}
-              aria-label={
-                isExpanded ? "Show less details" : "Show more details"
-              }
-              tabIndex={0}
-            >
-              {isExpanded ? (
-                <>
-                  Less <ChevronUp className="h-3 w-3" />
-                </>
-              ) : (
-                <>
-                  More <ChevronDown className="h-3 w-3" />
-                </>
-              )}
-            </button>
-
-            {isExpanded && (
-              <div className="space-y-3 border-t pt-2">
-                <div>
-                  <div className="text-muted-foreground mb-1 text-xs font-medium">
-                    Most Common Guests
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {core.guests.slice(0, 5).map((g) => (
-                      <Badge
-                        key={g.player.playerKey}
-                        variant="outline"
-                        className="text-xs"
-                      >
-                        {g.player.playerName} ({g.count})
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-        )}
+          <span className="text-sm font-medium">
+            {core.players.map((p) => p.playerName).join(" + ")}
+          </span>
+        </div>
+        <Badge variant="secondary">{core.matchCount} matches</Badge>
       </div>
 
-      {/* Detail Sheet */}
-      <PairwiseDetailSheet
-        pair={selectedPair}
-        isManualWinner={isManualWinner}
-        onClose={handleSheetClose}
-      />
-    </>
+      {/* Stability */}
+      <div className="text-muted-foreground text-xs">
+        {Math.round(core.stability * 100)}% exact lineup
+      </div>
+
+      {/* Pairwise stats (each row is collapsible for detail) */}
+      {core.pairwiseStats.length > 0 && (
+        <div className="space-y-2">
+          {core.pairwiseStats.map((ps) => (
+            <PairwiseRow
+              key={`${ps.playerA.playerKey}-${ps.playerB.playerKey}`}
+              pairwise={ps}
+              isManualWinner={isManualWinner}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Group ordering podium (meaningful for k >= 3) */}
+      {core.players.length >= 3 && core.groupOrdering.length > 0 && (
+        <GroupOrderingSection groupOrdering={core.groupOrdering} />
+      )}
+
+      {/* Expandable section - only show if there are guests */}
+      {core.guests.length > 0 && (
+        <>
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 text-xs transition-colors"
+            onClick={handleToggleExpand}
+            aria-label={isExpanded ? "Show less details" : "Show more details"}
+            tabIndex={0}
+          >
+            {isExpanded ? (
+              <>
+                Less <ChevronUp className="h-3 w-3" />
+              </>
+            ) : (
+              <>
+                More <ChevronDown className="h-3 w-3" />
+              </>
+            )}
+          </button>
+
+          {isExpanded && (
+            <div className="space-y-3 border-t pt-2">
+              <div>
+                <div className="text-muted-foreground mb-1 text-xs font-medium">
+                  Most Common Guests
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {core.guests.slice(0, 5).map((g) => (
+                    <Badge
+                      key={g.player.playerKey}
+                      variant="outline"
+                      className="text-xs"
+                    >
+                      {g.player.playerName} ({g.count})
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 };
 
@@ -232,85 +209,199 @@ const GroupOrderingSection = ({
   );
 };
 
-// ─── Pairwise Row ────────────────────────────────────────────────
+// ─── Pairwise Row (collapsible inline detail) ────────────────────
 
 const PairwiseRow = ({
   pairwise,
   isManualWinner,
-  onSelect,
 }: {
   pairwise: PairwiseStat;
   isManualWinner: boolean;
-  onSelect: (pair: PairwiseStat) => void;
 }) => {
   const rate = pairwise.finishesAboveRate;
   const ratePercent = Math.round(rate * 100);
-  const rateLabel = isManualWinner ? "win rate" : "finishes above rate";
-
-  const handleClick = () => {
-    onSelect(pairwise);
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      onSelect(pairwise);
-    }
-  };
+  const rateLabel = isManualWinner ? "Win Rate" : "Finishes Above";
 
   return (
-    <div
-      className="hover:bg-muted/50 flex cursor-pointer items-center gap-2 rounded-md p-2 transition-colors"
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
-      aria-label={`${pairwise.playerA.playerName} vs ${pairwise.playerB.playerName}: ${ratePercent}% ${rateLabel}`}
-    >
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 text-sm">
-          <span className="truncate font-medium">
-            {pairwise.playerA.playerName}
-          </span>
-          <span className="text-muted-foreground">vs</span>
-          <span className="truncate font-medium">
-            {pairwise.playerB.playerName}
-          </span>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <ConfidenceBadge confidence={pairwise.confidence} />
-        <div className="w-20">
-          <div className="flex justify-between text-xs">
-            <span
-              className={cn(
-                "font-semibold",
-                ratePercent >= 60
-                  ? "text-green-600"
-                  : ratePercent <= 40
-                    ? "text-red-600"
-                    : "text-yellow-600",
-              )}
-            >
-              {ratePercent}%
+    <Collapsible>
+      <CollapsibleTrigger
+        className="hover:bg-muted/50 flex w-full cursor-pointer items-center gap-2 rounded-md p-2 transition-colors"
+        aria-label={`${pairwise.playerA.playerName} vs ${pairwise.playerB.playerName}: ${ratePercent}% ${rateLabel}`}
+        tabIndex={0}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 text-sm">
+            <span className="truncate font-medium">
+              {pairwise.playerA.playerName}
+            </span>
+            <span className="text-muted-foreground">vs</span>
+            <span className="truncate font-medium">
+              {pairwise.playerB.playerName}
             </span>
           </div>
-          <Progress
-            value={ratePercent}
-            className={cn(
-              "h-1.5",
-              ratePercent >= 60
-                ? "[&>div]:bg-green-500"
-                : ratePercent <= 40
-                  ? "[&>div]:bg-red-500"
-                  : "[&>div]:bg-yellow-500",
-            )}
-          />
         </div>
+        <div className="flex items-center gap-2">
+          <ConfidenceBadge confidence={pairwise.confidence} />
+          <div className="w-20">
+            <div className="flex justify-between text-xs">
+              <span
+                className={cn(
+                  "font-semibold",
+                  ratePercent >= 60
+                    ? "text-green-600"
+                    : ratePercent <= 40
+                      ? "text-red-600"
+                      : "text-yellow-600",
+                )}
+              >
+                {ratePercent}%
+              </span>
+            </div>
+            <Progress
+              value={ratePercent}
+              className={cn(
+                "h-1.5",
+                ratePercent >= 60
+                  ? "[&>div]:bg-green-500"
+                  : ratePercent <= 40
+                    ? "[&>div]:bg-red-500"
+                    : "[&>div]:bg-yellow-500",
+              )}
+            />
+          </div>
+          <ChevronDown className="text-muted-foreground h-4 w-4 shrink-0 transition-transform [[data-state=open]>&]:rotate-180" />
+        </div>
+      </CollapsibleTrigger>
+
+      <CollapsibleContent>
+        <PairwiseDetail pair={pairwise} isManualWinner={isManualWinner} />
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
+// ─── Pairwise Detail (inline collapsible content) ────────────────
+
+const PairwiseDetail = ({
+  pair,
+  isManualWinner,
+}: {
+  pair: PairwiseStat;
+  isManualWinner: boolean;
+}) => {
+  const ratePercent = Math.round(pair.finishesAboveRate * 100);
+  const rateLabel = isManualWinner ? "Win Rate" : "Finishes Above";
+
+  return (
+    <div className="bg-muted/20 space-y-3 rounded-b-md border-t px-3 py-3">
+      {/* Overall stats */}
+      <div className="flex items-center gap-2">
+        <PlayerAvatar player={pair.playerA} />
+        <span className="text-muted-foreground text-xs">vs</span>
+        <PlayerAvatar player={pair.playerB} />
       </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <StatCard
+          value={`${ratePercent}%`}
+          label={rateLabel}
+          className={cn(
+            ratePercent >= 60
+              ? "text-green-600"
+              : ratePercent <= 40
+                ? "text-red-600"
+                : "text-yellow-600",
+          )}
+        />
+        <StatCard value={String(pair.matchCount)} label="Matches Together" />
+        {!isManualWinner && (
+          <StatCard
+            value={`${pair.avgPlacementDelta > 0 ? "+" : ""}${pair.avgPlacementDelta.toFixed(1)}`}
+            label="Avg Placement Δ"
+          />
+        )}
+        {pair.avgScoreDelta !== null && (
+          <StatCard
+            value={`${pair.avgScoreDelta > 0 ? "+" : ""}${pair.avgScoreDelta.toFixed(1)}`}
+            label="Avg Score Δ"
+          />
+        )}
+      </div>
+
+      {/* Player count breakdown */}
+      {pair.byPlayerCount.length > 0 && (
+        <div>
+          <h4 className="mb-1.5 text-xs font-medium">By Player Count</h4>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-14 text-xs">Count</TableHead>
+                <TableHead className="text-right text-xs">Matches</TableHead>
+                <TableHead className="text-right text-xs">
+                  {rateLabel}
+                </TableHead>
+                {!isManualWinner && (
+                  <TableHead className="text-right text-xs">
+                    Avg Place Δ
+                  </TableHead>
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pair.byPlayerCount.map((bucket) => (
+                <TableRow key={bucket.bucket}>
+                  <TableCell className="text-xs font-medium">
+                    {bucket.bucket}
+                  </TableCell>
+                  <TableCell className="text-right text-xs">
+                    {bucket.matchCount}
+                  </TableCell>
+                  <TableCell className="text-right text-xs">
+                    <span
+                      className={cn(
+                        "font-semibold",
+                        bucket.finishesAboveRate >= 0.6
+                          ? "text-green-600"
+                          : bucket.finishesAboveRate <= 0.4
+                            ? "text-red-600"
+                            : "text-yellow-600",
+                      )}
+                    >
+                      {Math.round(bucket.finishesAboveRate * 100)}%
+                    </span>
+                  </TableCell>
+                  {!isManualWinner && (
+                    <TableCell className="text-right text-xs">
+                      {bucket.avgPlacementDelta > 0 ? "+" : ""}
+                      {bucket.avgPlacementDelta.toFixed(1)}
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 };
+
+// ─── Stat Card (compact inline stat) ─────────────────────────────
+
+const StatCard = ({
+  value,
+  label,
+  className,
+}: {
+  value: string;
+  label: string;
+  className?: string;
+}) => (
+  <div className="rounded-md border p-2 text-center">
+    <div className={cn("text-base font-bold", className)}>{value}</div>
+    <div className="text-muted-foreground text-[10px]">{label}</div>
+  </div>
+);
 
 // ─── Rank Badge (for podium positions) ───────────────────────────
 
@@ -395,136 +486,6 @@ const PlayerAvatar = ({ player }: { player: CorePlayer }) => (
     <span className="text-sm">{player.playerName}</span>
   </div>
 );
-
-// ─── Pairwise Detail Sheet ───────────────────────────────────────
-
-const PairwiseDetailSheet = ({
-  pair,
-  isManualWinner,
-  onClose,
-}: {
-  pair: PairwiseStat | null;
-  isManualWinner: boolean;
-  onClose: () => void;
-}) => {
-  if (!pair) return null;
-
-  const ratePercent = Math.round(pair.finishesAboveRate * 100);
-  const rateLabel = isManualWinner ? "Win Rate" : "Finishes Above";
-
-  return (
-    <Sheet open={pair !== null} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <PlayerAvatar player={pair.playerA} />
-            <span className="text-muted-foreground">vs</span>
-            <PlayerAvatar player={pair.playerB} />
-          </SheetTitle>
-        </SheetHeader>
-        <div className="mt-4 space-y-4">
-          {/* Overall stats */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border p-3 text-center">
-              <div
-                className={cn(
-                  "text-xl font-bold",
-                  ratePercent >= 60
-                    ? "text-green-600"
-                    : ratePercent <= 40
-                      ? "text-red-600"
-                      : "text-yellow-600",
-                )}
-              >
-                {ratePercent}%
-              </div>
-              <div className="text-muted-foreground text-xs">{rateLabel}</div>
-            </div>
-            <div className="rounded-lg border p-3 text-center">
-              <div className="text-xl font-bold">{pair.matchCount}</div>
-              <div className="text-muted-foreground text-xs">
-                Matches Together
-              </div>
-            </div>
-            {!isManualWinner && (
-              <div className="rounded-lg border p-3 text-center">
-                <div className="text-xl font-bold">
-                  {pair.avgPlacementDelta > 0 ? "+" : ""}
-                  {pair.avgPlacementDelta.toFixed(1)}
-                </div>
-                <div className="text-muted-foreground text-xs">
-                  Avg Placement Delta
-                </div>
-              </div>
-            )}
-            {pair.avgScoreDelta !== null && (
-              <div className="rounded-lg border p-3 text-center">
-                <div className="text-xl font-bold">
-                  {pair.avgScoreDelta > 0 ? "+" : ""}
-                  {pair.avgScoreDelta.toFixed(1)}
-                </div>
-                <div className="text-muted-foreground text-xs">
-                  Avg Score Delta
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Player count breakdown */}
-          {pair.byPlayerCount.length > 0 && (
-            <div>
-              <h4 className="mb-2 text-sm font-medium">By Player Count</h4>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16">Count</TableHead>
-                    <TableHead className="text-right">Matches</TableHead>
-                    <TableHead className="text-right">{rateLabel}</TableHead>
-                    {!isManualWinner && (
-                      <TableHead className="text-right">Avg Place Δ</TableHead>
-                    )}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pair.byPlayerCount.map((bucket) => (
-                    <TableRow key={bucket.bucket}>
-                      <TableCell className="font-medium">
-                        {bucket.bucket}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {bucket.matchCount}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span
-                          className={cn(
-                            "font-semibold",
-                            bucket.finishesAboveRate >= 0.6
-                              ? "text-green-600"
-                              : bucket.finishesAboveRate <= 0.4
-                                ? "text-red-600"
-                                : "text-yellow-600",
-                          )}
-                        >
-                          {Math.round(bucket.finishesAboveRate * 100)}%
-                        </span>
-                      </TableCell>
-                      {!isManualWinner && (
-                        <TableCell className="text-right">
-                          {bucket.avgPlacementDelta > 0 ? "+" : ""}
-                          {bucket.avgPlacementDelta.toFixed(1)}
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-};
 
 // ─── Main Component ──────────────────────────────────────────────
 
