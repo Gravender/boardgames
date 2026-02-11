@@ -211,11 +211,7 @@ const getRolePresenceCategories = (
         samePlayer = true;
         continue;
       }
-      if (
-        x.teamId !== null &&
-        y.teamId !== null &&
-        x.teamId === y.teamId
-      ) {
+      if (x.teamId !== null && y.teamId !== null && x.teamId === y.teamId) {
         sameTeam = true;
       } else {
         opposing = true;
@@ -394,17 +390,16 @@ export const computeRolePresenceEffects = (
       }
 
       // Require ≥5 in at least one condition
-      if (
-        matchesSamePlayer < 5 &&
-        matchesSameTeam < 5 &&
-        matchesOpposing < 5
-      ) {
+      if (matchesSamePlayer < 5 && matchesSameTeam < 5 && matchesOpposing < 5) {
         continue;
       }
 
       const samePlayer =
         matchesSamePlayer >= 5 && totalSamePlayer > 0
-          ? { winRate: winsSamePlayer / totalSamePlayer, matches: matchesSamePlayer }
+          ? {
+              winRate: winsSamePlayer / totalSamePlayer,
+              matches: matchesSamePlayer,
+            }
           : null;
       const sameTeam =
         matchesSameTeam >= 5 && totalSameTeam > 0
