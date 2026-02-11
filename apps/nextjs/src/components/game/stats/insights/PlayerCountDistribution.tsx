@@ -28,6 +28,9 @@ const chartConfig = {
   },
 };
 
+const formatWinRate = (winRate: number): string =>
+  `${Math.round(winRate * 100)}%`;
+
 export function PlayerCountDistribution({
   distribution,
 }: PlayerCountDistributionProps) {
@@ -35,6 +38,7 @@ export function PlayerCountDistribution({
     playerCount: `${entry.playerCount}p`,
     matchCount: entry.matchCount,
     percentage: entry.percentage,
+    winRate: entry.winRate,
   }));
 
   const totalMatches = distribution.game.reduce(
@@ -67,10 +71,17 @@ export function PlayerCountDistribution({
                 <ChartTooltip
                   content={
                     <ChartTooltipContent
-                      formatter={(value, _name, item) =>
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
-                        `${value} matches (${item.payload.percentage}%)`
-                      }
+                      formatter={(value, _name, item) => {
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                        const percentage = item.payload.percentage as number;
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                        const winRate = item.payload.winRate as number | null;
+                        const winRateLabel =
+                          winRate !== null
+                            ? ` · ${formatWinRate(winRate)} win rate`
+                            : "";
+                        return `${value} matches (${percentage}%)${winRateLabel}`;
+                      }}
                     />
                   }
                 />
@@ -107,6 +118,13 @@ export function PlayerCountDistribution({
                       d.matchCount > (best?.matchCount ?? 0) ? d : best,
                     entry.distribution[0],
                   );
+                  // Compute overall win rate across all player counts
+                  const totalWins = entry.distribution.reduce(
+                    (sum, d) => sum + Math.round(d.winRate * d.matchCount),
+                    0,
+                  );
+                  const overallWinRate =
+                    playerTotal > 0 ? totalWins / playerTotal : 0;
 
                   return (
                     <div
@@ -134,11 +152,19 @@ export function PlayerCountDistribution({
                           <span className="truncate text-sm font-medium">
                             {entry.player.playerName}
                           </span>
-                          <span className="text-muted-foreground text-xs">
-                            {playerTotal} matches
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground text-xs">
+                              {Math.round(overallWinRate * 100)}% win
+                            </span>
+                            <span className="text-muted-foreground text-xs">
+                              ·
+                            </span>
+                            <span className="text-muted-foreground text-xs">
+                              {playerTotal} matches
+                            </span>
+                          </div>
                         </div>
-                        {/* Compact bar showing distribution */}
+                        {/* Compact bar showing distribution with win rates */}
                         <div className="mt-1 flex gap-0.5">
                           {entry.distribution.map((d) => {
                             const widthPercent =
@@ -152,7 +178,7 @@ export function PlayerCountDistribution({
                                 style={{
                                   width: `${Math.max(widthPercent, 3)}%`,
                                 }}
-                                title={`${d.playerCount}p: ${d.matchCount} matches`}
+                                title={`${d.playerCount}p: ${d.matchCount} matches · ${formatWinRate(d.winRate)} win rate`}
                               >
                                 <Progress
                                   value={100}
@@ -171,7 +197,7 @@ export function PlayerCountDistribution({
                             {Math.round(
                               (peakEntry.matchCount / playerTotal) * 100,
                             )}
-                            %)
+                            %) · {formatWinRate(peakEntry.winRate)} win rate
                           </p>
                         )}
                       </div>

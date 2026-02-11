@@ -12,17 +12,7 @@ import type {
   RoleSummary,
   TeamRelationEffect,
 } from "./game-insights.service.types";
-
-// ─── Helpers ─────────────────────────────────────────────────────
-
-const buildCorePlayer = (entry: MatchPlayerEntry): CorePlayer => ({
-  playerKey: entry.playerKey,
-  playerId: entry.playerId,
-  playerName: entry.playerName,
-  playerType: entry.playerType,
-  isUser: entry.isUser,
-  image: entry.image,
-});
+import { buildCorePlayer } from "./game-core-detection.service";
 
 const classifyRoleInMatch = (
   matchData: MatchInsightData,

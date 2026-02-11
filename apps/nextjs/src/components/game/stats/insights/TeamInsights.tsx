@@ -222,7 +222,7 @@ const TeamConfigCard = ({ config }: { config: TeamConfig }) => {
       {/* Teams display with parenthesized names and "vs" */}
       <div className="flex flex-wrap items-center gap-1">
         {config.teams.map((team, idx) => (
-          <div key={team.teamName} className="flex items-center gap-1">
+          <div key={`${team.teamName}-${idx}`} className="flex items-center gap-1">
             {idx > 0 && (
               <span className="text-muted-foreground mx-1 text-sm font-semibold">
                 vs

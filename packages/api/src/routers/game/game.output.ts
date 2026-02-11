@@ -1,5 +1,6 @@
 import z from "zod/v4";
 
+import { scoreSheetWinConditions } from "@board-games/db/constants";
 import { selectGameSchema } from "@board-games/db/zodSchema";
 import {
   baseRoundSchema,
@@ -377,6 +378,7 @@ const detectedCoreSchema = z.object({
       count: z.number(),
     }),
   ),
+  winCondition: z.enum(scoreSheetWinConditions),
   groupOrdering: z.array(
     z.object({
       player: corePlayerSchema,
@@ -471,6 +473,7 @@ export const getGameInsightsOutput = z.object({
         playerCount: z.number(),
         matchCount: z.number(),
         percentage: z.number(),
+        winRate: z.number().nullable(),
       }),
     ),
     perPlayer: z.array(
@@ -480,6 +483,7 @@ export const getGameInsightsOutput = z.object({
           z.object({
             playerCount: z.number(),
             matchCount: z.number(),
+            winRate: z.number(),
           }),
         ),
       }),

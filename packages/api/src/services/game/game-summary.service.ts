@@ -76,8 +76,15 @@ const computeUserPlayerCount = (
   };
 };
 
+/**
+ * Find the user's top rival: the opponent with the most competitive matchup.
+ * Selects the pairwise stat with finishesAboveRate closest to 0.5, breaking
+ * ties by larger matchCount (more head-to-head data = more meaningful rivalry).
+ */
 const findTopRival = (pairs: DetectedCore[]): InsightsSummary["topRival"] => {
   let topRival: InsightsSummary["topRival"] = null;
+  let bestDeviation = Infinity;
+
   for (const pair of pairs) {
     const userPlayer = pair.players.find((p) => p.isUser);
     if (!userPlayer) continue;
@@ -90,7 +97,15 @@ const findTopRival = (pairs: DetectedCore[]): InsightsSummary["topRival"] => {
         ? ps.playerB.playerName
         : ps.playerA.playerName;
 
-      if (!topRival || rate > topRival.finishesAboveRate) {
+      const deviation = Math.abs(rate - 0.5);
+      const isBetter =
+        deviation < bestDeviation ||
+        (deviation === bestDeviation &&
+          topRival !== null &&
+          ps.matchCount > topRival.matchCount);
+
+      if (isBetter) {
+        bestDeviation = deviation;
         topRival = {
           name: opponentName,
           finishesAboveRate: rate,

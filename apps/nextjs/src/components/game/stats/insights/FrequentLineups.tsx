@@ -92,11 +92,22 @@ const TopCoresSection = ({ cores }: { cores: Cores }) => {
     return combined.sort((a, b) => b.matchCount - a.matchCount);
   }, [cores.trios, cores.quartets]);
 
-  // Detect if this game uses manual winner (no placement data available)
+  // Detect if this game uses manual winner mode.
+  // Prefer explicit winCondition check; fall back to avgPlacement heuristic
+  // (treating avgPlacement === 0 as "unknown" and excluding those entries).
   const isManualWinner = useMemo(() => {
-    return !allCores.some((core) =>
-      core.groupOrdering.some((entry) => entry.avgPlacement > 0),
+    const hasExplicitManual = allCores.some(
+      (core) => core.winCondition === "Manual",
     );
+    if (hasExplicitManual) return true;
+
+    // Fall back: if every non-zero avgPlacement is absent, treat as manual
+    const nonZeroPlacements = allCores.flatMap((core) =>
+      core.groupOrdering
+        .map((entry) => entry.avgPlacement)
+        .filter((avg) => avg !== 0),
+    );
+    return nonZeroPlacements.length === 0 && allCores.length > 0;
   }, [allCores]);
 
   const filteredCores = useMemo(() => {

@@ -16,9 +16,14 @@ export const computePlayerCountDistribution = (
   perPlayer: PerPlayerDistribution[];
 } => {
   const countMap = new Map<number, number>();
+  /** Track the user's wins per player-count bucket for game-level win rate. */
+  const userWinsMap = new Map<number, { wins: number; matches: number }>();
   const playerCountMap = new Map<
     string,
-    { player: CorePlayer; counts: Map<number, number> }
+    {
+      player: CorePlayer;
+      counts: Map<number, { matchCount: number; wins: number }>;
+    }
   >();
   const totalMatches = matchMap.size;
 
@@ -27,31 +32,57 @@ export const computePlayerCountDistribution = (
     countMap.set(pc, (countMap.get(pc) ?? 0) + 1);
 
     for (const p of matchData.players) {
+      // Track user-level wins per player count
+      if (p.isUser) {
+        const userBucket = userWinsMap.get(pc) ?? { wins: 0, matches: 0 };
+        userBucket.matches += 1;
+        if (p.winner) userBucket.wins += 1;
+        userWinsMap.set(pc, userBucket);
+      }
+
+      // Track per-player wins per player count
       let entry = playerCountMap.get(p.playerKey);
       if (!entry) {
         entry = { player: buildCorePlayer(p), counts: new Map() };
         playerCountMap.set(p.playerKey, entry);
       }
-      entry.counts.set(pc, (entry.counts.get(pc) ?? 0) + 1);
+      const bucket = entry.counts.get(pc) ?? { matchCount: 0, wins: 0 };
+      bucket.matchCount += 1;
+      if (p.winner) bucket.wins += 1;
+      entry.counts.set(pc, bucket);
     }
   }
 
   const gameDistribution: PlayerCountDistributionEntry[] = Array.from(
     countMap.entries(),
   )
-    .map(([playerCount, matchCount]) => ({
-      playerCount,
-      matchCount,
-      percentage:
-        totalMatches > 0 ? Math.round((matchCount / totalMatches) * 100) : 0,
-    }))
+    .map(([playerCount, matchCount]) => {
+      const userBucket = userWinsMap.get(playerCount);
+      return {
+        playerCount,
+        matchCount,
+        percentage:
+          totalMatches > 0 ? Math.round((matchCount / totalMatches) * 100) : 0,
+        winRate:
+          userBucket && userBucket.matches > 0
+            ? Math.round((userBucket.wins / userBucket.matches) * 100) / 100
+            : null,
+      };
+    })
     .sort((a, b) => a.playerCount - b.playerCount);
 
   const perPlayer: PerPlayerDistribution[] = Array.from(playerCountMap.values())
     .map((entry) => ({
       player: entry.player,
       distribution: Array.from(entry.counts.entries())
-        .map(([playerCount, matchCount]) => ({ playerCount, matchCount }))
+        .map(([playerCount, bucket]) => ({
+          playerCount,
+          matchCount: bucket.matchCount,
+          winRate:
+            bucket.matchCount > 0
+              ? Math.round((bucket.wins / bucket.matchCount) * 100) / 100
+              : 0,
+        }))
         .sort((a, b) => a.playerCount - b.playerCount),
     }))
     .sort((a, b) => {

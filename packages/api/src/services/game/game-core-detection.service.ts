@@ -6,6 +6,7 @@ import type {
   PairwiseStat,
   PlayerCountBucketStat,
   RawCore,
+  WinCondition,
 } from "./game-insights.service.types";
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -264,6 +265,9 @@ export const computeCoreStats = (
   >();
   let exactMatchCount = 0;
 
+  // Track win conditions to determine the predominant one
+  const winConditionCounts = new Map<WinCondition, number>();
+
   const placementSums = new Map<string, { total: number; count: number }>();
   const winLossMap = new Map<
     string,
@@ -296,6 +300,12 @@ export const computeCoreStats = (
     for (const p of matchData.players) {
       matchPlayerMap.set(p.playerKey, p);
     }
+
+    // Track win condition
+    winConditionCounts.set(
+      matchData.winCondition,
+      (winConditionCounts.get(matchData.winCondition) ?? 0) + 1,
+    );
 
     // Populate player info
     for (const key of raw.playerKeys) {
@@ -432,6 +442,16 @@ export const computeCoreStats = (
 
   const stability = matchCount > 0 ? exactMatchCount / matchCount : 0;
 
+  // Determine predominant win condition
+  let predominantWinCondition: WinCondition = "Highest Score";
+  let maxCount = 0;
+  for (const [wc, count] of winConditionCounts) {
+    if (count > maxCount) {
+      maxCount = count;
+      predominantWinCondition = wc;
+    }
+  }
+
   return {
     coreKey: raw.coreKey,
     players,
@@ -439,6 +459,7 @@ export const computeCoreStats = (
     matchIds: raw.matchIds,
     stability,
     guests,
+    winCondition: predominantWinCondition,
     groupOrdering,
     pairwiseStats,
   };

@@ -1,4 +1,8 @@
+import type { scoreSheetWinConditions } from "@board-games/db/constants";
+
 import type { GetGameInputType } from "../../routers/game/game.input";
+
+export type WinCondition = (typeof scoreSheetWinConditions)[number];
 
 // ─── Service Args ────────────────────────────────────────────────
 
@@ -45,7 +49,7 @@ export interface MatchInsightData {
   matchId: number;
   matchDate: Date;
   isCoop: boolean;
-  winCondition: string;
+  winCondition: WinCondition;
   playerCount: number;
   players: MatchPlayerEntry[];
 }
@@ -88,6 +92,8 @@ export interface DetectedCore {
   matchIds: number[];
   stability: number; // % of core matches that are exact (no guests)
   guests: { player: CorePlayer; count: number }[];
+  /** Predominant win condition across matches in this core. */
+  winCondition: WinCondition;
   groupOrdering: {
     player: CorePlayer;
     avgPlacement: number;
@@ -120,11 +126,18 @@ export interface PlayerCountDistributionEntry {
   playerCount: number;
   matchCount: number;
   percentage: number;
+  /** User's win rate at this player count (null when no user player found). */
+  winRate: number | null;
 }
 
 export interface PerPlayerDistribution {
   player: CorePlayer;
-  distribution: { playerCount: number; matchCount: number }[];
+  distribution: {
+    playerCount: number;
+    matchCount: number;
+    /** Player's win rate at this player count (0–1). */
+    winRate: number;
+  }[];
 }
 
 // ─── Lineup ──────────────────────────────────────────────────────

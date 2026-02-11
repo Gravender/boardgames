@@ -4,12 +4,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { cn } from "@board-games/ui/utils";
 
 import { useGameInsights } from "~/hooks/queries/game/game-insights";
-import { FrequentLineups } from "./frequent-lineups";
+import { FrequentLineups } from "./FrequentLineups";
 import { GroupMatchups } from "./GroupMatchups";
-import { InsightsSummary } from "./insights-summary";
-import { PlayerCountDistribution } from "./player-count-distribution";
-import { RoleInsights } from "./role-insights";
-import { TeamInsights } from "./team-insights";
+import { InsightsSummary } from "./InsightsSummary";
+import { PlayerCountDistribution } from "./PlayerCountDistribution";
+import { RoleInsights } from "./RoleInsights";
+import { TeamInsights } from "./TeamInsights";
 
 interface InsightsTabProps {
   game: {
