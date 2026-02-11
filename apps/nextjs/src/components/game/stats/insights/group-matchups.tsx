@@ -94,6 +94,11 @@ const CoreCard = ({ core }: { core: DetectedCore }) => {
           <Badge variant="secondary">{core.matchCount} matches</Badge>
         </div>
 
+        {/* Stability */}
+        <div className="text-muted-foreground text-xs">
+          {Math.round(core.stability * 100)}% exact lineup
+        </div>
+
         {/* Pairwise stats */}
         {core.pairwiseStats.length > 0 && (
           <div className="space-y-2">
@@ -113,53 +118,50 @@ const CoreCard = ({ core }: { core: DetectedCore }) => {
           <GroupOrderingSection groupOrdering={core.groupOrdering} />
         )}
 
-        {/* Expandable section */}
-        <button
-          type="button"
-          className="text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 text-xs transition-colors"
-          onClick={handleToggleExpand}
-          aria-label={isExpanded ? "Show less details" : "Show more details"}
-          tabIndex={0}
-        >
-          {isExpanded ? (
-            <>
-              Less <ChevronUp className="h-3 w-3" />
-            </>
-          ) : (
-            <>
-              More <ChevronDown className="h-3 w-3" />
-            </>
-          )}
-        </button>
+        {/* Expandable section - only show if there are guests */}
+        {core.guests.length > 0 && (
+          <>
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 text-xs transition-colors"
+              onClick={handleToggleExpand}
+              aria-label={
+                isExpanded ? "Show less details" : "Show more details"
+              }
+              tabIndex={0}
+            >
+              {isExpanded ? (
+                <>
+                  Less <ChevronUp className="h-3 w-3" />
+                </>
+              ) : (
+                <>
+                  More <ChevronDown className="h-3 w-3" />
+                </>
+              )}
+            </button>
 
-        {isExpanded && (
-          <div className="space-y-3 border-t pt-2">
-            {/* Stability */}
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Stability:</span>
-              <span>{Math.round(core.stability * 100)}% exact lineup</span>
-            </div>
-
-            {/* Guests */}
-            {core.guests.length > 0 && (
-              <div>
-                <div className="text-muted-foreground mb-1 text-xs font-medium">
-                  Most Common Guests
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {core.guests.slice(0, 5).map((g) => (
-                    <Badge
-                      key={g.player.playerKey}
-                      variant="outline"
-                      className="text-xs"
-                    >
-                      {g.player.playerName} ({g.count})
-                    </Badge>
-                  ))}
+            {isExpanded && (
+              <div className="space-y-3 border-t pt-2">
+                <div>
+                  <div className="text-muted-foreground mb-1 text-xs font-medium">
+                    Most Common Guests
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {core.guests.slice(0, 5).map((g) => (
+                      <Badge
+                        key={g.player.playerKey}
+                        variant="outline"
+                        className="text-xs"
+                      >
+                        {g.player.playerName} ({g.count})
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
 
@@ -209,6 +211,12 @@ const GroupOrderingSection = ({
             {hasPlacementData && entry.avgPlacement > 0 ? (
               <span className="text-muted-foreground text-xs">
                 avg {entry.avgPlacement.toFixed(1)}
+                {hasWinData && (entry.wins > 0 || entry.losses > 0) && (
+                  <span className="ml-1">
+                    · {Math.round(entry.winRate * 100)}% ({entry.wins}W-
+                    {entry.losses}L)
+                  </span>
+                )}
               </span>
             ) : (
               <span className="text-muted-foreground text-xs">

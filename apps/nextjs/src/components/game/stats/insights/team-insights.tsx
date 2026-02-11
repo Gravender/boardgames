@@ -181,7 +181,15 @@ const TeamGroupOrdering = ({
             </span>
             {hasPlacementData && entry.avgPlacement > 0 ? (
               <span className="text-muted-foreground ml-1 text-xs">
-                ({entry.avgPlacement.toFixed(1)})
+                ({entry.avgPlacement.toFixed(1)}
+                {hasWinData && (entry.wins > 0 || entry.losses > 0) && (
+                  <span>
+                    {" "}
+                    · {Math.round(entry.winRate * 100)}% {entry.wins}W-
+                    {entry.losses}L
+                  </span>
+                )}
+                )
               </span>
             ) : (
               <span className="text-muted-foreground ml-1 text-xs">
