@@ -18,6 +18,7 @@ import {
   location,
   match,
   matchPlayer,
+  matchPlayerRole,
   player,
   round,
   roundPlayer,
@@ -41,6 +42,7 @@ import type {
   DeleteSharedGameRoleArgs,
   GetGameArgs,
   GetGameInsightsDataArgs,
+  GetGameInsightsRoleDataArgs,
   GetGameRolesArgs,
   GetGameScoresheetStatsDataArgs,
   GetGameStatsHeaderArgs,
@@ -1025,6 +1027,88 @@ class GameRepository {
         ),
       )
       .orderBy(vMatchCanonical.matchDate);
+
+    return rows;
+  }
+
+  public async getGameInsightsRoleData(args: GetGameInsightsRoleDataArgs) {
+    const { input, userId } = args;
+
+    const linkedGameRole = alias(gameRole, "linked_game_role");
+
+    const rows = await db
+      .select({
+        matchId: vMatchCanonical.matchId,
+        playerId: vMatchPlayerCanonicalForUser.canonicalPlayerId,
+        playerSourceType: vMatchPlayerCanonicalForUser.playerSourceType,
+        teamId: vMatchPlayerCanonicalForUser.teamId,
+        canonicalRoleId:
+          sql<number>`CASE WHEN ${gameRole.createdBy} = ${userId} THEN ${gameRole.id} WHEN ${sharedGameRole.linkedGameRoleId} IS NOT NULL THEN ${sharedGameRole.linkedGameRoleId} ELSE ${gameRole.id} END`.as(
+            "canonical_role_id",
+          ),
+        roleName:
+          sql<string>`COALESCE(${linkedGameRole.name}, ${gameRole.name})`.as(
+            "role_name",
+          ),
+        roleDescription: sql<
+          string | null
+        >`COALESCE(${linkedGameRole.description}, ${gameRole.description})`.as(
+          "role_description",
+        ),
+      })
+      .from(matchPlayerRole)
+      .innerJoin(
+        vMatchPlayerCanonicalForUser,
+        and(
+          eq(
+            vMatchPlayerCanonicalForUser.baseMatchPlayerId,
+            matchPlayerRole.matchPlayerId,
+          ),
+          or(
+            and(
+              eq(vMatchPlayerCanonicalForUser.ownerId, userId),
+              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
+            ),
+            and(
+              eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
+              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
+              ne(vMatchPlayerCanonicalForUser.playerSourceType, "not-shared"),
+            ),
+          ),
+        ),
+      )
+      .innerJoin(
+        vMatchCanonical,
+        and(
+          eq(
+            vMatchCanonical.matchId,
+            vMatchPlayerCanonicalForUser.canonicalMatchId,
+          ),
+          eq(vMatchCanonical.visibleToUserId, userId),
+        ),
+      )
+      .innerJoin(gameRole, eq(gameRole.id, matchPlayerRole.roleId))
+      .leftJoin(
+        sharedGameRole,
+        and(
+          eq(sharedGameRole.gameRoleId, gameRole.id),
+          eq(sharedGameRole.sharedWithId, userId),
+        ),
+      )
+      .leftJoin(
+        linkedGameRole,
+        eq(linkedGameRole.id, sharedGameRole.linkedGameRoleId),
+      )
+      .where(
+        and(
+          eq(vMatchCanonical.finished, true),
+          input.type === "original"
+            ? eq(vMatchCanonical.canonicalGameId, input.id)
+            : eq(vMatchCanonical.sharedGameId, input.sharedGameId),
+          ne(vMatchPlayerCanonicalForUser.playerSourceType, "not-shared"),
+          isNull(gameRole.deletedAt),
+        ),
+      );
 
     return rows;
   }

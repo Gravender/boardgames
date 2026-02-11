@@ -513,6 +513,79 @@ export const getGameInsightsOutput = z.object({
       configurations: z.array(teamConfigSchema),
     })
     .nullable(),
+  roles: z
+    .object({
+      roles: z.array(
+        z.object({
+          roleId: z.number(),
+          name: z.string(),
+          description: z.string().nullable(),
+          matchCount: z.number(),
+          winRate: z.number(),
+          classificationBreakdown: z.object({
+            unique: z.number(),
+            team: z.number(),
+            shared: z.number(),
+          }),
+          predominantClassification: z.enum(["unique", "team", "shared"]),
+        }),
+      ),
+      presenceEffects: z.array(
+        z.object({
+          roleId: z.number(),
+          name: z.string(),
+          description: z.string().nullable(),
+          classification: z.enum(["unique", "team", "shared"]),
+          matchCount: z.number(),
+          playerEffects: z.array(
+            z.object({
+              player: corePlayerSchema,
+              self: z
+                .object({ winRate: z.number(), matches: z.number() })
+                .nullable(),
+              sameTeam: z
+                .object({ winRate: z.number(), matches: z.number() })
+                .nullable(),
+              opposingTeam: z
+                .object({ winRate: z.number(), matches: z.number() })
+                .nullable(),
+            }),
+          ),
+          roleEffects: z.array(
+            z.object({
+              otherRoleId: z.number(),
+              otherRoleName: z.string(),
+              samePlayer: z
+                .object({ winRate: z.number(), matches: z.number() })
+                .nullable(),
+              sameTeam: z
+                .object({ winRate: z.number(), matches: z.number() })
+                .nullable(),
+              opposingTeam: z
+                .object({ winRate: z.number(), matches: z.number() })
+                .nullable(),
+            }),
+          ),
+        }),
+      ),
+      playerPerformance: z.array(
+        z.object({
+          player: corePlayerSchema,
+          roles: z.array(
+            z.object({
+              roleId: z.number(),
+              name: z.string(),
+              classification: z.enum(["unique", "team", "shared"]),
+              winRate: z.number(),
+              avgPlacement: z.number().nullable(),
+              avgScore: z.number().nullable(),
+              matchCount: z.number(),
+            }),
+          ),
+        }),
+      ),
+    })
+    .nullable(),
 });
 
 export type GetGameInsightsOutputType = z.infer<typeof getGameInsightsOutput>;

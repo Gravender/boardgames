@@ -16,6 +16,7 @@ import type {
   TeamCore,
 } from "./game-insights.service.types";
 import { gameRepository } from "../../repositories/game/game.repository";
+import { computeRoleInsights } from "./game-role-insights.service";
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -70,12 +71,21 @@ class GameInsightsService {
   public async getGameInsights(
     args: GetGameInsightsArgs,
   ): Promise<GameInsightsOutput> {
-    const rows = await gameRepository.getGameInsightsData({
-      input: args.input,
-      userId: args.ctx.userId,
-    });
+    const [rows, roleRows] = await Promise.all([
+      gameRepository.getGameInsightsData({
+        input: args.input,
+        userId: args.ctx.userId,
+      }),
+      gameRepository.getGameInsightsRoleData({
+        input: args.input,
+        userId: args.ctx.userId,
+      }),
+    ]);
 
     const matchMap = this.groupMatchesByMatch(rows);
+
+    // Merge role data into the match map
+    this.mergeRoleData(matchMap, roleRows);
 
     // Game cores (all players in match, regardless of team)
     const rawPairs = this.detectCores(matchMap, 2, 3, false);
@@ -135,12 +145,16 @@ class GameInsightsService {
       lineups,
     );
 
+    // Compute role insights (null if no role data)
+    const roles = computeRoleInsights(matchMap);
+
     return {
       summary,
       distribution,
       cores: { pairs, trios, quartets },
       lineups,
       teams,
+      roles,
     };
   }
 
@@ -194,10 +208,48 @@ class GameInsightsService {
                 type: row.playerImageType ?? "file",
               }
             : null,
+        roles: [],
       });
     }
 
     return matchMap;
+  }
+
+  // ─── Merge role data into the match map ─────────────────────────
+
+  private mergeRoleData(
+    matchMap: Map<number, MatchInsightData>,
+    roleRows: Awaited<
+      ReturnType<typeof gameRepository.getGameInsightsRoleData>
+    >,
+  ): void {
+    for (const row of roleRows) {
+      const matchData = matchMap.get(row.matchId);
+      if (!matchData) continue;
+
+      const sourceType = row.playerSourceType;
+      const playerType: "original" | "shared" =
+        sourceType === "linked" || sourceType === "original"
+          ? "original"
+          : "shared";
+      const playerKey = `${playerType}-${row.playerId}`;
+
+      const playerEntry = matchData.players.find(
+        (p) => p.playerKey === playerKey,
+      );
+      if (!playerEntry) continue;
+
+      // Deduplicate by canonicalRoleId within the same player
+      if (playerEntry.roles.some((r) => r.roleId === row.canonicalRoleId)) {
+        continue;
+      }
+
+      playerEntry.roles.push({
+        roleId: row.canonicalRoleId,
+        roleName: row.roleName,
+        roleDescription: row.roleDescription,
+      });
+    }
   }
 
   // ─── Core detection (generic over k and teamOnly) ──────────────
@@ -215,8 +267,6 @@ class GameInsightsService {
     >();
 
     for (const [matchId, matchData] of matchMap) {
-      let playerKeys: string[];
-
       if (teamOnly) {
         // Group players by teamId, then generate subsets per team
         const teamGroups = new Map<number, string[]>();
@@ -247,7 +297,7 @@ class GameInsightsService {
       }
 
       // Game core: all players regardless of team
-      playerKeys = matchData.players.map((p) => p.playerKey).sort();
+      const playerKeys = matchData.players.map((p) => p.playerKey).sort();
       if (playerKeys.length < coreSize) continue;
 
       const subsets = kCombinations(playerKeys, coreSize);
@@ -311,9 +361,11 @@ class GameInsightsService {
     const pairKeys: [string, string][] = [];
     for (let i = 0; i < raw.playerKeys.length; i++) {
       for (let j = i + 1; j < raw.playerKeys.length; j++) {
-        const keyA = raw.playerKeys[i]!;
-        const keyB = raw.playerKeys[j]!;
-        pairKeys.push([keyA, keyB]);
+        const keyA = raw.playerKeys[i];
+        const keyB = raw.playerKeys[j];
+        if (keyA && keyB) {
+          pairKeys.push([keyA, keyB]);
+        }
       }
     }
 
@@ -506,8 +558,7 @@ class GameInsightsService {
         const wlAcc = winLossMap.get(p.playerKey);
         const wins = wlAcc?.wins ?? 0;
         const losses = wlAcc?.losses ?? 0;
-        const winRate =
-          wlAcc && wlAcc.total > 0 ? wlAcc.wins / wlAcc.total : 0;
+        const winRate = wlAcc && wlAcc.total > 0 ? wlAcc.wins / wlAcc.total : 0;
 
         return { player: p, avgPlacement, winRate, wins, losses, rank: 0 };
       })
@@ -622,7 +673,8 @@ class GameInsightsService {
       const corePlayer = matchData.players.find(
         (p) => p.playerKey === firstCoreKey,
       );
-      if (!corePlayer || corePlayer.teamId === null) continue;
+      if (!corePlayer) continue;
+      if (corePlayer.teamId === null) continue;
 
       const sharedTeamId = corePlayer.teamId;
 

@@ -168,3 +168,8 @@ export interface GetGameInsightsDataArgs {
   input: GetGameInputType;
   userId: string;
 }
+
+export interface GetGameInsightsRoleDataArgs {
+  input: GetGameInputType;
+  userId: string;
+}

@@ -38,6 +38,7 @@ export interface MatchPlayerEntry {
   teamId: number | null;
   teamName: string | null;
   image: CorePlayer["image"];
+  roles: { roleId: number; roleName: string; roleDescription: string | null }[];
 }
 
 export interface MatchInsightData {
@@ -160,6 +161,89 @@ export interface InsightsSummary {
   totalMatchesAnalyzed: number;
 }
 
+// ─── Role Classification ─────────────────────────────────────────
+
+export type RoleClassification = "unique" | "team" | "shared";
+
+export interface RoleSummary {
+  roleId: number;
+  name: string;
+  description: string | null;
+  matchCount: number;
+  winRate: number;
+  classificationBreakdown: {
+    unique: number;
+    team: number;
+    shared: number;
+  };
+  predominantClassification: RoleClassification;
+}
+
+/** Win-rate breakdown for a specific team-relationship condition. */
+export interface TeamRelationEffect {
+  /** Absolute win rate in this condition. */
+  winRate: number;
+  /** Number of matches in this condition. */
+  matches: number;
+}
+
+export interface RolePresencePlayerEffect {
+  player: CorePlayer;
+  /** Stats when THIS player holds the role. */
+  self: TeamRelationEffect | null;
+  /** Stats when a TEAMMATE (not self) holds the role. */
+  sameTeam: TeamRelationEffect | null;
+  /** Stats when an OPPONENT holds the role (player does not hold it). */
+  opposingTeam: TeamRelationEffect | null;
+}
+
+/**
+ * How another role's presence affects the PRIMARY role's win rate.
+ * Win rates are computed from the perspective of the PRIMARY role's holders.
+ */
+export interface RolePresenceRoleEffect {
+  otherRoleId: number;
+  otherRoleName: string;
+  /** Win rate when the SAME player holds both roles. */
+  samePlayer: TeamRelationEffect | null;
+  /** Win rate of PRIMARY role holders when both roles on the same team (different players). */
+  sameTeam: TeamRelationEffect | null;
+  /** Win rate of PRIMARY role holders when the other role is on the opposing team. */
+  opposingTeam: TeamRelationEffect | null;
+}
+
+export interface RolePresenceEffect {
+  roleId: number;
+  name: string;
+  description: string | null;
+  classification: RoleClassification;
+  matchCount: number;
+  playerEffects: RolePresencePlayerEffect[];
+  /** How other roles' presence affects the win rate when THIS role is present. */
+  roleEffects: RolePresenceRoleEffect[];
+}
+
+export interface PlayerRoleEntry {
+  roleId: number;
+  name: string;
+  classification: RoleClassification;
+  winRate: number;
+  avgPlacement: number | null;
+  avgScore: number | null;
+  matchCount: number;
+}
+
+export interface PlayerRolePerformance {
+  player: CorePlayer;
+  roles: PlayerRoleEntry[];
+}
+
+export interface RoleInsightsOutput {
+  roles: RoleSummary[];
+  presenceEffects: RolePresenceEffect[];
+  playerPerformance: PlayerRolePerformance[];
+}
+
 // ─── Full Output ─────────────────────────────────────────────────
 
 export interface GameInsightsOutput {
@@ -175,7 +259,6 @@ export interface GameInsightsOutput {
   };
   lineups: FrequentLineup[];
   teams: {
-    // null in Phase 1
     cores: {
       pairs: TeamCore[];
       trios: TeamCore[];
@@ -183,4 +266,5 @@ export interface GameInsightsOutput {
     };
     configurations: TeamConfig[];
   } | null;
+  roles: RoleInsightsOutput | null;
 }
