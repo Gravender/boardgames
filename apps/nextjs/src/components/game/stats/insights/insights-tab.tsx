@@ -5,7 +5,7 @@ import { cn } from "@board-games/ui/utils";
 
 import { useGameInsights } from "~/hooks/queries/game/game-insights";
 import { FrequentLineups } from "./frequent-lineups";
-import { GroupMatchups } from "./group-matchups";
+import { GroupMatchups } from "./GroupMatchups";
 import { InsightsSummary } from "./insights-summary";
 import { PlayerCountDistribution } from "./player-count-distribution";
 import { RoleInsights } from "./role-insights";

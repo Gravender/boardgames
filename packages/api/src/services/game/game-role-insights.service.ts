@@ -140,27 +140,6 @@ export const computeRoleSummaries = (
 
 // ─── Compute Role Presence Effects ──────────────────────────────
 
-/**
- * Determine a player's team-relationship to the holders of a given role.
- * Returns "self" | "same" | "opposing" | "mixed".
- *
- *  - "self":     the player IS one of the holders
- *  - "same":     the player does NOT hold it but a teammate does (no opponents hold it)
- *  - "opposing": the player does NOT hold it and only opponents hold it
- *  - "mixed":    the player does NOT hold it and holders are on both sides → skip
- *
- * If the player holds the role it is always "self" regardless of who
- * else also holds it — this keeps each match in exactly one bucket.
- * A null teamId on either side is treated as opposing.
- */
-/**
- * Determine which presence categories apply for a player relative to holders.
- * A single match can contribute to multiple categories simultaneously.
- * Each category counts at most once per match regardless of holder count.
- *
- * Example: Player A holds Role Y (self), Player B on same team also has
- * Role Y (sameTeam) → match counts once for self AND once for sameTeam.
- */
 const getPlayerPresenceCategories = (
   player: MatchPlayerEntry,
   holders: MatchPlayerEntry[],
@@ -185,41 +164,13 @@ const getPlayerPresenceCategories = (
     }
   }
 
-  return { self, sameTeam, opposing };
-};
-
-/**
- * Determine which presence categories apply between two sets of role holders.
- * A single match can contribute to multiple categories simultaneously.
- * Each category counts at most once per match regardless of holder count.
- *
- * - samePlayer: at least one player holds both roles
- * - sameTeam: at least one X-holder and a DIFFERENT Y-holder are on the same team
- * - opposing: at least one X-holder and Y-holder are on opposing teams
- */
-const getRolePresenceCategories = (
-  holdersX: MatchPlayerEntry[],
-  holdersY: MatchPlayerEntry[],
-): { samePlayer: boolean; sameTeam: boolean; opposing: boolean } => {
-  let samePlayer = false;
-  let sameTeam = false;
-  let opposing = false;
-
-  for (const x of holdersX) {
-    for (const y of holdersY) {
-      if (x.playerKey === y.playerKey) {
-        samePlayer = true;
-        continue;
-      }
-      if (x.teamId !== null && y.teamId !== null && x.teamId === y.teamId) {
-        sameTeam = true;
-      } else {
-        opposing = true;
-      }
-    }
+  // When the player holds the role, their relationship is "self" — do not
+  // also mark as opposing (other holders on different teams are irrelevant).
+  if (self) {
+    opposing = false;
   }
 
-  return { samePlayer, sameTeam, opposing };
+  return { self, sameTeam, opposing };
 };
 
 /** Build a TeamRelationEffect or null from accumulated wins/matches. */
@@ -336,20 +287,18 @@ export const computeRolePresenceEffects = (
 
     // ── Role-to-role effects ──────────────────────────────────────
     // Win rates are from X holders' perspective (the primary role).
+    // Categories are evaluated per xHolder against yHolders to avoid
+    // overcounting when a match has multiple xHolders.
     const roleEffects: RolePresenceRoleEffect[] = [];
     for (const otherRole of roleSummaries) {
       if (otherRole.roleId === role.roleId) continue;
 
-      // Same-player / same-team / opposing split
-      // A match can contribute to multiple categories simultaneously.
+      // Per-holder observation counters (holder-observation semantics).
       let winsSamePlayer = 0;
-      let matchesSamePlayer = 0;
       let totalSamePlayer = 0;
       let winsSameTeam = 0;
-      let matchesSameTeam = 0;
       let totalSameTeam = 0;
       let winsOpposing = 0;
-      let matchesOpposing = 0;
       let totalOpposing = 0;
 
       for (const matchData of matchMap.values()) {
@@ -365,49 +314,62 @@ export const computeRolePresenceEffects = (
         );
         if (yHolders.length === 0) continue;
 
-        const cats = getRolePresenceCategories(xHolders, yHolders);
-        if (cats.samePlayer) {
-          matchesSamePlayer++;
-          for (const h of xHolders) {
+        // Evaluate categories per xHolder against yHolders
+        for (const x of xHolders) {
+          let isSamePlayer = false;
+          let isSameTeam = false;
+          let isOpposing = false;
+
+          for (const y of yHolders) {
+            if (x.playerKey === y.playerKey) {
+              isSamePlayer = true;
+              continue;
+            }
+            if (
+              x.teamId !== null &&
+              y.teamId !== null &&
+              x.teamId === y.teamId
+            ) {
+              isSameTeam = true;
+            } else {
+              isOpposing = true;
+            }
+          }
+
+          if (isSamePlayer) {
             totalSamePlayer++;
-            if (h.winner) winsSamePlayer++;
+            if (x.winner) winsSamePlayer++;
           }
-        }
-        if (cats.sameTeam) {
-          matchesSameTeam++;
-          for (const h of xHolders) {
+          if (isSameTeam) {
             totalSameTeam++;
-            if (h.winner) winsSameTeam++;
+            if (x.winner) winsSameTeam++;
           }
-        }
-        if (cats.opposing) {
-          matchesOpposing++;
-          for (const h of xHolders) {
+          if (isOpposing) {
             totalOpposing++;
-            if (h.winner) winsOpposing++;
+            if (x.winner) winsOpposing++;
           }
         }
       }
 
-      // Require ≥5 in at least one condition
-      if (matchesSamePlayer < 5 && matchesSameTeam < 5 && matchesOpposing < 5) {
+      // Require ≥5 holder-observations in at least one condition
+      if (totalSamePlayer < 5 && totalSameTeam < 5 && totalOpposing < 5) {
         continue;
       }
 
       const samePlayer =
-        matchesSamePlayer >= 5 && totalSamePlayer > 0
+        totalSamePlayer >= 5
           ? {
               winRate: winsSamePlayer / totalSamePlayer,
-              matches: matchesSamePlayer,
+              matches: totalSamePlayer,
             }
           : null;
       const sameTeam =
-        matchesSameTeam >= 5 && totalSameTeam > 0
-          ? { winRate: winsSameTeam / totalSameTeam, matches: matchesSameTeam }
+        totalSameTeam >= 5
+          ? { winRate: winsSameTeam / totalSameTeam, matches: totalSameTeam }
           : null;
       const opposingTeam =
-        matchesOpposing >= 5 && totalOpposing > 0
-          ? { winRate: winsOpposing / totalOpposing, matches: matchesOpposing }
+        totalOpposing >= 5
+          ? { winRate: winsOpposing / totalOpposing, matches: totalOpposing }
           : null;
 
       roleEffects.push({
@@ -441,7 +403,7 @@ export const computeRolePresenceEffects = (
       name: role.name,
       description: role.description,
       classification: role.predominantClassification,
-      matchCount: role.matchCount,
+      matchCount: matchesWithRole,
       playerEffects: playerEffects.slice(0, 10),
       roleEffects: roleEffects.slice(0, 10),
     });

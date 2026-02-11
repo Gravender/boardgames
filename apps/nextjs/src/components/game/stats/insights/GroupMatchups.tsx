@@ -1,5 +1,6 @@
 "use client";
 
+import type { KeyboardEvent } from "react";
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Medal, Trophy } from "lucide-react";
 
@@ -250,7 +251,7 @@ const PairwiseRow = ({
     onSelect(pairwise);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       onSelect(pairwise);
@@ -527,7 +528,7 @@ const PairwiseDetailSheet = ({
 
 // ─── Main Component ──────────────────────────────────────────────
 
-export function GroupMatchups({ cores }: GroupMatchupsProps) {
+export const GroupMatchups = ({ cores }: GroupMatchupsProps) => {
   const hasPairs = cores.pairs.length > 0;
   const hasTrios = cores.trios.length > 0;
   const hasQuartets = cores.quartets.length > 0;
@@ -600,7 +601,7 @@ export function GroupMatchups({ cores }: GroupMatchupsProps) {
       </CardContent>
     </Card>
   );
-}
+};
 
 const CoreList = ({ cores }: { cores: DetectedCore[] }) => (
   <ScrollArea>
