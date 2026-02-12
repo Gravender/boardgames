@@ -106,7 +106,6 @@ export const computeFrequentLineups = (
     string,
     {
       playerKeys: string[];
-      matchIds: number[];
       matches: { matchId: number; date: Date }[];
     }
   >();
@@ -117,10 +116,9 @@ export const computeFrequentLineups = (
 
     let entry = lineupMap.get(lineupKey);
     if (!entry) {
-      entry = { playerKeys: sortedKeys, matchIds: [], matches: [] };
+      entry = { playerKeys: sortedKeys, matches: [] };
       lineupMap.set(lineupKey, entry);
     }
-    entry.matchIds.push(matchData.matchId);
     entry.matches.push({
       matchId: matchData.matchId,
       date: matchData.matchDate,
@@ -136,20 +134,27 @@ export const computeFrequentLineups = (
     }
   }
 
-  const lineups: FrequentLineup[] = Array.from(lineupMap.values())
-    .filter((entry) => entry.matchIds.length >= 2)
-    .map((entry) => ({
-      players: entry.playerKeys
-        .map((key) => playerInfoMap.get(key))
-        .filter((p): p is CorePlayer => p !== undefined),
-      matchCount: entry.matchIds.length,
-      matchIds: entry.matchIds,
-      matches: entry.matches.sort(
-        (a, b) => b.date.getTime() - a.date.getTime(),
-      ),
-    }))
-    .sort((a, b) => b.matchCount - a.matchCount)
-    .slice(0, 10);
+  const lineups: FrequentLineup[] = [];
+  for (const entry of lineupMap.values()) {
+    if (entry.matches.length < 2) continue;
 
-  return lineups;
+    const players = entry.playerKeys.map((key) => playerInfoMap.get(key));
+    if (players.some((p) => p === undefined)) {
+      // Skip lineup entirely when any player cannot be resolved
+      continue;
+    }
+
+    const sortedMatches = [...entry.matches].sort(
+      (a, b) => b.date.getTime() - a.date.getTime(),
+    );
+    lineups.push({
+      players: players as CorePlayer[],
+      matchCount: entry.matches.length,
+      matchIds: entry.matches.map((m) => m.matchId),
+      matches: sortedMatches,
+    });
+  }
+
+  lineups.sort((a, b) => b.matchCount - a.matchCount);
+  return lineups.slice(0, 10);
 };

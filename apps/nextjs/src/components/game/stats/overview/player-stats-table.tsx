@@ -47,7 +47,7 @@ export function PlayerStatsTableSkeleton() {
       </CardHeader>
       <CardContent className="p-2">
         <div className="flex">
-          <Table containerClassname="overflow-y-scroll max-h-[60vh] rounded-lg">
+          <Table containerClassname="overflow-y-scroll max-h-[40vh] rounded-lg">
             <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20">
               <TableRow>
                 <TableHead className="w-16 px-2 sm:w-full sm:px-4">

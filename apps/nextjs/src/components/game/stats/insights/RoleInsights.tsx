@@ -578,7 +578,11 @@ const PlayerPerformanceSection = ({
       }
       const aVal = a[sortKey] ?? Infinity;
       const bVal = b[sortKey] ?? Infinity;
-      return dir * (Number(aVal) - Number(bVal));
+      const diff = dir * (Number(aVal) - Number(bVal));
+      if (Number.isNaN(diff)) {
+        return dir * a.name.localeCompare(b.name);
+      }
+      return diff;
     });
   }, [selectedPerformance, sortKey, sortDir]);
 

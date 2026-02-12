@@ -168,7 +168,7 @@ export function PlayerCountDistribution({
                         <div className="mt-1 flex gap-0.5">
                           {entry.distribution.map((d) => {
                             const widthPercent =
-                              totalMatches > 0
+                              playerTotal > 0
                                 ? (d.matchCount / playerTotal) * 100
                                 : 0;
                             return (

@@ -562,7 +562,6 @@ export const computeRoleInsights = (
       winCondition = wc;
     }
   }
-  console.log("winCondition", winConditionCounts);
 
   const roles = computeRoleSummaries(matchMap);
   const presenceEffects = computeRolePresenceEffects(matchMap, roles);
