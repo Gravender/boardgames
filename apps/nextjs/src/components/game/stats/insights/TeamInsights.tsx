@@ -131,73 +131,10 @@ const TeamCoreCard = ({ core }: { core: TeamCore }) => {
         </p>
       </div>
 
-      {/* Group ordering for trios+ */}
-      {core.players.length >= 3 && core.groupOrdering.length > 0 && (
-        <TeamGroupOrdering groupOrdering={core.groupOrdering} />
-      )}
-
       {/* Stability */}
       <div className="flex items-center justify-between text-xs">
         <span className="text-muted-foreground">Stability:</span>
         <span>{Math.round(core.stability * 100)}% exact lineup</span>
-      </div>
-    </div>
-  );
-};
-
-// ─── Team Group Ordering ─────────────────────────────────────────
-
-type TeamGroupOrderingEntry = TeamCore["groupOrdering"][number];
-
-const TeamGroupOrdering = ({
-  groupOrdering,
-}: {
-  groupOrdering: TeamGroupOrderingEntry[];
-}) => {
-  const hasPlacementData = groupOrdering.some(
-    (entry) => entry.avgPlacement > 0,
-  );
-  const hasWinData = groupOrdering.some(
-    (entry) => entry.wins > 0 || entry.losses > 0,
-  );
-
-  if (!hasPlacementData && !hasWinData) return null;
-
-  const title = hasPlacementData ? "Placement Ranking" : "Win Rate Ranking";
-
-  return (
-    <div className="bg-muted/30 rounded-lg p-2">
-      <div className="text-muted-foreground mb-1 text-xs font-medium">
-        {title}
-      </div>
-      <div className="flex items-center gap-2">
-        {groupOrdering.map((entry, idx) => (
-          <div key={entry.player.playerKey} className="flex items-center">
-            {idx > 0 && (
-              <span className="text-muted-foreground mx-1">&gt;</span>
-            )}
-            <span className="text-sm font-medium">
-              {entry.player.playerName}
-            </span>
-            {hasPlacementData && entry.avgPlacement > 0 ? (
-              <span className="text-muted-foreground ml-1 text-xs">
-                ({entry.avgPlacement.toFixed(1)}
-                {hasWinData && (entry.wins > 0 || entry.losses > 0) && (
-                  <span>
-                    {" "}
-                    · {Math.round(entry.winRate * 100)}% {entry.wins}W-
-                    {entry.losses}L
-                  </span>
-                )}
-                )
-              </span>
-            ) : (
-              <span className="text-muted-foreground ml-1 text-xs">
-                ({Math.round(entry.winRate * 100)}%)
-              </span>
-            )}
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -222,7 +159,10 @@ const TeamConfigCard = ({ config }: { config: TeamConfig }) => {
       {/* Teams display with parenthesized names and "vs" */}
       <div className="flex flex-wrap items-center gap-1">
         {config.teams.map((team, idx) => (
-          <div key={`${team.teamName}-${idx}`} className="flex items-center gap-1">
+          <div
+            key={`${team.teamName}-${idx}`}
+            className="flex items-center gap-1"
+          >
             {idx > 0 && (
               <span className="text-muted-foreground mx-1 text-sm font-semibold">
                 vs

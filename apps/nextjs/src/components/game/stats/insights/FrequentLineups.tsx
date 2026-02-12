@@ -173,7 +173,7 @@ const TopCoresSection = ({ cores }: { cores: Cores }) => {
         {/* Table */}
         {filteredCores.length > 0 ? (
           <ScrollArea>
-            <div className="max-h-[50vh]">
+            <div className="max-h-[40vh]">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -358,7 +358,7 @@ export function FrequentLineups({ lineups, cores }: FrequentLineupsProps) {
         <CardContent>
           {lineups.length > 0 ? (
             <ScrollArea>
-              <div className="flex max-h-[60vh] flex-col gap-2">
+              <div className="flex max-h-[40vh] flex-col gap-2">
                 {lineups.map((lineup) => {
                   const lineupKey = lineup.players
                     .map((p) => p.playerKey)

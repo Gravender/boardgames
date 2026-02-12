@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, ChevronUp, Medal, Trophy } from "lucide-react";
+import { ChevronDown, Medal, Trophy } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
@@ -39,16 +38,10 @@ interface GroupMatchupsProps {
 // ─── Core Card Component (works for any core size) ───────────────
 
 const CoreCard = ({ core }: { core: DetectedCore }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
   // Detect if this core is from manual winner games (no placement data)
   const isManualWinner = !core.groupOrdering.some(
     (entry) => entry.avgPlacement > 0,
   );
-
-  const handleToggleExpand = () => {
-    setIsExpanded((prev) => !prev);
-  };
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border p-3">
@@ -88,19 +81,6 @@ const CoreCard = ({ core }: { core: DetectedCore }) => {
         {Math.round(core.stability * 100)}% exact lineup
       </div>
 
-      {/* Pairwise stats (each row is collapsible for detail) */}
-      {core.pairwiseStats.length > 0 && (
-        <div className="space-y-2">
-          {core.pairwiseStats.map((ps) => (
-            <PairwiseRow
-              key={`${ps.playerA.playerKey}-${ps.playerB.playerKey}`}
-              pairwise={ps}
-              isManualWinner={isManualWinner}
-            />
-          ))}
-        </div>
-      )}
-
       {/* Group ordering podium (meaningful for k >= 3) */}
       {core.players.length >= 3 && core.groupOrdering.length > 0 && (
         <GroupOrderingSection groupOrdering={core.groupOrdering} />
@@ -108,27 +88,30 @@ const CoreCard = ({ core }: { core: DetectedCore }) => {
 
       {/* Expandable section - only show if there are guests */}
       {core.guests.length > 0 && (
-        <>
-          <button
-            type="button"
-            className="text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 text-xs transition-colors"
-            onClick={handleToggleExpand}
-            aria-label={isExpanded ? "Show less details" : "Show more details"}
+        <Collapsible>
+          <CollapsibleTrigger
+            className="text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center justify-center gap-1 text-xs transition-colors"
+            aria-label="Toggle additional details"
             tabIndex={0}
           >
-            {isExpanded ? (
-              <>
-                Less <ChevronUp className="h-3 w-3" />
-              </>
-            ) : (
-              <>
-                More <ChevronDown className="h-3 w-3" />
-              </>
-            )}
-          </button>
+            <span>More</span>
+            <ChevronDown className="h-3 w-3 transition-transform [[data-state=open]>&]:rotate-180" />
+          </CollapsibleTrigger>
 
-          {isExpanded && (
+          <CollapsibleContent>
             <div className="space-y-3 border-t pt-2">
+              {/* Pairwise stats (each row is collapsible for detail) */}
+              {core.pairwiseStats.length > 0 && (
+                <div className="space-y-2">
+                  {core.pairwiseStats.map((ps) => (
+                    <PairwiseRow
+                      key={`${ps.playerA.playerKey}-${ps.playerB.playerKey}`}
+                      pairwise={ps}
+                      isManualWinner={isManualWinner}
+                    />
+                  ))}
+                </div>
+              )}
               <div>
                 <div className="text-muted-foreground mb-1 text-xs font-medium">
                   Most Common Guests
@@ -146,8 +129,8 @@ const CoreCard = ({ core }: { core: DetectedCore }) => {
                 </div>
               </div>
             </div>
-          )}
-        </>
+          </CollapsibleContent>
+        </Collapsible>
       )}
     </div>
   );
