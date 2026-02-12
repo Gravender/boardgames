@@ -30,7 +30,6 @@ export default async function GameStatsPage({ params }: Props) {
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
-  void prefetch(trpc.game.getGameStats.queryOptions({ id: Number(id) }));
   void prefetch(
     trpc.newGame.getGameScoresheetStats.queryOptions({
       type: "original",

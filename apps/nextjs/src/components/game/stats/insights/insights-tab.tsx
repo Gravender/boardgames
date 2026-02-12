@@ -3,6 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { cn } from "@board-games/ui/utils";
 
+import type { GameInput } from "~/components/match/types/input";
 import { useGameInsights } from "~/hooks/queries/game/game-insights";
 import { FrequentLineups } from "./FrequentLineups";
 import { GroupMatchups } from "./GroupMatchups";
@@ -12,14 +13,11 @@ import { RoleInsights } from "./RoleInsights";
 import { TeamInsights } from "./TeamInsights";
 
 interface InsightsTabProps {
-  game: {
-    id: number;
-    type: "original";
-  };
+  game: GameInput;
 }
 
 export default function InsightsTab({ game }: InsightsTabProps) {
-  const insights = useGameInsights({ type: game.type, id: game.id });
+  const insights = useGameInsights(game);
 
   const hasTeams = insights.teams !== null;
   const hasRoles = insights.roles !== null;

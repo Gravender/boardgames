@@ -58,9 +58,6 @@ export function GamesDropDown({
           trpc.game.getEditGame.queryOptions({ id: data.id }),
         );
         await queryClient.invalidateQueries(
-          trpc.game.getGameStats.queryOptions({ id: data.id }),
-        );
-        await queryClient.invalidateQueries(
           trpc.game.getGameName.queryOptions({ id: data.id }),
         );
         await queryClient.invalidateQueries(
