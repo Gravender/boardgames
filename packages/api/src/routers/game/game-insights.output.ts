@@ -1,6 +1,7 @@
 import z from "zod/v4";
 
 import { scoreSheetWinConditions } from "@board-games/db/constants";
+import { playerImageSchema } from "@board-games/shared";
 
 // ─── Game Insights ───────────────────────────────────────────────
 
@@ -10,13 +11,7 @@ const corePlayerSchema = z.object({
   playerName: z.string(),
   playerType: z.enum(["original", "shared"]),
   isUser: z.boolean(),
-  image: z
-    .object({
-      name: z.string(),
-      url: z.string().nullable(),
-      type: z.string(),
-    })
-    .nullable(),
+  image: playerImageSchema.nullable(),
 });
 
 const playerCountBucketStatSchema = z.object({

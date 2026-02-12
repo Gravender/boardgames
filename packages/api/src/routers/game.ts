@@ -1,7 +1,7 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { compareDesc } from "date-fns";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import z from "zod/v4";
 
 import type { scoreSheetWinConditions } from "@board-games/db/constants";
@@ -13,7 +13,6 @@ import type {
 } from "@board-games/db/zodSchema";
 import {
   game,
-  image,
   location,
   match,
   matchPlayer,

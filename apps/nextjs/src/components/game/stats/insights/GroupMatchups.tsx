@@ -52,18 +52,7 @@ const CoreCard = ({ core }: { core: DetectedCore }) => {
             {core.players.map((p) => (
               <PlayerImage
                 key={p.playerKey}
-                image={
-                  p.image
-                    ? {
-                        ...p.image,
-                        type:
-                          p.image.type === "file" || p.image.type === "svg"
-                            ? p.image.type
-                            : "file",
-                        usageType: "player" as const,
-                      }
-                    : null
-                }
+                image={p.image}
                 alt={p.playerName}
                 className="ring-background h-8 w-8 ring-2"
               />
@@ -451,18 +440,7 @@ const ConfidenceBadge = ({
 const PlayerAvatar = ({ player }: { player: CorePlayer }) => (
   <div className="flex items-center gap-1.5">
     <PlayerImage
-      image={
-        player.image
-          ? {
-              ...player.image,
-              type:
-                player.image.type === "file" || player.image.type === "svg"
-                  ? player.image.type
-                  : "file",
-              usageType: "player" as const,
-            }
-          : null
-      }
+      image={player.image}
       alt={player.playerName}
       className="h-6 w-6"
     />

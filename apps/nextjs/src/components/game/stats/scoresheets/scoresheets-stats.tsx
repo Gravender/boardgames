@@ -13,8 +13,8 @@ import {
 } from "@board-games/ui/select";
 
 import type { GameInput } from "~/components/match/types/input";
-import { useGameScoresheetStats } from "~/hooks/queries/game/game-scoresheet-stats";
 import { useScoresheetStats } from "~/hooks/game-stats/use-scoresheet-stats";
+import { useGameScoresheetStats } from "~/hooks/queries/game/game-scoresheet-stats";
 import { RoundByRoundTable } from "./round-by-round-table";
 import { ScoresheetCharts } from "./scoresheet-charts";
 import { ScoresheetPlayerTable } from "./scoresheet-player-table";

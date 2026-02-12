@@ -144,7 +144,8 @@ class GameInsightsService {
             ? {
                 name: row.playerImageName,
                 url: row.playerImageUrl,
-                type: row.playerImageType ?? "file",
+                type: row.playerImageType ?? ("file" as const),
+                usageType: "player" as const,
               }
             : null,
         roles: [],

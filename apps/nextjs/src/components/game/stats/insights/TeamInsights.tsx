@@ -43,18 +43,7 @@ const PlayerAvatar = ({
   className?: string;
 }) => (
   <PlayerImage
-    image={
-      player.image
-        ? {
-            ...player.image,
-            type:
-              player.image.type === "file" || player.image.type === "svg"
-                ? player.image.type
-                : "file",
-            usageType: "player" as const,
-          }
-        : null
-    }
+    image={player.image}
     alt={player.playerName}
     className={className}
   />
