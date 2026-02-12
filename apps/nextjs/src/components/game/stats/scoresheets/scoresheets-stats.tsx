@@ -2,7 +2,6 @@
 
 import { FileText } from "lucide-react";
 
-import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import {
@@ -13,18 +12,15 @@ import {
   SelectValue,
 } from "@board-games/ui/select";
 
+import type { GameInput } from "~/components/match/types/input";
+import { useGameScoresheetStats } from "~/hooks/queries/game/game-scoresheet-stats";
 import { useScoresheetStats } from "~/hooks/game-stats/use-scoresheet-stats";
 import { RoundByRoundTable } from "./round-by-round-table";
 import { ScoresheetCharts } from "./scoresheet-charts";
 import { ScoresheetPlayerTable } from "./scoresheet-player-table";
 
-type ScoresheetStats = RouterOutputs["newGame"]["getGameScoresheetStats"];
-
-export function ScoreSheetsStats({
-  scoresheetStats,
-}: {
-  scoresheetStats: ScoresheetStats;
-}) {
+export function ScoreSheetsStats({ game }: { game: GameInput }) {
+  const scoresheetStats = useGameScoresheetStats(game);
   const {
     currentScoresheet,
     setCurrentScoresheet,

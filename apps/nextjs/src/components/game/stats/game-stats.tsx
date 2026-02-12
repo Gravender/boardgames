@@ -5,21 +5,17 @@ import { Suspense } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 
 import type { GameInput } from "~/components/match/types/input";
-import { useGameScoresheetStats } from "~/hooks/queries/game/game-scoresheet-stats";
 import { GameStatsHeader } from "./game-stats-header";
 import InsightsTab from "./insights/insights-tab";
 import OverviewTab from "./overview/overview-tab";
 import { ScoreSheetsStats } from "./scoresheets/scoresheets-stats";
+import { ScoreSheetsStatsSkeleton } from "./scoresheets/scoresheets-stats-skeleton";
 
 export default function GameStats({ game }: { game: GameInput }) {
-  const scoresheetStats = useGameScoresheetStats(game);
-
   return (
     <div className="flex w-full max-w-4xl flex-col gap-4">
-      {/* Game stats header with Suspense boundary */}
       <GameStatsHeader gameInput={game} />
 
-      {/* Charts */}
       <Tabs defaultValue="overview">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -31,7 +27,9 @@ export default function GameStats({ game }: { game: GameInput }) {
           <OverviewTab game={game} />
         </TabsContent>
         <TabsContent value="scoresheet" className="space-y-6">
-          <ScoreSheetsStats scoresheetStats={scoresheetStats} />
+          <Suspense fallback={<ScoreSheetsStatsSkeleton />}>
+            <ScoreSheetsStats game={game} />
+          </Suspense>
         </TabsContent>
         <TabsContent value="insights" className="space-y-6">
           <Suspense
