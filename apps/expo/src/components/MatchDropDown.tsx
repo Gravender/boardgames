@@ -57,9 +57,6 @@ export function MatchDropDown({
           trpc.game.getGame.queryOptions({ id: gameId }),
         );
         await queryClient.invalidateQueries(
-          trpc.game.getGameStats.queryOptions({ id: gameId }),
-        );
-        await queryClient.invalidateQueries(
           trpc.game.getGameMetaData.queryOptions({ id: gameId }),
         );
         await queryClient.invalidateQueries(trpc.player.pathFilter());

@@ -163,3 +163,13 @@ export interface GetGameScoresheetStatsDataArgs {
   userId: string;
   tx?: TransactionType;
 }
+
+export interface GetGameInsightsDataArgs {
+  input: GetGameInputType;
+  userId: string;
+}
+
+export interface GetGameInsightsRoleDataArgs {
+  input: GetGameInputType;
+  userId: string;
+}

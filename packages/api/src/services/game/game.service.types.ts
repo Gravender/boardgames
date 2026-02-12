@@ -75,3 +75,10 @@ export interface GetGameScoresheetStatsArgs {
     userId: string;
   };
 }
+
+export interface GetGameInsightsArgs {
+  input: GetGameInputType;
+  ctx: {
+    userId: string;
+  };
+}

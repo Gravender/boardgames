@@ -49,7 +49,7 @@ export function GameStatsSkeleton() {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="scoresheet">Scoresheets</TabsTrigger>
-          <TabsTrigger value="advanced">Advanced</TabsTrigger>
+          <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -121,27 +121,14 @@ export function GameStatsSkeleton() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="advanced" className="space-y-6">
-          {/* Advanced stats cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <Skeleton className="mb-4 h-5 w-32" />
-                  <Skeleton className="h-8 w-16" />
-                  <Skeleton className="mt-2 h-3 w-24" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Head to head section skeleton */}
+        <TabsContent value="insights" className="space-y-6">
+          {/* Insights skeleton */}
           <Card>
             <CardContent className="p-6">
               <Skeleton className="mb-4 h-6 w-40" />
               <div className="space-y-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
                 ))}
               </div>
             </CardContent>

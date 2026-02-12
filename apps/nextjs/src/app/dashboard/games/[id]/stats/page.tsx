@@ -14,15 +14,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
-  const game = await caller.game.getGameMetaData({ id: Number(id) });
-  if (!game) redirect("/dashboard/games");
-  if (!game.image?.url)
+  const game = await caller.newGame.getGame({
+    type: "original",
+    id: Number(id),
+  });
+  const image = game.image?.url;
+  if (!image)
     return { title: `${game.name} Stats`, description: `${game.name} Stats` };
   return {
     title: `${game.name} Stats`,
     description: `${game.name} Stats`,
     openGraph: {
-      images: [game.image.url],
+      images: [image],
     },
   };
 }
@@ -30,7 +33,6 @@ export default async function GameStatsPage({ params }: Props) {
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
-  void prefetch(trpc.game.getGameStats.queryOptions({ id: Number(id) }));
   void prefetch(
     trpc.newGame.getGameScoresheetStats.queryOptions({
       type: "original",
@@ -48,6 +50,12 @@ export default async function GameStatsPage({ params }: Props) {
   );
   void prefetch(
     trpc.newGame.getGamePlayerStats.queryOptions({
+      id: Number(id),
+      type: "original",
+    }),
+  );
+  void prefetch(
+    trpc.newGame.getGameInsights.queryOptions({
       id: Number(id),
       type: "original",
     }),

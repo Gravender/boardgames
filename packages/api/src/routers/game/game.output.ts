@@ -328,3 +328,9 @@ export const getGameScoresheetStatsOutput = z.array(
 export type GetGameScoresheetStatsOutputType = z.infer<
   typeof getGameScoresheetStatsOutput
 >;
+
+// ─── Game Insights (extracted to game-insights.output.ts) ────────
+export {
+  getGameInsightsOutput,
+  type GetGameInsightsOutputType,
+} from "./game-insights.output";
