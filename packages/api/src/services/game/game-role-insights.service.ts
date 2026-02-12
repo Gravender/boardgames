@@ -11,6 +11,7 @@ import type {
   RolePresenceRoleEffect,
   RoleSummary,
   TeamRelationEffect,
+  WinCondition,
 } from "./game-insights.service.types";
 import { buildCorePlayer } from "./game-core-detection.service";
 
@@ -257,33 +258,25 @@ export const computeRolePresenceEffects = (
       });
     }
 
-    // Sort by most extreme win rate (furthest from 50%) across conditions
-    const deviation = (e: TeamRelationEffect | null): number =>
-      e ? Math.abs(e.winRate - 0.5) : 0;
+    // Sort by total matches across all conditions (descending)
+    const totalPlayerMatches = (e: RolePresencePlayerEffect): number =>
+      (e.self?.matches ?? 0) +
+      (e.sameTeam?.matches ?? 0) +
+      (e.opposingTeam?.matches ?? 0);
 
-    playerEffects.sort((a, b) => {
-      const aMax = Math.max(
-        deviation(a.self),
-        deviation(a.sameTeam),
-        deviation(a.opposingTeam),
-      );
-      const bMax = Math.max(
-        deviation(b.self),
-        deviation(b.sameTeam),
-        deviation(b.opposingTeam),
-      );
-      return bMax - aMax;
-    });
+    playerEffects.sort((a, b) => totalPlayerMatches(b) - totalPlayerMatches(a));
 
     // ── Role-to-role effects ──────────────────────────────────────
     // Win rates are from X holders' perspective (the primary role).
-    // Categories are evaluated per xHolder against yHolders to avoid
-    // overcounting when a match has multiple xHolders.
+    // Each match contributes at most one observation per category to
+    // avoid overcounting when multiple xHolders exist in a single match.
+    // When multiple xHolders qualify for a category, their win outcomes
+    // are averaged so the match still counts as one observation.
     const roleEffects: RolePresenceRoleEffect[] = [];
     for (const otherRole of roleSummaries) {
       if (otherRole.roleId === role.roleId) continue;
 
-      // Per-holder observation counters (holder-observation semantics).
+      // Match-level accumulators.
       let winsSamePlayer = 0;
       let totalSamePlayer = 0;
       let winsSameTeam = 0;
@@ -304,7 +297,14 @@ export const computeRolePresenceEffects = (
         );
         if (yHolders.length === 0) continue;
 
-        // Evaluate categories per xHolder against yHolders
+        // Aggregate per-xHolder categories, then count the match once.
+        let spWins = 0;
+        let spCount = 0;
+        let stWins = 0;
+        let stCount = 0;
+        let opWins = 0;
+        let opCount = 0;
+
         for (const x of xHolders) {
           let isSamePlayer = false;
           let isSameTeam = false;
@@ -327,21 +327,35 @@ export const computeRolePresenceEffects = (
           }
 
           if (isSamePlayer) {
-            totalSamePlayer++;
-            if (x.winner) winsSamePlayer++;
+            spCount++;
+            if (x.winner) spWins++;
           }
           if (isSameTeam) {
-            totalSameTeam++;
-            if (x.winner) winsSameTeam++;
+            stCount++;
+            if (x.winner) stWins++;
           }
           if (isOpposing) {
-            totalOpposing++;
-            if (x.winner) winsOpposing++;
+            opCount++;
+            if (x.winner) opWins++;
           }
+        }
+
+        // Count match once per category, averaging xHolder outcomes
+        if (spCount > 0) {
+          totalSamePlayer++;
+          winsSamePlayer += spWins / spCount;
+        }
+        if (stCount > 0) {
+          totalSameTeam++;
+          winsSameTeam += stWins / stCount;
+        }
+        if (opCount > 0) {
+          totalOpposing++;
+          winsOpposing += opWins / opCount;
         }
       }
 
-      // Require ≥5 holder-observations in at least one condition
+      // Require ≥5 match-observations in at least one condition
       if (totalSamePlayer < 5 && totalSameTeam < 5 && totalOpposing < 5) {
         continue;
       }
@@ -371,20 +385,13 @@ export const computeRolePresenceEffects = (
       });
     }
 
-    // Sort by most extreme win rate (furthest from 50%)
-    roleEffects.sort((a, b) => {
-      const aMax = Math.max(
-        deviation(a.samePlayer),
-        deviation(a.sameTeam),
-        deviation(a.opposingTeam),
-      );
-      const bMax = Math.max(
-        deviation(b.samePlayer),
-        deviation(b.sameTeam),
-        deviation(b.opposingTeam),
-      );
-      return bMax - aMax;
-    });
+    // Sort by total matches across all conditions (descending)
+    const totalRoleMatches = (e: RolePresenceRoleEffect): number =>
+      (e.samePlayer?.matches ?? 0) +
+      (e.sameTeam?.matches ?? 0) +
+      (e.opposingTeam?.matches ?? 0);
+
+    roleEffects.sort((a, b) => totalRoleMatches(b) - totalRoleMatches(a));
 
     if (matchesWithRole === 0) continue;
 
@@ -394,8 +401,8 @@ export const computeRolePresenceEffects = (
       description: role.description,
       classification: role.predominantClassification,
       matchCount: matchesWithRole,
-      playerEffects: playerEffects.slice(0, 10),
-      roleEffects: roleEffects.slice(0, 10),
+      playerEffects: playerEffects,
+      roleEffects: roleEffects,
     });
   }
 
@@ -539,11 +546,30 @@ export const computeRoleInsights = (
 
   if (!hasRoles) return null;
 
+  // Determine predominant win condition across matches
+  const winConditionCounts = new Map<WinCondition, number>();
+  for (const matchData of matchMap.values()) {
+    winConditionCounts.set(
+      matchData.winCondition,
+      (winConditionCounts.get(matchData.winCondition) ?? 0) + 1,
+    );
+  }
+  let winCondition: WinCondition = "Manual";
+  let maxCount = 0;
+  for (const [wc, count] of winConditionCounts) {
+    if (count > maxCount) {
+      maxCount = count;
+      winCondition = wc;
+    }
+  }
+  console.log("winCondition", winConditionCounts);
+
   const roles = computeRoleSummaries(matchMap);
   const presenceEffects = computeRolePresenceEffects(matchMap, roles);
   const playerPerformance = computePlayerRolePerformance(matchMap, roles);
 
   return {
+    winCondition,
     roles,
     presenceEffects,
     playerPerformance,

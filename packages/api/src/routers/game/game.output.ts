@@ -519,6 +519,7 @@ export const getGameInsightsOutput = z.object({
     .nullable(),
   roles: z
     .object({
+      winCondition: z.enum(scoreSheetWinConditions),
       roles: z.array(
         z.object({
           roleId: z.number(),

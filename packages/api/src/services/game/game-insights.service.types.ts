@@ -252,6 +252,7 @@ export interface PlayerRolePerformance {
 }
 
 export interface RoleInsightsOutput {
+  winCondition: WinCondition;
   roles: RoleSummary[];
   presenceEffects: RolePresenceEffect[];
   playerPerformance: PlayerRolePerformance[];
