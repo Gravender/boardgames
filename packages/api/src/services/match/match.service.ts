@@ -28,7 +28,7 @@ import { matchRepository } from "../../repositories/match/match.repository";
 import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
 import { teamRepository } from "../../repositories/match/team.repository";
 import { locationRepository } from "../../routers/location/repository/location.repository";
-import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
+import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 import { friendService } from "../social/friend.service";
 import { matchParticipantsService } from "./match-participants.service";

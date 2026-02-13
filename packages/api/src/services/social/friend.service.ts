@@ -10,7 +10,7 @@ import { friendRepository } from "../../repositories/social/friend.repository";
 import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
 import { locationRepository } from "../../routers/location/repository/location.repository";
 import { playerRepository } from "../../routers/player/repository/player.repository";
-import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
+import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
 class FriendService {

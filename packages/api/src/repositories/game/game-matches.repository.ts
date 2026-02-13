@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, or, sql } from "drizzle-orm";
+import { type SQL, and, asc, eq, or, sql } from "drizzle-orm";
 import { caseWhen } from "drizzle-plus";
 import { jsonAgg, jsonAggNotNull, jsonBuildObject } from "drizzle-plus/pg";
 
@@ -21,8 +21,16 @@ import {
 import type { GetGameArgs } from "./game.repository.types";
 
 class GameMatchesRepository {
-  public async getGameMatches(args: GetGameArgs) {
-    const { input } = args;
+  /**
+   * Shared helper that builds the CTEs (teamsByMatch, teamsAgg, playersByMatch,
+   * playersAgg), the select projection, and the join chain common to both the
+   * "original" and "shared" branches.  Callers supply only the differing WHERE
+   * predicate on vMatchCanonical.
+   */
+  private async fetchMatchesForUser(args: {
+    userId: string;
+    where: SQL | undefined;
+  }) {
     const teamsByMatch = db.$with("teams_by_match").as(
       db
         .selectDistinctOn([team.matchId, team.id], {
@@ -34,7 +42,6 @@ class GameMatchesRepository {
         .orderBy(team.matchId, team.id),
     );
 
-    // Now aggregate them into json
     const teamsAgg = db.$with("teams_agg").as(
       db
         .select({
@@ -52,6 +59,7 @@ class GameMatchesRepository {
         .from(teamsByMatch)
         .groupBy(teamsByMatch.matchId),
     );
+
     const playersByMatch = db.$with("players_by_match").as(
       db
         .selectDistinctOn(
@@ -141,6 +149,101 @@ class GameMatchesRepository {
         .from(playersByMatch)
         .groupBy(playersByMatch.matchId),
     );
+
+    return db
+      .with(teamsByMatch, teamsAgg, playersByMatch, playersAgg)
+      .select({
+        id: vMatchCanonical.matchId,
+        sharedMatchId: vMatchCanonical.sharedMatchId,
+        permissions: vMatchCanonical.permission,
+        name: vMatchCanonical.name,
+        date: vMatchCanonical.matchDate,
+        comment: vMatchCanonical.comment,
+        type: vMatchCanonical.visibilitySource,
+        finished: vMatchCanonical.finished,
+        duration: match.duration,
+        winCondition: scoresheet.winCondition,
+        isCoop: scoresheet.isCoop,
+        game: jsonBuildObject({
+          id: vMatchCanonical.canonicalGameId,
+          linkedGameId: vMatchCanonical.linkedGameId,
+          sharedGameId: vMatchCanonical.sharedGameId,
+          type: vMatchCanonical.gameVisibilitySource,
+          name: game.name,
+          image: caseWhen<{
+            name: string;
+            url: string | null;
+            type: "file" | "svg";
+            usageType: "game" | "player" | "match";
+          } | null>(sql`${game.imageId} IS NULL`, sql`NULL`).else(
+            jsonBuildObject({
+              name: image.name,
+              url: image.url,
+              type: image.type,
+              usageType: image.usageType,
+            }),
+          ),
+        }).as("game"),
+        location: caseWhen<{ id: number; name: string } | null>(
+          sql`${location.id} IS NULL`,
+          sql`NULL`,
+        )
+          .else(
+            jsonBuildObject({
+              id: location.id,
+              name: location.name,
+            }),
+          )
+          .as("location"),
+        teams: sql<
+          { id: number; name: string }[]
+        >`coalesce(${teamsAgg.teams}, '[]'::jsonb)`.as("teams"),
+        matchPlayers: sql<
+          {
+            id: number;
+            playerId: number;
+            name: string;
+            score: number | null;
+            teamId: number | null;
+            placement: number | null;
+            winner: boolean | null;
+            type: "original" | "shared";
+            playerType: "original" | "shared" | "linked" | "not-shared";
+            sharedPlayerId: number | null;
+            linkedPlayerId: number | null;
+            image: {
+              name: string;
+              url: string | null;
+              type: "file" | "svg";
+              usageType: "game" | "player" | "match";
+            } | null;
+            isUser: boolean;
+          }[]
+        >`coalesce(${playersAgg.matchPlayers}, '[]'::jsonb)`.as(
+          "match_players",
+        ),
+      })
+      .from(vMatchCanonical)
+      .where(args.where)
+      .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
+      .innerJoin(game, eq(game.id, vMatchCanonical.canonicalGameId))
+      .innerJoin(
+        scoresheet,
+        eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
+      )
+      .leftJoin(image, eq(image.id, game.imageId))
+      .leftJoin(
+        location,
+        eq(location.id, vMatchCanonical.canonicalLocationId),
+      )
+      .leftJoin(teamsAgg, eq(teamsAgg.matchId, vMatchCanonical.matchId))
+      .leftJoin(playersAgg, eq(playersAgg.matchId, vMatchCanonical.matchId))
+      .orderBy(vMatchCanonical.matchDate);
+  }
+
+  public async getGameMatches(args: GetGameArgs) {
+    const { input } = args;
+
     const userPlayer = await db.query.player.findFirst({
       where: {
         isUser: true,
@@ -153,6 +256,7 @@ class GameMatchesRepository {
         message: "Current user not found.",
       });
     }
+
     if (input.type === "original") {
       const returnedGame = await db.query.game.findFirst({
         where: {
@@ -172,81 +276,18 @@ class GameMatchesRepository {
           message: "Game not found.",
         });
       }
-      const matches = await db
-        .with(teamsByMatch, teamsAgg, playersByMatch, playersAgg)
-        .select({
-          id: vMatchCanonical.matchId,
-          sharedMatchId: vMatchCanonical.sharedMatchId,
-          permissions: vMatchCanonical.permission,
-          name: vMatchCanonical.name,
-          date: vMatchCanonical.matchDate,
-          comment: vMatchCanonical.comment,
-          type: vMatchCanonical.visibilitySource,
-          finished: vMatchCanonical.finished,
-          duration: match.duration,
-          winCondition: scoresheet.winCondition,
-          isCoop: scoresheet.isCoop,
-          game: jsonBuildObject({
-            id: vMatchCanonical.canonicalGameId,
-            linkedGameId: vMatchCanonical.linkedGameId,
-            sharedGameId: vMatchCanonical.sharedGameId,
-            type: vMatchCanonical.gameVisibilitySource,
-            name: game.name,
-            image: caseWhen<{
-              name: string;
-              url: string | null;
-              type: "file" | "svg";
-              usageType: "game" | "player" | "match";
-            } | null>(sql`${game.imageId} IS NULL`, sql`NULL`).else(
-              jsonBuildObject({
-                name: image.name,
-                url: image.url,
-                type: image.type,
-                usageType: image.usageType,
-              }),
-            ),
-          }).as("game"),
-          location: caseWhen<{ id: number; name: string } | null>(
-            sql`${location.id} IS NULL`,
-            sql`NULL`,
-          )
-            .else(
-              jsonBuildObject({
-                id: location.id,
-                name: location.name,
-              }),
-            )
-            .as("location"),
-          teams: sql<
-            { id: number; name: string }[]
-          >`coalesce(${teamsAgg.teams}, '[]'::jsonb)`.as("teams"),
-          matchPlayers: playersAgg.matchPlayers,
-        })
-        .from(vMatchCanonical)
-        .where(
-          and(
-            eq(vMatchCanonical.canonicalGameId, returnedGame.id),
-            eq(vMatchCanonical.visibleToUserId, args.userId),
-          ),
-        )
-        .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
-        .innerJoin(game, eq(game.id, vMatchCanonical.canonicalGameId))
-        .innerJoin(
-          scoresheet,
-          eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
-        )
-        .leftJoin(image, eq(image.id, game.imageId))
-        .leftJoin(
-          location,
-          eq(location.id, vMatchCanonical.canonicalLocationId),
-        )
-        .leftJoin(teamsAgg, eq(teamsAgg.matchId, vMatchCanonical.matchId))
-        .leftJoin(playersAgg, eq(playersAgg.matchId, vMatchCanonical.matchId))
-        .orderBy(vMatchCanonical.matchDate);
+
+      const matches = await this.fetchMatchesForUser({
+        userId: args.userId,
+        where: and(
+          eq(vMatchCanonical.canonicalGameId, returnedGame.id),
+          eq(vMatchCanonical.visibleToUserId, args.userId),
+        ),
+      });
 
       return {
-        matches: matches,
-        userPlayer: userPlayer,
+        matches,
+        userPlayer,
       };
     } else {
       const returnedSharedGame = await db.query.sharedGame.findFirst({
@@ -261,80 +302,18 @@ class GameMatchesRepository {
           message: "Shared game not found.",
         });
       }
-      const matches = await db
-        .with(teamsByMatch, teamsAgg, playersByMatch, playersAgg)
-        .select({
-          id: vMatchCanonical.matchId,
-          sharedMatchId: vMatchCanonical.sharedMatchId,
-          permissions: vMatchCanonical.permission,
-          name: vMatchCanonical.name,
-          date: vMatchCanonical.matchDate,
-          comment: vMatchCanonical.comment,
-          type: vMatchCanonical.visibilitySource,
-          finished: vMatchCanonical.finished,
-          duration: match.duration,
-          winCondition: scoresheet.winCondition,
-          isCoop: scoresheet.isCoop,
-          game: jsonBuildObject({
-            id: vMatchCanonical.canonicalGameId,
-            linkedGameId: vMatchCanonical.linkedGameId,
-            sharedGameId: vMatchCanonical.sharedGameId,
-            type: vMatchCanonical.gameVisibilitySource,
-            name: game.name,
-            image: caseWhen<{
-              name: string;
-              url: string | null;
-              type: "file" | "svg";
-              usageType: "game" | "player" | "match";
-            } | null>(sql`${game.imageId} IS NULL`, sql`NULL`).else(
-              jsonBuildObject({
-                name: image.name,
-                url: image.url,
-                type: image.type,
-                usageType: image.usageType,
-              }),
-            ),
-          }).as("game"),
-          location: caseWhen<{ id: number; name: string } | null>(
-            sql`${location.id} IS NULL`,
-            sql`NULL`,
-          )
-            .else(
-              jsonBuildObject({
-                id: location.id,
-                name: location.name,
-              }),
-            )
-            .as("location"),
-          teams: sql<
-            { id: number; name: string }[]
-          >`coalesce(${teamsAgg.teams}, '[]'::jsonb)`.as("teams"),
-          matchPlayers: playersAgg.matchPlayers,
-        })
-        .from(vMatchCanonical)
-        .where(
-          and(
-            eq(vMatchCanonical.sharedGameId, returnedSharedGame.id),
-            eq(vMatchCanonical.visibleToUserId, args.userId),
-          ),
-        )
-        .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
-        .innerJoin(game, eq(game.id, vMatchCanonical.canonicalGameId))
-        .innerJoin(
-          scoresheet,
-          eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
-        )
-        .leftJoin(image, eq(image.id, game.imageId))
-        .leftJoin(
-          location,
-          eq(location.id, vMatchCanonical.canonicalLocationId),
-        )
-        .leftJoin(teamsAgg, eq(teamsAgg.matchId, vMatchCanonical.matchId))
-        .leftJoin(playersAgg, eq(playersAgg.matchId, vMatchCanonical.matchId))
-        .orderBy(vMatchCanonical.matchDate);
+
+      const matches = await this.fetchMatchesForUser({
+        userId: args.userId,
+        where: and(
+          eq(vMatchCanonical.sharedGameId, returnedSharedGame.id),
+          eq(vMatchCanonical.visibleToUserId, args.userId),
+        ),
+      });
+
       return {
-        matches: matches,
-        userPlayer: userPlayer,
+        matches,
+        userPlayer,
       };
     }
   }

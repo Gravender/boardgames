@@ -8,7 +8,7 @@ import {
   shareRequest,
 } from "@board-games/db/schema";
 
-import { scoresheetRepository } from "../routers/scoresheet/repository/scoresheet.repository";
+import { scoresheetRepository } from "../repositories/scoresheet/scoresheet.repository";
 
 export interface FriendSharingSettings {
   id: number;

@@ -13,6 +13,58 @@ import {
   updateScoresheets,
 } from "./game-scoresheet-edit.service";
 
+interface PendingImageDeletion {
+  existingImage: {
+    type: string;
+    fileId: string | null;
+    name: string;
+    id: number;
+  };
+  userId: string;
+}
+
+/**
+ * Performs the external image deletion side-effects (posthog + deleteFiles)
+ * that were collected during the transaction.  Must be called AFTER the
+ * transaction commits so a rollback does not leave orphaned file deletions.
+ */
+const handleImageDeletion = async (args: {
+  pending: PendingImageDeletion;
+  posthog: EditGameArgs["ctx"]["posthog"];
+  deleteFiles: EditGameArgs["ctx"]["deleteFiles"];
+}) => {
+  const { pending, posthog, deleteFiles } = args;
+  const { existingImage, userId } = pending;
+
+  if (existingImage.type !== "file" || !existingImage.fileId) {
+    return;
+  }
+
+  await posthog.captureImmediate({
+    distinctId: userId,
+    event: "uploadthing begin image delete",
+    properties: {
+      imageName: existingImage.name,
+      imageId: existingImage.id,
+      fileId: existingImage.fileId,
+    },
+  });
+
+  const result = await deleteFiles(existingImage.fileId);
+  if (!result.success) {
+    await posthog.captureImmediate({
+      distinctId: userId,
+      event: "uploadthing image delete error",
+      properties: {
+        imageName: existingImage.name,
+        imageId: existingImage.id,
+        fileId: existingImage.fileId,
+      },
+    });
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+  }
+};
+
 class GameEditService {
   public async editGame(args: EditGameArgs) {
     const {
@@ -20,11 +72,18 @@ class GameEditService {
       ctx: { userId, posthog, deleteFiles },
     } = args;
 
+    // Collect file deletions during the transaction; execute after commit.
+    const pendingDeletions: PendingImageDeletion[] = [];
+
     await db.transaction(async (tx) => {
-      const existingGame = await gameRepository.getGame({
-        id: input.game.id,
-        createdBy: userId,
-      });
+      // Read the game inside the transaction to avoid TOCTOU issues.
+      const existingGame = await gameRepository.getGame(
+        {
+          id: input.game.id,
+          createdBy: userId,
+        },
+        tx,
+      );
 
       assertFound(
         existingGame,
@@ -46,14 +105,13 @@ class GameEditService {
       });
 
       if (input.game.type === "updateGame") {
-        await this.updateGameDetails({
+        const filesToDelete = await this.updateGameDetails({
           input: input.game,
           existingGame,
           userId,
-          posthog,
-          deleteFiles,
           tx,
         });
+        pendingDeletions.push(...filesToDelete);
       }
 
       if (input.scoresheets.length > 0) {
@@ -73,6 +131,11 @@ class GameEditService {
         });
       }
     });
+
+    // Perform external file deletions after the transaction commits.
+    for (const pending of pendingDeletions) {
+      await handleImageDeletion({ pending, posthog, deleteFiles });
+    }
   }
 
   private async updateGameRoles(args: {
@@ -185,6 +248,13 @@ class GameEditService {
             },
             "Shared role not found.",
           );
+
+          if (returnedSharedRole.permission !== "edit") {
+            throw new TRPCError({
+              code: "UNAUTHORIZED",
+              message: "Does not have permission to delete this role.",
+            });
+          }
         }
 
         await gameRoleRepository.deleteSharedGameRole({
@@ -197,15 +267,18 @@ class GameEditService {
     }
   }
 
+  /**
+   * Updates game details inside the transaction, returning any pending image
+   * deletions that should be executed after commit.
+   */
   private async updateGameDetails(args: {
     input: Extract<EditGameArgs["input"]["game"], { type: "updateGame" }>;
     existingGame: { id: number; imageId: number | null };
     userId: string;
-    posthog: EditGameArgs["ctx"]["posthog"];
-    deleteFiles: EditGameArgs["ctx"]["deleteFiles"];
     tx: TransactionType;
-  }) {
-    const { input, existingGame, userId, posthog, deleteFiles, tx } = args;
+  }): Promise<PendingImageDeletion[]> {
+    const { input, existingGame, userId, tx } = args;
+    const pendingDeletions: PendingImageDeletion[] = [];
 
     let imageId: number | null | undefined = undefined;
     if (input.image !== undefined) {
@@ -218,14 +291,14 @@ class GameEditService {
           )
         : null;
 
-      imageId = await this.resolveImageIdForEdit({
+      const resolved = await this.resolveImageIdForEdit({
         imageInput: input.image,
         existingImage,
         userId,
-        posthog,
-        deleteFiles,
         tx,
       });
+      imageId = resolved.imageId;
+      pendingDeletions.push(...resolved.pendingDeletions);
     }
 
     await gameRepository.updateGame({
@@ -242,8 +315,14 @@ class GameEditService {
       },
       tx,
     });
+
+    return pendingDeletions;
   }
 
+  /**
+   * Resolves the image ID for an edit operation.  Instead of performing file
+   * deletions inline, it collects them as PendingImageDeletion entries.
+   */
   private async resolveImageIdForEdit(args: {
     imageInput: Extract<
       EditGameArgs["input"]["game"],
@@ -259,70 +338,30 @@ class GameEditService {
       | null
       | undefined;
     userId: string;
-    posthog: EditGameArgs["ctx"]["posthog"];
-    deleteFiles: EditGameArgs["ctx"]["deleteFiles"];
     tx: TransactionType;
-  }): Promise<number | null | undefined> {
-    const { imageInput, existingImage, userId, posthog, deleteFiles, tx } =
-      args;
+  }): Promise<{
+    imageId: number | null | undefined;
+    pendingDeletions: PendingImageDeletion[];
+  }> {
+    const { imageInput, existingImage, userId, tx } = args;
+    const pendingDeletions: PendingImageDeletion[] = [];
+
     if (imageInput === undefined) {
-      return undefined;
+      return { imageId: undefined, pendingDeletions };
     }
 
     if (imageInput === null) {
       if (existingImage?.type === "file" && existingImage.fileId) {
-        await posthog.captureImmediate({
-          distinctId: userId,
-          event: "uploadthing begin image delete",
-          properties: {
-            imageName: existingImage.name,
-            imageId: existingImage.id,
-            fileId: existingImage.fileId,
-          },
-        });
-        const result = await deleteFiles(existingImage.fileId);
-        if (!result.success) {
-          await posthog.captureImmediate({
-            distinctId: userId,
-            event: "uploadthing image delete error",
-            properties: {
-              imageName: existingImage.name,
-              imageId: existingImage.id,
-              fileId: existingImage.fileId,
-            },
-          });
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-        }
+        pendingDeletions.push({ existingImage, userId });
       }
-      return null;
+      return { imageId: null, pendingDeletions };
     }
 
     if (imageInput.type === "file") {
       if (existingImage?.type === "file" && existingImage.fileId) {
-        await posthog.captureImmediate({
-          distinctId: userId,
-          event: "uploadthing begin image delete",
-          properties: {
-            imageName: existingImage.name,
-            imageId: existingImage.id,
-            fileId: existingImage.fileId,
-          },
-        });
-        const result = await deleteFiles(existingImage.fileId);
-        if (!result.success) {
-          await posthog.captureImmediate({
-            distinctId: userId,
-            event: "uploadthing image delete error",
-            properties: {
-              imageName: existingImage.name,
-              imageId: existingImage.id,
-              fileId: existingImage.fileId,
-            },
-          });
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-        }
+        pendingDeletions.push({ existingImage, userId });
       }
-      return imageInput.imageId;
+      return { imageId: imageInput.imageId, pendingDeletions };
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -336,7 +375,7 @@ class GameEditService {
         tx,
       );
       if (existingSvg) {
-        return existingSvg.id;
+        return { imageId: existingSvg.id, pendingDeletions };
       }
       const returnedImage = await imageRepository.insert(
         {
@@ -354,10 +393,10 @@ class GameEditService {
         },
         "Failed to create image",
       );
-      return returnedImage.id;
+      return { imageId: returnedImage.id, pendingDeletions };
     }
 
-    return undefined;
+    return { imageId: undefined, pendingDeletions };
   }
 }
 

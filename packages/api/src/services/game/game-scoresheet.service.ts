@@ -11,7 +11,7 @@ import type {
   GetGameScoreSheetsWithRoundsArgs,
 } from "./game.service.types";
 import { gameRepository } from "../../repositories/game/game.repository";
-import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
+import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
 
 class GameScoresheetService {
   public async getGameScoresheets(

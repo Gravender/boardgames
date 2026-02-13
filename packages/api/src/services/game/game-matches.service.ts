@@ -12,6 +12,90 @@ import { gameRoleRepository } from "../../repositories/game/game-role.repository
 import { gameRepository } from "../../repositories/game/game.repository";
 import { assertFound } from "../../utils/databaseHelpers";
 
+type RepositoryMatchRow = Awaited<
+  ReturnType<typeof gameMatchesRepository.getGameMatches>
+>["matches"][number];
+
+/**
+ * Maps a shared match row from the repository into the service output shape.
+ * Performs type guards (game.type, sharedGameId, sharedMatchId), builds the
+ * shared game object, and maps matchPlayers with the correct playerType logic.
+ */
+const mapSharedMatch = (
+  match: RepositoryMatchRow,
+  userMatchPlayer: RepositoryMatchRow["matchPlayers"][number] | undefined,
+) => {
+  if (match.game.type === "original") {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Game and Match are not of correct type.",
+    });
+  }
+  if (match.game.sharedGameId === null) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Game and Match are not of the correct type.",
+    });
+  }
+  if (match.sharedMatchId === null) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Game and Match are not of the correct type.",
+    });
+  }
+  return {
+    ...match,
+    sharedMatchId: match.sharedMatchId,
+    game: {
+      id: match.game.id,
+      name: match.game.name,
+      image: match.game.image,
+      linkedGameId: match.game.linkedGameId,
+      sharedGameId: match.game.sharedGameId,
+      type:
+        match.game.type === "linked"
+          ? ("linked" as const)
+          : ("shared" as const),
+    },
+    type: "shared" as const,
+    hasUser: userMatchPlayer !== undefined,
+    won: userMatchPlayer?.winner ?? false,
+    matchPlayers: match.matchPlayers.map((mp) => {
+      if (mp.playerType === "original" || mp.type !== "shared") {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Match player and Match are not of the correct type.",
+        });
+      }
+      return {
+        id: mp.id,
+        playerId: mp.playerId,
+        type: "shared" as const,
+        isUser: mp.isUser,
+        name: mp.name,
+        score: mp.score,
+        teamId: mp.teamId,
+        placement: mp.placement,
+        winner: mp.winner,
+        playerType:
+          mp.playerType === "linked"
+            ? ("linked" as const)
+            : mp.playerType === "not-shared"
+              ? ("not-shared" as const)
+              : ("shared" as const),
+        sharedPlayerId: mp.sharedPlayerId,
+        linkedPlayerId: mp.linkedPlayerId,
+        image: mp.image as {
+          name: string;
+          url: string | null;
+          type: "file" | "svg";
+          usageType: "game" | "player" | "match";
+        } | null,
+      };
+    }),
+  };
+};
+
 class GameMatchesService {
   public async getGameMatches(
     args: GetGameArgs,
@@ -71,152 +155,13 @@ class GameMatchesService {
             }),
           };
         } else {
-          if (match.game.type === "original") {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Game and Match are not of correct type.",
-            });
-          }
-          if (match.game.sharedGameId === null) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Game and Match are not of the correct type.",
-            });
-          }
-          if (match.sharedMatchId === null) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Game and Match are not of the correct type.",
-            });
-          }
-          return {
-            ...match,
-            sharedMatchId: match.sharedMatchId,
-            permissions: match.permissions,
-            game: {
-              id: match.game.id,
-              name: match.game.name,
-              image: match.game.image,
-              linkedGameId: match.game.linkedGameId,
-              sharedGameId: match.game.sharedGameId,
-              type:
-                match.game.type === "linked"
-                  ? ("linked" as const)
-                  : ("shared" as const),
-            },
-            type: "shared",
-            hasUser: userMatchPlayer !== undefined,
-            won: userMatchPlayer?.winner ?? false,
-            matchPlayers: match.matchPlayers.map((mp) => {
-              if (mp.playerType === "original" || mp.type !== "shared") {
-                throw new TRPCError({
-                  code: "INTERNAL_SERVER_ERROR",
-                  message:
-                    "Match player and Match are not of the correct type.",
-                });
-              }
-              return {
-                id: mp.id,
-                playerId: mp.playerId,
-                type: "shared" as const,
-                isUser: mp.isUser,
-                name: mp.name,
-                score: mp.score,
-                teamId: mp.teamId,
-                placement: mp.placement,
-                winner: mp.winner,
-                playerType:
-                  mp.playerType === "linked"
-                    ? ("linked" as const)
-                    : mp.playerType === "not-shared"
-                      ? ("not-shared" as const)
-                      : ("shared" as const),
-                sharedPlayerId: mp.sharedPlayerId,
-                linkedPlayerId: mp.linkedPlayerId,
-                image: mp.image as {
-                  name: string;
-                  url: string | null;
-                  type: "file" | "svg";
-                  usageType: "game" | "player" | "match";
-                } | null,
-              };
-            }),
-          };
+          return mapSharedMatch(match, userMatchPlayer);
         }
       });
     } else {
       return response.matches.map((match) => {
         const userMatchPlayer = match.matchPlayers.find((mp) => mp.isUser);
-
-        if (match.game.type === "original") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Game and Match are not of correct type.",
-          });
-        }
-        if (match.game.sharedGameId === null) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Game and Match are not of the correct type.",
-          });
-        }
-        if (match.sharedMatchId === null) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Game and Match are not of the correct type.",
-          });
-        }
-        return {
-          ...match,
-          sharedMatchId: match.sharedMatchId,
-          game: {
-            id: match.game.id,
-            name: match.game.name,
-            image: match.game.image,
-            linkedGameId: match.game.linkedGameId,
-            sharedGameId: match.game.sharedGameId,
-            type:
-              match.game.type === "linked"
-                ? ("linked" as const)
-                : ("shared" as const),
-          },
-          type: "shared",
-          hasUser: userMatchPlayer !== undefined,
-          won: userMatchPlayer?.winner ?? false,
-          matchPlayers: match.matchPlayers.map((mp) => {
-            if (mp.playerType === "original" || mp.type !== "shared") {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Match player and Match are not of the correct type.",
-              });
-            }
-            return {
-              id: mp.id,
-              playerId: mp.playerId,
-              type: "shared" as const,
-              isUser: mp.isUser,
-              name: mp.name,
-              score: mp.score,
-              teamId: mp.teamId,
-              placement: mp.placement,
-              winner: mp.winner,
-              playerType:
-                mp.playerType === "linked"
-                  ? ("linked" as const)
-                  : mp.playerType === "not-shared"
-                    ? ("not-shared" as const)
-                    : ("shared" as const),
-              sharedPlayerId: mp.sharedPlayerId,
-              linkedPlayerId: mp.linkedPlayerId,
-              image: mp.image as {
-                name: string;
-                url: string | null;
-                type: "file" | "svg";
-                usageType: "game" | "player" | "match";
-              } | null,
-            };
-          }),
-        };
+        return mapSharedMatch(match, userMatchPlayer);
       });
     }
   }

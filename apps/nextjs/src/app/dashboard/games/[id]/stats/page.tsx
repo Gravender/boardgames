@@ -12,24 +12,30 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  // read route params
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
-  const game = await caller.game.getGame({
-    type: "original",
-    id: Number(id),
-  });
-  const image = game.image?.url;
-  if (!image)
-    return { title: `${game.name} Stats`, description: `${game.name} Stats` };
-  return {
-    title: `${game.name} Stats`,
-    description: `${game.name} Stats`,
-    openGraph: {
-      images: [image],
-    },
-  };
+  try {
+    const game = await caller.game.getGame({
+      type: "original",
+      id: Number(id),
+    });
+    const image = game.image?.url;
+    if (!image)
+      return {
+        title: `${game.name} Stats`,
+        description: `${game.name} Stats`,
+      };
+    return {
+      title: `${game.name} Stats`,
+      description: `${game.name} Stats`,
+      openGraph: {
+        images: [image],
+      },
+    };
+  } catch {
+    return { title: "Game Stats", description: "Game Stats" };
+  }
 }
 export default async function GameStatsPage({ params }: Props) {
   const id = (await params).id;

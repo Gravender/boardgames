@@ -12,6 +12,7 @@ import type {
   insertPlayerSchema,
   insertRoundPlayerSchema,
 } from "@board-games/db/zodSchema";
+import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 import {
   game,
@@ -89,95 +90,98 @@ class GameImportService {
         })),
     }));
 
-    const createdLocations: {
-      bggLocationId: number;
-      name: string;
-      trackerId: number;
-    }[] = [];
-    for (const locationToInsert of input.locations) {
-      const [insertedLocation] = await db
-        .insert(location)
-        .values({
-          name: locationToInsert.name,
-          createdBy: ctx.userId,
-        })
-        .returning();
-      if (!insertedLocation) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create location",
-        });
-      }
-      createdLocations.push({
-        bggLocationId: locationToInsert.id,
-        name: insertedLocation.name,
-        trackerId: insertedLocation.id,
-      });
-    }
-
-    for (const mappedGame of mappedGames) {
-      const [returningGame] = await db
-        .insert(game)
-        .values({
-          name: mappedGame.name,
-          description: mappedGame.description,
-          ownedBy: false,
-          yearPublished: mappedGame.yearPublished,
-          playersMin: mappedGame.minPlayers,
-          playersMax: mappedGame.maxPlayers,
-          playtimeMin: mappedGame.minPlayTime,
-          playtimeMax: mappedGame.maxPlayTime,
-          createdBy: ctx.userId,
-        })
-        .returning();
-      if (!returningGame) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create game",
+    await db.transaction(async (tx) => {
+      const createdLocations: {
+        bggLocationId: number;
+        name: string;
+        trackerId: number;
+      }[] = [];
+      for (const locationToInsert of input.locations) {
+        const [insertedLocation] = await tx
+          .insert(location)
+          .values({
+            name: locationToInsert.name,
+            createdBy: ctx.userId,
+          })
+          .returning();
+        if (!insertedLocation) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create location",
+          });
+        }
+        createdLocations.push({
+          bggLocationId: locationToInsert.id,
+          name: insertedLocation.name,
+          trackerId: insertedLocation.id,
         });
       }
 
-      let winCondition: (typeof scoreSheetWinConditions)[number] =
-        "Highest Score";
-      if (mappedGame.noPoints) {
-        winCondition = "Manual";
-      }
-      const [returnedScoresheet] = await db
-        .insert(scoresheet)
-        .values({
-          name: "Default",
-          createdBy: ctx.userId,
-          gameId: returningGame.id,
-          isCoop: mappedGame.isCoop,
-          type: "Default",
-          winCondition: winCondition,
-        })
-        .returning();
-      if (!returnedScoresheet) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create scoresheet",
-        });
-      }
-      await db.insert(round).values({
-        name: "Round 1",
-        order: 1,
-        type: "Numeric",
-        scoresheetId: returnedScoresheet.id,
-      });
+      for (const mappedGame of mappedGames) {
+        const [returningGame] = await tx
+          .insert(game)
+          .values({
+            name: mappedGame.name,
+            description: mappedGame.description,
+            ownedBy: false,
+            yearPublished: mappedGame.yearPublished,
+            playersMin: mappedGame.minPlayers,
+            playersMax: mappedGame.maxPlayers,
+            playtimeMin: mappedGame.minPlayTime,
+            playtimeMax: mappedGame.maxPlayTime,
+            createdBy: ctx.userId,
+          })
+          .returning();
+        if (!returningGame) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create game",
+          });
+        }
 
-      for (const [index, play] of mappedGame.plays.entries()) {
-        await this.importPlay({
-          play,
-          index,
-          mappedGame,
-          returnedScoresheet,
-          returningGame,
-          createdLocations,
-          userId: ctx.userId,
+        let winCondition: (typeof scoreSheetWinConditions)[number] =
+          "Highest Score";
+        if (mappedGame.noPoints) {
+          winCondition = "Manual";
+        }
+        const [returnedScoresheet] = await tx
+          .insert(scoresheet)
+          .values({
+            name: "Default",
+            createdBy: ctx.userId,
+            gameId: returningGame.id,
+            isCoop: mappedGame.isCoop,
+            type: "Default",
+            winCondition: winCondition,
+          })
+          .returning();
+        if (!returnedScoresheet) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create scoresheet",
+          });
+        }
+        await tx.insert(round).values({
+          name: "Round 1",
+          order: 1,
+          type: "Numeric",
+          scoresheetId: returnedScoresheet.id,
         });
+
+        for (const [index, play] of mappedGame.plays.entries()) {
+          await this.importPlay({
+            play,
+            index,
+            mappedGame,
+            returnedScoresheet,
+            returningGame,
+            createdLocations,
+            userId: ctx.userId,
+            tx,
+          });
+        }
       }
-    }
+    });
 
     return null;
   }
@@ -219,6 +223,7 @@ class GameImportService {
       trackerId: number;
     }[];
     userId: string;
+    tx: TransactionType;
   }) {
     const {
       play,
@@ -228,6 +233,7 @@ class GameImportService {
       returningGame,
       createdLocations,
       userId,
+      tx,
     } = args;
 
     const currentLocation = createdLocations.find(
@@ -243,7 +249,7 @@ class GameImportService {
       roundsScore: returnedScoresheet.roundsScore,
       type: "Match" as const,
     };
-    const [playScoresheet] = await db
+    const [playScoresheet] = await tx
       .insert(scoresheet)
       .values(playScoresheetValues)
       .returning();
@@ -253,7 +259,7 @@ class GameImportService {
         message: "Failed to create scoresheet",
       });
     }
-    const [insertedRound] = await db
+    const [insertedRound] = await tx
       .insert(round)
       .values({
         name: "Round 1",
@@ -284,7 +290,7 @@ class GameImportService {
       finished: play.isFinished,
       locationId: currentLocation?.trackerId,
     };
-    const [returningMatch] = await db
+    const [returningMatch] = await tx
       .insert(match)
       .values(matchToInsert)
       .returning();
@@ -294,7 +300,7 @@ class GameImportService {
         message: "Failed to create match",
       });
     }
-    await db
+    await tx
       .update(scoresheet)
       .set({ forkedForMatchId: returningMatch.id })
       .where(eq(scoresheet.id, playScoresheet.id));
@@ -305,7 +311,7 @@ class GameImportService {
         createdBy: userId,
       }));
 
-    let currentPlayers = await db
+    let currentPlayers = await tx
       .select({ id: player.id, name: player.name })
       .from(player)
       .where(eq(player.createdBy, userId));
@@ -318,7 +324,7 @@ class GameImportService {
     );
 
     if (newPlayers.length > 0) {
-      const insertedPlayers = await db
+      const insertedPlayers = await tx
         .insert(player)
         .values(newPlayers)
         .returning();
@@ -332,7 +338,7 @@ class GameImportService {
       );
       for (const playTeam of teams.values()) {
         if (playTeam) {
-          const [insertedTeam] = await db
+          const [insertedTeam] = await tx
             .insert(team)
             .values({
               name: playTeam,
@@ -412,7 +418,7 @@ class GameImportService {
         };
       });
 
-    const insertedMatchPlayers = await db
+    const insertedMatchPlayers = await tx
       .insert(matchPlayer)
       .values(matchPlayersToInsert)
       .returning();
@@ -424,7 +430,7 @@ class GameImportService {
         score: Number(mp.score),
         updatedBy: userId,
       }));
-    await db.insert(roundPlayer).values(roundPlayersToInsert);
+    await tx.insert(roundPlayer).values(roundPlayersToInsert);
   }
 }
 

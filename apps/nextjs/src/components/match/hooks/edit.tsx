@@ -31,7 +31,7 @@ export const useEditMatchMutation = (input: MatchInput) => {
           error,
         });
         toast.error("Error", {
-          description: "There was a problem adding your match.",
+          description: "There was a problem editing your match.",
         });
       },
     }),

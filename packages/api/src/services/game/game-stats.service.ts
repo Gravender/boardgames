@@ -29,7 +29,7 @@ import type {
 } from "./game.service.types";
 import { gameStatsRepository } from "../../repositories/game/game-stats.repository";
 import { gameRepository } from "../../repositories/game/game.repository";
-import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
+import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
 
 /** One shared round from getAllSharedScoresheetsWithRounds (round + optional linked id). */
 type SharedRoundWithRound = Awaited<

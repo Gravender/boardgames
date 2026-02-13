@@ -292,7 +292,12 @@ class GameRepository {
       await tx
         .update(scoresheet)
         .set({ deletedAt: new Date() })
-        .where(eq(scoresheet.gameId, args.gameId));
+        .where(
+          and(
+            eq(scoresheet.gameId, args.gameId),
+            eq(scoresheet.createdBy, args.userId),
+          ),
+        );
 
       const [deletedGame] = await tx
         .update(game)
