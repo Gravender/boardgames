@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 
 import type { TransactionType } from "@board-games/db/client";
 
-import { gameRepository } from "../../repositories/game/game.repository";
+import { gameRoleRepository } from "../../repositories/game/game-role.repository";
 import { matchUpdatePlayerRoleRepository } from "../../repositories/match/match-update-player-role.repository";
 import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
@@ -46,7 +46,7 @@ class SharedRoleService {
     let linkedGameRoleId = returnedSharedRole.linkedGameRoleId;
 
     if (!linkedGameRoleId) {
-      const createdGameRole = await gameRepository.createGameRole({
+      const createdGameRole = await gameRoleRepository.createGameRole({
         input: {
           gameId,
           name: returnedSharedRole.gameRole.name,

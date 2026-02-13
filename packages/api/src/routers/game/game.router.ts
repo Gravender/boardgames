@@ -1,7 +1,12 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 import z from "zod/v4";
 
+import { gameEditService } from "../../services/game/game-edit.service";
+import { gameImportService } from "../../services/game/game-import.service";
 import { gameInsightsService } from "../../services/game/game-insights.service";
+import { gameListService } from "../../services/game/game-list.service";
+import { gameMatchesService } from "../../services/game/game-matches.service";
+import { gameScoresheetService } from "../../services/game/game-scoresheet.service";
 import { gameStatsService } from "../../services/game/game-stats.service";
 import { gameService } from "../../services/game/game.service";
 import { protectedUserProcedure } from "../../trpc";
@@ -33,13 +38,13 @@ export const gameRouter = {
   getGames: protectedUserProcedure
     .output(getGamesOutput)
     .query(async ({ ctx }) => {
-      return gameService.getGames({ ctx });
+      return gameListService.getGames({ ctx });
     }),
   getGameToShare: protectedUserProcedure
     .input(z.object({ id: z.number() }))
     .output(getGameToShareOutput)
     .query(async ({ ctx, input }) => {
-      return gameService.getGameToShare({ ctx, input });
+      return gameListService.getGameToShare({ ctx, input });
     }),
   deleteGame: protectedUserProcedure
     .input(z.object({ id: z.number() }))
@@ -51,7 +56,7 @@ export const gameRouter = {
     .input(importBGGGamesInput)
     .output(importBGGGamesOutput)
     .mutation(async ({ ctx, input }) => {
-      return gameService.importBGGGames({ ctx, input });
+      return gameImportService.importBGGGames({ ctx, input });
     }),
   create: protectedUserProcedure
     .input(createGameInput)
@@ -66,7 +71,7 @@ export const gameRouter = {
     .input(editGameInput)
     .output(editGameOutput)
     .mutation(async ({ ctx, input }) => {
-      await gameService.editGame({
+      await gameEditService.editGame({
         ctx: {
           userId: ctx.userId,
           posthog: ctx.posthog,
@@ -88,7 +93,7 @@ export const gameRouter = {
     .input(getGameInput)
     .output(getGameMatchesOutput)
     .query(async ({ ctx, input }) => {
-      return gameService.getGameMatches({
+      return gameMatchesService.getGameMatches({
         ctx,
         input,
       });
@@ -112,7 +117,7 @@ export const gameRouter = {
     .input(getGameInput)
     .output(getGameRolesOutput)
     .query(async ({ ctx, input }) => {
-      return gameService.getGameRoles({
+      return gameMatchesService.getGameRoles({
         ctx,
         input,
       });
@@ -121,7 +126,7 @@ export const gameRouter = {
     .input(getGameInput)
     .output(getGameScoresheetsOutput)
     .query(async ({ ctx, input }) => {
-      return gameService.getGameScoresheets({
+      return gameScoresheetService.getGameScoresheets({
         ctx,
         input,
       });
@@ -130,7 +135,7 @@ export const gameRouter = {
     .input(getGameInput)
     .output(getGameScoreSheetsWithRoundsOutput)
     .query(async ({ ctx, input }) => {
-      return gameService.getGameScoreSheetsWithRounds({
+      return gameScoresheetService.getGameScoreSheetsWithRounds({
         ctx,
         input,
       });

@@ -71,11 +71,10 @@ describe("Game Create - Role Tests", () => {
       expect(result.id).toBeDefined();
 
       // Verify role is created correctly
-      const rolesInput: inferProcedureInput<AppRouter["game"]["gameRoles"]> =
-        {
-          type: "original",
-          id: result.id,
-        };
+      const rolesInput: inferProcedureInput<AppRouter["game"]["gameRoles"]> = {
+        type: "original",
+        id: result.id,
+      };
       const roles = await caller.game.gameRoles(rolesInput);
 
       expect(roles).toHaveLength(1);
@@ -119,11 +118,10 @@ describe("Game Create - Role Tests", () => {
       expect(result.id).toBeDefined();
 
       // Verify role is created correctly
-      const rolesInput: inferProcedureInput<AppRouter["game"]["gameRoles"]> =
-        {
-          type: "original",
-          id: result.id,
-        };
+      const rolesInput: inferProcedureInput<AppRouter["game"]["gameRoles"]> = {
+        type: "original",
+        id: result.id,
+      };
       const roles = await caller.game.gameRoles(rolesInput);
 
       expect(roles).toHaveLength(1);
@@ -175,11 +173,10 @@ describe("Game Create - Role Tests", () => {
       expect(result.id).toBeDefined();
 
       // Verify roles are created correctly
-      const rolesInput: inferProcedureInput<AppRouter["game"]["gameRoles"]> =
-        {
-          type: "original",
-          id: result.id,
-        };
+      const rolesInput: inferProcedureInput<AppRouter["game"]["gameRoles"]> = {
+        type: "original",
+        id: result.id,
+      };
       const roles = await caller.game.gameRoles(rolesInput);
 
       expect(roles).toHaveLength(3);

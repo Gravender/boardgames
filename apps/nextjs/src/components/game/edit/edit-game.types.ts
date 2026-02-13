@@ -122,9 +122,7 @@ export const defaultScoresheetsFormValues: {
 // Transform API output to form default values
 export function transformEditGameDataToFormValues(
   game: NonNullable<RouterOutputs["game"]["getGame"]>,
-  scoresheets: NonNullable<
-    RouterOutputs["game"]["gameScoreSheetsWithRounds"]
-  >,
+  scoresheets: NonNullable<RouterOutputs["game"]["gameScoreSheetsWithRounds"]>,
   roles: NonNullable<RouterOutputs["game"]["gameRoles"]>,
 ): EditGameFormValues {
   return {
