@@ -8,7 +8,7 @@ import {
   shareRequest,
 } from "@board-games/db/schema";
 
-import { scoresheetRepository } from "../repositories/scoresheet/scoresheet.repository";
+import { roundRepository } from "../repositories/scoresheet/round.repository";
 
 export interface FriendSharingSettings {
   id: number;
@@ -150,7 +150,7 @@ export async function createSharedRoundsForScoresheet(
   }));
 
   if (sharedScoresheetRoundsInput.length > 0) {
-    await scoresheetRepository.insertSharedRounds(
+    await roundRepository.insertSharedRounds(
       { input: sharedScoresheetRoundsInput },
       transaction,
     );

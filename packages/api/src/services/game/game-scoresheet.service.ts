@@ -9,6 +9,7 @@ import type {
 } from "@board-games/db/constants";
 import { db } from "@board-games/db/client";
 
+import type { GetGameInputType } from "../../routers/game/game.input";
 import type {
   GetGameScoresheetsOutputType,
   GetGameScoreSheetsWithRoundsOutputType,
@@ -149,28 +150,30 @@ const resolveSharedGame = async (
   return returnedSharedGame;
 };
 
+// ─── Resolved game context ───────────────────────────────────
+
+type ResolvedGameContext =
+  | { type: "original"; gameId: number; linkedGameIds: number[] }
+  | { type: "shared"; sharedGameId: number };
+
 // ─── Service ─────────────────────────────────────────────────
 
 class GameScoresheetService {
   public async getGameScoresheets(
     args: GetGameScoresheetsArgs,
   ): Promise<GetGameScoresheetsOutputType> {
-    const { input, ctx } = args;
-    const response = await db.transaction(async (tx) => {
-      if (input.type === "original") {
-        const returnedGame = await resolveOriginalGame(input, ctx, tx);
+    return this.withGameContext(args, async (context, userId, tx) => {
+      if (context.type === "original") {
         const originalScoresheets = await scoresheetRepository.getAll(
-          { createdBy: ctx.userId, gameId: returnedGame.id },
+          { createdBy: userId, gameId: context.gameId },
           tx,
         );
         const sharedScoresheets = await scoresheetRepository.getAllShared(
           {
-            sharedWithId: ctx.userId,
+            sharedWithId: userId,
             where: {
               linkedScoresheetId: { isNull: true },
-              sharedGameId: {
-                in: returnedGame.linkedGames.map((lg) => lg.id),
-              },
+              sharedGameId: { in: context.linkedGameIds },
             },
             with: { scoresheet: true },
           },
@@ -182,15 +185,11 @@ class GameScoresheetService {
         ].sort(scoresheetSortComparator);
       }
 
-      const returnedSharedGame = await resolveSharedGame(input, ctx, tx);
       const sharedScoresheets = await scoresheetRepository.getAllShared(
         {
-          sharedWithId: ctx.userId,
-          where: { sharedGameId: returnedSharedGame.id },
-          with: {
-            scoresheet: true,
-            sharedRounds: { with: { round: true } },
-          },
+          sharedWithId: userId,
+          where: { sharedGameId: context.sharedGameId },
+          with: { scoresheet: true },
         },
         tx,
       );
@@ -198,31 +197,26 @@ class GameScoresheetService {
         .map(mapSharedScoresheetBase)
         .sort(scoresheetSortComparator);
     });
-    return response;
   }
 
   public async getGameScoreSheetsWithRounds(
     args: GetGameScoreSheetsWithRoundsArgs,
   ): Promise<GetGameScoreSheetsWithRoundsOutputType> {
-    const { input, ctx } = args;
-    const response = await db.transaction(async (tx) => {
-      if (input.type === "original") {
-        const returnedGame = await resolveOriginalGame(input, ctx, tx);
+    return this.withGameContext(args, async (context, userId, tx) => {
+      if (context.type === "original") {
         const originalScoresheets = await scoresheetRepository.getAll(
           {
-            createdBy: ctx.userId,
-            gameId: returnedGame.id,
+            createdBy: userId,
+            gameId: context.gameId,
             with: { rounds: { orderBy: { order: "asc" } } },
           },
           tx,
         );
         const sharedScoresheets = await scoresheetRepository.getAllShared(
           {
-            sharedWithId: ctx.userId,
+            sharedWithId: userId,
             where: {
-              sharedGameId: {
-                in: returnedGame.linkedGames.map((lg) => lg.id),
-              },
+              sharedGameId: { in: context.linkedGameIds },
               linkedScoresheetId: { isNull: true },
             },
             with: {
@@ -244,11 +238,10 @@ class GameScoresheetService {
         ].sort(scoresheetSortComparator);
       }
 
-      const returnedSharedGame = await resolveSharedGame(input, ctx, tx);
       const sharedScoresheets = await scoresheetRepository.getAllShared(
         {
-          sharedWithId: ctx.userId,
-          where: { sharedGameId: returnedSharedGame.id },
+          sharedWithId: userId,
+          where: { sharedGameId: context.sharedGameId },
           with: {
             scoresheet: true,
             sharedRounds: { with: { round: true } },
@@ -263,7 +256,42 @@ class GameScoresheetService {
         }))
         .sort(scoresheetSortComparator);
     });
-    return response;
+  }
+
+  /**
+   * Resolves the game (original or shared) inside a transaction and delegates
+   * to a handler with a normalised context, eliminating repeated resolution
+   * and branching boilerplate.
+   */
+  private async withGameContext<T>(
+    args: { input: GetGameInputType; ctx: { userId: string } },
+    handler: (
+      context: ResolvedGameContext,
+      userId: string,
+      tx: TransactionType,
+    ) => Promise<T>,
+  ): Promise<T> {
+    const { input, ctx } = args;
+    return db.transaction(async (tx) => {
+      if (input.type === "original") {
+        const returnedGame = await resolveOriginalGame(input, ctx, tx);
+        return handler(
+          {
+            type: "original",
+            gameId: returnedGame.id,
+            linkedGameIds: returnedGame.linkedGames.map((lg) => lg.id),
+          },
+          ctx.userId,
+          tx,
+        );
+      }
+      const returnedSharedGame = await resolveSharedGame(input, ctx, tx);
+      return handler(
+        { type: "shared", sharedGameId: returnedSharedGame.id },
+        ctx.userId,
+        tx,
+      );
+    });
   }
 }
 

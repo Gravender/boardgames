@@ -12,9 +12,7 @@ interface scoreSheet {
   winCondition: NonNullable<
     z.infer<typeof insertScoreSheetSchema>["winCondition"]
   >;
-  targetScore: NonNullable<
-    z.infer<typeof insertScoreSheetSchema>["targetScore"]
-  >;
+  targetScore: z.infer<typeof insertScoreSheetSchema>["targetScore"] | null;
 }
 interface Round {
   score: NonNullable<z.infer<typeof insertRoundSchema>["score"]> | null;
@@ -70,13 +68,15 @@ export function calculateFinalScore(rounds: Round[], scoresheet: scoreSheet) {
       }, null);
     }
     if (scoresheet.winCondition === "Target Score") {
+      if (scoresheet.targetScore == null) return null;
+      const target = scoresheet.targetScore;
       return rounds.reduce<number | null>((acc, round) => {
         if (round.score) {
           if (acc) {
-            if (acc === scoresheet.targetScore) return acc;
-            if (round.score === scoresheet.targetScore) return round.score;
-            const accClose = Math.abs(acc - scoresheet.targetScore);
-            const roundClose = Math.abs(round.score - scoresheet.targetScore);
+            if (acc === target) return acc;
+            if (round.score === target) return round.score;
+            const accClose = Math.abs(acc - target);
+            const roundClose = Math.abs(round.score - target);
             return accClose < roundClose ? acc : round.score;
           }
           return round.score;

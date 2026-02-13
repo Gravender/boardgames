@@ -5,6 +5,7 @@ import type { TransactionType } from "@board-games/db/client";
 import type { editScoresheetSchemaApiInput } from "@board-games/shared";
 
 import type { EditGameArgs } from "./game.service.types";
+import { roundRepository } from "../../repositories/scoresheet/round.repository";
 import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
@@ -77,7 +78,7 @@ const handleNewScoresheet = async (
     scoresheetId: returnedScoresheet.id,
     order: index + 1,
   }));
-  await scoresheetRepository.insertRounds(roundsToInsert, tx);
+  await roundRepository.insertRounds(roundsToInsert, tx);
 };
 
 const handleUpdateScoresheet = async (
@@ -257,7 +258,7 @@ const handleUpdateScoresheetAndRounds = async (
   }
 
   if (inputScoresheet.roundsToAdd.length > 0) {
-    await scoresheetRepository.insertRounds(
+    await roundRepository.insertRounds(
       inputScoresheet.roundsToAdd.map((round) => ({
         ...round,
         scoresheetId,
@@ -267,7 +268,7 @@ const handleUpdateScoresheetAndRounds = async (
   }
 
   if (inputScoresheet.roundsToDelete.length > 0) {
-    await scoresheetRepository.deleteRounds({
+    await roundRepository.deleteRounds({
       input: {
         ids: inputScoresheet.roundsToDelete,
       },
@@ -311,20 +312,18 @@ const bulkUpdateRounds = async (args: {
   tx: TransactionType;
 }) => {
   const { roundsToEdit, tx } = args;
-  for (const round of roundsToEdit) {
-    await scoresheetRepository.updateRound({
+  await roundRepository.updateRounds({
+    input: roundsToEdit.map((round) => ({
       id: round.id,
-      input: {
-        name: round.name,
-        score: round.score,
-        type: round.type,
-        color: round.color,
-        lookup: round.lookup,
-        modifier: round.modifier,
-      },
-      tx,
-    });
-  }
+      name: round.name,
+      score: round.score,
+      type: round.type,
+      color: round.color,
+      lookup: round.lookup,
+      modifier: round.modifier,
+    })),
+    tx,
+  });
 };
 
 export const deleteScoresheets = async (args: {

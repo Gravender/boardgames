@@ -4,8 +4,11 @@ export {
   type InsertScoreSheetInputType,
   insertSharedScoreSheetInput,
   type InsertSharedScoreSheetInputType,
+} from "../../../repositories/scoresheet/scoresheet.repository.types";
+
+export {
   insertRoundSchemaInput,
   type InsertRoundInputType,
   updateRoundSchema,
   type UpdateRoundType,
-} from "../../../repositories/scoresheet/scoresheet.repository.types";
+} from "../../../repositories/scoresheet/round.repository.types";

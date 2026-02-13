@@ -54,7 +54,7 @@ class PlayerRepository {
     const database = tx ?? db;
     return database.query.player.findMany({
       columns: { id: true, name: true },
-      where: { createdBy },
+      where: { createdBy, deletedAt: { isNull: true } },
     });
   }
 

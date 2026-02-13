@@ -3,14 +3,14 @@ import { TRPCError } from "@trpc/server";
 import { db } from "@board-games/db/client";
 
 import { gameRepository } from "../../repositories/game/game.repository";
+import { locationRepository } from "../../repositories/location/location.repository";
 import { matchRepository } from "../../repositories/match/match.repository";
 import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
+import { playerRepository } from "../../repositories/player/player.repository";
 import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
+import { sharedGameRepository } from "../../repositories/shared-game/shared-game.repository";
 import { sharingRepository } from "../../repositories/sharing/sharing.repository";
 import { friendRepository } from "../../repositories/social/friend.repository";
-import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
-import { locationRepository } from "../../routers/location/repository/location.repository";
-import { playerRepository } from "../../routers/player/repository/player.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
 class FriendService {

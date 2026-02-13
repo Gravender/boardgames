@@ -11,13 +11,14 @@ import { calculatePlacement } from "@board-games/shared";
 import type { ImportBGGGamesOutputType } from "../../routers/game/game.output";
 import type { ImportBGGGamesArgs } from "./game.service.types";
 import { gameRepository } from "../../repositories/game/game.repository";
+import { locationRepository } from "../../repositories/location/location.repository";
 import { matchUpdateStateRepository } from "../../repositories/match/match-update-state.repository";
 import { matchRepository } from "../../repositories/match/match.repository";
 import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
 import { teamRepository } from "../../repositories/match/team.repository";
+import { playerRepository } from "../../repositories/player/player.repository";
+import { roundRepository } from "../../repositories/scoresheet/round.repository";
 import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
-import { locationRepository } from "../../routers/location/repository/location.repository";
-import { playerRepository } from "../../routers/player/repository/player.repository";
 import { assertInserted } from "../../utils/databaseHelpers";
 
 interface MappedParticipant {
@@ -103,14 +104,14 @@ class GameImportService {
     const { input, ctx } = args;
     const userId = ctx.userId;
 
-    const hasGames = await gameRepository.hasGamesByUser(userId);
-    if (hasGames) {
-      return null;
-    }
-
     const mappedGames = this.mapBGGData(input);
 
     await db.transaction(async (tx) => {
+      const hasGames = await gameRepository.hasGamesByUser(userId, tx);
+      if (hasGames) {
+        return;
+      }
+
       const createdLocations = await this.createLocations(
         input.locations,
         userId,
@@ -241,7 +242,7 @@ class GameImportService {
     );
 
     // Create default round
-    const defaultRound = await scoresheetRepository.insertRound(
+    const defaultRound = await roundRepository.insertRound(
       {
         name: "Round 1",
         type: "Numeric",
@@ -520,6 +521,16 @@ class GameImportService {
       }
     } else {
       // Scored games: use calculatePlacement from @board-games/shared
+      if (
+        scoresheet.winCondition === "Target Score" &&
+        scoresheet.targetScore == null
+      ) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            "Cannot calculate placement: winCondition is 'Target Score' but targetScore is not set.",
+        });
+      }
       const playersForCalc = insertedMatchPlayers.map((mp, idx) => ({
         id: mp.id,
         rounds: [{ score: participantData[idx]?.score ?? null }],
@@ -528,7 +539,7 @@ class GameImportService {
       const placements = calculatePlacement(playersForCalc, {
         roundsScore: scoresheet.roundsScore,
         winCondition: scoresheet.winCondition,
-        targetScore: scoresheet.targetScore ?? 0,
+        targetScore: scoresheet.targetScore,
       });
       for (const placement of placements) {
         await matchPlayerRepository.updateMatchPlayerPlacementAndScore({
@@ -574,7 +585,7 @@ class GameImportService {
       scoresheetId,
     }));
     if (mappedRounds.length === 0) return [];
-    return scoresheetRepository.insertRounds(mappedRounds, tx);
+    return roundRepository.insertRounds(mappedRounds, tx);
   }
 }
 

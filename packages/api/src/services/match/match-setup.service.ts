@@ -2,12 +2,13 @@ import { TRPCError } from "@trpc/server";
 
 import type { TransactionType } from "@board-games/db/client";
 
-import type { InsertRoundInputType } from "../../repositories/scoresheet/scoresheet.repository.types";
+import type { InsertRoundInputType } from "../../repositories/scoresheet/round.repository.types";
 import type { CreateMatchArgs } from "./match.service.types";
 import { gameRepository } from "../../repositories/game/game.repository";
+import { locationRepository } from "../../repositories/location/location.repository";
+import { roundRepository } from "../../repositories/scoresheet/round.repository";
 import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
-import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
-import { locationRepository } from "../../routers/location/repository/location.repository";
+import { sharedGameRepository } from "../../repositories/shared-game/shared-game.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
 class MatchSetupService {
@@ -272,7 +273,7 @@ class MatchSetupService {
           message: `New round not found for shared round ${String(sharedRound.id)} (template round ${String(sharedRound.round.id)}). For Create Match. Based on Shared Scoresheet.`,
         });
       }
-      const linkedSharedRound = await scoresheetRepository.linkSharedRound({
+      const linkedSharedRound = await roundRepository.linkSharedRound({
         input: {
           sharedRoundId: sharedRound.id,
           linkedRoundId: newRound.id,
@@ -425,7 +426,7 @@ class MatchSetupService {
       scoresheetId,
     }));
     if (mappedRounds.length === 0) return [];
-    return scoresheetRepository.insertRounds(mappedRounds, tx);
+    return roundRepository.insertRounds(mappedRounds, tx);
   }
 }
 

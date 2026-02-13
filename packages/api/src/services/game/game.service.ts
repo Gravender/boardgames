@@ -15,6 +15,7 @@ import type {
 import { gameRoleRepository } from "../../repositories/game/game-role.repository";
 import { gameRepository } from "../../repositories/game/game.repository";
 import { imageRepository } from "../../repositories/image/image.repository";
+import { roundRepository } from "../../repositories/scoresheet/round.repository";
 import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
 import { friendRepository } from "../../repositories/social/friend.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
@@ -89,7 +90,7 @@ class GameService {
             },
             "Failed to create scoresheet",
           );
-          const defaultRound = await scoresheetRepository.insertRound(
+          const defaultRound = await roundRepository.insertRound(
             {
               name: "Round 1",
               scoresheetId: defaultScoresheet.id,
@@ -132,7 +133,7 @@ class GameService {
               order: index + 1,
             }));
             if (rounds.length > 0) {
-              const createdRounds = await scoresheetRepository.insertRounds(
+              const createdRounds = await roundRepository.insertRounds(
                 rounds,
                 tx,
               );
@@ -356,7 +357,7 @@ class GameService {
     });
   }
 
-  public async resolveImageId(args: {
+  private async resolveImageId(args: {
     imageInput: CreateGameArgs["input"]["image"];
     userId: string;
     tx: TransactionType;

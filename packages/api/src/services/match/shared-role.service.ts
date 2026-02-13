@@ -4,7 +4,7 @@ import type { TransactionType } from "@board-games/db/client";
 
 import { gameRoleRepository } from "../../repositories/game/game-role.repository";
 import { matchUpdatePlayerRoleRepository } from "../../repositories/match/match-update-player-role.repository";
-import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
+import { sharedGameRepository } from "../../repositories/shared-game/shared-game.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
 /**

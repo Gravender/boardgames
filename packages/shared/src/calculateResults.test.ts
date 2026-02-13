@@ -20,9 +20,7 @@ interface scoreSheet {
   winCondition: NonNullable<
     z.infer<typeof insertScoreSheetSchema>["winCondition"]
   >;
-  targetScore: NonNullable<
-    z.infer<typeof insertScoreSheetSchema>["targetScore"]
-  >;
+  targetScore: z.infer<typeof insertScoreSheetSchema>["targetScore"];
 }
 
 describe("calculateFinalScore", () => {
