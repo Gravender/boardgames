@@ -1,61 +1,138 @@
-import type { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 
+import type { TransactionType } from "@board-games/db/client";
 import type {
   scoreSheetRoundsScore,
   scoreSheetWinConditions,
 } from "@board-games/db/constants";
-import type {
-  insertMatchPlayerSchema,
-  insertMatchSchema,
-  insertPlayerSchema,
-  insertRoundPlayerSchema,
-} from "@board-games/db/zodSchema";
-import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
-import {
-  game,
-  location,
-  match,
-  matchPlayer,
-  player,
-  round,
-  roundPlayer,
-  scoresheet,
-  team,
-} from "@board-games/db/schema";
+import { calculatePlacement } from "@board-games/shared";
 
 import type { ImportBGGGamesOutputType } from "../../routers/game/game.output";
 import type { ImportBGGGamesArgs } from "./game.service.types";
+import { gameRepository } from "../../repositories/game/game.repository";
+import { matchUpdateStateRepository } from "../../repositories/match/match-update-state.repository";
+import { matchRepository } from "../../repositories/match/match.repository";
+import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
+import { teamRepository } from "../../repositories/match/team.repository";
+import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
+import { locationRepository } from "../../routers/location/repository/location.repository";
+import { playerRepository } from "../../routers/player/repository/player.repository";
+import { assertInserted } from "../../utils/databaseHelpers";
+
+interface MappedParticipant {
+  name: string;
+  order: number;
+  score: number | undefined;
+  finishPlace: number;
+  isWinner: boolean;
+  team: string | undefined;
+  isNew: boolean;
+}
+
+interface MappedPlay {
+  name: string;
+  participants: MappedParticipant[];
+  dateString: string;
+  duration: number;
+  isFinished: boolean;
+  comment: string | undefined;
+  locationRefId: number;
+  usesTeams: boolean;
+}
+
+interface MappedGame {
+  name: string;
+  minPlayers: number;
+  maxPlayers: number;
+  minPlayTime: number;
+  maxPlayTime: number;
+  yearPublished: number;
+  noPoints: boolean;
+  isCoop: boolean;
+  description: string;
+  plays: MappedPlay[];
+}
+
+interface CreatedLocation {
+  bggLocationId: number;
+  name: string;
+  trackerId: number;
+}
+
+interface DefaultScoresheetInfo {
+  id: number;
+  name: string;
+  isCoop: boolean;
+  winCondition: (typeof scoreSheetWinConditions)[number];
+  targetScore: number | null;
+  roundsScore: (typeof scoreSheetRoundsScore)[number];
+  templateVersion: number | null;
+  scoresheetKey: string | null;
+}
+
+interface DefaultRoundInfo {
+  id: number;
+  name: string;
+  type: "Numeric" | "Checkbox";
+  order: number;
+  scoresheetId: number;
+  color: string | null;
+  score: number | null;
+  winCondition: number | null;
+  toggleScore: number | null;
+  modifier: number | null;
+  lookup: number | null;
+  roundKey: string | null;
+  templateRoundId: number | null;
+  kind:
+    | "numeric"
+    | "rank"
+    | "checkbox"
+    | "timer"
+    | "resources"
+    | "victoryPoints"
+    | null;
+  config: unknown;
+}
 
 class GameImportService {
   public async importBGGGames(
     args: ImportBGGGamesArgs,
   ): Promise<ImportBGGGamesOutputType> {
     const { input, ctx } = args;
+    const userId = ctx.userId;
 
-    const currentGames = await db.query.game.findMany({
-      where: {
-        createdBy: ctx.userId,
-        deletedAt: {
-          isNull: true,
-        },
-      },
-    });
-    if (currentGames.length > 0) {
+    const hasGames = await gameRepository.hasGamesByUser(userId);
+    if (hasGames) {
       return null;
     }
 
-    const mappedGames = input.games.map((g) => ({
+    const mappedGames = this.mapBGGData(input);
+
+    await db.transaction(async (tx) => {
+      const createdLocations = await this.createLocations(
+        input.locations,
+        userId,
+        tx,
+      );
+
+      for (const mappedGame of mappedGames) {
+        await this.importGame(mappedGame, createdLocations, userId, tx);
+      }
+    });
+
+    return null;
+  }
+
+  private mapBGGData(input: ImportBGGGamesArgs["input"]): MappedGame[] {
+    return input.games.map((g) => ({
       name: g.name,
       minPlayers: g.minPlayerCount,
       maxPlayers: g.maxPlayerCount,
-      playingTime: g.maxPlayTime,
       minPlayTime: g.minPlayTime,
       maxPlayTime: g.maxPlayTime,
       yearPublished: g.bggYear,
-      age: g.minAge,
       noPoints: g.noPoints,
       isCoop: g.cooperative,
       description: "",
@@ -68,7 +145,7 @@ class GameImportService {
               (p) => p.id === playerScore.playerRefId,
             );
             return {
-              name: foundPlayer?.name,
+              name: foundPlayer?.name ?? "Unknown",
               order: playerScore.seatOrder,
               score:
                 playerScore.score !== "" && !g.noPoints
@@ -80,7 +157,6 @@ class GameImportService {
               isNew: playerScore.newPlayer,
             };
           }),
-          dateLong: new Date(play.playDate).getTime(),
           dateString: play.playDate,
           duration: play.durationMin,
           isFinished: true,
@@ -89,348 +165,416 @@ class GameImportService {
           usesTeams: play.usesTeams,
         })),
     }));
+  }
 
-    await db.transaction(async (tx) => {
-      const createdLocations: {
-        bggLocationId: number;
-        name: string;
-        trackerId: number;
-      }[] = [];
-      for (const locationToInsert of input.locations) {
-        const [insertedLocation] = await tx
-          .insert(location)
-          .values({
-            name: locationToInsert.name,
-            createdBy: ctx.userId,
-          })
-          .returning();
-        if (!insertedLocation) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to create location",
-          });
-        }
-        createdLocations.push({
-          bggLocationId: locationToInsert.id,
-          name: insertedLocation.name,
-          trackerId: insertedLocation.id,
-        });
-      }
+  private async createLocations(
+    locations: ImportBGGGamesArgs["input"]["locations"],
+    userId: string,
+    tx: TransactionType,
+  ): Promise<CreatedLocation[]> {
+    const createdLocations: CreatedLocation[] = [];
+    for (const loc of locations) {
+      const insertedLocation = await locationRepository.insert(
+        { name: loc.name, createdBy: userId },
+        tx,
+      );
+      assertInserted(
+        insertedLocation,
+        { userId, value: { locationName: loc.name } },
+        "Failed to create location",
+      );
+      createdLocations.push({
+        bggLocationId: loc.id,
+        name: insertedLocation.name,
+        trackerId: insertedLocation.id,
+      });
+    }
+    return createdLocations;
+  }
 
-      for (const mappedGame of mappedGames) {
-        const [returningGame] = await tx
-          .insert(game)
-          .values({
-            name: mappedGame.name,
-            description: mappedGame.description,
-            ownedBy: false,
-            yearPublished: mappedGame.yearPublished,
-            playersMin: mappedGame.minPlayers,
-            playersMax: mappedGame.maxPlayers,
-            playtimeMin: mappedGame.minPlayTime,
-            playtimeMax: mappedGame.maxPlayTime,
-            createdBy: ctx.userId,
-          })
-          .returning();
-        if (!returningGame) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to create game",
-          });
-        }
-
-        let winCondition: (typeof scoreSheetWinConditions)[number] =
-          "Highest Score";
-        if (mappedGame.noPoints) {
-          winCondition = "Manual";
-        }
-        const [returnedScoresheet] = await tx
-          .insert(scoresheet)
-          .values({
-            name: "Default",
-            createdBy: ctx.userId,
-            gameId: returningGame.id,
-            isCoop: mappedGame.isCoop,
-            type: "Default",
-            winCondition: winCondition,
-          })
-          .returning();
-        if (!returnedScoresheet) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to create scoresheet",
-          });
-        }
-        await tx.insert(round).values({
-          name: "Round 1",
-          order: 1,
-          type: "Numeric",
-          scoresheetId: returnedScoresheet.id,
-        });
-
-        for (const [index, play] of mappedGame.plays.entries()) {
-          await this.importPlay({
-            play,
-            index,
-            mappedGame,
-            returnedScoresheet,
-            returningGame,
-            createdLocations,
-            userId: ctx.userId,
-            tx,
-          });
-        }
-      }
+  private async importGame(
+    mappedGame: MappedGame,
+    createdLocations: CreatedLocation[],
+    userId: string,
+    tx: TransactionType,
+  ) {
+    // Create game via gameRepository (same pattern as gameService.createGame)
+    const insertedGame = await gameRepository.createGame({
+      input: {
+        name: mappedGame.name,
+        description: mappedGame.description,
+        ownedBy: false,
+        yearPublished: mappedGame.yearPublished,
+        playersMin: mappedGame.minPlayers,
+        playersMax: mappedGame.maxPlayers,
+        playtimeMin: mappedGame.minPlayTime,
+        playtimeMax: mappedGame.maxPlayTime,
+        imageId: null,
+      },
+      userId,
+      tx,
     });
+    assertInserted(
+      insertedGame,
+      { userId, value: { gameName: mappedGame.name } },
+      "Failed to create game",
+    );
 
-    return null;
+    // Create default scoresheet (same pattern as gameService.createGame with no scoresheets)
+    const winCondition: (typeof scoreSheetWinConditions)[number] =
+      mappedGame.noPoints ? "Manual" : "Highest Score";
+    const defaultScoresheet = await scoresheetRepository.insert(
+      {
+        name: "Default",
+        type: "Default",
+        createdBy: userId,
+        gameId: insertedGame.id,
+        isCoop: mappedGame.isCoop,
+        winCondition,
+      },
+      tx,
+    );
+    assertInserted(
+      defaultScoresheet,
+      { userId, value: { gameId: insertedGame.id } },
+      "Failed to create default scoresheet",
+    );
+
+    // Create default round
+    const defaultRound = await scoresheetRepository.insertRound(
+      {
+        name: "Round 1",
+        type: "Numeric",
+        order: 1,
+        scoresheetId: defaultScoresheet.id,
+      },
+      tx,
+    );
+    assertInserted(
+      defaultRound,
+      { userId, value: { scoresheetId: defaultScoresheet.id } },
+      "Failed to create default round",
+    );
+
+    // Import each play as a match
+    for (const [index, play] of mappedGame.plays.entries()) {
+      await this.importPlay({
+        play,
+        index,
+        gameName: mappedGame.name,
+        gameId: insertedGame.id,
+        defaultScoresheet,
+        defaultRound,
+        createdLocations,
+        userId,
+        tx,
+      });
+    }
   }
 
   private async importPlay(args: {
-    play: {
-      name: string;
-      participants: {
-        name: string | undefined;
-        order: number;
-        score: number | undefined;
-        finishPlace: number;
-        isWinner: boolean;
-        team: string | undefined;
-        isNew: boolean;
-      }[];
-      dateString: string;
-      duration: number;
-      isFinished: boolean;
-      comment: string | undefined;
-      locationRefId: number;
-      usesTeams: boolean;
-    };
+    play: MappedPlay;
     index: number;
-    mappedGame: { name: string; isCoop: boolean };
-    returnedScoresheet: {
-      id: number;
-      name: string;
-      gameId: number;
-      isCoop: boolean;
-      winCondition: (typeof scoreSheetWinConditions)[number];
-      targetScore: number | null;
-      roundsScore: (typeof scoreSheetRoundsScore)[number];
-    };
-    returningGame: { id: number };
-    createdLocations: {
-      bggLocationId: number;
-      name: string;
-      trackerId: number;
-    }[];
+    gameName: string;
+    gameId: number;
+    defaultScoresheet: DefaultScoresheetInfo;
+    defaultRound: DefaultRoundInfo;
+    createdLocations: CreatedLocation[];
     userId: string;
     tx: TransactionType;
   }) {
     const {
       play,
       index,
-      mappedGame,
-      returnedScoresheet,
-      returningGame,
+      gameName,
+      gameId,
+      defaultScoresheet,
+      defaultRound,
       createdLocations,
       userId,
       tx,
     } = args;
 
+    // 1. Fork scoresheet for match (same pattern as matchSetupService.resolveOriginalScoresheet)
+    const matchScoresheet = await scoresheetRepository.insert(
+      {
+        name: defaultScoresheet.name,
+        isCoop: defaultScoresheet.isCoop,
+        winCondition: defaultScoresheet.winCondition,
+        targetScore: defaultScoresheet.targetScore ?? undefined,
+        roundsScore: defaultScoresheet.roundsScore,
+        parentId: defaultScoresheet.id,
+        forkedFromScoresheetId: defaultScoresheet.id,
+        forkedFromTemplateVersion: defaultScoresheet.templateVersion,
+        scoresheetKey: defaultScoresheet.scoresheetKey ?? undefined,
+        createdBy: userId,
+        gameId,
+        type: "Match",
+      },
+      tx,
+    );
+    assertInserted(
+      matchScoresheet,
+      { userId, value: { gameId } },
+      "Failed to create match scoresheet",
+    );
+
+    // 2. Copy rounds from default with provenance (same as matchSetupService.insertRoundsFromTemplate)
+    const matchRounds = await this.insertRoundsFromTemplate(
+      [defaultRound],
+      matchScoresheet.id,
+      tx,
+    );
+    const matchRound = matchRounds[0];
+    if (!matchRound) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to create match round",
+      });
+    }
+
+    // 3. Create match (same pattern as matchService.createMatch)
     const currentLocation = createdLocations.find(
       (loc) => loc.bggLocationId === play.locationRefId,
     );
-    const playScoresheetValues = {
-      name: returnedScoresheet.name,
-      gameId: returnedScoresheet.gameId,
-      createdBy: userId,
-      isCoop: returnedScoresheet.isCoop,
-      winCondition: returnedScoresheet.winCondition,
-      targetScore: returnedScoresheet.targetScore ?? undefined,
-      roundsScore: returnedScoresheet.roundsScore,
-      type: "Match" as const,
-    };
-    const [playScoresheet] = await tx
-      .insert(scoresheet)
-      .values(playScoresheetValues)
-      .returning();
-    if (!playScoresheet) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to create scoresheet",
-      });
-    }
-    const [insertedRound] = await tx
-      .insert(round)
-      .values({
-        name: "Round 1",
-        order: 1,
-        type: "Numeric",
-        scoresheetId: playScoresheet.id,
-      })
-      .returning();
-    if (!insertedRound) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to create round",
-      });
-    }
-    if (playScoresheet.type !== "Match") {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message:
-          "Match must use a scoresheet with type Match. Invalid scoresheet type.",
-      });
-    }
-    const matchToInsert: z.infer<typeof insertMatchSchema> = {
-      createdBy: userId,
-      scoresheetId: playScoresheet.id,
-      gameId: returningGame.id,
-      name: `${mappedGame.name} #${index + 1}`,
-      date: new Date(play.dateString),
-      finished: play.isFinished,
-      locationId: currentLocation?.trackerId,
-    };
-    const [returningMatch] = await tx
-      .insert(match)
-      .values(matchToInsert)
-      .returning();
-    if (!returningMatch) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to create match",
-      });
-    }
-    await tx
-      .update(scoresheet)
-      .set({ forkedForMatchId: returningMatch.id })
-      .where(eq(scoresheet.id, playScoresheet.id));
-
-    const playersToInsert: z.infer<typeof insertPlayerSchema>[] =
-      play.participants.map((p) => ({
-        name: p.name ?? "Unknown",
+    const insertedMatch = await matchRepository.insert(
+      {
+        name: gameName + " #" + String(index + 1),
+        date: new Date(play.dateString),
+        gameId,
+        locationId: currentLocation?.trackerId,
         createdBy: userId,
-      }));
-
-    let currentPlayers = await tx
-      .select({ id: player.id, name: player.name })
-      .from(player)
-      .where(eq(player.createdBy, userId));
-
-    const newPlayers = playersToInsert.filter(
-      (p) =>
-        !currentPlayers.some(
-          (existingPlayer) => existingPlayer.name === p.name,
-        ),
+        scoresheetId: matchScoresheet.id,
+        running: false,
+      },
+      tx,
+    );
+    assertInserted(
+      insertedMatch,
+      { userId, value: { gameName, index } },
+      "Failed to create match",
     );
 
-    if (newPlayers.length > 0) {
-      const insertedPlayers = await tx
-        .insert(player)
-        .values(newPlayers)
-        .returning();
-      currentPlayers = currentPlayers.concat(insertedPlayers);
+    // 4. Set match as finished and link scoresheet to match
+    await matchUpdateStateRepository.updateMatchFinished({
+      input: { id: insertedMatch.id, finished: true },
+      tx,
+    });
+    await scoresheetRepository.update({
+      input: { id: matchScoresheet.id, forkedForMatchId: insertedMatch.id },
+      tx,
+    });
+
+    // 5. Create/dedup players
+    let currentPlayers = await playerRepository.getPlayersByCreatedBy({
+      createdBy: userId,
+      tx,
+    });
+    const uniqueParticipantNames = [
+      ...new Set(play.participants.map((p) => p.name)),
+    ];
+    for (const name of uniqueParticipantNames) {
+      if (!currentPlayers.some((p) => p.name === name)) {
+        const newPlayer = await playerRepository.insert({
+          input: { createdBy: userId, name },
+          tx,
+        });
+        assertInserted(
+          newPlayer,
+          { userId, value: { playerName: name } },
+          "Failed to create player",
+        );
+        currentPlayers = [...currentPlayers, newPlayer];
+      }
     }
 
+    // 6. Create teams
     const createdTeams: { id: number; name: string }[] = [];
     if (play.usesTeams) {
-      const teams = new Set(
-        play.participants.map((p) => p.team).filter((t) => t !== undefined),
+      const teamNames = new Set(
+        play.participants
+          .map((p) => p.team)
+          .filter((t): t is string => t !== undefined),
       );
-      for (const playTeam of teams.values()) {
-        if (playTeam) {
-          const [insertedTeam] = await tx
-            .insert(team)
-            .values({
-              name: playTeam,
-              matchId: returningMatch.id,
-            })
-            .returning();
-          if (!insertedTeam) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create team",
-            });
-          }
-          createdTeams.push({
-            id: insertedTeam.id,
-            name: insertedTeam.name,
-          });
-        }
+      for (const teamName of teamNames) {
+        const insertedTeam = await teamRepository.createTeam({
+          input: { name: teamName, matchId: insertedMatch.id },
+          tx,
+        });
+        assertInserted(
+          insertedTeam,
+          { userId, value: { teamName, matchId: insertedMatch.id } },
+          "Failed to create team",
+        );
+        createdTeams.push({ id: insertedTeam.id, name: insertedTeam.name });
       }
     }
 
-    const calculatePlacement = (playerName: string) => {
-      const sortedParticipants = [...play.participants];
-      sortedParticipants.sort((a, b) => {
-        if (a.score !== undefined && b.score !== undefined) {
-          return b.score - a.score;
-        }
-        return a.order - b.order;
-      });
-      let placement = 1;
-      let prevScore = -1;
-      for (const [playerIndex, sortPlayer] of sortedParticipants.entries()) {
-        if (playerIndex > 0 && prevScore !== sortPlayer.score) {
-          placement = playerIndex + 1;
-        }
-        prevScore = sortPlayer.score ?? 0;
-        if (sortPlayer.name === playerName) {
-          return placement;
-        }
+    // 7. Create match players without score/placement/winner (same as matchParticipantsService)
+    const participantData = play.participants.map((p) => {
+      const foundPlayer = currentPlayers.find((cp) => cp.name === p.name);
+      if (!foundPlayer) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Player " + p.name + " not found for game " + gameName,
+        });
       }
-      return 0;
+      return {
+        playerId: foundPlayer.id,
+        teamId: createdTeams.find((t) => t.name === p.team)?.id ?? null,
+        score: p.score,
+        isWinner: p.isWinner,
+      };
+    });
+    const matchPlayersInput = participantData.map((pd) => ({
+      matchId: insertedMatch.id,
+      playerId: pd.playerId,
+      teamId: pd.teamId,
+    }));
+    const insertedMatchPlayers = await matchPlayerRepository.insertMatchPlayers(
+      {
+        input: matchPlayersInput,
+        tx,
+      },
+    );
+    assertInserted(
+      insertedMatchPlayers.at(0),
+      { userId, value: { matchId: insertedMatch.id } },
+      "Failed to create match players",
+    );
+
+    // 8. Create round players without score (same as matchParticipantsService)
+    const roundPlayersInput = insertedMatchPlayers.map((mp) => ({
+      roundId: matchRound.id,
+      matchPlayerId: mp.id,
+      updatedBy: userId,
+    }));
+    const insertedRoundPlayers = await matchPlayerRepository.insertRounds({
+      input: roundPlayersInput,
+      tx,
+    });
+
+    // 9. Update round player scores
+    for (const insertedRoundPlayer of insertedRoundPlayers) {
+      const participantIdx = insertedMatchPlayers.findIndex(
+        (mp) => mp.id === insertedRoundPlayer.matchPlayerId,
+      );
+      const score = participantData[participantIdx]?.score;
+      if (score !== undefined) {
+        await matchPlayerRepository.updateRoundPlayer({
+          input: {
+            id: insertedRoundPlayer.id,
+            score,
+            updatedBy: userId,
+          },
+          tx,
+        });
+      }
+    }
+
+    // 10. Calculate placement and update match players
+    await this.updateMatchPlayerResults({
+      insertedMatchPlayers,
+      participantData,
+      scoresheet: defaultScoresheet,
+      tx,
+    });
+  }
+
+  /**
+   * Calculate placement and update match player score/placement/winner.
+   * For Manual/Coop: uses BGG isWinner flag, no calculated placement.
+   * For scored games: uses calculatePlacement from @board-games/shared
+   * (same pattern as matchUpdateScoreService.updateMatchFinalScores).
+   */
+  private async updateMatchPlayerResults(args: {
+    insertedMatchPlayers: { id: number; teamId: number | null }[];
+    participantData: {
+      score: number | undefined;
+      isWinner: boolean;
+    }[];
+    scoresheet: {
+      winCondition: (typeof scoreSheetWinConditions)[number];
+      roundsScore: (typeof scoreSheetRoundsScore)[number];
+      targetScore: number | null;
+      isCoop: boolean;
     };
+    tx: TransactionType;
+  }) {
+    const { insertedMatchPlayers, participantData, scoresheet, tx } = args;
 
-    const matchPlayersToInsert: z.infer<typeof insertMatchPlayerSchema>[] =
-      play.participants.map((p) => {
-        const foundPlayer = currentPlayers.find((cp) => cp.name === p.name);
-        if (!foundPlayer) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: `Error player ${p.name} not Found Game:${mappedGame.name} Play:${play.name}`,
-          });
-        }
-        if (
-          play.participants.every((pp) => pp.finishPlace === p.finishPlace) &&
-          !play.participants.every((pp) => pp.isWinner === p.isWinner) &&
-          !mappedGame.isCoop
-        ) {
-          return {
-            matchId: returningMatch.id,
-            playerId: foundPlayer.id,
-            score: p.score,
-            winner: p.isWinner,
-            order: p.order,
-            placement: playScoresheet.isCoop
-              ? null
-              : calculatePlacement(p.name ?? ""),
-            teamId: createdTeams.find((t) => t.name === p.team)?.id ?? null,
-          };
-        }
-        return {
-          matchId: returningMatch.id,
-          playerId: foundPlayer.id,
-          score: p.score,
-          winner: p.isWinner,
-          order: p.order,
-          placement: p.finishPlace,
-          teamId: createdTeams.find((t) => t.name === p.team)?.id ?? null,
-        };
-      });
-
-    const insertedMatchPlayers = await tx
-      .insert(matchPlayer)
-      .values(matchPlayersToInsert)
-      .returning();
-
-    const roundPlayersToInsert: z.infer<typeof insertRoundPlayerSchema>[] =
-      insertedMatchPlayers.map((mp) => ({
-        roundId: insertedRound.id,
-        matchPlayerId: mp.id,
-        score: Number(mp.score),
-        updatedBy: userId,
+    if (scoresheet.winCondition === "Manual" || scoresheet.isCoop) {
+      // Manual/Coop: use BGG isWinner flag, no calculated placement
+      for (const [idx, mp] of insertedMatchPlayers.entries()) {
+        const data = participantData[idx];
+        if (!data) continue;
+        await matchPlayerRepository.updateMatchPlayerPlacementAndScore({
+          input: {
+            id: mp.id,
+            placement: null,
+            score: data.score ?? null,
+            winner: data.isWinner,
+          },
+          tx,
+        });
+      }
+    } else {
+      // Scored games: use calculatePlacement from @board-games/shared
+      const playersForCalc = insertedMatchPlayers.map((mp, idx) => ({
+        id: mp.id,
+        rounds: [{ score: participantData[idx]?.score ?? null }],
+        teamId: mp.teamId,
       }));
-    await tx.insert(roundPlayer).values(roundPlayersToInsert);
+      const placements = calculatePlacement(playersForCalc, {
+        roundsScore: scoresheet.roundsScore,
+        winCondition: scoresheet.winCondition,
+        targetScore: scoresheet.targetScore ?? 0,
+      });
+      for (const placement of placements) {
+        await matchPlayerRepository.updateMatchPlayerPlacementAndScore({
+          input: {
+            id: placement.id,
+            placement: placement.placement,
+            score: placement.score,
+            winner: placement.placement === 1,
+          },
+          tx,
+        });
+      }
+    }
+  }
+
+  /**
+   * Copies rounds from a template scoresheet to a new scoresheet, preserving provenance.
+   * Same pattern as matchSetupService.insertRoundsFromTemplate.
+   */
+  private async insertRoundsFromTemplate(
+    rounds: DefaultRoundInfo[],
+    scoresheetId: number,
+    tx: TransactionType,
+  ) {
+    const mappedRounds = rounds.map((sourceRound) => ({
+      name: sourceRound.name,
+      type: sourceRound.type,
+      color: sourceRound.color ?? undefined,
+      score: sourceRound.score ?? undefined,
+      winCondition: sourceRound.winCondition ?? undefined,
+      toggleScore: sourceRound.toggleScore ?? undefined,
+      modifier: sourceRound.modifier ?? undefined,
+      lookup: sourceRound.lookup ?? undefined,
+      order: sourceRound.order,
+      // provenance
+      parentId: sourceRound.id,
+      // root template anchor (follow chain to original, or this is the root)
+      templateRoundId: sourceRound.templateRoundId ?? sourceRound.id,
+      // stable identity across forks
+      roundKey: sourceRound.roundKey ?? undefined,
+      kind: sourceRound.kind ?? undefined,
+      config: sourceRound.config,
+      scoresheetId,
+    }));
+    if (mappedRounds.length === 0) return [];
+    return scoresheetRepository.insertRounds(mappedRounds, tx);
   }
 }
 

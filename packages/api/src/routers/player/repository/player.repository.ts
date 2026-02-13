@@ -46,6 +46,18 @@ class PlayerRepository {
       .returning();
     return returnedSharedPlayer;
   }
+  public async getPlayersByCreatedBy(args: {
+    createdBy: string;
+    tx?: TransactionType;
+  }) {
+    const { createdBy, tx } = args;
+    const database = tx ?? db;
+    return database.query.player.findMany({
+      columns: { id: true, name: true },
+      where: { createdBy },
+    });
+  }
+
   public async getPlayer<TConfig extends QueryConfig<"player">>(
     filters: {
       id: NonNullable<Filter<"player">["id"]>;

@@ -104,6 +104,18 @@ class GameRepository {
     return result as InferQueryResult<"sharedGame", TConfig> | undefined;
   }
 
+  public async hasGamesByUser(userId: string, tx?: TransactionType) {
+    const database = tx ?? db;
+    const result = await database.query.game.findFirst({
+      columns: { id: true },
+      where: {
+        createdBy: userId,
+        deletedAt: { isNull: true },
+      },
+    });
+    return result !== undefined;
+  }
+
   public async createGame(args: CreateGameArgs) {
     const { input, userId, tx } = args;
     const database = tx ?? db;
