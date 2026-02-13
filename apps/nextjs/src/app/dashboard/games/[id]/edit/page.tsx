@@ -1,8 +1,10 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { ErrorBoundary } from "react-error-boundary";
 
 import { EditGameFormWithSuspense } from "~/components/game/edit";
 import { EditGameFormSkeleton } from "~/components/game/edit/edit-game-form-skeleton";
+import { GameNotFound } from "~/components/game/not-found";
 import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 
 export default async function Page({
@@ -17,16 +19,16 @@ export default async function Page({
 
   // Prefetch queries
   void prefetch(
-    trpc.newGame.getGame.queryOptions({ id: gameId, type: "original" }),
+    trpc.game.getGame.queryOptions({ id: gameId, type: "original" }),
   );
   void prefetch(
-    trpc.newGame.gameScoreSheetsWithRounds.queryOptions({
+    trpc.game.gameScoreSheetsWithRounds.queryOptions({
       id: gameId,
       type: "original",
     }),
   );
   void prefetch(
-    trpc.newGame.gameRoles.queryOptions({
+    trpc.game.gameRoles.queryOptions({
       id: gameId,
       type: "original",
     }),
@@ -35,14 +37,16 @@ export default async function Page({
   return (
     <HydrateClient>
       <div className="flex w-full items-center justify-center">
-        <Suspense fallback={<EditGameFormSkeleton />}>
-          <EditGameFormWithSuspense
-            game={{
-              id: gameId,
-              type: "original",
-            }}
-          />
-        </Suspense>
+        <ErrorBoundary fallback={<GameNotFound />}>
+          <Suspense fallback={<EditGameFormSkeleton />}>
+            <EditGameFormWithSuspense
+              game={{
+                id: gameId,
+                type: "original",
+              }}
+            />
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </HydrateClient>
   );

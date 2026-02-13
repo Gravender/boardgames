@@ -106,7 +106,7 @@ function Content({
   teams: Team[];
   player: Player;
   players: Player[];
-  roles: RouterOutputs["newGame"]["gameRoles"];
+  roles: RouterOutputs["game"]["gameRoles"];
   onClose: () => void;
 }) {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");

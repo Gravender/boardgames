@@ -42,7 +42,7 @@ import { Spinner } from "~/components/spinner";
 import { withForm } from "~/hooks/form";
 import { useAddLocationMutation } from "~/hooks/mutations/location/add";
 
-type ScoreSheets = RouterOutputs["newGame"]["gameScoresheets"];
+type ScoreSheets = RouterOutputs["game"]["gameScoresheets"];
 type Locations = RouterOutputs["location"]["getLocations"];
 export const defaultValues = {
   name: "",

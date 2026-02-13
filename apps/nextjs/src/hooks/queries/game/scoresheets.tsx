@@ -14,7 +14,7 @@ type useScoresheetsInputType =
 export const useScoresheets = (input: useScoresheetsInputType) => {
   const trpc = useTRPC();
   const { data: scoresheets, isLoading: isLoadingScoresheets } = useQuery(
-    trpc.newGame.gameScoresheets.queryOptions({ ...input }),
+    trpc.game.gameScoresheets.queryOptions({ ...input }),
   );
   return {
     scoresheets,

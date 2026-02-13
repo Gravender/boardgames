@@ -15,7 +15,7 @@ type useGameScoreSheetsWithRoundsInputType =
     };
 
 type GameScoreSheetsWithRoundsType =
-  RouterOutputs["newGame"]["gameScoreSheetsWithRounds"];
+  RouterOutputs["game"]["gameScoreSheetsWithRounds"];
 
 export function useGameScoreSheetsWithRounds(
   input: Extract<useGameScoreSheetsWithRoundsInputType, { type: "original" }>,
@@ -42,7 +42,7 @@ export function useGameScoreSheetsWithRounds(
 } {
   const trpc = useTRPC();
   const { data: gameScoreSheetsWithRounds } = useSuspenseQuery(
-    trpc.newGame.gameScoreSheetsWithRounds.queryOptions(
+    trpc.game.gameScoreSheetsWithRounds.queryOptions(
       input.type === "original"
         ? { id: input.id, type: "original" }
         : { sharedGameId: input.sharedGameId, type: "shared" },

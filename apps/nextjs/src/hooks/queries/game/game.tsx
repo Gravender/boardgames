@@ -5,10 +5,10 @@ import type { RouterOutputs } from "@board-games/api";
 import { useTRPC } from "~/trpc/react";
 
 export function useGame(gameInput: { id: number; type: "original" }): {
-  game: Extract<RouterOutputs["newGame"]["getGame"], { type: "original" }>;
+  game: Extract<RouterOutputs["game"]["getGame"], { type: "original" }>;
 };
 export function useGame(gameInput: { sharedGameId: number; type: "shared" }): {
-  game: Extract<RouterOutputs["newGame"]["getGame"], { type: "shared" }>;
+  game: Extract<RouterOutputs["game"]["getGame"], { type: "shared" }>;
 };
 export function useGame(
   gameInput:
@@ -21,7 +21,7 @@ export function useGame(
         type: "shared";
       },
 ): {
-  game: NonNullable<RouterOutputs["newGame"]["getGame"]>;
+  game: NonNullable<RouterOutputs["game"]["getGame"]>;
 };
 export function useGame(
   gameInput:
@@ -34,11 +34,11 @@ export function useGame(
         type: "shared";
       },
 ): {
-  game: NonNullable<RouterOutputs["newGame"]["getGame"]>;
+  game: NonNullable<RouterOutputs["game"]["getGame"]>;
 } {
   const trpc = useTRPC();
   const { data: game } = useSuspenseQuery(
-    trpc.newGame.getGame.queryOptions(gameInput),
+    trpc.game.getGame.queryOptions(gameInput),
   );
 
   return {

@@ -28,7 +28,7 @@ import {
 import { formatMatchLink } from "~/utils/linkFormatting";
 import { MatchDropdown } from "./match-dropdown";
 
-type Match = NonNullable<RouterOutputs["newGame"]["gameMatches"]>[number];
+type Match = NonNullable<RouterOutputs["game"]["gameMatches"]>[number];
 interface MatchItemProps {
   match: Match;
 }

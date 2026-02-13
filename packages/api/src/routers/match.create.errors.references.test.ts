@@ -46,7 +46,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // Create a game and get scoresheet (but use wrong game ID)
-      const gameInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Test Game",
           description: null,
@@ -63,16 +63,16 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.newGame.create(gameInput);
+      const createdGame = await caller.game.create(gameInput);
 
       const scoresheetsInput: inferProcedureInput<
-        AppRouter["newGame"]["gameScoreSheetsWithRounds"]
+        AppRouter["game"]["gameScoreSheetsWithRounds"]
       > = {
         type: "original",
         id: createdGame.id,
       };
       const scoresheets =
-        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
+        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
 
       const defaultScoresheet = scoresheets[0];
       if (defaultScoresheet?.type !== "original") {
@@ -117,7 +117,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // Create a game
-      const gameInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Test Game",
           description: null,
@@ -134,7 +134,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.newGame.create(gameInput);
+      const createdGame = await caller.game.create(gameInput);
 
       const player = await caller.player.create({
         name: "Test Player",
@@ -174,7 +174,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // Create a game and get scoresheet
-      const gameInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Test Game",
           description: null,
@@ -191,16 +191,16 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.newGame.create(gameInput);
+      const createdGame = await caller.game.create(gameInput);
 
       const scoresheetsInput: inferProcedureInput<
-        AppRouter["newGame"]["gameScoreSheetsWithRounds"]
+        AppRouter["game"]["gameScoreSheetsWithRounds"]
       > = {
         type: "original",
         id: createdGame.id,
       };
       const scoresheets =
-        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
+        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
 
       const defaultScoresheet = scoresheets[0];
       if (defaultScoresheet?.type !== "original") {
@@ -240,7 +240,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // Create a game and get scoresheet
-      const gameInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Test Game",
           description: null,
@@ -257,16 +257,16 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.newGame.create(gameInput);
+      const createdGame = await caller.game.create(gameInput);
 
       const scoresheetsInput: inferProcedureInput<
-        AppRouter["newGame"]["gameScoreSheetsWithRounds"]
+        AppRouter["game"]["gameScoreSheetsWithRounds"]
       > = {
         type: "original",
         id: createdGame.id,
       };
       const scoresheets =
-        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
+        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
 
       const defaultScoresheet = scoresheets[0];
       if (defaultScoresheet?.type !== "original") {

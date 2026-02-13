@@ -1,8 +1,10 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { ErrorBoundary } from "react-error-boundary";
 
 import { EditGameFormWithSuspense } from "~/components/game/edit";
 import { EditGameFormSkeleton } from "~/components/game/edit/edit-game-form-skeleton";
+import { GameNotFound } from "~/components/game/not-found";
 import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 
 export default async function Page({
@@ -17,19 +19,19 @@ export default async function Page({
 
   // Prefetch queries
   void prefetch(
-    trpc.newGame.getGame.queryOptions({
+    trpc.game.getGame.queryOptions({
       sharedGameId: sharedGameId,
       type: "shared",
     }),
   );
   void prefetch(
-    trpc.newGame.gameScoreSheetsWithRounds.queryOptions({
+    trpc.game.gameScoreSheetsWithRounds.queryOptions({
       sharedGameId: sharedGameId,
       type: "shared",
     }),
   );
   void prefetch(
-    trpc.newGame.gameRoles.queryOptions({
+    trpc.game.gameRoles.queryOptions({
       sharedGameId: sharedGameId,
       type: "shared",
     }),
@@ -38,14 +40,24 @@ export default async function Page({
   return (
     <HydrateClient>
       <div className="flex w-full items-center justify-center">
-        <Suspense fallback={<EditGameFormSkeleton />}>
-          <EditGameFormWithSuspense
-            game={{
-              sharedGameId,
-              type: "shared",
-            }}
-          />
-        </Suspense>
+        <ErrorBoundary
+          fallback={
+            <GameNotFound
+              title="Shared Game Not Found"
+              description="This shared game doesn't exist or is no longer shared with you."
+              errorCode="SHARED_GAME_404"
+            />
+          }
+        >
+          <Suspense fallback={<EditGameFormSkeleton />}>
+            <EditGameFormWithSuspense
+              game={{
+                sharedGameId,
+                type: "shared",
+              }}
+            />
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </HydrateClient>
   );

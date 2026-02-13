@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
   try {
-    const game = await caller.newGame.getGame({
+    const game = await caller.game.getGame({
       id: Number(id),
       type: "original",
     });

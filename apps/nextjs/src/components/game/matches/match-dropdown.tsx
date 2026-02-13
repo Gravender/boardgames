@@ -34,7 +34,7 @@ import {
 
 import { useTRPC } from "~/trpc/react";
 
-type Matches = NonNullable<RouterOutputs["newGame"]["gameMatches"]>;
+type Matches = NonNullable<RouterOutputs["game"]["gameMatches"]>;
 export function MatchDropdown({ match }: { match: Matches[number] }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 

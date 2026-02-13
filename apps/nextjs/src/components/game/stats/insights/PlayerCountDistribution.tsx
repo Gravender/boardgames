@@ -14,7 +14,7 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 
 import { PlayerImage } from "~/components/player-image";
 
-type Insights = RouterOutputs["newGame"]["getGameInsights"];
+type Insights = RouterOutputs["game"]["getGameInsights"];
 type Distribution = Insights["distribution"];
 
 interface PlayerCountDistributionProps {

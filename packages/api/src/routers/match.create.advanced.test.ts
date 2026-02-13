@@ -46,7 +46,7 @@ describe("Match Create - Advanced Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // Create a game
-      const gameInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Test Game Full",
           description: "Test description",
@@ -63,17 +63,17 @@ describe("Match Create - Advanced Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.newGame.create(gameInput);
+      const createdGame = await caller.game.create(gameInput);
 
       // Get scoresheets
       const scoresheetsInput: inferProcedureInput<
-        AppRouter["newGame"]["gameScoreSheetsWithRounds"]
+        AppRouter["game"]["gameScoreSheetsWithRounds"]
       > = {
         type: "original",
         id: createdGame.id,
       };
       const scoresheets =
-        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
+        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
 
       expect(scoresheets.length).toBeGreaterThan(0);
       const defaultScoresheet = scoresheets[0];
@@ -182,7 +182,7 @@ describe("Match Create - Advanced Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // Create a game
-      const gameInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Multi-Player Game",
           description: null,
@@ -199,17 +199,17 @@ describe("Match Create - Advanced Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.newGame.create(gameInput);
+      const createdGame = await caller.game.create(gameInput);
 
       // Get scoresheets
       const scoresheetsInput: inferProcedureInput<
-        AppRouter["newGame"]["gameScoreSheetsWithRounds"]
+        AppRouter["game"]["gameScoreSheetsWithRounds"]
       > = {
         type: "original",
         id: createdGame.id,
       };
       const scoresheets =
-        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
+        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
 
       expect(scoresheets.length).toBeGreaterThan(0);
       const defaultScoresheet = scoresheets[0];
@@ -266,7 +266,7 @@ describe("Match Create - Advanced Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // Create a game
-      const gameInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Team Game",
           description: null,
@@ -283,17 +283,17 @@ describe("Match Create - Advanced Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.newGame.create(gameInput);
+      const createdGame = await caller.game.create(gameInput);
 
       // Get scoresheets
       const scoresheetsInput: inferProcedureInput<
-        AppRouter["newGame"]["gameScoreSheetsWithRounds"]
+        AppRouter["game"]["gameScoreSheetsWithRounds"]
       > = {
         type: "original",
         id: createdGame.id,
       };
       const scoresheets =
-        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
+        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
 
       expect(scoresheets.length).toBeGreaterThan(0);
       const defaultScoresheet = scoresheets[0];

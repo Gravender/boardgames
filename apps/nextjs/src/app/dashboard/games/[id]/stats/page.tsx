@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { ErrorBoundary } from "react-error-boundary";
 
+import { GameNotFound } from "~/components/game/not-found";
 import GameStats from "~/components/game/stats/game-stats";
 import { GameStatsSkeleton } from "~/components/game/stats/game-stats-skeleton";
 import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
@@ -14,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
-  const game = await caller.newGame.getGame({
+  const game = await caller.game.getGame({
     type: "original",
     id: Number(id),
   });
@@ -34,28 +36,28 @@ export default async function GameStatsPage({ params }: Props) {
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
   void prefetch(
-    trpc.newGame.getGameScoresheetStats.queryOptions({
+    trpc.game.getGameScoresheetStats.queryOptions({
       type: "original",
       id: Number(id),
     }),
   );
   void prefetch(
-    trpc.newGame.getGameStatsHeader.queryOptions({
+    trpc.game.getGameStatsHeader.queryOptions({
       id: Number(id),
       type: "original",
     }),
   );
   void prefetch(
-    trpc.newGame.gameMatches.queryOptions({ id: Number(id), type: "original" }),
+    trpc.game.gameMatches.queryOptions({ id: Number(id), type: "original" }),
   );
   void prefetch(
-    trpc.newGame.getGamePlayerStats.queryOptions({
+    trpc.game.getGamePlayerStats.queryOptions({
       id: Number(id),
       type: "original",
     }),
   );
   void prefetch(
-    trpc.newGame.getGameInsights.queryOptions({
+    trpc.game.getGameInsights.queryOptions({
       id: Number(id),
       type: "original",
     }),
@@ -63,9 +65,11 @@ export default async function GameStatsPage({ params }: Props) {
   return (
     <HydrateClient>
       <div className="container flex w-full items-center justify-center px-3 py-4 md:px-6 md:py-8">
-        <Suspense fallback={<GameStatsSkeleton />}>
-          <GameStats game={{ id: Number(id), type: "original" }} />
-        </Suspense>
+        <ErrorBoundary fallback={<GameNotFound />}>
+          <Suspense fallback={<GameStatsSkeleton />}>
+            <GameStats game={{ id: Number(id), type: "original" }} />
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </HydrateClient>
   );

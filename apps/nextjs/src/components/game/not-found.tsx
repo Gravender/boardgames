@@ -3,7 +3,17 @@ import { Gamepad2, Home, Search } from "lucide-react";
 
 import { Button } from "@board-games/ui/button";
 
-export function GameNotFound() {
+interface GameNotFoundProps {
+  title?: string;
+  description?: string;
+  errorCode?: string;
+}
+
+export function GameNotFound({
+  title = "Game Not Found",
+  description = "Looks like this game doesn't exist in our database.",
+  errorCode = "GAME_404",
+}: GameNotFoundProps) {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="mx-auto max-w-2xl space-y-8 text-center">
@@ -18,11 +28,9 @@ export function GameNotFound() {
 
         {/* Main Message */}
         <div className="space-y-4">
-          <h1 className="text-4xl font-bold text-white md:text-5xl">
-            Game Not Found
-          </h1>
+          <h1 className="text-4xl font-bold text-white md:text-5xl">{title}</h1>
           <p className="mx-auto max-w-md text-xl leading-relaxed text-slate-300">
-            Looks like this game doesn't exist in our database.
+            {description}
           </p>
         </div>
 
@@ -46,7 +54,7 @@ export function GameNotFound() {
         {/* Additional Help Text */}
         <div className="border-t border-slate-700 pt-8">
           <p className="text-sm text-slate-500">
-            Error Code: GAME_404 | If you believe this is a mistake, please
+            Error Code: {errorCode} | If you believe this is a mistake, please
             contact support
           </p>
         </div>

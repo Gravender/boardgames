@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { ErrorBoundary } from "react-error-boundary";
 
+import { GameNotFound } from "~/components/game/not-found";
 import GameStats from "~/components/game/stats/game-stats";
 import { GameStatsSkeleton } from "~/components/game/stats/game-stats-skeleton";
 import { HydrateClient, prefetch, trpc } from "~/trpc/server";
@@ -14,28 +16,28 @@ export default async function SharedGameStatsPage({ params }: Props) {
   if (isNaN(Number(id))) redirect("/dashboard/games");
   const sharedGameId = Number(id);
   void prefetch(
-    trpc.newGame.getGameScoresheetStats.queryOptions({
+    trpc.game.getGameScoresheetStats.queryOptions({
       type: "shared",
       sharedGameId,
     }),
   );
   void prefetch(
-    trpc.newGame.getGameStatsHeader.queryOptions({
+    trpc.game.getGameStatsHeader.queryOptions({
       type: "shared",
       sharedGameId,
     }),
   );
   void prefetch(
-    trpc.newGame.gameMatches.queryOptions({ type: "shared", sharedGameId }),
+    trpc.game.gameMatches.queryOptions({ type: "shared", sharedGameId }),
   );
   void prefetch(
-    trpc.newGame.getGamePlayerStats.queryOptions({
+    trpc.game.getGamePlayerStats.queryOptions({
       type: "shared",
       sharedGameId,
     }),
   );
   void prefetch(
-    trpc.newGame.getGameInsights.queryOptions({
+    trpc.game.getGameInsights.queryOptions({
       type: "shared",
       sharedGameId,
     }),
@@ -43,9 +45,19 @@ export default async function SharedGameStatsPage({ params }: Props) {
   return (
     <HydrateClient>
       <div className="container flex w-full items-center justify-center px-3 py-4 md:px-6 md:py-8">
-        <Suspense fallback={<GameStatsSkeleton />}>
-          <GameStats game={{ type: "shared", sharedGameId }} />
-        </Suspense>
+        <ErrorBoundary
+          fallback={
+            <GameNotFound
+              title="Shared Game Not Found"
+              description="This shared game doesn't exist or is no longer shared with you."
+              errorCode="SHARED_GAME_404"
+            />
+          }
+        >
+          <Suspense fallback={<GameStatsSkeleton />}>
+            <GameStats game={{ type: "shared", sharedGameId }} />
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </HydrateClient>
   );

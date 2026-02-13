@@ -45,7 +45,7 @@ describe("Game Create - Basic Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Test Game",
           description: null,
@@ -62,7 +62,7 @@ describe("Game Create - Basic Tests", () => {
         roles: [],
       };
 
-      const result = await caller.newGame.create(input);
+      const result = await caller.game.create(input);
 
       expect(result).toMatchObject({
         name: "Test Game",
@@ -85,7 +85,7 @@ describe("Game Create - Basic Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Test Game Full",
           description: "Test description",
@@ -102,7 +102,7 @@ describe("Game Create - Basic Tests", () => {
         roles: [],
       };
 
-      const result = await caller.newGame.create(input);
+      const result = await caller.game.create(input);
 
       expect(result).toMatchObject({
         name: "Test Game Full",

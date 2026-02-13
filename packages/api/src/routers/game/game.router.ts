@@ -1,12 +1,19 @@
 import type { TRPCRouterRecord } from "@trpc/server";
+import z from "zod/v4";
 
 import { gameInsightsService } from "../../services/game/game-insights.service";
 import { gameStatsService } from "../../services/game/game-stats.service";
 import { gameService } from "../../services/game/game.service";
 import { protectedUserProcedure } from "../../trpc";
-import { createGameInput, editGameInput, getGameInput } from "./game.input";
+import {
+  createGameInput,
+  editGameInput,
+  getGameInput,
+  importBGGGamesInput,
+} from "./game.input";
 import {
   createGameOutput,
+  deleteGameOutput,
   editGameOutput,
   getGameInsightsOutput,
   getGameMatchesOutput,
@@ -16,10 +23,36 @@ import {
   getGameScoresheetsOutput,
   getGameScoresheetStatsOutput,
   getGameScoreSheetsWithRoundsOutput,
+  getGamesOutput,
   getGameStatsHeaderOutput,
+  getGameToShareOutput,
+  importBGGGamesOutput,
 } from "./game.output";
 
 export const gameRouter = {
+  getGames: protectedUserProcedure
+    .output(getGamesOutput)
+    .query(async ({ ctx }) => {
+      return gameService.getGames({ ctx });
+    }),
+  getGameToShare: protectedUserProcedure
+    .input(z.object({ id: z.number() }))
+    .output(getGameToShareOutput)
+    .query(async ({ ctx, input }) => {
+      return gameService.getGameToShare({ ctx, input });
+    }),
+  deleteGame: protectedUserProcedure
+    .input(z.object({ id: z.number() }))
+    .output(deleteGameOutput)
+    .mutation(async ({ ctx, input }) => {
+      return gameService.deleteGame({ ctx, input });
+    }),
+  importBGGGames: protectedUserProcedure
+    .input(importBGGGamesInput)
+    .output(importBGGGamesOutput)
+    .mutation(async ({ ctx, input }) => {
+      return gameService.importBGGGames({ ctx, input });
+    }),
   create: protectedUserProcedure
     .input(createGameInput)
     .output(createGameOutput)

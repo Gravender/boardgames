@@ -33,11 +33,11 @@ export function EditGameForm({
   initialScoresheets,
   initialRoles,
 }: {
-  initialGame: NonNullable<RouterOutputs["newGame"]["getGame"]>;
+  initialGame: NonNullable<RouterOutputs["game"]["getGame"]>;
   initialScoresheets: NonNullable<
-    RouterOutputs["newGame"]["gameScoreSheetsWithRounds"]
+    RouterOutputs["game"]["gameScoreSheetsWithRounds"]
   >;
-  initialRoles: NonNullable<RouterOutputs["newGame"]["gameRoles"]>;
+  initialRoles: NonNullable<RouterOutputs["game"]["gameRoles"]>;
 }) {
   const [imagePreview, setImagePreview] = useState<ImagePreviewType | null>(
     null,

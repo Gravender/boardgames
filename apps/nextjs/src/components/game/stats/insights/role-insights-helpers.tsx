@@ -5,7 +5,7 @@ import { PlayerImage } from "~/components/player-image";
 
 // ─── Types ──────────────────────────────────────────────────────
 
-export type Insights = RouterOutputs["newGame"]["getGameInsights"];
+export type Insights = RouterOutputs["game"]["getGameInsights"];
 export type RolesData = NonNullable<Insights["roles"]>;
 export type RoleSummary = RolesData["roles"][number];
 export type RolePresenceEffect = RolesData["presenceEffects"][number];

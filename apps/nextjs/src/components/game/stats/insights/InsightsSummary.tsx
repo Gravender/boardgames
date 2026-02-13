@@ -5,7 +5,7 @@ import { BarChart3, Swords, User, Users, UsersRound, Zap } from "lucide-react";
 import type { RouterOutputs } from "@board-games/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 
-type Insights = RouterOutputs["newGame"]["getGameInsights"];
+type Insights = RouterOutputs["game"]["getGameInsights"];
 type Summary = Insights["summary"];
 
 interface InsightsSummaryProps {

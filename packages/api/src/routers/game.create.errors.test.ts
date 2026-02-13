@@ -59,9 +59,9 @@ describe("Game Create - Error Tests", () => {
         image: null,
         scoresheets: [],
         roles: [],
-      } as unknown as inferProcedureInput<AppRouter["newGame"]["create"]>;
+      } as unknown as inferProcedureInput<AppRouter["game"]["create"]>;
 
-      await expect(caller.newGame.create(input)).rejects.toThrow();
+      await expect(caller.game.create(input)).rejects.toThrow();
     });
 
     test("fails with invalid players range", async () => {
@@ -70,7 +70,7 @@ describe("Game Create - Error Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Invalid Game",
           description: null,
@@ -87,7 +87,7 @@ describe("Game Create - Error Tests", () => {
         roles: [],
       };
 
-      await expect(caller.newGame.create(input)).rejects.toThrow();
+      await expect(caller.game.create(input)).rejects.toThrow();
     });
 
     test("fails with invalid playtime range", async () => {
@@ -96,7 +96,7 @@ describe("Game Create - Error Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Invalid Game",
           description: null,
@@ -113,7 +113,7 @@ describe("Game Create - Error Tests", () => {
         roles: [],
       };
 
-      await expect(caller.newGame.create(input)).rejects.toThrow();
+      await expect(caller.game.create(input)).rejects.toThrow();
     });
   });
 });

@@ -3,7 +3,7 @@ import { compareAsc, format } from "date-fns";
 
 import type { RouterOutputs } from "@board-games/api";
 
-type ScoresheetStats = RouterOutputs["newGame"]["getGameScoresheetStats"];
+type ScoresheetStats = RouterOutputs["game"]["getGameScoresheetStats"];
 type ScoresheetStatsItem = ScoresheetStats[number];
 type OverallPlayer = ScoresheetStatsItem["players"][number];
 

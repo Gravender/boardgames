@@ -1,7 +1,6 @@
 import { dashboardRouter } from "./routers/dashboard";
 import { friendsRouter } from "./routers/friends";
-import { gameRouter } from "./routers/game";
-import { gameRouter as newGameRouter } from "./routers/game/game.router";
+import { gameRouter } from "./routers/game/game.router";
 import { groupRouter } from "./routers/group";
 import { groupRouter as newGroupRouter } from "./routers/group/group.router";
 import { imageRouter } from "./routers/image";
@@ -26,7 +25,6 @@ export const appRouter = createTRPCRouter({
   image: imageRouter,
   scoresheet: scoresheetRouter,
   match: matchRouter,
-  newGame: newGameRouter,
   newPlayer: newPlayerRouter,
   player: playerRouter,
   round: roundRouter,

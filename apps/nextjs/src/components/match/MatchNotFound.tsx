@@ -3,7 +3,17 @@ import { Gamepad2, Home, Search } from "lucide-react";
 
 import { Button } from "@board-games/ui/button";
 
-export function MatchNotFound() {
+interface MatchNotFoundProps {
+  title?: string;
+  description?: string;
+  errorCode?: string;
+}
+
+export function MatchNotFound({
+  title = "Match Not Found",
+  description = "Looks like this Match doesn't exist in our database.",
+  errorCode = "MATCH_404",
+}: MatchNotFoundProps) {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="mx-auto max-w-2xl space-y-8 text-center">
@@ -18,11 +28,9 @@ export function MatchNotFound() {
 
         {/* Main Message */}
         <div className="space-y-4">
-          <h1 className="text-4xl font-bold text-white md:text-5xl">
-            Match Not Found
-          </h1>
+          <h1 className="text-4xl font-bold text-white md:text-5xl">{title}</h1>
           <p className="mx-auto max-w-md text-xl leading-relaxed text-slate-300">
-            Looks like this Match doesn't exist in our database.
+            {description}
           </p>
         </div>
 
@@ -46,7 +54,7 @@ export function MatchNotFound() {
         {/* Additional Help Text */}
         <div className="border-t border-slate-700 pt-8">
           <p className="text-sm text-slate-500">
-            Error Code: Match_404 | If you believe this is a mistake, please
+            Error Code: {errorCode} | If you believe this is a mistake, please
             contact support
           </p>
         </div>

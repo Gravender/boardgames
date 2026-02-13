@@ -46,7 +46,7 @@ describe("Match Create - Basic Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // Create a game with default scoresheet
-      const gameInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Test Game",
           description: null,
@@ -63,17 +63,17 @@ describe("Match Create - Basic Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.newGame.create(gameInput);
+      const createdGame = await caller.game.create(gameInput);
 
       // Get scoresheets for the game
       const scoresheetsInput: inferProcedureInput<
-        AppRouter["newGame"]["gameScoreSheetsWithRounds"]
+        AppRouter["game"]["gameScoreSheetsWithRounds"]
       > = {
         type: "original",
         id: createdGame.id,
       };
       const scoresheets =
-        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
+        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
 
       expect(scoresheets.length).toBeGreaterThan(0);
       const defaultScoresheet = scoresheets[0];
@@ -146,7 +146,7 @@ describe("Match Create - Basic Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       // Create a game
-      const gameInput: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Schema Test Game",
           description: null,
@@ -163,17 +163,17 @@ describe("Match Create - Basic Tests", () => {
         roles: [],
       };
 
-      const createdGame = await caller.newGame.create(gameInput);
+      const createdGame = await caller.game.create(gameInput);
 
       // Get scoresheets
       const scoresheetsInput: inferProcedureInput<
-        AppRouter["newGame"]["gameScoreSheetsWithRounds"]
+        AppRouter["game"]["gameScoreSheetsWithRounds"]
       > = {
         type: "original",
         id: createdGame.id,
       };
       const scoresheets =
-        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
+        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
 
       expect(scoresheets.length).toBeGreaterThan(0);
       const defaultScoresheet = scoresheets[0];

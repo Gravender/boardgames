@@ -20,12 +20,12 @@ interface GameDetailProps {
 
 export default function GameDetail({ game }: GameDetailProps) {
   // Prefetch game data
-  void prefetch(trpc.newGame.getGame.queryOptions(game));
-  void prefetch(trpc.newGame.gameMatches.queryOptions(game));
+  void prefetch(trpc.game.getGame.queryOptions(game));
+  void prefetch(trpc.game.gameMatches.queryOptions(game));
 
   // Prefetch game roles, scoresheets, locations, players, and groups for add match dialog
-  void prefetch(trpc.newGame.gameRoles.queryOptions(game));
-  void prefetch(trpc.newGame.gameScoresheets.queryOptions(game));
+  void prefetch(trpc.game.gameRoles.queryOptions(game));
+  void prefetch(trpc.game.gameScoresheets.queryOptions(game));
   void prefetch(trpc.location.getLocations.queryOptions());
   void prefetch(trpc.newPlayer.getPlayersForMatch.queryOptions());
   void prefetch(trpc.newGroup.getGroupsWithPlayers.queryOptions());

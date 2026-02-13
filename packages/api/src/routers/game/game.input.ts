@@ -184,3 +184,91 @@ export const editGameInput = z.object({
 });
 
 export type EditGameInputType = z.infer<typeof editGameInput>;
+
+export const importBGGGamesInput = z.object({
+  games: z.array(
+    z.object({
+      bggId: z.number(),
+      bggName: z.string(),
+      bggYear: z.number(),
+      cooperative: z.boolean(),
+      designers: z.string(),
+      highestWins: z.boolean(),
+      id: z.number(),
+      isBaseGame: z.number(),
+      isExpansion: z.number(),
+      maxPlayerCount: z.number(),
+      maxPlayTime: z.number(),
+      minAge: z.number(),
+      minPlayerCount: z.number(),
+      minPlayTime: z.number(),
+      modificationDate: z.string(),
+      name: z.string(),
+      noPoints: z.boolean(),
+      preferredImage: z.number(),
+      previouslyPlayedAmount: z.number(),
+      rating: z.number(),
+      urlImage: z.string(),
+      urlThumb: z.string(),
+      usesTeams: z.boolean(),
+    }),
+  ),
+  plays: z.array(
+    z.object({
+      bggId: z.number(),
+      bggLastSync: z.string().optional(),
+      durationMin: z.number(),
+      entryDate: z.string(),
+      expansionPlays: z.array(z.unknown()),
+      gameRefId: z.number(),
+      ignored: z.boolean(),
+      importPlayId: z.number(),
+      locationRefId: z.number(),
+      manualWinner: z.boolean(),
+      metaData: z.string().optional(),
+      modificationDate: z.string(),
+      nemestatsId: z.number(),
+      playDate: z.string(),
+      playDateYmd: z.number(),
+      playerScores: z.array(
+        z.object({
+          newPlayer: z.boolean(),
+          playerRefId: z.number(),
+          rank: z.number(),
+          score: z.string(),
+          seatOrder: z.number(),
+          startPlayer: z.boolean(),
+          winner: z.boolean(),
+          team: z.string().optional(),
+        }),
+      ),
+      playImages: z.string(),
+      rating: z.number(),
+      rounds: z.number(),
+      scoringSetting: z.number(),
+      usesTeams: z.boolean(),
+      uuid: z.string(),
+      comments: z.string().optional(),
+    }),
+  ),
+  players: z.array(
+    z.object({
+      bggUsername: z.string().optional(),
+      id: z.number(),
+      isAnonymous: z.boolean(),
+      modificationDate: z.string(),
+      name: z.string(),
+      uuid: z.string(),
+    }),
+  ),
+  locations: z.array(
+    z.object({
+      id: z.number(),
+      modificationDate: z.string(),
+      name: z.string(),
+      uuid: z.string(),
+    }),
+  ),
+});
+
+export type ImportBGGGamesInputType = z.infer<typeof importBGGGamesInput>;

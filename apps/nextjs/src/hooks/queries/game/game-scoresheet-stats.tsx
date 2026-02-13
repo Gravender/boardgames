@@ -5,11 +5,11 @@ import type { RouterInputs, RouterOutputs } from "@board-games/api";
 import { useTRPC } from "~/trpc/react";
 
 export function useGameScoresheetStats(
-  input: RouterInputs["newGame"]["getGameScoresheetStats"],
-): RouterOutputs["newGame"]["getGameScoresheetStats"] {
+  input: RouterInputs["game"]["getGameScoresheetStats"],
+): RouterOutputs["game"]["getGameScoresheetStats"] {
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(
-    trpc.newGame.getGameScoresheetStats.queryOptions(input),
+    trpc.game.getGameScoresheetStats.queryOptions(input),
   );
   return data;
 }

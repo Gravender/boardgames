@@ -55,7 +55,7 @@ export const ManageTeamContent = ({
 }: {
   teams: (Team & { players: number })[];
 
-  roles: RouterOutputs["newGame"]["gameRoles"];
+  roles: RouterOutputs["game"]["gameRoles"];
   setTeams: (teams: Team[]) => void;
   cancel: () => void;
 }) => {
@@ -335,7 +335,7 @@ const ManageTeamRoles = ({
       | z.infer<typeof sharedRoleSchema>
     )[];
   };
-  roles: RouterOutputs["newGame"]["gameRoles"];
+  roles: RouterOutputs["game"]["gameRoles"];
   onClose: () => void;
   onSave: (
     roles: (

@@ -19,7 +19,7 @@ import { SortIcon } from "~/components/sort-icon";
 import { getCurrentPlayerKey } from "~/hooks/game-stats/use-scoresheet-stats";
 
 type ScoresheetStatsItem =
-  RouterOutputs["newGame"]["getGameScoresheetStats"][number];
+  RouterOutputs["game"]["getGameScoresheetStats"][number];
 type OverallPlayer = ScoresheetStatsItem["players"][number];
 type SortField =
   | "name"
