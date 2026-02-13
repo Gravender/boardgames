@@ -23,6 +23,7 @@ import {
   round,
   roundPlayer,
   scoresheet,
+  sharedGame,
   sharedGameRole,
   sharedMatch,
   sharedRound,
@@ -1111,6 +1112,171 @@ class GameRepository {
       );
 
     return rows;
+  }
+
+  public async getGamesForUser(userId: string) {
+    return db.query.game.findMany({
+      columns: {
+        id: true,
+        name: true,
+        createdAt: true,
+        playersMin: true,
+        playersMax: true,
+        playtimeMin: true,
+        playtimeMax: true,
+        yearPublished: true,
+        ownedBy: true,
+      },
+      where: {
+        createdBy: userId,
+        deletedAt: {
+          isNull: true,
+        },
+      },
+      with: {
+        image: true,
+        matches: {
+          where: { finished: true },
+          orderBy: { date: "desc" },
+          with: {
+            location: true,
+          },
+        },
+        sharedGameMatches: {
+          where: { sharedWithId: userId },
+          with: {
+            match: {
+              where: { finished: true },
+            },
+            sharedLocation: {
+              with: {
+                location: true,
+                linkedLocation: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  public async getUnlinkedSharedGames(userId: string) {
+    return db.query.sharedGame.findMany({
+      where: {
+        linkedGameId: {
+          isNull: true,
+        },
+        sharedWithId: userId,
+      },
+      with: {
+        game: {
+          with: {
+            image: true,
+          },
+        },
+        sharedMatches: {
+          where: { sharedWithId: userId },
+          with: {
+            match: {
+              where: { finished: true },
+              columns: {
+                id: true,
+                date: true,
+              },
+            },
+            sharedLocation: {
+              with: {
+                location: true,
+                linkedLocation: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  public async getGameForSharing(args: { gameId: number; userId: string }) {
+    return db.query.game.findFirst({
+      where: {
+        id: args.gameId,
+        createdBy: args.userId,
+        deletedAt: {
+          isNull: true,
+        },
+      },
+      with: {
+        matches: {
+          with: {
+            matchPlayers: {
+              with: {
+                player: true,
+                team: true,
+              },
+            },
+            location: true,
+            teams: true,
+          },
+          orderBy: (matches, { desc }) => [desc(matches.date)],
+        },
+        scoresheets: true,
+        image: true,
+      },
+    });
+  }
+
+  public async softDeleteGame(args: { gameId: number; userId: string }) {
+    return db.transaction(async (tx) => {
+      await tx
+        .update(sharedGame)
+        .set({ linkedGameId: null })
+        .where(
+          and(
+            eq(sharedGame.linkedGameId, args.gameId),
+            eq(sharedGame.sharedWithId, args.userId),
+          ),
+        );
+
+      const updatedMatches = await tx
+        .update(match)
+        .set({ deletedAt: new Date() })
+        .where(
+          and(eq(match.gameId, args.gameId), eq(match.createdBy, args.userId)),
+        )
+        .returning();
+
+      if (updatedMatches.length > 0) {
+        await tx
+          .update(matchPlayer)
+          .set({ deletedAt: new Date() })
+          .where(
+            inArray(
+              matchPlayer.matchId,
+              updatedMatches.map((uMatch) => uMatch.id),
+            ),
+          );
+      }
+
+      await tx
+        .update(scoresheet)
+        .set({ deletedAt: new Date() })
+        .where(eq(scoresheet.gameId, args.gameId));
+
+      const [deletedGame] = await tx
+        .update(game)
+        .set({ deletedAt: new Date() })
+        .where(and(eq(game.id, args.gameId), eq(game.createdBy, args.userId)))
+        .returning();
+
+      if (!deletedGame) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete game",
+        });
+      }
+
+      return deletedGame;
+    });
   }
 }
 export const gameRepository = new GameRepository();
