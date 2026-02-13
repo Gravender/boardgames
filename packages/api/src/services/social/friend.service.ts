@@ -5,12 +5,12 @@ import { db } from "@board-games/db/client";
 import { gameRepository } from "../../repositories/game/game.repository";
 import { matchRepository } from "../../repositories/match/match.repository";
 import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
+import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
 import { sharingRepository } from "../../repositories/sharing/sharing.repository";
 import { friendRepository } from "../../repositories/social/friend.repository";
 import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
 import { locationRepository } from "../../routers/location/repository/location.repository";
 import { playerRepository } from "../../routers/player/repository/player.repository";
-import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
 class FriendService {

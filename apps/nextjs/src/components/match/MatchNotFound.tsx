@@ -28,7 +28,9 @@ export function MatchNotFound({
 
         {/* Main Message */}
         <div className="space-y-4">
-          <h1 className="text-4xl font-bold text-white md:text-5xl">{title}</h1>
+          <h1 className="text-foreground text-4xl font-bold md:text-5xl">
+            {title}
+          </h1>
           <p className="mx-auto max-w-md text-xl leading-relaxed text-slate-300">
             {description}
           </p>

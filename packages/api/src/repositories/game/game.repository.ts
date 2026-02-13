@@ -271,6 +271,8 @@ class GameRepository {
 
   public async softDeleteGame(args: { gameId: number; userId: string }) {
     return db.transaction(async (tx) => {
+      const now = new Date();
+
       await tx
         .update(sharedGame)
         .set({ linkedGameId: null })
@@ -283,7 +285,7 @@ class GameRepository {
 
       const updatedMatches = await tx
         .update(match)
-        .set({ deletedAt: new Date() })
+        .set({ deletedAt: now })
         .where(
           and(eq(match.gameId, args.gameId), eq(match.createdBy, args.userId)),
         )
@@ -292,7 +294,7 @@ class GameRepository {
       if (updatedMatches.length > 0) {
         await tx
           .update(matchPlayer)
-          .set({ deletedAt: new Date() })
+          .set({ deletedAt: now })
           .where(
             inArray(
               matchPlayer.matchId,
@@ -303,7 +305,7 @@ class GameRepository {
 
       await tx
         .update(scoresheet)
-        .set({ deletedAt: new Date() })
+        .set({ deletedAt: now })
         .where(
           and(
             eq(scoresheet.gameId, args.gameId),
@@ -313,7 +315,7 @@ class GameRepository {
 
       const [deletedGame] = await tx
         .update(game)
-        .set({ deletedAt: new Date() })
+        .set({ deletedAt: now })
         .where(and(eq(game.id, args.gameId), eq(game.createdBy, args.userId)))
         .returning();
 

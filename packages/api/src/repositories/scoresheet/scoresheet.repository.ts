@@ -583,13 +583,14 @@ class ScoresheetRepository {
     const { input, tx } = args;
     const database = tx ?? db;
     const conditions = [eq(sharedScoresheet.id, input.sharedId)];
-    if (input.userId) {
-      conditions.push(
-        or(
-          eq(sharedScoresheet.ownerId, input.userId),
-          eq(sharedScoresheet.sharedWithId, input.userId),
-        )!,
+    if (input.userId !== undefined) {
+      const userIdCondition = or(
+        eq(sharedScoresheet.ownerId, input.userId),
+        eq(sharedScoresheet.sharedWithId, input.userId),
       );
+      if (userIdCondition !== undefined) {
+        conditions.push(userIdCondition);
+      }
     }
     const deletedSharedScoresheet = await database
       .delete(sharedScoresheet)

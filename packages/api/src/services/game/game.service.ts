@@ -15,8 +15,8 @@ import type {
 import { gameRoleRepository } from "../../repositories/game/game-role.repository";
 import { gameRepository } from "../../repositories/game/game.repository";
 import { imageRepository } from "../../repositories/image/image.repository";
-import { friendRepository } from "../../repositories/social/friend.repository";
 import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
+import { friendRepository } from "../../repositories/social/friend.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
 class GameService {

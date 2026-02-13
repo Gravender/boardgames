@@ -257,12 +257,6 @@ const handleUpdateScoresheetAndRounds = async (
   }
 
   if (inputScoresheet.roundsToAdd.length > 0) {
-    if (scoresheetId === undefined) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Scoresheet ID is required to add rounds.",
-      });
-    }
     await scoresheetRepository.insertRounds(
       inputScoresheet.roundsToAdd.map((round) => ({
         ...round,

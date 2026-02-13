@@ -1,5 +1,6 @@
+import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { type SQL, and, asc, eq, or, sql } from "drizzle-orm";
+import { and, asc, eq, or, sql } from "drizzle-orm";
 import { caseWhen } from "drizzle-plus";
 import { jsonAgg, jsonAggNotNull, jsonBuildObject } from "drizzle-plus/pg";
 
@@ -232,10 +233,7 @@ class GameMatchesRepository {
         eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
       .leftJoin(image, eq(image.id, game.imageId))
-      .leftJoin(
-        location,
-        eq(location.id, vMatchCanonical.canonicalLocationId),
-      )
+      .leftJoin(location, eq(location.id, vMatchCanonical.canonicalLocationId))
       .leftJoin(teamsAgg, eq(teamsAgg.matchId, vMatchCanonical.matchId))
       .leftJoin(playersAgg, eq(playersAgg.matchId, vMatchCanonical.matchId))
       .orderBy(vMatchCanonical.matchDate);
