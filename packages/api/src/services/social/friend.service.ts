@@ -279,10 +279,9 @@ class FriendService {
       });
     }
 
-    const hasLinkedScoresheet =
-      match.scoresheet.parent.sharedScoresheets.find(
-        (ss) => ss.ownerId === friend.friendUserId,
-      );
+    const hasLinkedScoresheet = match.scoresheet.parent.sharedScoresheets.find(
+      (ss) => ss.ownerId === friend.friendUserId,
+    );
 
     const parentSharedScoresheet = hasLinkedScoresheet
       ? null
@@ -456,13 +455,12 @@ class FriendService {
     if (existingRequest !== undefined) {
       if (existingRequest.status !== "accepted") return null;
 
-      const existingSharedGame =
-        await gameRepository.getSharedGameByGameId({
-          gameId: match.gameId,
-          sharedWithId: friend.friendUserId,
-          where: { ownerId: ctx.userId },
-          tx: ctx.tx,
-        });
+      const existingSharedGame = await gameRepository.getSharedGameByGameId({
+        gameId: match.gameId,
+        sharedWithId: friend.friendUserId,
+        where: { ownerId: ctx.userId },
+        tx: ctx.tx,
+      });
       assertFound(
         existingSharedGame,
         { userId: ctx.userId, value: ctx.input },
