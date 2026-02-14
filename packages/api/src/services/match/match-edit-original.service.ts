@@ -153,16 +153,37 @@ class MatchEditOriginalService {
       }));
 
       const originalTeams = returnedMatch.teams.map((team) => {
-        const teamPlayer = returnedMatch.matchPlayers.find(
+        const teamPlayers = returnedMatch.matchPlayers.filter(
           (mp) => mp.teamId === team.id,
         );
+        if (teamPlayers.length === 0) {
+          return {
+            id: team.id,
+            teamId: team.id,
+            placement: null,
+            winner: false,
+            score: null,
+            rounds: [] as { roundId: number; score: number | null }[],
+          };
+        }
+        const placements = teamPlayers.map((p) => p.placement);
+        const scores = teamPlayers.map((p) => p.score);
+        const winners = teamPlayers.map((p) => p.winner);
+
+        const allSamePlacement =
+          placements.every((v) => v != null) &&
+          new Set(placements).size === 1;
+        const allSameScore =
+          scores.every((v) => v != null) && new Set(scores).size === 1;
+        const allSameWinner = new Set(winners).size === 1;
+
         return {
           id: team.id,
           teamId: team.id,
-          placement: teamPlayer?.placement ?? null,
-          winner: teamPlayer?.winner ?? false,
-          score: teamPlayer?.score ?? null,
-          rounds: teamPlayer?.playerRounds ?? [],
+          placement: allSamePlacement ? (placements[0] ?? null) : null,
+          winner: allSameWinner ? (winners[0] ?? false) : false,
+          score: allSameScore ? (scores[0] ?? null) : null,
+          rounds: teamPlayers[0]?.playerRounds ?? [],
         };
       });
 

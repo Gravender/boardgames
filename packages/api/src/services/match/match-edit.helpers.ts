@@ -32,20 +32,18 @@ export const computeTeamRoles = (
 ): MappedTeamWithRoles[] => {
   return teams.map((team) => {
     const teamPlayers = matchPlayers.filter((mp) => mp.teamId === team.id);
-    const roleCount: { id: number; count: number }[] = [];
-    teamPlayers.forEach((player) => {
-      player.roles.forEach((role) => {
-        const existingRole = roleCount.find((r) => r.id === role.id);
-        if (existingRole) {
-          existingRole.count++;
-        } else {
-          roleCount.push({ id: role.id, count: 1 });
-        }
-      });
-    });
-    const teamRoles = roleCount
-      .filter((role) => role.count === teamPlayers.length)
-      .map((r) => ({ id: r.id, type: "original" as const }));
+    const roleCounts = new Map<number, number>();
+    for (const player of teamPlayers) {
+      for (const role of player.roles) {
+        roleCounts.set(role.id, (roleCounts.get(role.id) ?? 0) + 1);
+      }
+    }
+    const teamRoles: MappedTeamWithRoles["roles"] = [];
+    for (const [id, count] of roleCounts) {
+      if (count === teamPlayers.length) {
+        teamRoles.push({ id, type: "original" as const });
+      }
+    }
     return { id: team.id, name: team.name, roles: teamRoles };
   });
 };
@@ -71,6 +69,27 @@ interface ExistingMatchPlayer {
 }
 
 /**
+ * Merge team-level roles into a player's roles list, de-duplicating via
+ * isSameRole. Returns a new array containing all unique roles.
+ */
+const mergeTeamRoles = (
+  playerRoles: MatchRoleRef[],
+  teamId: number | null,
+  inputTeams: EditInputTeam[],
+): MatchRoleRef[] => {
+  const merged: MatchRoleRef[] = [...playerRoles];
+  const teamRoles =
+    inputTeams.find((t) => t.id === teamId)?.roles ?? [];
+  for (const role of teamRoles) {
+    const alreadyPresent = merged.find((r) => isSameRole(r, role));
+    if (!alreadyPresent) {
+      merged.push(role);
+    }
+  }
+  return merged;
+};
+
+/**
  * Diff the desired player list against the current match players.
  * Returns lists of players to add, remove, and update.
  */
@@ -94,15 +113,11 @@ export const computePlayerChanges = (
     if (foundPlayer) {
       const teamChanged = foundPlayer.teamId !== player.teamId;
       const originalRoles = foundPlayer.roles;
-      const playerRoles: MatchRoleRef[] = [...player.roles];
-      const teamRoles =
-        inputTeams.find((t) => t.id === player.teamId)?.roles ?? [];
-      teamRoles.forEach((role) => {
-        const foundRole = playerRoles.find((r) => isSameRole(r, role));
-        if (!foundRole) {
-          playerRoles.push(role);
-        }
-      });
+      const playerRoles = mergeTeamRoles(
+        player.roles,
+        player.teamId,
+        inputTeams,
+      );
       const rolesToRemove = originalRoles.filter(
         (role) =>
           !playerRoles.find((r) =>
@@ -124,15 +139,11 @@ export const computePlayerChanges = (
         });
       }
     } else {
-      const playerRoles: MatchRoleRef[] = [...player.roles];
-      const teamRoles =
-        inputTeams.find((t) => t.id === player.teamId)?.roles ?? [];
-      teamRoles.forEach((role) => {
-        const foundRole = playerRoles.find((r) => isSameRole(r, role));
-        if (!foundRole) {
-          playerRoles.push(role);
-        }
-      });
+      const playerRoles = mergeTeamRoles(
+        player.roles,
+        player.teamId,
+        inputTeams,
+      );
       playersToAdd.push({
         ...player,
         roles: playerRoles,

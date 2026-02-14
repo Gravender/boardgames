@@ -78,7 +78,7 @@ const handleNewScoresheet = async (
     scoresheetId: returnedScoresheet.id,
     order: index + 1,
   }));
-  await roundRepository.insertRounds(roundsToInsert, tx);
+  await roundRepository.insertRounds({ input: roundsToInsert, tx });
 };
 
 const handleUpdateScoresheet = async (
@@ -258,13 +258,13 @@ const handleUpdateScoresheetAndRounds = async (
   }
 
   if (inputScoresheet.roundsToAdd.length > 0) {
-    await roundRepository.insertRounds(
-      inputScoresheet.roundsToAdd.map((round) => ({
+    await roundRepository.insertRounds({
+      input: inputScoresheet.roundsToAdd.map((round) => ({
         ...round,
         scoresheetId,
       })),
       tx,
-    );
+    });
   }
 
   if (inputScoresheet.roundsToDelete.length > 0) {

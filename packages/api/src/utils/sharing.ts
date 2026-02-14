@@ -150,10 +150,10 @@ export async function createSharedRoundsForScoresheet(
   }));
 
   if (sharedScoresheetRoundsInput.length > 0) {
-    await roundRepository.insertSharedRounds(
-      { input: sharedScoresheetRoundsInput },
-      transaction,
-    );
+    await roundRepository.insertSharedRounds({
+      input: sharedScoresheetRoundsInput,
+      tx: transaction,
+    });
   }
 }
 

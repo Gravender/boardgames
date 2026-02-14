@@ -21,3 +21,17 @@ export interface LinkedSharedGameArgs {
   };
   tx?: TransactionType;
 }
+export interface GetSharedRoleArgs {
+  input: {
+    sharedRoleId: number;
+  };
+  userId: string;
+  tx?: TransactionType;
+}
+export interface LinkedSharedRoleArgs {
+  input: {
+    sharedRoleId: number;
+    linkedRoleId: number;
+  };
+  tx?: TransactionType;
+}

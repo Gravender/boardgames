@@ -90,15 +90,15 @@ class GameService {
             },
             "Failed to create scoresheet",
           );
-          const defaultRound = await roundRepository.insertRound(
-            {
+          const defaultRound = await roundRepository.insertRound({
+            input: {
               name: "Round 1",
               scoresheetId: defaultScoresheet.id,
               type: "Numeric",
               order: 1,
             },
             tx,
-          );
+          });
           assertInserted(
             defaultRound,
             {
@@ -133,10 +133,10 @@ class GameService {
               order: index + 1,
             }));
             if (rounds.length > 0) {
-              const createdRounds = await roundRepository.insertRounds(
-                rounds,
+              const createdRounds = await roundRepository.insertRounds({
+                input: rounds,
                 tx,
-              );
+              });
               assertInserted(
                 createdRounds.at(0),
                 {

@@ -1,4 +1,4 @@
-import type { SQL } from "drizzle-orm";
+import type { AnyColumn, SQL } from "drizzle-orm";
 import { and, eq, inArray, sql } from "drizzle-orm";
 
 import type { TransactionType } from "@board-games/db/client";
@@ -10,8 +10,42 @@ import type {
   UpdateRoundType,
 } from "./round.repository.types";
 
+// ─── Helpers ─────────────────────────────────────────────────────
+
+interface CaseEntry {
+  id: number;
+  value: unknown;
+  cast: string;
+}
+
+/**
+ * Build a SQL CASE expression that conditionally sets a column value
+ * for each matching round id, falling back to the existing column value.
+ * Returns `undefined` when no entries are provided (field was never set).
+ */
+const buildCaseExpression = (
+  column: AnyColumn | SQL,
+  entries: CaseEntry[],
+): SQL | undefined => {
+  if (entries.length === 0) return undefined;
+  const chunks: SQL[] = [sql`(case`];
+  for (const e of entries) {
+    chunks.push(
+      sql`when ${round.id} = ${e.id} then ${sql`${e.value}::${sql.raw(e.cast)}`}`,
+    );
+  }
+  chunks.push(sql`else ${column} end)`);
+  return sql.join(chunks, sql.raw(" "));
+};
+
+// ─── Repository ──────────────────────────────────────────────────
+
 class RoundRepository {
-  public async insertRound(input: InsertRoundInputType, tx?: TransactionType) {
+  public async insertRound(args: {
+    input: InsertRoundInputType;
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
     const database = tx ?? db;
     const [returningRound] = await database
       .insert(round)
@@ -20,10 +54,11 @@ class RoundRepository {
     return returningRound;
   }
 
-  public async insertRounds(
-    input: InsertRoundInputType[],
-    tx?: TransactionType,
-  ) {
+  public async insertRounds(args: {
+    input: InsertRoundInputType[];
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
     if (input.length === 0) {
       return [];
     }
@@ -80,71 +115,34 @@ class RoundRepository {
     const { input, tx } = args;
     const database = tx ?? db;
     const ids = input.map((p) => p.id);
-    const nameSqlChunks: SQL[] = [sql`(case`];
-    const scoreSqlChunks: SQL[] = [sql`(case`];
-    const typeSqlChunks: SQL[] = [sql`(case`];
-    const colorSqlChunks: SQL[] = [sql`(case`];
-    const lookupSqlChunks: SQL[] = [sql`(case`];
-    const modifierSqlChunks: SQL[] = [sql`(case`];
 
-    for (const inputRound of input) {
-      if (inputRound.name !== undefined) {
-        nameSqlChunks.push(
-          sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.name}::varchar`}`,
-        );
-      }
-      if (inputRound.score !== undefined) {
-        scoreSqlChunks.push(
-          sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.score}::integer`}`,
-        );
-      }
-      if (inputRound.type !== undefined) {
-        typeSqlChunks.push(
-          sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.type}::varchar`}`,
-        );
-      }
-      if (inputRound.color !== undefined) {
-        colorSqlChunks.push(
-          sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.color}::varchar`}`,
-        );
-      }
-      if (inputRound.lookup !== undefined) {
-        lookupSqlChunks.push(
-          sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.lookup}::integer`}`,
-        );
-      }
-      if (inputRound.modifier !== undefined) {
-        modifierSqlChunks.push(
-          sql`when ${round.id} = ${inputRound.id} then ${sql`${inputRound.modifier}::integer`}`,
-        );
-      }
-    }
+    const fieldDefs: {
+      key: string;
+      column: AnyColumn | SQL;
+      cast: string;
+      getValue: (r: (typeof input)[number]) => unknown;
+    }[] = [
+      { key: "name", column: round.name, cast: "varchar", getValue: (r) => r.name },
+      { key: "score", column: round.score, cast: "integer", getValue: (r) => r.score },
+      { key: "type", column: round.type, cast: "varchar", getValue: (r) => r.type },
+      { key: "color", column: round.color, cast: "varchar", getValue: (r) => r.color },
+      { key: "lookup", column: round.lookup, cast: "integer", getValue: (r) => r.lookup },
+      { key: "modifier", column: round.modifier, cast: "integer", getValue: (r) => r.modifier },
+    ];
 
-    nameSqlChunks.push(sql`else ${round.name} end)`);
-    scoreSqlChunks.push(sql`else ${round.score} end)`);
-    typeSqlChunks.push(sql`else ${round.type} end)`);
-    colorSqlChunks.push(sql`else ${round.color} end)`);
-    lookupSqlChunks.push(sql`else ${round.lookup} end)`);
-    modifierSqlChunks.push(sql`else ${round.modifier} end)`);
-
-    const setData: Record<string, SQL | undefined> = {};
-    if (nameSqlChunks.length > 2) {
-      setData.name = sql.join(nameSqlChunks, sql.raw(" "));
-    }
-    if (scoreSqlChunks.length > 2) {
-      setData.score = sql.join(scoreSqlChunks, sql.raw(" "));
-    }
-    if (typeSqlChunks.length > 2) {
-      setData.type = sql.join(typeSqlChunks, sql.raw(" "));
-    }
-    if (colorSqlChunks.length > 2) {
-      setData.color = sql.join(colorSqlChunks, sql.raw(" "));
-    }
-    if (lookupSqlChunks.length > 2) {
-      setData.lookup = sql.join(lookupSqlChunks, sql.raw(" "));
-    }
-    if (modifierSqlChunks.length > 2) {
-      setData.modifier = sql.join(modifierSqlChunks, sql.raw(" "));
+    const setData: Record<string, SQL> = {};
+    for (const field of fieldDefs) {
+      const entries: CaseEntry[] = [];
+      for (const inputRound of input) {
+        const value = field.getValue(inputRound);
+        if (value !== undefined) {
+          entries.push({ id: inputRound.id, value, cast: field.cast });
+        }
+      }
+      const expr = buildCaseExpression(field.column, entries);
+      if (expr) {
+        setData[field.key] = expr;
+      }
     }
 
     if (Object.keys(setData).length === 0) {
@@ -179,20 +177,18 @@ class RoundRepository {
     return archivedRounds;
   }
 
-  public async insertSharedRounds(
-    args: {
-      input: {
-        roundId: number;
-        linkedRoundId: number | null;
-        sharedScoresheetId: number;
-        ownerId: string;
-        sharedWithId: string;
-        permission?: "view" | "edit";
-      }[];
-    },
-    tx?: TransactionType,
-  ) {
-    const { input } = args;
+  public async insertSharedRounds(args: {
+    input: {
+      roundId: number;
+      linkedRoundId: number | null;
+      sharedScoresheetId: number;
+      ownerId: string;
+      sharedWithId: string;
+      permission?: "view" | "edit";
+    }[];
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
     const database = tx ?? db;
     if (input.length === 0) {
       return [];

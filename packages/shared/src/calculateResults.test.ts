@@ -111,14 +111,14 @@ describe("calculateFinalScore", () => {
     expect(calculateFinalScore(rounds, scoresheet)).toBe(50);
   });
 
-  it("should return 0 if no rounds are played", () => {
+  it("should return null if no rounds are played", () => {
     const rounds: Round[] = [];
     const scoresheet: scoreSheet = {
       roundsScore: "Aggregate",
       winCondition: "Highest Score",
       targetScore: 50,
     };
-    expect(calculateFinalScore(rounds, scoresheet)).toBe(0);
+    expect(calculateFinalScore(rounds, scoresheet)).toBeNull();
   });
 
   it("should correctly aggregate negative scores", () => {
@@ -220,7 +220,7 @@ describe("calculateFinalScores", () => {
     ]);
   });
 
-  it("should return 0 scores for players with no rounds", () => {
+  it("should return null scores for players with no rounds", () => {
     const players = [
       { id: 1, rounds: [], teamId: null },
       { id: 2, rounds: [], teamId: null },
@@ -231,8 +231,8 @@ describe("calculateFinalScores", () => {
       targetScore: 50,
     };
     expect(calculateFinalScores(players, scoresheet)).toEqual([
-      { id: 1, score: 0, teamId: null },
-      { id: 2, score: 0, teamId: null },
+      { id: 1, score: null, teamId: null },
+      { id: 2, score: null, teamId: null },
     ]);
   });
 

@@ -1,12 +1,13 @@
 import { eq } from "drizzle-orm";
 
-import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 import { sharedGame, sharedGameRole } from "@board-games/db/schema";
 
 import type {
+  GetSharedRoleArgs,
   InsertSharedGameInputArgs,
   LinkedSharedGameArgs,
+  LinkedSharedRoleArgs,
 } from "./shared-game.repository.types";
 
 class SharedGameRepository {
@@ -29,15 +30,14 @@ class SharedGameRepository {
       })
       .where(eq(sharedGame.id, input.sharedGameId))
       .returning();
+    if (!linkedGame) {
+      throw new Error(
+        `SharedGame not found: no row with id ${input.sharedGameId}`,
+      );
+    }
     return linkedGame;
   }
-  public async getSharedRole(args: {
-    input: {
-      sharedRoleId: number;
-    };
-    userId: string;
-    tx?: TransactionType;
-  }) {
+  public async getSharedRole(args: GetSharedRoleArgs) {
     const { input, userId, tx } = args;
     const database = tx ?? db;
     const returnedSharedRole = await database.query.sharedGameRole.findFirst({
@@ -51,13 +51,7 @@ class SharedGameRepository {
     });
     return returnedSharedRole;
   }
-  public async linkSharedRole(args: {
-    input: {
-      sharedRoleId: number;
-      linkedRoleId: number;
-    };
-    tx?: TransactionType;
-  }) {
+  public async linkSharedRole(args: LinkedSharedRoleArgs) {
     const { input, tx } = args;
     const database = tx ?? db;
     const [linkedRole] = await database
@@ -67,6 +61,11 @@ class SharedGameRepository {
       })
       .where(eq(sharedGameRole.id, input.sharedRoleId))
       .returning();
+    if (!linkedRole) {
+      throw new Error(
+        `SharedRole not found: no row with id ${input.sharedRoleId}`,
+      );
+    }
     return linkedRole;
   }
 }

@@ -242,15 +242,15 @@ class GameImportService {
     );
 
     // Create default round
-    const defaultRound = await roundRepository.insertRound(
-      {
+    const defaultRound = await roundRepository.insertRound({
+      input: {
         name: "Round 1",
         type: "Numeric",
         order: 1,
         scoresheetId: defaultScoresheet.id,
       },
       tx,
-    );
+    });
     assertInserted(
       defaultRound,
       { userId, value: { scoresheetId: defaultScoresheet.id } },
@@ -589,7 +589,7 @@ class GameImportService {
       scoresheetId,
     }));
     if (mappedRounds.length === 0) return [];
-    return roundRepository.insertRounds(mappedRounds, tx);
+    return roundRepository.insertRounds({ input: mappedRounds, tx });
   }
 }
 

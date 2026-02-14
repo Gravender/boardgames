@@ -426,7 +426,7 @@ class MatchSetupService {
       scoresheetId,
     }));
     if (mappedRounds.length === 0) return [];
-    return roundRepository.insertRounds(mappedRounds, tx);
+    return roundRepository.insertRounds({ input: mappedRounds, tx });
   }
 }
 

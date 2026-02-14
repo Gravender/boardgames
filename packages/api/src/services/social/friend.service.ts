@@ -408,14 +408,15 @@ class FriendService {
 
     if (!friend.autoAcceptLocation) return null;
 
-    const existingSharedLocation = await locationRepository.getShared(
-      {
-        id: createdRequest.itemId,
-        sharedWithId: friend.friendUserId,
-        where: { ownerId: ctx.userId },
-      },
-      ctx.tx,
-    );
+    const existingSharedLocation =
+      await locationRepository.getSharedByLocationId(
+        {
+          locationId: createdRequest.itemId,
+          sharedWithId: friend.friendUserId,
+          where: { ownerId: ctx.userId },
+        },
+        ctx.tx,
+      );
     if (existingSharedLocation !== undefined) {
       return { sharedLocationId: existingSharedLocation.id };
     }

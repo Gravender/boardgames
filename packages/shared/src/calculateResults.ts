@@ -33,7 +33,7 @@ interface Round {
  * the `roundsScore` is "Best Of", it considers different win conditions ("Highest
  */
 export function calculateFinalScore(rounds: Round[], scoresheet: scoreSheet) {
-  if (rounds.length === 0) return 0;
+  if (rounds.length === 0) return null;
 
   if (scoresheet.roundsScore === "Aggregate") {
     return rounds.reduce<number | null>((acc, round) => {
@@ -119,13 +119,14 @@ export function calculatePlacement(players: Player[], scoresheet: scoreSheet) {
       return a.score - b.score;
     }
     if (scoresheet.winCondition === "Target Score") {
+      if (scoresheet.targetScore == null) return 0;
       if (a.score === b.score) {
         return 0;
       }
       if (a.score === scoresheet.targetScore) return -1;
       if (b.score === scoresheet.targetScore) return 1;
-      const aDist = Math.abs(a.score - (scoresheet.targetScore ?? 0));
-      const bDist = Math.abs(b.score - (scoresheet.targetScore ?? 0));
+      const aDist = Math.abs(a.score - scoresheet.targetScore);
+      const bDist = Math.abs(b.score - scoresheet.targetScore);
       return aDist - bDist;
     }
     return 0;
