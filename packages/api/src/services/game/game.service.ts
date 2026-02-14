@@ -355,6 +355,7 @@ class GameService {
         gameId: result.id,
       },
     });
+    return;
   }
 
   private async resolveImageId(args: {

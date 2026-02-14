@@ -266,13 +266,35 @@ export const buildOriginalTeams = (
       scores.every((v) => v != null) && new Set(scores).size === 1;
     const allSameWinner = new Set(winners).size === 1;
 
+    // Validate that playerRounds are identical across all team players
+    const referenceRounds = teamPlayers[0]?.playerRounds ?? [];
+    const roundsAreConsistent = teamPlayers.every((tp) => {
+      if (tp.playerRounds.length !== referenceRounds.length) return false;
+      return referenceRounds.every((ref) => {
+        const matching = tp.playerRounds.find(
+          (r) => r.roundId === ref.roundId,
+        );
+        if (!matching) return false;
+        // Treat nulls explicitly: both null or both equal
+        if (ref.score === null && matching.score === null) return true;
+        return ref.score === matching.score;
+      });
+    });
+
+    if (!roundsAreConsistent) {
+      throw new Error(
+        `Team ${team.id} has divergent per-round data across its players. ` +
+          `Cannot determine a consensus for team rounds.`,
+      );
+    }
+
     return {
       id: team.id,
       teamId: team.id,
       placement: allSamePlacement ? (placements[0] ?? null) : null,
       winner: allSameWinner ? (winners[0] ?? false) : false,
       score: allSameScore ? (scores[0] ?? null) : null,
-      rounds: teamPlayers[0]?.playerRounds ?? [],
+      rounds: referenceRounds,
     };
   });
 };

@@ -277,42 +277,48 @@ export const sharePlayersWithFriend = async (
   shareRequestId: number,
   sharedMatch: SharedMatchResult,
 ) => {
-  for (const matchPlayer of matchPlayers) {
-    const playerShareRequest = await sharingRepository.get(
-      {
-        ownerId: ctx.userId,
-        sharedWithId: friend.friendUserId,
-        where: {
-          itemType: "player",
-          itemId: matchPlayer.playerId,
-          status: "accepted",
-        },
-      },
-      ctx.tx,
-    );
+  const shouldSharePlayers = friend.sharePlayers && friend.allowSharedPlayers;
 
-    if (!playerShareRequest) {
-      const insertedPlayerShareRequest = await sharingRepository.insert(
+  for (const matchPlayer of matchPlayers) {
+    // Only create player-level share requests when player sharing is enabled
+    if (shouldSharePlayers) {
+      const playerShareRequest = await sharingRepository.get(
         {
           ownerId: ctx.userId,
           sharedWithId: friend.friendUserId,
-          itemType: "player",
-          itemId: matchPlayer.playerId,
-          itemParentId: matchPlayer.matchId,
-          status: friend.autoAcceptPlayers ? "accepted" : "pending",
-          permission: friend.defaultPermissionForPlayers,
-          expiresAt: null,
-          parentShareId: shareRequestId,
+          where: {
+            itemType: "player",
+            itemId: matchPlayer.playerId,
+            status: "accepted",
+          },
         },
         ctx.tx,
       );
-      assertInserted(
-        insertedPlayerShareRequest,
-        { userId: ctx.userId, value: ctx.input },
-        "Shared player request not created.",
-      );
+
+      if (!playerShareRequest) {
+        const insertedPlayerShareRequest = await sharingRepository.insert(
+          {
+            ownerId: ctx.userId,
+            sharedWithId: friend.friendUserId,
+            itemType: "player",
+            itemId: matchPlayer.playerId,
+            itemParentId: matchPlayer.matchId,
+            status: friend.autoAcceptPlayers ? "accepted" : "pending",
+            permission: friend.defaultPermissionForPlayers,
+            expiresAt: null,
+            parentShareId: shareRequestId,
+          },
+          ctx.tx,
+        );
+        assertInserted(
+          insertedPlayerShareRequest,
+          { userId: ctx.userId, value: ctx.input },
+          "Shared player request not created.",
+        );
+      }
     }
 
+    // Always create match player share requests so the friend sees players in the match
     const existingMatchPlayerRequest = await sharingRepository.get(
       {
         ownerId: ctx.userId,
@@ -346,11 +352,10 @@ export const sharePlayersWithFriend = async (
       );
     }
 
-    const sharedPlayer = await getOrCreateSharedPlayer(
-      ctx,
-      friend,
-      matchPlayer.playerId,
-    );
+    // Only link shared players when player sharing is enabled
+    const sharedPlayer = shouldSharePlayers
+      ? await getOrCreateSharedPlayer(ctx, friend, matchPlayer.playerId)
+      : null;
 
     if (friend.autoAcceptMatches) {
       await createSharedMatchPlayer(

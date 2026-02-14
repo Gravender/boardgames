@@ -644,13 +644,18 @@ class GameImportService {
    */
   private async insertRoundPlayersWithScores(args: {
     matchRoundId: number;
-    insertedMatchPlayers: { id: number }[];
+    insertedMatchPlayers: { id: number; playerId: number }[];
     participantData: ParticipantRecord[];
     userId: string;
     tx: TransactionType;
   }) {
     const { matchRoundId, insertedMatchPlayers, participantData, userId, tx } =
       args;
+
+    // Build lookup map keyed by playerId for safe correlation
+    const participantMap = new Map(
+      participantData.map((pd) => [pd.playerId, pd]),
+    );
 
     const roundPlayersInput = insertedMatchPlayers.map((mp) => ({
       roundId: matchRoundId,
@@ -663,10 +668,10 @@ class GameImportService {
     });
 
     for (const insertedRoundPlayer of insertedRoundPlayers) {
-      const participantIdx = insertedMatchPlayers.findIndex(
-        (mp) => mp.id === insertedRoundPlayer.matchPlayerId,
+      const mp = insertedMatchPlayers.find(
+        (m) => m.id === insertedRoundPlayer.matchPlayerId,
       );
-      const score = participantData[participantIdx]?.score;
+      const score = mp ? participantMap.get(mp.playerId)?.score : undefined;
       if (score !== undefined) {
         await matchPlayerRepository.updateRoundPlayer({
           input: {
@@ -687,8 +692,9 @@ class GameImportService {
    * (same pattern as matchUpdateScoreService.updateMatchFinalScores).
    */
   private async updateMatchPlayerResults(args: {
-    insertedMatchPlayers: { id: number; teamId: number | null }[];
+    insertedMatchPlayers: { id: number; playerId: number; teamId: number | null }[];
     participantData: {
+      playerId: number;
       score: number | undefined;
       isWinner: boolean;
     }[];
@@ -702,10 +708,15 @@ class GameImportService {
   }) {
     const { insertedMatchPlayers, participantData, scoresheet, tx } = args;
 
+    // Build lookup map keyed by playerId for safe correlation
+    const participantMap = new Map(
+      participantData.map((pd) => [pd.playerId, pd]),
+    );
+
     if (scoresheet.winCondition === "Manual" || scoresheet.isCoop) {
       // Manual/Coop: use BGG isWinner flag, no calculated placement
-      for (const [idx, mp] of insertedMatchPlayers.entries()) {
-        const data = participantData[idx];
+      for (const mp of insertedMatchPlayers) {
+        const data = participantMap.get(mp.playerId);
         if (!data) continue;
         await matchPlayerRepository.updateMatchPlayerPlacementAndScore({
           input: {
@@ -729,9 +740,9 @@ class GameImportService {
             "Cannot calculate placement: winCondition is 'Target Score' but targetScore is not set.",
         });
       }
-      const playersForCalc = insertedMatchPlayers.map((mp, idx) => ({
+      const playersForCalc = insertedMatchPlayers.map((mp) => ({
         id: mp.id,
-        rounds: [{ score: participantData[idx]?.score ?? null }],
+        rounds: [{ score: participantMap.get(mp.playerId)?.score ?? null }],
         teamId: mp.teamId,
       }));
       const placements = calculatePlacement(playersForCalc, {
