@@ -97,6 +97,24 @@ interface DefaultRoundInfo {
   config: unknown;
 }
 
+interface PlayerRecord {
+  id: number;
+  name: string;
+}
+
+interface CreatedMatchInfo {
+  matchId: number;
+  matchScoresheetId: number;
+  matchRoundId: number;
+}
+
+interface ParticipantRecord {
+  playerId: number;
+  teamId: number | null;
+  score: number | undefined;
+  isWinner: boolean;
+}
+
 class GameImportService {
   public async importBGGGames(
     args: ImportBGGGamesArgs,
@@ -257,9 +275,16 @@ class GameImportService {
       "Failed to create default round",
     );
 
+    // Fetch players once and thread through all plays
+    let currentPlayers: PlayerRecord[] =
+      await playerRepository.getPlayersByCreatedBy({
+        createdBy: userId,
+        tx,
+      });
+
     // Import each play as a match
     for (const [index, play] of mappedGame.plays.entries()) {
-      await this.importPlay({
+      currentPlayers = await this.importPlay({
         play,
         index,
         gameName: mappedGame.name,
@@ -267,6 +292,7 @@ class GameImportService {
         defaultScoresheet,
         defaultRound,
         createdLocations,
+        currentPlayers,
         userId,
         tx,
       });
@@ -281,9 +307,71 @@ class GameImportService {
     defaultScoresheet: DefaultScoresheetInfo;
     defaultRound: DefaultRoundInfo;
     createdLocations: CreatedLocation[];
+    currentPlayers: PlayerRecord[];
     userId: string;
     tx: TransactionType;
-  }) {
+  }): Promise<PlayerRecord[]> {
+    const {
+      play,
+      index,
+      gameName,
+      gameId,
+      defaultScoresheet,
+      defaultRound,
+      createdLocations,
+      currentPlayers,
+      userId,
+      tx,
+    } = args;
+
+    const matchInfo = await this.createMatchForPlay({
+      play,
+      index,
+      gameName,
+      gameId,
+      defaultScoresheet,
+      defaultRound,
+      createdLocations,
+      userId,
+      tx,
+    });
+
+    const updatedPlayers = await this.ensurePlayersExist({
+      participants: play.participants,
+      currentPlayers,
+      userId,
+      tx,
+    });
+
+    await this.createMatchParticipants({
+      play,
+      gameName,
+      matchId: matchInfo.matchId,
+      matchRoundId: matchInfo.matchRoundId,
+      currentPlayers: updatedPlayers,
+      defaultScoresheet,
+      userId,
+      tx,
+    });
+
+    return updatedPlayers;
+  }
+
+  /**
+   * Fork scoresheet, clone rounds, insert match, and mark it finished.
+   * (Steps 1–4 of the original importPlay.)
+   */
+  private async createMatchForPlay(args: {
+    play: MappedPlay;
+    index: number;
+    gameName: string;
+    gameId: number;
+    defaultScoresheet: DefaultScoresheetInfo;
+    defaultRound: DefaultRoundInfo;
+    createdLocations: CreatedLocation[];
+    userId: string;
+    tx: TransactionType;
+  }): Promise<CreatedMatchInfo> {
     const {
       play,
       index,
@@ -296,7 +384,7 @@ class GameImportService {
       tx,
     } = args;
 
-    // 1. Fork scoresheet for match (same pattern as matchSetupService.resolveOriginalScoresheet)
+    // 1. Fork scoresheet for match
     const matchScoresheet = await scoresheetRepository.insert(
       {
         name: defaultScoresheet.name,
@@ -320,7 +408,7 @@ class GameImportService {
       "Failed to create match scoresheet",
     );
 
-    // 2. Copy rounds from default with provenance (same as matchSetupService.insertRoundsFromTemplate)
+    // 2. Copy rounds from default with provenance
     const matchRounds = await this.insertRoundsFromTemplate(
       [defaultRound],
       matchScoresheet.id,
@@ -334,7 +422,7 @@ class GameImportService {
       });
     }
 
-    // 3. Create match (same pattern as matchService.createMatch)
+    // 3. Create match
     const currentLocation = createdLocations.find(
       (loc) => loc.bggLocationId === play.locationRefId,
     );
@@ -370,16 +458,30 @@ class GameImportService {
       tx,
     });
 
-    // 5. Create/dedup players
-    let currentPlayers = await playerRepository.getPlayersByCreatedBy({
-      createdBy: userId,
-      tx,
-    });
-    const uniqueParticipantNames = [
-      ...new Set(play.participants.map((p) => p.name)),
-    ];
-    for (const name of uniqueParticipantNames) {
-      if (!currentPlayers.some((p) => p.name === name)) {
+    return {
+      matchId: insertedMatch.id,
+      matchScoresheetId: matchScoresheet.id,
+      matchRoundId: matchRound.id,
+    };
+  }
+
+  /**
+   * Deduplicate and create any missing players from the participant list.
+   * Returns the updated player list so it can be reused across plays.
+   * (Step 5 of the original importPlay.)
+   */
+  private async ensurePlayersExist(args: {
+    participants: MappedParticipant[];
+    currentPlayers: PlayerRecord[];
+    userId: string;
+    tx: TransactionType;
+  }): Promise<PlayerRecord[]> {
+    const { participants, currentPlayers, userId, tx } = args;
+    let updatedPlayers = currentPlayers;
+
+    const uniqueNames = [...new Set(participants.map((p) => p.name))];
+    for (const name of uniqueNames) {
+      if (!updatedPlayers.some((p) => p.name === name)) {
         const newPlayer = await playerRepository.insert({
           input: { createdBy: userId, name },
           tx,
@@ -389,34 +491,137 @@ class GameImportService {
           { userId, value: { playerName: name } },
           "Failed to create player",
         );
-        currentPlayers = [...currentPlayers, newPlayer];
+        updatedPlayers = [...updatedPlayers, newPlayer];
       }
     }
+
+    return updatedPlayers;
+  }
+
+  /**
+   * Create teams, match players, round players, update scores, and calculate placements.
+   * (Steps 6–10 of the original importPlay.)
+   */
+  private async createMatchParticipants(args: {
+    play: MappedPlay;
+    gameName: string;
+    matchId: number;
+    matchRoundId: number;
+    currentPlayers: PlayerRecord[];
+    defaultScoresheet: DefaultScoresheetInfo;
+    userId: string;
+    tx: TransactionType;
+  }) {
+    const {
+      play,
+      gameName,
+      matchId,
+      matchRoundId,
+      currentPlayers,
+      defaultScoresheet,
+      userId,
+      tx,
+    } = args;
 
     // 6. Create teams
+    const createdTeams = await this.createTeams({
+      participants: play.participants,
+      usesTeams: play.usesTeams,
+      matchId,
+      userId,
+      tx,
+    });
+
+    // 7. Build participant data and insert match players
+    const participantData = this.buildParticipantData({
+      participants: play.participants,
+      currentPlayers,
+      createdTeams,
+      gameName,
+    });
+
+    const insertedMatchPlayers = await matchPlayerRepository.insertMatchPlayers(
+      {
+        input: participantData.map((pd) => ({
+          matchId,
+          playerId: pd.playerId,
+          teamId: pd.teamId,
+        })),
+        tx,
+      },
+    );
+    assertInserted(
+      insertedMatchPlayers.at(0),
+      { userId, value: { matchId } },
+      "Failed to create match players",
+    );
+
+    // 8. Create round players and update scores
+    await this.insertRoundPlayersWithScores({
+      matchRoundId,
+      insertedMatchPlayers,
+      participantData,
+      userId,
+      tx,
+    });
+
+    // 9. Calculate placement and update match players
+    await this.updateMatchPlayerResults({
+      insertedMatchPlayers,
+      participantData,
+      scoresheet: defaultScoresheet,
+      tx,
+    });
+  }
+
+  /**
+   * Create teams for a match if the play uses teams.
+   */
+  private async createTeams(args: {
+    participants: MappedParticipant[];
+    usesTeams: boolean;
+    matchId: number;
+    userId: string;
+    tx: TransactionType;
+  }): Promise<{ id: number; name: string }[]> {
+    const { participants, usesTeams, matchId, userId, tx } = args;
+    if (!usesTeams) return [];
+
     const createdTeams: { id: number; name: string }[] = [];
-    if (play.usesTeams) {
-      const teamNames = new Set(
-        play.participants
-          .map((p) => p.team)
-          .filter((t): t is string => t !== undefined),
+    const teamNames = new Set(
+      participants
+        .map((p) => p.team)
+        .filter((t): t is string => t !== undefined),
+    );
+
+    for (const teamName of teamNames) {
+      const insertedTeam = await teamRepository.createTeam({
+        input: { name: teamName, matchId },
+        tx,
+      });
+      assertInserted(
+        insertedTeam,
+        { userId, value: { teamName, matchId } },
+        "Failed to create team",
       );
-      for (const teamName of teamNames) {
-        const insertedTeam = await teamRepository.createTeam({
-          input: { name: teamName, matchId: insertedMatch.id },
-          tx,
-        });
-        assertInserted(
-          insertedTeam,
-          { userId, value: { teamName, matchId: insertedMatch.id } },
-          "Failed to create team",
-        );
-        createdTeams.push({ id: insertedTeam.id, name: insertedTeam.name });
-      }
+      createdTeams.push({ id: insertedTeam.id, name: insertedTeam.name });
     }
 
-    // 7. Create match players without score/placement/winner (same as matchParticipantsService)
-    const participantData = play.participants.map((p) => {
+    return createdTeams;
+  }
+
+  /**
+   * Map play participants to their player IDs, team IDs, scores, and winner flags.
+   */
+  private buildParticipantData(args: {
+    participants: MappedParticipant[];
+    currentPlayers: PlayerRecord[];
+    createdTeams: { id: number; name: string }[];
+    gameName: string;
+  }): ParticipantRecord[] {
+    const { participants, currentPlayers, createdTeams, gameName } = args;
+
+    return participants.map((p) => {
       const foundPlayer = currentPlayers.find((cp) => cp.name === p.name);
       if (!foundPlayer) {
         throw new TRPCError({
@@ -431,26 +636,24 @@ class GameImportService {
         isWinner: p.isWinner,
       };
     });
-    const matchPlayersInput = participantData.map((pd) => ({
-      matchId: insertedMatch.id,
-      playerId: pd.playerId,
-      teamId: pd.teamId,
-    }));
-    const insertedMatchPlayers = await matchPlayerRepository.insertMatchPlayers(
-      {
-        input: matchPlayersInput,
-        tx,
-      },
-    );
-    assertInserted(
-      insertedMatchPlayers.at(0),
-      { userId, value: { matchId: insertedMatch.id } },
-      "Failed to create match players",
-    );
+  }
 
-    // 8. Create round players without score (same as matchParticipantsService)
+  /**
+   * Insert round players and update their scores.
+   * (Steps 8–9 of the original importPlay.)
+   */
+  private async insertRoundPlayersWithScores(args: {
+    matchRoundId: number;
+    insertedMatchPlayers: { id: number }[];
+    participantData: ParticipantRecord[];
+    userId: string;
+    tx: TransactionType;
+  }) {
+    const { matchRoundId, insertedMatchPlayers, participantData, userId, tx } =
+      args;
+
     const roundPlayersInput = insertedMatchPlayers.map((mp) => ({
-      roundId: matchRound.id,
+      roundId: matchRoundId,
       matchPlayerId: mp.id,
       updatedBy: userId,
     }));
@@ -459,7 +662,6 @@ class GameImportService {
       tx,
     });
 
-    // 9. Update round player scores
     for (const insertedRoundPlayer of insertedRoundPlayers) {
       const participantIdx = insertedMatchPlayers.findIndex(
         (mp) => mp.id === insertedRoundPlayer.matchPlayerId,
@@ -476,14 +678,6 @@ class GameImportService {
         });
       }
     }
-
-    // 10. Calculate placement and update match players
-    await this.updateMatchPlayerResults({
-      insertedMatchPlayers,
-      participantData,
-      scoresheet: defaultScoresheet,
-      tx,
-    });
   }
 
   /**
