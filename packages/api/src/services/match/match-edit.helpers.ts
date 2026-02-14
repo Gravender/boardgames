@@ -215,3 +215,64 @@ export const computeTeamChanges = (
 
   return { addedTeams, editedTeams, deletedTeams };
 };
+
+// ─── TeamWithScoring ─────────────────────────────────────────────
+
+export interface TeamWithScoring {
+  id: number;
+  teamId: number;
+  placement: number | null;
+  winner: boolean;
+  score: number | null;
+  rounds: { roundId: number; score: number | null }[];
+}
+
+// ─── buildOriginalTeams ──────────────────────────────────────────
+
+/**
+ * Build team-level scoring from individual match-player data.
+ * When all players on a team share the same placement/score/winner
+ * value, that value is promoted to the team level.
+ */
+export const buildOriginalTeams = (
+  teams: { id: number }[],
+  matchPlayers: {
+    teamId: number | null;
+    placement: number | null;
+    score: number | null;
+    winner: boolean | null;
+    playerRounds: { roundId: number; score: number | null }[];
+  }[],
+): TeamWithScoring[] => {
+  return teams.map((team) => {
+    const teamPlayers = matchPlayers.filter((mp) => mp.teamId === team.id);
+    if (teamPlayers.length === 0) {
+      return {
+        id: team.id,
+        teamId: team.id,
+        placement: null,
+        winner: false,
+        score: null,
+        rounds: [],
+      };
+    }
+    const placements = teamPlayers.map((p) => p.placement);
+    const scores = teamPlayers.map((p) => p.score);
+    const winners = teamPlayers.map((p) => p.winner);
+
+    const allSamePlacement =
+      placements.every((v) => v != null) && new Set(placements).size === 1;
+    const allSameScore =
+      scores.every((v) => v != null) && new Set(scores).size === 1;
+    const allSameWinner = new Set(winners).size === 1;
+
+    return {
+      id: team.id,
+      teamId: team.id,
+      placement: allSamePlacement ? (placements[0] ?? null) : null,
+      winner: allSameWinner ? (winners[0] ?? false) : false,
+      score: allSameScore ? (scores[0] ?? null) : null,
+      rounds: teamPlayers[0]?.playerRounds ?? [],
+    };
+  });
+};
