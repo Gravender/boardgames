@@ -8,7 +8,7 @@ import type {
   GetPlayersForMatchArgs,
   GetRecentMatchWithPlayersArgs,
 } from "./player.service.types";
-import { playerRepository } from "../repository/player.repository";
+import { playerRepository } from "../../../repositories/player/player.repository";
 
 class PlayerService {
   public async getPlayersForMatch(

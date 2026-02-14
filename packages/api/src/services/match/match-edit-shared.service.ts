@@ -56,13 +56,16 @@ class MatchEditSharedService {
 
       if (input.match.location !== undefined) {
         if (input.match.location !== null) {
-          const returnedSharedLocation = await locationRepository.getShared({
-            id: input.match.location.sharedId,
-            sharedWithId: ctx.userId,
-            where: {
-              ownerId: returnedSharedMatch.ownerId,
+          const returnedSharedLocation = await locationRepository.getShared(
+            {
+              id: input.match.location.sharedId,
+              sharedWithId: ctx.userId,
+              where: {
+                ownerId: returnedSharedMatch.ownerId,
+              },
             },
-          });
+            tx,
+          );
           assertFound(
             returnedSharedLocation,
             {

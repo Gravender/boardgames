@@ -158,6 +158,7 @@ class MatchQueryService {
           );
         if (!sharedMatchPlayerRound) {
           const message = `Shared Match Player Round not found with roundId: ${scoresheetRound.id} and matchPlayerId: ${sharedMatchPlayer.matchPlayerId}`;
+          this.logger.error(message);
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: message,

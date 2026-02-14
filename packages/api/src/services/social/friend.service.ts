@@ -355,24 +355,30 @@ class FriendService {
       return null;
     }
 
-    const existingRequest = await sharingRepository.get({
-      ownerId: ctx.userId,
-      sharedWithId: friend.friendUserId,
-      where: {
-        itemType: "location",
-        itemId: match.locationId,
-        OR: [{ status: "accepted" }, { parentShareId: shareRequestId }],
+    const existingRequest = await sharingRepository.get(
+      {
+        ownerId: ctx.userId,
+        sharedWithId: friend.friendUserId,
+        where: {
+          itemType: "location",
+          itemId: match.locationId,
+          OR: [{ status: "accepted" }, { parentShareId: shareRequestId }],
+        },
       },
-    });
+      ctx.tx,
+    );
 
     if (existingRequest !== undefined) {
       if (existingRequest.status !== "accepted") return null;
 
-      const existingShared = await locationRepository.getSharedByLocationId({
-        locationId: match.locationId,
-        sharedWithId: friend.friendUserId,
-        where: { ownerId: ctx.userId },
-      });
+      const existingShared = await locationRepository.getSharedByLocationId(
+        {
+          locationId: match.locationId,
+          sharedWithId: friend.friendUserId,
+          where: { ownerId: ctx.userId },
+        },
+        ctx.tx,
+      );
       assertFound(
         existingShared,
         { userId: ctx.userId, value: ctx.input },
@@ -402,21 +408,27 @@ class FriendService {
 
     if (!friend.autoAcceptLocation) return null;
 
-    const existingSharedLocation = await locationRepository.getShared({
-      id: createdRequest.itemId,
-      sharedWithId: friend.friendUserId,
-      where: { ownerId: ctx.userId },
-    });
+    const existingSharedLocation = await locationRepository.getShared(
+      {
+        id: createdRequest.itemId,
+        sharedWithId: friend.friendUserId,
+        where: { ownerId: ctx.userId },
+      },
+      ctx.tx,
+    );
     if (existingSharedLocation !== undefined) {
       return { sharedLocationId: existingSharedLocation.id };
     }
 
-    const createdSharedLocation = await locationRepository.insertShared({
-      ownerId: ctx.userId,
-      sharedWithId: friend.friendUserId,
-      locationId: match.locationId,
-      permission: friend.defaultPermissionForLocation,
-    });
+    const createdSharedLocation = await locationRepository.insertShared(
+      {
+        ownerId: ctx.userId,
+        sharedWithId: friend.friendUserId,
+        locationId: match.locationId,
+        permission: friend.defaultPermissionForLocation,
+      },
+      ctx.tx,
+    );
     assertInserted(
       createdSharedLocation,
       { userId: ctx.userId, value: ctx.input },
@@ -442,15 +454,18 @@ class FriendService {
       return { sharedGameId: hasLinkedGame.id };
     }
 
-    const existingRequest = await sharingRepository.get({
-      ownerId: ctx.userId,
-      sharedWithId: friend.friendUserId,
-      where: {
-        itemType: "game",
-        itemId: match.gameId,
-        OR: [{ status: "accepted" }, { parentShareId: shareRequestId }],
+    const existingRequest = await sharingRepository.get(
+      {
+        ownerId: ctx.userId,
+        sharedWithId: friend.friendUserId,
+        where: {
+          itemType: "game",
+          itemId: match.gameId,
+          OR: [{ status: "accepted" }, { parentShareId: shareRequestId }],
+        },
       },
-    });
+      ctx.tx,
+    );
 
     if (existingRequest !== undefined) {
       if (existingRequest.status !== "accepted") return null;
@@ -531,15 +546,18 @@ class FriendService {
     shareRequestId: number,
     sharedGame: SharedGameResult,
   ): Promise<SharedScoresheetResult> {
-    const existingRequest = await sharingRepository.get({
-      ownerId: ctx.userId,
-      sharedWithId: friend.friendUserId,
-      where: {
-        itemType: "scoresheet",
-        itemId: parent.id,
-        OR: [{ status: "accepted" }, { parentShareId: shareRequestId }],
+    const existingRequest = await sharingRepository.get(
+      {
+        ownerId: ctx.userId,
+        sharedWithId: friend.friendUserId,
+        where: {
+          itemType: "scoresheet",
+          itemId: parent.id,
+          OR: [{ status: "accepted" }, { parentShareId: shareRequestId }],
+        },
       },
-    });
+      ctx.tx,
+    );
 
     if (existingRequest !== undefined) {
       return this.handleExistingParentScoresheetRequest(
@@ -572,11 +590,14 @@ class FriendService {
     }
 
     const parentSharedScoresheet =
-      await scoresheetRepository.getSharedByScoresheetId({
-        sharedWithId: friend.friendUserId,
-        scoresheetId: existingRequest.itemId,
-        where: { ownerId: ctx.userId },
-      });
+      await scoresheetRepository.getSharedByScoresheetId(
+        {
+          sharedWithId: friend.friendUserId,
+          scoresheetId: existingRequest.itemId,
+          where: { ownerId: ctx.userId },
+        },
+        ctx.tx,
+      );
 
     if (parentSharedScoresheet) {
       return { sharedScoresheetId: parentSharedScoresheet.id };
@@ -821,15 +842,18 @@ class FriendService {
     sharedMatch: SharedMatchResult,
   ) {
     for (const matchPlayer of matchPlayers) {
-      const playerShareRequest = await sharingRepository.get({
-        ownerId: ctx.userId,
-        sharedWithId: friend.friendUserId,
-        where: {
-          itemType: "player",
-          itemId: matchPlayer.playerId,
-          status: "accepted",
+      const playerShareRequest = await sharingRepository.get(
+        {
+          ownerId: ctx.userId,
+          sharedWithId: friend.friendUserId,
+          where: {
+            itemType: "player",
+            itemId: matchPlayer.playerId,
+            status: "accepted",
+          },
         },
-      });
+        ctx.tx,
+      );
 
       if (!playerShareRequest) {
         const insertedPlayerShareRequest = await sharingRepository.insert(
@@ -853,24 +877,38 @@ class FriendService {
         );
       }
 
-      const insertedMatchPlayerRequest = await sharingRepository.insert(
+      const existingMatchPlayerRequest = await sharingRepository.get(
         {
           ownerId: ctx.userId,
           sharedWithId: friend.friendUserId,
-          itemType: "matchPlayer",
-          itemId: matchPlayer.id,
-          status: friend.autoAcceptMatches ? "accepted" : "pending",
-          permission: friend.defaultPermissionForMatches,
-          expiresAt: null,
-          parentShareId: shareRequestId,
+          where: {
+            itemType: "matchPlayer",
+            itemId: matchPlayer.id,
+          },
         },
         ctx.tx,
       );
-      assertInserted(
-        insertedMatchPlayerRequest,
-        { userId: ctx.userId, value: ctx.input },
-        "Shared match player request not created.",
-      );
+
+      if (!existingMatchPlayerRequest) {
+        const insertedMatchPlayerRequest = await sharingRepository.insert(
+          {
+            ownerId: ctx.userId,
+            sharedWithId: friend.friendUserId,
+            itemType: "matchPlayer",
+            itemId: matchPlayer.id,
+            status: friend.autoAcceptMatches ? "accepted" : "pending",
+            permission: friend.defaultPermissionForMatches,
+            expiresAt: null,
+            parentShareId: shareRequestId,
+          },
+          ctx.tx,
+        );
+        assertInserted(
+          insertedMatchPlayerRequest,
+          { userId: ctx.userId, value: ctx.input },
+          "Shared match player request not created.",
+        );
+      }
 
       const sharedPlayer = await this.getOrCreateSharedPlayer(
         ctx,
@@ -898,11 +936,14 @@ class FriendService {
     if (!friend.autoAcceptPlayers) return null;
 
     const returnedSharedPlayer =
-      await playerRepository.getSharedPlayerByPlayerId({
-        playerId,
-        sharedWithId: friend.friendUserId,
-        where: { ownerId: ctx.userId },
-      });
+      await playerRepository.getSharedPlayerByPlayerId(
+        {
+          playerId,
+          sharedWithId: friend.friendUserId,
+          where: { ownerId: ctx.userId },
+        },
+        ctx.tx,
+      );
     if (returnedSharedPlayer) {
       return { sharedPlayerId: returnedSharedPlayer.id };
     }

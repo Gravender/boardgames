@@ -24,6 +24,9 @@ class RoundRepository {
     input: InsertRoundInputType[],
     tx?: TransactionType,
   ) {
+    if (input.length === 0) {
+      return [];
+    }
     const database = tx ?? db;
     const returningRounds = await database
       .insert(round)
@@ -117,12 +120,12 @@ class RoundRepository {
       }
     }
 
-    nameSqlChunks.push(sql`end)`);
-    scoreSqlChunks.push(sql`end)`);
-    typeSqlChunks.push(sql`end)`);
-    colorSqlChunks.push(sql`end)`);
-    lookupSqlChunks.push(sql`end)`);
-    modifierSqlChunks.push(sql`end)`);
+    nameSqlChunks.push(sql`else ${round.name} end)`);
+    scoreSqlChunks.push(sql`else ${round.score} end)`);
+    typeSqlChunks.push(sql`else ${round.type} end)`);
+    colorSqlChunks.push(sql`else ${round.color} end)`);
+    lookupSqlChunks.push(sql`else ${round.lookup} end)`);
+    modifierSqlChunks.push(sql`else ${round.modifier} end)`);
 
     const setData: Record<string, SQL | undefined> = {};
     if (nameSqlChunks.length > 2) {

@@ -76,7 +76,11 @@ class MatchEditOriginalService {
       };
 
       // ── Update match details (name, date, location) ──────────
-      if (input.match.name || input.match.date || input.match.location) {
+      if (
+        input.match.name !== undefined ||
+        input.match.date !== undefined ||
+        input.match.location !== undefined
+      ) {
         const locationId = await matchSetupService.resolveLocationForMatch({
           locationInput: input.match.location,
           userId: ctx.userId,
@@ -313,6 +317,19 @@ class MatchEditOriginalService {
       });
     }
 
+    // Validate that all playerIds in playersToInsert are unique to prevent
+    // mismapping when returnedMatchPlayers are matched back via find().
+    const seenPlayerIds = new Set<number>();
+    for (const p of playersToInsert) {
+      if (seenPlayerIds.has(p.processedPlayer.playerId)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Edit Match: duplicate playerId ${p.processedPlayer.playerId} in players to add. Each player must appear at most once.`,
+        });
+      }
+      seenPlayerIds.add(p.processedPlayer.playerId);
+    }
+
     const returnedMatchPlayers = await matchPlayerRepository.insertMatchPlayers(
       {
         input: playersToInsert.map((p) => p.processedPlayer),
@@ -320,17 +337,26 @@ class MatchEditOriginalService {
       },
     );
 
+    const remainingPlayersToInsert = [...playersToInsert];
     const mappedMatchPlayers = returnedMatchPlayers.map((mp) => {
-      const foundPlayer = playersToInsert.find(
+      const foundIndex = remainingPlayersToInsert.findIndex(
         (p) => p.processedPlayer.playerId === mp.playerId,
       );
-      if (!foundPlayer) {
+      if (foundIndex === -1) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message:
             "Edit Match Match players not created after mapping players to add.",
         });
       }
+      const foundPlayer = remainingPlayersToInsert[foundIndex];
+      if (!foundPlayer) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Edit Match: foundPlayer not found for matchPlayerId ${mp.id}. remainingPlayersToInsert contained a playerId that does not exist in playersToInsert (ids: [${remainingPlayersToInsert.map((p) => p.processedPlayer.playerId).join(", ")}]).`,
+        });
+      }
+      remainingPlayersToInsert.splice(foundIndex, 1);
       return {
         matchPlayerId: mp.id,
         playerId: mp.playerId,
@@ -431,7 +457,12 @@ class MatchEditOriginalService {
       const originalPlayer = returnedMatch.matchPlayers.find(
         (mp) => mp.id === updatedPlayer.matchPlayerId,
       );
-      if (!originalPlayer) continue;
+      if (!originalPlayer) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Edit Match: originalPlayer not found for matchPlayerId ${updatedPlayer.matchPlayerId}. updatedPlayers from computePlayerChanges contained a matchPlayerId that does not exist in returnedMatch.matchPlayers (ids: [${returnedMatch.matchPlayers.map((mp) => mp.id).join(", ")}]).`,
+        });
+      }
 
       if (originalPlayer.teamId !== updatedPlayer.teamId) {
         if (updatedPlayer.teamId !== null) {

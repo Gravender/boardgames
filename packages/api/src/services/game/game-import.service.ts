@@ -338,10 +338,14 @@ class GameImportService {
     const currentLocation = createdLocations.find(
       (loc) => loc.bggLocationId === play.locationRefId,
     );
+    const parsedDate = Date.parse(play.dateString);
+    const matchDate =
+      !play.dateString || isNaN(parsedDate) ? new Date() : new Date(parsedDate);
+
     const insertedMatch = await matchRepository.insert(
       {
         name: gameName + " #" + String(index + 1),
-        date: new Date(play.dateString),
+        date: matchDate,
         gameId,
         locationId: currentLocation?.trackerId,
         createdBy: userId,
