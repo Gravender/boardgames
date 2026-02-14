@@ -78,8 +78,7 @@ const mergeTeamRoles = (
   inputTeams: EditInputTeam[],
 ): MatchRoleRef[] => {
   const merged: MatchRoleRef[] = [...playerRoles];
-  const teamRoles =
-    inputTeams.find((t) => t.id === teamId)?.roles ?? [];
+  const teamRoles = inputTeams.find((t) => t.id === teamId)?.roles ?? [];
   for (const role of teamRoles) {
     const alreadyPresent = merged.find((r) => isSameRole(r, role));
     if (!alreadyPresent) {

@@ -122,12 +122,42 @@ class RoundRepository {
       cast: string;
       getValue: (r: (typeof input)[number]) => unknown;
     }[] = [
-      { key: "name", column: round.name, cast: "varchar", getValue: (r) => r.name },
-      { key: "score", column: round.score, cast: "integer", getValue: (r) => r.score },
-      { key: "type", column: round.type, cast: "varchar", getValue: (r) => r.type },
-      { key: "color", column: round.color, cast: "varchar", getValue: (r) => r.color },
-      { key: "lookup", column: round.lookup, cast: "integer", getValue: (r) => r.lookup },
-      { key: "modifier", column: round.modifier, cast: "integer", getValue: (r) => r.modifier },
+      {
+        key: "name",
+        column: round.name,
+        cast: "varchar",
+        getValue: (r) => r.name,
+      },
+      {
+        key: "score",
+        column: round.score,
+        cast: "integer",
+        getValue: (r) => r.score,
+      },
+      {
+        key: "type",
+        column: round.type,
+        cast: "varchar",
+        getValue: (r) => r.type,
+      },
+      {
+        key: "color",
+        column: round.color,
+        cast: "varchar",
+        getValue: (r) => r.color,
+      },
+      {
+        key: "lookup",
+        column: round.lookup,
+        cast: "integer",
+        getValue: (r) => r.lookup,
+      },
+      {
+        key: "modifier",
+        column: round.modifier,
+        cast: "integer",
+        getValue: (r) => r.modifier,
+      },
     ];
 
     const setData: Record<string, SQL> = {};

@@ -171,8 +171,7 @@ class MatchEditOriginalService {
         const winners = teamPlayers.map((p) => p.winner);
 
         const allSamePlacement =
-          placements.every((v) => v != null) &&
-          new Set(placements).size === 1;
+          placements.every((v) => v != null) && new Set(placements).size === 1;
         const allSameScore =
           scores.every((v) => v != null) && new Set(scores).size === 1;
         const allSameWinner = new Set(winners).size === 1;
