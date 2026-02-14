@@ -307,9 +307,9 @@ describe("calculatePlacement", () => {
 
     expect(calculatePlacement(players, scoresheet)).toEqual([
       { id: 7, score: 50, placement: 1 },
-      { id: 1, score: 60, placement: 2 },
-      { id: 2, score: 45, placement: 3 },
-      { id: 3, score: 60, placement: 4 },
+      { id: 2, score: 45, placement: 2 },
+      { id: 1, score: 60, placement: 3 },
+      { id: 3, score: 60, placement: 3 },
       { id: 4, score: 85, placement: 5 },
       { id: 5, score: 100, placement: 6 },
       { id: 6, score: 115, placement: 7 },

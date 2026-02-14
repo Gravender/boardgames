@@ -140,6 +140,7 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
       form.reset();
       setImagePreview(null); // Clear the image preview
     } catch (error) {
+      setIsUploading(false);
       console.error("Error uploading Image:", error);
       toast.error("Error", {
         description: "There was a problem uploading your Image.",

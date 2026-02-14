@@ -136,7 +136,7 @@ export const computePlayerChanges = (
       playersToAdd.push({
         ...player,
         roles: playerRoles,
-      } as EditInputPlayer);
+      });
     }
   });
 

@@ -33,10 +33,12 @@ interface Round {
  * the `roundsScore` is "Best Of", it considers different win conditions ("Highest
  */
 export function calculateFinalScore(rounds: Round[], scoresheet: scoreSheet) {
+  if (rounds.length === 0) return 0;
+
   if (scoresheet.roundsScore === "Aggregate") {
     return rounds.reduce<number | null>((acc, round) => {
-      if (round.score) {
-        if (acc) {
+      if (round.score != null) {
+        if (acc != null) {
           return acc + round.score;
         }
         return round.score;
@@ -47,8 +49,8 @@ export function calculateFinalScore(rounds: Round[], scoresheet: scoreSheet) {
   if (scoresheet.roundsScore === "Best Of") {
     if (scoresheet.winCondition === "Highest Score") {
       return rounds.reduce<number | null>((acc, round) => {
-        if (round.score) {
-          if (acc) {
+        if (round.score != null) {
+          if (acc != null) {
             return acc > round.score ? acc : round.score;
           }
           return round.score;
@@ -58,8 +60,8 @@ export function calculateFinalScore(rounds: Round[], scoresheet: scoreSheet) {
     }
     if (scoresheet.winCondition === "Lowest Score") {
       return rounds.reduce<number | null>((acc, round) => {
-        if (round.score) {
-          if (acc) {
+        if (round.score != null) {
+          if (acc != null) {
             return acc < round.score ? acc : round.score;
           }
           return round.score;
@@ -71,8 +73,8 @@ export function calculateFinalScore(rounds: Round[], scoresheet: scoreSheet) {
       if (scoresheet.targetScore == null) return null;
       const target = scoresheet.targetScore;
       return rounds.reduce<number | null>((acc, round) => {
-        if (round.score) {
-          if (acc) {
+        if (round.score != null) {
+          if (acc != null) {
             if (acc === target) return acc;
             if (round.score === target) return round.score;
             const accClose = Math.abs(acc - target);
@@ -117,11 +119,14 @@ export function calculatePlacement(players: Player[], scoresheet: scoreSheet) {
       return a.score - b.score;
     }
     if (scoresheet.winCondition === "Target Score") {
-      if (a.score == b.score) {
+      if (a.score === b.score) {
         return 0;
       }
       if (a.score === scoresheet.targetScore) return -1;
       if (b.score === scoresheet.targetScore) return 1;
+      const aDist = Math.abs(a.score - (scoresheet.targetScore ?? 0));
+      const bDist = Math.abs(b.score - (scoresheet.targetScore ?? 0));
+      return aDist - bDist;
     }
     return 0;
   });
