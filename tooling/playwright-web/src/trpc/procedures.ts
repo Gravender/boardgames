@@ -3,6 +3,7 @@ import type { RouterInputs } from "@board-games/api";
 import { createTrpcCaller } from "../trpc/trpc-helper";
 
 type CreateGameInputType = RouterInputs["game"]["create"];
+type CreateMatchInputType = RouterInputs["match"]["createMatch"];
 
 /**
  * Creates a game using tRPC directly (bypassing UI).
@@ -125,4 +126,117 @@ export async function createGameWithScoresheetViaTrpc(
     game: gameOverrides,
     scoresheets,
   });
+}
+
+// ─── Match helpers ────────────────────────────────────────────────────────
+
+/**
+ * Creates players via tRPC directly (bypassing UI).
+ *
+ * @param browserName - The browser name used to identify the test user
+ * @param count - Number of players to create
+ * @param prefix - Prefix for player names
+ * @returns Array of created players with { id, name }
+ */
+export async function createPlayersViaTrpc(
+  browserName: string,
+  count: number,
+  prefix = "Player",
+): Promise<{ id: number; name: string }[]> {
+  const caller = createTrpcCaller(browserName);
+  const players: { id: number; name: string }[] = [];
+  for (let i = 1; i <= count; i++) {
+    const player = await caller.player.create({
+      name: `${prefix} ${i}`,
+      imageId: null,
+    });
+    players.push(player);
+  }
+  return players;
+}
+
+/**
+ * Creates a full match (game + scoresheet + players + match) using tRPC
+ * directly (bypassing UI). Useful for setting up test data for score entry,
+ * finish, and delete Playwright tests.
+ *
+ * @param browserName - The browser name used to identify the test user
+ * @param browserGameName - The name of the game to create
+ * @param options - Optional match creation overrides
+ * @returns Created match, gameId, scoresheetId, and player ids
+ */
+export async function createFullMatchViaTrpc(
+  browserName: string,
+  browserGameName: string,
+  options?: {
+    matchName?: string;
+    matchDate?: Date;
+    playerCount?: number;
+    playerPrefix?: string;
+    scoresheetConfigs?: Parameters<typeof createGameWithScoresheetViaTrpc>[2];
+  },
+) {
+  const {
+    matchName,
+    matchDate = new Date(),
+    playerCount = 2,
+    playerPrefix = "Player",
+    scoresheetConfigs,
+  } = options ?? {};
+
+  const caller = createTrpcCaller(browserName);
+
+  // Create game (with scoresheets if provided, otherwise defaults)
+  let createdGame;
+  if (scoresheetConfigs) {
+    createdGame = await createGameWithScoresheetViaTrpc(
+      browserName,
+      browserGameName,
+      scoresheetConfigs,
+    );
+  } else {
+    createdGame = await createGameViaTrpc(browserName, browserGameName);
+  }
+
+  // Fetch scoresheet id
+  const scoresheets = await caller.game.gameScoreSheetsWithRounds({
+    type: "original",
+    id: createdGame.id,
+  });
+  const firstScoresheet = scoresheets[0];
+  if (firstScoresheet?.type !== "original") {
+    throw new Error("No default scoresheet found for created game");
+  }
+
+  // Create players
+  const players = await createPlayersViaTrpc(
+    browserName,
+    playerCount,
+    playerPrefix,
+  );
+
+  // Create match
+  const matchInput: CreateMatchInputType = {
+    name: matchName ?? `${browserGameName} Match #1`,
+    date: matchDate,
+    game: { type: "original", id: createdGame.id },
+    scoresheet: { type: "original", id: firstScoresheet.id },
+    players: players.map((p) => ({
+      type: "original" as const,
+      id: p.id,
+      roles: [],
+      teamId: null,
+    })),
+    teams: [],
+    location: null,
+  };
+
+  const match = await caller.match.createMatch(matchInput);
+
+  return {
+    match,
+    gameId: createdGame.id,
+    scoresheetId: firstScoresheet.id,
+    players,
+  };
 }
