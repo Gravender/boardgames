@@ -194,9 +194,36 @@ class GameStatsService {
   public async getGamePlayerStats(
     args: GetGamePlayerStatsArgs,
   ): Promise<GetGamePlayerStatsOutputType> {
+    const { input, ctx } = args;
+
+    // Validate game existence to be consistent with getGameScoresheetStats
+    if (input.type === "original") {
+      const returnedGame = await gameRepository.getGameWithLinkedGames({
+        id: input.id,
+        createdBy: ctx.userId,
+      });
+      if (!returnedGame) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Game not found.",
+        });
+      }
+    } else {
+      const returnedSharedGame = await gameRepository.getSharedGame({
+        id: input.sharedGameId,
+        sharedWithId: ctx.userId,
+      });
+      if (!returnedSharedGame) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared game not found.",
+        });
+      }
+    }
+
     const matchPlayers = await gameStatsRepository.getGamePlayerStatsData({
-      input: args.input,
-      userId: args.ctx.userId,
+      input,
+      userId: ctx.userId,
     });
 
     const acc = new Map<string, GamePlayerStatsAccEntry>();

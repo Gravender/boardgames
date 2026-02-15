@@ -105,6 +105,7 @@ test.describe("Match Summary - Teams", () => {
     // Team members should have "First Game" badges
     const badges = resultsCard.locator('[data-testid="result-badge"]');
     const badgeCount = await badges.count();
+    expect(badgeCount).toBeGreaterThan(0);
     for (let i = 0; i < badgeCount; i++) {
       await expect(badges.nth(i)).toHaveText("First Game");
     }
@@ -181,6 +182,7 @@ test.describe("Match Summary - Teams", () => {
     await expect(winnerTeam).toHaveAttribute("aria-label", /Winner/);
     const winnerBadges = winnerTeam.locator('[data-testid="result-badge"]');
     const winnerBadgeCount = await winnerBadges.count();
+    expect(winnerBadgeCount).toBeGreaterThan(0);
     for (let i = 0; i < winnerBadgeCount; i++) {
       await expect(winnerBadges.nth(i)).toHaveText("Best Game");
     }
@@ -191,6 +193,7 @@ test.describe("Match Summary - Teams", () => {
     await expect(loserTeam).toHaveAttribute("aria-label", /Loser/);
     const loserBadges = loserTeam.locator('[data-testid="result-badge"]');
     const loserBadgeCount = await loserBadges.count();
+    expect(loserBadgeCount).toBeGreaterThan(0);
     for (let i = 0; i < loserBadgeCount; i++) {
       await expect(loserBadges.nth(i)).toHaveText("Worst Game");
     }

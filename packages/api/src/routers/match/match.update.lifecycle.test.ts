@@ -47,12 +47,15 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
         id: match.id,
       });
 
-      // Verify match is running after start
+      // Verify match state after start
       const updatedMatch = await caller.match.getMatch({
         type: "original",
         id: match.id,
       });
       expect(updatedMatch.running).toBe(true);
+      expect(updatedMatch.finished).toBe(false);
+      expect(updatedMatch.startTime).toBeDefined();
+      expect(updatedMatch.startTime).not.toBeNull();
     });
 
     test("throws NOT_FOUND for non-existent match", async () => {

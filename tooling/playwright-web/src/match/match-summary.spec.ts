@@ -319,7 +319,7 @@ test.describe("Match Summary", () => {
     await expect(firstRow).toHaveAttribute("aria-label", /Winner.*1st place/);
     await expect(
       firstRow.locator('[data-testid="result-badge"]'),
-    ).toBeVisible();
+    ).toHaveText("First Game");
 
     // Player 2 (score 80) is 2nd / loser
     const secondRow = resultRows.nth(1);

@@ -145,15 +145,17 @@ describe("Game Stats Tests (header, playerStats, scoresheetStats)", () => {
       }
     });
 
-    test("returns empty players for non-existent game", async () => {
+    test("throws for non-existent game", async () => {
       const caller = await createAuthenticatedCaller(testUserId);
 
-      const result = await caller.game.getGamePlayerStats({
-        type: "original",
-        id: 999999,
-      });
-
-      expect(result.players).toHaveLength(0);
+      // Consistent with getGameScoresheetStats: both throw NOT_FOUND
+      // for non-existent games rather than returning empty results
+      await expect(
+        caller.game.getGamePlayerStats({
+          type: "original",
+          id: 999999,
+        }),
+      ).rejects.toThrow();
     });
   });
 

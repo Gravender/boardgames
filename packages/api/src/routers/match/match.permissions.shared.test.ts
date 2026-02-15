@@ -84,7 +84,7 @@ async function shareMatchBetweenUsers(opts: {
     if (!createdSharedMatch) throw new Error("Failed to create shared match");
 
     // 4. shared_match_players – link every matchPlayer so queries work
-    const matchPlayersAndTeams = await db.query.matchPlayer.findMany({
+    const matchPlayersAndTeams = await tx.query.matchPlayer.findMany({
       where: { matchId },
     });
     for (const mp of matchPlayersAndTeams) {

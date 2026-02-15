@@ -2,16 +2,18 @@ import { expect, test } from "@playwright/test";
 
 import { MATCH_GAME_NAME } from "../shared/test-data";
 import { createFullMatchViaTrpc } from "../trpc/procedures";
-import { deleteMatchTestData } from "./helpers";
+import { deleteMatchTestData, deleteTestPlayers } from "./helpers";
 
 const PREFIX = "_scores_";
 
 test.describe("Match Scores - Numeric", () => {
   test.beforeAll(async ({ browserName }) => {
     await deleteMatchTestData(browserName, browserName + PREFIX);
+    await deleteTestPlayers(browserName, browserName + "_ScoreP");
   });
   test.afterAll(async ({ browserName }) => {
     await deleteMatchTestData(browserName, browserName + PREFIX);
+    await deleteTestPlayers(browserName, browserName + "_ScoreP");
   });
 
   test("Enter numeric scores and verify totals", async ({
