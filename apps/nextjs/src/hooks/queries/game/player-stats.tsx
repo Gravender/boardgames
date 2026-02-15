@@ -9,7 +9,7 @@ type GameInput =
 export function useGamePlayerStats(input: GameInput) {
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(
-    trpc.newGame.getGamePlayerStats.queryOptions(
+    trpc.game.getGamePlayerStats.queryOptions(
       input.type === "original"
         ? { id: input.id, type: "original" }
         : { sharedGameId: input.sharedGameId, type: "shared" },

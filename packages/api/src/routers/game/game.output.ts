@@ -11,6 +11,114 @@ import {
   sharedRoleSchema,
 } from "@board-games/shared";
 
+// ─── getGames ────────────────────────────────────────────────
+const getGamesLocationSchema = z.object({
+  type: z.enum(["shared", "linked", "original"]),
+  name: z.string(),
+});
+
+export const getGamesOutput = z.array(
+  z.object({
+    type: z.enum(["original", "shared"]),
+    id: z.number(),
+    name: z.string(),
+    createdAt: z.date(),
+    players: z.object({
+      min: z.number().nullable(),
+      max: z.number().nullable(),
+    }),
+    playtime: z.object({
+      min: z.number().nullable(),
+      max: z.number().nullable(),
+    }),
+    yearPublished: z.number().nullable(),
+    image: gameImageSchema.nullable(),
+    ownedBy: z.boolean(),
+    games: z.number(),
+    lastPlayed: z.object({
+      date: z.date().nullable(),
+      location: getGamesLocationSchema.nullable(),
+    }),
+  }),
+);
+export type GetGamesOutputType = z.infer<typeof getGamesOutput>;
+
+// ─── getGameToShare ──────────────────────────────────────────
+export const getGameToShareOutput = z.object({
+  id: z.number(),
+  name: z.string(),
+  image: gameImageSchema.nullable(),
+  players: z.object({
+    min: z.number().nullable(),
+    max: z.number().nullable(),
+  }),
+  playtime: z.object({
+    min: z.number().nullable(),
+    max: z.number().nullable(),
+  }),
+  yearPublished: z.number().nullable(),
+  matches: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      date: z.date(),
+      duration: z.number(),
+      locationName: z.string().optional(),
+      players: z.array(
+        z.object({
+          id: z.number(),
+          name: z.string(),
+          score: z.number().nullable(),
+          isWinner: z.boolean().nullable(),
+          playerId: z.number(),
+          team: z
+            .object({
+              id: z.number(),
+              name: z.string(),
+              matchId: z.number(),
+            })
+            .nullable(),
+        }),
+      ),
+      teams: z.array(
+        z.object({
+          id: z.number(),
+          name: z.string(),
+          matchId: z.number(),
+        }),
+      ),
+    }),
+  ),
+  scoresheets: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      type: z.enum(["Default", "Game", "Match", "Template"]),
+      isCoop: z.boolean(),
+      winCondition: z.enum([
+        "Highest Score",
+        "Lowest Score",
+        "Manual",
+        "Target Score",
+        "No Winner",
+      ]),
+      targetScore: z.number().nullable(),
+      roundsScore: z.enum(["Aggregate", "Best Of", "Manual", "None"]),
+      gameId: z.number(),
+      createdBy: z.string(),
+    }),
+  ),
+});
+export type GetGameToShareOutputType = z.infer<typeof getGameToShareOutput>;
+
+// ─── deleteGame ──────────────────────────────────────────────
+export const deleteGameOutput = z.void();
+export type DeleteGameOutputType = z.infer<typeof deleteGameOutput>;
+
+// ─── importBGGGames ──────────────────────────────────────────
+export const importBGGGamesOutput = z.null();
+export type ImportBGGGamesOutputType = z.infer<typeof importBGGGamesOutput>;
+
 export const createGameOutput = selectGameSchema.pick({
   id: true,
   name: true,

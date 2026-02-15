@@ -1,6 +1,6 @@
 import type { GetLocationsOutputType } from "../location.output";
 import type { GetLocationsArgs } from "./location.service.types";
-import { locationRepository } from "../repository/location.repository";
+import { locationRepository } from "../../../repositories/location/location.repository";
 
 class LocationService {
   public async getLocations(

@@ -184,7 +184,7 @@ export const CustomPlayerSelect = withFieldGroup({
     description: "Add players to your match",
     selectedPlayers: [] as PlayerType[],
     teams: [] as TeamType[],
-    gameRoles: [] as RouterOutputs["newGame"]["gameRoles"],
+    gameRoles: [] as RouterOutputs["game"]["gameRoles"],
     playersForMatch: {
       players: [],
     } as RouterOutputs["newPlayer"]["getPlayersForMatch"],

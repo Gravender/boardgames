@@ -14,7 +14,7 @@ import { matchUpdatePlayerTeamRepository } from "../../repositories/match/match-
 import { matchRepository } from "../../repositories/match/match.repository";
 import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
 import { teamRepository } from "../../repositories/match/team.repository";
-import { sharedGameRepository } from "../../routers/game/sub-routers/shared/repository/shared-game.repository";
+import { sharedGameRepository } from "../../repositories/shared-game/shared-game.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 import { getMatchForUpdate } from "./match-update-helpers";
 import { sharedRoleService } from "./shared-role.service";

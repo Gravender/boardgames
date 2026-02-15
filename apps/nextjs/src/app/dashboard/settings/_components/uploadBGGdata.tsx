@@ -184,7 +184,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function UploadBGGdata() {
   const trpc = useTRPC();
-  const uploadJson = useMutation(trpc.game.insertGames.mutationOptions());
+  const uploadJson = useMutation(trpc.game.importBGGGames.mutationOptions());
   const form = useForm({
     schema: formSchema,
     defaultValues: {

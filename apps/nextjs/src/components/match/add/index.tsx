@@ -28,9 +28,9 @@ import { MatchForm } from "./match";
 import { CustomPlayerSelect } from "./player-selector";
 import { addMatchSchema } from "./schema";
 
-type ScoreSheets = RouterOutputs["newGame"]["gameScoresheets"];
+type ScoreSheets = RouterOutputs["game"]["gameScoresheets"];
 type Locations = RouterOutputs["location"]["getLocations"];
-type GameRoles = RouterOutputs["newGame"]["gameRoles"];
+type GameRoles = RouterOutputs["game"]["gameRoles"];
 export function AddMatchDialog({
   game,
   gameName,

@@ -34,7 +34,7 @@ import { cn } from "@board-games/ui/utils";
 
 import { MatchItem } from "./match-item";
 
-type Match = NonNullable<RouterOutputs["newGame"]["gameMatches"]>[number];
+type Match = NonNullable<RouterOutputs["game"]["gameMatches"]>[number];
 
 interface MatchListProps {
   matches: Match[];

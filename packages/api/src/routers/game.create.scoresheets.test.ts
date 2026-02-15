@@ -45,7 +45,7 @@ describe("Game Create - Scoresheet Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Game with Default Scoresheet",
           description: null,
@@ -62,18 +62,18 @@ describe("Game Create - Scoresheet Tests", () => {
         roles: [],
       };
 
-      const result = await caller.newGame.create(input);
+      const result = await caller.game.create(input);
       expect(result.id).toBeDefined();
 
       // Verify default scoresheet is created
       const scoresheetsInput: inferProcedureInput<
-        AppRouter["newGame"]["gameScoreSheetsWithRounds"]
+        AppRouter["game"]["gameScoreSheetsWithRounds"]
       > = {
         type: "original",
         id: result.id,
       };
       const scoresheets =
-        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
+        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
 
       expect(scoresheets).toHaveLength(1);
       expect(scoresheets[0]).toMatchObject({
@@ -91,7 +91,7 @@ describe("Game Create - Scoresheet Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Game with Scoresheet and Rounds",
           description: "Test game",
@@ -134,19 +134,19 @@ describe("Game Create - Scoresheet Tests", () => {
         roles: [],
       };
 
-      const result = await caller.newGame.create(input);
+      const result = await caller.game.create(input);
       expect(result.id).toBeDefined();
       expect(result.name).toBe("Game with Scoresheet and Rounds");
 
       // Verify scoresheets and rounds are created correctly
       const scoresheetsInput: inferProcedureInput<
-        AppRouter["newGame"]["gameScoreSheetsWithRounds"]
+        AppRouter["game"]["gameScoreSheetsWithRounds"]
       > = {
         type: "original",
         id: result.id,
       };
       const scoresheets =
-        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
+        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
 
       expect(scoresheets).toHaveLength(1);
       expect(scoresheets[0]).toMatchObject({
@@ -180,7 +180,7 @@ describe("Game Create - Scoresheet Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Game with Multiple Scoresheets",
           description: "Test game",
@@ -233,18 +233,18 @@ describe("Game Create - Scoresheet Tests", () => {
         roles: [],
       };
 
-      const result = await caller.newGame.create(input);
+      const result = await caller.game.create(input);
       expect(result.id).toBeDefined();
 
       // Verify scoresheets are created correctly
       const scoresheetsInput: inferProcedureInput<
-        AppRouter["newGame"]["gameScoreSheetsWithRounds"]
+        AppRouter["game"]["gameScoreSheetsWithRounds"]
       > = {
         type: "original",
         id: result.id,
       };
       const scoresheets =
-        await caller.newGame.gameScoreSheetsWithRounds(scoresheetsInput);
+        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
 
       expect(scoresheets).toHaveLength(2);
       expect(scoresheets[0]).toMatchObject({

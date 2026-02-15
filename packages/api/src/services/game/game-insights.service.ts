@@ -3,7 +3,7 @@ import type {
   GetGameInsightsArgs,
   MatchInsightData,
 } from "./game-insights.service.types";
-import { gameRepository } from "../../repositories/game/game.repository";
+import { gameInsightsRepository } from "../../repositories/game/game-insights.repository";
 import { computeCoreStats, detectCores } from "./game-core-detection.service";
 import {
   computeFrequentLineups,
@@ -23,11 +23,11 @@ class GameInsightsService {
     args: GetGameInsightsArgs,
   ): Promise<GameInsightsOutput> {
     const [rows, roleRows] = await Promise.all([
-      gameRepository.getGameInsightsData({
+      gameInsightsRepository.getGameInsightsData({
         input: args.input,
         userId: args.ctx.userId,
       }),
-      gameRepository.getGameInsightsRoleData({
+      gameInsightsRepository.getGameInsightsRoleData({
         input: args.input,
         userId: args.ctx.userId,
       }),
@@ -101,7 +101,9 @@ class GameInsightsService {
   // ─── Group flat rows by match ──────────────────────────────────
 
   private groupMatchesByMatch(
-    rows: Awaited<ReturnType<typeof gameRepository.getGameInsightsData>>,
+    rows: Awaited<
+      ReturnType<typeof gameInsightsRepository.getGameInsightsData>
+    >,
   ): Map<number, MatchInsightData> {
     const matchMap = new Map<number, MatchInsightData>();
 
@@ -160,7 +162,7 @@ class GameInsightsService {
   private mergeRoleData(
     matchMap: Map<number, MatchInsightData>,
     roleRows: Awaited<
-      ReturnType<typeof gameRepository.getGameInsightsRoleData>
+      ReturnType<typeof gameInsightsRepository.getGameInsightsRoleData>
     >,
   ): void {
     for (const row of roleRows) {

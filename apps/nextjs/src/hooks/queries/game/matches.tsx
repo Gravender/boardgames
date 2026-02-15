@@ -15,7 +15,7 @@ type useGameMatchesInputType =
 export function useGameMatches(input: useGameMatchesInputType) {
   const trpc = useTRPC();
   const { data: gameMatches } = useSuspenseQuery(
-    trpc.newGame.gameMatches.queryOptions(
+    trpc.game.gameMatches.queryOptions(
       input.type === "original"
         ? { id: input.id, type: "original" }
         : { sharedGameId: input.sharedGameId, type: "shared" },

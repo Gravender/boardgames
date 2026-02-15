@@ -29,7 +29,7 @@ import { SortIcon } from "~/components/sort-icon";
 import { useGamePlayerStats } from "~/hooks/queries/game/player-stats";
 
 type Player = NonNullable<
-  RouterOutputs["newGame"]["getGamePlayerStats"]
+  RouterOutputs["game"]["getGamePlayerStats"]
 >["players"][number];
 type SortField = "name" | "plays" | "wins" | "winRate";
 type SortOrder = "asc" | "desc";

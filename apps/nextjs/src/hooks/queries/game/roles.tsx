@@ -13,7 +13,7 @@ type useGameRolesInputType =
       type: "shared";
       sharedGameId: number;
     };
-type GameRolesType = RouterOutputs["newGame"]["gameRoles"];
+type GameRolesType = RouterOutputs["game"]["gameRoles"];
 
 export function useGameRoles(
   input: Extract<useGameRolesInputType, { type: "original" }>,
@@ -33,7 +33,7 @@ export function useGameRoles(input: useGameRolesInputType): {
 } {
   const trpc = useTRPC();
   const { data: gameRoles } = useSuspenseQuery(
-    trpc.newGame.gameRoles.queryOptions(
+    trpc.game.gameRoles.queryOptions(
       input.type === "original"
         ? { id: input.id, type: "original" }
         : { sharedGameId: input.sharedGameId, type: "shared" },

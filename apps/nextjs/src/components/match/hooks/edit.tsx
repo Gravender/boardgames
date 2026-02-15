@@ -18,7 +18,7 @@ export const useEditMatchMutation = (input: MatchInput) => {
     trpc.match.editMatch.mutationOptions({
       onSuccess: async (result) => {
         await queryClient.invalidateQueries(trpc.match.pathFilter());
-        await queryClient.invalidateQueries(trpc.newGame.pathFilter());
+        await queryClient.invalidateQueries(trpc.game.pathFilter());
         toast.success("Match updated successfully.");
         posthog.capture("match edited successfully", {
           input: input,
@@ -31,7 +31,7 @@ export const useEditMatchMutation = (input: MatchInput) => {
           error,
         });
         toast.error("Error", {
-          description: "There was a problem adding your match.",
+          description: "There was a problem editing your match.",
         });
       },
     }),

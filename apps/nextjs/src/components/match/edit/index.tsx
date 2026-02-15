@@ -37,7 +37,7 @@ export function EditMatch(input: EditMatchType) {
     prefetch(trpc.newPlayer.getPlayersForMatch.queryOptions());
     prefetch(trpc.newGroup.getGroupsWithPlayers.queryOptions());
     prefetch(
-      trpc.newGame.gameRoles.queryOptions({
+      trpc.game.gameRoles.queryOptions({
         id:
           input.game.type === "original"
             ? input.game.id

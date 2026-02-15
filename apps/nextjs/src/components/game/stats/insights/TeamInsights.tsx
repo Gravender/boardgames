@@ -21,7 +21,7 @@ import { cn } from "@board-games/ui/utils";
 
 import { PlayerImage } from "~/components/player-image";
 
-type Insights = RouterOutputs["newGame"]["getGameInsights"];
+type Insights = RouterOutputs["game"]["getGameInsights"];
 type Teams = NonNullable<Insights["teams"]>;
 type TeamCore = Teams["cores"]["pairs"][number];
 type TeamConfig = Teams["configurations"][number];

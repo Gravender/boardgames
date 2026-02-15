@@ -15,7 +15,7 @@ type useGameStatsHeaderInputType =
 export function useGameStatsHeader(input: useGameStatsHeaderInputType) {
   const trpc = useTRPC();
   const { data: stats } = useSuspenseQuery(
-    trpc.newGame.getGameStatsHeader.queryOptions(
+    trpc.game.getGameStatsHeader.queryOptions(
       input.type === "original"
         ? { id: input.id, type: "original" }
         : { sharedGameId: input.sharedGameId, type: "shared" },

@@ -22,7 +22,7 @@ import {
 import { cn } from "@board-games/ui/utils";
 
 type ScoresheetStatsItem =
-  RouterOutputs["newGame"]["getGameScoresheetStats"][number];
+  RouterOutputs["game"]["getGameScoresheetStats"][number];
 
 interface ScoreData {
   date: string;

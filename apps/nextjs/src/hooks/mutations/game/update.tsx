@@ -12,7 +12,7 @@ export const useUpdateGameMutation = () => {
   const posthog = usePostHog();
   const queryClient = useQueryClient();
   const updateGameMutation = useMutation(
-    trpc.newGame.updateGame.mutationOptions({
+    trpc.game.updateGame.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries();
         toast("Game updated successfully!");

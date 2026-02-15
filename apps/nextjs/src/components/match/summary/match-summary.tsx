@@ -21,7 +21,7 @@ export default function MatchSummary(input: {
   void prefetch(trpc.match.getMatchScoresheet.queryOptions(input.match));
   void prefetch(trpc.match.getMatchPlayersAndTeams.queryOptions(input.match));
   void prefetch(trpc.match.getMatchSummary.queryOptions(input.match));
-  void prefetch(trpc.newGame.gameMatches.queryOptions(input.game));
+  void prefetch(trpc.game.gameMatches.queryOptions(input.game));
   return (
     <div className="flex w-full items-center justify-center">
       <div className="flex max-w-6xl flex-1 flex-col items-center gap-4 pt-0 sm:p-4">

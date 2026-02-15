@@ -33,11 +33,11 @@ export function EditGameForm({
   initialScoresheets,
   initialRoles,
 }: {
-  initialGame: NonNullable<RouterOutputs["newGame"]["getGame"]>;
+  initialGame: NonNullable<RouterOutputs["game"]["getGame"]>;
   initialScoresheets: NonNullable<
-    RouterOutputs["newGame"]["gameScoreSheetsWithRounds"]
+    RouterOutputs["game"]["gameScoreSheetsWithRounds"]
   >;
-  initialRoles: NonNullable<RouterOutputs["newGame"]["gameRoles"]>;
+  initialRoles: NonNullable<RouterOutputs["game"]["gameRoles"]>;
 }) {
   const [imagePreview, setImagePreview] = useState<ImagePreviewType | null>(
     null,
@@ -129,13 +129,16 @@ export function EditGameForm({
             throw new Error("Image upload failed");
           }
 
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const imageId = uploadResult[0]
-            ? uploadResult[0].serverData.imageId
+            ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              uploadResult[0].serverData.imageId
             : null;
 
           image = imageId
             ? {
                 type: "file",
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 imageId: imageId,
               }
             : null;

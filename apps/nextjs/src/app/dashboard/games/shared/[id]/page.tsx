@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { TRPCError } from "@trpc/server";
+import { ErrorBoundary } from "react-error-boundary";
 
 import GameDetail from "~/components/game/detail";
+import { GameNotFound } from "~/components/game/not-found";
 import { caller, HydrateClient } from "~/trpc/server";
 
 interface Props {
@@ -14,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (isNaN(Number(id))) redirect("/dashboard/games");
   try {
-    const game = await caller.newGame.getGame({
+    const game = await caller.game.getGame({
       sharedGameId: Number(id),
       type: "shared",
     });
@@ -41,7 +43,17 @@ export default async function SharedGamePage({ params }: Props) {
   return (
     <HydrateClient>
       <div className="container px-3 py-1 md:px-6 md:py-2">
-        <GameDetail game={{ sharedGameId: Number(id), type: "shared" }} />
+        <ErrorBoundary
+          fallback={
+            <GameNotFound
+              title="Shared Game Not Found"
+              description="This shared game doesn't exist or is no longer shared with you."
+              errorCode="SHARED_GAME_404"
+            />
+          }
+        >
+          <GameDetail game={{ sharedGameId: Number(id), type: "shared" }} />
+        </ErrorBoundary>
       </div>
     </HydrateClient>
   );

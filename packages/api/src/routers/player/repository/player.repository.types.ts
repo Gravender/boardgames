@@ -1,19 +1,6 @@
-import type z from "zod";
-
-import { insertSharedPlayerSchema } from "@board-games/db/zodSchema";
-
-export interface GetPlayersForMatchArgs {
-  createdBy: string;
-}
-export interface GetRecentMatchWithPlayersArgs {
-  createdBy: string;
-}
-
-export const insertSharedPlayerSchemaInput = insertSharedPlayerSchema.omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-export type InsertSharedPlayerInputType = z.infer<
-  typeof insertSharedPlayerSchemaInput
->;
+export type {
+  GetPlayersForMatchArgs,
+  GetRecentMatchWithPlayersArgs,
+  InsertSharedPlayerInputType,
+} from "../../../repositories/player/player.repository.types";
+export { insertSharedPlayerSchemaInput } from "../../../repositories/player/player.repository.types";

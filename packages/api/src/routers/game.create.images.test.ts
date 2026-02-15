@@ -45,7 +45,7 @@ describe("Game Create - Image Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Game with SVG Image",
           description: "Test game",
@@ -65,16 +65,16 @@ describe("Game Create - Image Tests", () => {
         roles: [],
       };
 
-      const result = await caller.newGame.create(input);
+      const result = await caller.game.create(input);
       expect(result.id).toBeDefined();
       expect(result.name).toBe("Game with SVG Image");
 
       // Verify SVG image is returned when getting the game
-      const getInput: inferProcedureInput<AppRouter["newGame"]["getGame"]> = {
+      const getInput: inferProcedureInput<AppRouter["game"]["getGame"]> = {
         type: "original",
         id: result.id,
       };
-      const retrievedGame = await caller.newGame.getGame(getInput);
+      const retrievedGame = await caller.game.getGame(getInput);
 
       expect(retrievedGame.type).toBe("original");
       expect(retrievedGame.image).not.toBeNull();
@@ -91,7 +91,7 @@ describe("Game Create - Image Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["newGame"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
           name: "Game without Image",
           description: null,
@@ -108,15 +108,15 @@ describe("Game Create - Image Tests", () => {
         roles: [],
       };
 
-      const result = await caller.newGame.create(input);
+      const result = await caller.game.create(input);
       expect(result.id).toBeDefined();
 
       // Verify null image is returned when getting the game
-      const getInput: inferProcedureInput<AppRouter["newGame"]["getGame"]> = {
+      const getInput: inferProcedureInput<AppRouter["game"]["getGame"]> = {
         type: "original",
         id: result.id,
       };
-      const retrievedGame = await caller.newGame.getGame(getInput);
+      const retrievedGame = await caller.game.getGame(getInput);
 
       expect(retrievedGame.type).toBe("original");
       expect(retrievedGame.image).toBeNull();

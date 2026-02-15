@@ -104,17 +104,21 @@ export const AddPlayerForm = ({
         throw new Error("Image upload failed");
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const imageId = uploadResult[0]
-        ? uploadResult[0].serverData.imageId
+        ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          uploadResult[0].serverData.imageId
         : null;
 
       createPlayer.mutate({
         name: values.name,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         imageId: imageId,
       });
       form.reset();
       setImagePreview(null); // Clear the image preview
     } catch (error) {
+      setIsUploading(false);
       console.error("Error uploading Image:", error);
       toast.error("Error", {
         description: "There was a problem uploading your Image.",

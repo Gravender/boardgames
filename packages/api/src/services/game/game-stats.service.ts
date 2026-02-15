@@ -27,8 +27,9 @@ import type {
   GetGameScoresheetStatsArgs,
   GetGameStatsHeaderArgs,
 } from "./game.service.types";
+import { gameStatsRepository } from "../../repositories/game/game-stats.repository";
 import { gameRepository } from "../../repositories/game/game.repository";
-import { scoresheetRepository } from "../../routers/scoresheet/repository/scoresheet.repository";
+import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
 
 /** One shared round from getAllSharedScoresheetsWithRounds (round + optional linked id). */
 type SharedRoundWithRound = Awaited<
@@ -184,7 +185,7 @@ class GameStatsService {
   public async getGameStatsHeader(
     args: GetGameStatsHeaderArgs,
   ): Promise<GetGameStatsHeaderOutputType> {
-    return gameRepository.getGameStatsHeader({
+    return gameStatsRepository.getGameStatsHeader({
       input: args.input,
       userId: args.ctx.userId,
     });
@@ -193,7 +194,7 @@ class GameStatsService {
   public async getGamePlayerStats(
     args: GetGamePlayerStatsArgs,
   ): Promise<GetGamePlayerStatsOutputType> {
-    const matchPlayers = await gameRepository.getGamePlayerStatsData({
+    const matchPlayers = await gameStatsRepository.getGamePlayerStatsData({
       input: args.input,
       userId: args.ctx.userId,
     });
@@ -285,7 +286,7 @@ class GameStatsService {
               input.sharedGameId,
               tx,
             );
-      const rawData = await gameRepository.getGameScoresheetStatsData({
+      const rawData = await gameStatsRepository.getGameScoresheetStatsData({
         input,
         userId: ctx.userId,
         tx,
@@ -310,7 +311,7 @@ class GameStatsService {
 
   private aggregateScoresheetData(
     rawData: Awaited<
-      ReturnType<typeof gameRepository.getGameScoresheetStatsData>
+      ReturnType<typeof gameStatsRepository.getGameScoresheetStatsData>
     >,
   ): AggregatedScoresheetMap {
     const scoresheetMap = new Map<number, AggregatedScoresheet>();

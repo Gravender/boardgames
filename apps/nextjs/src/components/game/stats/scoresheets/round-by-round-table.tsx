@@ -19,7 +19,7 @@ import { PlayerImage } from "~/components/player-image";
 import { getCurrentPlayerKey } from "~/hooks/game-stats/use-scoresheet-stats";
 
 type ScoresheetStatsItem =
-  RouterOutputs["newGame"]["getGameScoresheetStats"][number];
+  RouterOutputs["game"]["getGameScoresheetStats"][number];
 
 export function RoundByRoundTable({
   currentScoresheet,

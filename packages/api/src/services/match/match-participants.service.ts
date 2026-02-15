@@ -7,7 +7,7 @@ import { isSameRole } from "@board-games/shared";
 import type { CreateMatchArgs } from "./match.service.types";
 import { matchPlayerRepository } from "../../repositories/match/matchPlayer.repository";
 import { teamRepository } from "../../repositories/match/team.repository";
-import { playerRepository } from "../../routers/player/repository/player.repository";
+import { playerRepository } from "../../repositories/player/player.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 import { matchRolesService } from "./match-roles.service";
 

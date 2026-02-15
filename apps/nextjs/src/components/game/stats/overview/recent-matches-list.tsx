@@ -42,7 +42,7 @@ import { PlayerImage } from "~/components/player-image";
 import { useGameMatches } from "~/hooks/queries/game/matches";
 import { formatMatchLink } from "~/utils/linkFormatting";
 
-type Matches = NonNullable<RouterOutputs["newGame"]["gameMatches"]>;
+type Matches = NonNullable<RouterOutputs["game"]["gameMatches"]>;
 type Match = Matches[number];
 
 export function RecentMatchesListSkeleton() {

@@ -5,6 +5,7 @@ import type {
   CreateGameInputType,
   EditGameInputType,
   GetGameInputType,
+  ImportBGGGamesInputType,
 } from "../../routers/game/game.input";
 import { getGameInput } from "../../routers/game/game.input";
 
@@ -16,11 +17,39 @@ export interface CreateGameArgs {
   };
 }
 
+export interface GetGamesArgs {
+  ctx: {
+    userId: string;
+  };
+}
+
 export interface GetGameArgs {
   input: GetGameInputType;
   ctx: {
     userId: string;
     posthog: PostHog;
+  };
+}
+
+export interface GetGameToShareArgs {
+  input: { id: number };
+  ctx: {
+    userId: string;
+  };
+}
+
+export interface DeleteGameArgs {
+  input: { id: number };
+  ctx: {
+    userId: string;
+    posthog: PostHog;
+  };
+}
+
+export interface ImportBGGGamesArgs {
+  input: ImportBGGGamesInputType;
+  ctx: {
+    userId: string;
   };
 }
 

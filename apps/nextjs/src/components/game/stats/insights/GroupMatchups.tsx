@@ -25,7 +25,7 @@ import { cn } from "@board-games/ui/utils";
 
 import { PlayerImage } from "~/components/player-image";
 
-type Insights = RouterOutputs["newGame"]["getGameInsights"];
+type Insights = RouterOutputs["game"]["getGameInsights"];
 type Cores = Insights["cores"];
 type DetectedCore = Cores["pairs"][number];
 type PairwiseStat = DetectedCore["pairwiseStats"][number];

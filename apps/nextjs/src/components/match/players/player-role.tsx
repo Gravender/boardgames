@@ -47,7 +47,7 @@ export const ManagePlayerRoles = ({
     | z.infer<typeof originalRoleSchema>
     | z.infer<typeof sharedRoleSchema>
   )[];
-  roles: RouterOutputs["newGame"]["gameRoles"];
+  roles: RouterOutputs["game"]["gameRoles"];
   onClose: () => void;
   onSave: (
     roles: (
