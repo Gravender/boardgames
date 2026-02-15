@@ -132,12 +132,16 @@ export const createGameWithFinishedMatch = async (
   });
 
   const firstPlayer = playersAndTeams.players[0];
-  if (firstPlayer) {
-    await caller.match.update.updateMatchManualWinner({
-      match: { type: "original", id: match.id },
-      winners: [{ id: firstPlayer.baseMatchPlayerId }],
-    });
+  if (!firstPlayer) {
+    throw new Error(
+      "createGameWithFinishedMatch: no players were available to set a winner via caller.match.update.updateMatchManualWinner",
+    );
   }
+
+  await caller.match.update.updateMatchManualWinner({
+    match: { type: "original", id: match.id },
+    winners: [{ id: firstPlayer.baseMatchPlayerId }],
+  });
 
   return { gameId, scoresheetId, matchId: match.id, players };
 };

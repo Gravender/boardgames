@@ -2,16 +2,20 @@ import { expect, test } from "@playwright/test";
 
 import { MATCH_GAME_NAME } from "../shared/test-data";
 import { createFullMatchViaTrpc } from "../trpc/procedures";
-import { deleteMatchTestData } from "./helpers";
+import { deleteMatchTestData, deleteTestPlayers } from "./helpers";
 
 const PREFIX = "_finish_";
 
 test.describe("Match Finish", () => {
   test.beforeAll(async ({ browserName }) => {
     await deleteMatchTestData(browserName, browserName + PREFIX);
+    await deleteTestPlayers(browserName, browserName + "_FinishP");
+    await deleteTestPlayers(browserName, browserName + "_ManualP");
   });
   test.afterAll(async ({ browserName }) => {
     await deleteMatchTestData(browserName, browserName + PREFIX);
+    await deleteTestPlayers(browserName, browserName + "_FinishP");
+    await deleteTestPlayers(browserName, browserName + "_ManualP");
   });
 
   test("Finish a match and navigate to summary", async ({

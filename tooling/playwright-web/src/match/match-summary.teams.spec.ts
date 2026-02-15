@@ -2,16 +2,20 @@ import { expect, test } from "@playwright/test";
 
 import { MATCH_GAME_NAME } from "../shared/test-data";
 import { createAndFinishMatchViaTrpc } from "../trpc/procedures";
-import { deleteMatchTestData } from "./helpers";
+import { deleteMatchTestData, deleteTestPlayers } from "./helpers";
 
 const PREFIX = "_team_summary_";
 
 test.describe("Match Summary - Teams", () => {
   test.beforeAll(async ({ browserName }) => {
     await deleteMatchTestData(browserName, browserName + PREFIX);
+    await deleteTestPlayers(browserName, browserName + "_TP");
+    await deleteTestPlayers(browserName, browserName + "_TMP");
   });
   test.afterAll(async ({ browserName }) => {
     await deleteMatchTestData(browserName, browserName + PREFIX);
+    await deleteTestPlayers(browserName, browserName + "_TP");
+    await deleteTestPlayers(browserName, browserName + "_TMP");
   });
 
   test("displays team rankings, placements, winner state, and member names for Highest Score", async ({

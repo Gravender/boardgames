@@ -6,16 +6,26 @@ import {
   createFullMatchViaTrpc,
 } from "../trpc/procedures";
 import { createTrpcCaller } from "../trpc/trpc-helper";
-import { deleteMatchTestData } from "./helpers";
+import { deleteMatchTestData, deleteTestPlayers } from "./helpers";
 
 const PREFIX = "_summary_";
 
 test.describe("Match Summary", () => {
   test.beforeAll(async ({ browserName }) => {
     await deleteMatchTestData(browserName, browserName + PREFIX);
+    await deleteTestPlayers(browserName, browserName + "_HSP");
+    await deleteTestPlayers(browserName, browserName + "_LSP");
+    await deleteTestPlayers(browserName, browserName + "_SumP");
+    await deleteTestPlayers(browserName, browserName + "_TSP");
+    await deleteTestPlayers(browserName, browserName + "_MSP");
   });
   test.afterAll(async ({ browserName }) => {
     await deleteMatchTestData(browserName, browserName + PREFIX);
+    await deleteTestPlayers(browserName, browserName + "_HSP");
+    await deleteTestPlayers(browserName, browserName + "_LSP");
+    await deleteTestPlayers(browserName, browserName + "_SumP");
+    await deleteTestPlayers(browserName, browserName + "_TSP");
+    await deleteTestPlayers(browserName, browserName + "_MSP");
   });
 
   test("displays rankings, placements, scores, and First Game badges for Highest Score", async ({

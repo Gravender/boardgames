@@ -164,21 +164,32 @@ export async function deleteTestPlayers(
   playerNamePrefix: string,
 ) {
   const betterAuthUserId = getBetterAuthUserId(browserName);
-  const playersToDelete = await db
-    .select({ id: player.id })
-    .from(player)
-    .where(
-      and(
-        eq(player.createdBy, betterAuthUserId),
-        like(player.name, `${playerNamePrefix}%`),
-      ),
+
+  try {
+    await db.transaction(async (tx) => {
+      const playersToDelete = await tx
+        .select({ id: player.id })
+        .from(player)
+        .where(
+          and(
+            eq(player.createdBy, betterAuthUserId),
+            like(player.name, `${playerNamePrefix}%`),
+          ),
+        );
+      if (playersToDelete.length > 0) {
+        await tx.delete(player).where(
+          inArray(
+            player.id,
+            playersToDelete.map((p) => p.id),
+          ),
+        );
+      }
+    });
+  } catch (error) {
+    console.error(
+      `Failed to delete test players for ${betterAuthUserId} with prefix "${playerNamePrefix}":`,
+      error,
     );
-  if (playersToDelete.length > 0) {
-    await db.delete(player).where(
-      inArray(
-        player.id,
-        playersToDelete.map((p) => p.id),
-      ),
-    );
+    throw error;
   }
 }
