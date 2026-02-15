@@ -23,7 +23,10 @@ export default function MatchSummary(input: {
   void prefetch(trpc.match.getMatchSummary.queryOptions(input.match));
   void prefetch(trpc.game.gameMatches.queryOptions(input.game));
   return (
-    <div className="flex w-full items-center justify-center">
+    <div
+      className="flex w-full items-center justify-center"
+      data-testid="match-summary"
+    >
       <div className="flex max-w-6xl flex-1 flex-col items-center gap-4 pt-0 sm:p-4">
         <Suspense fallback={<MatchCardSkeleton />}>
           <MatchCard match={input.match} />

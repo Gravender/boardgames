@@ -20,12 +20,12 @@ export function GamePreviousMatches(input: { game: GameInput }) {
     return null;
   }
   return (
-    <Card className="w-full">
+    <Card className="w-full" data-testid="previous-matches">
       <CardHeader>
         <CardTitle>Previous Matches</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex">
+        <div className="flex" role="region" aria-label="Previous matches">
           <ScrollArea className="w-1 flex-1">
             <div className="flex gap-2 p-1 sm:p-4">
               {gameMatches
@@ -34,6 +34,8 @@ export function GamePreviousMatches(input: { game: GameInput }) {
                   <Link
                     key={`${match.id}-${match.type}`}
                     prefetch={true}
+                    data-testid="previous-match-card"
+                    aria-label={`Match: ${match.name}, ${match.matchPlayers.length} players, ${match.finished ? "Completed" : "In Progress"}`}
                     href={formatMatchLink(
                       match.type === "original"
                         ? {

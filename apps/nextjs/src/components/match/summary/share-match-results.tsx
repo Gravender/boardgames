@@ -98,7 +98,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
   });
 
   return (
-    <Card className="w-full">
+    <Card className="w-full" data-testid="match-results">
       <CardHeader>
         <CardTitle>Match Results</CardTitle>
       </CardHeader>
@@ -134,6 +134,8 @@ export function ShareMatchResults(input: { match: MatchInput }) {
             return (
               <div
                 key={data.id}
+                data-testid="result-row-team"
+                aria-label={`Team: ${data.name}, ${data.winner ? "Winner" : "Loser"}${data.placement ? `, ${data.placement}${getOrdinalSuffix(data.placement)} place` : ""}`}
                 className={cn(
                   "rounded-lg border p-4",
                   data.winner
@@ -143,7 +145,10 @@ export function ShareMatchResults(input: { match: MatchInput }) {
               >
                 <div className="flex items-center justify-between gap-2 pb-4">
                   <div className="flex min-h-5 items-center gap-2">
-                    <Users className="text-muted-foreground h-5 w-5" />
+                    <Users
+                      className="text-muted-foreground h-5 w-5"
+                      aria-hidden="true"
+                    />
                     <h3 className="font-semibold"> {`Team: ${data.name}`}</h3>
                     <Separator orientation="vertical" />
 
@@ -169,26 +174,45 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                   <div className="flex items-center gap-3">
                     {scoresheet.winCondition === "Manual" ? (
                       data.winner ? (
-                        "✔️"
+                        <span aria-label="Winner" role="img">
+                          ✔️
+                        </span>
                       ) : (
-                        "❌"
+                        <span aria-label="Not winner" role="img">
+                          ❌
+                        </span>
                       )
                     ) : (
                       <>
-                        <div className="text-sm font-medium">
+                        <div
+                          className="text-sm font-medium"
+                          data-testid="result-score"
+                        >
                           {data.score} pts
                         </div>
                         {data.placement === 1 && (
-                          <Trophy className="ml-auto h-5 w-5 text-yellow-500" />
+                          <Trophy
+                            className="ml-auto h-5 w-5 text-yellow-500"
+                            aria-label="1st place"
+                          />
                         )}
                         {data.placement === 2 && (
-                          <Medal className="ml-auto h-5 w-5 text-gray-400" />
+                          <Medal
+                            className="ml-auto h-5 w-5 text-gray-400"
+                            aria-label="2nd place"
+                          />
                         )}
                         {data.placement === 3 && (
-                          <Award className="ml-auto h-5 w-5 text-amber-700" />
+                          <Award
+                            className="ml-auto h-5 w-5 text-amber-700"
+                            aria-label="3rd place"
+                          />
                         )}
                         {data.placement && data.placement > 3 && (
-                          <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
+                          <div
+                            className="flex h-6 w-6 items-center justify-center p-1 font-semibold"
+                            aria-label={`${data.placement}${getOrdinalSuffix(data.placement)} place`}
+                          >
                             {data.placement}
                             {getOrdinalSuffix(data.placement)}
                           </div>
@@ -204,6 +228,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                       <li
                         key={player.baseMatchPlayerId}
                         className="flex items-center"
+                        data-testid="team-member"
                       >
                         <PlayerImage
                           className="mr-3 h-8 w-8"
@@ -221,6 +246,8 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                               <Badge
                                 variant="outline"
                                 className="text-foreground text-sm font-medium"
+                                aria-label={player.performance}
+                                data-testid="result-badge"
                               >
                                 {player.performance}
                               </Badge>
@@ -255,6 +282,8 @@ export function ShareMatchResults(input: { match: MatchInput }) {
             return (
               <div
                 key={data.baseMatchPlayerId}
+                data-testid="result-row"
+                aria-label={`${data.name}, ${data.winner ? "Winner" : "Loser"}${data.placement ? `, ${data.placement}${getOrdinalSuffix(data.placement)} place` : ""}${data.score !== null ? `, ${data.score} points` : ""}`}
                 className={cn(
                   "flex items-center rounded-lg border p-3",
                   data.winner
@@ -276,6 +305,8 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                       <Badge
                         variant="outline"
                         className="text-foreground text-sm font-medium"
+                        aria-label={data.performance}
+                        data-testid="result-badge"
                       >
                         {data.performance}
                       </Badge>
@@ -285,27 +316,48 @@ export function ShareMatchResults(input: { match: MatchInput }) {
 
                 <div className="flex items-center gap-3">
                   {data.score !== null && (
-                    <div className="text-sm font-medium">{data.score} pts</div>
+                    <div
+                      className="text-sm font-medium"
+                      data-testid="result-score"
+                    >
+                      {data.score} pts
+                    </div>
                   )}
                   {scoresheet.winCondition === "Manual" ? (
                     data.winner ? (
-                      "✔️"
+                      <span aria-label="Winner" role="img">
+                        ✔️
+                      </span>
                     ) : (
-                      "❌"
+                      <span aria-label="Not winner" role="img">
+                        ❌
+                      </span>
                     )
                   ) : (
                     <>
                       {data.placement === 1 && (
-                        <Trophy className="h-5 w-5 text-yellow-500" />
+                        <Trophy
+                          className="h-5 w-5 text-yellow-500"
+                          aria-label="1st place"
+                        />
                       )}
                       {data.placement === 2 && (
-                        <Medal className="h-5 w-5 text-gray-400" />
+                        <Medal
+                          className="h-5 w-5 text-gray-400"
+                          aria-label="2nd place"
+                        />
                       )}
                       {data.placement === 3 && (
-                        <Award className="h-5 w-5 text-amber-700" />
+                        <Award
+                          className="h-5 w-5 text-amber-700"
+                          aria-label="3rd place"
+                        />
                       )}
                       {data.placement && data.placement > 3 && (
-                        <div className="flex h-6 w-6 items-center justify-center p-1 font-semibold">
+                        <div
+                          className="flex h-6 w-6 items-center justify-center p-1 font-semibold"
+                          aria-label={`${data.placement}${getOrdinalSuffix(data.placement)} place`}
+                        >
                           {data.placement}
                           {getOrdinalSuffix(data.placement)}
                         </div>

@@ -86,8 +86,41 @@ test.describe("Match Finish", () => {
       timeout: 20000,
     });
 
-    // Verify summary page loaded
-    await expect(page.getByRole("main")).toBeVisible({ timeout: 5000 });
+    // Verify summary page loaded with semantic selectors
+    const resultsCard = page.locator('[data-testid="match-results"]');
+    await expect(resultsCard).toBeVisible({ timeout: 10000 });
+
+    // Verify result rows rendered (2 players)
+    const resultRows = page.locator('[data-testid="result-row"]');
+    await expect(resultRows).toHaveCount(2);
+
+    // Winner (Player 1, 50 pts) — 1st place
+    const winnerRow = resultRows.nth(0);
+    await expect(winnerRow).toHaveAttribute(
+      "aria-label",
+      /Winner.*1st place.*50 points/,
+    );
+    await expect(winnerRow.locator('[data-testid="result-score"]')).toHaveText(
+      "50 pts",
+    );
+    await expect(winnerRow.locator('[aria-label="1st place"]')).toBeVisible();
+
+    // Loser (Player 2, 30 pts) — 2nd place
+    const loserRow = resultRows.nth(1);
+    await expect(loserRow).toHaveAttribute(
+      "aria-label",
+      /Loser.*2nd place.*30 points/,
+    );
+    await expect(loserRow.locator('[data-testid="result-score"]')).toHaveText(
+      "30 pts",
+    );
+
+    // Both players should have "First Game" badges
+    const badges = resultsCard.locator('[data-testid="result-badge"]');
+    await expect(badges).toHaveCount(2);
+    for (let i = 0; i < 2; i++) {
+      await expect(badges.nth(i)).toHaveText("First Game");
+    }
   });
 
   test("Finish a match with Manual win condition selects a winner", async ({
@@ -95,8 +128,7 @@ test.describe("Match Finish", () => {
     browserName,
   }) => {
     test.slow();
-    const browserGameName =
-      browserName + PREFIX + "manual_" + MATCH_GAME_NAME;
+    const browserGameName = browserName + PREFIX + "manual_" + MATCH_GAME_NAME;
 
     // Create a match with Manual win condition
     const { match, gameId } = await createFullMatchViaTrpc(
@@ -153,5 +185,21 @@ test.describe("Match Finish", () => {
     await expect(page).toHaveURL(/\/dashboard\/games\/\d+\/\d+\/summary/, {
       timeout: 20000,
     });
+
+    // Verify manual winner results on summary page
+    const resultsCard = page.locator('[data-testid="match-results"]');
+    await expect(resultsCard).toBeVisible({ timeout: 10000 });
+
+    const resultRows = page.locator('[data-testid="result-row"]');
+    await expect(resultRows).toHaveCount(2);
+
+    await page.reload();
+
+    // Both players were selected as winners → both have ✔️
+    for (let i = 0; i < 2; i++) {
+      const row = resultRows.nth(i);
+      await expect(row).toHaveAttribute("aria-label", /Winner/);
+      await expect(row.locator('[aria-label="Winner"]')).toBeVisible();
+    }
   });
 });
