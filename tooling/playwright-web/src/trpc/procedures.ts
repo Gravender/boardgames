@@ -367,37 +367,10 @@ export async function finishMatchViaTrpc(
       winners,
     });
   } else {
-    // Get updated players with computed scores
-    const updated = await caller.match.getMatchPlayersAndTeams(matchInput);
-
-    // Compute placements from scores
-    const scoredPlayers = updated.players.map((p) => ({
-      id: p.baseMatchPlayerId,
-      score: p.score ?? 0,
-    }));
-
-    // Remove duplicates for team matches (all team members share the same score)
-    const uniquePlayers = isTeamMatch
-      ? scoredPlayers.filter(
-          (p, idx, arr) =>
-            arr.findIndex((x) => x.score === p.score && x.id === p.id) === idx,
-        )
-      : scoredPlayers;
-
-    const sorted = [...uniquePlayers].sort((a, b) => {
-      if (winCondition === "Lowest Score") return a.score - b.score;
-      return b.score - a.score; // Highest Score, Target Score, No Winner
-    });
-
-    const placements = sorted.map((s, i) => ({
-      id: s.id,
-      placement: i + 1,
-    }));
-
-    await caller.match.update.updateMatchPlacements({
-      match: matchInput,
-      playersPlacement: placements,
-    });
+    // updateMatchFinalScores already calculated correct placements
+    // (using calculatePlacement from @board-games/shared which handles teams).
+    // Just mark the match as finished.
+    await caller.match.update.updateMatchFinish(matchInput);
   }
 }
 
