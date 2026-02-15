@@ -92,8 +92,7 @@ test.describe("Match Delete", () => {
 
   test("Cancel delete keeps the match", async ({ page, browserName }) => {
     test.slow();
-    const browserGameName =
-      browserName + PREFIX + "cancel_" + MATCH_GAME_NAME;
+    const browserGameName = browserName + PREFIX + "cancel_" + MATCH_GAME_NAME;
     const matchName = browserName + "_Keep Me";
 
     // Create and finish a match

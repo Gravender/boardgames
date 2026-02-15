@@ -97,12 +97,15 @@ test.describe("Match Scores - Numeric", () => {
     );
     await expect(reloadedInputs.first()).toBeVisible({ timeout: 5000 });
 
-    // Verify at least one score value persisted
-    const firstVal = await reloadedInputs.nth(0).inputValue();
-    const secondVal = await reloadedInputs.nth(1).inputValue();
+    // Verify all four score values persisted individually
+    const allValues: string[] = [];
+    const reloadedCount = await reloadedInputs.count();
+    for (let i = 0; i < reloadedCount; i++) {
+      allValues.push(await reloadedInputs.nth(i).inputValue());
+    }
     const enteredValues = ["10", "15", "20", "25"];
-    expect(
-      enteredValues.includes(firstVal) || enteredValues.includes(secondVal),
-    ).toBe(true);
+    for (const expected of enteredValues) {
+      expect(allValues).toContain(expected);
+    }
   });
 });

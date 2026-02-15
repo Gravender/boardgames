@@ -79,6 +79,9 @@ test.describe("Match Summary - Teams", () => {
     await expect(winnerMembers.nth(0)).toContainText(browserName + "_TP 1");
     await expect(winnerMembers.nth(1)).toContainText(browserName + "_TP 2");
 
+    // Reload to ensure React state is fresh — stale hydration state can
+    // cause team result rows to render incorrectly when asserting both
+    // the winning and losing teams in the same test run.
     await page.reload();
 
     // ── Losing team (Team Beta, 2nd place) ───────────────────────────

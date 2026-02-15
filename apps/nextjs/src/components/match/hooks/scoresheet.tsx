@@ -154,10 +154,7 @@ export const useUpdateFinalScores = (input: MatchInput) => {
   const updateFinalScores = () => updateFinalScoresMutation.mutate(input);
   return { updateFinalScores };
 };
-export const useUpdateFinish = (
-  input: MatchInput,
-  onFinished?: () => void,
-) => {
+export const useUpdateFinish = (input: MatchInput, onFinished?: () => void) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const posthog = usePostHog();

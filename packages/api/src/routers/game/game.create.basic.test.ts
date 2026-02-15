@@ -10,40 +10,34 @@ import {
 } from "vitest";
 
 import type { AppRouter } from "../../root";
-import { createContextInner } from "../../context";
-import { appRouter } from "../../root";
 import {
-  createTestSession,
-  createTestUser,
-  deleteTestUser,
-} from "../../test-helpers";
-import { createCallerFactory } from "../../trpc";
+  createAuthenticatedCaller,
+  gameTestLifecycle,
+} from "./game-test-fixtures";
 
 describe("Game Create - Basic Tests", () => {
   const testUserId = "test-user-1-game-basic";
+  const lifecycle = gameTestLifecycle(testUserId);
 
   beforeAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   afterAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   beforeEach(async () => {
-    await createTestUser(testUserId);
+    await lifecycle.createTestUser();
   });
 
   afterEach(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   describe("basic game creation", () => {
     test("creates a game with minimal required data", async () => {
-      const ctx = await createContextInner({
-        session: createTestSession(testUserId),
-      });
-      const caller = createCallerFactory(appRouter)(ctx);
+      const caller = await createAuthenticatedCaller(testUserId);
 
       const input: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
@@ -80,10 +74,7 @@ describe("Game Create - Basic Tests", () => {
     });
 
     test("creates a game with all optional fields", async () => {
-      const ctx = await createContextInner({
-        session: createTestSession(testUserId),
-      });
-      const caller = createCallerFactory(appRouter)(ctx);
+      const caller = await createAuthenticatedCaller(testUserId);
 
       const input: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {

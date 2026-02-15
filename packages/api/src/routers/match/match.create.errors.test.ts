@@ -10,74 +10,36 @@ import {
 } from "vitest";
 
 import type { AppRouter } from "../../root";
-import { createContextInner } from "../../context";
-import { appRouter } from "../../root";
 import {
-  createTestSession,
-  createTestUser,
-  deleteTestUser,
-} from "../../test-helpers";
-import { createCallerFactory } from "../../trpc";
+  createAuthenticatedCaller,
+  createGameWithScoresheet,
+  matchTestLifecycle,
+} from "./match-test-fixtures";
 
 describe("Match Create - Error Tests", () => {
   const testUserId = "test-user-1-match-errors";
+  const lifecycle = matchTestLifecycle(testUserId);
 
   beforeAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   afterAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   beforeEach(async () => {
-    await createTestUser(testUserId);
+    await lifecycle.createTestUser();
   });
 
   afterEach(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   describe("error cases", () => {
     test("fails with missing required name", async () => {
-      const ctx = await createContextInner({
-        session: createTestSession(testUserId),
-      });
-      const caller = createCallerFactory(appRouter)(ctx);
-
-      // Create a game and get scoresheet
-      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
-        game: {
-          name: "Test Game",
-          description: null,
-          playersMin: 2,
-          playersMax: 4,
-          playtimeMin: 15,
-          playtimeMax: 30,
-          yearPublished: 2024,
-          ownedBy: true,
-          rules: null,
-        },
-        image: null,
-        scoresheets: [],
-        roles: [],
-      };
-
-      const createdGame = await caller.game.create(gameInput);
-
-      const scoresheetsInput: inferProcedureInput<
-        AppRouter["game"]["gameScoreSheetsWithRounds"]
-      > = {
-        type: "original",
-        id: createdGame.id,
-      };
-      const scoresheets =
-        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
-
-      const defaultScoresheet = scoresheets[0];
-      if (defaultScoresheet?.type !== "original") {
-        throw new Error("No scoresheet found");
-      }
+      const caller = await createAuthenticatedCaller(testUserId);
+      const { gameId, scoresheetId } = await createGameWithScoresheet(caller);
 
       const player = await caller.player.create({
         name: "Test Player",
@@ -86,14 +48,8 @@ describe("Match Create - Error Tests", () => {
 
       const input = {
         date: new Date(),
-        game: {
-          type: "original" as const,
-          id: createdGame.id,
-        },
-        scoresheet: {
-          type: "original" as const,
-          id: defaultScoresheet.id,
-        },
+        game: { type: "original" as const, id: gameId },
+        scoresheet: { type: "original" as const, id: scoresheetId },
         players: [
           {
             type: "original" as const,
@@ -110,44 +66,8 @@ describe("Match Create - Error Tests", () => {
     });
 
     test("fails with missing required date", async () => {
-      const ctx = await createContextInner({
-        session: createTestSession(testUserId),
-      });
-      const caller = createCallerFactory(appRouter)(ctx);
-
-      // Create a game and get scoresheet
-      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
-        game: {
-          name: "Test Game",
-          description: null,
-          playersMin: 2,
-          playersMax: 4,
-          playtimeMin: 15,
-          playtimeMax: 30,
-          yearPublished: 2024,
-          ownedBy: true,
-          rules: null,
-        },
-        image: null,
-        scoresheets: [],
-        roles: [],
-      };
-
-      const createdGame = await caller.game.create(gameInput);
-
-      const scoresheetsInput: inferProcedureInput<
-        AppRouter["game"]["gameScoreSheetsWithRounds"]
-      > = {
-        type: "original",
-        id: createdGame.id,
-      };
-      const scoresheets =
-        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
-
-      const defaultScoresheet = scoresheets[0];
-      if (defaultScoresheet?.type !== "original") {
-        throw new Error("No scoresheet found");
-      }
+      const caller = await createAuthenticatedCaller(testUserId);
+      const { gameId, scoresheetId } = await createGameWithScoresheet(caller);
 
       const player = await caller.player.create({
         name: "Test Player",
@@ -156,14 +76,8 @@ describe("Match Create - Error Tests", () => {
 
       const input = {
         name: "Test Match",
-        game: {
-          type: "original" as const,
-          id: createdGame.id,
-        },
-        scoresheet: {
-          type: "original" as const,
-          id: defaultScoresheet.id,
-        },
+        game: { type: "original" as const, id: gameId },
+        scoresheet: { type: "original" as const, id: scoresheetId },
         players: [
           {
             type: "original" as const,
@@ -180,44 +94,8 @@ describe("Match Create - Error Tests", () => {
     });
 
     test("fails with missing required game", async () => {
-      const ctx = await createContextInner({
-        session: createTestSession(testUserId),
-      });
-      const caller = createCallerFactory(appRouter)(ctx);
-
-      // Create a game and get scoresheet
-      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
-        game: {
-          name: "Test Game",
-          description: null,
-          playersMin: 2,
-          playersMax: 4,
-          playtimeMin: 15,
-          playtimeMax: 30,
-          yearPublished: 2024,
-          ownedBy: true,
-          rules: null,
-        },
-        image: null,
-        scoresheets: [],
-        roles: [],
-      };
-
-      const createdGame = await caller.game.create(gameInput);
-
-      const scoresheetsInput: inferProcedureInput<
-        AppRouter["game"]["gameScoreSheetsWithRounds"]
-      > = {
-        type: "original",
-        id: createdGame.id,
-      };
-      const scoresheets =
-        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
-
-      const defaultScoresheet = scoresheets[0];
-      if (defaultScoresheet?.type !== "original") {
-        throw new Error("No scoresheet found");
-      }
+      const caller = await createAuthenticatedCaller(testUserId);
+      const { scoresheetId } = await createGameWithScoresheet(caller);
 
       const player = await caller.player.create({
         name: "Test Player",
@@ -227,10 +105,7 @@ describe("Match Create - Error Tests", () => {
       const input = {
         name: "Test Match",
         date: new Date(),
-        scoresheet: {
-          type: "original" as const,
-          id: defaultScoresheet.id,
-        },
+        scoresheet: { type: "original" as const, id: scoresheetId },
         players: [
           {
             type: "original" as const,
@@ -247,30 +122,8 @@ describe("Match Create - Error Tests", () => {
     });
 
     test("fails with missing required scoresheet", async () => {
-      const ctx = await createContextInner({
-        session: createTestSession(testUserId),
-      });
-      const caller = createCallerFactory(appRouter)(ctx);
-
-      // Create a game
-      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
-        game: {
-          name: "Test Game",
-          description: null,
-          playersMin: 2,
-          playersMax: 4,
-          playtimeMin: 15,
-          playtimeMax: 30,
-          yearPublished: 2024,
-          ownedBy: true,
-          rules: null,
-        },
-        image: null,
-        scoresheets: [],
-        roles: [],
-      };
-
-      const createdGame = await caller.game.create(gameInput);
+      const caller = await createAuthenticatedCaller(testUserId);
+      const { gameId } = await createGameWithScoresheet(caller);
 
       const player = await caller.player.create({
         name: "Test Player",
@@ -280,10 +133,7 @@ describe("Match Create - Error Tests", () => {
       const input = {
         name: "Test Match",
         date: new Date(),
-        game: {
-          type: "original" as const,
-          id: createdGame.id,
-        },
+        game: { type: "original" as const, id: gameId },
         players: [
           {
             type: "original" as const,
@@ -300,56 +150,14 @@ describe("Match Create - Error Tests", () => {
     });
 
     test("fails with missing required players", async () => {
-      const ctx = await createContextInner({
-        session: createTestSession(testUserId),
-      });
-      const caller = createCallerFactory(appRouter)(ctx);
-
-      // Create a game and get scoresheet
-      const gameInput: inferProcedureInput<AppRouter["game"]["create"]> = {
-        game: {
-          name: "Test Game",
-          description: null,
-          playersMin: 2,
-          playersMax: 4,
-          playtimeMin: 15,
-          playtimeMax: 30,
-          yearPublished: 2024,
-          ownedBy: true,
-          rules: null,
-        },
-        image: null,
-        scoresheets: [],
-        roles: [],
-      };
-
-      const createdGame = await caller.game.create(gameInput);
-
-      const scoresheetsInput: inferProcedureInput<
-        AppRouter["game"]["gameScoreSheetsWithRounds"]
-      > = {
-        type: "original",
-        id: createdGame.id,
-      };
-      const scoresheets =
-        await caller.game.gameScoreSheetsWithRounds(scoresheetsInput);
-
-      const defaultScoresheet = scoresheets[0];
-      if (defaultScoresheet?.type !== "original") {
-        throw new Error("No scoresheet found");
-      }
+      const caller = await createAuthenticatedCaller(testUserId);
+      const { gameId, scoresheetId } = await createGameWithScoresheet(caller);
 
       const input = {
         name: "Test Match",
         date: new Date(),
-        game: {
-          type: "original" as const,
-          id: createdGame.id,
-        },
-        scoresheet: {
-          type: "original" as const,
-          id: defaultScoresheet.id,
-        },
+        game: { type: "original" as const, id: gameId },
+        scoresheet: { type: "original" as const, id: scoresheetId },
         teams: [],
         location: null,
       } as unknown as inferProcedureInput<AppRouter["match"]["createMatch"]>;

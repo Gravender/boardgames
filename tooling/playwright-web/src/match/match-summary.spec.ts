@@ -257,14 +257,14 @@ test.describe("Match Summary", () => {
     await expect(p2Cells.nth(1)).toHaveText("2"); // Games
     await expect(p2Cells.nth(2)).toContainText("1"); // Wins
 
-    // Best/Worst for Highest Score:
+    // Best/Worst for Highest Score (using data-testid, column-order-independent):
     // P1 scores [50,20]: Best=50, Worst=20
-    await expect(p1Cells.nth(6)).toHaveText("50"); // Best
-    await expect(p1Cells.nth(7)).toHaveText("20"); // Worst
+    await expect(p1Row.locator('[data-testid="stats-best"]')).toHaveText("50");
+    await expect(p1Row.locator('[data-testid="stats-worst"]')).toHaveText("20");
 
     // P2 scores [30,40]: Best=40, Worst=30
-    await expect(p2Cells.nth(6)).toHaveText("40"); // Best
-    await expect(p2Cells.nth(7)).toHaveText("30"); // Worst
+    await expect(p2Row.locator('[data-testid="stats-best"]')).toHaveText("40");
+    await expect(p2Row.locator('[data-testid="stats-worst"]')).toHaveText("30");
 
     // ── Previous Matches section ─────────────────────────────────────
     const prevMatches = page.locator('[data-testid="previous-matches"]');
@@ -317,9 +317,9 @@ test.describe("Match Summary", () => {
     // For first-time players, First Game takes priority over Perfect Game
     const firstRow = resultRows.nth(0);
     await expect(firstRow).toHaveAttribute("aria-label", /Winner.*1st place/);
-    await expect(
-      firstRow.locator('[data-testid="result-badge"]'),
-    ).toHaveText("First Game");
+    await expect(firstRow.locator('[data-testid="result-badge"]')).toHaveText(
+      "First Game",
+    );
 
     // Player 2 (score 80) is 2nd / loser
     const secondRow = resultRows.nth(1);
@@ -385,8 +385,6 @@ test.describe("Match Summary", () => {
       '[data-testid="result-row"][aria-label*=", Loser"]',
     );
     await expect(loserRow).toBeVisible();
-    await expect(
-      loserRow.locator('[aria-label="Not winner"]'),
-    ).toBeVisible();
+    await expect(loserRow.locator('[aria-label="Not winner"]')).toBeVisible();
   });
 });

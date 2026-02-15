@@ -139,10 +139,16 @@ export function MatchSummaryPlayerStats(input: { match: MatchInput }) {
                           ? `${topPlacement}${getOrdinalSuffix(topPlacement)}`
                           : "-"}
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell
+                        className="text-center"
+                        data-testid="stats-best"
+                      >
                         {Best ?? "-"}
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell
+                        className="text-center"
+                        data-testid="stats-worst"
+                      >
                         {Worst ?? "-"}
                       </TableCell>
                     </>

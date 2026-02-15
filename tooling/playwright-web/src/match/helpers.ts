@@ -45,7 +45,10 @@ export async function deleteMatchTestData(
       )
     : eq(game.createdBy, returnedUser.id);
 
-  const userGames = await db.select({ id: game.id }).from(game).where(gameFilter);
+  const userGames = await db
+    .select({ id: game.id })
+    .from(game)
+    .where(gameFilter);
   if (userGames.length === 0) return;
 
   const gameIds = userGames.map((g) => g.id);
