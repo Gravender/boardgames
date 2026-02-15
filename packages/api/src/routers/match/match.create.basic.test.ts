@@ -9,15 +9,15 @@ import {
   test,
 } from "vitest";
 
-import type { AppRouter } from "../root";
-import { createContextInner } from "../context";
-import { appRouter } from "../root";
+import type { AppRouter } from "../../root";
+import { createContextInner } from "../../context";
+import { appRouter } from "../../root";
 import {
   createTestSession,
   createTestUser,
   deleteTestUser,
-} from "../test-helpers";
-import { createCallerFactory } from "../trpc";
+} from "../../test-helpers";
+import { createCallerFactory } from "../../trpc";
 
 describe("Match Create - Basic Tests", () => {
   const testUserId = "test-user-1-match-basic";

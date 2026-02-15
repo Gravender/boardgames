@@ -271,9 +271,7 @@ export const buildOriginalTeams = (
     const roundsAreConsistent = teamPlayers.every((tp) => {
       if (tp.playerRounds.length !== referenceRounds.length) return false;
       return referenceRounds.every((ref) => {
-        const matching = tp.playerRounds.find(
-          (r) => r.roundId === ref.roundId,
-        );
+        const matching = tp.playerRounds.find((r) => r.roundId === ref.roundId);
         if (!matching) return false;
         // Treat nulls explicitly: both null or both equal
         if (ref.score === null && matching.score === null) return true;

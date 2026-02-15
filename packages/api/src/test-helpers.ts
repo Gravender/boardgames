@@ -70,6 +70,59 @@ async function deleteUserGames(userId: string) {
       }
       if (returnedScoresheets.length > 0) {
         const scoresheetIds = returnedScoresheets.map((s) => s.id);
+
+        // Find any orphaned matches that still reference these scoresheets
+        // (e.g. matches not found through game.matches because the relation
+        // was already partially cleaned by a service-level deleteMatch).
+        const orphanedMatches = await tx
+          .select({ id: match.id })
+          .from(match)
+          .where(inArray(match.scoresheetId, scoresheetIds));
+        const orphanedMatchIds = orphanedMatches.map((m) => m.id);
+
+        if (orphanedMatchIds.length > 0) {
+          // Clean up matchPlayers for orphaned matches
+          const orphanedMatchPlayerRows = await tx
+            .select({ id: matchPlayer.id })
+            .from(matchPlayer)
+            .where(inArray(matchPlayer.matchId, orphanedMatchIds));
+          const orphanedMpIds = orphanedMatchPlayerRows.map((mp) => mp.id);
+
+          if (orphanedMpIds.length > 0) {
+            await tx
+              .delete(matchPlayerRole)
+              .where(inArray(matchPlayerRole.matchPlayerId, orphanedMpIds));
+            await tx
+              .delete(roundPlayer)
+              .where(inArray(roundPlayer.matchPlayerId, orphanedMpIds));
+            await tx
+              .delete(matchPlayer)
+              .where(inArray(matchPlayer.id, orphanedMpIds));
+          }
+
+          await tx.delete(team).where(inArray(team.matchId, orphanedMatchIds));
+          await tx
+            .update(scoresheet)
+            .set({ forkedForMatchId: null })
+            .where(inArray(scoresheet.forkedForMatchId, orphanedMatchIds));
+          await tx.delete(match).where(inArray(match.id, orphanedMatchIds));
+        }
+
+        // Find all rounds for these scoresheets so we can clean up any
+        // orphaned roundPlayer rows (e.g. when match was deleted externally
+        // but roundPlayers still reference the scoresheet's rounds).
+        const roundIds = await tx
+          .select({ id: round.id })
+          .from(round)
+          .where(inArray(round.scoresheetId, scoresheetIds));
+        if (roundIds.length > 0) {
+          await tx.delete(roundPlayer).where(
+            inArray(
+              roundPlayer.roundId,
+              roundIds.map((r) => r.id),
+            ),
+          );
+        }
         await tx
           .delete(round)
           .where(inArray(round.scoresheetId, scoresheetIds));
