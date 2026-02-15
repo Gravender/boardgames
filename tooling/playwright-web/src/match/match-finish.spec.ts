@@ -2,7 +2,6 @@ import { expect, test } from "@playwright/test";
 
 import { MATCH_GAME_NAME } from "../shared/test-data";
 import { createFullMatchViaTrpc } from "../trpc/procedures";
-import { createTrpcCaller } from "../trpc/trpc-helper";
 import { deleteMatchTestData } from "./helpers";
 
 const PREFIX = "_finish_";
@@ -82,27 +81,12 @@ test.describe("Match Finish", () => {
     await expect(finishButton).toBeVisible({ timeout: 5000 });
     await finishButton.click();
 
-    // Verify the mutation fires (button changes to "Submitting...")
-    await expect(
-      page.getByRole("button", { name: "Submitting..." }),
-    ).toBeVisible({ timeout: 5000 });
+    // With distinct scores (50 vs 30), placements are unique → auto-navigate
+    await expect(page).toHaveURL(/\/dashboard\/games\/\d+\/\d+\/summary/, {
+      timeout: 20000,
+    });
 
-    // The mutation fires updateMatchFinish → onSuccess → invalidateQueries → router.push.
-    // invalidateQueries() can hang due to Suspense re-suspension, preventing navigation.
-    // Wait for URL change; if it doesn't happen, navigate manually.
-    const summaryUrl = `/dashboard/games/${gameId}/${match.id}/summary`;
-    const navigated = await page
-      .waitForURL(/\/summary/, { timeout: 15000 })
-      .then(() => true)
-      .catch(() => false);
-
-    if (!navigated) {
-      // The mutation did fire. Navigate to summary manually.
-      await page.goto(summaryUrl);
-    }
-
-    // Verify we're on the summary page
-    await expect(page).toHaveURL(new RegExp(`/summary`), { timeout: 10000 });
+    // Verify summary page loaded
     await expect(page.getByRole("main")).toBeVisible({ timeout: 5000 });
   });
 

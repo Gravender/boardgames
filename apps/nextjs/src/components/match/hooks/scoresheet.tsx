@@ -154,18 +154,24 @@ export const useUpdateFinalScores = (input: MatchInput) => {
   const updateFinalScores = () => updateFinalScoresMutation.mutate(input);
   return { updateFinalScores };
 };
-export const useUpdateFinish = (input: MatchInput) => {
+export const useUpdateFinish = (
+  input: MatchInput,
+  onFinished?: () => void,
+) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const posthog = usePostHog();
   const updateFinishMutation = useMutation(
     trpc.match.update.updateMatchFinish.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries();
+      onSuccess: () => {
+        // Navigate FIRST, before invalidation can suspend the component tree
+        onFinished?.();
         posthog.capture("match finished", {
           input: input,
           finishedType: "normal",
         });
+        // Fire-and-forget — the summary page will fetch fresh data
+        void queryClient.invalidateQueries();
       },
       onError: (error) => {
         posthog.capture("match finished error", { error });

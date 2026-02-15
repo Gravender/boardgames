@@ -422,7 +422,28 @@ function ScoresheetFooter(input: { match: MatchInput }) {
     input.match,
   );
 
-  const { updateFinishMutation } = useUpdateFinish(input.match);
+  const { updateFinishMutation } = useUpdateFinish(input.match, () => {
+    if (match.type === "original") {
+      router.push(
+        formatMatchLink({
+          matchId: match.id,
+          gameId: match.game.id,
+          type: "original",
+          finished: true,
+        }),
+      );
+    } else {
+      router.push(
+        formatMatchLink({
+          sharedMatchId: match.sharedMatchId,
+          sharedGameId: match.game.sharedGameId,
+          linkedGameId: match.game.linkedGameId,
+          type: match.game.type,
+          finished: true,
+        }),
+      );
+    }
+  });
   const { updateFinalScores } = useUpdateFinalScores(input.match);
 
   const toggleClock = () => {
@@ -523,30 +544,7 @@ function ScoresheetFooter(input: { match: MatchInput }) {
       updateFinalScores();
     } else {
       updateFinalScores();
-      updateFinishMutation.mutate(input.match, {
-        onSuccess: () => {
-          if (match.type === "original") {
-            router.push(
-              formatMatchLink({
-                matchId: match.id,
-                gameId: match.game.id,
-                type: "original",
-                finished: true,
-              }),
-            );
-          } else {
-            router.push(
-              formatMatchLink({
-                sharedMatchId: match.sharedMatchId,
-                sharedGameId: match.game.sharedGameId,
-                linkedGameId: match.game.linkedGameId,
-                type: match.game.type,
-                finished: true,
-              }),
-            );
-          }
-        },
-      });
+      updateFinishMutation.mutate(input.match);
     }
   };
 
