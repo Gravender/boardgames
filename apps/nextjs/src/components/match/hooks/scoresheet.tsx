@@ -214,14 +214,21 @@ export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const posthog = usePostHog();
+  const removeMatchQueries = useRemoveMatchQueries();
   const updateMatchManualWinnerMutation = useMutation(
     trpc.match.update.updateMatchManualWinner.mutationOptions({
-      onSuccess: async () => {
+      onSuccess: () => {
+        // Remove match queries so the summary page hydrates with fresh
+        // server-prefetched data instead of stale client cache.
+        removeMatchQueries(input);
         posthog.capture("match finished", {
           input: input,
           finishedType: "manual",
         });
-        await queryClient.invalidateQueries();
+        // Invalidate remaining queries (e.g. game matches list).
+        // Match queries were already removed above so only game-level
+        // and other unrelated queries will refetch.
+        void queryClient.invalidateQueries();
       },
       onError: (error) => {
         posthog.capture("manual winner update error", { error });
@@ -240,14 +247,21 @@ export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const posthog = usePostHog();
+  const removeMatchQueries = useRemoveMatchQueries();
   const updateMatchPlacementsMutation = useMutation(
     trpc.match.update.updateMatchPlacements.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries();
+      onSuccess: () => {
+        // Remove match queries so the summary page hydrates with fresh
+        // server-prefetched data instead of stale client cache.
+        removeMatchQueries(input);
         posthog.capture("match finished", {
           input: input,
           finishedType: "tie-breaker",
         });
+        // Invalidate remaining queries (e.g. game matches list).
+        // Match queries were already removed above so only game-level
+        // and other unrelated queries will refetch.
+        void queryClient.invalidateQueries();
       },
       onError: (error) => {
         posthog.capture("match finished error", { error });

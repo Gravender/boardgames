@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { differenceInSeconds } from "date-fns";
 import {
   Calendar,
@@ -26,15 +27,12 @@ import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
-import { useQueryClient } from "@tanstack/react-query";
-
 import type { MatchInput } from "./types/input";
 import {
   useMatch,
   usePlayersAndTeams,
   useScoresheet,
 } from "~/components/match/hooks/suspenseQueries";
-import { useTRPC } from "~/trpc/react";
 import { CommentDialog } from "~/components/match/scoresheet/CommentDialog";
 import { ManualWinnerDialog } from "~/components/match/scoresheet/ManualWinnerDialog";
 import { MatchImages } from "~/components/match/scoresheet/match-images";
@@ -42,6 +40,7 @@ import { ScoreSheetTable } from "~/components/match/scoresheet/table";
 import { TieBreakerDialog } from "~/components/match/scoresheet/TieBreakerDialog";
 import { Spinner } from "~/components/spinner";
 import { useGameRoles } from "~/hooks/queries/game/roles";
+import { useTRPC } from "~/trpc/react";
 import { formatMatchLink } from "~/utils/linkFormatting";
 import { FormattedDate } from "../formatted-date";
 import {
@@ -390,7 +389,6 @@ function ManualScoreSheet(input: { match: MatchInput }) {
 function ScoresheetFooter(input: { match: MatchInput }) {
   const { match } = useMatch(input.match);
   const { scoresheet } = useScoresheet(input.match);
-  const { players } = usePlayersAndTeams(input.match);
   const [duration, setDuration] = useState(match.duration);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openManualWinnerDialog, setOpenManualWinnerDialog] = useState(false);
