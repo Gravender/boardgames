@@ -9,41 +9,35 @@ import {
   test,
 } from "vitest";
 
-import type { AppRouter } from "../root";
-import { createContextInner } from "../context";
-import { appRouter } from "../root";
+import type { AppRouter } from "../../root";
 import {
-  createTestSession,
-  createTestUser,
-  deleteTestUser,
-} from "../test-helpers";
-import { createCallerFactory } from "../trpc";
+  createAuthenticatedCaller,
+  gameTestLifecycle,
+} from "./game-test-fixtures";
 
 describe("Game GetGame Tests", () => {
   const testUserId = "test-user-1-game-getgame";
+  const lifecycle = gameTestLifecycle(testUserId);
 
   beforeAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   afterAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   beforeEach(async () => {
-    await createTestUser(testUserId);
+    await lifecycle.createTestUser();
   });
 
   afterEach(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   describe("game.getGame", () => {
     test("retrieves a created game by id", async () => {
-      const ctx = await createContextInner({
-        session: createTestSession(testUserId),
-      });
-      const caller = createCallerFactory(appRouter)(ctx);
+      const caller = await createAuthenticatedCaller(testUserId);
 
       // First create a game
       const createInput: inferProcedureInput<AppRouter["game"]["create"]> = {
@@ -93,10 +87,7 @@ describe("Game GetGame Tests", () => {
 
   describe("game.create and getGame (combined)", () => {
     test("creates a game and retrieves it", async () => {
-      const ctx = await createContextInner({
-        session: createTestSession(testUserId),
-      });
-      const caller = createCallerFactory(appRouter)(ctx);
+      const caller = await createAuthenticatedCaller(testUserId);
 
       const input: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {

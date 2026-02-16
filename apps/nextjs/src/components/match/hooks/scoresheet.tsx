@@ -12,6 +12,27 @@ type MatchInput =
   | { type: "shared"; sharedMatchId: number }
   | { type: "original"; id: number };
 
+/**
+ * Returns a callback that removes match-specific queries from the client
+ * cache so the summary page hydrates with fresh server-prefetched data
+ * instead of stale client data.
+ */
+export const useRemoveMatchQueries = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return (input: MatchInput) => {
+    const matchQueryKeys = [
+      trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
+      trpc.match.getMatchSummary.queryOptions(input).queryKey,
+      trpc.match.getMatchScoresheet.queryOptions(input).queryKey,
+    ];
+    for (const queryKey of matchQueryKeys) {
+      queryClient.removeQueries({ queryKey });
+    }
+  };
+};
+
 export const useDurationMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -154,18 +175,27 @@ export const useUpdateFinalScores = (input: MatchInput) => {
   const updateFinalScores = () => updateFinalScoresMutation.mutate(input);
   return { updateFinalScores };
 };
-export const useUpdateFinish = (input: MatchInput) => {
+export const useUpdateFinish = (input: MatchInput, onFinished?: () => void) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const posthog = usePostHog();
+  const removeMatchQueries = useRemoveMatchQueries();
   const updateFinishMutation = useMutation(
     trpc.match.update.updateMatchFinish.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries();
+      onSuccess: () => {
+        // Remove match queries so the summary page hydrates with fresh
+        // server-prefetched data instead of stale client cache.
+        removeMatchQueries(input);
+        // Navigate FIRST, before invalidation can suspend the component tree
+        onFinished?.();
         posthog.capture("match finished", {
           input: input,
           finishedType: "normal",
         });
+        // Invalidate remaining queries (e.g. game matches list).
+        // Match queries were already removed above so only game-level
+        // and other unrelated queries will refetch.
+        void queryClient.invalidateQueries();
       },
       onError: (error) => {
         posthog.capture("match finished error", { error });
@@ -184,14 +214,21 @@ export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const posthog = usePostHog();
+  const removeMatchQueries = useRemoveMatchQueries();
   const updateMatchManualWinnerMutation = useMutation(
     trpc.match.update.updateMatchManualWinner.mutationOptions({
-      onMutate: async () => {
-        await queryClient.invalidateQueries();
+      onSuccess: () => {
+        // Remove match queries so the summary page hydrates with fresh
+        // server-prefetched data instead of stale client cache.
+        removeMatchQueries(input);
         posthog.capture("match finished", {
           input: input,
           finishedType: "manual",
         });
+        // Invalidate remaining queries (e.g. game matches list).
+        // Match queries were already removed above so only game-level
+        // and other unrelated queries will refetch.
+        void queryClient.invalidateQueries();
       },
       onError: (error) => {
         posthog.capture("manual winner update error", { error });
@@ -210,14 +247,21 @@ export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const posthog = usePostHog();
+  const removeMatchQueries = useRemoveMatchQueries();
   const updateMatchPlacementsMutation = useMutation(
     trpc.match.update.updateMatchPlacements.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries();
+      onSuccess: () => {
+        // Remove match queries so the summary page hydrates with fresh
+        // server-prefetched data instead of stale client cache.
+        removeMatchQueries(input);
         posthog.capture("match finished", {
           input: input,
           finishedType: "tie-breaker",
         });
+        // Invalidate remaining queries (e.g. game matches list).
+        // Match queries were already removed above so only game-level
+        // and other unrelated queries will refetch.
+        void queryClient.invalidateQueries();
       },
       onError: (error) => {
         posthog.capture("match finished error", { error });
@@ -339,10 +383,20 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
           );
         }
       },
-      onSettled: async () => {
-        return queryClient.invalidateQueries(
-          trpc.match.getMatchPlayersAndTeams.queryOptions(input),
-        );
+      onSettled: () => {
+        // Only refetch when no other mutations are still pending.
+        // This prevents an earlier mutation's refetch from overwriting a
+        // later mutation's optimistic cache update with stale server data.
+        // Note: onSettled fires while the mutation is still in 'pending' state
+        // (before #dispatch('success')), so the current mutation counts itself
+        // in isMutating(). Use <= 1 to detect "I'm the last one".
+        // Fire-and-forget (void) so the mutation settles immediately — onFinish
+        // uses fetchQuery to get authoritative data from the server.
+        if (queryClient.isMutating() <= 1) {
+          void queryClient.invalidateQueries(
+            trpc.match.getMatchPlayersAndTeams.queryOptions(input),
+          );
+        }
       },
     }),
   );
@@ -428,10 +482,20 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
           );
         }
       },
-      onSettled: async () => {
-        return queryClient.invalidateQueries(
-          trpc.match.getMatchPlayersAndTeams.queryOptions(input),
-        );
+      onSettled: () => {
+        // Only refetch when no other mutations are still pending.
+        // This prevents an earlier mutation's refetch from overwriting a
+        // later mutation's optimistic cache update with stale server data.
+        // Note: onSettled fires while the mutation is still in 'pending' state
+        // (before #dispatch('success')), so the current mutation counts itself
+        // in isMutating(). Use <= 1 to detect "I'm the last one".
+        // Fire-and-forget (void) so the mutation settles immediately — onFinish
+        // uses fetchQuery to get authoritative data from the server.
+        if (queryClient.isMutating() <= 1) {
+          void queryClient.invalidateQueries(
+            trpc.match.getMatchPlayersAndTeams.queryOptions(input),
+          );
+        }
       },
     }),
   );

@@ -19,7 +19,7 @@ export function MatchSummaryPlayerStats(input: { match: MatchInput }) {
   const { summary } = useMatchSummary(input.match);
   const { scoresheet } = useScoresheet(input.match);
   return (
-    <Card className="w-full">
+    <Card className="w-full" data-testid="player-stats">
       <CardHeader>
         <CardTitle>Player Statistics</CardTitle>
       </CardHeader>
@@ -27,6 +27,7 @@ export function MatchSummaryPlayerStats(input: { match: MatchInput }) {
         <Table
           className="min-w-full"
           containerClassname="max-h-[65vh] h-fit w-full rounded-lg"
+          aria-label="Player statistics"
         >
           <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20 shadow-lg">
             <TableRow>
@@ -104,7 +105,11 @@ export function MatchSummaryPlayerStats(input: { match: MatchInput }) {
                 placements.length > 0 ? placements[0]?.placement : null;
 
               return (
-                <TableRow key={player.id} className="base:text-sm text-xs">
+                <TableRow
+                  key={player.id}
+                  className="base:text-sm text-xs"
+                  data-testid={`stats-row-${player.name}`}
+                >
                   <TableCell className="bg-card text-muted-foreground after:bg-border sticky left-0 z-10 max-w-24 font-semibold after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:max-w-32">
                     <div className="flex items-center gap-2">
                       {player.name}
@@ -134,10 +139,16 @@ export function MatchSummaryPlayerStats(input: { match: MatchInput }) {
                           ? `${topPlacement}${getOrdinalSuffix(topPlacement)}`
                           : "-"}
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell
+                        className="text-center"
+                        data-testid="stats-best"
+                      >
                         {Best ?? "-"}
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell
+                        className="text-center"
+                        data-testid="stats-worst"
+                      >
                         {Worst ?? "-"}
                       </TableCell>
                     </>

@@ -692,7 +692,11 @@ class GameImportService {
    * (same pattern as matchUpdateScoreService.updateMatchFinalScores).
    */
   private async updateMatchPlayerResults(args: {
-    insertedMatchPlayers: { id: number; playerId: number; teamId: number | null }[];
+    insertedMatchPlayers: {
+      id: number;
+      playerId: number;
+      teamId: number | null;
+    }[];
     participantData: {
       playerId: number;
       score: number | undefined;

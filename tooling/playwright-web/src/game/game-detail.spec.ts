@@ -7,6 +7,9 @@ import { deleteGames } from "./helpers";
 test.describe("Game Detail Page", () => {
   test.beforeAll(async ({ browserName }) => {
     await deleteGames(browserName);
+    // Create the game once for all tests in this suite
+    const browserGameName = browserName + "_" + GAME_NAME;
+    await createGameViaTrpc(browserName, browserGameName);
   });
   test.afterAll(async ({ browserName }) => {
     await deleteGames(browserName);
@@ -14,8 +17,6 @@ test.describe("Game Detail Page", () => {
 
   test("Navigate to game detail page", async ({ page, browserName }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
-    // First create a game
-    await createGameViaTrpc(browserName, browserGameName);
     // Navigate to games list and click on game
     await page.goto("/dashboard/games");
     await page
