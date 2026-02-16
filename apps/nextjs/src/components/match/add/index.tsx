@@ -22,7 +22,7 @@ import { useGameRoles } from "~/hooks/queries/game/roles";
 import { useScoresheets } from "~/hooks/queries/game/scoresheets";
 import { useLocations } from "~/hooks/queries/locations";
 import { formatMatchLink } from "~/utils/linkFormatting";
-import { useSuspensePlayers } from "../hooks/players";
+import { useSuspensePlayers } from "~/hooks/queries/match/players";
 import { AddPlayerForm } from "./add-player-form";
 import { MatchForm } from "./match";
 import { CustomPlayerSelect } from "./player-selector";

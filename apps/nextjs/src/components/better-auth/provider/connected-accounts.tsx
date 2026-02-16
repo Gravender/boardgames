@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@board-games/ui/card";
 
-import { useListAccounts } from "../hooks";
+import { useListAccounts } from "~/hooks/queries/auth";
 import { CellSkeleton, ProviderCell } from "./cell";
 import { SocialProviders } from "./providers";
 

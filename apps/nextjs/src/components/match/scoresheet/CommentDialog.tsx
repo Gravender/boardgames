@@ -23,7 +23,7 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Textarea } from "@board-games/ui/textarea";
 
 import type { MatchInput } from "../types/input";
-import { useUpdateMatchCommentMutation } from "~/components/match/hooks/scoresheet";
+import { useUpdateMatchCommentMutation } from "~/hooks/mutations/match/scoresheet";
 
 export function CommentDialog({
   match,

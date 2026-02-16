@@ -26,12 +26,12 @@ import { DebouncedCheckbox } from "~/components/debounced-checkbox";
 import {
   useUpdateMatchPlayerOrTeamScoreMutation,
   useUpdateMatchRoundScoreMutation,
-} from "~/components/match/hooks/scoresheet";
+} from "~/hooks/mutations/match/scoresheet";
 import {
   useMatch,
   usePlayersAndTeams,
   useScoresheet,
-} from "~/components/match/hooks/suspenseQueries";
+} from "~/hooks/queries/match/match";
 import { AddRoundDialog } from "~/components/match/scoresheet/add-round-dialog";
 import { DetailDialog } from "~/components/match/scoresheet/DetailDialog";
 import PlayerEditorDialog from "~/components/match/scoresheet/edit-player-dialog";

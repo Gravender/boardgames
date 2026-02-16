@@ -29,7 +29,7 @@ import {
 } from "@board-games/ui/tooltip";
 
 import { PlayerImage } from "~/components/player-image";
-import { useGroupsWithPlayers } from "../hooks/players";
+import { useGroupsWithPlayers } from "~/hooks/queries/match/players";
 
 type Players = RouterOutputs["newPlayer"]["getPlayersForMatch"]["players"];
 export function GroupQuickMatchSelection({

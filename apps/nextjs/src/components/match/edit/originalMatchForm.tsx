@@ -48,9 +48,9 @@ import { useSuspenseLocations } from "~/hooks/queries/locations";
 import { formatMatchLink } from "~/utils/linkFormatting";
 import { AddPlayerForm } from "../add/add-player-form";
 import { CustomPlayerSelect } from "../add/player-selector";
-import { useEditMatchMutation } from "../hooks/edit";
-import { useSuspensePlayers } from "../hooks/players";
-import { useMatch, usePlayersAndTeams } from "../hooks/suspenseQueries";
+import { useEditMatchMutation } from "~/hooks/mutations/match/edit";
+import { useMatch, usePlayersAndTeams } from "~/hooks/queries/match/match";
+import { useSuspensePlayers } from "~/hooks/queries/match/players";
 import { editOriginalMatchSchema } from "./schema";
 
 export function EditOriginalMatchForm(input: {

@@ -29,7 +29,7 @@ import { cn } from "@board-games/ui/utils";
 
 import { authClient } from "~/auth/client";
 import { InputFieldSkeleton } from "~/components/input-field-skeleton";
-import { useListAccounts } from "../hooks";
+import { useListAccounts } from "~/hooks/queries/auth";
 
 export function ChangePasswordCard() {
   const { data: sessionData } = authClient.useSession();

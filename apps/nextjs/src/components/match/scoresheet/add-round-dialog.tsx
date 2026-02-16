@@ -39,7 +39,7 @@ import { GradientPicker } from "~/components/color-picker";
 import {
   usePlayersAndTeams,
   useScoresheet,
-} from "~/components/match/hooks/suspenseQueries";
+} from "~/hooks/queries/match/match";
 import { NumberInput } from "~/components/number-input";
 import { Spinner } from "~/components/spinner";
 import { useTRPC } from "~/trpc/react";
