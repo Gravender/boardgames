@@ -11,7 +11,7 @@ import {
   TooltipTrigger,
 } from "@board-games/ui/tooltip";
 
-import { useRecentMatchWithPlayers } from "../hooks/players";
+import { useRecentMatchWithPlayers } from "~/hooks/queries/match/players";
 
 type Players = RouterOutputs["newPlayer"]["getPlayersForMatch"]["players"];
 export function RecentMatchSelection({

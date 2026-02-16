@@ -53,7 +53,7 @@ import type {
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { withFieldGroup, withForm } from "~/hooks/form";
-import { usePlayers } from "../hooks/players";
+import { usePlayers } from "~/hooks/queries/match/players";
 import { GroupQuickMatchSelection } from "./group-select";
 import { PlayerSelectorField } from "./player-selection-form";
 import { RecentMatchSelection } from "./recent-match-select";

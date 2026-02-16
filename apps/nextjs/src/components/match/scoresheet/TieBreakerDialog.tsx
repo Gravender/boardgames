@@ -37,8 +37,8 @@ import type { GameAndMatchInput } from "../types/input";
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { formatMatchLink } from "~/utils/linkFormatting";
-import { useUpdateMatchPlacementsMutation } from "../hooks/scoresheet";
-import { usePlayersAndTeams } from "../hooks/suspenseQueries";
+import { useUpdateMatchPlacementsMutation } from "~/hooks/mutations/match/scoresheet";
+import { usePlayersAndTeams } from "~/hooks/queries/match/match";
 
 export const TieBreakerPlayerSchema = z
   .array(

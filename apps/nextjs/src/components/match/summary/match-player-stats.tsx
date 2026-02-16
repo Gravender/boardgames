@@ -13,7 +13,7 @@ import {
 } from "@board-games/ui/table";
 
 import type { MatchInput } from "../types/input";
-import { useMatchSummary, useScoresheet } from "../hooks/suspenseQueries";
+import { useMatchSummary, useScoresheet } from "~/hooks/queries/match/match";
 
 export function MatchSummaryPlayerStats(input: { match: MatchInput }) {
   const { summary } = useMatchSummary(input.match);

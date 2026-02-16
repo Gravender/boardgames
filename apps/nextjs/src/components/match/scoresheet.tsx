@@ -32,22 +32,22 @@ import {
   useMatch,
   usePlayersAndTeams,
   useScoresheet,
-} from "~/components/match/hooks/suspenseQueries";
+} from "~/hooks/queries/match/match";
 import { CommentDialog } from "~/components/match/scoresheet/CommentDialog";
 import { ManualWinnerDialog } from "~/components/match/scoresheet/ManualWinnerDialog";
 import { MatchImages } from "~/components/match/scoresheet/match-images";
 import { ScoreSheetTable } from "~/components/match/scoresheet/table";
 import { TieBreakerDialog } from "~/components/match/scoresheet/TieBreakerDialog";
 import { Spinner } from "~/components/spinner";
-import { useGameRoles } from "~/hooks/queries/game/roles";
-import { useTRPC } from "~/trpc/react";
-import { formatMatchLink } from "~/utils/linkFormatting";
-import { FormattedDate } from "../formatted-date";
 import {
   useDurationMutation,
   useUpdateFinalScores,
   useUpdateFinish,
-} from "./hooks/scoresheet";
+} from "~/hooks/mutations/match/scoresheet";
+import { useGameRoles } from "~/hooks/queries/game/roles";
+import { useTRPC } from "~/trpc/react";
+import { formatMatchLink } from "~/utils/linkFormatting";
+import { FormattedDate } from "../formatted-date";
 import { DetailDialog } from "./scoresheet/DetailDialog";
 import PlayerEditorDialog from "./scoresheet/edit-player-dialog";
 import TeamEditorDialog from "./scoresheet/edit-team-dialog";

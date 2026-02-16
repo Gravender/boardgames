@@ -17,7 +17,7 @@ import {
   useMatchSummary,
   usePlayersAndTeams,
   useScoresheet,
-} from "../hooks/suspenseQueries";
+} from "~/hooks/queries/match/match";
 
 export function ShareMatchResults(input: { match: MatchInput }) {
   const { summary } = useMatchSummary(input.match);

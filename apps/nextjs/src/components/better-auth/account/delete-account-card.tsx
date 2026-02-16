@@ -32,7 +32,7 @@ import { Input } from "@board-games/ui/input";
 import { toast } from "@board-games/ui/toast";
 
 import { authClient } from "~/auth/client";
-import { useListAccounts } from "../hooks";
+import { useListAccounts } from "~/hooks/queries/auth";
 import { UserView } from "../user-view";
 
 export function DeleteAccountCard() {

@@ -10,7 +10,7 @@ import { Skeleton } from "@board-games/ui/skeleton";
 
 import type { MatchInput } from "../types/input";
 import { GameImage } from "~/components/game-image";
-import { useMatch } from "~/components/match/hooks/suspenseQueries";
+import { useMatch } from "~/hooks/queries/match/match";
 
 export function MatchCard(input: { match: MatchInput }) {
   const { match } = useMatch(input.match);
