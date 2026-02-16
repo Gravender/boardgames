@@ -36,9 +36,9 @@ import { cn } from "@board-games/ui/utils";
 import type { GameAndMatchInput } from "../types/input";
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
-import { formatMatchLink } from "~/utils/linkFormatting";
 import { useUpdateMatchPlacementsMutation } from "~/hooks/mutations/match/scoresheet";
 import { usePlayersAndTeams } from "~/hooks/queries/match/match";
+import { formatMatchLink } from "~/utils/linkFormatting";
 
 export const TieBreakerPlayerSchema = z
   .array(

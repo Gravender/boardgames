@@ -1,4 +1,5 @@
 import type { FileRouter } from "uploadthing/next";
+import type { FileRoute } from "uploadthing/types";
 import { createUploadthing } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
 import z from "zod/v4";
@@ -10,8 +11,39 @@ import { image, matchImage } from "@board-games/db/schema";
 export { UTApi } from "uploadthing/server";
 const f = createUploadthing();
 
+const imageInputSchema = z.discriminatedUnion("usageType", [
+  z.object({
+    usageType: z.literal("match"),
+    matchId: z.number(),
+    caption: z.string().optional(),
+    duration: z.number().optional(),
+  }),
+  z.object({
+    usageType: z.literal("game"),
+  }),
+  z.object({
+    usageType: z.literal("player"),
+  }),
+]);
+
+type ImageUploaderInput = z.infer<typeof imageInputSchema>;
+
+interface ImageUploaderOutput {
+  uploadedBy: string;
+  imageId: number;
+}
+
+type ImageUploaderRoute = FileRoute<{
+  input: ImageUploaderInput;
+  output: ImageUploaderOutput;
+  errorShape: unknown; // or your concrete UploadThing error shape
+}>;
+
+export type uploadRouter = {
+  imageUploader: ImageUploaderRoute;
+} & FileRouter;
 export function createUploadRouter(auth: Auth) {
-  const router = {
+  const router: uploadRouter = {
     imageUploader: f({
       image: {
         /**
@@ -22,22 +54,7 @@ export function createUploadRouter(auth: Auth) {
         maxFileCount: 1,
       },
     })
-      .input(
-        z.discriminatedUnion("usageType", [
-          z.object({
-            usageType: z.literal("match"),
-            matchId: z.number(),
-            caption: z.string().optional(),
-            duration: z.number().optional(),
-          }),
-          z.object({
-            usageType: z.literal("game"),
-          }),
-          z.object({
-            usageType: z.literal("player"),
-          }),
-        ]),
-      )
+      .input(imageInputSchema)
       .middleware(async ({ input, req }) => {
         // Get session from better-auth using request headers
         // UploadThing passes headers in req.headers which can be a Headers object or plain object
@@ -108,11 +125,6 @@ export function createUploadRouter(auth: Auth) {
         });
         return { uploadedBy: metadata.userId, imageId: returnedImage.id };
       }),
-  };
-  // Type assertion to satisfy TypeScript's requirement for explicit type annotation
-  // while preserving the inferred type structure for ReturnType
-  return router as FileRouter;
+  } satisfies FileRouter;
+  return router;
 }
-
-// Export the inferred type for client-side usage
-export type uploadRouter = ReturnType<typeof createUploadRouter>;

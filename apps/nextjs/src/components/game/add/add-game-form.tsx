@@ -101,10 +101,8 @@ export function AddGameForm({
             });
             throw new Error("Image upload failed");
           }
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const imageId = uploadResult[0]
-            ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-              uploadResult[0].serverData.imageId
+            ? uploadResult[0].serverData.imageId
             : null;
 
           createGameMutation.mutate(
@@ -121,7 +119,6 @@ export function AddGameForm({
               image: imageId
                 ? {
                     type: "file",
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                     imageId: imageId,
                   }
                 : null,

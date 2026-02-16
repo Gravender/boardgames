@@ -28,9 +28,9 @@ import { cn } from "@board-games/ui/utils";
 
 import type { GameAndMatchInput } from "../types/input";
 import { PlayerImage } from "~/components/player-image";
-import { formatMatchLink } from "~/utils/linkFormatting";
 import { useUpdateMatchManualWinnerMutation } from "~/hooks/mutations/match/scoresheet";
 import { usePlayersAndTeams } from "~/hooks/queries/match/match";
+import { formatMatchLink } from "~/utils/linkFormatting";
 
 const playerSchema = z.object({
   id: z.number(),

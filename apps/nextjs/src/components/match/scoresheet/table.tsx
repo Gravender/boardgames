@@ -23,6 +23,11 @@ import { cn } from "@board-games/ui/utils";
 
 import type { MatchInput } from "../types/input";
 import { DebouncedCheckbox } from "~/components/debounced-checkbox";
+import { AddRoundDialog } from "~/components/match/scoresheet/add-round-dialog";
+import { DetailDialog } from "~/components/match/scoresheet/DetailDialog";
+import PlayerEditorDialog from "~/components/match/scoresheet/edit-player-dialog";
+import TeamEditorDialog from "~/components/match/scoresheet/edit-team-dialog";
+import { NumberInput } from "~/components/number-input";
 import {
   useUpdateMatchPlayerOrTeamScoreMutation,
   useUpdateMatchRoundScoreMutation,
@@ -32,11 +37,6 @@ import {
   usePlayersAndTeams,
   useScoresheet,
 } from "~/hooks/queries/match/match";
-import { AddRoundDialog } from "~/components/match/scoresheet/add-round-dialog";
-import { DetailDialog } from "~/components/match/scoresheet/DetailDialog";
-import PlayerEditorDialog from "~/components/match/scoresheet/edit-player-dialog";
-import TeamEditorDialog from "~/components/match/scoresheet/edit-team-dialog";
-import { NumberInput } from "~/components/number-input";
 
 type Player = NonNullable<
   RouterOutputs["match"]["getMatchPlayersAndTeams"]

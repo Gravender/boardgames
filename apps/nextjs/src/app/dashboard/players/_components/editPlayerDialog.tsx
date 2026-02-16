@@ -178,13 +178,11 @@ const PlayerContent = ({
         throw new Error("Image upload failed");
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const imageId = uploadResult[0]
-        ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          uploadResult[0].serverData.imageId
+        ? uploadResult[0].serverData.imageId
         : null;
 
-      updatePlayer({ values, imageId: imageId }); // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+      updatePlayer({ values, imageId: imageId });
     } catch (error) {
       console.error("Error uploading Image:", error);
       toast.error("Error", {

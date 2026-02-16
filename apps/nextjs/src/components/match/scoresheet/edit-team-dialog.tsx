@@ -38,14 +38,11 @@ import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 
 import type { MatchInput } from "../types/input";
-import {
-  useMatch,
-  usePlayersAndTeams,
-} from "~/hooks/queries/match/match";
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { useUpdateMatchTeamMutation } from "~/hooks/mutations/match/scoresheet";
 import { useGameRoles } from "~/hooks/queries/game/roles";
+import { useMatch, usePlayersAndTeams } from "~/hooks/queries/match/match";
 import { useFilteredRoles } from "~/hooks/use-filtered-roles";
 
 type Player = NonNullable<

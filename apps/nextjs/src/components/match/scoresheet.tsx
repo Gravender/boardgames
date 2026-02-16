@@ -28,11 +28,6 @@ import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
 import type { MatchInput } from "./types/input";
-import {
-  useMatch,
-  usePlayersAndTeams,
-  useScoresheet,
-} from "~/hooks/queries/match/match";
 import { CommentDialog } from "~/components/match/scoresheet/CommentDialog";
 import { ManualWinnerDialog } from "~/components/match/scoresheet/ManualWinnerDialog";
 import { MatchImages } from "~/components/match/scoresheet/match-images";
@@ -45,6 +40,11 @@ import {
   useUpdateFinish,
 } from "~/hooks/mutations/match/scoresheet";
 import { useGameRoles } from "~/hooks/queries/game/roles";
+import {
+  useMatch,
+  usePlayersAndTeams,
+  useScoresheet,
+} from "~/hooks/queries/match/match";
 import { useTRPC } from "~/trpc/react";
 import { formatMatchLink } from "~/utils/linkFormatting";
 import { FormattedDate } from "../formatted-date";

@@ -33,8 +33,8 @@ import type { GameInput, MatchInput } from "../types/input";
 import { InputFieldSkeleton } from "~/components/input-field-skeleton";
 import { Spinner } from "~/components/spinner";
 import { useAppForm } from "~/hooks/form";
-import { useSuspenseSharedLocationsFromSharedMatch } from "~/hooks/queries/locations";
 import { useEditMatchMutation } from "~/hooks/mutations/match/edit";
+import { useSuspenseSharedLocationsFromSharedMatch } from "~/hooks/queries/locations";
 import { useMatch } from "~/hooks/queries/match/match";
 import { editSharedMatchSchema } from "./schema";
 

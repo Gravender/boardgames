@@ -126,15 +126,12 @@ export function AddPlayerForm({
           throw new Error("Image upload failed");
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const imageId = uploadResult[0]
-          ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            uploadResult[0].serverData.imageId
+          ? uploadResult[0].serverData.imageId
           : null;
 
         createPlayer.mutate({
           name: value.name,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           imageId: imageId,
         });
         form.reset();
