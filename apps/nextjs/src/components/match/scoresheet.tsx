@@ -553,12 +553,10 @@ function ScoresheetFooter(input: { match: MatchInput }) {
             return foundPlayer?.teamId !== null;
           })
           .map((player) => {
-            {
-              const foundPlayer = freshPlayers.find(
-                (p) => p.baseMatchPlayerId === player.id,
-              );
-              return foundPlayer?.teamId ?? null;
-            }
+            const foundPlayer = freshPlayers.find(
+              (p) => p.baseMatchPlayerId === player.id,
+            );
+            return foundPlayer?.teamId ?? null;
           }),
       ),
     ).map((teamId) => {

@@ -23,6 +23,7 @@ export const useRemoveMatchQueries = () => {
 
   return (input: MatchInput) => {
     const matchQueryKeys = [
+      trpc.match.getMatch.queryOptions(input).queryKey,
       trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
       trpc.match.getMatchSummary.queryOptions(input).queryKey,
       trpc.match.getMatchScoresheet.queryOptions(input).queryKey,
