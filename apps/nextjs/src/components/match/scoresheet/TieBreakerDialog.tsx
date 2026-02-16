@@ -37,7 +37,10 @@ import type { GameAndMatchInput } from "../types/input";
 import { PlayerImage } from "~/components/player-image";
 import { Spinner } from "~/components/spinner";
 import { formatMatchLink } from "~/utils/linkFormatting";
-import { useUpdateMatchPlacementsMutation } from "../hooks/scoresheet";
+import {
+  useRemoveMatchQueries,
+  useUpdateMatchPlacementsMutation,
+} from "../hooks/scoresheet";
 import { usePlayersAndTeams } from "../hooks/suspenseQueries";
 
 export const TieBreakerPlayerSchema = z
@@ -131,6 +134,7 @@ function Content({
   players: z.infer<typeof TieBreakerPlayerSchema>;
 }) {
   const router = useRouter();
+  const removeMatchQueries = useRemoveMatchQueries();
 
   const { updateMatchPlacementsMutation } = useUpdateMatchPlacementsMutation(
     gameAndMatch.match,
@@ -151,6 +155,7 @@ function Content({
       },
       {
         onSuccess: () => {
+          removeMatchQueries(gameAndMatch.match);
           router.push(
             formatMatchLink(
               gameAndMatch.type === "shared"

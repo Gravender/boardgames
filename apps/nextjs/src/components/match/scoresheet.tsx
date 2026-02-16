@@ -26,12 +26,15 @@ import { Label } from "@board-games/ui/label";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
 import { cn } from "@board-games/ui/utils";
 
+import { useQueryClient } from "@tanstack/react-query";
+
 import type { MatchInput } from "./types/input";
 import {
   useMatch,
   usePlayersAndTeams,
   useScoresheet,
 } from "~/components/match/hooks/suspenseQueries";
+import { useTRPC } from "~/trpc/react";
 import { CommentDialog } from "~/components/match/scoresheet/CommentDialog";
 import { ManualWinnerDialog } from "~/components/match/scoresheet/ManualWinnerDialog";
 import { MatchImages } from "~/components/match/scoresheet/match-images";
@@ -393,6 +396,9 @@ function ScoresheetFooter(input: { match: MatchInput }) {
   const [openManualWinnerDialog, setOpenManualWinnerDialog] = useState(false);
   const [openTieBreakerDialog, setOpenTieBreakerDialog] = useState(false);
 
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
   //TODO: fix lint error
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -465,7 +471,7 @@ function ScoresheetFooter(input: { match: MatchInput }) {
     resetMatch();
   };
 
-  const onFinish = () => {
+  const onFinish = async () => {
     posthog.capture("match finish begin", {
       gameId: match.game.id,
       matchId: match.id,
@@ -474,6 +480,45 @@ function ScoresheetFooter(input: { match: MatchInput }) {
       pauseMatch();
     }
     setIsSubmitting(true);
+
+    // Flush any focused score input — blur triggers immediate onValueChange,
+    // bypassing the 1200ms debounce so the mutation is enqueued now.
+    // Note: when clicking the Finish button, the browser already fires blur
+    // on the previously focused input before the click handler runs, so
+    // mutate() has already been called synchronously by this point.
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
+    // Wait for all in-flight score mutations to settle so scores are
+    // persisted to the DB before we fetch the authoritative data.
+    if (queryClient.isMutating() > 0) {
+      await new Promise<void>((resolve) => {
+        const unsub = queryClient.getMutationCache().subscribe(() => {
+          if (queryClient.isMutating() === 0) {
+            unsub();
+            resolve();
+          }
+        });
+        // Re-check immediately in case mutations settled between check and subscribe
+        if (queryClient.isMutating() === 0) {
+          unsub();
+          resolve();
+        }
+      });
+    }
+
+    // Fetch guaranteed-fresh player data from the server. Reading from the
+    // query cache (getQueryData) is unreliable here because optimistic updates,
+    // invalidation refetches, and React render-cycle timing can leave the cache
+    // with stale round scores — causing calculatePlacement to detect false ties.
+    // staleTime: 0 forces a network request so we get server-confirmed scores.
+    const freshPlayersAndTeams = await queryClient.fetchQuery({
+      ...trpc.match.getMatchPlayersAndTeams.queryOptions(input.match),
+      staleTime: 0,
+    });
+    const freshPlayers = freshPlayersAndTeams.players;
+
     if (scoresheet.winCondition === "Manual") {
       setOpenManualWinnerDialog(true);
       updateFinalScores();
@@ -481,21 +526,20 @@ function ScoresheetFooter(input: { match: MatchInput }) {
     }
 
     const playersPlacement = calculatePlacement(
-      players.map((player) => ({
+      freshPlayers.map((player) => ({
         id: player.baseMatchPlayerId,
         rounds: player.rounds.map((round) => ({
           score: round.score,
         })),
         teamId: player.teamId,
       })),
-
       scoresheet,
     );
     let isTieBreaker = false;
     const placements: Record<number, number> = {};
     const nonTeamPlayerPlacements = playersPlacement
       .filter((player) => {
-        const foundPlayer = players.find(
+        const foundPlayer = freshPlayers.find(
           (p) => p.baseMatchPlayerId === player.id,
         );
         return foundPlayer?.teamId === null;
@@ -505,14 +549,14 @@ function ScoresheetFooter(input: { match: MatchInput }) {
       new Set(
         playersPlacement
           .filter((player) => {
-            const foundPlayer = players.find(
+            const foundPlayer = freshPlayers.find(
               (p) => p.baseMatchPlayerId === player.id,
             );
             return foundPlayer?.teamId !== null;
           })
           .map((player) => {
             {
-              const foundPlayer = players.find(
+              const foundPlayer = freshPlayers.find(
                 (p) => p.baseMatchPlayerId === player.id,
               );
               return foundPlayer?.teamId ?? null;
@@ -520,7 +564,7 @@ function ScoresheetFooter(input: { match: MatchInput }) {
           }),
       ),
     ).map((teamId) => {
-      const findFirstPlayer = players.find(
+      const findFirstPlayer = freshPlayers.find(
         (player) => player.teamId === teamId,
       );
       const findPlayerPlacement = playersPlacement.find(
@@ -565,7 +609,7 @@ function ScoresheetFooter(input: { match: MatchInput }) {
           </div>
           <Button
             onClick={() => {
-              onFinish();
+              void onFinish();
             }}
             disabled={isSubmitting}
           >

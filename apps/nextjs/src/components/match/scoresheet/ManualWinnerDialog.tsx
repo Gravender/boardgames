@@ -29,7 +29,10 @@ import { cn } from "@board-games/ui/utils";
 import type { GameAndMatchInput } from "../types/input";
 import { PlayerImage } from "~/components/player-image";
 import { formatMatchLink } from "~/utils/linkFormatting";
-import { useUpdateMatchManualWinnerMutation } from "../hooks/scoresheet";
+import {
+  useRemoveMatchQueries,
+  useUpdateMatchManualWinnerMutation,
+} from "../hooks/scoresheet";
 import { usePlayersAndTeams } from "../hooks/suspenseQueries";
 
 const playerSchema = z.object({
@@ -97,6 +100,7 @@ function Content({
   scoresheet: Scoresheet;
 }) {
   const router = useRouter();
+  const removeMatchQueries = useRemoveMatchQueries();
   const { updateMatchManualWinnerMutation } =
     useUpdateMatchManualWinnerMutation(gameAndMatch.match);
 
@@ -117,6 +121,7 @@ function Content({
       },
       {
         onSuccess: () => {
+          removeMatchQueries(gameAndMatch.match);
           router.push(
             formatMatchLink(
               gameAndMatch.type === "shared"

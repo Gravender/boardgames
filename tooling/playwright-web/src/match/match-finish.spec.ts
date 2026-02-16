@@ -67,16 +67,6 @@ test.describe("Match Finish", () => {
     await scoreInputs.nth(1).click();
     await scoreInputs.nth(1).fill("30");
 
-    // Wait for debounce to save scores to DB
-    await page.waitForTimeout(3000);
-
-    // Reload to ensure React state is fresh before clicking Finish.
-    // calculatePlacement reads from React state; stale state causes
-    // a false tie-breaker dialog.
-    await page.reload();
-    const reloadedTable = page.locator('[data-slot="table"]').first();
-    await expect(reloadedTable).toBeVisible({ timeout: 10000 });
-
     // Click the Finish button — use exact to avoid matching player buttons
     const finishButton = page.getByRole("button", {
       name: "Finish",
@@ -197,9 +187,7 @@ test.describe("Match Finish", () => {
     const resultRows = page.locator('[data-testid="result-row"]');
     await expect(resultRows).toHaveCount(2);
 
-    await page.reload();
-
-    // Both players were selected as winners → both have ✔️
+    // Both players were selected as winners → both have check mark
     for (let i = 0; i < 2; i++) {
       const row = resultRows.nth(i);
       await expect(row).toHaveAttribute("aria-label", /Winner/);
