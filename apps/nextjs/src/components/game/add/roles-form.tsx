@@ -14,7 +14,6 @@ import {
   CardFooter,
 } from "@board-games/ui/card";
 import { DialogFooter } from "@board-games/ui/dialog";
-import { Field, FieldError, FieldLabel } from "@board-games/ui/field";
 import { Input } from "@board-games/ui/input";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import { Textarea } from "@board-games/ui/textarea";
@@ -237,73 +236,26 @@ export const RolesForm = withFieldGroup({
                                     <group.AppField
                                       name={`roles[${actualRoleIndex}].name`}
                                     >
-                                      {(field) => {
-                                        const isInvalid =
-                                          field.state.meta.isTouched &&
-                                          !field.state.meta.isValid;
-                                        return (
-                                          <Field data-invalid={isInvalid}>
-                                            <FieldLabel className="sr-only">
-                                              Name
-                                            </FieldLabel>
-                                            <Input
-                                              placeholder="Role name"
-                                              value={field.state.value}
-                                              onBlur={field.handleBlur}
-                                              onChange={(e) =>
-                                                field.handleChange(
-                                                  e.target.value,
-                                                )
-                                              }
-                                              aria-invalid={isInvalid}
-                                              disabled={!canEdit}
-                                            />
-                                            {isInvalid && (
-                                              <FieldError
-                                                errors={field.state.meta.errors}
-                                              />
-                                            )}
-                                          </Field>
-                                        );
-                                      }}
+                                      {(field) => (
+                                        <field.TextField
+                                          label="Name"
+                                          hideLabel
+                                          placeholder="Role name"
+                                          disabled={!canEdit}
+                                        />
+                                      )}
                                     </group.AppField>
                                     <group.AppField
                                       name={`roles[${actualRoleIndex}].description`}
                                     >
-                                      {(field) => {
-                                        const isInvalid =
-                                          field.state.meta.isTouched &&
-                                          !field.state.meta.isValid;
-                                        return (
-                                          <Field data-invalid={isInvalid}>
-                                            <FieldLabel className="sr-only">
-                                              Description
-                                            </FieldLabel>
-                                            <Textarea
-                                              placeholder="Description for role"
-                                              className="resize-none"
-                                              value={field.state.value ?? ""}
-                                              onBlur={field.handleBlur}
-                                              onChange={(e) => {
-                                                if (e.target.value === "") {
-                                                  field.handleChange(null);
-                                                  return;
-                                                }
-                                                field.handleChange(
-                                                  e.target.value,
-                                                );
-                                              }}
-                                              aria-invalid={isInvalid}
-                                              disabled={!canEdit}
-                                            />
-                                            {isInvalid && (
-                                              <FieldError
-                                                errors={field.state.meta.errors}
-                                              />
-                                            )}
-                                          </Field>
-                                        );
-                                      }}
+                                      {(field) => (
+                                        <field.NullableTextAreaField
+                                          label="Description"
+                                          hideLabel
+                                          placeholder="Description for role"
+                                          disabled={!canEdit}
+                                        />
+                                      )}
                                     </group.AppField>
                                   </CardContent>
                                   <CardFooter className="justify-end p-2 pt-2">

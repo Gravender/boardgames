@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { format, isSameDay } from "date-fns";
-import { CalendarIcon, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
-import { Calendar } from "@board-games/ui/calendar";
 import {
   DialogDescription,
   DialogFooter,
@@ -19,11 +17,6 @@ import {
   FieldLabel,
 } from "@board-games/ui/field";
 import { Input } from "@board-games/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@board-games/ui/popover";
 import {
   Select,
   SelectContent,
@@ -87,74 +80,15 @@ export const MatchForm = withForm({
           <DialogTitle>Add Match</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <form.Field name="name">
-          {(field) => {
-            const isInvalid =
-              field.state.meta.isTouched && !field.state.meta.isValid;
-            return (
-              <Field data-invalid={isInvalid}>
-                <FieldLabel htmlFor={field.name}>Match Name</FieldLabel>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  aria-invalid={isInvalid}
-                  placeholder="Match Name"
-                  autoComplete="off"
-                />
-                {isInvalid && <FieldError errors={field.state.meta.errors} />}
-              </Field>
-            );
-          }}
-        </form.Field>
+        <form.AppField name="name">
+          {(field) => (
+            <field.TextField label="Match Name" placeholder="Match Name" />
+          )}
+        </form.AppField>
         <FieldGroup className="grid w-full grid-cols-2 gap-2">
-          <form.Field name="date">
-            {(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name} className="sr-only">
-                    Date
-                  </FieldLabel>
-
-                  <Popover modal={true}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className="text-muted-foreground w-full pl-3 text-left font-normal"
-                        type="button"
-                      >
-                        {isSameDay(field.state.value, new Date()) ? (
-                          <span>Today</span>
-                        ) : (
-                          format(field.state.value, "PPP")
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.state.value}
-                        onSelect={(date) => {
-                          if (date) {
-                            field.handleChange(date);
-                          }
-                        }}
-                        disabled={(date) =>
-                          date > new Date() || date < new Date("1900-01-01")
-                        }
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                </Field>
-              );
-            }}
-          </form.Field>
+          <form.AppField name="date">
+            {(field) => <field.DateField />}
+          </form.AppField>
           <form.Field name="players">
             {(field) => {
               const isInvalid = !field.state.meta.isValid;

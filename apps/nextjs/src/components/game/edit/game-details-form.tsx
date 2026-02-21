@@ -3,7 +3,6 @@
 import type { ImagePreviewType } from "@board-games/shared";
 import { gameIcons } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
-import { Checkbox } from "@board-games/ui/checkbox";
 import { Field, FieldError, FieldLabel } from "@board-games/ui/field";
 import { Input } from "@board-games/ui/input";
 import { Label } from "@board-games/ui/label";
@@ -49,28 +48,9 @@ export const GameDetailsForm = withForm({
           return (
             <div className="space-y-8">
               <form.AppField name="game.name">
-                {(field) => {
-                  const isInvalid =
-                    field.state.meta.isTouched && !field.state.meta.isValid;
-                  return (
-                    <Field data-invalid={isInvalid}>
-                      <FieldLabel htmlFor={field.name}>Game Name</FieldLabel>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        aria-invalid={isInvalid}
-                        placeholder="Game name"
-                        autoComplete="off"
-                      />
-                      {isInvalid && (
-                        <FieldError errors={field.state.meta.errors} />
-                      )}
-                    </Field>
-                  );
-                }}
+                {(field) => (
+                  <field.TextField label="Game Name" placeholder="Game name" />
+                )}
               </form.AppField>
 
               <form.AppField name="game.gameImg">
@@ -180,27 +160,7 @@ export const GameDetailsForm = withForm({
               </form.AppField>
 
               <form.AppField name="game.ownedBy">
-                {(field) => {
-                  const isInvalid =
-                    field.state.meta.isTouched && !field.state.meta.isValid;
-                  return (
-                    <Field data-invalid={isInvalid} orientation="horizontal">
-                      <Checkbox
-                        id={field.name}
-                        checked={field.state.value}
-                        onCheckedChange={(checked) =>
-                          field.handleChange(checked as boolean)
-                        }
-                      />
-                      <FieldLabel htmlFor={field.name} className="font-normal">
-                        Owned by
-                      </FieldLabel>
-                      {isInvalid && (
-                        <FieldError errors={field.state.meta.errors} />
-                      )}
-                    </Field>
-                  );
-                }}
+                {(field) => <field.CheckboxField label="Owned by" />}
               </form.AppField>
 
               <div className="space-y-4">
@@ -224,35 +184,13 @@ export const GameDetailsForm = withForm({
                       },
                     }}
                   >
-                    {(field) => {
-                      const isInvalid =
-                        field.state.meta.isTouched && !field.state.meta.isValid;
-                      return (
-                        <Field data-invalid={isInvalid}>
-                          <FieldLabel className="sr-only">
-                            Min Players
-                          </FieldLabel>
-                          <Input
-                            type="number"
-                            name={field.name}
-                            placeholder="Min"
-                            value={field.state.value ?? ""}
-                            onBlur={field.handleBlur}
-                            onChange={(e) =>
-                              field.handleChange(
-                                e.target.value === ""
-                                  ? null
-                                  : parseInt(e.target.value),
-                              )
-                            }
-                            aria-invalid={isInvalid}
-                          />
-                          {isInvalid && (
-                            <FieldError errors={field.state.meta.errors} />
-                          )}
-                        </Field>
-                      );
-                    }}
+                    {(field) => (
+                      <field.NullableNumberField
+                        label="Min Players"
+                        placeholder="Min"
+                        hideLabel
+                      />
+                    )}
                   </form.AppField>
                   <form.AppField
                     name="game.playersMax"
@@ -272,35 +210,13 @@ export const GameDetailsForm = withForm({
                       },
                     }}
                   >
-                    {(field) => {
-                      const isInvalid =
-                        field.state.meta.isTouched && !field.state.meta.isValid;
-                      return (
-                        <Field data-invalid={isInvalid}>
-                          <FieldLabel className="sr-only">
-                            Max Players
-                          </FieldLabel>
-                          <Input
-                            type="number"
-                            name={field.name}
-                            placeholder="Max"
-                            value={field.state.value ?? ""}
-                            onBlur={field.handleBlur}
-                            onChange={(e) =>
-                              field.handleChange(
-                                e.target.value === ""
-                                  ? null
-                                  : parseInt(e.target.value),
-                              )
-                            }
-                            aria-invalid={isInvalid}
-                          />
-                          {isInvalid && (
-                            <FieldError errors={field.state.meta.errors} />
-                          )}
-                        </Field>
-                      );
-                    }}
+                    {(field) => (
+                      <field.NullableNumberField
+                        label="Max Players"
+                        placeholder="Max"
+                        hideLabel
+                      />
+                    )}
                   </form.AppField>
                 </div>
 
@@ -324,35 +240,13 @@ export const GameDetailsForm = withForm({
                       },
                     }}
                   >
-                    {(field) => {
-                      const isInvalid =
-                        field.state.meta.isTouched && !field.state.meta.isValid;
-                      return (
-                        <Field data-invalid={isInvalid}>
-                          <FieldLabel className="sr-only">
-                            Min Playtime
-                          </FieldLabel>
-                          <Input
-                            type="number"
-                            name={field.name}
-                            placeholder="Min"
-                            value={field.state.value ?? ""}
-                            onBlur={field.handleBlur}
-                            onChange={(e) =>
-                              field.handleChange(
-                                e.target.value === ""
-                                  ? null
-                                  : parseInt(e.target.value),
-                              )
-                            }
-                            aria-invalid={isInvalid}
-                          />
-                          {isInvalid && (
-                            <FieldError errors={field.state.meta.errors} />
-                          )}
-                        </Field>
-                      );
-                    }}
+                    {(field) => (
+                      <field.NullableNumberField
+                        label="Min Playtime"
+                        placeholder="Min"
+                        hideLabel
+                      />
+                    )}
                   </form.AppField>
                   <form.AppField
                     name="game.playtimeMax"
@@ -372,70 +266,26 @@ export const GameDetailsForm = withForm({
                       },
                     }}
                   >
-                    {(field) => {
-                      const isInvalid =
-                        field.state.meta.isTouched && !field.state.meta.isValid;
-                      return (
-                        <Field data-invalid={isInvalid}>
-                          <FieldLabel className="sr-only">
-                            Max Playtime
-                          </FieldLabel>
-                          <Input
-                            type="number"
-                            name={field.name}
-                            placeholder="Max"
-                            value={field.state.value ?? ""}
-                            onBlur={field.handleBlur}
-                            onChange={(e) =>
-                              field.handleChange(
-                                e.target.value === ""
-                                  ? null
-                                  : parseInt(e.target.value),
-                              )
-                            }
-                            aria-invalid={isInvalid}
-                          />
-                          {isInvalid && (
-                            <FieldError errors={field.state.meta.errors} />
-                          )}
-                        </Field>
-                      );
-                    }}
+                    {(field) => (
+                      <field.NullableNumberField
+                        label="Max Playtime"
+                        placeholder="Max"
+                        hideLabel
+                      />
+                    )}
                   </form.AppField>
                 </div>
 
                 <div className="grid grid-cols-3 items-center gap-4">
                   <Label>Year Published</Label>
                   <form.AppField name="game.yearPublished">
-                    {(field) => {
-                      const isInvalid =
-                        field.state.meta.isTouched && !field.state.meta.isValid;
-                      return (
-                        <Field data-invalid={isInvalid}>
-                          <FieldLabel className="sr-only">
-                            Year Published
-                          </FieldLabel>
-                          <Input
-                            type="number"
-                            name={field.name}
-                            placeholder="Year"
-                            value={field.state.value ?? ""}
-                            onBlur={field.handleBlur}
-                            onChange={(e) =>
-                              field.handleChange(
-                                e.target.value === ""
-                                  ? null
-                                  : parseInt(e.target.value),
-                              )
-                            }
-                            aria-invalid={isInvalid}
-                          />
-                          {isInvalid && (
-                            <FieldError errors={field.state.meta.errors} />
-                          )}
-                        </Field>
-                      );
-                    }}
+                    {(field) => (
+                      <field.NullableNumberField
+                        label="Year Published"
+                        placeholder="Year"
+                        hideLabel
+                      />
+                    )}
                   </form.AppField>
                   <div></div>
                 </div>
