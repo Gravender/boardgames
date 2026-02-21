@@ -292,7 +292,7 @@ export const ManageTeamContent = ({
                           remove(foundIndex);
                           setActiveTeamEdit(null);
                         }}
-                        className="border-destructive text-destructive hover:bg-destructive hover:text-destructive hover:text-white"
+                        className="border-destructive text-destructive hover:bg-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                         <span>Team</span>
