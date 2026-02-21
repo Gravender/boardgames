@@ -2,7 +2,10 @@ import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 
 import { CheckboxField } from "~/components/form/checkbox-field";
 import { DateField } from "~/components/form/date-field";
-import { NullableNumberField, NumberField } from "~/components/form/number-field";
+import {
+  NullableNumberField,
+  NumberField,
+} from "~/components/form/number-field";
 import { SelectField } from "~/components/form/select-field";
 import { SliderField } from "~/components/form/slider-field";
 import { SubscribeButton } from "~/components/form/submit";

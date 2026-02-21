@@ -61,8 +61,7 @@ export const DateField = ({
             }}
             disabled={
               disableFuture
-                ? (date) =>
-                    date > new Date() || date < new Date("1900-01-01")
+                ? (date) => date > new Date() || date < new Date("1900-01-01")
                 : undefined
             }
           />
