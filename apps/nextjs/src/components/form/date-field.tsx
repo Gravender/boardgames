@@ -1,3 +1,5 @@
+"use client";
+
 import { format, isSameDay } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 
@@ -30,14 +32,20 @@ export const DateField = ({
       <Popover modal={true}>
         <PopoverTrigger asChild>
           <Button
+            id={field.name}
             variant="outline"
             className="text-muted-foreground w-full pl-3 text-left font-normal"
             type="button"
           >
-            {isSameDay(field.state.value, new Date()) ? (
-              <span>Today</span>
+            {field.state.value instanceof Date &&
+            !isNaN(field.state.value.getTime()) ? (
+              isSameDay(field.state.value, new Date()) ? (
+                <span>Today</span>
+              ) : (
+                format(field.state.value, "PPP")
+              )
             ) : (
-              format(field.state.value, "PPP")
+              <span>Select date</span>
             )}
             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
           </Button>

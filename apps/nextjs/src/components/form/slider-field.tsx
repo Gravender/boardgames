@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Field,
   FieldDescription,
@@ -41,7 +43,7 @@ export const SliderField = ({
         min={min}
         max={max}
         step={step}
-        onValueChange={(value) => field.handleChange(value)}
+        onValueChange={field.handleChange}
         onBlur={field.handleBlur}
         aria-invalid={isInvalid}
         disabled={disabled}

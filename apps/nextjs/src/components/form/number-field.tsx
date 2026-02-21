@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Field,
   FieldDescription,
@@ -78,7 +80,7 @@ export const NullableNumberField = ({
         onBlur={field.handleBlur}
         onChange={(e) =>
           field.handleChange(
-            e.target.value === "" ? null : parseInt(e.target.value),
+            e.target.value === "" ? null : Number(e.target.value),
           )
         }
         aria-invalid={isInvalid}
