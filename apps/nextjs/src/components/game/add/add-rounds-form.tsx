@@ -4,7 +4,6 @@ import { Copy, Minus, Plus, Trash } from "lucide-react";
 
 import { Button } from "@board-games/ui/button";
 import { Field, FieldError, FieldLabel } from "@board-games/ui/field";
-import { Input } from "@board-games/ui/input";
 
 import type { Rounds } from "./add-game.types";
 import { GradientPicker } from "~/components/color-picker";
@@ -66,36 +65,14 @@ export const AddRoundsForm = withFieldGroup({
                             }}
                           </group.AppField>
                           <group.AppField name={`rounds[${index}].name`}>
-                            {(field) => {
-                              const isInvalid =
-                                field.state.meta.isTouched &&
-                                !field.state.meta.isValid;
-                              return (
-                                <Field
-                                  data-invalid={isInvalid}
-                                  className="space-y-0"
-                                >
-                                  <FieldLabel className="hidden">
-                                    Round Name
-                                  </FieldLabel>
-                                  <Input
-                                    placeholder="Round name"
-                                    value={field.state.value}
-                                    onBlur={field.handleBlur}
-                                    onChange={(e) =>
-                                      field.handleChange(e.target.value)
-                                    }
-                                    aria-invalid={isInvalid}
-                                    disabled={!editable}
-                                  />
-                                  {isInvalid && (
-                                    <FieldError
-                                      errors={field.state.meta.errors}
-                                    />
-                                  )}
-                                </Field>
-                              );
-                            }}
+                            {(field) => (
+                              <field.TextField
+                                label="Round Name"
+                                hideLabel
+                                placeholder="Round name"
+                                disabled={!editable}
+                              />
+                            )}
                           </group.AppField>
                         </div>
                         <div className="flex items-center gap-2">

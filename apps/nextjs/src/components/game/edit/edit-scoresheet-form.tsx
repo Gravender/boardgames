@@ -16,7 +16,6 @@ import {
   FieldError,
   FieldLabel,
 } from "@board-games/ui/field";
-import { Input } from "@board-games/ui/input";
 import {
   Select,
   SelectContent,
@@ -81,64 +80,24 @@ export const ScoresheetForm = withForm({
                   <form.AppField
                     name={`scoresheets[${scoresheetIndex}].scoresheet.name`}
                   >
-                    {(field) => {
-                      const isInvalid =
-                        field.state.meta.isTouched && !field.state.meta.isValid;
-                      return (
-                        <Field data-invalid={isInvalid}>
-                          <FieldLabel htmlFor={field.name}>
-                            Sheet Name
-                          </FieldLabel>
-                          <Input
-                            id={field.name}
-                            name={field.name}
-                            value={field.state.value}
-                            onBlur={field.handleBlur}
-                            onChange={(e) => field.handleChange(e.target.value)}
-                            aria-invalid={isInvalid}
-                            placeholder="Sheet name"
-                            autoComplete="off"
-                            disabled={!scoresheetEditable}
-                          />
-                          {isInvalid && (
-                            <FieldError errors={field.state.meta.errors} />
-                          )}
-                        </Field>
-                      );
-                    }}
+                    {(field) => (
+                      <field.TextField
+                        label="Sheet Name"
+                        placeholder="Sheet name"
+                        disabled={!scoresheetEditable}
+                      />
+                    )}
                   </form.AppField>
 
                   <form.AppField
                     name={`scoresheets[${scoresheetIndex}].scoresheet.isCoop`}
                   >
-                    {(field) => {
-                      const isInvalid =
-                        field.state.meta.isTouched && !field.state.meta.isValid;
-                      return (
-                        <Field
-                          data-invalid={isInvalid}
-                          orientation="horizontal"
-                        >
-                          <Checkbox
-                            id={field.name}
-                            checked={field.state.value}
-                            onCheckedChange={(checked) =>
-                              field.handleChange(checked as boolean)
-                            }
-                            disabled={!scoresheetEditable}
-                          />
-                          <FieldLabel
-                            htmlFor={field.name}
-                            className="font-normal"
-                          >
-                            Is Co-op?
-                          </FieldLabel>
-                          {isInvalid && (
-                            <FieldError errors={field.state.meta.errors} />
-                          )}
-                        </Field>
-                      );
-                    }}
+                    {(field) => (
+                      <field.CheckboxField
+                        label="Is Co-op?"
+                        disabled={!scoresheetEditable}
+                      />
+                    )}
                   </form.AppField>
 
                   <form.AppField
@@ -302,34 +261,12 @@ export const ScoresheetForm = withForm({
                     <form.AppField
                       name={`scoresheets[${scoresheetIndex}].scoresheet.targetScore`}
                     >
-                      {(field) => {
-                        const isInvalid =
-                          field.state.meta.isTouched &&
-                          !field.state.meta.isValid;
-                        return (
-                          <Field data-invalid={isInvalid}>
-                            <FieldLabel htmlFor={field.name}>
-                              Target Score
-                            </FieldLabel>
-                            <Input
-                              id={field.name}
-                              name={field.name}
-                              value={field.state.value}
-                              onBlur={field.handleBlur}
-                              onChange={(e) =>
-                                field.handleChange(Number(e.target.value))
-                              }
-                              type="number"
-                              className="text-center"
-                              aria-invalid={isInvalid}
-                              disabled={!scoresheetEditable}
-                            />
-                            {isInvalid && (
-                              <FieldError errors={field.state.meta.errors} />
-                            )}
-                          </Field>
-                        );
-                      }}
+                      {(field) => (
+                        <field.NumberField
+                          label="Target Score"
+                          disabled={!scoresheetEditable}
+                        />
+                      )}
                     </form.AppField>
                   )}
 
