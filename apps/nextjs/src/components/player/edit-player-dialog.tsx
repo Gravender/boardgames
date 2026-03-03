@@ -61,7 +61,9 @@ const PlayerContent = ({
     const nameUnchanged = ctx.value.name === player.name;
     const imageUnchanged = ctx.value.imageUrl === initialImageUrl;
     const hasNoChanges =
-      player.type === "original" ? nameUnchanged && imageUnchanged : nameUnchanged;
+      player.type === "original"
+        ? nameUnchanged && imageUnchanged
+        : nameUnchanged;
 
     if (hasNoChanges)
       ctx.issues.push({
@@ -164,9 +166,9 @@ const PlayerContent = ({
         <DialogTitle>{`Edit ${player.name}`}</DialogTitle>
       </DialogHeader>
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          form.handleSubmit();
+          await form.handleSubmit();
         }}
         className="space-y-4"
       >

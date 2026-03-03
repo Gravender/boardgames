@@ -76,9 +76,9 @@ export const ManagePlayerRoles = ({
 
   return (
     <form
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
-        form.handleSubmit();
+        await form.handleSubmit();
       }}
     >
       <DialogHeader>
@@ -124,10 +124,9 @@ export const ManagePlayerRoles = ({
                             ) !== undefined
                           }
                           onCheckedChange={() => {
-                            const foundRoleIndex =
-                              field.state.value.findIndex((r) =>
-                                isSameRole(r, role),
-                              );
+                            const foundRoleIndex = field.state.value.findIndex(
+                              (r) => isSameRole(r, role),
+                            );
                             if (foundRoleIndex > -1) {
                               const newRoles = [
                                 ...field.state.value.filter(

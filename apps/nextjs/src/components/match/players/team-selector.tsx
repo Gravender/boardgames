@@ -101,10 +101,8 @@ export const ManageTeamContent = ({
   const getLowestTeamId = () => {
     const currentTeams = form.getFieldValue("teams");
     return (
-      currentTeams.reduce(
-        (acc, curr) => (curr.id < acc ? curr.id : acc),
-        -1,
-      ) - 2
+      currentTeams.reduce((acc, curr) => (curr.id < acc ? curr.id : acc), -1) -
+      2
     );
   };
 
@@ -114,9 +112,9 @@ export const ManageTeamContent = ({
         <DialogTitle>Edit Teams</DialogTitle>
       </DialogHeader>
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          form.handleSubmit();
+          await form.handleSubmit();
         }}
       >
         <div className="border-b border-gray-700 py-2 sm:p-6">
@@ -348,9 +346,9 @@ const ManageTeamRoles = ({
 
   return (
     <form
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
-        form.handleSubmit();
+        await form.handleSubmit();
       }}
     >
       <DialogHeader>
@@ -388,15 +386,13 @@ const ManageTeamRoles = ({
                       <Checkbox
                         id={`${role.type}-${role.type === "original" ? role.id : role.sharedId}`}
                         checked={
-                          field.state.value.find((r) =>
-                            isSameRole(r, role),
-                          ) !== undefined
+                          field.state.value.find((r) => isSameRole(r, role)) !==
+                          undefined
                         }
                         onCheckedChange={() => {
-                          const foundRoleIndex =
-                            field.state.value.findIndex((r) =>
-                              isSameRole(r, role),
-                            );
+                          const foundRoleIndex = field.state.value.findIndex(
+                            (r) => isSameRole(r, role),
+                          );
                           if (foundRoleIndex > -1) {
                             const newRoles = [
                               ...field.state.value.filter(

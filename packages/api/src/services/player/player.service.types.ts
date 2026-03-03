@@ -26,9 +26,7 @@ export interface UpdatePlayerArgs {
   ctx: {
     userId: string;
     posthog: PostHog;
-    deleteFiles: (
-      keys: string | string[],
-    ) => Promise<{
+    deleteFiles: (keys: string | string[]) => Promise<{
       readonly success: boolean;
       readonly deletedCount: number;
     }>;

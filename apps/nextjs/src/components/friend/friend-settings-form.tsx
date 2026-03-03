@@ -103,9 +103,9 @@ export function FriendSettings({
 
   return (
     <form
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
-        form.handleSubmit();
+        await form.handleSubmit();
       }}
     >
       <form.Subscribe
@@ -139,9 +139,7 @@ export function FriendSettings({
                 <TabsContent value="matches" className="space-y-4 pt-4">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">
-                        Match Settings
-                      </CardTitle>
+                      <CardTitle className="text-lg">Match Settings</CardTitle>
                     </CardHeader>
                     <ScrollArea>
                       <CardContent className="grid max-h-[400px] gap-2">
@@ -250,9 +248,7 @@ export function FriendSettings({
                 <TabsContent value="players" className="space-y-4 pt-4">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">
-                        Player Settings
-                      </CardTitle>
+                      <CardTitle className="text-lg">Player Settings</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <form.AppField name="allowSharedPlayers">

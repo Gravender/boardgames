@@ -120,9 +120,9 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
         <DialogTitle>Add Player</DialogTitle>
       </DialogHeader>
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          form.handleSubmit();
+          await form.handleSubmit();
         }}
         className="space-y-8"
       >

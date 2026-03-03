@@ -53,7 +53,9 @@ class PlayerRepository {
         name: input.name,
         imageId: input.imageId,
       })
-      .where(and(eq(player.id, input.id), eq(player.createdBy, input.createdBy)))
+      .where(
+        and(eq(player.id, input.id), eq(player.createdBy, input.createdBy)),
+      )
       .returning();
     return returnedPlayer;
   }

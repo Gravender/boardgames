@@ -18,6 +18,7 @@ import {
 import { calculatePlacement } from "@board-games/shared";
 
 import type { Player, PlayerMatch } from "../utils/player";
+import { playerService } from "../services/player/player.service";
 import { protectedUserProcedure } from "../trpc";
 import {
   aggregatePlayerStats,
@@ -25,7 +26,6 @@ import {
   headToHeadStats,
   teammateFrequency,
 } from "../utils/player";
-import { playerService } from "../services/player/player.service";
 
 export const playerRouter = {
   getPlayersByGame: protectedUserProcedure

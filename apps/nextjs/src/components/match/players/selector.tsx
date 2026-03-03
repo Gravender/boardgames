@@ -150,9 +150,7 @@ export const AddPlayersDialogForm = ({
         (p) => p.id === player.id && p.type === "original",
       );
       if (playerExists) {
-        const playerSelected = currentPlayers.find(
-          (p) => p.id === player.id,
-        );
+        const playerSelected = currentPlayers.find((p) => p.id === player.id);
         if (!playerSelected) {
           form.pushFieldValue("players", {
             id: player.id,
@@ -203,9 +201,7 @@ export const AddPlayersDialogForm = ({
       {({ formTeams, formPlayers }) => {
         if (showTeamModal) {
           const mappedTeams = formTeams.map((team) => {
-            const teamPlayers = formPlayers.filter(
-              (p) => p.teamId === team.id,
-            );
+            const teamPlayers = formPlayers.filter((p) => p.teamId === team.id);
             return {
               id: team.id,
               name: team.name,
@@ -265,12 +261,10 @@ export const AddPlayersDialogForm = ({
         }
         if (showRoleModal) {
           const foundPlayer = formPlayers.find(
-            (p) =>
-              p.id === showRoleModal.id && p.type === showRoleModal.type,
+            (p) => p.id === showRoleModal.id && p.type === showRoleModal.type,
           );
           const playerIndex = formPlayers.findIndex(
-            (p) =>
-              p.id === showRoleModal.id && p.type === showRoleModal.type,
+            (p) => p.id === showRoleModal.id && p.type === showRoleModal.type,
           );
           if (foundPlayer && playerIndex > -1) {
             const foundTeam = formTeams.find(
@@ -283,10 +277,7 @@ export const AddPlayersDialogForm = ({
                 roles={gameRoles}
                 onClose={() => setShowRoleModal(null)}
                 onSave={(roles) => {
-                  form.setFieldValue(
-                    `players[${playerIndex}].roles`,
-                    roles,
-                  );
+                  form.setFieldValue(`players[${playerIndex}].roles`, roles);
                   setShowRoleModal(null);
                 }}
               />
@@ -328,9 +319,9 @@ export const AddPlayersDialogForm = ({
             </div>
 
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                form.handleSubmit();
+                await form.handleSubmit();
               }}
             >
               <form.Field name="players">
@@ -368,12 +359,10 @@ export const AddPlayersDialogForm = ({
                                   )
                                   .toSorted((a, b) => {
                                     const foundA = formPlayers.find(
-                                      (i) =>
-                                        i.id === a.id && i.type === a.type,
+                                      (i) => i.id === a.id && i.type === a.type,
                                     );
                                     const foundB = formPlayers.find(
-                                      (i) =>
-                                        i.id === b.id && i.type === b.type,
+                                      (i) => i.id === b.id && i.type === b.type,
                                     );
                                     if (foundA && foundB) return 0;
                                     if (foundA) return -1;
@@ -483,8 +472,7 @@ export const AddPlayersDialogForm = ({
                                               }}
                                               className="xs:w-auto w-full"
                                             >
-                                              Roles (
-                                              {foundPlayer.roles.length})
+                                              Roles ({foundPlayer.roles.length})
                                             </Button>
                                           )}
                                           {formTeams.length > 0 &&

@@ -11,7 +11,6 @@ import {
 } from "@board-games/ui/dialog";
 import { toast } from "@board-games/ui/toast";
 
-import { Spinner } from "~/components/spinner";
 import { useAppForm } from "~/hooks/form";
 import { useCreatePlayerMutation } from "~/hooks/mutations/player/create";
 import { useUploadThing } from "~/utils/uploadthing";
@@ -101,19 +100,24 @@ export const AddPlayerForm = ({
         </DialogDescription>
       </DialogHeader>
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          form.handleSubmit();
+          await form.handleSubmit();
         }}
         className="space-y-8"
       >
         <form.AppField name="name">
-          {(field) => <field.TextField label="Player Name" placeholder="Player name" />}
+          {(field) => (
+            <field.TextField label="Player Name" placeholder="Player name" />
+          )}
         </form.AppField>
 
         <form.AppField name="imageUrl">
           {(field) => (
-            <field.FileField label="Image" description="Upload an image (max 4MB)." />
+            <field.FileField
+              label="Image"
+              description="Upload an image (max 4MB)."
+            />
           )}
         </form.AppField>
 

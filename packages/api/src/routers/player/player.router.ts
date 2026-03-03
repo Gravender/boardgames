@@ -1,11 +1,11 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
+import { playerService } from "../../services/player/player.service";
 import { protectedUserProcedure } from "../../trpc";
 import {
   getPlayersForMatchOutput,
   getRecentMatchWithPlayersOutput,
 } from "./player.output";
-import { playerService } from "../../services/player/player.service";
 
 export const playerRouter = {
   getPlayersForMatch: protectedUserProcedure
