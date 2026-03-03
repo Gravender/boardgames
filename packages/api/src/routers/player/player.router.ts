@@ -5,7 +5,7 @@ import {
   getPlayersForMatchOutput,
   getRecentMatchWithPlayersOutput,
 } from "./player.output";
-import { playerService } from "./service/player.service";
+import { playerService } from "../../services/player/player.service";
 
 export const playerRouter = {
   getPlayersForMatch: protectedUserProcedure

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import type {
   Filter,
@@ -20,6 +20,7 @@ class PlayerRepository {
     input: {
       createdBy: string;
       name: string;
+      imageId?: number | null;
     };
     tx?: TransactionType;
   }) {
@@ -30,7 +31,29 @@ class PlayerRepository {
       .values({
         createdBy: input.createdBy,
         name: input.name,
+        imageId: input.imageId,
       })
+      .returning();
+    return returnedPlayer;
+  }
+  public async update(args: {
+    input: {
+      id: number;
+      createdBy: string;
+      name?: string;
+      imageId?: number | null;
+    };
+    tx?: TransactionType;
+  }) {
+    const { input, tx } = args;
+    const database = tx ?? db;
+    const [returnedPlayer] = await database
+      .update(player)
+      .set({
+        name: input.name,
+        imageId: input.imageId,
+      })
+      .where(and(eq(player.id, input.id), eq(player.createdBy, input.createdBy)))
       .returning();
     return returnedPlayer;
   }

@@ -25,6 +25,7 @@ import {
   headToHeadStats,
   teammateFrequency,
 } from "../utils/player";
+import { playerService } from "../services/player/player.service";
 
 export const playerRouter = {
   getPlayersByGame: protectedUserProcedure
@@ -866,33 +867,12 @@ export const playerRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const [returnedPlayer] = await ctx.db
-        .insert(player)
-        .values({
-          createdBy: ctx.userId,
-          imageId: input.imageId,
-          name: input.name,
-        })
-        .returning();
-      if (!returnedPlayer) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      }
-      const returnedPlayerImage = await ctx.db.query.player.findFirst({
-        where: {
-          id: returnedPlayer.id,
-          createdBy: ctx.userId,
+      return playerService.createPlayer({
+        ctx: {
+          userId: ctx.userId,
         },
-        with: {
-          image: true,
-        },
+        input,
       });
-      return {
-        id: returnedPlayer.id,
-        name: returnedPlayer.name,
-        image: returnedPlayerImage?.image,
-        matches: 0,
-        team: 0,
-      };
     }),
   update: protectedUserProcedure
     .input(
@@ -911,99 +891,13 @@ export const playerRouter = {
       ]),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.transaction(async (tx) => {
-        if (input.type === "shared") {
-          const returnedSharedPlayer = await tx.query.sharedPlayer.findFirst({
-            where: {
-              sharedWithId: ctx.userId,
-              id: input.id,
-            },
-            with: {
-              player: true,
-            },
-          });
-          if (!returnedSharedPlayer) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Player not found.",
-            });
-          }
-          if (returnedSharedPlayer.permission !== "edit") {
-            throw new TRPCError({
-              code: "UNAUTHORIZED",
-              message: "Does not have permission to edit this player.",
-            });
-          }
-          await tx
-            .update(player)
-            .set({
-              name: input.name,
-            })
-            .where(
-              and(
-                eq(player.id, returnedSharedPlayer.player.id),
-                eq(player.createdBy, returnedSharedPlayer.ownerId),
-              ),
-            );
-        }
-        if (input.type === "original") {
-          const existingPlayer = await tx.query.player.findFirst({
-            where: {
-              id: input.id,
-              createdBy: ctx.userId,
-            },
-          });
-          if (!existingPlayer) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Player not found.",
-            });
-          }
-          if (existingPlayer.imageId) {
-            const imageToDelete = await tx.query.image.findFirst({
-              where: {
-                id: existingPlayer.imageId,
-              },
-            });
-            if (!imageToDelete) {
-              throw new TRPCError({
-                code: "NOT_FOUND",
-                message: "Image not found.",
-              });
-            }
-            if (imageToDelete.type === "file" && imageToDelete.fileId) {
-              await ctx.posthog.captureImmediate({
-                distinctId: ctx.userId,
-                event: "uploadthing begin image delete",
-                properties: {
-                  imageName: imageToDelete.name,
-                  imageId: imageToDelete.id,
-                  fileId: imageToDelete.fileId,
-                },
-              });
-              const result = await ctx.deleteFiles(imageToDelete.fileId);
-              if (!result.success) {
-                await ctx.posthog.captureImmediate({
-                  distinctId: ctx.userId,
-                  event: "uploadthing image delete error",
-                  properties: {
-                    imageName: imageToDelete.name,
-                    imageId: imageToDelete.id,
-                    fileId: imageToDelete.fileId,
-                  },
-                });
-                throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-              }
-            }
-          }
-          await tx
-            .update(player)
-            .set({
-              name: input.name,
-              imageId: input.imageId,
-            })
-            .where(eq(player.id, input.id));
-        }
+      await playerService.updatePlayer({
+        ctx: {
+          userId: ctx.userId,
+          posthog: ctx.posthog,
+          deleteFiles: ctx.deleteFiles,
+        },
+        input,
       });
     }),
   deletePlayer: protectedUserProcedure

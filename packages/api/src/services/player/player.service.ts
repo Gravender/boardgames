@@ -1,14 +1,21 @@
+import { TRPCError } from "@trpc/server";
 import { differenceInDays, isSameDay, max } from "date-fns";
+
+import { db } from "@board-games/db/client";
 
 import type {
   GetPlayersForMatchOutputType,
   GetRecentMatchWithPlayersOutputType,
-} from "../player.output";
+} from "../../routers/player/player.output";
 import type {
+  CreatePlayerArgs,
   GetPlayersForMatchArgs,
   GetRecentMatchWithPlayersArgs,
+  UpdatePlayerArgs,
 } from "./player.service.types";
-import { playerRepository } from "../../../repositories/player/player.repository";
+import { imageRepository } from "../../repositories/image/image.repository";
+import { playerRepository } from "../../repositories/player/player.repository";
+import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
 class PlayerService {
   public async getPlayersForMatch(
@@ -22,14 +29,12 @@ class PlayerService {
     const ninetyDays = 90;
     const halfLifeInDays = 30;
 
-    // --- Core scoring functions ---
     const recencyWeight = (date: Date): number => {
       const daysAgo = differenceInDays(now, date);
       return Math.exp(-Math.log(2) * (daysAgo / halfLifeInDays));
     };
 
     const frequencyWeight = (dates: Date[]): number => {
-      // Use diminishing returns + cap total count
       const count = Math.min(dates.length, 30);
       return Math.log1p(count);
     };
@@ -62,7 +67,6 @@ class PlayerService {
       return recency * 0.7 + frequency * frequencyDecay * 0.3 + sameDayBonus;
     };
 
-    // --- Base mapping logic ---
     const mapPlayer = (base: {
       name: string;
       isUser: boolean;
@@ -75,7 +79,7 @@ class PlayerService {
       matches: { date: Date; finished: boolean }[];
     }) => {
       const finished = base.matches.filter((m) => m.finished);
-      if (finished.length === 0)
+      if (finished.length === 0) {
         return {
           ...base,
           matches: 0,
@@ -84,6 +88,7 @@ class PlayerService {
           frequency: 0,
           score: 0,
         };
+      }
 
       const finishedDates = finished.map((m) => m.date);
 
@@ -118,7 +123,6 @@ class PlayerService {
       };
     };
 
-    // --- Map and merge players ---
     const mappedOriginalPlayers = response.originalPlayers.map((player) => {
       const sharedMatches = player.sharedLinkedPlayers.flatMap((sp) =>
         sp.sharedMatchPlayers.map((sMp) => sMp.match),
@@ -158,7 +162,6 @@ class PlayerService {
 
     const combinedPlayers = [...mappedOriginalPlayers, ...mappedSharedPlayers];
 
-    // --- Safe and stable sort ---
     combinedPlayers.sort((a, b) => {
       if (a.score !== b.score) return b.score - a.score;
 
@@ -178,6 +181,7 @@ class PlayerService {
       players: combinedPlayers,
     };
   }
+
   public async getRecentMatchWithPlayers(
     args: GetRecentMatchWithPlayersArgs,
   ): Promise<GetRecentMatchWithPlayersOutputType> {
@@ -188,5 +192,156 @@ class PlayerService {
       recentMatches: response,
     };
   }
+
+  public async createPlayer(args: CreatePlayerArgs) {
+    const returnedPlayer = await playerRepository.insert({
+      input: {
+        createdBy: args.ctx.userId,
+        imageId: args.input.imageId,
+        name: args.input.name,
+      },
+    });
+    assertInserted(
+      returnedPlayer,
+      {
+        userId: args.ctx.userId,
+        value: args.input,
+      },
+      "Failed to create player",
+    );
+
+    const returnedPlayerImage = await playerRepository.getPlayer({
+      id: returnedPlayer.id,
+      createdBy: args.ctx.userId,
+      with: {
+        image: true,
+      },
+    });
+
+    return {
+      id: returnedPlayer.id,
+      name: returnedPlayer.name,
+      image: returnedPlayerImage?.image ?? null,
+      matches: 0,
+      team: 0,
+    };
+  }
+
+  public async updatePlayer(args: UpdatePlayerArgs) {
+    const {
+      ctx: { userId, posthog, deleteFiles },
+      input,
+    } = args;
+
+    await db.transaction(async (tx) => {
+      if (input.type === "shared") {
+        const returnedSharedPlayer = await playerRepository.getSharedPlayer(
+          {
+            id: input.id,
+            sharedWithId: userId,
+            with: {
+              player: true,
+            },
+          },
+          tx,
+        );
+        assertFound(
+          returnedSharedPlayer,
+          {
+            userId,
+            value: input,
+          },
+          "Player not found.",
+        );
+        if (returnedSharedPlayer.permission !== "edit") {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Does not have permission to edit this player.",
+          });
+        }
+
+        await playerRepository.update({
+          input: {
+            id: returnedSharedPlayer.player.id,
+            createdBy: returnedSharedPlayer.ownerId,
+            name: input.name,
+          },
+          tx,
+        });
+        return;
+      }
+
+      const existingPlayer = await playerRepository.getPlayer(
+        {
+          id: input.id,
+          createdBy: userId,
+        },
+        tx,
+      );
+      assertFound(
+        existingPlayer,
+        {
+          userId,
+          value: input,
+        },
+        "Player not found.",
+      );
+
+      if (existingPlayer.imageId) {
+        const imageToDelete = await imageRepository.getById(
+          {
+            id: existingPlayer.imageId,
+          },
+          tx,
+        );
+        assertFound(
+          imageToDelete,
+          {
+            userId,
+            value: {
+              imageId: existingPlayer.imageId,
+            },
+          },
+          "Image not found.",
+        );
+        if (imageToDelete.type === "file" && imageToDelete.fileId) {
+          await posthog.captureImmediate({
+            distinctId: userId,
+            event: "uploadthing begin image delete",
+            properties: {
+              imageName: imageToDelete.name,
+              imageId: imageToDelete.id,
+              fileId: imageToDelete.fileId,
+            },
+          });
+
+          const result = await deleteFiles(imageToDelete.fileId);
+          if (!result.success) {
+            await posthog.captureImmediate({
+              distinctId: userId,
+              event: "uploadthing image delete error",
+              properties: {
+                imageName: imageToDelete.name,
+                imageId: imageToDelete.id,
+                fileId: imageToDelete.fileId,
+              },
+            });
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+          }
+        }
+      }
+
+      await playerRepository.update({
+        input: {
+          id: input.id,
+          createdBy: userId,
+          name: input.name,
+          imageId: input.imageId,
+        },
+        tx,
+      });
+    });
+  }
 }
+
 export const playerService = new PlayerService();
