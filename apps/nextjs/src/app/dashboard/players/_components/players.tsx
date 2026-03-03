@@ -11,10 +11,10 @@ import { CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
+import { PlayerDropDown } from "~/components/player/player-dropdown";
 import { PlayerImage } from "~/components/player-image";
 import { useTRPC } from "~/trpc/react";
-import { AddPlayerDialog } from "./addPlayerDialog";
-import { PlayerDropDown } from "./playerDropDown";
+import { AddPlayerDialog } from "~/components/player/add-player-dialog";
 
 export function PlayersTable({
   defaultIsOpen = false,

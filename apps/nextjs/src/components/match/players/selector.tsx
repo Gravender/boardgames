@@ -21,16 +21,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@board-games/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  useFieldArray,
-  useForm,
-} from "@board-games/ui/form";
 import { Input } from "@board-games/ui/input";
 import { ScrollArea } from "@board-games/ui/scroll-area";
 import {
@@ -45,6 +35,7 @@ import { cn } from "@board-games/ui/utils";
 
 import type { GameInput } from "../types/input";
 import { PlayerImage } from "~/components/player-image";
+import { useAppForm } from "~/hooks/form";
 import { useGameRoles } from "~/hooks/queries/game/roles";
 import { useTRPC } from "~/trpc/react";
 import { AddPlayerForm } from "./add-player";
@@ -119,8 +110,7 @@ export const AddPlayersDialogForm = ({
   );
 
   const currentUser = gamePlayers?.find((player) => player.isUser);
-  const form = useForm({
-    schema: AddPlayersFormSchema,
+  const form = useAppForm({
     defaultValues: {
       players:
         players.length > 0
@@ -132,39 +122,39 @@ export const AddPlayersDialogForm = ({
                   type: currentUser.type,
                   imageUrl: currentUser.image?.url ?? "",
                   name: currentUser.name,
-                  teamId: null,
+                  teamId: null as number | null,
                   matches: currentUser.matches,
-                  roles: [],
+                  roles: [] as (
+                    | z.infer<typeof originalRoleSchema>
+                    | z.infer<typeof sharedRoleSchema>
+                  )[],
                 },
               ]
             : [],
       teams: teams,
+    } satisfies addPlayersFormType,
+    validators: {
+      onSubmit: AddPlayersFormSchema,
+    },
+    onSubmit: ({ value }) => {
+      setPlayersAndTeams(value.players, value.teams);
     },
   });
-  const { append, remove, update } = useFieldArray({
-    control: form.control,
-    name: "players",
-  });
-  const onSubmit = (data: addPlayersFormType) => {
-    setPlayersAndTeams(data.players, data.teams);
-  };
-  const onShowTeamModal = () => {
-    setShowTeamModal(true);
-  };
 
   const handleAddGroup = (
     group: NonNullable<RouterOutputs["group"]["getGroups"]>[number],
   ) => {
+    const currentPlayers = form.getFieldValue("players");
     group.players.forEach((player) => {
       const playerExists = players.find(
         (p) => p.id === player.id && p.type === "original",
       );
       if (playerExists) {
-        const playerSelected = form
-          .getValues("players")
-          .find((p) => p.id === player.id);
+        const playerSelected = currentPlayers.find(
+          (p) => p.id === player.id,
+        );
         if (!playerSelected) {
-          append({
+          form.pushFieldValue("players", {
             id: player.id,
             type: "original" as const,
             imageUrl: playerExists.imageUrl,
@@ -178,16 +168,13 @@ export const AddPlayersDialogForm = ({
     });
     setShowGroups(false);
   };
-  const formTeams = form.watch("teams");
-  const formPlayers = form.watch("players");
-
   if (showAddPlayer) {
     const addMatchPlayer = (player: {
       id: number;
       imageUrl: string;
       name: string;
     }) => {
-      append({
+      form.pushFieldValue("players", {
         id: player.id,
         type: "original" as const,
         imageUrl: player.imageUrl,
@@ -205,404 +192,406 @@ export const AddPlayersDialogForm = ({
       />
     );
   }
-  if (showTeamModal) {
-    const mappedTeams = formTeams.map((team) => {
-      const teamPlayers = formPlayers.filter((p) => p.teamId === team.id);
-      return {
-        id: team.id,
-        name: team.name,
-        roles: team.roles,
-        players: teamPlayers.length,
-      };
-    });
-    const manageTeamSave = (teams: Team[]) => {
-      const mappedPlayers = formPlayers.map((player) => {
-        const foundTeam = teams.find((t) => t.id === player.teamId);
-        const originalTeam = formTeams.find((t) => t.id === player.teamId);
-        const rolesToRemove = originalTeam?.roles.filter(
-          (role) => !foundTeam?.roles.find((r) => isSameRole(r, role)),
-        );
-        if (foundTeam) {
-          const playerRoles = player.roles.filter(
-            (role) => !rolesToRemove?.find((r) => isSameRole(r, role)),
-          );
-          const rolesToAdd = foundTeam.roles.filter(
-            (role) => !playerRoles.find((r) => isSameRole(r, role)),
-          );
-          return {
-            ...player,
-            teamId: foundTeam.id,
-            roles: [...playerRoles, ...rolesToAdd],
-          };
-        } else if (originalTeam) {
-          const filteredRoles = player.roles.filter(
-            (role) => !originalTeam.roles.find((r) => isSameRole(r, role)),
-          );
-          return {
-            ...player,
-            teamId: null,
-            roles: filteredRoles,
-          };
-        }
-        return player;
-      });
-      form.setValue("teams", teams);
-      form.setValue("players", mappedPlayers);
-      setShowTeamModal(false);
-    };
-
-    return (
-      <ManageTeamContent
-        roles={gameRoles}
-        teams={mappedTeams}
-        cancel={() => setShowTeamModal(false)}
-        setTeams={manageTeamSave}
-      />
-    );
-  }
-  if (showRoleModal) {
-    const foundPlayer = formPlayers.find(
-      (p) => p.id === showRoleModal.id && p.type === showRoleModal.type,
-    );
-    const playerIndex = formPlayers.findIndex(
-      (p) => p.id === showRoleModal.id && p.type === showRoleModal.type,
-    );
-    if (foundPlayer && playerIndex > -1) {
-      const foundTeam = formTeams.find((t) => t.id === foundPlayer.teamId);
-      return (
-        <ManagePlayerRoles
-          player={foundPlayer}
-          teamRoles={foundTeam?.roles ?? []}
-          roles={gameRoles}
-          onClose={() => setShowRoleModal(null)}
-          onSave={(roles) => {
-            update(playerIndex, {
-              ...foundPlayer,
-              roles,
-            });
-            setShowRoleModal(null);
-          }}
-        />
-      );
-    }
-  }
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>Select Players</DialogTitle>
-        <DialogDescription className="xs:not-sr-only sr-only">
-          Add players to your match
-        </DialogDescription>
-      </DialogHeader>
-      <div className="xs:flex-row flex flex-col items-center gap-2">
-        <Input
-          placeholder="Search players..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-grow"
-        />
-        <div className="xs:w-auto xs:justify-start flex w-full items-center justify-between gap-2">
-          <Button variant="outline" onClick={() => setShowGroups(!showGroups)}>
-            <Users className="h-4 w-4" />
-            Groups
-          </Button>
-          <Button variant="outline" onClick={() => setShowAddPlayer(true)}>
-            <Plus className="h-4 w-4" />
-            New
-          </Button>
-        </div>
-      </div>
+    <form.Subscribe
+      selector={(state) => ({
+        formTeams: state.values.teams,
+        formPlayers: state.values.players,
+      })}
+    >
+      {({ formTeams, formPlayers }) => {
+        if (showTeamModal) {
+          const mappedTeams = formTeams.map((team) => {
+            const teamPlayers = formPlayers.filter(
+              (p) => p.teamId === team.id,
+            );
+            return {
+              id: team.id,
+              name: team.name,
+              roles: team.roles,
+              players: teamPlayers.length,
+            };
+          });
+          const manageTeamSave = (newTeams: Team[]) => {
+            const currentPlayers = form.getFieldValue("players");
+            const currentTeams = form.getFieldValue("teams");
+            const mappedPlayers = currentPlayers.map((player) => {
+              const foundTeam = newTeams.find((t) => t.id === player.teamId);
+              const originalTeam = currentTeams.find(
+                (t) => t.id === player.teamId,
+              );
+              const rolesToRemove = originalTeam?.roles.filter(
+                (role) => !foundTeam?.roles.find((r) => isSameRole(r, role)),
+              );
+              if (foundTeam) {
+                const playerRoles = player.roles.filter(
+                  (role) => !rolesToRemove?.find((r) => isSameRole(r, role)),
+                );
+                const rolesToAdd = foundTeam.roles.filter(
+                  (role) => !playerRoles.find((r) => isSameRole(r, role)),
+                );
+                return {
+                  ...player,
+                  teamId: foundTeam.id,
+                  roles: [...playerRoles, ...rolesToAdd],
+                };
+              } else if (originalTeam) {
+                const filteredRoles = player.roles.filter(
+                  (role) =>
+                    !originalTeam.roles.find((r) => isSameRole(r, role)),
+                );
+                return {
+                  ...player,
+                  teamId: null,
+                  roles: filteredRoles,
+                };
+              }
+              return player;
+            });
+            form.setFieldValue("teams", newTeams);
+            form.setFieldValue("players", mappedPlayers);
+            setShowTeamModal(false);
+          };
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <FormField
-            control={form.control}
-            name="players"
-            render={() => (
-              <FormItem>
-                {showGroups && groups ? (
-                  <PlayerGroupSelector
-                    searchTerm={searchTerm}
-                    groups={groups}
-                    handleAddGroup={handleAddGroup}
-                  />
-                ) : (
-                  <>
-                    <div className="flex items-center justify-between gap-2 px-2">
-                      <FormLabel>
-                        {`${form.getValues("players").length} player${form.getValues("players").length !== 1 ? "s" : ""} Selected`}
-                      </FormLabel>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          onShowTeamModal();
-                        }}
-                      >
-                        Edit Teams
-                      </Button>
-                    </div>
-                    <ScrollArea className="sm:p-1">
-                      <div className="grid max-h-[50vh] gap-2 rounded-lg">
-                        {gamePlayers !== undefined
-                          ? gamePlayers
-                              .filter((player) =>
-                                player.name
-                                  .toLowerCase()
-                                  .includes(searchTerm.toLowerCase()),
-                              )
-                              .toSorted((a, b) => {
-                                const foundA = form
-                                  .getValues("players")
-                                  .find(
-                                    (i) => i.id === a.id && i.type === a.type,
-                                  );
-                                const foundB = form
-                                  .getValues("players")
-                                  .find(
-                                    (i) => i.id === b.id && i.type === b.type,
-                                  );
-                                if (foundA && foundB) {
-                                  return 0;
-                                }
-                                if (foundA) {
-                                  return -1;
-                                }
-                                if (foundB) {
-                                  return 1;
-                                }
-                                if (a.matches === b.matches) {
-                                  return a.name.localeCompare(b.name);
-                                }
-                                return b.matches - a.matches;
-                              })
-                              .map((player) => {
-                                return (
-                                  <FormField
-                                    key={`${player.id}-${player.type}`}
-                                    control={form.control}
-                                    name="players"
-                                    render={({ field }) => {
-                                      const foundPlayer = field.value.find(
-                                        (i) =>
-                                          i.id === player.id &&
-                                          i.type === player.type,
-                                      );
-                                      const playerIndex = field.value.findIndex(
-                                        (i) =>
-                                          i.id === player.id &&
-                                          i.type === player.type,
-                                      );
+          return (
+            <ManageTeamContent
+              roles={gameRoles}
+              teams={mappedTeams}
+              cancel={() => setShowTeamModal(false)}
+              setTeams={manageTeamSave}
+            />
+          );
+        }
+        if (showRoleModal) {
+          const foundPlayer = formPlayers.find(
+            (p) =>
+              p.id === showRoleModal.id && p.type === showRoleModal.type,
+          );
+          const playerIndex = formPlayers.findIndex(
+            (p) =>
+              p.id === showRoleModal.id && p.type === showRoleModal.type,
+          );
+          if (foundPlayer && playerIndex > -1) {
+            const foundTeam = formTeams.find(
+              (t) => t.id === foundPlayer.teamId,
+            );
+            return (
+              <ManagePlayerRoles
+                player={foundPlayer}
+                teamRoles={foundTeam?.roles ?? []}
+                roles={gameRoles}
+                onClose={() => setShowRoleModal(null)}
+                onSave={(roles) => {
+                  form.setFieldValue(
+                    `players[${playerIndex}].roles`,
+                    roles,
+                  );
+                  setShowRoleModal(null);
+                }}
+              />
+            );
+          }
+        }
 
-                                      return (
-                                        <FormItem
-                                          key={`${player.id}-${player.type}`}
-                                          className={cn(
-                                            "flex flex-row items-center space-y-0 space-x-3 rounded-sm p-1 sm:p-2",
-                                            foundPlayer
-                                              ? "bg-violet-400/50"
-                                              : "bg-border",
-                                          )}
-                                        >
-                                          <FormControl>
-                                            <Checkbox
-                                              className="hidden"
-                                              checked={playerIndex > -1}
-                                              onCheckedChange={(checked) => {
-                                                return checked
-                                                  ? append({
-                                                      id: player.id,
-                                                      type: player.type,
-                                                      imageUrl:
-                                                        player.image?.url ??
-                                                        null,
-                                                      name: player.name,
-                                                      matches: player.matches,
-                                                      teamId: null,
-                                                      roles: [],
-                                                    })
-                                                  : remove(
-                                                      field.value.findIndex(
-                                                        (i) =>
-                                                          i.id === player.id &&
-                                                          i.type ===
-                                                            player.type,
-                                                      ),
-                                                    );
-                                              }}
+        return (
+          <>
+            <DialogHeader>
+              <DialogTitle>Select Players</DialogTitle>
+              <DialogDescription className="xs:not-sr-only sr-only">
+                Add players to your match
+              </DialogDescription>
+            </DialogHeader>
+            <div className="xs:flex-row flex flex-col items-center gap-2">
+              <Input
+                placeholder="Search players..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="grow"
+              />
+              <div className="xs:w-auto xs:justify-start flex w-full items-center justify-between gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowGroups(!showGroups)}
+                >
+                  <Users className="h-4 w-4" />
+                  Groups
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAddPlayer(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  New
+                </Button>
+              </div>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                form.handleSubmit();
+              }}
+            >
+              <form.Field name="players">
+                {(playersField) => (
+                  <div>
+                    {showGroups && groups ? (
+                      <PlayerGroupSelector
+                        searchTerm={searchTerm}
+                        groups={groups}
+                        handleAddGroup={handleAddGroup}
+                      />
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between gap-2 px-2">
+                          <span className="text-sm font-medium">
+                            {`${formPlayers.length} player${formPlayers.length !== 1 ? "s" : ""} Selected`}
+                          </span>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setShowTeamModal(true);
+                            }}
+                          >
+                            Edit Teams
+                          </Button>
+                        </div>
+                        <ScrollArea className="sm:p-1">
+                          <div className="grid max-h-[50vh] gap-2 rounded-lg">
+                            {gamePlayers !== undefined
+                              ? gamePlayers
+                                  .filter((player) =>
+                                    player.name
+                                      .toLowerCase()
+                                      .includes(searchTerm.toLowerCase()),
+                                  )
+                                  .toSorted((a, b) => {
+                                    const foundA = formPlayers.find(
+                                      (i) =>
+                                        i.id === a.id && i.type === a.type,
+                                    );
+                                    const foundB = formPlayers.find(
+                                      (i) =>
+                                        i.id === b.id && i.type === b.type,
+                                    );
+                                    if (foundA && foundB) return 0;
+                                    if (foundA) return -1;
+                                    if (foundB) return 1;
+                                    if (a.matches === b.matches) {
+                                      return a.name.localeCompare(b.name);
+                                    }
+                                    return b.matches - a.matches;
+                                  })
+                                  .map((player) => {
+                                    const foundPlayer = formPlayers.find(
+                                      (i) =>
+                                        i.id === player.id &&
+                                        i.type === player.type,
+                                    );
+                                    const playerIdx = formPlayers.findIndex(
+                                      (i) =>
+                                        i.id === player.id &&
+                                        i.type === player.type,
+                                    );
+
+                                    return (
+                                      <div
+                                        key={`${player.id}-${player.type}`}
+                                        className={cn(
+                                          "flex flex-row items-center space-y-0 space-x-3 rounded-sm p-1 sm:p-2",
+                                          foundPlayer
+                                            ? "bg-violet-400/50"
+                                            : "bg-border",
+                                        )}
+                                      >
+                                        <Checkbox
+                                          className="hidden"
+                                          checked={playerIdx > -1}
+                                          onCheckedChange={(checked) => {
+                                            if (checked) {
+                                              playersField.pushValue({
+                                                id: player.id,
+                                                type: player.type,
+                                                imageUrl:
+                                                  player.image?.url ?? null,
+                                                name: player.name,
+                                                matches: player.matches,
+                                                teamId: null,
+                                                roles: [],
+                                              });
+                                            } else {
+                                              const removeIdx =
+                                                playersField.state.value.findIndex(
+                                                  (i) =>
+                                                    i.id === player.id &&
+                                                    i.type === player.type,
+                                                );
+                                              if (removeIdx > -1) {
+                                                playersField.removeValue(
+                                                  removeIdx,
+                                                );
+                                              }
+                                            }
+                                          }}
+                                        />
+                                        <label className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2">
+                                          <div className="flex items-center gap-1 sm:gap-2">
+                                            <PlayerImage
+                                              className="size-8"
+                                              image={player.image}
+                                              alt={player.name}
                                             />
-                                          </FormControl>
-                                          <FormLabel className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2">
-                                            <div className="flex items-center gap-1 sm:gap-2">
-                                              <PlayerImage
-                                                className="size-8"
-                                                image={player.image}
-                                                alt={player.name}
-                                              />
-                                              <div>
-                                                <div className="flex gap-1 text-sm font-medium">
-                                                  {player.name}
-                                                  {player.isUser && (
-                                                    <Badge
-                                                      variant="outline"
-                                                      className="ml-2 text-xs"
-                                                    >
-                                                      You
-                                                    </Badge>
-                                                  )}
-                                                  {player.type === "shared" && (
-                                                    <Badge
-                                                      variant="outline"
-                                                      className="bg-blue-600 text-xs text-white"
-                                                    >
-                                                      Shared
-                                                    </Badge>
-                                                  )}
-                                                </div>
+                                            <div>
+                                              <div className="flex gap-1 text-sm font-medium">
+                                                {player.name}
+                                                {player.isUser && (
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="ml-2 text-xs"
+                                                  >
+                                                    You
+                                                  </Badge>
+                                                )}
+                                                {player.type === "shared" && (
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="bg-blue-600 text-xs text-white"
+                                                  >
+                                                    Shared
+                                                  </Badge>
+                                                )}
+                                              </div>
 
-                                                <div className="text-muted-foreground text-xs">
-                                                  {player.matches} matches
-                                                </div>
+                                              <div className="text-muted-foreground text-xs">
+                                                {player.matches} matches
                                               </div>
                                             </div>
-                                          </FormLabel>
-                                          <div className="xs:flex-row flex flex-col items-center gap-2">
-                                            {foundPlayer && (
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                type="button"
-                                                onClick={() => {
-                                                  setShowRoleModal({
-                                                    id: foundPlayer.id,
-                                                    type: foundPlayer.type,
-                                                  });
-                                                }}
-                                                className="xs:w-auto w-full"
-                                              >
-                                                Roles (
-                                                {foundPlayer.roles.length})
-                                              </Button>
-                                            )}
-                                            {formTeams.length > 0 &&
-                                              foundPlayer && (
-                                                <Select
-                                                  value={
-                                                    foundPlayer.teamId !== null
-                                                      ? foundPlayer.teamId.toString()
-                                                      : "no-team"
-                                                  }
-                                                  onValueChange={(value) => {
-                                                    if (value === "no-team") {
-                                                      update(
-                                                        field.value.findIndex(
-                                                          (i) =>
-                                                            i.id ===
-                                                              player.id &&
-                                                            i.type ===
-                                                              player.type,
-                                                        ),
-                                                        {
-                                                          ...foundPlayer,
-                                                          teamId: null,
-                                                        },
-                                                      );
-                                                      return;
-                                                    }
-                                                    const parsedValue =
-                                                      Number(value);
-                                                    const foundTeam =
-                                                      formTeams.find(
-                                                        (t) =>
-                                                          t.id === parsedValue,
-                                                      );
-                                                    if (
-                                                      !isNaN(parsedValue) &&
-                                                      foundTeam
-                                                    ) {
-                                                      const playerRoles =
-                                                        Array.from(
-                                                          new Set([
-                                                            ...foundPlayer.roles,
-                                                            ...foundTeam.roles,
-                                                          ]),
-                                                        );
-                                                      update(
-                                                        field.value.findIndex(
-                                                          (i) =>
-                                                            i.id ===
-                                                              player.id &&
-                                                            i.type ===
-                                                              player.type,
-                                                        ),
-                                                        {
-                                                          ...foundPlayer,
-                                                          teamId: parsedValue,
-                                                          roles: playerRoles,
-                                                        },
-                                                      );
-                                                      return;
-                                                    }
-                                                  }}
-                                                >
-                                                  <SelectTrigger className="h-8 w-32">
-                                                    <SelectValue placeholder="No team" />
-                                                  </SelectTrigger>
-                                                  <SelectContent>
-                                                    <SelectItem value="no-team">
-                                                      No team
-                                                    </SelectItem>
-                                                    {formTeams.map((team) => (
-                                                      <SelectItem
-                                                        key={team.id}
-                                                        value={team.id.toString()}
-                                                      >
-                                                        {`${team.name}`}
-                                                      </SelectItem>
-                                                    ))}
-                                                  </SelectContent>
-                                                </Select>
-                                              )}
                                           </div>
-                                        </FormItem>
-                                      );
-                                    }}
-                                  />
-                                );
-                              })
-                          : Array.from({ length: 6 }).map((_, i) => (
-                              <div
-                                key={i}
-                                className="bg-border flex h-12 flex-row items-center space-y-0 space-x-3 rounded-sm p-1 sm:p-2"
-                              >
-                                <div className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2">
-                                  <div className="flex items-center gap-1 sm:gap-2">
-                                    <Skeleton className="bg-card size-10 rounded-full" />
-                                    <div className="flex flex-col gap-2">
-                                      <Skeleton className="bg-card h-5 w-36" />
-                                      <Skeleton className="bg-card h-3 w-24" />
+                                        </label>
+                                        <div className="xs:flex-row flex flex-col items-center gap-2">
+                                          {foundPlayer && (
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              type="button"
+                                              onClick={() => {
+                                                setShowRoleModal({
+                                                  id: foundPlayer.id,
+                                                  type: foundPlayer.type,
+                                                });
+                                              }}
+                                              className="xs:w-auto w-full"
+                                            >
+                                              Roles (
+                                              {foundPlayer.roles.length})
+                                            </Button>
+                                          )}
+                                          {formTeams.length > 0 &&
+                                            foundPlayer && (
+                                              <Select
+                                                value={
+                                                  foundPlayer.teamId !== null
+                                                    ? foundPlayer.teamId.toString()
+                                                    : "no-team"
+                                                }
+                                                onValueChange={(value) => {
+                                                  if (value === "no-team") {
+                                                    form.setFieldValue(
+                                                      `players[${playerIdx}].teamId`,
+                                                      null,
+                                                    );
+                                                    return;
+                                                  }
+                                                  const parsedValue =
+                                                    Number(value);
+                                                  const teamMatch =
+                                                    formTeams.find(
+                                                      (t) =>
+                                                        t.id === parsedValue,
+                                                    );
+                                                  if (
+                                                    !isNaN(parsedValue) &&
+                                                    teamMatch
+                                                  ) {
+                                                    const playerRoles =
+                                                      Array.from(
+                                                        new Set([
+                                                          ...foundPlayer.roles,
+                                                          ...teamMatch.roles,
+                                                        ]),
+                                                      );
+                                                    form.setFieldValue(
+                                                      `players[${playerIdx}].teamId`,
+                                                      parsedValue,
+                                                    );
+                                                    form.setFieldValue(
+                                                      `players[${playerIdx}].roles`,
+                                                      playerRoles,
+                                                    );
+                                                  }
+                                                }}
+                                              >
+                                                <SelectTrigger className="h-8 w-32">
+                                                  <SelectValue placeholder="No team" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  <SelectItem value="no-team">
+                                                    No team
+                                                  </SelectItem>
+                                                  {formTeams.map((team) => (
+                                                    <SelectItem
+                                                      key={team.id}
+                                                      value={team.id.toString()}
+                                                    >
+                                                      {`${team.name}`}
+                                                    </SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
+                                            )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })
+                              : Array.from({ length: 6 }).map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className="bg-border flex h-12 flex-row items-center space-y-0 space-x-3 rounded-sm p-1 sm:p-2"
+                                  >
+                                    <div className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2">
+                                      <div className="flex items-center gap-1 sm:gap-2">
+                                        <Skeleton className="bg-card size-10 rounded-full" />
+                                        <div className="flex flex-col gap-2">
+                                          <Skeleton className="bg-card h-5 w-36" />
+                                          <Skeleton className="bg-card h-3 w-24" />
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              </div>
-                            ))}
-                      </div>
-                    </ScrollArea>
-                  </>
+                                ))}
+                          </div>
+                        </ScrollArea>
+                      </>
+                    )}
+                  </div>
                 )}
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              </form.Field>
 
-          <DialogFooter className="gap-2 pt-2">
-            <Button type="reset" variant="secondary" onClick={() => cancel()}>
-              Cancel
-            </Button>
-            <Button type="submit">Save</Button>
-          </DialogFooter>
-        </form>
-      </Form>
-    </>
+              <DialogFooter className="gap-2 pt-2">
+                <Button
+                  type="reset"
+                  variant="secondary"
+                  onClick={() => cancel()}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">Save</Button>
+              </DialogFooter>
+            </form>
+          </>
+        );
+      }}
+    </form.Subscribe>
   );
 };
