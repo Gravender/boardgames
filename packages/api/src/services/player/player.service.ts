@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { differenceInDays, isSameDay, max } from "date-fns";
 
+import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 
 import type {
@@ -18,6 +19,37 @@ import { playerRepository } from "../../repositories/player/player.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 
 class PlayerService {
+  private async getAuthorizedImageById(args: {
+    imageId: number;
+    userId: string;
+    tx?: TransactionType;
+  }) {
+    const returnedImage = await imageRepository.getById(
+      {
+        id: args.imageId,
+      },
+      args.tx,
+    );
+    assertFound(
+      returnedImage,
+      {
+        userId: args.userId,
+        value: {
+          imageId: args.imageId,
+        },
+      },
+      "Image not found.",
+    );
+
+    if (returnedImage.createdBy && returnedImage.createdBy !== args.userId) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Not authorized to use this image.",
+      });
+    }
+    return returnedImage;
+  }
+
   public async getPlayersForMatch(
     args: GetPlayersForMatchArgs,
   ): Promise<GetPlayersForMatchOutputType> {
@@ -194,6 +226,13 @@ class PlayerService {
   }
 
   public async createPlayer(args: CreatePlayerArgs) {
+    if (typeof args.input.imageId === "number") {
+      await this.getAuthorizedImageById({
+        imageId: args.input.imageId,
+        userId: args.ctx.userId,
+      });
+    }
+
     const returnedPlayer = await playerRepository.insert({
       input: {
         createdBy: args.ctx.userId,
@@ -233,7 +272,7 @@ class PlayerService {
       input,
     } = args;
 
-    await db.transaction(async (tx) => {
+    const imageToDeleteMetadata = await db.transaction(async (tx) => {
       if (input.type === "shared") {
         const returnedSharedPlayer = await playerRepository.getSharedPlayer(
           {
@@ -260,7 +299,7 @@ class PlayerService {
           });
         }
 
-        await playerRepository.update({
+        const updatedSharedPlayer = await playerRepository.update({
           input: {
             id: returnedSharedPlayer.player.id,
             createdBy: returnedSharedPlayer.ownerId,
@@ -268,7 +307,15 @@ class PlayerService {
           },
           tx,
         });
-        return;
+        assertFound(
+          updatedSharedPlayer,
+          {
+            userId,
+            value: input,
+          },
+          "Player not found.",
+        );
+        return null;
       }
 
       const existingPlayer = await playerRepository.getPlayer(
@@ -296,14 +343,25 @@ class PlayerService {
         input.updateValues.type === "imageId" ||
         input.updateValues.type === "nameAndImageId"
           ? input.updateValues.imageId
+          : input.updateValues.type === "clearImage"
+            ? null
           : undefined;
+
+      if (typeof nextImageId === "number") {
+        await this.getAuthorizedImageById({
+          imageId: nextImageId,
+          userId,
+          tx,
+        });
+      }
+
       const previousImageId = existingPlayer.imageId;
       const imageUpdateRequested = nextImageId !== undefined;
       const shouldDeleteExistingImage =
         imageUpdateRequested &&
         previousImageId !== null &&
         previousImageId !== nextImageId;
-      await playerRepository.update({
+      const updatedPlayer = await playerRepository.update({
         input: {
           id: input.id,
           createdBy: userId,
@@ -312,54 +370,62 @@ class PlayerService {
         },
         tx,
       });
-
-      if (!shouldDeleteExistingImage) {
-        return;
-      }
-
-      const imageToDelete = await imageRepository.getById(
-        {
-          id: previousImageId,
-        },
-        tx,
-      );
       assertFound(
-        imageToDelete,
+        updatedPlayer,
         {
           userId,
-          value: {
-            imageId: previousImageId,
-          },
+          value: input,
         },
-        "Image not found.",
+        "Player not found.",
       );
-      if (imageToDelete.type !== "file" || !imageToDelete.fileId) {
-        return;
+
+      if (!shouldDeleteExistingImage) {
+        return null;
       }
+
+      const imageToDelete = await this.getAuthorizedImageById({
+        imageId: previousImageId,
+        userId,
+        tx,
+      });
+      if (imageToDelete.type !== "file" || !imageToDelete.fileId) {
+        return null;
+      }
+
+      return {
+        imageName: imageToDelete.name,
+        imageId: imageToDelete.id,
+        fileId: imageToDelete.fileId,
+      };
+    });
+
+    if (!imageToDeleteMetadata) {
+      return;
+    }
+
+    await posthog.captureImmediate({
+      distinctId: userId,
+      event: "uploadthing begin image delete",
+      properties: {
+        imageName: imageToDeleteMetadata.imageName,
+        imageId: imageToDeleteMetadata.imageId,
+        fileId: imageToDeleteMetadata.fileId,
+      },
+    });
+
+    const result = await deleteFiles(imageToDeleteMetadata.fileId);
+    if (!result.success) {
       await posthog.captureImmediate({
         distinctId: userId,
-        event: "uploadthing begin image delete",
+        event: "uploadthing image delete error",
         properties: {
-          imageName: imageToDelete.name,
-          imageId: imageToDelete.id,
-          fileId: imageToDelete.fileId,
+          imageName: imageToDeleteMetadata.imageName,
+          imageId: imageToDeleteMetadata.imageId,
+          fileId: imageToDeleteMetadata.fileId,
         },
       });
-
-      const result = await deleteFiles(imageToDelete.fileId);
-      if (!result.success) {
-        await posthog.captureImmediate({
-          distinctId: userId,
-          event: "uploadthing image delete error",
-          properties: {
-            imageName: imageToDelete.name,
-            imageId: imageToDelete.id,
-            fileId: imageToDelete.fileId,
-          },
-        });
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      }
-    });
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    }
   }
 }
 

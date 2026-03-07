@@ -31,7 +31,7 @@ const formSchema = z.object({
   teams: z.array(
     z.object({
       id: z.number(),
-      name: z.string(),
+      name: z.string().trim().min(1, { message: "Team name is required" }),
       roles: z.array(
         z.discriminatedUnion("type", [originalRoleSchema, sharedRoleSchema]),
       ),
@@ -126,7 +126,7 @@ export const ManageTeamContent = ({
     const currentTeams = form.getFieldValue("teams");
     form.pushFieldValue("teams", {
       id: getLowestTeamId(currentTeams),
-      name: newTeam,
+      name: trimmedTeam,
       roles: [],
     });
     setNewTeam("");
@@ -174,7 +174,14 @@ export const ManageTeamContent = ({
                       onEditingNameValueChange={(value) => {
                         form.setFieldValue(teamNameFieldPath, value);
                       }}
-                      onSaveName={() => setActiveTeamEdit(null)}
+                      onSaveName={() => {
+                        const trimmedTeam = editingNameValue.trim();
+                        if (trimmedTeam.length === 0) {
+                          return;
+                        }
+                        form.setFieldValue(teamNameFieldPath, trimmedTeam);
+                        setActiveTeamEdit(null);
+                      }}
                       setActiveTeamEdit={setActiveTeamEdit}
                       setEditingTeamRoles={setEditingTeamRoles}
                       onRemoveTeam={() => {
@@ -293,11 +300,9 @@ const ManageTeamRoles = ({
                             (r) => isSameRole(r, role),
                           );
                           if (foundRoleIndex > -1) {
-                            const newRoles = [
-                              ...field.state.value.filter(
-                                (r) => !isSameRole(r, role),
-                              ),
-                            ];
+                            const newRoles = field.state.value.filter(
+                              (r) => !isSameRole(r, role),
+                            );
                             field.handleChange(newRoles);
                           } else {
                             field.handleChange([...field.state.value, role]);

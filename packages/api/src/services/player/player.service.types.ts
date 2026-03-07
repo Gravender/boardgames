@@ -45,6 +45,9 @@ export interface UpdatePlayerArgs {
               imageId: number;
             }
           | {
+              type: "clearImage";
+            }
+          | {
               type: "nameAndImageId";
               name: string;
               imageId: number;

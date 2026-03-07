@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
 
-import { EditPlayerDialog } from "~/components/player/edit-player-dialog";
+import { EditPlayerDialog } from "~/components/player/EditPlayerDialog";
 import { useTRPC } from "~/trpc/react";
 
 export function PlayerDropDown({

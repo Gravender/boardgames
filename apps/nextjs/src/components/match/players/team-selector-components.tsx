@@ -122,6 +122,13 @@ export const TeamRow = ({
                 placeholder="Team name"
                 value={editingNameValue}
                 onChange={(e) => onEditingNameValueChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onSaveName();
+                  }
+                }}
               />
               <Button type="button" size="sm" onClick={onSaveName}>
                 Save

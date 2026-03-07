@@ -883,15 +883,18 @@ export const playerRouter = {
           updateValues: z.discriminatedUnion("type", [
             z.object({
               type: z.literal("name"),
-              name: z.string(),
+              name: z.string().trim().min(1, "Name is required"),
             }),
             z.object({
               type: z.literal("imageId"),
               imageId: z.number(),
             }),
             z.object({
+              type: z.literal("clearImage"),
+            }),
+            z.object({
               type: z.literal("nameAndImageId"),
-              name: z.string(),
+              name: z.string().trim().min(1, "Name is required"),
               imageId: z.number(),
             }),
           ]),
@@ -899,7 +902,7 @@ export const playerRouter = {
         z.object({
           type: z.literal("shared"),
           id: z.number(),
-          name: z.string(),
+          name: z.string().trim().min(1, "Name is required"),
         }),
       ]),
     )

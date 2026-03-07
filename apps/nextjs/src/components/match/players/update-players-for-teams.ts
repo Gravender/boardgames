@@ -27,6 +27,7 @@ export const updatePlayersForTeams = <
 }): TPlayer[] => {
   return players.map((player) => {
     const foundTeam = newTeams.find((team) => team.id === player.teamId);
+
     const originalTeam = currentTeams.find((team) => team.id === player.teamId);
 
     if (!originalTeam && !foundTeam) {
@@ -46,24 +47,22 @@ export const updatePlayersForTeams = <
       };
     }
 
-    if (!foundTeam) {
-      return player;
-    }
-
     const rolesToRemove = originalTeam?.roles.filter(
-      (role) => !foundTeam.roles.find((existing) => isSameRole(existing, role)),
+      (role) =>
+        !foundTeam?.roles.find((existing) => isSameRole(existing, role)),
     );
 
     const playerRoles = player.roles.filter(
       (role) => !rolesToRemove?.find((existing) => isSameRole(existing, role)),
     );
-    const rolesToAdd = foundTeam.roles.filter(
-      (role) => !playerRoles.find((existing) => isSameRole(existing, role)),
-    );
+    const rolesToAdd =
+      foundTeam?.roles.filter(
+        (role) => !playerRoles.find((existing) => isSameRole(existing, role)),
+      ) ?? [];
 
     return {
       ...player,
-      teamId: foundTeam.id,
+      teamId: foundTeam?.id,
       roles: [...playerRoles, ...rolesToAdd],
     };
   });

@@ -136,4 +136,56 @@ describe("updatePlayersForTeams", () => {
       roles: [{ id: 99, name: "PersonalRole" }],
     });
   });
+
+  it("merges roles when player belongs to newly created team", () => {
+    const players: Player[] = [
+      {
+        id: 1,
+        name: "Alice",
+        teamId: 20,
+        roles: [{ id: 99, name: "PersonalRole" }],
+      },
+    ];
+    const currentTeams: Team[] = [
+      {
+        id: 10,
+        name: "Red",
+        roles: [{ id: 1, name: "Leader" }],
+      },
+    ];
+    const newTeams: Team[] = [
+      {
+        id: 10,
+        name: "Red",
+        roles: [{ id: 1, name: "Leader" }],
+      },
+      {
+        id: 20,
+        name: "Blue",
+        roles: [
+          { id: 2, name: "Scout" },
+          { id: 3, name: "Support" },
+          { id: 99, name: "PersonalRole" },
+        ],
+      },
+    ];
+
+    const mappedPlayers = updatePlayersForTeams({
+      players,
+      currentTeams,
+      newTeams,
+      isSameRole,
+    });
+
+    expect(mappedPlayers[0]).toEqual({
+      id: 1,
+      name: "Alice",
+      teamId: 20,
+      roles: [
+        { id: 99, name: "PersonalRole" },
+        { id: 2, name: "Scout" },
+        { id: 3, name: "Support" },
+      ],
+    });
+  });
 });
