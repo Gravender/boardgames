@@ -49,6 +49,7 @@ This is a monorepo for tracking board games, players, matches, scoresheets, and 
 ### Package-Specific Commands
 
 After making changes in a specific package, run its check (lint + typecheck + format) or format-fix via Turbo.
+Use Turbo task commands like `turbo run check --filter=<package>` and `turbo run format --filter=<package>` (or `format:fix` when available).
 
 ### Important Notes
 

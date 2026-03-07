@@ -301,28 +301,36 @@ class PlayerService {
       return;
     }
 
-    await posthog.captureImmediate({
-      distinctId: userId,
-      event: "uploadthing begin image delete",
-      properties: {
-        imageName: imageToDeleteMetadata.imageName,
-        imageId: imageToDeleteMetadata.imageId,
-        fileId: imageToDeleteMetadata.fileId,
-      },
-    });
-
-    const result = await deleteFiles(imageToDeleteMetadata.fileId);
-    if (!result.success) {
+    try {
       await posthog.captureImmediate({
         distinctId: userId,
-        event: "uploadthing image delete error",
+        event: "uploadthing begin image delete",
         properties: {
           imageName: imageToDeleteMetadata.imageName,
           imageId: imageToDeleteMetadata.imageId,
           fileId: imageToDeleteMetadata.fileId,
         },
       });
-      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      const result = await deleteFiles(imageToDeleteMetadata.fileId);
+      if (!result.success) {
+        await posthog.captureImmediate({
+          distinctId: userId,
+          event: "uploadthing image delete error",
+          properties: {
+            imageName: imageToDeleteMetadata.imageName,
+            imageId: imageToDeleteMetadata.imageId,
+            fileId: imageToDeleteMetadata.fileId,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Failed post-commit player image cleanup", {
+        userId,
+        imageId: imageToDeleteMetadata.imageId,
+        fileId: imageToDeleteMetadata.fileId,
+        error,
+      });
     }
   }
 }

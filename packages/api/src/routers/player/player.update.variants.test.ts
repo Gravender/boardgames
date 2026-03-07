@@ -271,7 +271,59 @@ describe("Player Update - updateValues variants", () => {
     expect(deleteFilesSpy).toHaveBeenCalledWith(initialImage.fileId);
   });
 
-  test("throws when deleteFiles fails for replaced file-backed image", async () => {
+  test("clears image with updateValues.type=clearImage without renaming", async () => {
+    const deleteFilesSpy = vi.fn(() =>
+      Promise.resolve({
+        success: true as const,
+        deletedCount: 1,
+      }),
+    );
+    const ctx = await createContextInner({
+      session: createTestSession(testUserId),
+      deleteFiles: deleteFilesSpy,
+    });
+    const caller = createCallerFactory(appRouter)(ctx);
+
+    const initialImage = await caller.image.create({
+      name: "Initial Image",
+      url: "https://example.com/initial-player-image.jpg",
+      type: "file",
+      usageType: "player",
+      fileId: "utfs-initial-image-clear-2",
+      fileSize: 3072,
+    });
+
+    const createdPlayer = await caller.player.create({
+      name: "Name Stays The Same",
+      imageId: initialImage.id,
+    });
+
+    const input: inferProcedureInput<AppRouter["player"]["update"]> = {
+      type: "original",
+      id: createdPlayer.id,
+      updateValues: {
+        type: "clearImage",
+      },
+    };
+    await caller.player.update(input);
+
+    const [updatedPlayer] = await db
+      .select({
+        id: player.id,
+        name: player.name,
+        imageId: player.imageId,
+      })
+      .from(player)
+      .where(eq(player.id, createdPlayer.id));
+
+    expect(updatedPlayer).toBeDefined();
+    expect(updatedPlayer?.name).toBe("Name Stays The Same");
+    expect(updatedPlayer?.imageId).toBeNull();
+    expect(deleteFilesSpy).toHaveBeenCalledTimes(1);
+    expect(deleteFilesSpy).toHaveBeenCalledWith(initialImage.fileId);
+  });
+
+  test("does not throw when deleteFiles fails for replaced file-backed image", async () => {
     const deleteFilesSpy = vi.fn(() =>
       Promise.resolve({
         success: false as const,
@@ -315,7 +367,7 @@ describe("Player Update - updateValues variants", () => {
           imageId: replacementImage.id,
         },
       }),
-    ).rejects.toThrow();
+    ).resolves.toBeUndefined();
 
     expect(deleteFilesSpy).toHaveBeenCalledTimes(1);
     expect(deleteFilesSpy).toHaveBeenCalledWith(initialImage.fileId);

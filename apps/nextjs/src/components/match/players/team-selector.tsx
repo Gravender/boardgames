@@ -161,8 +161,7 @@ export const ManageTeamContent = ({
                   const teamPlayers =
                     teams.find((t) => t.id === team.id)?.players ?? 0;
                   const teamNameFieldPath = `teams[${index}].name` as const;
-                  const editingNameValue =
-                    form.getFieldValue(teamNameFieldPath);
+                  const editingNameValue = form.getFieldValue(teamNameFieldPath);
 
                   return (
                     <TeamRow

@@ -21,7 +21,7 @@ interface UsePlayerCreationArgs {
 
 interface PlayerCreationValues {
   name: string;
-  imageUrl: File | null;
+  imageFile: File | null;
 }
 
 export const usePlayerCreation = ({
@@ -31,28 +31,17 @@ export const usePlayerCreation = ({
   const { createPlayerMutation } = useCreatePlayerMutation();
   const trpc = useTRPC();
   const deleteImageMutation = useMutation(trpc.image.delete.mutationOptions());
-
-  const showUploadErrorToast = useCallback(() => {
-    toast.error("Error", {
-      description: "There was a problem uploading your Image.",
-    });
-  }, []);
-
-  const showCreatePlayerErrorToast = useCallback(() => {
-    toast.error("Error", {
-      description: "There was a problem creating the player.",
-    });
-  }, []);
+  const { mutateAsync: deleteImage } = deleteImageMutation;
 
   const rollbackUploadedImages = useCallback(
     async (uploadedImageIds: number[]) => {
       await Promise.all(
         uploadedImageIds.map((id) =>
-          deleteImageMutation.mutateAsync({ id }).catch(() => undefined),
+          deleteImage({ id }).catch(() => undefined),
         ),
       );
     },
-    [deleteImageMutation],
+    [deleteImage],
   );
 
   const handleCreatePlayerWithoutImage = useCallback(
@@ -64,18 +53,20 @@ export const usePlayerCreation = ({
         });
         onCreateSuccess(player);
       } catch {
-        showCreatePlayerErrorToast();
+        toast.error("Error", {
+          description: "There was a problem creating the player.",
+        });
       }
     },
-    [createPlayerMutation, onCreateSuccess, showCreatePlayerErrorToast],
+    [createPlayerMutation, onCreateSuccess],
   );
 
   const handleCreatePlayerWithImage = useCallback(
-    async ({ name, imageUrl }: { name: string; imageUrl: File }) => {
+    async ({ name, imageFile }: { name: string; imageFile: File }) => {
       let uploadedImageIds: number[] = [];
 
       try {
-        const uploadResult = await startUpload([imageUrl], {
+        const uploadResult = await startUpload([imageFile], {
           usageType: "player",
         });
         if (!uploadResult) {
@@ -96,30 +87,32 @@ export const usePlayerCreation = ({
         onCreateSuccess(player);
       } catch {
         if (uploadedImageIds.length === 0) {
-          showUploadErrorToast();
+          toast.error("Error", {
+            description: "There was a problem uploading your Image.",
+          });
           return;
         }
         await rollbackUploadedImages(uploadedImageIds);
-        showCreatePlayerErrorToast();
+        toast.error("Error", {
+          description: "There was a problem creating the player.",
+        });
       }
     },
     [
       createPlayerMutation,
       onCreateSuccess,
       rollbackUploadedImages,
-      showCreatePlayerErrorToast,
-      showUploadErrorToast,
       startUpload,
     ],
   );
 
   const handleSubmit = useCallback(
-    async ({ name, imageUrl }: PlayerCreationValues) => {
-      if (!imageUrl) {
+    async ({ name, imageFile }: PlayerCreationValues) => {
+      if (!imageFile) {
         await handleCreatePlayerWithoutImage({ name });
         return;
       }
-      await handleCreatePlayerWithImage({ name, imageUrl });
+      await handleCreatePlayerWithImage({ name, imageFile });
     },
     [handleCreatePlayerWithImage, handleCreatePlayerWithoutImage],
   );

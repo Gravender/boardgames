@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
 import { z } from "zod/v4";
 
 import type { RouterInputs, RouterOutputs } from "@board-games/api";
@@ -19,6 +20,7 @@ import { toast } from "@board-games/ui/toast";
 import { Spinner } from "~/components/spinner";
 import { useAppForm } from "~/hooks/form";
 import { useUpdatePlayerMutation } from "~/hooks/mutations/player/update";
+import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
 const originalPlayerSchema = insertPlayerSchema.pick({ name: true }).extend({
@@ -37,16 +39,6 @@ interface PlayerValues {
   imageUrl: File | string | null;
 }
 type UpdatePlayerInput = RouterInputs["player"]["update"];
-type UpdatePlayerInputWithClearName =
-  | UpdatePlayerInput
-  | {
-      type: "original";
-      id: number;
-      updateValues: {
-        type: "nameAndClearImage";
-        name: string;
-      };
-    };
 
 const buildPlayerSchema = (
   player: PlayerType,
@@ -127,7 +119,7 @@ const useUpdateOriginalPlayer = ({
 
     if (clearImageRequested) {
       if (nameChanged) {
-        const combinedUpdateInput: UpdatePlayerInputWithClearName = {
+        const combinedUpdateInput: UpdatePlayerInput = {
           type: "original",
           id: player.id,
           updateValues: {
@@ -201,6 +193,9 @@ const useUpdateSharedPlayer = ({
 
 const useHandleImageUploadAndUpdate = () => {
   const { startUpload } = useUploadThing("imageUploader");
+  const trpc = useTRPC();
+  const deleteImageMutation = useMutation(trpc.image.delete.mutationOptions());
+  const { mutateAsync: deleteImage } = deleteImageMutation;
 
   const handleImageUploadAndUpdate = async ({
     player,
@@ -234,7 +229,16 @@ const useHandleImageUploadAndUpdate = () => {
     if (typeof imageId !== "number") {
       throw new Error("Image upload did not return an imageId");
     }
-    await onUpdate(imageId);
+    try {
+      await onUpdate(imageId);
+    } catch (error) {
+      try {
+        await deleteImage({ id: imageId });
+      } catch (cleanupError) {
+        console.error("Failed to cleanup uploaded player image", cleanupError);
+      }
+      throw error;
+    }
   };
 
   return { handleImageUploadAndUpdate };
@@ -293,6 +297,37 @@ const useEditPlayerSubmit = ({
     handleSubmitValues,
     isUpdatePending: isOriginalUpdatePending || isSharedUpdatePending,
   };
+};
+
+const useEditPlayerForm = ({
+  player,
+  initialImageUrl,
+  handleSubmitValues,
+}: {
+  player: PlayerType;
+  initialImageUrl: string | null;
+  handleSubmitValues: (values: PlayerValues) => Promise<void>;
+}) => {
+  const playerSchema = buildPlayerSchema(player, initialImageUrl);
+
+  return useAppForm({
+    defaultValues:
+      player.type === "original"
+        ? {
+            name: player.name,
+            imageUrl: initialImageUrl as File | string | null,
+          }
+        : {
+            name: player.name,
+            imageUrl: null as File | string | null,
+          },
+    validators: {
+      onSubmit: playerSchema,
+    },
+    onSubmit: async ({ value }) => {
+      await handleSubmitValues(value);
+    },
+  });
 };
 
 const valueIsExistingImage = (
@@ -362,26 +397,10 @@ const PlayerContent = ({
     setIsSubmitting,
     handleMutationSuccess,
   });
-
-  const playerSchema = buildPlayerSchema(player, initialImageUrl);
-
-  const form = useAppForm({
-    defaultValues:
-      player.type === "original"
-        ? {
-            name: player.name,
-            imageUrl: initialImageUrl as File | string | null,
-          }
-        : {
-            name: player.name,
-            imageUrl: null as File | string | null,
-          },
-    validators: {
-      onSubmit: playerSchema,
-    },
-    onSubmit: async ({ value }) => {
-      await handleSubmitValues(value);
-    },
+  const form = useEditPlayerForm({
+    player,
+    initialImageUrl,
+    handleSubmitValues,
   });
 
   const handleClose = () => {

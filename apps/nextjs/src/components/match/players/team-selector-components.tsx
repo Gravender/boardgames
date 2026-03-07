@@ -111,7 +111,7 @@ export const TeamRow = ({
   team: TeamValue;
   teamPlayers: number;
   isEditingName: boolean;
-  editingNameValue?: string;
+  editingNameValue: string;
   onEditingNameValueChange: (value: string) => void;
   onSaveName: () => void;
   nameError?: string;
@@ -192,9 +192,9 @@ export const TeamRow = ({
             }}
           >
             {team.roles.length > 0 ? (
-              <div>
+              <span>
                 {`${team.roles.length} role${team.roles.length !== 1 ? "s" : ""} selected`}
-              </div>
+              </span>
             ) : (
               <span className="text-muted-foreground">No roles selected</span>
             )}

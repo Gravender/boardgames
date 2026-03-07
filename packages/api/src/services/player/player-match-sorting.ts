@@ -158,6 +158,10 @@ export const sortPlayersForMatch = <T extends SortablePlayer>(
   return [...players].sort((a, b) => {
     if (a.score !== b.score) return b.score - a.score;
 
+    if (!a.lastPlayedAt && !b.lastPlayedAt) {
+      return 0;
+    }
+
     if (a.lastPlayedAt && b.lastPlayedAt) {
       if (a.lastPlayedAt.getTime() !== b.lastPlayedAt.getTime()) {
         return b.lastPlayedAt.getTime() - a.lastPlayedAt.getTime();

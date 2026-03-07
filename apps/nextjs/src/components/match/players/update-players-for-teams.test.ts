@@ -274,12 +274,22 @@ describe("updatePlayersForTeams", () => {
         name: "Red",
         roles: [{ id: 1, name: "Leader" }],
       },
+      {
+        id: 20,
+        name: "Blue",
+        roles: [{ id: 1, name: "Leader" }],
+      },
     ];
     const newTeams: Team[] = [
       {
         id: 10,
         name: "Red",
         roles: [{ id: 3, name: "Support" }],
+      },
+      {
+        id: 20,
+        name: "Blue",
+        roles: [{ id: 1, name: "Leader" }],
       },
     ];
 

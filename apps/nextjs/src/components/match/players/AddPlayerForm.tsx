@@ -1,5 +1,7 @@
 "use client";
 
+import { useCallback } from "react";
+
 import { insertPlayerSchema } from "@board-games/db/zodSchema";
 import { fileSchema } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
@@ -14,7 +16,7 @@ import { useAppForm } from "~/hooks/form";
 import { usePlayerCreation } from "./usePlayerCreation";
 
 const addPlayerSchema = insertPlayerSchema.pick({ name: true }).extend({
-  imageUrl: fileSchema,
+  imageFile: fileSchema,
 });
 
 export const AddPlayerForm = ({
@@ -28,27 +30,10 @@ export const AddPlayerForm = ({
   }) => void;
   cancel: () => void;
 }) => {
-  const handleCreatePlayerSuccess = (player: {
-    id: number;
-    name: string;
-    image: { url: string | null } | null;
-  }) => {
-    addMatchPlayer({
-      id: player.id,
-      imageUrl: player.image?.url ?? null,
-      name: player.name,
-    });
-    form.reset();
-  };
-
-  const { handleSubmit } = usePlayerCreation({
-    onCreateSuccess: handleCreatePlayerSuccess,
-  });
-
   const form = useAppForm({
     defaultValues: {
       name: "",
-      imageUrl: null as File | null,
+      imageFile: null as File | null,
     },
     validators: {
       onSubmit: addPlayerSchema,
@@ -56,6 +41,26 @@ export const AddPlayerForm = ({
     onSubmit: async ({ value }) => {
       await handleSubmit(value);
     },
+  });
+
+  const handleCreatePlayerSuccess = useCallback(
+    (player: {
+      id: number;
+      name: string;
+      image: { url: string | null } | null;
+    }) => {
+      addMatchPlayer({
+        id: player.id,
+        imageUrl: player.image?.url ?? null,
+        name: player.name,
+      });
+      form.reset();
+    },
+    [addMatchPlayer, form],
+  );
+
+  const { handleSubmit } = usePlayerCreation({
+    onCreateSuccess: handleCreatePlayerSuccess,
   });
 
   return (
@@ -79,7 +84,7 @@ export const AddPlayerForm = ({
           )}
         </form.AppField>
 
-        <form.AppField name="imageUrl">
+        <form.AppField name="imageFile">
           {(field) => (
             <field.FileField
               label="Image"

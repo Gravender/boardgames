@@ -567,7 +567,7 @@ export const AddPlayersDialogForm = ({
 
               <DialogFooter className="gap-2 pt-2">
                 <Button
-                  type="reset"
+                  type="button"
                   variant="secondary"
                   onClick={() => cancel()}
                 >
