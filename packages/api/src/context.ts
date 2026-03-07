@@ -21,7 +21,6 @@ type PosthogContext = RouterContext["posthog"];
  * const caller = createCallerFactory(appRouter)(ctx);
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/require-await
 export async function createContextInner(opts?: {
   session?: RouterContext["session"] | null;
   posthog?: PostHog;

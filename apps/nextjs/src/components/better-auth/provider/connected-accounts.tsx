@@ -31,8 +31,8 @@ export function ProfileConnectedAccounts() {
         <CardContent className="grid gap-4">
           {isLoading ? (
             <>
-              {Array.from({ length: 2 }).map((_, index) => (
-                <CellSkeleton key={index} />
+              {["account-skeleton-1", "account-skeleton-2"].map((itemKey) => (
+                <CellSkeleton key={itemKey} />
               ))}
             </>
           ) : (

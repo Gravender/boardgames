@@ -206,7 +206,6 @@ export default function PlayerRequestPage({
             }),
           };
         }
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (pGame.type === "shared") {
           return {
             type: "shared" as const,

@@ -279,17 +279,19 @@ const getStreakIcon = (type: "win" | "loss") => {
 };
 const RECENT_FORM_COUNT = 5;
 const getFormIndicator = (form: ("win" | "loss")[]) => {
-  return form
-    .slice(-RECENT_FORM_COUNT)
-    .map((result, index) => (
+  const counts = { win: 0, loss: 0 };
+  return form.slice(-RECENT_FORM_COUNT).map((result) => {
+    counts[result]++;
+    return (
       <div
-        key={index}
+        key={`${result}-${counts[result]}`}
         className={`h-2 w-2 rounded-full ${result === "win" ? "bg-green-500" : "bg-red-500"}`}
         title={result === "win" ? "Win" : "Loss"}
         role="img"
         aria-label={result === "win" ? "Win" : "Loss"}
       />
-    ));
+    );
+  });
 };
 
 const getRankBadge = (rank: number) => {

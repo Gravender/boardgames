@@ -48,30 +48,28 @@ export default async function Page() {
             className="col-span-1"
             title="Match Placements"
             description="Distribution of your placements in matches"
-            children={
-              <Suspense
-                fallback={
-                  <div className="bg-card-foreground/50 h-96 w-full animate-pulse rounded-lg" />
-                }
-              >
-                <PlacementsChart />
-              </Suspense>
-            }
-          />
+          >
+            <Suspense
+              fallback={
+                <div className="bg-card-foreground/50 h-96 w-full animate-pulse rounded-lg" />
+              }
+            >
+              <PlacementsChart />
+            </Suspense>
+          </ChartCard>
           <ChartCard
             className="col-span-1"
             title="Days of the Week Played"
             description="When you play the most during the week"
-            children={
-              <Suspense
-                fallback={
-                  <div className="bg-card-foreground/50 h-96 w-full animate-pulse rounded-lg" />
-                }
-              >
-                <DaysPlayedChart />
-              </Suspense>
-            }
-          />
+          >
+            <Suspense
+              fallback={
+                <div className="bg-card-foreground/50 h-96 w-full animate-pulse rounded-lg" />
+              }
+            >
+              <DaysPlayedChart />
+            </Suspense>
+          </ChartCard>
           <Suspense
             fallback={
               <div className="bg-card-foreground/50 h-96 w-full animate-pulse rounded-lg" />

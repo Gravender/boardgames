@@ -30,10 +30,10 @@ export const AddRoundsForm = withFieldGroup({
             return (
               <>
                 <div className="flex max-h-[25vh] flex-col gap-2 overflow-auto py-1">
-                  {field.state.value.map((_, index) => {
+                  {field.state.value.map((round, index) => {
                     return (
                       <div
-                        key={index}
+                        key={`round-${round.order ?? round.name}`}
                         className="flex items-center justify-between gap-2"
                       >
                         <div className="flex items-center gap-2">

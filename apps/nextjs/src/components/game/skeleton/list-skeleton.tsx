@@ -22,8 +22,15 @@ export function GamesListSkeleton() {
 
         <div className="p-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-[300px] rounded-lg" />
+            {[
+              "list-skeleton-1",
+              "list-skeleton-2",
+              "list-skeleton-3",
+              "list-skeleton-4",
+              "list-skeleton-5",
+              "list-skeleton-6",
+            ].map((itemKey) => (
+              <Skeleton key={itemKey} className="h-[300px] rounded-lg" />
             ))}
           </div>
         </div>

@@ -55,6 +55,16 @@ const getPredominantClassification = (breakdown: {
   return "unique";
 };
 
+const totalPlayerMatches = (effect: RolePresencePlayerEffect): number =>
+  (effect.self?.matches ?? 0) +
+  (effect.sameTeam?.matches ?? 0) +
+  (effect.opposingTeam?.matches ?? 0);
+
+const totalRoleMatches = (effect: RolePresenceRoleEffect): number =>
+  (effect.samePlayer?.matches ?? 0) +
+  (effect.sameTeam?.matches ?? 0) +
+  (effect.opposingTeam?.matches ?? 0);
+
 // ─── Collect all distinct roles from match map ──────────────────
 
 const collectAllRoles = (
@@ -259,11 +269,6 @@ export const computeRolePresenceEffects = (
     }
 
     // Sort by total matches across all conditions (descending)
-    const totalPlayerMatches = (e: RolePresencePlayerEffect): number =>
-      (e.self?.matches ?? 0) +
-      (e.sameTeam?.matches ?? 0) +
-      (e.opposingTeam?.matches ?? 0);
-
     playerEffects.sort((a, b) => totalPlayerMatches(b) - totalPlayerMatches(a));
 
     // ── Role-to-role effects ──────────────────────────────────────
@@ -386,11 +391,6 @@ export const computeRolePresenceEffects = (
     }
 
     // Sort by total matches across all conditions (descending)
-    const totalRoleMatches = (e: RolePresenceRoleEffect): number =>
-      (e.samePlayer?.matches ?? 0) +
-      (e.sameTeam?.matches ?? 0) +
-      (e.opposingTeam?.matches ?? 0);
-
     roleEffects.sort((a, b) => totalRoleMatches(b) - totalRoleMatches(a));
 
     if (matchesWithRole === 0) continue;

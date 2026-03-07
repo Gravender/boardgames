@@ -4,9 +4,7 @@ import { env } from "../env";
 import pc from "./pc";
 
 export class Logger {
-  constructor(private readonly context: string) {
-    this.context = context;
-  }
+  constructor(private readonly context: string) {}
 
   private static logMessage(
     type: "log" | "debug" | "info" | "error",

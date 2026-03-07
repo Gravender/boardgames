@@ -36,7 +36,6 @@ class MatchSetupService {
       );
       return returnedGame.id;
     }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (gameInput.type === "shared") {
       const returnedSharedGame = await gameRepository.getSharedGame(
         {
@@ -117,7 +116,6 @@ class MatchSetupService {
         tx,
       });
     }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (scoresheetInput.type === "shared") {
       return this.resolveSharedScoresheet({
         scoresheetInput,
@@ -336,7 +334,6 @@ class MatchSetupService {
       return returnedLocation.id;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (locationInput.type === "shared") {
       const returnedSharedLocation = await locationRepository.getShared(
         {

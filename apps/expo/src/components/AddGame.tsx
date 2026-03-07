@@ -144,6 +144,18 @@ const formSchema = z.object({
   scoresheet: scoresheetSchema.or(z.null()),
   rounds: roundsSchema,
 });
+
+const createNumberChangeHandler = (onChange: (...event: any[]) => void) => {
+  return (text: string) => {
+    if (text === "") {
+      onChange(null);
+      return;
+    }
+
+    onChange(parseInt(text));
+  };
+};
+
 function AddGameContent({
   setIsOpen,
 }: {
@@ -303,20 +315,8 @@ function AddGameContent({
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onChangeNumberText = (onChange: (...event: any[]) => void) => {
-    return (text: string) => {
-      if (text === "") {
-        onChange(null);
-      } else {
-        onChange(parseInt(text));
-      }
-    };
-  };
-
   async function pickImage() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
     if (status !== "granted") {
       Alert.alert(
         "Permission required",
@@ -408,7 +408,6 @@ function AddGameContent({
                 <FormLabel>Owned by</FormLabel>
                 <FormControl>
                   <Checkbox
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                     checked={field.value ?? false}
                     onCheckedChange={field.onChange}
                   />
@@ -449,7 +448,9 @@ function AddGameContent({
                             <Input
                               placeholder="Min"
                               keyboardType="numeric"
-                              onChangeText={onChangeNumberText(field.onChange)}
+                              onChangeText={createNumberChangeHandler(
+                                field.onChange,
+                              )}
                               value={
                                 field.value
                                   ? `${field.value.toString()}`
@@ -471,7 +472,9 @@ function AddGameContent({
                             <Input
                               placeholder="Max"
                               keyboardType="numeric"
-                              onChangeText={onChangeNumberText(field.onChange)}
+                              onChangeText={createNumberChangeHandler(
+                                field.onChange,
+                              )}
                               value={
                                 field.value
                                   ? `${field.value.toString()}`
@@ -519,7 +522,9 @@ function AddGameContent({
                             <Input
                               placeholder="Min"
                               keyboardType="numeric"
-                              onChangeText={onChangeNumberText(field.onChange)}
+                              onChangeText={createNumberChangeHandler(
+                                field.onChange,
+                              )}
                               value={
                                 field.value
                                   ? `${field.value.toString()}`
@@ -541,7 +546,9 @@ function AddGameContent({
                             <Input
                               placeholder="Max"
                               keyboardType="numeric"
-                              onChangeText={onChangeNumberText(field.onChange)}
+                              onChangeText={createNumberChangeHandler(
+                                field.onChange,
+                              )}
                               value={
                                 field.value
                                   ? `${field.value.toString()}`
@@ -589,7 +596,9 @@ function AddGameContent({
                             <Input
                               placeholder="Year Published"
                               keyboardType="numeric"
-                              onChangeText={onChangeNumberText(field.onChange)}
+                              onChangeText={createNumberChangeHandler(
+                                field.onChange,
+                              )}
                               value={
                                 field.value
                                   ? `${field.value.toString()}`

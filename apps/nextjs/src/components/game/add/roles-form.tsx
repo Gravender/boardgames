@@ -20,7 +20,6 @@ import { Textarea } from "@board-games/ui/textarea";
 
 import { withFieldGroup } from "~/hooks/form";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const rolesSchema = z.array(editRoleSchema);
 type rolesSchemaType = z.infer<typeof rolesSchema>;
 const defaultValues: {
@@ -213,7 +212,6 @@ export const RolesForm = withFieldGroup({
                             const canEdit =
                               role.type === "new" ||
                               role.type === "original" ||
-                              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                               (role.type === "shared" &&
                                 role.permission === "edit");
 

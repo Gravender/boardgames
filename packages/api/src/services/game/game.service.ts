@@ -127,11 +127,12 @@ class GameService {
               "Failed to create scoresheet",
             );
 
-            const rounds = inputScoresheet.rounds.map((round, index) => ({
-              ...round,
-              scoresheetId: createdScoresheet.id,
-              order: index + 1,
-            }));
+            const rounds = inputScoresheet.rounds.map((round, index) =>
+              Object.assign(round, {
+                scoresheetId: createdScoresheet.id,
+                order: index + 1,
+              }),
+            );
             if (rounds.length > 0) {
               const createdRounds = await roundRepository.insertRounds({
                 input: rounds,

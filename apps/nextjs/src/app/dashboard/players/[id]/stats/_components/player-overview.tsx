@@ -222,8 +222,8 @@ export function PlayerOverview({ player }: { player: Player }) {
                     `${name} ${(percent * 100).toFixed(0)}%`
                   }
                 >
-                  {winLossData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  {winLossData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
                   ))}
                 </Pie>
                 <ChartTooltip content={<ChartTooltipContent />} />
@@ -260,8 +260,8 @@ export function PlayerOverview({ player }: { player: Player }) {
                 <YAxis />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="count" name="Games">
-                  {placementData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  {placementData.map((entry) => (
+                    <Cell key={entry.placement} fill={entry.color} />
                   ))}
                 </Bar>
               </BarChart>

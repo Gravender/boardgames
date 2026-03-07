@@ -12,9 +12,11 @@ export default function Page() {
           fallback={
             <div className="relative container mx-auto h-[90vh] max-w-3xl px-4">
               <div className="flex flex-col gap-2">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <GroupSkeleton key={i} />
-                ))}
+                {["group-1", "group-2", "group-3", "group-4", "group-5"].map(
+                  (itemKey) => (
+                    <GroupSkeleton key={itemKey} />
+                  ),
+                )}
               </div>
             </div>
           }

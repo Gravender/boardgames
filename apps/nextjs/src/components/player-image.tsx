@@ -60,7 +60,6 @@ export function PlayerImage({
         alt={alt}
       />
       {/* TODO: fix this bug */}
-      {/*  eslint-disable-next-line react-hooks/static-components */}
       <Inner />
       {children}
     </Avatar>

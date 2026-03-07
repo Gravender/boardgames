@@ -72,8 +72,7 @@ export default function DaysPlayedChart() {
           <ChartTooltip
             content={
               <ChartTooltipContent
-                //eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                formatter={(value) => [`${value} matches`]}
+                formatter={(value) => [`${String(value)} matches`]}
               />
             }
           />

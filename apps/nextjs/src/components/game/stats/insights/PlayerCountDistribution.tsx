@@ -56,15 +56,12 @@ const GameHistogramCard = ({ chartData }: { chartData: ChartDataEntry[] }) => (
               content={
                 <ChartTooltipContent
                   formatter={(value, _name, item) => {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     const percentage = item.payload.percentage as number;
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     const winRate = item.payload.winRate as number | null;
                     const winRateLabel =
                       winRate !== null
                         ? ` · ${formatWinRate(winRate)} win rate`
                         : "";
-                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     return `${value} matches (${percentage}%)${winRateLabel}`;
                   }}
                 />

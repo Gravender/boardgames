@@ -51,26 +51,27 @@ export function ShareMatchResults(input: { match: MatchInput }) {
   };
   const playersWithoutTeams = players
     .filter((player) => player.teamId === null)
-    .map((player) => ({
-      ...player,
-      performance: calculatePerformance(player),
-      teamType: "Player" as const,
-    }));
+    .map((player) =>
+      Object.assign(player, {
+        performance: calculatePerformance(player),
+        teamType: "Player" as const,
+      }),
+    );
   const teamsWithTeams = teams
     .map((team) => {
       const teamPlayers = players.filter((player) => player.teamId === team.id);
       const [firstTeamPlayer] = teamPlayers;
-      return {
-        ...team,
-        players: teamPlayers.map((player) => ({
-          ...player,
-          performance: calculatePerformance(player),
-        })),
+      return Object.assign(team, {
+        players: teamPlayers.map((player) =>
+          Object.assign({}, player, {
+            performance: calculatePerformance(player),
+          }),
+        ),
         placement: firstTeamPlayer?.placement ?? null,
         score: firstTeamPlayer?.score ?? 0,
         winner: firstTeamPlayer?.winner ?? false,
         teamType: "Team" as const,
-      };
+      });
     })
     .filter((team) => team.players.length > 0);
   const sortedPlayersAndTeams: (
@@ -381,27 +382,29 @@ export function ShareMatchResultsSkeleton() {
         <CardTitle>Match Results</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-2 p-2 pt-0 sm:p-6">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div
-            key={i}
-            className={cn("flex items-center rounded-lg border p-3")}
-          >
-            <Skeleton className="mr-4 h-8 w-8" />
+        {["result-skeleton-1", "result-skeleton-2", "result-skeleton-3"].map(
+          (itemKey) => (
+            <div
+              key={itemKey}
+              className={cn("flex items-center rounded-lg border p-3")}
+            >
+              <Skeleton className="mr-4 h-8 w-8" />
 
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <Skeleton className="h-4 w-32" />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Skeleton className="h-4 w-32" />
 
-                <Badge
-                  variant="outline"
-                  className="bg-accent text-foreground w-4 animate-pulse rounded-md text-sm font-medium"
-                />
+                  <Badge
+                    variant="outline"
+                    className="bg-accent text-foreground w-4 animate-pulse rounded-md text-sm font-medium"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center gap-3" />
-          </div>
-        ))}
+              <div className="flex items-center gap-3" />
+            </div>
+          ),
+        )}
       </CardContent>
     </Card>
   );

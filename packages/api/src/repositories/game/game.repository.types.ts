@@ -17,7 +17,6 @@ export interface CreateGameArgs {
   userId: string;
   tx?: TransactionType;
 }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const createGameRoleInput = insertGameRoleSchema.omit({
   id: true,
   createdAt: true,

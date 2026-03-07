@@ -420,7 +420,7 @@ export const computeCoreStats = (
       }
       return b.winRate - a.winRate;
     })
-    .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+    .map((entry, idx) => Object.assign({}, entry, { rank: idx + 1 }));
 
   // Build pairwise stats
   const pairwiseStats: PairwiseStat[] = [];

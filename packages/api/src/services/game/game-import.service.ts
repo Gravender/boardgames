@@ -477,7 +477,7 @@ class GameImportService {
     tx: TransactionType;
   }): Promise<PlayerRecord[]> {
     const { participants, currentPlayers, userId, tx } = args;
-    let updatedPlayers = currentPlayers;
+    const updatedPlayers = [...currentPlayers];
 
     const uniqueNames = [...new Set(participants.map((p) => p.name))];
     for (const name of uniqueNames) {
@@ -491,7 +491,7 @@ class GameImportService {
           { userId, value: { playerName: name } },
           "Failed to create player",
         );
-        updatedPlayers = [...updatedPlayers, newPlayer];
+        updatedPlayers.push(newPlayer);
       }
     }
 

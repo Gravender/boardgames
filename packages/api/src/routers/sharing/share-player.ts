@@ -254,10 +254,7 @@ export const sharePlayerRouter = {
             if (!foundGameStats) {
               return null;
             }
-            return {
-              ...foundGameStats,
-              ...game,
-            };
+            return Object.assign(foundGameStats, game);
           })
           .filter((game) => game !== null),
       };

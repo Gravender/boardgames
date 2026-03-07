@@ -38,8 +38,14 @@ export default async function Page({ params }: Props) {
             <div className="relative container mx-auto h-[90vh] max-w-3xl px-4">
               <Table className="flex flex-col gap-2">
                 <TableBody>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <MatchSkeleton key={i} />
+                  {[
+                    "location-match-1",
+                    "location-match-2",
+                    "location-match-3",
+                    "location-match-4",
+                    "location-match-5",
+                  ].map((itemKey) => (
+                    <MatchSkeleton key={itemKey} />
                   ))}
                 </TableBody>
               </Table>

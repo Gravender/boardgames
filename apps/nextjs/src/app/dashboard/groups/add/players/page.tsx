@@ -9,10 +9,9 @@ export default async function Page() {
   return (
     <HydrateClient>
       <PlayersTable
-        data={players.map((player) => ({
-          ...player,
-          matches: Number(player.matches),
-        }))}
+        data={players.map((player) =>
+          Object.assign(player, { matches: Number(player.matches) }),
+        )}
       />
       ;
     </HydrateClient>

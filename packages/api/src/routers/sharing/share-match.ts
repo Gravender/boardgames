@@ -14,6 +14,18 @@ import {
 
 import { protectedUserProcedure } from "../../trpc";
 
+type SharedMatchSummaryAccPlayer = {
+  type: "original" | "shared";
+  name: string;
+  scores: number[];
+  dates: { matchId: number; date: Date; createdAt: Date }[];
+  placements: Record<number, number>;
+  wins: number;
+  id: number;
+  playerId: number;
+  plays: number;
+};
+
 export const shareMatchRouter = {
   getSharedMatch: protectedUserProcedure
     .input(selectSharedMatchSchema.pick({ id: true }))
@@ -471,19 +483,7 @@ export const shareMatchRouter = {
         return 0;
       });
 
-      interface AccPlayer {
-        type: "original" | "shared";
-        name: string;
-        scores: number[]; // from matches that contain scores
-        dates: { matchId: number; date: Date; createdAt: Date }[];
-        placements: Record<number, number>;
-        wins: number;
-        id: number;
-        playerId: number;
-        plays: number;
-      }
-
-      const playerStats: Record<number, AccPlayer> = {};
+      const playerStats: Record<number, SharedMatchSummaryAccPlayer> = {};
 
       filteredPreviousMatches.forEach((match) => {
         if (match.finished) {
@@ -552,13 +552,12 @@ export const shareMatchRouter = {
           }
         });
 
-        return {
-          ...player,
+        return Object.assign(player, {
           firstGame: firstGame?.matchId === returnedSharedMatch.matchId,
           dates: player.dates.map((date) => {
             return date.date;
           }),
-        };
+        });
       });
       return {
         id: returnedSharedMatch.id,

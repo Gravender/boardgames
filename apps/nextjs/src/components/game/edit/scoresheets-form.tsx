@@ -93,9 +93,7 @@ export const ScoresheetsForm = withForm({
                                       : true;
 
                                     return (
-                                      <div
-                                        key={`${index}-${scoresheet.scoresheet.id}`}
-                                      >
+                                      <div key={scoresheet.scoresheet.id}>
                                         <form.AppField
                                           name={`scoresheets[${index}]`}
                                         >

@@ -62,7 +62,6 @@ export function createUploadRouter(auth: Auth) {
           req.headers instanceof Headers
             ? req.headers
             : new Headers(
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 Object.entries(req.headers ?? {}).flatMap(([key, value]) =>
                   Array.isArray(value)
                     ? value.map((v) => [key, v] as [string, string])
@@ -73,7 +72,6 @@ export function createUploadRouter(auth: Auth) {
               );
 
         const session = await auth.api.getSession({ headers });
-        // eslint-disable-next-line @typescript-eslint/only-throw-error
         if (!session) throw new UploadThingError("Unauthorized");
         return { userId: session.user.id, usageType: input.usageType, input };
       })
@@ -92,7 +90,6 @@ export function createUploadRouter(auth: Auth) {
             })
             .returning();
           if (!insertedImage) {
-            // eslint-disable-next-line @typescript-eslint/only-throw-error
             throw new UploadThingError("Image not added to database");
           }
           if (metadata.input.usageType === "match") {
@@ -103,7 +100,6 @@ export function createUploadRouter(auth: Auth) {
               },
             });
             if (!returnedMatch) {
-              // eslint-disable-next-line @typescript-eslint/only-throw-error
               throw new UploadThingError("Match not found");
             }
             const [returnedMatchImage] = await tx
@@ -117,7 +113,6 @@ export function createUploadRouter(auth: Auth) {
               })
               .returning();
             if (!returnedMatchImage) {
-              // eslint-disable-next-line @typescript-eslint/only-throw-error
               throw new UploadThingError("MatchImage not added to database");
             }
           }

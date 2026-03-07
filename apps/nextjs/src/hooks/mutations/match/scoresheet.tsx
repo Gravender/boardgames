@@ -74,7 +74,6 @@ export const useDurationMutation = (input: MatchInput) => {
           trpc.match.getMatch.queryOptions(input).queryKey,
           newData,
         );
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       } else if (action === "reset") {
         const newData = {
           ...prevMatch,
@@ -589,7 +588,6 @@ export const useUpdateMatchDetailsMutation = (input: MatchInput) => {
               trpc.match.getMatchPlayersAndTeams.queryOptions(input).queryKey,
               newData,
             );
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           } else if (newDetails.type === "team") {
             const newData = {
               ...prevData,

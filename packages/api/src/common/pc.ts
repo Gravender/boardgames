@@ -63,7 +63,6 @@ void (async () => {
   const tty = await import("tty");
   const isTTY = tty.isatty(1);
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const argv: string[] = process.argv ?? [],
     env: NodeJS.ProcessEnv = process.env;
   isColorSupported =

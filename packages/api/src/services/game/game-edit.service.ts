@@ -364,7 +364,6 @@ class GameEditService {
       return { imageId: imageInput.imageId, pendingDeletions };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (imageInput.type === "svg") {
       const existingSvg = await imageRepository.findFirst(
         {

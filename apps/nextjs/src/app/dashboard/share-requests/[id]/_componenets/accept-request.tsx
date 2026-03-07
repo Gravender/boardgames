@@ -19,7 +19,6 @@ export default function ShareRequestPage({ requestId }: { requestId: number }) {
   if (shareRequest.itemType === "match") {
     return <MatchRequestPage match={shareRequest} requestId={requestId} />;
   }
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (shareRequest.itemType === "player") {
     return <PlayerRequestPage player={shareRequest} requestId={requestId} />;
   } else {

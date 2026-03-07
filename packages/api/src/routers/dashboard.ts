@@ -48,7 +48,6 @@ export const dashboardRouter = {
       };
 
       for (let i = 0; i < input.segments.length; i++) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const seg = input.segments[i]!;
         href += `/${seg}`;
 

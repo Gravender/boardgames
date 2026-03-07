@@ -289,12 +289,15 @@ class GameStatsService {
       }
     }
 
-    const players = Array.from(acc.values()).map((p) => ({
-      ...p,
-      coopWinRate: p.coopMatches > 0 ? p.coopWins / p.coopMatches : 0,
-      competitiveWinRate:
-        p.competitiveMatches > 0 ? p.competitiveWins / p.competitiveMatches : 0,
-    }));
+    const players = Array.from(acc.values()).map((p) =>
+      Object.assign({}, p, {
+        coopWinRate: p.coopMatches > 0 ? p.coopWins / p.coopMatches : 0,
+        competitiveWinRate:
+          p.competitiveMatches > 0
+            ? p.competitiveWins / p.competitiveMatches
+            : 0,
+      }),
+    );
 
     return { players };
   }

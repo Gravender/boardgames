@@ -223,17 +223,23 @@ export function PlayerTrends({ player }: { player: Player }) {
               <div className="rounded-lg border p-4">
                 <div className="mb-2 text-sm font-medium">Recent Matches</div>
                 <div className="flex items-center gap-2">
-                  {player.stats.recentForm.slice(-10).map((result, index) => (
-                    <div
-                      key={index}
-                      className={`flex h-6 w-6 items-center justify-center rounded-full text-xs text-white ${
-                        result === "win" ? "bg-green-500" : "bg-red-500"
-                      }`}
-                      title={result === "win" ? "Win" : "Loss"}
-                    >
-                      {result === "win" ? "W" : "L"}
-                    </div>
-                  ))}
+                  {(() => {
+                    const counts = { win: 0, loss: 0 };
+                    return player.stats.recentForm.slice(-10).map((result) => {
+                      counts[result]++;
+                      return (
+                        <div
+                          key={`${result}-${counts[result]}`}
+                          className={`flex h-6 w-6 items-center justify-center rounded-full text-xs text-white ${
+                            result === "win" ? "bg-green-500" : "bg-red-500"
+                          }`}
+                          title={result === "win" ? "Win" : "Loss"}
+                        >
+                          {result === "win" ? "W" : "L"}
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             </div>
@@ -264,8 +270,8 @@ export function PlayerTrends({ player }: { player: Player }) {
                     `${name} ${(percent * 100).toFixed(0)}%`
                   }
                 >
-                  {pieChartData.map((data, index) => (
-                    <Cell key={`cell-${index}`} fill={data.fill} />
+                  {pieChartData.map((data) => (
+                    <Cell key={data.name} fill={data.fill} />
                   ))}
                 </Pie>
 
@@ -273,7 +279,6 @@ export function PlayerTrends({ player }: { player: Player }) {
                   content={
                     <ChartTooltipContent
                       formatter={(value, name, props) => [
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         `${props.payload.fullName}: ${formatDuration(Number(value))}`,
                       ]}
                     />

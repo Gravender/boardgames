@@ -53,7 +53,6 @@ class MatchService {
           gameId,
           tx,
         });
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (matchScoresheet.type !== "Match") {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -237,7 +236,6 @@ class MatchService {
         ctx: args.ctx,
       });
     }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (args.input.type === "shared") {
       return matchEditSharedService.editSharedMatch({
         input: args.input,

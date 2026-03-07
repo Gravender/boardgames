@@ -1,5 +1,4 @@
 // Injected content via Sentry wizard below
-import { fileURLToPath } from "url";
 import { withSentryConfig } from "@sentry/nextjs";
 import { createJiti } from "jiti";
 

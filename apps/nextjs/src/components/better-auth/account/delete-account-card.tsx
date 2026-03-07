@@ -90,8 +90,7 @@ function DeleteAccountDialog({
   const user = sessionData?.user;
 
   const isFresh = session
-    ? // eslint-disable-next-line react-hooks/purity
-      Date.now() - new Date(session.createdAt).getTime() < 60 * 60 * 24 * 1000
+    ? Date.now() - new Date(session.createdAt).getTime() < 60 * 60 * 24 * 1000
     : false;
   const credentialsLinked = accounts.some(
     (acc) => acc.providerId === "credential",
@@ -114,7 +113,6 @@ function DeleteAccountDialog({
     const params = {} as Record<string, string>;
 
     if (credentialsLinked) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       params.password = password!;
     } else if (!isFresh) {
       await authClient.signOut();

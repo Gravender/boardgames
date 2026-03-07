@@ -35,8 +35,8 @@ export const SessionsCard = () => {
         </CardHeader>
         <CardContent className="grid gap-4">
           {isLoading
-            ? Array.from({ length: 2 }).map((_, index) => (
-                <CellSkeleton key={index} />
+            ? ["session-skeleton-1", "session-skeleton-2"].map((itemKey) => (
+                <CellSkeleton key={itemKey} />
               ))
             : sessions?.map((session) => (
                 <SessionCell key={session.id} session={session} />

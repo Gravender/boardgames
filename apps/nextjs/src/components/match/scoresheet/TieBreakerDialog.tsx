@@ -328,7 +328,6 @@ function Content({
                             <PopoverContent>
                               <FormField
                                 control={form.control}
-                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                 name={`players.${indexes.get(player.matchPlayerId)!}.placement`}
                                 render={({ field }) => (
                                   <FormItem>
@@ -351,7 +350,6 @@ function Content({
 
                                           if (player.teamId === null) {
                                             update(
-                                              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                               indexes.get(
                                                 player.matchPlayerId,
                                               )!,

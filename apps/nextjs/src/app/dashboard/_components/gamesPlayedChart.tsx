@@ -33,18 +33,19 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+const trendCalculate = (numbers: number[]) => {
+  const last = numbers[numbers.length - 1];
+  const secondLast = numbers[numbers.length - 2];
+  if (!last || !secondLast) return 0;
+  if (secondLast <= 0) return 0;
+  return ((last - secondLast) / secondLast) * 100;
+};
+
 export function PlayedChart() {
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(
     trpc.dashboard.getMatchesByMonth.queryOptions(),
   );
-  const trendCalculate = (numbers: number[]) => {
-    const last = numbers[numbers.length - 1];
-    const secondLast = numbers[numbers.length - 2];
-    if (!last || !secondLast) return 0;
-    if (secondLast <= 0) return 0;
-    return ((last - secondLast) / secondLast) * 100;
-  };
   const trend = trendCalculate(data.months.map((month) => month.thisYear));
 
   return (

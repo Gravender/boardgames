@@ -23,7 +23,6 @@ export interface Player {
   teamId: number | null;
   placement: number | null;
 }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const teamSchema = selectTeamSchema.pick({ id: true, name: true });
 export interface PlayerMatch {
   id: number;
@@ -269,31 +268,33 @@ export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
     >,
   );
   const playerStats = Object.values(players)
-    .map((player) => ({
-      ...player,
-      winRate: player.wins / player.plays,
-      gameStats: Object.values(player.gameStats)
-        .map((gameStats) => ({
-          ...gameStats,
-          winRate: safeDivide(gameStats.wins, gameStats.plays),
-          coopWinRate: safeDivide(gameStats.coopWins, gameStats.coopPlays),
-          competitiveWinRate: safeDivide(
-            gameStats.competitiveWins,
-            gameStats.competitivePlays,
-          ),
-          averageScore:
-            gameStats.scores.length > 0
-              ? gameStats.scores.reduce((acc, cur) => acc + cur, 0) /
-                gameStats.scores.length
-              : null,
-        }))
-        .toSorted((a, b) => {
-          if (a.plays !== b.plays) {
-            return b.plays - a.plays;
-          }
-          return b.winRate - a.winRate;
-        }),
-    }))
+    .map((player) =>
+      Object.assign({}, player, {
+        winRate: player.wins / player.plays,
+        gameStats: Object.values(player.gameStats)
+          .map((gameStats) =>
+            Object.assign({}, gameStats, {
+              winRate: safeDivide(gameStats.wins, gameStats.plays),
+              coopWinRate: safeDivide(gameStats.coopWins, gameStats.coopPlays),
+              competitiveWinRate: safeDivide(
+                gameStats.competitiveWins,
+                gameStats.competitivePlays,
+              ),
+              averageScore:
+                gameStats.scores.length > 0
+                  ? gameStats.scores.reduce((acc, cur) => acc + cur, 0) /
+                    gameStats.scores.length
+                  : null,
+            }),
+          )
+          .toSorted((a, b) => {
+            if (a.plays !== b.plays) {
+              return b.plays - a.plays;
+            }
+            return b.winRate - a.winRate;
+          }),
+      }),
+    )
     .toSorted((a, b) => {
       if (a.plays !== b.plays) {
         return b.plays - a.plays;
@@ -566,10 +567,11 @@ export function headToHeadStats(
     >,
   );
 
-  return Object.values(headToHead).map((entry) => ({
-    ...entry,
-    games: Object.values(entry.games),
-  }));
+  return Object.values(headToHead).map((entry) =>
+    Object.assign({}, entry, {
+      games: Object.values(entry.games),
+    }),
+  );
 }
 const createGame = (
   match: PlayerMatch,
@@ -622,7 +624,6 @@ export function getTeamStats(
     const current = match.players.find(
       (p) => p.id === currentPlayer.id && p.type === currentPlayer.type,
     );
-    // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
     if (current === undefined || current.teamId === null) continue;
 
     // Only consider matches where player had teammates

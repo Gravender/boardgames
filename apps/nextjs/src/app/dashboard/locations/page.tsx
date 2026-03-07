@@ -9,7 +9,6 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/map-pin.ico" }],
 };
 
-// eslint-disable-next-line @typescript-eslint/require-await
 export default async function Page() {
   void prefetch(trpc.location.getLocations.queryOptions());
   return (

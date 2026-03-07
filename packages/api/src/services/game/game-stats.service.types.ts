@@ -132,7 +132,6 @@ const parenRoundSchema = baseRoundSchema.extend({
   id: z.number(),
 });
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getGameScoresheetStatsScoreSheet = z.array(
   z.discriminatedUnion("type", [
     scoreSheetSchema.safeExtend({

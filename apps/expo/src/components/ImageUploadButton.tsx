@@ -55,7 +55,6 @@ export default function ImageUploadButton() {
 
   async function pickImage() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
     if (status !== "granted") {
       Alert.alert(
         "Permission required",

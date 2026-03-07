@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 import ShareRequestsPage from "./_components/share-requests";
 
-// eslint-disable-next-line @typescript-eslint/require-await
 export default async function Page() {
   prefetch(trpc.sharing.getIncomingShareRequests.queryOptions());
   prefetch(trpc.sharing.getOutgoingShareRequests.queryOptions());

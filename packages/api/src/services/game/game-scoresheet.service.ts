@@ -227,14 +227,16 @@ class GameScoresheetService {
           tx,
         );
         return [
-          ...originalScoresheets.map((s) => ({
-            ...mapOriginalScoresheetBase(s),
-            rounds: s.rounds.map(mapRound),
-          })),
-          ...sharedScoresheets.map((s) => ({
-            ...mapSharedScoresheetBase(s),
-            rounds: s.sharedRounds.map((sr) => mapRound(sr.round)),
-          })),
+          ...originalScoresheets.map((s) =>
+            Object.assign({}, mapOriginalScoresheetBase(s), {
+              rounds: s.rounds.map(mapRound),
+            }),
+          ),
+          ...sharedScoresheets.map((s) =>
+            Object.assign({}, mapSharedScoresheetBase(s), {
+              rounds: s.sharedRounds.map((sr) => mapRound(sr.round)),
+            }),
+          ),
         ].toSorted(scoresheetSortComparator);
       }
 
@@ -250,10 +252,11 @@ class GameScoresheetService {
         tx,
       );
       return sharedScoresheets
-        .map((s) => ({
-          ...mapSharedScoresheetBase(s),
-          rounds: s.sharedRounds.map((sr) => mapRound(sr.round)),
-        }))
+        .map((s) =>
+          Object.assign({}, mapSharedScoresheetBase(s), {
+            rounds: s.sharedRounds.map((sr) => mapRound(sr.round)),
+          }),
+        )
         .toSorted(scoresheetSortComparator);
     });
   }

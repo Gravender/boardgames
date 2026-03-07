@@ -33,8 +33,10 @@ const FormField = <
 >({
   ...props
 }: ControllerProps<TFieldValues, TName>) => {
+  const value = React.useMemo(() => ({ name: props.name }), [props.name]);
+
   return (
-    <FormFieldContext.Provider value={{ name: props.name }}>
+    <FormFieldContext.Provider value={value}>
       <Controller {...props} />
     </FormFieldContext.Provider>
   );
@@ -47,7 +49,6 @@ const useFormField = () => {
 
   const fieldState = getFieldState(fieldContext.name, formState);
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!fieldContext) {
     throw new Error("useFormField should be used within <FormField>");
   }
@@ -77,9 +78,10 @@ const FormItem = React.forwardRef<
   React.ComponentProps<typeof View>
 >(({ className, ...props }, ref) => {
   const id = React.useId();
+  const value = React.useMemo(() => ({ id }), [id]);
 
   return (
-    <FormItemContext.Provider value={{ id }}>
+    <FormItemContext.Provider value={value}>
       <View ref={ref} className={cn("space-y-2", className)} {...props} />
     </FormItemContext.Provider>
   );
