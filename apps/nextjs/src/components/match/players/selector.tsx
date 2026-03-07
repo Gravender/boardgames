@@ -150,7 +150,9 @@ export const AddPlayersDialogForm = ({
         (p) => p.id === player.id && p.type === "original",
       );
       if (playerExists) {
-        const playerSelected = currentPlayers.find((p) => p.id === player.id);
+        const playerSelected = currentPlayers.find(
+          (p) => p.id === player.id && p.type === "original",
+        );
         if (!playerSelected) {
           form.pushFieldValue("players", {
             id: player.id,
@@ -194,14 +196,14 @@ export const AddPlayersDialogForm = ({
   return (
     <form.Subscribe
       selector={(state) => ({
-        formTeams: state.values.teams,
-        formPlayers: state.values.players,
+        players: state.values.players,
+        teams: state.values.teams,
       })}
     >
-      {({ formTeams, formPlayers }) => {
+      {({ players, teams }) => {
         if (showTeamModal) {
-          const mappedTeams = formTeams.map((team) => {
-            const teamPlayers = formPlayers.filter((p) => p.teamId === team.id);
+          const mappedTeams = teams.map((team) => {
+            const teamPlayers = players.filter((p) => p.teamId === team.id);
             return {
               id: team.id,
               name: team.name,
@@ -260,16 +262,14 @@ export const AddPlayersDialogForm = ({
           );
         }
         if (showRoleModal) {
-          const foundPlayer = formPlayers.find(
+          const foundPlayer = players.find(
             (p) => p.id === showRoleModal.id && p.type === showRoleModal.type,
           );
-          const playerIndex = formPlayers.findIndex(
+          const playerIndex = players.findIndex(
             (p) => p.id === showRoleModal.id && p.type === showRoleModal.type,
           );
           if (foundPlayer && playerIndex > -1) {
-            const foundTeam = formTeams.find(
-              (t) => t.id === foundPlayer.teamId,
-            );
+            const foundTeam = teams.find((t) => t.id === foundPlayer.teamId);
             return (
               <ManagePlayerRoles
                 player={foundPlayer}
@@ -337,10 +337,11 @@ export const AddPlayersDialogForm = ({
                       <>
                         <div className="flex items-center justify-between gap-2 px-2">
                           <span className="text-sm font-medium">
-                            {`${formPlayers.length} player${formPlayers.length !== 1 ? "s" : ""} Selected`}
+                            {`${players.length} player${players.length !== 1 ? "s" : ""} Selected`}
                           </span>
                           <Button
                             variant="outline"
+                            type="button"
                             onClick={() => {
                               setShowTeamModal(true);
                             }}
@@ -358,11 +359,11 @@ export const AddPlayersDialogForm = ({
                                       .includes(searchTerm.toLowerCase()),
                                   )
                                   .toSorted((a, b) => {
-                                    const foundA = formPlayers.find(
-                                      (i) => i.id === a.id && i.type === a.type,
+                                    const foundA = players.find(
+                                      (p) => p.id === a.id && p.type === a.type,
                                     );
-                                    const foundB = formPlayers.find(
-                                      (i) => i.id === b.id && i.type === b.type,
+                                    const foundB = players.find(
+                                      (p) => p.id === b.id && p.type === b.type,
                                     );
                                     if (foundA && foundB) return 0;
                                     if (foundA) return -1;
@@ -373,15 +374,16 @@ export const AddPlayersDialogForm = ({
                                     return b.matches - a.matches;
                                   })
                                   .map((player) => {
-                                    const foundPlayer = formPlayers.find(
-                                      (i) =>
-                                        i.id === player.id &&
-                                        i.type === player.type,
+                                    const playerCheckboxId = `player-${player.id}-${player.type}`;
+                                    const foundPlayer = players.find(
+                                      (p) =>
+                                        p.id === player.id &&
+                                        p.type === player.type,
                                     );
-                                    const playerIdx = formPlayers.findIndex(
-                                      (i) =>
-                                        i.id === player.id &&
-                                        i.type === player.type,
+                                    const playerIdx = players.findIndex(
+                                      (p) =>
+                                        p.id === player.id &&
+                                        p.type === player.type,
                                     );
 
                                     return (
@@ -395,7 +397,8 @@ export const AddPlayersDialogForm = ({
                                         )}
                                       >
                                         <Checkbox
-                                          className="hidden"
+                                          id={playerCheckboxId}
+                                          className="sr-only"
                                           checked={playerIdx > -1}
                                           onCheckedChange={(checked) => {
                                             if (checked) {
@@ -424,7 +427,10 @@ export const AddPlayersDialogForm = ({
                                             }
                                           }}
                                         />
-                                        <label className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2">
+                                        <label
+                                          htmlFor={playerCheckboxId}
+                                          className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2"
+                                        >
                                           <div className="flex items-center gap-1 sm:gap-2">
                                             <PlayerImage
                                               className="size-8"
@@ -475,69 +481,88 @@ export const AddPlayersDialogForm = ({
                                               Roles ({foundPlayer.roles.length})
                                             </Button>
                                           )}
-                                          {formTeams.length > 0 &&
-                                            foundPlayer && (
-                                              <Select
-                                                value={
-                                                  foundPlayer.teamId !== null
-                                                    ? foundPlayer.teamId.toString()
-                                                    : "no-team"
+                                          {teams.length > 0 && foundPlayer && (
+                                            <Select
+                                              value={
+                                                foundPlayer.teamId !== null
+                                                  ? foundPlayer.teamId.toString()
+                                                  : "no-team"
+                                              }
+                                              onValueChange={(value) => {
+                                                if (value === "no-team") {
+                                                  form.setFieldValue(
+                                                    `players[${playerIdx}].teamId`,
+                                                    null,
+                                                  );
+                                                  return;
                                                 }
-                                                onValueChange={(value) => {
-                                                  if (value === "no-team") {
-                                                    form.setFieldValue(
-                                                      `players[${playerIdx}].teamId`,
-                                                      null,
-                                                    );
-                                                    return;
-                                                  }
-                                                  const parsedValue =
-                                                    Number(value);
-                                                  const teamMatch =
-                                                    formTeams.find(
-                                                      (t) =>
-                                                        t.id === parsedValue,
-                                                    );
-                                                  if (
-                                                    !isNaN(parsedValue) &&
-                                                    teamMatch
-                                                  ) {
-                                                    const playerRoles =
-                                                      Array.from(
-                                                        new Set([
-                                                          ...foundPlayer.roles,
-                                                          ...teamMatch.roles,
-                                                        ]),
+                                                const parsedValue =
+                                                  Number(value);
+                                                const teamMatch = teams.find(
+                                                  (t) => t.id === parsedValue,
+                                                );
+                                                if (
+                                                  !isNaN(parsedValue) &&
+                                                  teamMatch
+                                                ) {
+                                                  const playerRoles = [
+                                                    ...foundPlayer.roles,
+                                                    ...teamMatch.roles,
+                                                  ].reduce<
+                                                    (
+                                                      | z.infer<
+                                                          typeof originalRoleSchema
+                                                        >
+                                                      | z.infer<
+                                                          typeof sharedRoleSchema
+                                                        >
+                                                    )[]
+                                                  >((uniqueRoles, role) => {
+                                                    const existingRole =
+                                                      uniqueRoles.find(
+                                                        (existing) =>
+                                                          isSameRole(
+                                                            existing,
+                                                            role,
+                                                          ),
                                                       );
-                                                    form.setFieldValue(
-                                                      `players[${playerIdx}].teamId`,
-                                                      parsedValue,
-                                                    );
-                                                    form.setFieldValue(
-                                                      `players[${playerIdx}].roles`,
-                                                      playerRoles,
-                                                    );
-                                                  }
-                                                }}
-                                              >
-                                                <SelectTrigger className="h-8 w-32">
-                                                  <SelectValue placeholder="No team" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                  <SelectItem value="no-team">
-                                                    No team
+                                                    if (existingRole) {
+                                                      return uniqueRoles;
+                                                    }
+                                                    return [
+                                                      ...uniqueRoles,
+                                                      role,
+                                                    ];
+                                                  }, []);
+                                                  form.setFieldValue(
+                                                    `players[${playerIdx}].teamId`,
+                                                    parsedValue,
+                                                  );
+                                                  form.setFieldValue(
+                                                    `players[${playerIdx}].roles`,
+                                                    playerRoles,
+                                                  );
+                                                }
+                                              }}
+                                            >
+                                              <SelectTrigger className="h-8 w-32">
+                                                <SelectValue placeholder="No team" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="no-team">
+                                                  No team
+                                                </SelectItem>
+                                                {teams.map((team) => (
+                                                  <SelectItem
+                                                    key={team.id}
+                                                    value={team.id.toString()}
+                                                  >
+                                                    {`${team.name}`}
                                                   </SelectItem>
-                                                  {formTeams.map((team) => (
-                                                    <SelectItem
-                                                      key={team.id}
-                                                      value={team.id.toString()}
-                                                    >
-                                                      {`${team.name}`}
-                                                    </SelectItem>
-                                                  ))}
-                                                </SelectContent>
-                                              </Select>
-                                            )}
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                          )}
                                         </div>
                                       </div>
                                     );

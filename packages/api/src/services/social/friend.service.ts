@@ -2,8 +2,10 @@ import { TRPCError } from "@trpc/server";
 
 import { db } from "@board-games/db/client";
 
+import type { GetFriendSettingsOutputType } from "../../routers/friend/friend.output";
 import type {
   AutoShareMatchData,
+  GetFriendSettingsArgs,
   Permission,
   ShareContext,
   ShareFriendConfig,
@@ -31,6 +33,30 @@ class FriendService {
   // -------------------------------------------------------------------------
   // Public
   // -------------------------------------------------------------------------
+
+  public async getFriendSettings(
+    args: GetFriendSettingsArgs,
+  ): Promise<GetFriendSettingsOutputType> {
+    const returnedFriend = await friendRepository.getWithSettings({
+      userId: args.ctx.userId,
+      friendId: args.input.friendId,
+    });
+
+    if (!returnedFriend) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Friend not found" });
+    }
+    if (!returnedFriend.friendSetting) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Friend settings not found",
+      });
+    }
+
+    return {
+      id: returnedFriend.friendSetting.id,
+      settings: returnedFriend.friendSetting,
+    };
+  }
 
   public async autoShareMatch(args: {
     input: { matchId: number };

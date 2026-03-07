@@ -55,10 +55,73 @@ export const AddPlayerDialog = ({
 const playerSchema = insertPlayerSchema.pick({ name: true }).extend({
   imageUrl: fileSchema,
 });
+
+const finalizePlayerCreate = ({
+  setOpen,
+  resetForm,
+  router,
+}: {
+  setOpen: (isOpen: boolean) => void;
+  resetForm: () => void;
+  router: ReturnType<typeof useRouter>;
+}) => {
+  setOpen(false);
+  resetForm();
+  router.refresh();
+};
+
+/**
+ * Uploads an optional player image and creates the player record.
+ * Closes/reset UI only after the mutation succeeds.
+ */
+const handleUploadAndCreate = async ({
+  name,
+  imageUrl,
+  startUpload,
+  createPlayerMutation,
+  setOpen,
+  resetForm,
+  router,
+}: {
+  name: string;
+  imageUrl: File | null;
+  startUpload: ReturnType<typeof useUploadThing>["startUpload"];
+  createPlayerMutation: ReturnType<
+    typeof useCreatePlayerMutation
+  >["createPlayerMutation"];
+  setOpen: (isOpen: boolean) => void;
+  resetForm: () => void;
+  router: ReturnType<typeof useRouter>;
+}) => {
+  if (!imageUrl) {
+    await createPlayerMutation.mutateAsync({ name, imageId: null });
+    finalizePlayerCreate({ setOpen, resetForm, router });
+    return;
+  }
+
+  const uploadResult = await startUpload([imageUrl], {
+    usageType: "player",
+  });
+  if (!uploadResult) {
+    throw new Error("Image upload failed");
+  }
+
+  const uploadedFile = uploadResult[0] as
+    | { serverData?: { imageId?: number | null } }
+    | undefined;
+  const imageId = uploadedFile?.serverData?.imageId ?? null;
+  await createPlayerMutation.mutateAsync({ name, imageId });
+  finalizePlayerCreate({ setOpen, resetForm, router });
+};
+
+/**
+ * Renders the add-player dialog form and handles submit lifecycle.
+ */
 const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
   const { startUpload } = useUploadThing("imageUploader");
   const router = useRouter();
   const { createPlayerMutation } = useCreatePlayerMutation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useAppForm({
     defaultValues: {
@@ -69,47 +132,24 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
       onSubmit: playerSchema,
     },
     onSubmit: async ({ value }) => {
-      if (!value.imageUrl) {
-        createPlayerMutation.mutate(
-          { name: value.name, imageId: null },
-          {
-            onSuccess: () => {
-              setOpen(false);
-              form.reset();
-              router.refresh();
-            },
-          },
-        );
-        return;
-      }
-
+      setIsSubmitting(true);
       try {
-        const uploadResult = await startUpload([value.imageUrl], {
-          usageType: "player",
+        await handleUploadAndCreate({
+          name: value.name,
+          imageUrl: value.imageUrl,
+          startUpload,
+          createPlayerMutation,
+          setOpen,
+          resetForm: form.reset,
+          router,
         });
-        if (!uploadResult) {
-          throw new Error("Image upload failed");
-        }
-
-        const imageId = uploadResult[0]
-          ? uploadResult[0].serverData.imageId
-          : null;
-
-        createPlayerMutation.mutate(
-          { name: value.name, imageId },
-          {
-            onSuccess: () => {
-              setOpen(false);
-              form.reset();
-              router.refresh();
-            },
-          },
-        );
       } catch (error) {
         console.error("Error uploading Image:", error);
         toast.error("Error", {
           description: "There was a problem uploading your Image.",
         });
+      } finally {
+        setIsSubmitting(false);
       }
     },
   });
@@ -149,20 +189,16 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
           >
             Cancel
           </Button>
-          <form.Subscribe selector={(state) => state.isSubmitting}>
-            {(isSubmitting) => (
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Spinner />
-                    <span>Uploading...</span>
-                  </>
-                ) : (
-                  "Submit"
-                )}
-              </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Spinner />
+                <span>Uploading...</span>
+              </>
+            ) : (
+              "Submit"
             )}
-          </form.Subscribe>
+          </Button>
         </DialogFooter>
       </form>
     </>

@@ -18,7 +18,9 @@ export default function FriendProfilePage({ friendId }: { friendId: string }) {
   const { data: friend } = useSuspenseQuery(
     trpc.friend.getFriend.queryOptions({ friendId: friendId }),
   );
-  //TODO update to better auth user
+  const { data: friendSettings } = useSuspenseQuery(
+    trpc.friend.getFriendSettings.queryOptions({ friendId: friendId }),
+  );
   const hasLinkedPlayer = friend.linkedPlayer;
   return (
     <div className="space-y-8">
@@ -29,7 +31,7 @@ export default function FriendProfilePage({ friendId }: { friendId: string }) {
             image={friend.image}
             alt={friend.name}
           />
-          <div className="flex-grow">
+          <div className="grow">
             <CardTitle>{friend.name}</CardTitle>
             <p className="text-muted-foreground text-sm">
               {friend.username && `@${friend.username}`}
@@ -37,7 +39,7 @@ export default function FriendProfilePage({ friendId }: { friendId: string }) {
           </div>
           <FriendSettingsDialog
             friendId={friend.friendId}
-            initialSettings={friend.settings}
+            initialSettings={friendSettings.settings}
           />
         </CardHeader>
       </Card>

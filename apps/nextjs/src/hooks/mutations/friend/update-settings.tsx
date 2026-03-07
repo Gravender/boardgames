@@ -19,9 +19,14 @@ export const useUpdateFriendSettingsMutation = ({
         toast.success("Settings updated", {
           description: "Your friend settings have been updated successfully.",
         });
-        await queryClient.invalidateQueries(
-          trpc.friend.getFriend.queryOptions({ friendId }),
-        );
+        await Promise.all([
+          queryClient.invalidateQueries(
+            trpc.friend.getFriend.queryOptions({ friendId }),
+          ),
+          queryClient.invalidateQueries(
+            trpc.friend.getFriendSettings.queryOptions({ friendId }),
+          ),
+        ]);
       },
       onError: () => {
         toast.error("Error", {

@@ -46,5 +46,47 @@ class FriendRepository {
     });
     return result as InferManyQueryResult<"friend", TConfig>;
   }
+
+  public async getWithSettings(
+    filters: {
+      userId: NonNullable<Filter<"friend">["userId"]>;
+      friendId: NonNullable<Filter<"friend">["friendId"]>;
+    },
+    tx?: TransactionType,
+  ) {
+    const database = tx ?? db;
+    const result = await database.query.friend.findFirst({
+      columns: {
+        id: true,
+      },
+      where: {
+        userId: filters.userId,
+        friendId: filters.friendId,
+      },
+      with: {
+        friendSetting: {
+          columns: {
+            id: true,
+            autoShareMatches: true,
+            sharePlayersWithMatch: true,
+            includeLocationWithMatch: true,
+            defaultPermissionForMatches: true,
+            defaultPermissionForPlayers: true,
+            defaultPermissionForLocation: true,
+            defaultPermissionForGame: true,
+            autoAcceptMatches: true,
+            autoAcceptPlayers: true,
+            autoAcceptLocation: true,
+            autoAcceptGame: true,
+            allowSharedGames: true,
+            allowSharedPlayers: true,
+            allowSharedLocation: true,
+            allowSharedMatches: true,
+          },
+        },
+      },
+    });
+    return result;
+  }
 }
 export const friendRepository = new FriendRepository();

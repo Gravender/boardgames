@@ -65,3 +65,12 @@ export type SharedScoresheetResult = {
   sharedScoresheetId: number | null;
 } | null;
 export type SharedMatchResult = { sharedMatchId: number } | null;
+
+export interface GetFriendSettingsArgs {
+  ctx: {
+    userId: string;
+  };
+  input: {
+    friendId: string;
+  };
+}
