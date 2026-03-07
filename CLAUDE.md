@@ -25,6 +25,12 @@ This is a monorepo for tracking board games, players, matches, scoresheets, and 
 - Client components should be marked with `"use client"` directive
 - Prefer TanStack Form for form management
 - Use TanStack Query for data fetching and mutations
+- When using TanStack `form.Subscribe`, subscribe only to the minimal needed state
+  - Prefer a concise selector for specific fields:
+    - `selector={(state) => ({ players: state.values.players, teams: state.values.teams })}`
+  - Keep selector output minimal and stable in shape
+  - Avoid derived computations in selector; derive inside render
+  - Use a primitive selector (for example `state.isSubmitting`) only for single scalar subscriptions
 
 ### API Patterns
 

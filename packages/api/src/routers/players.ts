@@ -897,6 +897,10 @@ export const playerRouter = {
               name: z.string().trim().min(1, "Name is required"),
               imageId: z.number(),
             }),
+            z.object({
+              type: z.literal("nameAndClearImage"),
+              name: z.string().trim().min(1, "Name is required"),
+            }),
           ]),
         }),
         z.object({

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod/v4";
 
-import type { RouterOutputs } from "@board-games/api";
+import type { RouterInputs, RouterOutputs } from "@board-games/api";
 import { insertPlayerSchema } from "@board-games/db/zodSchema";
 import { fileSchema } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
@@ -36,9 +36,17 @@ interface PlayerValues {
   name: string;
   imageUrl: File | string | null;
 }
-type MutateAsyncFn = ReturnType<
-  typeof useUpdatePlayerMutation
->["updatePlayerMutation"]["mutateAsync"];
+type UpdatePlayerInput = RouterInputs["player"]["update"];
+type UpdatePlayerInputWithClearName =
+  | UpdatePlayerInput
+  | {
+      type: "original";
+      id: number;
+      updateValues: {
+        type: "nameAndClearImage";
+        name: string;
+      };
+    };
 
 const buildPlayerSchema = (
   player: PlayerType,
@@ -65,109 +73,130 @@ const buildPlayerSchema = (
   });
 };
 
-const updateOriginalPlayer = async ({
-  player,
-  values,
-  imageId,
-  mutateAsync,
+const useUpdateOriginalPlayer = ({
   handleMutationSuccess,
 }: {
-  player: PlayerType;
-  values: PlayerValues;
-  imageId: number | undefined;
-  mutateAsync: MutateAsyncFn;
   handleMutationSuccess: () => void;
 }) => {
-  const nameChanged = values.name !== player.name;
-  const imageIdChanged = imageId !== undefined;
-  const clearImageRequested =
-    values.imageUrl === null && player.image?.url !== null;
+  const { updatePlayerMutation } = useUpdatePlayerMutation();
 
-  if (!nameChanged && !imageIdChanged && !clearImageRequested) {
-    return;
-  }
+  const updateOriginalPlayer = async ({
+    player,
+    values,
+    imageId,
+  }: {
+    player: PlayerType;
+    values: PlayerValues;
+    imageId: number | undefined;
+  }) => {
+    const nameChanged = values.name !== player.name;
+    const imageIdChanged = imageId !== undefined;
+    const clearImageRequested =
+      values.imageUrl === null && player.image?.url != null;
 
-  if (nameChanged && imageIdChanged) {
-    await mutateAsync({
-      type: "original",
-      id: player.id,
-      updateValues: {
-        type: "nameAndImageId",
-        name: values.name,
-        imageId,
-      },
-    });
-    handleMutationSuccess();
-    return;
-  }
+    if (!nameChanged && !imageIdChanged && !clearImageRequested) {
+      return;
+    }
 
-  if (imageIdChanged) {
-    await mutateAsync({
-      type: "original",
-      id: player.id,
-      updateValues: {
-        type: "imageId",
-        imageId,
-      },
-    });
-    handleMutationSuccess();
-    return;
-  }
-
-  if (clearImageRequested) {
-    if (nameChanged) {
-      await mutateAsync({
+    if (nameChanged && imageIdChanged) {
+      await updatePlayerMutation.mutateAsync({
         type: "original",
         id: player.id,
         updateValues: {
-          type: "name",
+          type: "nameAndImageId",
           name: values.name,
+          imageId,
         },
       });
+      handleMutationSuccess();
+      return;
     }
-    await mutateAsync({
+
+    if (imageIdChanged) {
+      await updatePlayerMutation.mutateAsync({
+        type: "original",
+        id: player.id,
+        updateValues: {
+          type: "imageId",
+          imageId,
+        },
+      });
+      handleMutationSuccess();
+      return;
+    }
+
+    if (clearImageRequested) {
+      if (nameChanged) {
+        const combinedUpdateInput: UpdatePlayerInputWithClearName = {
+          type: "original",
+          id: player.id,
+          updateValues: {
+            type: "nameAndClearImage",
+            name: values.name,
+          },
+        };
+        await updatePlayerMutation.mutateAsync(combinedUpdateInput);
+        handleMutationSuccess();
+        return;
+      }
+      await updatePlayerMutation.mutateAsync({
+        type: "original",
+        id: player.id,
+        updateValues: {
+          type: "clearImage",
+        },
+      });
+      handleMutationSuccess();
+      return;
+    }
+
+    await updatePlayerMutation.mutateAsync({
       type: "original",
       id: player.id,
       updateValues: {
-        type: "clearImage",
+        type: "name",
+        name: values.name,
       },
     });
     handleMutationSuccess();
-    return;
-  }
+  };
 
-  await mutateAsync({
-    type: "original",
-    id: player.id,
-    updateValues: {
-      type: "name",
-      name: values.name,
-    },
-  });
-  handleMutationSuccess();
+  return {
+    updateOriginalPlayer,
+    isOriginalUpdatePending: updatePlayerMutation.isPending,
+  };
 };
 
-const updateSharedPlayer = async ({
-  player,
-  values,
-  mutateAsync,
+const useUpdateSharedPlayer = ({
   handleMutationSuccess,
 }: {
-  player: PlayerType;
-  values: PlayerValues;
-  mutateAsync: MutateAsyncFn;
   handleMutationSuccess: () => void;
 }) => {
-  const nameChanged = values.name !== player.name;
-  if (!nameChanged) {
-    return;
-  }
-  await mutateAsync({
-    type: "shared",
-    id: player.id,
-    name: values.name,
-  });
-  handleMutationSuccess();
+  const { updatePlayerMutation } = useUpdatePlayerMutation();
+
+  const updateSharedPlayer = async ({
+    player,
+    values,
+  }: {
+    player: PlayerType;
+    values: PlayerValues;
+  }) => {
+    const nameChanged = values.name !== player.name;
+    if (!nameChanged) {
+      return;
+    }
+    await updatePlayerMutation.mutateAsync({
+      type: "shared",
+      id: player.id,
+      name: values.name,
+    });
+    handleMutationSuccess();
+  };
+
+  return {
+    updateSharedPlayer,
+    isSharedUpdatePending: updatePlayerMutation.isPending,
+  };
 };
 
 const useHandleImageUploadAndUpdate = () => {
@@ -209,6 +238,61 @@ const useHandleImageUploadAndUpdate = () => {
   };
 
   return { handleImageUploadAndUpdate };
+};
+
+const useEditPlayerSubmit = ({
+  player,
+  setIsSubmitting,
+  handleMutationSuccess,
+}: {
+  player: PlayerType;
+  setIsSubmitting: (isSubmitting: boolean) => void;
+  handleMutationSuccess: () => void;
+}) => {
+  const { handleImageUploadAndUpdate } = useHandleImageUploadAndUpdate();
+  const { updateOriginalPlayer, isOriginalUpdatePending } =
+    useUpdateOriginalPlayer({
+      handleMutationSuccess,
+    });
+  const { updateSharedPlayer, isSharedUpdatePending } = useUpdateSharedPlayer({
+    handleMutationSuccess,
+  });
+
+  const handleSubmitValues = async (values: PlayerValues) => {
+    setIsSubmitting(true);
+    try {
+      await handleImageUploadAndUpdate({
+        player,
+        values,
+        onUpdate: async (imageId) => {
+          if (player.type === "original") {
+            await updateOriginalPlayer({
+              player,
+              values,
+              imageId,
+            });
+            return;
+          }
+          await updateSharedPlayer({
+            player,
+            values,
+          });
+        },
+      });
+    } catch (error) {
+      console.error("Error saving player:", error);
+      toast.error("Error", {
+        description: "There was a problem saving your changes.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return {
+    handleSubmitValues,
+    isUpdatePending: isOriginalUpdatePending || isSharedUpdatePending,
+  };
 };
 
 const valueIsExistingImage = (
@@ -264,10 +348,20 @@ const PlayerContent = ({
   isSubmitting: boolean;
   setIsSubmitting: (isSubmitting: boolean) => void;
 }) => {
-  const { handleImageUploadAndUpdate } = useHandleImageUploadAndUpdate();
   const router = useRouter();
-  const { updatePlayerMutation } = useUpdatePlayerMutation();
   const initialImageUrl = player.image?.url ?? null;
+
+  const handleMutationSuccess = () => {
+    router.refresh();
+    form.reset();
+    setOpen(false);
+  };
+
+  const { handleSubmitValues, isUpdatePending } = useEditPlayerSubmit({
+    player,
+    setIsSubmitting,
+    handleMutationSuccess,
+  });
 
   const playerSchema = buildPlayerSchema(player, initialImageUrl);
 
@@ -286,46 +380,9 @@ const PlayerContent = ({
       onSubmit: playerSchema,
     },
     onSubmit: async ({ value }) => {
-      setIsSubmitting(true);
-      try {
-        await handleImageUploadAndUpdate({
-          player,
-          values: value,
-          onUpdate: async (imageId) => {
-            if (player.type === "original") {
-              await updateOriginalPlayer({
-                player,
-                values: value,
-                imageId,
-                mutateAsync: updatePlayerMutation.mutateAsync,
-                handleMutationSuccess,
-              });
-              return;
-            }
-            await updateSharedPlayer({
-              player,
-              values: value,
-              mutateAsync: updatePlayerMutation.mutateAsync,
-              handleMutationSuccess,
-            });
-          },
-        });
-      } catch (error) {
-        console.error("Error saving player:", error);
-        toast.error("Error", {
-          description: "There was a problem saving your changes.",
-        });
-      } finally {
-        setIsSubmitting(false);
-      }
+      await handleSubmitValues(value);
     },
   });
-
-  const handleMutationSuccess = () => {
-    router.refresh();
-    form.reset();
-    setOpen(false);
-  };
 
   const handleClose = () => {
     if (isSubmitting) {
@@ -373,28 +430,21 @@ const PlayerContent = ({
           >
             Cancel
           </Button>
-          <form.Subscribe
-            selector={(state) => ({
-              isSubmitting: state.isSubmitting,
-              isDirty: state.isDirty,
-            })}
-          >
-            {({ isSubmitting: formIsSubmitting, isDirty }) => (
+          <form.Subscribe>
+            {(state) => (
               <Button
                 type="submit"
                 disabled={
                   isSubmitting ||
-                  formIsSubmitting ||
-                  !isDirty ||
-                  updatePlayerMutation.isPending
+                  state.isSubmitting ||
+                  !state.isDirty ||
+                  isUpdatePending
                 }
               >
-                {isSubmitting ||
-                formIsSubmitting ||
-                updatePlayerMutation.isPending ? (
+                {isSubmitting || state.isSubmitting || isUpdatePending ? (
                   <>
                     <Spinner />
-                    <span>Uploading...</span>
+                    <span>Saving...</span>
                   </>
                 ) : (
                   "Submit"

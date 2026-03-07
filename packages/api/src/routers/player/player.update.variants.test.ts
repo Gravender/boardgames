@@ -44,10 +44,12 @@ describe("Player Update - updateValues variants", () => {
   });
 
   test("updates only name with updateValues.type=name", async () => {
-    const deleteFilesSpy = vi.fn(async () => ({
-      success: true as const,
-      deletedCount: 1,
-    }));
+    const deleteFilesSpy = vi.fn(() =>
+      Promise.resolve({
+        success: true as const,
+        deletedCount: 1,
+      }),
+    );
     const ctx = await createContextInner({
       session: createTestSession(testUserId),
       deleteFiles: deleteFilesSpy,
@@ -94,10 +96,12 @@ describe("Player Update - updateValues variants", () => {
   });
 
   test("updates only image with updateValues.type=imageId", async () => {
-    const deleteFilesSpy = vi.fn(async () => ({
-      success: true as const,
-      deletedCount: 1,
-    }));
+    const deleteFilesSpy = vi.fn(() =>
+      Promise.resolve({
+        success: true as const,
+        deletedCount: 1,
+      }),
+    );
     const ctx = await createContextInner({
       session: createTestSession(testUserId),
       deleteFiles: deleteFilesSpy,
@@ -153,10 +157,12 @@ describe("Player Update - updateValues variants", () => {
   });
 
   test("updates name and image with updateValues.type=nameAndImageId", async () => {
-    const deleteFilesSpy = vi.fn(async () => ({
-      success: true as const,
-      deletedCount: 1,
-    }));
+    const deleteFilesSpy = vi.fn(() =>
+      Promise.resolve({
+        success: true as const,
+        deletedCount: 1,
+      }),
+    );
     const ctx = await createContextInner({
       session: createTestSession(testUserId),
       deleteFiles: deleteFilesSpy,
@@ -212,11 +218,66 @@ describe("Player Update - updateValues variants", () => {
     expect(deleteFilesSpy).toHaveBeenCalledWith(initialImage.fileId);
   });
 
+  test("updates name and clears image with updateValues.type=nameAndClearImage", async () => {
+    const deleteFilesSpy = vi.fn(() =>
+      Promise.resolve({
+        success: true as const,
+        deletedCount: 1,
+      }),
+    );
+    const ctx = await createContextInner({
+      session: createTestSession(testUserId),
+      deleteFiles: deleteFilesSpy,
+    });
+    const caller = createCallerFactory(appRouter)(ctx);
+
+    const initialImage = await caller.image.create({
+      name: "Initial Image",
+      url: "https://example.com/initial-player-image.jpg",
+      type: "file",
+      usageType: "player",
+      fileId: "utfs-initial-image-clear-1",
+      fileSize: 4096,
+    });
+
+    const createdPlayer = await caller.player.create({
+      name: "Original Name",
+      imageId: initialImage.id,
+    });
+
+    const input: inferProcedureInput<AppRouter["player"]["update"]> = {
+      type: "original",
+      id: createdPlayer.id,
+      updateValues: {
+        type: "nameAndClearImage",
+        name: "Updated Name No Image",
+      },
+    };
+    await caller.player.update(input);
+
+    const [updatedPlayer] = await db
+      .select({
+        id: player.id,
+        name: player.name,
+        imageId: player.imageId,
+      })
+      .from(player)
+      .where(eq(player.id, createdPlayer.id));
+
+    expect(updatedPlayer).toBeDefined();
+    expect(updatedPlayer?.name).toBe("Updated Name No Image");
+    expect(updatedPlayer?.imageId).toBeNull();
+    expect(deleteFilesSpy).toHaveBeenCalledTimes(1);
+    expect(deleteFilesSpy).toHaveBeenCalledWith(initialImage.fileId);
+  });
+
   test("throws when deleteFiles fails for replaced file-backed image", async () => {
-    const deleteFilesSpy = vi.fn(async () => ({
-      success: false as const,
-      deletedCount: 0,
-    }));
+    const deleteFilesSpy = vi.fn(() =>
+      Promise.resolve({
+        success: false as const,
+        deletedCount: 0,
+      }),
+    );
     const ctx = await createContextInner({
       session: createTestSession(testUserId),
       deleteFiles: deleteFilesSpy,

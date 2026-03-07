@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { Plus, SquarePen, Trash2 } from "lucide-react";
 
 import { Button } from "@board-games/ui/button";
@@ -19,6 +20,8 @@ export const AddTeamForm = ({
   setShowAddTeam: (show: boolean) => void;
   addTeam: () => void;
 }) => {
+  const addTeamInputId = useId();
+
   if (!showAddTeam) {
     return (
       <Button
@@ -36,7 +39,11 @@ export const AddTeamForm = ({
   return (
     <Card className="py-2">
       <CardContent className="flex items-center gap-3 px-2 sm:px-4">
+        <label htmlFor={addTeamInputId} className="sr-only">
+          New team name
+        </label>
         <Input
+          id={addTeamInputId}
           value={newTeam}
           onChange={(e) => setNewTeam(e.target.value)}
           onKeyDown={(e) => {
@@ -96,6 +103,7 @@ export const TeamRow = ({
   editingNameValue,
   onEditingNameValueChange,
   onSaveName,
+  nameError,
   setActiveTeamEdit,
   setEditingTeamRoles,
   onRemoveTeam,
@@ -106,90 +114,104 @@ export const TeamRow = ({
   editingNameValue?: string;
   onEditingNameValueChange: (value: string) => void;
   onSaveName: () => void;
+  nameError?: string;
   setActiveTeamEdit: (id: number | null) => void;
   setEditingTeamRoles: (editing: boolean) => void;
   onRemoveTeam: () => void;
-}) => (
-  <Card key={team.id}>
-    <CardContent className="flex flex-col gap-2 px-4 py-2">
-      <div className="flex flex-col gap-1">
-        {isEditingName ? (
-          <div className="space-y-0">
-            <label className="sr-only">Team Name</label>
-            <div className="flex items-center gap-2">
-              <Input
-                className="text-base font-medium"
-                placeholder="Team name"
-                value={editingNameValue}
-                onChange={(e) => onEditingNameValueChange(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onSaveName();
-                  }
-                }}
-              />
-              <Button type="button" size="sm" onClick={onSaveName}>
-                Save
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex h-10 items-center gap-2 py-2">
-            <span
-              className="cursor-pointer font-medium transition-colors hover:text-purple-300"
-              onClick={() => setActiveTeamEdit(team.id)}
-              title="Click to edit team name"
-            >
-              {team.name}
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setActiveTeamEdit(team.id)}
-            >
-              <SquarePen className="size-6" />
-            </Button>
-          </div>
-        )}
+}) => {
+  const teamNameInputId = useId();
 
-        <div className="flex items-center gap-4 text-sm">
-          <span>{teamPlayers} players</span>
-          <span>{team.roles.length} team roles</span>
-        </div>
-      </div>
-      <div className="flex items-center justify-between gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setEditingTeamRoles(true);
-            setActiveTeamEdit(team.id);
-          }}
-        >
-          {team.roles.length > 0 ? (
-            <div>
-              {`${team.roles.length} role${team.roles.length !== 1 ? "s" : ""} selected`}
+  return (
+    <Card key={team.id}>
+      <CardContent className="flex flex-col gap-2 px-4 py-2">
+        <div className="flex flex-col gap-1">
+          {isEditingName ? (
+            <div className="space-y-0">
+              <label htmlFor={teamNameInputId} className="sr-only">
+                Team name
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id={teamNameInputId}
+                  className="text-base font-medium"
+                  placeholder="Team name"
+                  value={editingNameValue}
+                  onChange={(e) => onEditingNameValueChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onSaveName();
+                    }
+                  }}
+                />
+                <Button type="button" size="sm" onClick={onSaveName}>
+                  Save
+                </Button>
+              </div>
+              {nameError ? (
+                <p className="text-destructive text-sm" role="alert">
+                  {nameError}
+                </p>
+              ) : null}
             </div>
           ) : (
-            <span className="text-muted-foreground">No roles selected</span>
+            <div className="flex h-10 items-center gap-2 py-2">
+              <span
+                className="cursor-pointer font-medium transition-colors hover:text-purple-300"
+                onClick={() => setActiveTeamEdit(team.id)}
+                title="Click to edit team name"
+              >
+                {team.name}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setActiveTeamEdit(team.id)}
+                aria-label={`Edit team name for ${team.name}`}
+              >
+                <SquarePen className="size-6" />
+              </Button>
+            </div>
           )}
-        </Button>
 
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={onRemoveTeam}
-          className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-        >
-          <Trash2 className="h-4 w-4" />
-          <span>Team</span>
-        </Button>
-      </div>
-    </CardContent>
-  </Card>
-);
+          <div className="flex items-center gap-4 text-sm">
+            <span>{teamPlayers} players</span>
+            <span>{team.roles.length} team roles</span>
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setEditingTeamRoles(true);
+              setActiveTeamEdit(team.id);
+            }}
+          >
+            {team.roles.length > 0 ? (
+              <div>
+                {`${team.roles.length} role${team.roles.length !== 1 ? "s" : ""} selected`}
+              </div>
+            ) : (
+              <span className="text-muted-foreground">No roles selected</span>
+            )}
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onRemoveTeam}
+            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span>Team</span>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};

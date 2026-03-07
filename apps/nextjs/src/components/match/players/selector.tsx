@@ -121,7 +121,7 @@ export const AddPlayersDialogForm = ({
                 {
                   id: currentUser.id,
                   type: currentUser.type,
-                  imageUrl: currentUser.image?.url ?? "",
+                  imageUrl: currentUser.image?.url ?? null,
                   name: currentUser.name,
                   teamId: null as number | null,
                   matches: currentUser.matches,
@@ -172,7 +172,7 @@ export const AddPlayersDialogForm = ({
   if (showAddPlayer) {
     const addMatchPlayer = (player: {
       id: number;
-      imageUrl: string;
+      imageUrl: string | null;
       name: string;
     }) => {
       form.pushFieldValue("players", {
