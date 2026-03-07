@@ -13,7 +13,7 @@ import { cn } from "@board-games/ui/utils";
 
 export function GradientPicker({
   color,
-  setColor: setColor,
+  setColor,
   disabled = false,
   className,
 }: {

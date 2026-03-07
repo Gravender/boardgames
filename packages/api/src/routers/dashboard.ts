@@ -337,7 +337,7 @@ export const dashboardRouter = {
           month: date.getMonth(),
           name: date.toLocaleString("default", { month: "long" }) as MonthName,
         };
-      }).reverse();
+      }).toReversed();
 
       const matchesPerMonth = last12Months.reduce(
         (acc, { year, month, name }) => {

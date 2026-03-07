@@ -55,7 +55,7 @@ const safeDivide = (num: number, denom: number): number =>
   denom === 0 ? 0 : num / denom;
 
 export function aggregatePlayerStats(playerMatches: PlayerMatch[]) {
-  const sortedMatches = playerMatches.sort((a, b) =>
+  const sortedMatches = playerMatches.toSorted((a, b) =>
     compareAsc(b.date, a.date),
   );
   const players = sortedMatches.reduce(

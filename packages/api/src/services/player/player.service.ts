@@ -95,11 +95,10 @@ class PlayerService {
         now,
       });
 
-      return {
-        sharedId: sharedPlayer.id,
-        type: "shared" as const,
-        ...mappedBase,
-      };
+      return Object.assign(
+        { sharedId: sharedPlayer.id, type: `shared` as const },
+        mappedBase,
+      );
     });
 
     const combinedPlayers = [...mappedOriginalPlayers, ...mappedSharedPlayers];

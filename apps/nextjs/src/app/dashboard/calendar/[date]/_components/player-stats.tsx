@@ -190,7 +190,7 @@ function PlayerCard({ player, rank, expanded, onToggle }: PlayerCardProps) {
                 <TabsContent value="placements" className="mt-3 space-y-3">
                   <div className="space-y-2">
                     {Object.entries(player.placements)
-                      .sort(
+                      .toSorted(
                         ([a], [b]) => Number.parseInt(a) - Number.parseInt(b),
                       )
                       .map(([placement, count]) => {

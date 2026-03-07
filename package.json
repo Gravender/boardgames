@@ -15,6 +15,8 @@
     "db:seed": "turbo -F @board-games/db seed",
     "dev": "turbo watch dev --continue",
     "dev:next": "turbo watch dev -F @board-games/nextjs...",
+    "fmt": "turbo run format --continue",
+    "fmt:fix": "turbo run format:fix --continue",
     "format": "turbo run format --continue",
     "format:fix": "turbo run format:fix --continue",
     "lint": "turbo run lint --continue",

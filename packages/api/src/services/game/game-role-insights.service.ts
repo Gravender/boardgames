@@ -126,7 +126,7 @@ export const computeRoleSummaries = (
     });
   }
 
-  return summaries.sort((a, b) => b.matchCount - a.matchCount);
+  return summaries.toSorted((a, b) => b.matchCount - a.matchCount);
 };
 
 // ─── Compute Role Presence Effects ──────────────────────────────

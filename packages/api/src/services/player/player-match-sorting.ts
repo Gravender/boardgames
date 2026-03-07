@@ -155,7 +155,7 @@ export const mapPlayer = ({
 export const sortPlayersForMatch = <T extends SortablePlayer>(
   players: T[],
 ): T[] => {
-  return [...players].sort((a, b) => {
+  return [...players].toSorted((a, b) => {
     if (a.score !== b.score) return b.score - a.score;
 
     if (!a.lastPlayedAt && !b.lastPlayedAt) {

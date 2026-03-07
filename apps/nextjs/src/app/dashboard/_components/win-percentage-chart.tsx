@@ -30,7 +30,7 @@ import { useTRPC } from "~/trpc/react";
 type ViewType = "overtime" | "month to month";
 export default function WinPercentageChart() {
   const trpc = useTRPC();
-  const { data: data } = useSuspenseQuery(
+  const { data } = useSuspenseQuery(
     trpc.dashboard.getUserWinPercentage.queryOptions(),
   );
   const [view, setView] = useState<ViewType>("overtime");

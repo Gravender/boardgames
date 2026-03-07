@@ -338,9 +338,9 @@ describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
         },
       );
 
-      const winnerIds = winners.map((w) => w.baseMatchPlayerId);
+      const winnerIds = new Set(winners.map((w) => w.baseMatchPlayerId));
       for (const player of updatedPlayersAndTeams.players) {
-        if (winnerIds.includes(player.baseMatchPlayerId)) {
+        if (winnerIds.has(player.baseMatchPlayerId)) {
           expect(player.winner).toBe(true);
         } else {
           expect(player.winner).toBe(false);

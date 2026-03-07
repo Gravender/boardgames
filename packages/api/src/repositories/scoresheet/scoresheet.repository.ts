@@ -49,25 +49,26 @@ class ScoresheetRepository {
   ): Promise<InferQueryResult<"scoresheet", TConfig> | undefined> {
     const database = tx ?? db;
     const { id, createdBy, ...queryConfig } = filters;
-    const result = await database.query.scoresheet.findFirst({
-      where: {
-        id: id,
-        createdBy: createdBy,
-        deletedAt: {
-          isNull: true,
-        },
-        type: {
-          OR: [
-            {
-              eq: "Game",
-            },
-            {
-              eq: "Default",
-            },
-          ],
-        },
-        ...(queryConfig.where ?? {}),
+    const where = {
+      ...(queryConfig.where as QueryConfig<"scoresheet">["where"]),
+      id: id,
+      createdBy: createdBy,
+      deletedAt: {
+        isNull: true,
       },
+      type: {
+        OR: [
+          {
+            eq: "Game",
+          },
+          {
+            eq: "Default",
+          },
+        ],
+      },
+    } satisfies QueryConfig<"scoresheet">["where"];
+    const result = await database.query.scoresheet.findFirst({
+      where,
       with: queryConfig.with,
       orderBy: queryConfig.orderBy,
     });
@@ -82,20 +83,22 @@ class ScoresheetRepository {
   ): Promise<InferQueryResult<"sharedScoresheet", TConfig> | undefined> {
     const database = tx ?? db;
     const { id, sharedWithId, ...queryConfig } = filters;
+    const where = {
+      ...(queryConfig.where as QueryConfig<"sharedScoresheet">["where"]),
+      id: id,
+      sharedWithId: sharedWithId,
+      type: "game",
+      linkedScoresheetId: {
+        isNull: true,
+      },
+    } satisfies QueryConfig<"sharedScoresheet">["where"];
+    const withConfig = {
+      ...(queryConfig.with as QueryConfig<"sharedScoresheet">["with"]),
+      scoresheet: true,
+    } as QueryConfig<"sharedScoresheet">["with"];
     const result = await database.query.sharedScoresheet.findFirst({
-      where: {
-        id: id,
-        sharedWithId: sharedWithId,
-        type: "game",
-        linkedScoresheetId: {
-          isNull: true,
-        },
-        ...(queryConfig.where ?? {}),
-      },
-      with: {
-        scoresheet: true,
-        ...(queryConfig.with ?? {}),
-      },
+      where,
+      with: withConfig,
       orderBy: queryConfig.orderBy,
     });
     return result as InferQueryResult<"sharedScoresheet", TConfig> | undefined;
@@ -111,20 +114,22 @@ class ScoresheetRepository {
   ): Promise<InferQueryResult<"sharedScoresheet", TConfig> | undefined> {
     const database = tx ?? db;
     const { scoresheetId, sharedWithId, ...queryConfig } = filters;
+    const where = {
+      ...(queryConfig.where as QueryConfig<"sharedScoresheet">["where"]),
+      scoresheetId: scoresheetId,
+      sharedWithId: sharedWithId,
+      type: "game",
+      linkedScoresheetId: {
+        isNull: true,
+      },
+    } satisfies QueryConfig<"sharedScoresheet">["where"];
+    const withConfig = {
+      ...(queryConfig.with as QueryConfig<"sharedScoresheet">["with"]),
+      scoresheet: true,
+    } as QueryConfig<"sharedScoresheet">["with"];
     const result = await database.query.sharedScoresheet.findFirst({
-      where: {
-        scoresheetId: scoresheetId,
-        sharedWithId: sharedWithId,
-        type: "game",
-        linkedScoresheetId: {
-          isNull: true,
-        },
-        ...(queryConfig.where ?? {}),
-      },
-      with: {
-        scoresheet: true,
-        ...(queryConfig.with ?? {}),
-      },
+      where,
+      with: withConfig,
       orderBy: queryConfig.orderBy,
     });
     return result as InferQueryResult<"sharedScoresheet", TConfig> | undefined;

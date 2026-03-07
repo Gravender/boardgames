@@ -23,7 +23,7 @@ export default function MatchSummaryPlayerStats({
   playerStats: playerStats;
 }) {
   // Sort players by number of wins (highest first)
-  const sortedStats = [...playerStats].sort((a, b) => b.wins - a.wins);
+  const sortedStats = [...playerStats].toSorted((a, b) => b.wins - a.wins);
 
   return (
     <Card className="w-full">
@@ -100,7 +100,7 @@ export default function MatchSummaryPlayerStats({
                   placement: Number(placement),
                   count,
                 }))
-                .sort((a, b) => a.placement - b.placement);
+                .toSorted((a, b) => a.placement - b.placement);
 
               const topPlacement =
                 placements.length > 0 ? placements[0]?.placement : null;

@@ -104,6 +104,7 @@ setup("authenticate", async ({ page, browserName }) => {
     } catch (error) {
       throw new Error(
         `Failed to sign up: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }

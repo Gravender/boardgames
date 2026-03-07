@@ -99,7 +99,7 @@ export function MatchSummaryPlayerStats(input: { match: MatchInput }) {
                   placement: Number(placement),
                   count,
                 }))
-                .sort((a, b) => a.placement - b.placement);
+                .toSorted((a, b) => a.placement - b.placement);
 
               const topPlacement =
                 placements.length > 0 ? placements[0]?.placement : null;

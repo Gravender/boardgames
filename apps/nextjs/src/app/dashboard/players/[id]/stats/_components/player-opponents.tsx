@@ -57,7 +57,7 @@ export function PlayerOpponents({
     }
     setExpandedOpponents(newExpanded);
   };
-  const sortedOpponents = opponents.sort((a, b) => {
+  const sortedOpponents = opponents.toSorted((a, b) => {
     const aTotalGames = a.wins + a.losses;
     const bTotalGames = b.wins + b.losses;
     const aWinRate = aTotalGames > 0 ? a.wins / aTotalGames : 0;

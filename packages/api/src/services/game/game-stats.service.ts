@@ -637,7 +637,7 @@ class GameStatsService {
       const overallPlayers: GetGameScoresheetStatsOverallPlayerSchemaType[] =
         [];
       for (const p of scoresheet.matchResultsByPlayer.values()) {
-        const matchList = Array.from(p.matches.values()).sort(
+        const matchList = Array.from(p.matches.values()).toSorted(
           (a, b) => a.date.getTime() - b.date.getTime(),
         );
         const numMatches = matchList.length;

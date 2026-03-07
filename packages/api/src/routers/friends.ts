@@ -824,7 +824,7 @@ export const friendsRouter = {
         }
       });
 
-      const friendGames = Array.from(gameMap.values()).sort((a, b) => {
+      const friendGames = Array.from(gameMap.values()).toSorted((a, b) => {
         return a.name.localeCompare(b.name);
       });
 

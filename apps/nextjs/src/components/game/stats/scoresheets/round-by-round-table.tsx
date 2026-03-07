@@ -27,7 +27,7 @@ export function RoundByRoundTable({
   currentScoresheet: ScoresheetStatsItem;
 }) {
   const sortedRounds = useMemo(
-    () => [...currentScoresheet.rounds].sort((a, b) => a.order - b.order),
+    () => [...currentScoresheet.rounds].toSorted((a, b) => a.order - b.order),
     [currentScoresheet.rounds],
   );
 

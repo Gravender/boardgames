@@ -115,7 +115,7 @@ export const PlayerPerformanceSection = ({
   const isManual = winCondition === "Manual";
   const sortedPlayers = useMemo(
     () =>
-      [...playerPerformance].sort(
+      [...playerPerformance].toSorted(
         (a, b) => getTotalMatches(b) - getTotalMatches(a),
       ),
     [playerPerformance],
@@ -140,7 +140,7 @@ export const PlayerPerformanceSection = ({
 
   const sortedRoles = useMemo(() => {
     if (!selectedPerformance) return [];
-    return [...selectedPerformance.roles].sort((a, b) => {
+    return [...selectedPerformance.roles].toSorted((a, b) => {
       const dir = sortDir === "asc" ? 1 : -1;
       if (sortKey === "name") {
         return dir * a.name.localeCompare(b.name);

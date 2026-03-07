@@ -182,7 +182,7 @@ class GameScoresheetService {
         return [
           ...originalScoresheets.map(mapOriginalScoresheetBase),
           ...sharedScoresheets.map(mapSharedScoresheetBase),
-        ].sort(scoresheetSortComparator);
+        ].toSorted(scoresheetSortComparator);
       }
 
       const sharedScoresheets = await scoresheetRepository.getAllShared(
@@ -195,7 +195,7 @@ class GameScoresheetService {
       );
       return sharedScoresheets
         .map(mapSharedScoresheetBase)
-        .sort(scoresheetSortComparator);
+        .toSorted(scoresheetSortComparator);
     });
   }
 
@@ -235,7 +235,7 @@ class GameScoresheetService {
             ...mapSharedScoresheetBase(s),
             rounds: s.sharedRounds.map((sr) => mapRound(sr.round)),
           })),
-        ].sort(scoresheetSortComparator);
+        ].toSorted(scoresheetSortComparator);
       }
 
       const sharedScoresheets = await scoresheetRepository.getAllShared(
@@ -254,7 +254,7 @@ class GameScoresheetService {
           ...mapSharedScoresheetBase(s),
           rounds: s.sharedRounds.map((sr) => mapRound(sr.round)),
         }))
-        .sort(scoresheetSortComparator);
+        .toSorted(scoresheetSortComparator);
     });
   }
 

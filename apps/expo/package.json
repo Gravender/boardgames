@@ -11,10 +11,10 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "format": "oxfmt --check .",
-    "lint": "oxlint --report-unused-disable-directives .",
+    "lint": "oxlint --report-unused-disable-directives",
     "typecheck": "tsc --noEmit",
     "format:fix": "oxfmt .",
-    "lint:fix": "oxlint --fix --report-unused-disable-directives ."
+    "lint:fix": "oxlint --fix --report-unused-disable-directives"
   },
   "dependencies": {
     "@better-auth/expo": "catalog:",

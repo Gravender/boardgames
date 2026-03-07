@@ -38,7 +38,7 @@ export function PlayerGames({ player }: { player: Player }) {
       competitivePlays: game.competitivePlays,
       coopPlays: game.coopPlays,
     }))
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       if (a.plays > 10 && b.plays > 10)
         return Number(b.overall) - Number(a.overall);
       if (a.plays > 5 && b.plays > 5) return b.wins - a.wins;

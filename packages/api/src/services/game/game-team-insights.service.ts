@@ -105,9 +105,9 @@ export const computeTeamConfigurations = (
     const sortedTeams = Array.from(teamGroups.values())
       .map((g) => ({
         ...g,
-        playerKeys: g.playerKeys.sort(),
+        playerKeys: g.playerKeys.toSorted(),
       }))
-      .sort((a, b) =>
+      .toSorted((a, b) =>
         a.playerKeys.join("|").localeCompare(b.playerKeys.join("|")),
       );
 
@@ -154,7 +154,7 @@ export const computeTeamConfigurations = (
         wins: t.wins,
       })),
     }))
-    .sort((a, b) => b.matchCount - a.matchCount)
+    .toSorted((a, b) => b.matchCount - a.matchCount)
     .slice(0, 15);
 
   return configs;

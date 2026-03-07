@@ -910,10 +910,10 @@ export function playerAndRolesAggregated(
               },
               null,
             );
-            return {
-              avgScore: sumScores ? sumScores / round.scores.length : null,
-              ...round,
-            };
+            return Object.assign(
+              { avgScore: sumScores ? sumScores / round.scores.length : null },
+              round,
+            );
           }),
           winRate:
             scoresheet.plays > 0 ? scoresheet.wins / scoresheet.plays : 0,
@@ -1334,7 +1334,7 @@ function updateComboRoles(
   for (const roleCombo of roleCombos) {
     const sortedCombo = roleCombo
       .slice()
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .toSorted((a, b) => a.name.localeCompare(b.name));
     const roleComboKey = sortedCombo.map((r) => r.name).join(" + ");
     const globalCombo = comboRoles[roleComboKey];
     if (!globalCombo) {

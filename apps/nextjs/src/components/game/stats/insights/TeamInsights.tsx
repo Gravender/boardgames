@@ -52,7 +52,9 @@ const PlayerAvatar = ({
 // ─── Helpers ─────────────────────────────────────────────────────
 
 const deriveShapeLabel = (config: TeamConfig): string => {
-  const sizes = config.teams.map((t) => t.players.length).sort((a, b) => b - a);
+  const sizes = config.teams
+    .map((t) => t.players.length)
+    .toSorted((a, b) => b - a);
   return sizes.join("v");
 };
 
@@ -234,7 +236,7 @@ const OpposingTeamsView = ({
     for (const config of configurations) {
       shapes.add(deriveShapeLabel(config));
     }
-    return Array.from(shapes).sort();
+    return Array.from(shapes).toSorted();
   }, [configurations]);
 
   const filteredConfigs = useMemo(() => {

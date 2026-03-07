@@ -308,7 +308,7 @@ export const ScoresheetForm = withForm({
                   >
                     Cancel
                   </Button>
-                  {/*  
+                  {/*
           TODO: Add validation before saving
            */}
                   <Button

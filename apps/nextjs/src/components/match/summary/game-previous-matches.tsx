@@ -29,7 +29,7 @@ export function GamePreviousMatches(input: { game: GameInput }) {
           <ScrollArea className="w-1 flex-1">
             <div className="flex gap-2 p-1 sm:p-4">
               {gameMatches
-                .sort((a, b) => compareDesc(a.date, b.date))
+                .toSorted((a, b) => compareDesc(a.date, b.date))
                 .map((match) => (
                   <Link
                     key={`${match.id}-${match.type}`}

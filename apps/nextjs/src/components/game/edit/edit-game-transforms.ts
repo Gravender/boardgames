@@ -327,9 +327,9 @@ export function transformToApiInput(
             );
 
           const roundsToDelete = foundScoresheet.rounds
-            .map<
-              UpdateScoresheetAndRoundsType["roundsToDelete"][number]
-            >((round) => round.id)
+            .map<UpdateScoresheetAndRoundsType["roundsToDelete"][number]>(
+              (round) => round.id,
+            )
             .filter(
               (roundId) =>
                 !scoresheet.rounds.find((round) => round.roundId === roundId),

@@ -45,15 +45,16 @@ class LocationRepository {
   ): Promise<InferQueryResult<"location", TConfig> | undefined> {
     const database = tx ?? db;
     const { id, createdBy, ...queryConfig } = filters;
-    const result = await database.query.location.findFirst({
-      where: {
-        id: id,
-        createdBy: createdBy,
-        deletedAt: {
-          isNull: true,
-        },
-        ...(queryConfig.where ?? {}),
+    const where = {
+      ...(queryConfig.where as QueryConfig<"location">["where"]),
+      id: id,
+      createdBy: createdBy,
+      deletedAt: {
+        isNull: true,
       },
+    } satisfies QueryConfig<"location">["where"];
+    const result = await database.query.location.findFirst({
+      where,
       with: queryConfig.with,
       orderBy: queryConfig.orderBy,
     });
@@ -69,19 +70,21 @@ class LocationRepository {
   ): Promise<InferQueryResult<"sharedLocation", TConfig> | undefined> {
     const database = tx ?? db;
     const { id, sharedWithId, ...queryConfig } = filters;
+    const where = {
+      ...(queryConfig.where as QueryConfig<"sharedLocation">["where"]),
+      id: id,
+      sharedWithId: sharedWithId,
+      linkedLocationId: {
+        isNull: true,
+      },
+    } satisfies QueryConfig<"sharedLocation">["where"];
+    const withConfig = {
+      ...(queryConfig.with as QueryConfig<"sharedLocation">["with"]),
+      location: true,
+    } as QueryConfig<"sharedLocation">["with"];
     const result = await database.query.sharedLocation.findFirst({
-      where: {
-        id: id,
-        sharedWithId: sharedWithId,
-        linkedLocationId: {
-          isNull: true,
-        },
-        ...(queryConfig.where ?? {}),
-      },
-      with: {
-        location: true,
-        ...(queryConfig.with ?? {}),
-      },
+      where,
+      with: withConfig,
       orderBy: queryConfig.orderBy,
     });
     return result as InferQueryResult<"sharedLocation", TConfig> | undefined;
@@ -97,19 +100,21 @@ class LocationRepository {
   ): Promise<InferQueryResult<"sharedLocation", TConfig> | undefined> {
     const database = tx ?? db;
     const { locationId, sharedWithId, ...queryConfig } = filters;
+    const where = {
+      ...(queryConfig.where as QueryConfig<"sharedLocation">["where"]),
+      locationId: locationId,
+      sharedWithId: sharedWithId,
+      linkedLocationId: {
+        isNull: true,
+      },
+    } as QueryConfig<"sharedLocation">["where"];
+    const withConfig = {
+      ...(queryConfig.with as QueryConfig<"sharedLocation">["with"]),
+      location: true,
+    } satisfies QueryConfig<"sharedLocation">["with"];
     const result = await database.query.sharedLocation.findFirst({
-      where: {
-        locationId: locationId,
-        sharedWithId: sharedWithId,
-        linkedLocationId: {
-          isNull: true,
-        },
-        ...(queryConfig.where ?? {}),
-      },
-      with: {
-        location: true,
-        ...(queryConfig.with ?? {}),
-      },
+      where,
+      with: withConfig,
       orderBy: queryConfig.orderBy,
     });
     return result as InferQueryResult<"sharedLocation", TConfig> | undefined;

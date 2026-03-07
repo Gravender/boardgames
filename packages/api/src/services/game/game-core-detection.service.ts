@@ -83,7 +83,7 @@ export const detectCores = (
       }
       for (const group of teamGroups.values()) {
         if (group.length < coreSize) continue;
-        const subsets = kCombinations(group.sort(), coreSize);
+        const subsets = kCombinations(group.toSorted(), coreSize);
         for (const subset of subsets) {
           const coreKey = subset.join("|");
           let entry = coreMap.get(coreKey);
@@ -97,7 +97,7 @@ export const detectCores = (
       continue;
     }
 
-    const playerKeys = matchData.players.map((p) => p.playerKey).sort();
+    const playerKeys = matchData.players.map((p) => p.playerKey).toSorted();
     if (playerKeys.length < coreSize) continue;
 
     const subsets = kCombinations(playerKeys, coreSize);
@@ -410,7 +410,7 @@ export const computeCoreStats = (
 
       return { player: p, avgPlacement, winRate, wins, losses, rank: 0 };
     })
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       if (hasPlacementData) {
         if (a.avgPlacement === 0 && b.avgPlacement !== 0) return 1;
         if (b.avgPlacement === 0 && a.avgPlacement !== 0) return -1;
@@ -437,7 +437,7 @@ export const computeCoreStats = (
 
   // Build guest list sorted by count desc
   const guests = Array.from(guestCountMap.values())
-    .sort((a, b) => b.count - a.count)
+    .toSorted((a, b) => b.count - a.count)
     .slice(0, 10);
 
   const stability = matchCount > 0 ? exactMatchCount / matchCount : 0;

@@ -16,11 +16,11 @@
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "dev": "tsc",
     "format": "oxfmt --check .",
-    "lint": "oxlint --report-unused-disable-directives .",
+    "lint": "oxlint --report-unused-disable-directives",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "ui-add": "pnpm dlx shadcn@latest add && oxfmt src",
     "format:fix": "oxfmt .",
-    "lint:fix": "oxlint --fix --report-unused-disable-directives ."
+    "lint:fix": "oxlint --fix --report-unused-disable-directives"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

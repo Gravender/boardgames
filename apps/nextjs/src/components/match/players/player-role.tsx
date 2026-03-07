@@ -132,9 +132,9 @@ const RoleList = ({
                     isSameRole(r, role),
                   );
                   if (foundRoleIndex > -1) {
-                    const newRoles = [
-                      ...field.state.value.filter((r) => !isSameRole(r, role)),
-                    ];
+                    const newRoles = field.state.value.filter(
+                      (r) => !isSameRole(r, role),
+                    );
                     field.handleChange(newRoles);
                     return;
                   }

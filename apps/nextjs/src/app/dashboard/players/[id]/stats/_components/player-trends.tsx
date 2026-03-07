@@ -45,7 +45,7 @@ export function PlayerTrends({ player }: { player: Player }) {
       winRate: number;
       gamesPlayed: number;
     }[] = [];
-    const sortedMatches = [...player.matches].sort((a, b) =>
+    const sortedMatches = [...player.matches].toSorted((a, b) =>
       compareAsc(a.date, b.date),
     );
     sortedMatches.forEach((match, index) => {
@@ -97,7 +97,7 @@ export function PlayerTrends({ player }: { player: Player }) {
     }[] = [];
     let otherPlaytime = 0;
     player.stats.gameStats
-      .sort((a, b) => b.playtime - a.playtime)
+      .toSorted((a, b) => b.playtime - a.playtime)
       .forEach((game, index) => {
         if (index < 5) {
           pieData.push({

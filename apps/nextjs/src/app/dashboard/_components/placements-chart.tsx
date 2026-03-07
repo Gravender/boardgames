@@ -13,7 +13,7 @@ import { useTRPC } from "~/trpc/react";
 
 export default function PlacementsChart() {
   const trpc = useTRPC();
-  const { data: data } = useSuspenseQuery(
+  const { data } = useSuspenseQuery(
     trpc.dashboard.getUserPlacements.queryOptions(),
   );
   const chartConfig = {
