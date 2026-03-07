@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 80,
+  "tabWidth": 2,
+  "useTabs": false,
+  "ignorePatterns": [
+    ".next",
+    ".expo",
+    "expo-plugins",
+    ".turbo",
+    ".cache",
+    ".pnpm-store",
+    "coverage",
+    "dist",
+    "node_modules",
+    "apps/expo/android",
+    "apps/expo/ios",
+    "tooling/playwright-web/playwright",
+    "tooling/playwright-web/playwright-report",
+    "tooling/playwright-web/test-results",
+    "tooling/playwright-web/blob-report"
+  ],
+  "sortPackageJson": false
+}

@@ -33,15 +33,17 @@
     "build": "tsc",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "dev": "tsc",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
-    "lint": "eslint --flag unstable_native_nodejs_ts_config",
+    "format": "oxfmt --check .",
+    "lint": "oxlint --report-unused-disable-directives .",
     "push": "pnpm with-env drizzle-kit push",
     "migrate": "pnpm with-env drizzle-kit migrate",
     "generate": "pnpm with-env drizzle-kit generate",
     "seed": "pnpm with-env tsx src/seeding/seed.ts",
     "studio": "pnpm with-env drizzle-kit studio",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
-    "with-env": "dotenv -e ../../.env --"
+    "with-env": "dotenv -e ../../.env --",
+    "format:fix": "oxfmt .",
+    "lint:fix": "oxlint --fix --report-unused-disable-directives ."
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
@@ -52,8 +54,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@board-games/eslint-config": "workspace:*",
-    "@board-games/prettier-config": "workspace:*",
     "@board-games/tsconfig": "workspace:*",
     "@faker-js/faker": "^9.6.0",
     "@types/d3": "^7.4.3",
@@ -61,9 +61,6 @@
     "d3": "^7.9.0",
     "date-fns": "^4.1.0",
     "drizzle-kit": "1.0.0-beta.12-a5629fb",
-    "eslint": "catalog:",
-    "prettier": "catalog:",
     "typescript": "catalog:"
-  },
-  "prettier": "@board-games/prettier-config"
+  }
 }

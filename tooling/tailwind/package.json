@@ -10,22 +10,19 @@
   "license": "MIT",
   "scripts": {
     "clean": "git clean -xdf .cache .turbo node_modules",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
-    "lint": "eslint --flag unstable_native_nodejs_ts_config",
-    "typecheck": "tsc --noEmit"
+    "format": "oxfmt --check .",
+    "lint": "oxlint --report-unused-disable-directives .",
+    "typecheck": "tsc --noEmit",
+    "format:fix": "oxfmt .",
+    "lint:fix": "oxlint --fix --report-unused-disable-directives ."
   },
   "dependencies": {
     "@tailwindcss/postcss": "catalog:",
     "tailwindcss": "catalog:"
   },
   "devDependencies": {
-    "@board-games/eslint-config": "workspace:*",
-    "@board-games/prettier-config": "workspace:*",
     "@board-games/tsconfig": "workspace:*",
     "@types/node": "catalog:",
-    "eslint": "catalog:",
-    "prettier": "catalog:",
     "typescript": "catalog:"
-  },
-  "prettier": "@board-games/prettier-config"
+  }
 }
