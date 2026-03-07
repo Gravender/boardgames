@@ -40,7 +40,7 @@ class FriendRepository {
     const result = await database.query.friend.findMany({
       ...queryConfig,
       where: {
-        ...(queryConfig.where ?? {}),
+        ...queryConfig.where,
         userId: filters.userId,
       },
     });

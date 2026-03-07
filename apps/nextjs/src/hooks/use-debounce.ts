@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { debounce } from "lodash";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function useDebounce<T extends (...args: any[]) => void>(
   callback: T,
   delay: number,
@@ -45,7 +44,6 @@ export function useDebouncedCallback<T extends (...args: never[]) => void>(
   }, [callback]);
 
   return useMemo(() => {
-    // eslint-disable-next-line react-hooks/refs
     return debounce((...args: Parameters<T>) => {
       ref.current(...args);
     }, delay);

@@ -31,13 +31,17 @@ const DropdownMenuSubTrigger = React.forwardRef<
   const { open } = DropdownMenuPrimitive.useSubContext();
   const Icon =
     Platform.OS === "web" ? ChevronRight : open ? ChevronUp : ChevronDown;
-  return (
-    <TextClassContext.Provider
-      value={cn(
+  const textClassName = React.useMemo(
+    () =>
+      cn(
         "native:text-lg select-none text-sm text-primary",
         open && "native:text-accent-foreground",
-      )}
-    >
+      ),
+    [open],
+  );
+
+  return (
+    <TextClassContext.Provider value={textClassName}>
       <DropdownMenuPrimitive.SubTrigger
         ref={ref}
         className={cn(

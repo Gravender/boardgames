@@ -54,7 +54,6 @@ export function GameImage({
       )}
     >
       {/* TODO: fix this bug */}
-      {/* eslint-disable-next-line react-hooks/static-components */}
       <Inner />
       {children}
     </div>
@@ -94,7 +93,6 @@ function UserImage({
     />
   );
 }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ImageIconSchema = imageSchema.pick({
   type: true,
   name: true,

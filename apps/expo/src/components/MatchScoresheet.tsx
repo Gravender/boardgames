@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // TODO: Finish implementing
 
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
@@ -52,11 +51,11 @@ const ManualWinnerPlayerSchema = z
 
 export function MatchScoresheet({ data }: { data: Match }) {
   const [players, setPlayers] = useState<Player[]>(() => [...data.players]);
-  const [manualWinners, setManualWinners] = useState<
+  const [, setManualWinners] = useState<
     z.infer<typeof ManualWinnerPlayerSchema>
   >([]);
-  const [openManualWinnerDialog, setOpenManualWinnerDialog] = useState(false);
-  const [hasPlayersChanged, setHasPlayersChanged] = useState(false);
+  const [, setOpenManualWinnerDialog] = useState(false);
+  const [, setHasPlayersChanged] = useState(false);
 
   const [duration, setDuration] = useState(data.duration);
   const [isRunning, setIsRunning] = useState(data.running);

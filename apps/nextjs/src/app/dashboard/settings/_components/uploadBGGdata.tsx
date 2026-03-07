@@ -195,7 +195,6 @@ export default function UploadBGGdata() {
   async function onSubmit(values: FormValues) {
     try {
       const fileContent = await values.jsonFile.text();
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const parsedJson: JsonData = JSON.parse(fileContent);
       uploadJson.mutate({
         games: parsedJson.games,
@@ -260,15 +259,12 @@ export default function UploadBGGdata() {
                           {...rest}
                         />
                       </label>
-                      {
-                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                        value && (
-                          <p className="text-muted-foreground text-sm">
-                            Selected file:{" "}
-                            {value instanceof File ? value.name : ""}
-                          </p>
-                        )
-                      }
+                      {value && (
+                        <p className="text-muted-foreground text-sm">
+                          Selected file:{" "}
+                          {value instanceof File ? value.name : ""}
+                        </p>
+                      )}
                     </div>
                   </FormControl>
                   <FormDescription>

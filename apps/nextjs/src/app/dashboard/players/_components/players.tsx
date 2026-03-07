@@ -22,9 +22,7 @@ export function PlayersTable({
   defaultIsOpen?: boolean;
 }) {
   const trpc = useTRPC();
-  const { data: data } = useSuspenseQuery(
-    trpc.player.getPlayers.queryOptions(),
-  );
+  const { data } = useSuspenseQuery(trpc.player.getPlayers.queryOptions());
   const [players, setPlayers] = useState(data);
 
   return (

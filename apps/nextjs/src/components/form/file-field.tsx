@@ -35,7 +35,6 @@ export const FileField = ({
     const value = field.state.value;
     if (value instanceof File) {
       const url = URL.createObjectURL(value);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreview(url);
       return () => URL.revokeObjectURL(url);
     } else if (typeof value === "string") {

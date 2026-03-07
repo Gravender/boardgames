@@ -68,9 +68,16 @@ export function GamesSkeleton() {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {[
+            "unique-games-skeleton-1",
+            "unique-games-skeleton-2",
+            "unique-games-skeleton-3",
+            "unique-games-skeleton-4",
+            "unique-games-skeleton-5",
+            "unique-games-skeleton-6",
+          ].map((itemKey) => (
             <div
-              key={i}
+              key={itemKey}
               className="flex items-center justify-between rounded-lg border p-3"
             >
               <div className="flex items-center gap-3">

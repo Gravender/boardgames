@@ -10,9 +10,11 @@
     "dev:ios": "expo start --ios",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path .prettierignore",
-    "lint": "eslint --flag unstable_native_nodejs_ts_config",
-    "typecheck": "tsc --noEmit"
+    "format": "oxfmt --check .",
+    "lint": "oxlint --report-unused-disable-directives",
+    "typecheck": "tsc --noEmit",
+    "format:fix": "oxfmt .",
+    "lint:fix": "oxlint --fix --report-unused-disable-directives"
   },
   "dependencies": {
     "@better-auth/expo": "catalog:",
@@ -78,15 +80,10 @@
   },
   "devDependencies": {
     "@board-games/api": "workspace:*",
-    "@board-games/eslint-config": "workspace:*",
-    "@board-games/prettier-config": "workspace:*",
     "@board-games/tailwind-config": "workspace:*",
     "@board-games/tsconfig": "workspace:*",
     "@types/react": "catalog:react19",
-    "eslint": "catalog:",
-    "prettier": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:"
-  },
-  "prettier": "@board-games/prettier-config"
+  }
 }

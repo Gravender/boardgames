@@ -31,13 +31,12 @@ class SharingRepository {
     const database = tx ?? db;
     const { ownerId, sharedWithId, ...queryConfig } = filters;
     const result = await database.query.shareRequest.findFirst({
+      ...(queryConfig as unknown as TConfig),
       where: {
+        ...(queryConfig as QueryConfig<"shareRequest">).where,
         ownerId,
         sharedWithId,
-        ...(queryConfig.where ?? {}),
       },
-      with: queryConfig.with,
-      orderBy: queryConfig.orderBy,
     });
     return result as InferQueryResult<"shareRequest", TConfig> | undefined;
   }

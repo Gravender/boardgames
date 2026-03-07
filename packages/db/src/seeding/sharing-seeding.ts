@@ -56,7 +56,6 @@ export async function seedSharing(d3Seed: number) {
       },
     },
   });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const parentShareRequestSchema = insertShareRequestSchema
     .required({ createdAt: true, ownerId: true, permission: true })
     .omit({ updatedAt: true, id: true, token: true, parentShareId: true });
@@ -91,7 +90,6 @@ export async function seedSharing(d3Seed: number) {
                 }
                 return "rejected";
               }
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
               if (itemType === "match") {
                 if (userB.friendSetting.autoAcceptMatches) {
                   return "accepted";
@@ -177,7 +175,6 @@ export async function seedSharing(d3Seed: number) {
             sharedWith: true,
           },
         });
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const childShareRequestSchema = insertShareRequestSchema
           .required({ parentShareId: true, createdAt: true })
           .omit({ updatedAt: true, id: true, token: true });

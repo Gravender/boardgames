@@ -41,7 +41,6 @@ export function ResetPasswordForm({
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const token = searchParams.get("token")!;
 
   const [isLoading, setIsLoading] = useState(false);

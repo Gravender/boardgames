@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-properties */
 // This file configures the initialization of Sentry on the client.
 // The added config here will be used whenever a users loads a page in their browser.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
@@ -36,7 +35,6 @@ Sentry.init({
 });
 
 if (process.env.NODE_ENV === "development") {
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   Spotlight.init();
 }
 

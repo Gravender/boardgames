@@ -45,7 +45,6 @@ export function GamePerformance() {
                       <span>
                         {"Played " +
                           // TODO: fix lint error
-                          // eslint-disable-next-line react-hooks/purity
                           formatDistance(game.lastPlayed, Date.now(), {
                             addSuffix: true,
                           })}
@@ -82,9 +81,16 @@ export function GamePerformanceSkeleton() {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {[
+            "game-performance-skeleton-1",
+            "game-performance-skeleton-2",
+            "game-performance-skeleton-3",
+            "game-performance-skeleton-4",
+            "game-performance-skeleton-5",
+            "game-performance-skeleton-6",
+          ].map((itemKey) => (
             <div
-              key={i}
+              key={itemKey}
               className="flex items-center justify-between rounded-lg border p-3"
             >
               <div className="flex items-center gap-3">

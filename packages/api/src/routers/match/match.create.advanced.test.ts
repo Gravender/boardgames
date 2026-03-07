@@ -254,8 +254,8 @@ describe("Match Create - Advanced Tests", () => {
       expect(result.id).toBeDefined();
       expect(result.name).toBe("Multi-Player Match");
       expect(result.players).toHaveLength(5);
-      expect(result.players.map((p) => p.id).sort()).toEqual(
-        players.map((p) => p.id).sort(),
+      expect(result.players.map((p) => p.id).toSorted()).toEqual(
+        players.map((p) => p.id).toSorted(),
       );
     });
 

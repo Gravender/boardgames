@@ -48,7 +48,6 @@ export const dashboardRouter = {
       };
 
       for (let i = 0; i < input.segments.length; i++) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const seg = input.segments[i]!;
         href += `/${seg}`;
 
@@ -337,7 +336,7 @@ export const dashboardRouter = {
           month: date.getMonth(),
           name: date.toLocaleString("default", { month: "long" }) as MonthName,
         };
-      }).reverse();
+      }).toReversed();
 
       const matchesPerMonth = last12Months.reduce(
         (acc, { year, month, name }) => {

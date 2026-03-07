@@ -152,7 +152,7 @@ function calculateHIndex(games: { plays: number }[]): number {
 
   // Sort games by number of plays in descending order
   const sortedPlays = [...games]
-    .sort((a, b) => b.plays - a.plays)
+    .toSorted((a, b) => b.plays - a.plays)
     .map((game) => game.plays);
 
   // Find the h-index

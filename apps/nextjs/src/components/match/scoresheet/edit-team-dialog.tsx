@@ -385,11 +385,11 @@ function Content({
                                     },
                                   ]);
                                 } else {
-                                  field.onChange([
-                                    ...formRoles.filter(
+                                  field.onChange(
+                                    formRoles.filter(
                                       (r) => !isSameRole(r, role),
                                     ),
-                                  ]);
+                                  );
                                 }
                               }}
                             />

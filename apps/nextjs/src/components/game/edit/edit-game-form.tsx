@@ -213,11 +213,10 @@ export function EditGameForm({
             const scoresheetName =
               currentScoresheet?.scoresheet.name ??
               `Scoresheet ${scoresheets.length}`;
-            const editable =
+            const editable = !(
               currentScoresheet?.scoresheetType === "shared" &&
               currentScoresheet.permission !== "edit"
-                ? false
-                : true;
+            );
             return (
               <>
                 <CardHeader>

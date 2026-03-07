@@ -15,10 +15,12 @@
     "build": "tsc",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "dev": "tsc",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
-    "lint": "eslint --flag unstable_native_nodejs_ts_config",
+    "format": "oxfmt --check .",
+    "lint": "oxlint --report-unused-disable-directives",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
-    "ui-add": "pnpm dlx shadcn@latest add && prettier src --write --list-different"
+    "ui-add": "pnpm dlx shadcn@latest add && oxfmt src",
+    "format:fix": "oxfmt .",
+    "lint:fix": "oxlint --fix --report-unused-disable-directives"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -55,12 +57,8 @@
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
-    "@board-games/eslint-config": "workspace:*",
-    "@board-games/prettier-config": "workspace:*",
     "@board-games/tsconfig": "workspace:*",
     "@types/react": "catalog:react19",
-    "eslint": "catalog:",
-    "prettier": "catalog:",
     "react": "catalog:react19",
     "typescript": "catalog:",
     "zod": "catalog:"
@@ -68,6 +66,5 @@
   "peerDependencies": {
     "react": "catalog:react19",
     "zod": "catalog:"
-  },
-  "prettier": "@board-games/prettier-config"
+  }
 }

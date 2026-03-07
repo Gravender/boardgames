@@ -52,7 +52,9 @@ const PlayerAvatar = ({
 // ─── Helpers ─────────────────────────────────────────────────────
 
 const deriveShapeLabel = (config: TeamConfig): string => {
-  const sizes = config.teams.map((t) => t.players.length).sort((a, b) => b - a);
+  const sizes = config.teams
+    .map((t) => t.players.length)
+    .toSorted((a, b) => b - a);
   return sizes.join("v");
 };
 
@@ -148,10 +150,7 @@ const TeamConfigCard = ({ config }: { config: TeamConfig }) => {
       {/* Teams display with parenthesized names and "vs" */}
       <div className="flex flex-wrap items-center gap-1">
         {config.teams.map((team, idx) => (
-          <div
-            key={`${team.teamName}-${idx}`}
-            className="flex items-center gap-1"
-          >
+          <div key={team.teamName} className="flex items-center gap-1">
             {idx > 0 && (
               <span className="text-muted-foreground mx-1 text-sm font-semibold">
                 vs
@@ -234,7 +233,7 @@ const OpposingTeamsView = ({
     for (const config of configurations) {
       shapes.add(deriveShapeLabel(config));
     }
-    return Array.from(shapes).sort();
+    return Array.from(shapes).toSorted();
   }, [configurations]);
 
   const filteredConfigs = useMemo(() => {

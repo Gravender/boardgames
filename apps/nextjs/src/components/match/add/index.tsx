@@ -202,7 +202,6 @@ function AddMatchContent({
               />
             );
           }
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           if (currentForm === "player") {
             return (
               <CustomPlayerSelect

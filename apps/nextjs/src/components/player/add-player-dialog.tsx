@@ -185,7 +185,6 @@ const PlayerContent = ({
   isSubmitting: boolean;
   setIsSubmitting: (isSubmitting: boolean) => void;
 }) => {
-
   const form = useAppForm({
     defaultValues: {
       name: "",

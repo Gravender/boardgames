@@ -38,7 +38,7 @@ export function PlayerGames({ player }: { player: Player }) {
       competitivePlays: game.competitivePlays,
       coopPlays: game.coopPlays,
     }))
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       if (a.plays > 10 && b.plays > 10)
         return Number(b.overall) - Number(a.overall);
       if (a.plays > 5 && b.plays > 5) return b.wins - a.wins;
@@ -48,7 +48,6 @@ export function PlayerGames({ player }: { player: Player }) {
       if (gameChartMode === "competitive") {
         return b.competitivePlays - a.competitivePlays;
       }
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (gameChartMode === "cooperative") {
         return b.coopPlays - a.coopPlays;
       }
@@ -148,7 +147,6 @@ export function PlayerGames({ player }: { player: Player }) {
                   dataKey="game"
                   type="category"
                   tickFormatter={(value, _) =>
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
                     value.length > 10 ? value.substring(0, 10) + "..." : value
                   }
                 />
@@ -157,10 +155,8 @@ export function PlayerGames({ player }: { player: Player }) {
                     <ChartTooltipContent
                       formatter={(value, name) => {
                         if (name === "Plays") {
-                          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                           return [`${value} Plays`];
                         }
-                        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                         return [`${value}% Win Rate`];
                       }}
                     />

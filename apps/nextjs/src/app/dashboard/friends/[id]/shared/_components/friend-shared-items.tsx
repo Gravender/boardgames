@@ -23,6 +23,14 @@ import {
 import { Input } from "@board-games/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 
+const formatDate = (date: Date) => {
+  return new Date(date).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
 export function FriendSharedItems({
   sharedWith,
   sharedTo,
@@ -235,15 +243,6 @@ function GameItem({
       sheet.name.toLowerCase().includes(lowerSearchTerm),
     );
   }, [item.scoresheets, searchTerm]);
-
-  // Format date to readable format
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   return (
     <div className="overflow-hidden rounded-md border">

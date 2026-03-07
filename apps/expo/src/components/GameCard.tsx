@@ -18,11 +18,9 @@ export function GamesCard({
 }) {
   const playtimeText = () => {
     const playtime = game.playtime;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (playtime?.min && playtime?.max) {
       return `${playtime.min} - ${playtime.max}`;
     }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (playtime?.min || playtime?.max) {
       return `${playtime.min ?? playtime.max}`;
     }
@@ -30,11 +28,9 @@ export function GamesCard({
   };
   const playerText = () => {
     const players = game.players;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (players?.min && players?.max) {
       return `${players.min} - ${players.max}`;
     }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (players?.min || players?.max) {
       return `${players.min ?? players.max}`;
     }

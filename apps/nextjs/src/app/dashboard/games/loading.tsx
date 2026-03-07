@@ -29,8 +29,15 @@ export default function Loading() {
 
         <div className="p-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-[300px] rounded-lg" />
+            {[
+              "game-skeleton-1",
+              "game-skeleton-2",
+              "game-skeleton-3",
+              "game-skeleton-4",
+              "game-skeleton-5",
+              "game-skeleton-6",
+            ].map((itemKey) => (
+              <Skeleton key={itemKey} className="h-[300px] rounded-lg" />
             ))}
           </div>
         </div>

@@ -46,7 +46,6 @@ async function SidebarLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/require-await
 export default async function DashboardLayout({
   children,
 }: {

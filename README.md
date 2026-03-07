@@ -58,9 +58,17 @@ A web and mobile project for logging board games, players, matches, scoresheets,
 ## Useful scripts
 
 - `pnpm db:studio` — Open Drizzle Studio against the local database.
-- `pnpm lint` / `pnpm typecheck` — Static checks.
+- `pnpm lint` / `pnpm lint:fix` — Run oxlint checks or autofix.
+- `pnpm format` / `pnpm format:fix` — Run oxfmt checks or apply formatting.
+- `pnpm typecheck` — Run TypeScript checks.
 - `pnpm e2e` — Playwright tests for the web client.
 - `./stop-database.sh` — Stop the local PostgreSQL container.
+
+## Linting and formatting
+
+- `oxlint` and `oxfmt` are the default linting and formatting tools across the monorepo.
+- CI runs `pnpm lint` and `pnpm format` as required checks.
+- ESLint/Prettier workspace config packages have been removed from active tooling.
 
 ## E2E Testing
 

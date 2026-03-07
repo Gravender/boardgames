@@ -7,7 +7,6 @@ import { FriendsListSkeleton } from "./_components/friend-list-skeleton";
 import { FriendRequestsSkeleton } from "./_components/friend-requests-skeleton";
 import { FriendRequestsTabs } from "./_components/friend-requests-tabs";
 
-// eslint-disable-next-line @typescript-eslint/require-await
 export default async function FriendsPage() {
   prefetch(trpc.friend.getFriends.queryOptions());
   prefetch(trpc.friend.getFriendRequests.queryOptions());

@@ -52,7 +52,6 @@ export function PlayerDropDown({
 
   const canEdit =
     data.type === "original" ||
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     (data.type === "shared" && data.permissions === "edit");
 
   return (

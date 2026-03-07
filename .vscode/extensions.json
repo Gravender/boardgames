@@ -1,9 +1,8 @@
 {
-    "recommendations": [
-        "yzhang.markdown-all-in-one",
-        "esbenp.prettier-vscode",
-        "dbaeumer.vscode-eslint",
-        "yoavbls.pretty-ts-errors",
-        "bradlc.vscode-tailwindcss"
-    ]
+  "recommendations": [
+    "yzhang.markdown-all-in-one",
+    "oxc.oxc-vscode",
+    "yoavbls.pretty-ts-errors",
+    "bradlc.vscode-tailwindcss"
+  ]
 }

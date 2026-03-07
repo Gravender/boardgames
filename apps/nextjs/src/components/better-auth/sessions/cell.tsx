@@ -13,6 +13,16 @@ import { toast } from "@board-games/ui/toast";
 
 import { authClient } from "~/auth/client";
 
+const getDeviceIcon = (userAgent?: UAParser.IDevice["type"]) => {
+  if (userAgent === "mobile") {
+    return <SmartphoneIcon className="size-4" />;
+  } else if (userAgent === "tablet") {
+    return <Tablet className="size-4" />;
+  }
+
+  return <Monitor className="size-4" />;
+};
+
 export const SessionCell = ({ session }: { session: Session }) => {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -45,17 +55,6 @@ export const SessionCell = ({ session }: { session: Session }) => {
     },
   });
 
-  const getDeviceIcon = (userAgent?: UAParser.IDevice["type"]) => {
-    if (userAgent === "mobile") {
-      return <SmartphoneIcon className="size-4" />;
-    } else if (userAgent === "tablet") {
-      return <Tablet className="size-4" />;
-    }
-
-    return <Monitor className="size-4" />;
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const parser = UAParser(session.userAgent!);
 
   return (

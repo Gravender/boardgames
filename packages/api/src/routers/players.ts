@@ -27,6 +27,41 @@ import {
   teammateFrequency,
 } from "../utils/player";
 
+const recomputePlacements = (
+  matchPlayers: { id: number; placement: number | null }[],
+  finalPlacements: { id: number; score: number | null }[],
+) => {
+  // map id -> original placement
+  const originalPlacements = new Map(
+    matchPlayers.map((p) => [p.id, p.placement]),
+  );
+
+  return finalPlacements.map((placement) => {
+    const higher = finalPlacements.filter((candidate) => {
+      if (candidate.score == null && placement.score == null) return false;
+      if (candidate.score == null) return false;
+      if (placement.score == null) return true;
+      return candidate.score > placement.score;
+    }).length;
+
+    const tiedHigher = finalPlacements.filter((candidate) => {
+      const candidatePlacement = originalPlacements.get(candidate.id);
+      const currentPlacement = originalPlacements.get(placement.id);
+      if (candidatePlacement == null || currentPlacement == null) return false;
+      return (
+        candidate.score === placement.score &&
+        candidatePlacement < currentPlacement
+      );
+    }).length;
+
+    return {
+      id: placement.id,
+      score: placement.score,
+      placement: 1 + higher + tiedHigher,
+    };
+  });
+};
+
 export const playerRouter = {
   getPlayersByGame: protectedUserProcedure
     .input(
@@ -164,7 +199,6 @@ export const playerRouter = {
           isUser: player.isUser,
           name: player.name,
           image: player.image,
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           matches: (player.matches?.length ?? 0) + (linkedMatches.length ?? 0),
         };
       });
@@ -178,7 +212,6 @@ export const playerRouter = {
           id: returnedSharedPlayer.id,
           name: returnedSharedPlayer.player.name,
           image: returnedSharedPlayer.player.image,
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           matches: filteredMatches.length ?? 0,
         });
       }
@@ -756,10 +789,7 @@ export const playerRouter = {
             if (!foundGameStats) {
               return null;
             }
-            return {
-              ...foundGameStats,
-              ...game,
-            };
+            return Object.assign(foundGameStats, game);
           })
           .filter((game) => game !== null),
       };
@@ -959,40 +989,6 @@ export const playerRouter = {
                 })),
                 returnedMatch.scoresheet,
               );
-              function recomputePlacements(
-                matchPlayers: { id: number; placement: number | null }[],
-                finalPlacements: { id: number; score: number | null }[],
-              ) {
-                // map id → original placement
-                const orig = new Map(
-                  matchPlayers.map((p) => [p.id, p.placement]),
-                );
-
-                return finalPlacements.map((p) => {
-                  // how many outrank p on score?
-                  const higher = finalPlacements.filter((q) => {
-                    if (q.score == null && p.score == null) return false;
-                    if (q.score == null) return false;
-                    if (p.score == null) return true;
-                    return q.score > p.score;
-                  }).length;
-                  // how many tie on score but outrank p originally?
-                  const tiedHigher = finalPlacements.filter((q) => {
-                    const qPlacement = orig.get(q.id);
-                    const pPlacement = orig.get(p.id);
-                    if (qPlacement == null || pPlacement == null) return false;
-
-                    // Lower original placement outranks higher one
-                    return q.score === p.score && qPlacement < pPlacement;
-                  }).length;
-
-                  return {
-                    id: p.id,
-                    score: p.score,
-                    placement: 1 + higher + tiedHigher,
-                  };
-                });
-              }
               const recomputedPlacements = recomputePlacements(
                 returnedMatch.matchPlayers.map((mPlayer) => ({
                   id: mPlayer.id,

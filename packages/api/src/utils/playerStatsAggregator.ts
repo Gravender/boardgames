@@ -192,26 +192,30 @@ export function aggregatePlayerStats(matches: Matches) {
     >,
   );
   return Object.values(players)
-    .map((player) => ({
-      ...player,
-      winRate: player.wins / player.plays,
-      gameStats: Object.values(player.gameStats)
-        .map((gameStats) => ({
-          ...gameStats,
-          winRate: gameStats.wins / gameStats.plays,
-          averageScore:
-            gameStats.scores.length > 0
-              ? gameStats.scores.reduce((acc, cur) => acc + cur, 0) /
-                gameStats.scores.length
-              : null,
-        }))
+    .map((player) => {
+      const gameStats = Object.values(player.gameStats)
+        .map((gameStat) =>
+          Object.assign({}, gameStat, {
+            winRate: gameStat.wins / gameStat.plays,
+            averageScore:
+              gameStat.scores.length > 0
+                ? gameStat.scores.reduce((acc, cur) => acc + cur, 0) /
+                  gameStat.scores.length
+                : null,
+          }),
+        )
         .toSorted((a, b) => {
           if (a.plays !== b.plays) {
             return b.plays - a.plays;
           }
           return b.winRate - a.winRate;
-        }),
-    }))
+        });
+
+      return Object.assign(player, {
+        winRate: player.wins / player.plays,
+        gameStats,
+      });
+    })
     .toSorted((a, b) => {
       if (a.plays !== b.plays) {
         return b.plays - a.plays;

@@ -90,7 +90,6 @@ export function updateRoundStatistics(
 
   return tempPlayerRounds;
 }
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type Player = {
   id: number;
   type: "original" | "shared";
@@ -124,7 +123,6 @@ type Player = {
     description: string | null;
   }[];
 };
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type PlayerMatch = {
   type: "original" | "shared";
   id: number;
@@ -173,7 +171,6 @@ export type PlayerMatch = {
     } | null;
   }[];
 };
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type OriginalMatch = {
   id: number;
   name: string;
@@ -285,7 +282,6 @@ type OriginalMatch = {
     }[];
   };
 };
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type SharedMatch = {
   id: number;
   ownerId: string;
@@ -665,7 +661,6 @@ export function matchesAggregated(
   });
   return matches;
 }
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type Roles = {
   id: number;
   name: string;
@@ -676,7 +671,6 @@ type Roles = {
   updatedAt: Date | null;
   deletedAt: Date | null;
 };
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type RolePlayerStats = {
   id: number;
   name: string;
@@ -694,7 +688,6 @@ type RolePlayerStats = {
   winRate: number;
   placements: Record<number, number>;
 };
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type RoleStats = {
   roleId: number;
   name: string;
@@ -707,7 +700,6 @@ type RoleStats = {
   placements: Record<number, number>;
   players: Record<string, RolePlayerStats>;
 };
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type ComboRoleStats = {
   roles: {
     id: number;
@@ -722,7 +714,6 @@ type ComboRoleStats = {
   winRate: number;
   placements: Record<number, number>;
 };
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type PlayerScoresheetStats = {
   id: number;
   bestScore: number | null;
@@ -750,7 +741,6 @@ type PlayerScoresheetStats = {
     }
   >;
 };
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type PlayerRoleStats = {
   roleId: number;
   name: string;
@@ -761,7 +751,6 @@ type PlayerRoleStats = {
   losses: number;
   placements: Record<number, number>;
 };
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type PlayerRoleComboStats = {
   roles: {
     id: number;
@@ -775,7 +764,6 @@ type PlayerRoleComboStats = {
   placements: Record<number, number>;
 };
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type PlayerStats = {
   id: number;
   type: "original" | "shared";
@@ -864,72 +852,79 @@ export function playerAndRolesAggregated(
     {} as Record<string, PlayerStats>,
   );
   return {
-    roleStats: Object.values(roleStats).map((role) => ({
-      ...role,
-      players: Object.values(role.players).map((player) => ({
-        ...player,
-        matchCount: player.matchIds.size,
-        winRate: player.totalWins / (player.totalWins + player.totalLosses),
-      })),
-      winRate: role.wins / (role.wins + role.losses),
-      playerCount: Object.values(role.players).length,
-      matchCount: role.matchIds.size,
-    })),
-    comboRolesStats: Object.values(comboRoles).map((combo) => ({
-      ...combo,
-      winRate: combo.wins / (combo.wins + combo.losses),
-      playerCount: combo.players.size,
-      matchCount: combo.matchIds.size,
-    })),
-    playerStats: Object.values(players).map((player) => ({
-      ...player,
-      coopWinRate:
-        player.coopMatches > 0 ? player.coopWins / player.coopMatches : 0,
-      competitiveWinRate:
-        player.competitiveMatches > 0
-          ? player.competitiveWins / player.competitiveMatches
-          : 0,
-      scoresheets: Object.values(player.scoresheets).map((scoresheet) => {
-        const sumScores = scoresheet.scores.reduce<number | null>(
-          (acc, score) => {
-            if (acc === null) return score.score;
-            if (score.score === null) return acc;
-            return acc + score.score;
-          },
-          null,
-        );
-        return {
-          ...scoresheet,
-          avgScore: sumScores ? sumScores / scoresheet.scores.length : null,
-          rounds: Object.values(scoresheet.rounds).map((round) => {
-            const sumScores = round.scores.reduce<number | null>(
-              (acc, score) => {
-                if (acc === null) return score.score;
-                if (score.score === null) return acc;
-                return acc + score.score;
-              },
-              null,
-            );
-            return {
-              avgScore: sumScores ? sumScores / round.scores.length : null,
-              ...round,
-            };
+    roleStats: Object.values(roleStats).map((role) =>
+      Object.assign({}, role, {
+        players: Object.values(role.players).map((player) =>
+          Object.assign({}, player, {
+            matchCount: player.matchIds.size,
+            winRate: player.totalWins / (player.totalWins + player.totalLosses),
           }),
-          winRate:
-            scoresheet.plays > 0 ? scoresheet.wins / scoresheet.plays : 0,
-        };
-      }),
-      roles: Object.values(player.roles).map((role) => ({
-        ...role,
+        ),
         winRate: role.wins / (role.wins + role.losses),
+        playerCount: Object.values(role.players).length,
         matchCount: role.matchIds.size,
-      })),
-      roleCombos: Object.values(player.roleCombos).map((combo) => ({
-        ...combo,
+      }),
+    ),
+    comboRolesStats: Object.values(comboRoles).map((combo) =>
+      Object.assign({}, combo, {
         winRate: combo.wins / (combo.wins + combo.losses),
+        playerCount: combo.players.size,
         matchCount: combo.matchIds.size,
-      })),
-    })),
+      }),
+    ),
+    playerStats: Object.values(players).map((player) =>
+      Object.assign({}, player, {
+        coopWinRate:
+          player.coopMatches > 0 ? player.coopWins / player.coopMatches : 0,
+        competitiveWinRate:
+          player.competitiveMatches > 0
+            ? player.competitiveWins / player.competitiveMatches
+            : 0,
+        scoresheets: Object.values(player.scoresheets).map((scoresheet) => {
+          const sumScores = scoresheet.scores.reduce<number | null>(
+            (acc, score) => {
+              if (acc === null) return score.score;
+              if (score.score === null) return acc;
+              return acc + score.score;
+            },
+            null,
+          );
+          return Object.assign({}, scoresheet, {
+            avgScore: sumScores ? sumScores / scoresheet.scores.length : null,
+            rounds: Object.values(scoresheet.rounds).map((round) => {
+              const sumScores = round.scores.reduce<number | null>(
+                (acc, score) => {
+                  if (acc === null) return score.score;
+                  if (score.score === null) return acc;
+                  return acc + score.score;
+                },
+                null,
+              );
+              return Object.assign(
+                {
+                  avgScore: sumScores ? sumScores / round.scores.length : null,
+                },
+                round,
+              );
+            }),
+            winRate:
+              scoresheet.plays > 0 ? scoresheet.wins / scoresheet.plays : 0,
+          });
+        }),
+        roles: Object.values(player.roles).map((role) =>
+          Object.assign({}, role, {
+            winRate: role.wins / (role.wins + role.losses),
+            matchCount: role.matchIds.size,
+          }),
+        ),
+        roleCombos: Object.values(player.roleCombos).map((combo) =>
+          Object.assign({}, combo, {
+            winRate: combo.wins / (combo.wins + combo.losses),
+            matchCount: combo.matchIds.size,
+          }),
+        ),
+      }),
+    ),
   };
 }
 function updateRoleStats(
@@ -1334,7 +1329,7 @@ function updateComboRoles(
   for (const roleCombo of roleCombos) {
     const sortedCombo = roleCombo
       .slice()
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .toSorted((a, b) => a.name.localeCompare(b.name));
     const roleComboKey = sortedCombo.map((r) => r.name).join(" + ");
     const globalCombo = comboRoles[roleComboKey];
     if (!globalCombo) {
@@ -1538,11 +1533,10 @@ export function headToHeadStats(playerMatches: PlayerMatch[]) {
 
   const headToHeadArray = Object.values(headToHead).map((opponent) => {
     const totalGames = opponent.wins + opponent.losses;
-    return {
-      ...opponent,
+    return Object.assign({}, opponent, {
       totalGames: totalGames + opponent.ties,
       winRate: totalGames > 0 ? opponent.wins / totalGames : 0,
-    };
+    });
   });
   headToHeadArray.sort((a, b) => {
     if (a.totalGames > 10 && b.totalGames > 10) {

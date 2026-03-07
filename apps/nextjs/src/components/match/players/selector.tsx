@@ -503,10 +503,8 @@ export const AddPlayersDialogForm = ({
                                                     if (existingRole) {
                                                       return uniqueRoles;
                                                     }
-                                                    return [
-                                                      ...uniqueRoles,
-                                                      role,
-                                                    ];
+                                                    uniqueRoles.push(role);
+                                                    return uniqueRoles;
                                                   }, []);
                                                   form.setFieldValue(
                                                     `players[${playerIdx}].teamId`,
@@ -541,9 +539,16 @@ export const AddPlayersDialogForm = ({
                                       </div>
                                     );
                                   })
-                              : Array.from({ length: 6 }).map((_, i) => (
+                              : [
+                                  "player-skeleton-1",
+                                  "player-skeleton-2",
+                                  "player-skeleton-3",
+                                  "player-skeleton-4",
+                                  "player-skeleton-5",
+                                  "player-skeleton-6",
+                                ].map((itemKey) => (
                                   <div
-                                    key={i}
+                                    key={itemKey}
                                     className="bg-border flex h-12 flex-row items-center space-y-0 space-x-3 rounded-sm p-1 sm:p-2"
                                   >
                                     <div className="flex w-full items-center justify-between gap-1 text-sm font-normal sm:gap-2">

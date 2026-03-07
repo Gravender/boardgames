@@ -19,7 +19,7 @@ class SharedLocationService {
         isDefault: sharedLocation.isDefault,
         permission: sharedLocation.permission,
       }))
-      .sort((a, b) => {
+      .toSorted((a, b) => {
         if (a.isDefault && !b.isDefault) return -1;
         if (!a.isDefault && b.isDefault) return 1;
         return a.name.localeCompare(b.name);

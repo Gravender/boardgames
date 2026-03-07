@@ -15,7 +15,7 @@ import { useTRPC } from "~/trpc/react";
 
 export default function DaysPlayedChart() {
   const trpc = useTRPC();
-  const { data: data } = useSuspenseQuery(
+  const { data } = useSuspenseQuery(
     trpc.dashboard.getDaysPlayed.queryOptions(),
   );
   const chartConfig = {
@@ -72,8 +72,7 @@ export default function DaysPlayedChart() {
           <ChartTooltip
             content={
               <ChartTooltipContent
-                //eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                formatter={(value) => [`${value} matches`]}
+                formatter={(value) => [`${String(value)} matches`]}
               />
             }
           />

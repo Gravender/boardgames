@@ -29,7 +29,7 @@ export async function seedFriends(d3Seed: number) {
     );
 
     for (const userB of potentialFriends) {
-      const key = `${[userA.id, userB.id].sort()[0]}-${[userA.id, userB.id].sort()[1]}`;
+      const key = `${[userA.id, userB.id].toSorted()[0]}-${[userA.id, userB.id].toSorted()[1]}`;
       if (friendPairs.has(key)) continue;
       friendPairs.add(key);
 

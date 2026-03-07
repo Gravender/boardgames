@@ -27,6 +27,7 @@ export function getBetterAuthUserId(browserName: string): string {
     );
     throw new Error(
       `Failed to read userId from ${userIdFile}. Make sure authentication setup has run for browser: ${browserName}.`,
+      { cause: error },
     );
   }
 }

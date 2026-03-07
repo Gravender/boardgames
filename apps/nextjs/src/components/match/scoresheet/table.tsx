@@ -285,6 +285,7 @@ const BodyRow = ({
                 );
               })
               .filter((roundPlayer) => roundPlayer !== undefined);
+            const firstRoundPlayer = roundPlayers.find(() => true);
             return (
               <TableCell
                 key={`team-${team.id}-round-${round.id}`}
@@ -293,7 +294,7 @@ const BodyRow = ({
                 <div className="flex h-full min-h-10 w-full items-center justify-center p-1">
                   {round.type === "Numeric" ? (
                     <NumberInput
-                      defaultValue={roundPlayers[0]?.score ?? ""}
+                      defaultValue={firstRoundPlayer?.score ?? ""}
                       onValueChange={(value) => {
                         updateTeamScore(team.id, round.id, value);
                       }}
@@ -310,7 +311,7 @@ const BodyRow = ({
                             isChecked ? round.score : null,
                           );
                         }}
-                        checked={roundPlayers[0]?.score === round.score}
+                        checked={firstRoundPlayer?.score === round.score}
                       />
                     </>
                   )}
@@ -545,10 +546,9 @@ const TotalRow = ({ match }: { match: MatchInput }) => {
         {teams
           .filter((team) => players.find((player) => player.teamId === team.id))
           .map((team) => {
-            const teamPlayer = players.filter(
+            const firstTeamPlayer = players.find(
               (player) => player.teamId === team.id,
             );
-            const firstTeamPlayer = teamPlayer[0];
             if (firstTeamPlayer === undefined) return null;
             if (scoresheet.roundsScore === "Manual") {
               return (

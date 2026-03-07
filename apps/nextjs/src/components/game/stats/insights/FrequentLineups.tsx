@@ -78,7 +78,7 @@ const TopCoresSection = ({ cores }: { cores: Cores }) => {
     for (const core of cores.quartets) {
       combined.push({ ...core, coreSize: 4 });
     }
-    return combined.sort((a, b) => b.matchCount - a.matchCount);
+    return combined.toSorted((a, b) => b.matchCount - a.matchCount);
   }, [cores.trios, cores.quartets]);
 
   // Detect if this game uses manual winner mode.

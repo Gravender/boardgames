@@ -122,7 +122,7 @@ export function PlayerOverview({ player }: { player: Player }) {
               ? "#b45309"
               : "#64748b",
     }))
-    .sort(
+    .toSorted(
       (a, b) =>
         Number.parseInt(a.placement.substring(1)) -
         Number.parseInt(b.placement.substring(1)),
@@ -222,8 +222,8 @@ export function PlayerOverview({ player }: { player: Player }) {
                     `${name} ${(percent * 100).toFixed(0)}%`
                   }
                 >
-                  {winLossData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  {winLossData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
                   ))}
                 </Pie>
                 <ChartTooltip content={<ChartTooltipContent />} />
@@ -260,8 +260,8 @@ export function PlayerOverview({ player }: { player: Player }) {
                 <YAxis />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="count" name="Games">
-                  {placementData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  {placementData.map((entry) => (
+                    <Cell key={entry.placement} fill={entry.color} />
                   ))}
                 </Bar>
               </BarChart>
@@ -271,7 +271,7 @@ export function PlayerOverview({ player }: { player: Player }) {
             <div className="text-muted-foreground text-sm">
               Most common placement: #
               {
-                Object.entries(player.stats.placements).sort(
+                Object.entries(player.stats.placements).toSorted(
                   (a, b) => b[1] - a[1],
                 )[0]?.[0]
               }
@@ -291,7 +291,7 @@ export function PlayerOverview({ player }: { player: Player }) {
             <ScrollArea className="h-[30vh]">
               <div className="flex w-full flex-col gap-2 p-1 sm:px-4">
                 {player.matches
-                  .sort((a, b) => compareDesc(a.date, b.date))
+                  .toSorted((a, b) => compareDesc(a.date, b.date))
                   .map((match) => {
                     const playerInMatch = match.players.find(
                       (p) => p.id === player.id && p.type === "original",

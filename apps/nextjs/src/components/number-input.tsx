@@ -10,6 +10,27 @@ interface NumberInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   onValueChange?: (value: number | null) => void;
   debounceTime?: number;
 }
+
+const validateValue = (value: string) => {
+  let validValue = value;
+  if (value !== "-") {
+    const numberPart = value.replace(/^-/, "");
+    const trimmedNumber =
+      numberPart === "0" ? "0" : numberPart.replace(/^0+/, "");
+    validValue = value.startsWith("-") ? `-${trimmedNumber}` : trimmedNumber;
+  }
+
+  // Validate the input: allow empty string, single minus, or valid integer
+  const isValid =
+    validValue === "" || validValue === "-" || /^-?\d+$/.test(validValue);
+  const numericValue =
+    validValue === "" || validValue === "-" ? null : parseFloat(validValue);
+  return {
+    parsedValue: numericValue,
+    isValid,
+  };
+};
+
 export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
   (
     { defaultValue, onValueChange, debounceTime = 1200, className, ...props },
@@ -22,28 +43,6 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
     const debouncedOnChange = useDebounce((value: number | null) => {
       onValueChange?.(value);
     }, debounceTime);
-
-    const validateValue = (value: string) => {
-      let validValue = value;
-      if (value !== "-") {
-        const numberPart = value.replace(/^-/, "");
-        const trimmedNumber =
-          numberPart === "0" ? "0" : numberPart.replace(/^0+/, "");
-        validValue = value.startsWith("-")
-          ? `-${trimmedNumber}`
-          : trimmedNumber;
-      }
-
-      // Validate the input: allow empty string, single minus, or valid integer
-      const isValid =
-        validValue === "" || validValue === "-" || /^-?\d+$/.test(validValue);
-      const numericValue =
-        validValue === "" || validValue === "-" ? null : parseFloat(validValue);
-      return {
-        parsedValue: numericValue,
-        isValid,
-      };
-    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
@@ -69,7 +68,6 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
 
     useEffect(() => {
       if (defaultValue !== undefined) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setInternalValue(defaultValue.toString());
       }
     }, [defaultValue]);

@@ -69,7 +69,7 @@ export const computePlayerCountDistribution = (
             : null,
       };
     })
-    .sort((a, b) => a.playerCount - b.playerCount);
+    .toSorted((a, b) => a.playerCount - b.playerCount);
 
   const perPlayer: PerPlayerDistribution[] = Array.from(playerCountMap.values())
     .map((entry) => ({
@@ -83,9 +83,9 @@ export const computePlayerCountDistribution = (
               ? Math.round((bucket.wins / bucket.matchCount) * 100) / 100
               : 0,
         }))
-        .sort((a, b) => a.playerCount - b.playerCount),
+        .toSorted((a, b) => a.playerCount - b.playerCount),
     }))
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       if (a.player.isUser !== b.player.isUser) {
         return a.player.isUser ? -1 : 1;
       }
@@ -111,7 +111,7 @@ export const computeFrequentLineups = (
   >();
 
   for (const matchData of matchMap.values()) {
-    const sortedKeys = matchData.players.map((p) => p.playerKey).sort();
+    const sortedKeys = matchData.players.map((p) => p.playerKey).toSorted();
     const lineupKey = sortedKeys.join("|");
 
     let entry = lineupMap.get(lineupKey);
@@ -144,7 +144,7 @@ export const computeFrequentLineups = (
       continue;
     }
 
-    const sortedMatches = [...entry.matches].sort(
+    const sortedMatches = [...entry.matches].toSorted(
       (a, b) => b.date.getTime() - a.date.getTime(),
     );
     lineups.push({

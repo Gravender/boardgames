@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 export function GradientPicker({
   color,
-  setColor: setColor,
+  setColor,
   className,
   portalHost,
 }: {

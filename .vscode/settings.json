@@ -1,53 +1,22 @@
 {
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll.oxc": "explicit"
   },
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.defaultFormatter": "oxc.oxc-vscode",
   "[typescript,typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "editor.formatOnSave": true,
-  "eslint.rules.customizations": [
-    {
-      "rule": "*",
-      "severity": "warn"
-    }
-  ],
   "files.associations": {
     "*.css": "tailwindcss"
   },
-  "eslint.runtime": "node",
-  "eslint.workingDirectories": [
-    {
-      "pattern": "./apps/*/"
-    },
-    {
-      "pattern": "./packages/*/"
-    },
-    {
-      "pattern": "./tooling/*/"
-    }
-  ],
-  "prettier.ignorePath": ".gitignore",
-  "tailwindCSS.classFunctions": [
-    "cva",
-    "cx",
-    "cn"
-  ],
+  "tailwindCSS.classFunctions": ["cva", "cx", "cn"],
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "typescript.preferences.autoImportFileExcludePatterns": [
     "next/router.d.ts",
     "next/dist/client/router.d.ts"
   ],
   "typescript.tsdk": "node_modules/typescript/lib",
-  "conventionalCommits.scopes": [
-    "api",
-    "expo",
-    "next"
-  ],
-  "cSpell.words": [
-    "nativewind",
-    "scoresheet",
-    "uploadthing"
-  ]
+  "conventionalCommits.scopes": ["api", "expo", "next"],
+  "cSpell.words": ["nativewind", "scoresheet", "uploadthing"]
 }

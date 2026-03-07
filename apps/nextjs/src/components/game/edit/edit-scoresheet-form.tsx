@@ -123,39 +123,44 @@ export const ScoresheetForm = withForm({
                                     if (s.scoresheetType === "new") {
                                       return {
                                         scoresheetType: "new",
-                                        scoresheet: {
-                                          ...s.scoresheet,
-                                          isDefault:
-                                            index === scoresheetIndex
-                                              ? true
-                                              : false,
-                                        },
+                                        scoresheet: Object.assign(
+                                          {},
+                                          s.scoresheet,
+                                          {
+                                            isDefault:
+                                              index === scoresheetIndex,
+                                          },
+                                        ),
                                         rounds: s.rounds,
                                       };
                                     }
                                     const roundChanged = s.roundChanged;
                                     if (index === scoresheetIndex) {
-                                      return {
-                                        ...s,
-                                        scoresheet: {
-                                          ...s.scoresheet,
-                                          isDefault: true,
-                                        },
+                                      return Object.assign({}, s, {
+                                        scoresheet: Object.assign(
+                                          {},
+                                          s.scoresheet,
+                                          {
+                                            isDefault: true,
+                                          },
+                                        ),
                                         scoreSheetChanged: true,
                                         roundChanged: roundChanged,
-                                      };
+                                      });
                                     }
-                                    return {
-                                      ...s,
-                                      scoresheet: {
-                                        ...s.scoresheet,
-                                        isDefault: false,
-                                      },
+                                    return Object.assign({}, s, {
+                                      scoresheet: Object.assign(
+                                        {},
+                                        s.scoresheet,
+                                        {
+                                          isDefault: false,
+                                        },
+                                      ),
                                       scoreSheetChanged:
                                         s.scoresheet.isDefault ??
                                         s.scoreSheetChanged,
                                       roundChanged: roundChanged,
-                                    };
+                                    });
                                   });
                                 form.setFieldValue(`scoresheets`, temp);
                               } else {
@@ -387,7 +392,7 @@ export const ScoresheetForm = withForm({
                   >
                     Cancel
                   </Button>
-                  {/*  
+                  {/*
           TODO: Add validation before saving
            */}
                   <Button

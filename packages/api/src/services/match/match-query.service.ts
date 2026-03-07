@@ -268,7 +268,7 @@ class MatchQueryService {
   private sortPlayersByOrderThenName<
     T extends { order: number | null; name: string },
   >(players: T[]) {
-    return players.sort((a, b) => {
+    return players.toSorted((a, b) => {
       if (a.order === null && b.order === null) {
         return a.name.localeCompare(b.name);
       }

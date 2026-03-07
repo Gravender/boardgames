@@ -415,9 +415,7 @@ export async function seedMatches(d3Seed: number) {
         placement = i + 1; // Adjust placement only if score changes
       }
       placements.push({
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         id: finalScores[i]!.id,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         score: finalScores[i]!.score,
         placement,
       });
@@ -481,7 +479,6 @@ function weightedRandomSample<T>(
   while (selectedItem.length < count) {
     const rand = faker.number.float({ min: 0, max: 1 }); // Generate a random number in [0, 1]
     for (let j = 0; j < cumulativeWeights.length; j++) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       if (rand <= cumulativeWeights[j]!) {
         const valueInSelectedItem = selectedItem.find(
           (v) => v === weightedPlayers[j]?.value,

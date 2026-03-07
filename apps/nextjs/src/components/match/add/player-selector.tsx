@@ -237,7 +237,7 @@ export const CustomPlayerSelect = withFieldGroup({
       const currentPlayers = group.state.values.players;
       const tempPlayers = currentPlayers.map((p) => {
         if (isSamePlayer(p, player)) {
-          return { ...p, teamId };
+          return Object.assign(p, { teamId });
         }
         return p;
       });
@@ -360,12 +360,12 @@ export const CustomPlayerSelect = withFieldGroup({
                             (p) => p.teamId === team.id,
                           );
                           return (
-                            <Item key={i} variant="outline">
+                            <Item key={team.id} variant="outline">
                               <ItemMedia variant="icon">
                                 <Users2 />
                               </ItemMedia>
                               <ItemContent>
-                                <group.Field key={i} name={`teams[${i}].name`}>
+                                <group.Field name={`teams[${i}].name`}>
                                   {(subField) => {
                                     return (
                                       <Input

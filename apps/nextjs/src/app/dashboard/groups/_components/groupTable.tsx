@@ -16,7 +16,7 @@ import { GroupDropDown } from "./groupDropDown";
 
 export function GroupTable() {
   const trpc = useTRPC();
-  const { data: data } = useSuspenseQuery(trpc.group.getGroups.queryOptions());
+  const { data } = useSuspenseQuery(trpc.group.getGroups.queryOptions());
 
   const [search, setSearch] = useState("");
   const filteredGroups = useMemo(() => {

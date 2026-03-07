@@ -182,7 +182,7 @@ class GameScoresheetService {
         return [
           ...originalScoresheets.map(mapOriginalScoresheetBase),
           ...sharedScoresheets.map(mapSharedScoresheetBase),
-        ].sort(scoresheetSortComparator);
+        ].toSorted(scoresheetSortComparator);
       }
 
       const sharedScoresheets = await scoresheetRepository.getAllShared(
@@ -195,7 +195,7 @@ class GameScoresheetService {
       );
       return sharedScoresheets
         .map(mapSharedScoresheetBase)
-        .sort(scoresheetSortComparator);
+        .toSorted(scoresheetSortComparator);
     });
   }
 
@@ -227,15 +227,17 @@ class GameScoresheetService {
           tx,
         );
         return [
-          ...originalScoresheets.map((s) => ({
-            ...mapOriginalScoresheetBase(s),
-            rounds: s.rounds.map(mapRound),
-          })),
-          ...sharedScoresheets.map((s) => ({
-            ...mapSharedScoresheetBase(s),
-            rounds: s.sharedRounds.map((sr) => mapRound(sr.round)),
-          })),
-        ].sort(scoresheetSortComparator);
+          ...originalScoresheets.map((s) =>
+            Object.assign({}, mapOriginalScoresheetBase(s), {
+              rounds: s.rounds.map(mapRound),
+            }),
+          ),
+          ...sharedScoresheets.map((s) =>
+            Object.assign({}, mapSharedScoresheetBase(s), {
+              rounds: s.sharedRounds.map((sr) => mapRound(sr.round)),
+            }),
+          ),
+        ].toSorted(scoresheetSortComparator);
       }
 
       const sharedScoresheets = await scoresheetRepository.getAllShared(
@@ -250,11 +252,12 @@ class GameScoresheetService {
         tx,
       );
       return sharedScoresheets
-        .map((s) => ({
-          ...mapSharedScoresheetBase(s),
-          rounds: s.sharedRounds.map((sr) => mapRound(sr.round)),
-        }))
-        .sort(scoresheetSortComparator);
+        .map((s) =>
+          Object.assign({}, mapSharedScoresheetBase(s), {
+            rounds: s.sharedRounds.map((sr) => mapRound(sr.round)),
+          }),
+        )
+        .toSorted(scoresheetSortComparator);
     });
   }
 

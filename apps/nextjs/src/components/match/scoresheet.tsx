@@ -148,18 +148,19 @@ function ManualScoreSheet(input: { match: MatchInput }) {
         });
         return {
           ...team,
-          players: teamPlayers.map((player) => ({
-            ...player,
-            roles: player.roles.filter(
-              (role) =>
-                !teamRoles.some((r) => {
-                  if (r.type == "original") {
-                    return r.type === role.type && r.id === role.id;
-                  }
-                  return r.type === role.type && r.sharedId === role.sharedId;
-                }),
-            ),
-          })),
+          players: teamPlayers.map((player) =>
+            Object.assign(player, {
+              roles: player.roles.filter(
+                (role) =>
+                  !teamRoles.some((r) => {
+                    if (r.type == `original`) {
+                      return r.type === role.type && r.id === role.id;
+                    }
+                    return r.type === role.type && r.sharedId === role.sharedId;
+                  }),
+              ),
+            }),
+          ),
           roles: teamRoles,
         };
       })
@@ -413,7 +414,6 @@ function ScoresheetFooter(input: { match: MatchInput }) {
         }
       }, 1000);
     } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDuration(match.duration);
     }
     return () => clearInterval(interval);

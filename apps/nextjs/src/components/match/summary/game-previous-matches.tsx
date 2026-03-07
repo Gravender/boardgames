@@ -29,7 +29,7 @@ export function GamePreviousMatches(input: { game: GameInput }) {
           <ScrollArea className="w-1 flex-1">
             <div className="flex gap-2 p-1 sm:p-4">
               {gameMatches
-                .sort((a, b) => compareDesc(a.date, b.date))
+                .toSorted((a, b) => compareDesc(a.date, b.date))
                 .map((match) => (
                   <Link
                     key={`${match.id}-${match.type}`}
@@ -120,12 +120,14 @@ export function GamePreviousMatchesSkeleton() {
         <div className="flex">
           <ScrollArea className="w-1 flex-1">
             <div className="flex gap-2 p-1 sm:p-4">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <Skeleton
-                  key={index}
-                  className="h-40 w-64 rounded-lg"
-                ></Skeleton>
-              ))}
+              {["match-skeleton-1", "match-skeleton-2", "match-skeleton-3"].map(
+                (itemKey) => (
+                  <Skeleton
+                    key={itemKey}
+                    className="h-40 w-64 rounded-lg"
+                  ></Skeleton>
+                ),
+              )}
             </div>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>

@@ -70,6 +70,18 @@ export function RoundPopOver({
 }
 
 const CUSTOM_PORTAL_HOST_NAME = "modal-round-pop-over-select";
+
+const createNumberChangeHandler = (onChange: (...event: any[]) => void) => {
+  return (text: string) => {
+    if (text === "") {
+      onChange(null);
+      return;
+    }
+
+    onChange(parseInt(text));
+  };
+};
+
 function Content({
   index,
   form,
@@ -89,16 +101,6 @@ function Content({
     control: form.control,
   });
   const roundsTypeOptions = roundTypes;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onChangeNumberText = (onChange: (...event: any[]) => void) => {
-    return (text: string) => {
-      if (text === "") {
-        onChange(null);
-      } else {
-        onChange(parseInt(text));
-      }
-    };
-  };
   return (
     <Fragment>
       <Form {...form}>
@@ -167,7 +169,7 @@ function Content({
                       value={
                         field.value ? `${field.value.toString()}` : undefined
                       }
-                      onChangeText={onChangeNumberText(field.onChange)}
+                      onChangeText={createNumberChangeHandler(field.onChange)}
                       keyboardType="numeric"
                       className="border-none text-center"
                     />

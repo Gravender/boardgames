@@ -14,7 +14,6 @@ import {
   getFriendSettingsOutput,
 } from "./friend/friend.output";
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type GameAgg = {
   type: "Original" | "Shared";
   id: number;
@@ -82,7 +81,6 @@ export const friendsRouter = {
         if (existingRequest.status === "accepted") {
           return { success: false, message: "Friend request already accepted" };
         }
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (existingRequest.status === "pending") {
           return { success: false, message: "Friend request already pending" };
         }
@@ -824,7 +822,7 @@ export const friendsRouter = {
         }
       });
 
-      const friendGames = Array.from(gameMap.values()).sort((a, b) => {
+      const friendGames = Array.from(gameMap.values()).toSorted((a, b) => {
         return a.name.localeCompare(b.name);
       });
 

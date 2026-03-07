@@ -289,12 +289,15 @@ class GameStatsService {
       }
     }
 
-    const players = Array.from(acc.values()).map((p) => ({
-      ...p,
-      coopWinRate: p.coopMatches > 0 ? p.coopWins / p.coopMatches : 0,
-      competitiveWinRate:
-        p.competitiveMatches > 0 ? p.competitiveWins / p.competitiveMatches : 0,
-    }));
+    const players = Array.from(acc.values()).map((p) =>
+      Object.assign({}, p, {
+        coopWinRate: p.coopMatches > 0 ? p.coopWins / p.coopMatches : 0,
+        competitiveWinRate:
+          p.competitiveMatches > 0
+            ? p.competitiveWins / p.competitiveMatches
+            : 0,
+      }),
+    );
 
     return { players };
   }
@@ -637,7 +640,7 @@ class GameStatsService {
       const overallPlayers: GetGameScoresheetStatsOverallPlayerSchemaType[] =
         [];
       for (const p of scoresheet.matchResultsByPlayer.values()) {
-        const matchList = Array.from(p.matches.values()).sort(
+        const matchList = Array.from(p.matches.values()).toSorted(
           (a, b) => a.date.getTime() - b.date.getTime(),
         );
         const numMatches = matchList.length;

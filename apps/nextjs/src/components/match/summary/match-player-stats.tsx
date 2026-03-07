@@ -99,7 +99,7 @@ export function MatchSummaryPlayerStats(input: { match: MatchInput }) {
                   placement: Number(placement),
                   count,
                 }))
-                .sort((a, b) => a.placement - b.placement);
+                .toSorted((a, b) => a.placement - b.placement);
 
               const topPlacement =
                 placements.length > 0 ? placements[0]?.placement : null;
@@ -192,8 +192,8 @@ export function MatchSummaryPlayerStatsSkeleton() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: 3 }).map((_, index) => (
-              <TableRow key={index} className="base:text-sm text-xs">
+            {["row-1", "row-2", "row-3"].map((rowKey) => (
+              <TableRow key={rowKey} className="base:text-sm text-xs">
                 <TableCell className="bg-card after:bg-border sticky left-0 z-10 max-w-24 after:absolute after:top-0 after:right-0 after:h-full after:w-px sm:max-w-32">
                   <div className="flex items-center gap-2">
                     <div className="bg-muted h-4 w-20 animate-pulse rounded" />

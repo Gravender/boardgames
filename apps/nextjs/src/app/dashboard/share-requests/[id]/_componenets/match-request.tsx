@@ -190,16 +190,14 @@ export default function MatchRequestPage({
           type: "shared" as const,
           ...sMatch,
         })),
-        ...linkedMatches.map((lMatch) => ({
-          type: "linked" as const,
-          ...lMatch,
-        })),
+        ...linkedMatches.map((lMatch) =>
+          Object.assign({ type: `linked` as const }, lMatch),
+        ),
       ];
     }
-    return sharedMatches.map((sMatch) => ({
-      type: "shared" as const,
-      ...sMatch,
-    }));
+    return sharedMatches.map((sMatch) =>
+      Object.assign({ type: `shared` as const }, sMatch),
+    );
   }, [match.item.date, match.sharedGame]);
   const sortedGames = useMemo(() => {
     const temp = [...filteredGames];

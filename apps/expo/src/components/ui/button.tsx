@@ -68,14 +68,18 @@ const Button = React.forwardRef<
   React.ElementRef<typeof Pressable>,
   ButtonProps
 >(({ className, variant, size, ...props }, ref) => {
-  return (
-    <TextClassContext.Provider
-      value={buttonTextVariants({
+  const textClassName = React.useMemo(
+    () =>
+      buttonTextVariants({
         variant,
         size,
         className: "web:pointer-events-none",
-      })}
-    >
+      }),
+    [variant, size],
+  );
+
+  return (
+    <TextClassContext.Provider value={textClassName}>
       <Pressable
         className={cn(
           props.disabled && "web:pointer-events-none opacity-50",
