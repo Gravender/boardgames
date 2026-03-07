@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from "@board-games/ui/dialog";
 
-import { FriendSettings } from "~/components/friend/friend-settings-form";
+import { FriendSettings } from "~/components/friend/FriendSettingsForm";
 
 export function FriendSettingsDialog({
   friendId,

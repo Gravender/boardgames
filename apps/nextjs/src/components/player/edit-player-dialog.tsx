@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod/v4";
 
@@ -36,9 +37,27 @@ export const EditPlayerDialog = ({
   player: RouterOutputs["player"]["getPlayers"][number];
   setOpen: (isOpen: boolean) => void;
 }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   return (
-    <DialogContent className="sm:max-w-[465px]">
-      <PlayerContent setOpen={setOpen} player={player} />
+    <DialogContent
+      className="sm:max-w-[465px]"
+      onInteractOutside={(event) => {
+        if (isSubmitting) {
+          event.preventDefault();
+        }
+      }}
+      onEscapeKeyDown={(event) => {
+        if (isSubmitting) {
+          event.preventDefault();
+        }
+      }}
+    >
+      <PlayerContent
+        setOpen={setOpen}
+        player={player}
+        isSubmitting={isSubmitting}
+        setIsSubmitting={setIsSubmitting}
+      />
     </DialogContent>
   );
 };
@@ -46,9 +65,13 @@ export const EditPlayerDialog = ({
 const PlayerContent = ({
   setOpen,
   player,
+  isSubmitting,
+  setIsSubmitting,
 }: {
   setOpen: (isOpen: boolean) => void;
   player: RouterOutputs["player"]["getPlayers"][number];
+  isSubmitting: boolean;
+  setIsSubmitting: (isSubmitting: boolean) => void;
 }) => {
   const { startUpload } = useUploadThing("imageUploader");
   const router = useRouter();
@@ -80,35 +103,55 @@ const PlayerContent = ({
     setOpen(false);
   };
 
-  const updatePlayer = ({
+  const updatePlayer = async ({
     imageId,
     values,
   }: {
-    imageId: number | null | undefined;
+    imageId: number | undefined;
     values: { name: string; imageUrl: File | string | null };
   }) => {
     const nameChanged = values.name !== player.name;
     const imageIdChanged = imageId !== undefined;
     if (player.type === "original" && (nameChanged || imageIdChanged)) {
-      updatePlayerMutation.mutate(
-        {
+      if (nameChanged && imageIdChanged) {
+        await updatePlayerMutation.mutateAsync({
           type: "original" as const,
           id: player.id,
-          name: nameChanged ? values.name : undefined,
-          imageId: imageId,
-        },
-        { onSuccess: handleMutationSuccess },
-      );
+          updateValues: {
+            type: "nameAndImageId",
+            name: values.name,
+            imageId,
+          },
+        });
+      } else if (imageIdChanged) {
+        await updatePlayerMutation.mutateAsync({
+          type: "original" as const,
+          id: player.id,
+          updateValues: {
+            type: "imageId",
+            imageId,
+          },
+        });
+      } else if (nameChanged) {
+        await updatePlayerMutation.mutateAsync({
+          type: "original" as const,
+          id: player.id,
+          updateValues: {
+            type: "name",
+            name: values.name,
+          },
+        });
+      }
+      handleMutationSuccess();
+      return;
     }
     if (player.type === "shared" && nameChanged) {
-      updatePlayerMutation.mutate(
-        {
-          type: "shared" as const,
-          id: player.id,
-          name: values.name,
-        },
-        { onSuccess: handleMutationSuccess },
-      );
+      await updatePlayerMutation.mutateAsync({
+        type: "shared" as const,
+        id: player.id,
+        name: values.name,
+      });
+      handleMutationSuccess();
     }
   };
 
@@ -127,38 +170,54 @@ const PlayerContent = ({
       onSubmit: playerSchema,
     },
     onSubmit: async ({ value }) => {
-      if (value.imageUrl === player.image?.url) {
-        updatePlayer({ imageId: undefined, values: value });
-        return;
-      }
-      if (!value.imageUrl) {
-        updatePlayer({ imageId: null, values: value });
-        return;
-      }
-
+      setIsSubmitting(true);
       try {
-        const imageFile = value.imageUrl as File;
+        if (value.imageUrl === player.image?.url) {
+          await updatePlayer({ imageId: undefined, values: value });
+          return;
+        }
+        if (!value.imageUrl) {
+          await updatePlayer({ imageId: undefined, values: value });
+          return;
+        }
+        if (typeof value.imageUrl === "string") {
+          await updatePlayer({ imageId: undefined, values: value });
+          return;
+        }
+        if (!(value.imageUrl instanceof File)) {
+          throw new Error("Expected imageUrl to be a File before uploading");
+        }
 
-        const uploadResult = await startUpload([imageFile], {
+        const uploadResult = await startUpload([value.imageUrl], {
           usageType: "player",
         });
-        if (!uploadResult) {
+        if (!uploadResult || uploadResult.length === 0) {
           throw new Error("Image upload failed");
         }
 
-        const imageId = uploadResult[0]
-          ? uploadResult[0].serverData.imageId
-          : null;
+        const imageId = uploadResult[0]?.serverData.imageId;
+        if (typeof imageId !== "number") {
+          throw new Error("Image upload did not return an imageId");
+        }
 
-        updatePlayer({ values: value, imageId: imageId });
+        await updatePlayer({ values: value, imageId });
       } catch (error) {
         console.error("Error uploading Image:", error);
         toast.error("Error", {
           description: "There was a problem uploading your Image.",
         });
+      } finally {
+        setIsSubmitting(false);
       }
     },
   });
+
+  const handleClose = () => {
+    if (isSubmitting) {
+      return;
+    }
+    setOpen(false);
+  };
 
   return (
     <>
@@ -194,7 +253,8 @@ const PlayerContent = ({
           <Button
             type="reset"
             variant="secondary"
-            onClick={() => setOpen(false)}
+            onClick={handleClose}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
@@ -204,14 +264,19 @@ const PlayerContent = ({
               isDirty: state.isDirty,
             })}
           >
-            {({ isSubmitting, isDirty }) => (
+            {({ isSubmitting: formIsSubmitting, isDirty }) => (
               <Button
                 type="submit"
                 disabled={
-                  isSubmitting || !isDirty || updatePlayerMutation.isPending
+                  isSubmitting ||
+                  formIsSubmitting ||
+                  !isDirty ||
+                  updatePlayerMutation.isPending
                 }
               >
-                {isSubmitting || updatePlayerMutation.isPending ? (
+                {isSubmitting ||
+                formIsSubmitting ||
+                updatePlayerMutation.isPending ? (
                   <>
                     <Spinner />
                     <span>Uploading...</span>

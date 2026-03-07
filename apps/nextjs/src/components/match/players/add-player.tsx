@@ -1,5 +1,7 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
+
 import { insertPlayerSchema } from "@board-games/db/zodSchema";
 import { fileSchema } from "@board-games/shared";
 import { Button } from "@board-games/ui/button";
@@ -13,6 +15,7 @@ import { toast } from "@board-games/ui/toast";
 
 import { useAppForm } from "~/hooks/form";
 import { useCreatePlayerMutation } from "~/hooks/mutations/player/create";
+import { useTRPC } from "~/trpc/react";
 import { useUploadThing } from "~/utils/uploadthing";
 
 const addPlayerSchema = insertPlayerSchema.pick({ name: true }).extend({
@@ -30,7 +33,15 @@ export const AddPlayerForm = ({
   cancel: () => void;
 }) => {
   const { startUpload } = useUploadThing("imageUploader");
+  const trpc = useTRPC();
   const { createPlayerMutation } = useCreatePlayerMutation();
+  const deleteImageMutation = useMutation(trpc.image.delete.mutationOptions());
+
+  const showUploadErrorToast = () => {
+    toast.error("Error", {
+      description: "There was a problem uploading your Image.",
+    });
+  };
 
   const form = useAppForm({
     defaultValues: {
@@ -51,6 +62,7 @@ export const AddPlayerForm = ({
                 imageUrl: player.image?.url ?? "",
                 name: player.name,
               });
+              form.reset();
             },
           },
         );
@@ -64,10 +76,14 @@ export const AddPlayerForm = ({
         if (!uploadResult) {
           throw new Error("Image upload failed");
         }
+        const uploadedImageIds = uploadResult
+          .map((result) => result.serverData.imageId)
+          .filter((imageId): imageId is number => typeof imageId === "number");
 
-        const imageId = uploadResult[0]
-          ? uploadResult[0].serverData.imageId
-          : null;
+        const imageId = uploadedImageIds[0];
+        if (imageId === undefined) {
+          throw new Error("Image upload did not return an imageId");
+        }
 
         createPlayerMutation.mutate(
           { name: value.name, imageId },
@@ -80,13 +96,20 @@ export const AddPlayerForm = ({
               });
               form.reset();
             },
+            onError: () => {
+              void Promise.all(
+                uploadedImageIds.map((id) =>
+                  deleteImageMutation
+                    .mutateAsync({ id })
+                    .catch(() => undefined),
+                ),
+              );
+              showUploadErrorToast();
+            },
           },
         );
-      } catch (error) {
-        console.error("Error uploading Image:", error);
-        toast.error("Error", {
-          description: "There was a problem uploading your Image.",
-        });
+      } catch {
+        showUploadErrorToast();
       }
     },
   });

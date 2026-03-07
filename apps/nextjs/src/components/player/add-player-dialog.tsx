@@ -70,48 +70,27 @@ const finalizePlayerCreate = ({
   router.refresh();
 };
 
-/**
- * Uploads an optional player image and creates the player record.
- * Closes/reset UI only after the mutation succeeds.
- */
-const handleUploadAndCreate = async ({
-  name,
+const uploadPlayerImage = async ({
   imageUrl,
   startUpload,
-  createPlayerMutation,
-  setOpen,
-  resetForm,
-  router,
 }: {
-  name: string;
-  imageUrl: File | null;
+  imageUrl: File;
   startUpload: ReturnType<typeof useUploadThing>["startUpload"];
-  createPlayerMutation: ReturnType<
-    typeof useCreatePlayerMutation
-  >["createPlayerMutation"];
-  setOpen: (isOpen: boolean) => void;
-  resetForm: () => void;
-  router: ReturnType<typeof useRouter>;
 }) => {
-  if (!imageUrl) {
-    await createPlayerMutation.mutateAsync({ name, imageId: null });
-    finalizePlayerCreate({ setOpen, resetForm, router });
-    return;
-  }
-
   const uploadResult = await startUpload([imageUrl], {
     usageType: "player",
   });
-  if (!uploadResult) {
+  if (!uploadResult || uploadResult.length === 0) {
     throw new Error("Image upload failed");
   }
-
   const uploadedFile = uploadResult[0] as
     | { serverData?: { imageId?: number | null } }
     | undefined;
-  const imageId = uploadedFile?.serverData?.imageId ?? null;
-  await createPlayerMutation.mutateAsync({ name, imageId });
-  finalizePlayerCreate({ setOpen, resetForm, router });
+  const imageId = uploadedFile?.serverData?.imageId;
+  if (typeof imageId !== "number") {
+    throw new Error("Image upload did not return an imageId");
+  }
+  return imageId;
 };
 
 /**
@@ -134,20 +113,31 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
     onSubmit: async ({ value }) => {
       setIsSubmitting(true);
       try {
-        await handleUploadAndCreate({
-          name: value.name,
-          imageUrl: value.imageUrl,
-          startUpload,
-          createPlayerMutation,
-          setOpen,
-          resetForm: form.reset,
-          router,
-        });
-      } catch (error) {
-        console.error("Error uploading Image:", error);
-        toast.error("Error", {
-          description: "There was a problem uploading your Image.",
-        });
+        let imageId: number | null = null;
+        if (value.imageUrl) {
+          try {
+            imageId = await uploadPlayerImage({
+              imageUrl: value.imageUrl,
+              startUpload,
+            });
+          } catch (error) {
+            console.error("Error uploading image:", error);
+            toast.error("Error", {
+              description: "There was a problem uploading your image.",
+            });
+            return;
+          }
+        }
+
+        try {
+          await createPlayerMutation.mutateAsync({ name: value.name, imageId });
+          finalizePlayerCreate({ setOpen, resetForm: form.reset, router });
+        } catch (error) {
+          console.error("Error creating player:", error);
+          toast.error("Error", {
+            description: "There was a problem creating your player.",
+          });
+        }
       } finally {
         setIsSubmitting(false);
       }

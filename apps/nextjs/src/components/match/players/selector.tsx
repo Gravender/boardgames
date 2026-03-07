@@ -42,6 +42,7 @@ import { AddPlayerForm } from "./add-player";
 import { PlayerGroupSelector } from "./group-selector";
 import { ManagePlayerRoles } from "./player-role";
 import { ManageTeamContent } from "./team-selector";
+import { updatePlayersForTeams } from "./update-players-for-teams";
 
 const AddPlayersFormSchema = z.object({
   players: addMatchPlayersSchema,
@@ -214,38 +215,11 @@ export const AddPlayersDialogForm = ({
           const manageTeamSave = (newTeams: Team[]) => {
             const currentPlayers = form.getFieldValue("players");
             const currentTeams = form.getFieldValue("teams");
-            const mappedPlayers = currentPlayers.map((player) => {
-              const foundTeam = newTeams.find((t) => t.id === player.teamId);
-              const originalTeam = currentTeams.find(
-                (t) => t.id === player.teamId,
-              );
-              const rolesToRemove = originalTeam?.roles.filter(
-                (role) => !foundTeam?.roles.find((r) => isSameRole(r, role)),
-              );
-              if (foundTeam) {
-                const playerRoles = player.roles.filter(
-                  (role) => !rolesToRemove?.find((r) => isSameRole(r, role)),
-                );
-                const rolesToAdd = foundTeam.roles.filter(
-                  (role) => !playerRoles.find((r) => isSameRole(r, role)),
-                );
-                return {
-                  ...player,
-                  teamId: foundTeam.id,
-                  roles: [...playerRoles, ...rolesToAdd],
-                };
-              } else if (originalTeam) {
-                const filteredRoles = player.roles.filter(
-                  (role) =>
-                    !originalTeam.roles.find((r) => isSameRole(r, role)),
-                );
-                return {
-                  ...player,
-                  teamId: null,
-                  roles: filteredRoles,
-                };
-              }
-              return player;
+            const mappedPlayers = updatePlayersForTeams({
+              players: currentPlayers,
+              currentTeams,
+              newTeams,
+              isSameRole,
             });
             form.setFieldValue("teams", newTeams);
             form.setFieldValue("players", mappedPlayers);

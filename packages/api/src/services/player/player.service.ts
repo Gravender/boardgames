@@ -287,59 +287,78 @@ class PlayerService {
         "Player not found.",
       );
 
-      if (existingPlayer.imageId) {
-        const imageToDelete = await imageRepository.getById(
-          {
-            id: existingPlayer.imageId,
-          },
-          tx,
-        );
-        assertFound(
-          imageToDelete,
-          {
-            userId,
-            value: {
-              imageId: existingPlayer.imageId,
-            },
-          },
-          "Image not found.",
-        );
-        if (imageToDelete.type === "file" && imageToDelete.fileId) {
-          await posthog.captureImmediate({
-            distinctId: userId,
-            event: "uploadthing begin image delete",
-            properties: {
-              imageName: imageToDelete.name,
-              imageId: imageToDelete.id,
-              fileId: imageToDelete.fileId,
-            },
-          });
-
-          const result = await deleteFiles(imageToDelete.fileId);
-          if (!result.success) {
-            await posthog.captureImmediate({
-              distinctId: userId,
-              event: "uploadthing image delete error",
-              properties: {
-                imageName: imageToDelete.name,
-                imageId: imageToDelete.id,
-                fileId: imageToDelete.fileId,
-              },
-            });
-            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-          }
-        }
-      }
-
+      const nextName =
+        input.updateValues.type === "name" ||
+        input.updateValues.type === "nameAndImageId"
+          ? input.updateValues.name
+          : undefined;
+      const nextImageId =
+        input.updateValues.type === "imageId" ||
+        input.updateValues.type === "nameAndImageId"
+          ? input.updateValues.imageId
+          : undefined;
+      const previousImageId = existingPlayer.imageId;
+      const imageUpdateRequested = nextImageId !== undefined;
+      const shouldDeleteExistingImage =
+        imageUpdateRequested &&
+        previousImageId !== null &&
+        previousImageId !== nextImageId;
       await playerRepository.update({
         input: {
           id: input.id,
           createdBy: userId,
-          name: input.name,
-          imageId: input.imageId,
+          name: nextName,
+          imageId: nextImageId,
         },
         tx,
       });
+
+      if (!shouldDeleteExistingImage) {
+        return;
+      }
+
+      const imageToDelete = await imageRepository.getById(
+        {
+          id: previousImageId,
+        },
+        tx,
+      );
+      assertFound(
+        imageToDelete,
+        {
+          userId,
+          value: {
+            imageId: previousImageId,
+          },
+        },
+        "Image not found.",
+      );
+      if (imageToDelete.type !== "file" || !imageToDelete.fileId) {
+        return;
+      }
+      await posthog.captureImmediate({
+        distinctId: userId,
+        event: "uploadthing begin image delete",
+        properties: {
+          imageName: imageToDelete.name,
+          imageId: imageToDelete.id,
+          fileId: imageToDelete.fileId,
+        },
+      });
+
+      const result = await deleteFiles(imageToDelete.fileId);
+      if (!result.success) {
+        await posthog.captureImmediate({
+          distinctId: userId,
+          event: "uploadthing image delete error",
+          properties: {
+            imageName: imageToDelete.name,
+            imageId: imageToDelete.id,
+            fileId: imageToDelete.fileId,
+          },
+        });
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      }
     });
   }
 }

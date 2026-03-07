@@ -880,8 +880,21 @@ export const playerRouter = {
         z.object({
           type: z.literal("original"),
           id: z.number(),
-          imageId: z.number().nullable().optional(),
-          name: z.string().optional(),
+          updateValues: z.discriminatedUnion("type", [
+            z.object({
+              type: z.literal("name"),
+              name: z.string(),
+            }),
+            z.object({
+              type: z.literal("imageId"),
+              imageId: z.number(),
+            }),
+            z.object({
+              type: z.literal("nameAndImageId"),
+              name: z.string(),
+              imageId: z.number(),
+            }),
+          ]),
         }),
         z.object({
           type: z.literal("shared"),

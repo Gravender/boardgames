@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import type {
   Filter,
@@ -54,7 +54,11 @@ class PlayerRepository {
         imageId: input.imageId,
       })
       .where(
-        and(eq(player.id, input.id), eq(player.createdBy, input.createdBy)),
+        and(
+          eq(player.id, input.id),
+          eq(player.createdBy, input.createdBy),
+          isNull(player.deletedAt),
+        ),
       )
       .returning();
     return returnedPlayer;

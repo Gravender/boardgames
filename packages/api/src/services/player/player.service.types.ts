@@ -35,8 +35,20 @@ export interface UpdatePlayerArgs {
     | {
         type: "original";
         id: number;
-        imageId?: number | null;
-        name?: string;
+        updateValues:
+          | {
+              type: "name";
+              name: string;
+            }
+          | {
+              type: "imageId";
+              imageId: number;
+            }
+          | {
+              type: "nameAndImageId";
+              name: string;
+              imageId: number;
+            };
       }
     | {
         type: "shared";

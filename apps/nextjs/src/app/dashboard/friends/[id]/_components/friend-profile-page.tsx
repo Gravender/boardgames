@@ -158,7 +158,7 @@ function calculateHIndex(games: { plays: number }[]): number {
   // Find the h-index
   let hIndex = 0;
   for (let i = 0; i < sortedPlays.length; i++) {
-    if (sortedPlays[i] ?? 0 >= i + 1) {
+    if ((sortedPlays[i] ?? 0) >= i + 1) {
       hIndex = i + 1;
     } else {
       break;
