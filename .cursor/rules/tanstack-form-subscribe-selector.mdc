@@ -1,0 +1,30 @@
+---
+description: Prefer concise object selector for TanStack Form Subscribe state picks
+globs: **/*.tsx
+alwaysApply: false
+---
+
+# TanStack Form `form.Subscribe` Selector Pattern
+
+When using `form.Subscribe`, prefer selecting only the needed state keys with a concise object selector.
+
+Preferred canonical shape (from `apps/nextjs/src/components/match/players/selector.tsx`):
+
+```tsx
+<form.Subscribe
+  selector={(state) => ({
+    players: state.values.players,
+    teams: state.values.teams,
+  })}
+>
+  {({ players, teams }) => (
+    // ...
+  )}
+</form.Subscribe>
+```
+
+Guidance:
+- Select only the fields you need from `state`.
+- Keep selector output minimal and stable in shape.
+- Avoid doing derived computations in the selector; derive inside the child render.
+- Use a primitive selector (for example `state.isSubmitting`) only when subscribing to a single scalar value.

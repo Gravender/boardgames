@@ -38,7 +38,7 @@ import { PlayerImage } from "~/components/player-image";
 import { useAppForm } from "~/hooks/form";
 import { useGameRoles } from "~/hooks/queries/game/roles";
 import { useTRPC } from "~/trpc/react";
-import { AddPlayerForm } from "./add-player";
+import { AddPlayerForm } from "./AddPlayerForm";
 import { PlayerGroupSelector } from "./group-selector";
 import { ManagePlayerRoles } from "./player-role";
 import { ManageTeamContent } from "./team-selector";

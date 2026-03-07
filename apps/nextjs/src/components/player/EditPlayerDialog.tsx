@@ -32,7 +32,10 @@ const sharedPlayerSchema = insertPlayerSchema
   });
 
 type PlayerType = RouterOutputs["player"]["getPlayers"][number];
-type PlayerValues = { name: string; imageUrl: File | string | null };
+interface PlayerValues {
+  name: string;
+  imageUrl: File | string | null;
+}
 type MutateAsyncFn = ReturnType<
   typeof useUpdatePlayerMutation
 >["updatePlayerMutation"]["mutateAsync"];
@@ -77,7 +80,8 @@ const updateOriginalPlayer = async ({
 }) => {
   const nameChanged = values.name !== player.name;
   const imageIdChanged = imageId !== undefined;
-  const clearImageRequested = values.imageUrl === null && player.image?.url !== null;
+  const clearImageRequested =
+    values.imageUrl === null && player.image?.url !== null;
 
   if (!nameChanged && !imageIdChanged && !clearImageRequested) {
     return;
@@ -166,41 +170,45 @@ const updateSharedPlayer = async ({
   handleMutationSuccess();
 };
 
-const handleImageUploadAndUpdate = async ({
-  player,
-  values,
-  startUpload,
-  onUpdate,
-}: {
-  player: PlayerType;
-  values: PlayerValues;
-  startUpload: ReturnType<typeof useUploadThing>["startUpload"];
-  onUpdate: (imageId: number | undefined) => Promise<void>;
-}) => {
-  if (valueIsExistingImage(values.imageUrl, player.image?.url ?? null)) {
-    await onUpdate(undefined);
-    return;
-  }
-  if (!values.imageUrl || typeof values.imageUrl === "string") {
-    await onUpdate(undefined);
-    return;
-  }
-  if (!(values.imageUrl instanceof File)) {
-    throw new Error("Expected imageUrl to be a File before uploading");
-  }
+const useHandleImageUploadAndUpdate = () => {
+  const { startUpload } = useUploadThing("imageUploader");
 
-  const uploadResult = await startUpload([values.imageUrl], {
-    usageType: "player",
-  });
-  if (!uploadResult || uploadResult.length === 0) {
-    throw new Error("Image upload failed");
-  }
+  const handleImageUploadAndUpdate = async ({
+    player,
+    values,
+    onUpdate,
+  }: {
+    player: PlayerType;
+    values: PlayerValues;
+    onUpdate: (imageId: number | undefined) => Promise<void>;
+  }) => {
+    if (valueIsExistingImage(values.imageUrl, player.image?.url ?? null)) {
+      await onUpdate(undefined);
+      return;
+    }
+    if (!values.imageUrl || typeof values.imageUrl === "string") {
+      await onUpdate(undefined);
+      return;
+    }
+    if (!(values.imageUrl instanceof File)) {
+      throw new Error("Expected imageUrl to be a File before uploading");
+    }
 
-  const imageId = uploadResult[0]?.serverData.imageId;
-  if (typeof imageId !== "number") {
-    throw new Error("Image upload did not return an imageId");
-  }
-  await onUpdate(imageId);
+    const uploadResult = await startUpload([values.imageUrl], {
+      usageType: "player",
+    });
+    if (!uploadResult || uploadResult.length === 0) {
+      throw new Error("Image upload failed");
+    }
+
+    const imageId = uploadResult[0]?.serverData.imageId;
+    if (typeof imageId !== "number") {
+      throw new Error("Image upload did not return an imageId");
+    }
+    await onUpdate(imageId);
+  };
+
+  return { handleImageUploadAndUpdate };
 };
 
 const valueIsExistingImage = (
@@ -256,7 +264,7 @@ const PlayerContent = ({
   isSubmitting: boolean;
   setIsSubmitting: (isSubmitting: boolean) => void;
 }) => {
-  const { startUpload } = useUploadThing("imageUploader");
+  const { handleImageUploadAndUpdate } = useHandleImageUploadAndUpdate();
   const router = useRouter();
   const { updatePlayerMutation } = useUpdatePlayerMutation();
   const initialImageUrl = player.image?.url ?? null;
@@ -283,7 +291,6 @@ const PlayerContent = ({
         await handleImageUploadAndUpdate({
           player,
           values: value,
-          startUpload,
           onUpdate: async (imageId) => {
             if (player.type === "original") {
               await updateOriginalPlayer({

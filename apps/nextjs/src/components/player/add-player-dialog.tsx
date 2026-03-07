@@ -70,34 +70,32 @@ const finalizePlayerCreate = ({
   router.refresh();
 };
 
-const uploadPlayerImage = async ({
-  imageUrl,
-  startUpload,
-}: {
-  imageUrl: File;
-  startUpload: ReturnType<typeof useUploadThing>["startUpload"];
-}) => {
-  const uploadResult = await startUpload([imageUrl], {
-    usageType: "player",
-  });
-  if (!uploadResult || uploadResult.length === 0) {
-    throw new Error("Image upload failed");
-  }
-  const uploadedFile = uploadResult[0] as
-    | { serverData?: { imageId?: number | null } }
-    | undefined;
-  const imageId = uploadedFile?.serverData?.imageId;
-  if (typeof imageId !== "number") {
-    throw new Error("Image upload did not return an imageId");
-  }
-  return imageId;
+const useUploadPlayerImage = () => {
+  const { startUpload } = useUploadThing("imageUploader");
+
+  const uploadPlayerImage = async ({ imageUrl }: { imageUrl: File }) => {
+    const uploadResult = await startUpload([imageUrl], {
+      usageType: "player",
+    });
+    if (!uploadResult || uploadResult.length === 0) {
+      throw new Error("Image upload failed");
+    }
+    const uploadedFile = uploadResult[0];
+    const imageId = uploadedFile?.serverData.imageId;
+    if (typeof imageId !== "number") {
+      throw new Error("Image upload did not return an imageId");
+    }
+    return imageId;
+  };
+
+  return { uploadPlayerImage };
 };
 
 /**
  * Renders the add-player dialog form and handles submit lifecycle.
  */
 const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
-  const { startUpload } = useUploadThing("imageUploader");
+  const { uploadPlayerImage } = useUploadPlayerImage();
   const router = useRouter();
   const { createPlayerMutation } = useCreatePlayerMutation();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -118,7 +116,6 @@ const PlayerContent = ({ setOpen }: { setOpen: (isOpen: boolean) => void }) => {
           try {
             imageId = await uploadPlayerImage({
               imageUrl: value.imageUrl,
-              startUpload,
             });
           } catch (error) {
             console.error("Error uploading image:", error);
