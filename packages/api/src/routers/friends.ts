@@ -5,9 +5,14 @@ import { z } from "zod/v4";
 
 import { friend, friendRequest, friendSetting } from "@board-games/db/schema";
 
+import { friendService } from "../services/social/friend.service";
 import { protectedUserProcedure } from "../trpc";
 import { mapMatches } from "../utils/game";
 import { collectShares } from "../utils/sharing";
+import {
+  friendSettingsSchema,
+  getFriendSettingsOutput,
+} from "./friend/friend.output";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type GameAgg = {
@@ -867,6 +872,17 @@ export const friendsRouter = {
         linkedPlayer: linkedPlayer,
       };
     }),
+  getFriendSettings: protectedUserProcedure
+    .input(z.object({ friendId: z.string() }))
+    .output(getFriendSettingsOutput)
+    .query(async ({ ctx, input }) => {
+      return friendService.getFriendSettings({
+        ctx: {
+          userId: ctx.userId,
+        },
+        input,
+      });
+    }),
   getFriendMetaData: protectedUserProcedure
     .input(z.object({ friendId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -902,23 +918,7 @@ export const friendsRouter = {
     .input(
       z.object({
         friendId: z.string(),
-        settings: z.object({
-          autoShareMatches: z.boolean(),
-          sharePlayersWithMatch: z.boolean(),
-          includeLocationWithMatch: z.boolean(),
-          defaultPermissionForMatches: z.enum(["view", "edit"]),
-          defaultPermissionForPlayers: z.enum(["view", "edit"]),
-          defaultPermissionForLocation: z.enum(["view", "edit"]),
-          defaultPermissionForGame: z.enum(["view", "edit"]),
-          autoAcceptMatches: z.boolean(),
-          autoAcceptPlayers: z.boolean(),
-          autoAcceptLocation: z.boolean(),
-          autoAcceptGame: z.boolean(),
-          allowSharedGames: z.boolean(),
-          allowSharedPlayers: z.boolean(),
-          allowSharedLocation: z.boolean(),
-          allowSharedMatches: z.boolean(),
-        }),
+        settings: friendSettingsSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {

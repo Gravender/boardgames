@@ -12,9 +12,9 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 
 import { FilterAndSearch } from "~/app/_components/filterAndSearch";
 import { PlayerImage } from "~/components/player-image";
+import { AddPlayerDialog } from "~/components/player/add-player-dialog";
+import { PlayerDropDown } from "~/components/player/player-dropdown";
 import { useTRPC } from "~/trpc/react";
-import { AddPlayerDialog } from "./addPlayerDialog";
-import { PlayerDropDown } from "./playerDropDown";
 
 export function PlayersTable({
   defaultIsOpen = false,

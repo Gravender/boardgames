@@ -33,6 +33,7 @@ export default async function Page({ params }: Props) {
 
   if (isNaN(Number(id))) redirect("/dashboard/friends");
   void prefetch(trpc.friend.getFriend.queryOptions({ friendId: id }));
+  void prefetch(trpc.friend.getFriendSettings.queryOptions({ friendId: id }));
   return (
     <HydrateClient>
       <div className="max-auto container px-4 py-2">

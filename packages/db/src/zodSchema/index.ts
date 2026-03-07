@@ -3,6 +3,7 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import {
   friend,
   friendRequest,
+  friendSetting,
   game,
   gameRole,
   group,
@@ -123,3 +124,6 @@ export const insertSharedMatchPlayerRoleSchema = createInsertSchema(
 export const selectSharedMatchPlayerRoleSchema = createSelectSchema(
   sharedMatchPlayerRole,
 );
+
+export const insertFriendSettingSchema = createInsertSchema(friendSetting);
+export const selectFriendSettingSchema = createSelectSchema(friendSetting);
