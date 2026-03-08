@@ -38,9 +38,9 @@ A web and mobile project for logging board games, players, matches, scoresheets,
 2. Create environment file  
    `cp .env.example .env` then fill in required secrets (UploadThing token, Sentry token). The `POSTGRES_URL` value is used by the database scripts.
 
-3. Start the local database (Docker)  
-   `./start-database.sh`  
-   This script creates/starts a `games-postgres` container using the credentials from `POSTGRES_URL`.
+3. Start the local database (Docker Postgres)  
+   `docker compose -f .devcontainer/docker-compose.yml up -d postgres`  
+   This starts the `postgres:16` service defined in the devcontainer compose file.
 
 4. Apply schema and seed data
 
@@ -62,7 +62,7 @@ A web and mobile project for logging board games, players, matches, scoresheets,
 - `pnpm format` / `pnpm format:fix` — Run oxfmt checks or apply formatting.
 - `pnpm typecheck` — Run TypeScript checks.
 - `pnpm e2e` — Playwright tests for the web client.
-- `./stop-database.sh` — Stop the local PostgreSQL container.
+- `docker compose -f .devcontainer/docker-compose.yml stop postgres` — Stop the local PostgreSQL container.
 
 ## Linting and formatting
 

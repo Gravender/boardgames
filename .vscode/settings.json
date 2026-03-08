@@ -18,5 +18,12 @@
   ],
   "typescript.tsdk": "node_modules/typescript/lib",
   "conventionalCommits.scopes": ["api", "expo", "next"],
-  "cSpell.words": ["nativewind", "scoresheet", "uploadthing"]
+  "cSpell.words": [
+    "nativewind",
+    "scoresheet",
+    "uploadthing"
+  ],
+  "[jsonc]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  }
 }

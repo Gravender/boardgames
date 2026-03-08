@@ -4,14 +4,14 @@
 		{
 			"label": "Start Database",
 			"type": "shell",
-			"command": "./start-database.sh",
+			"command": "docker compose -f .devcontainer/docker-compose.yml up -d postgres",
 			"problemMatcher": [],
-			"detail": "./start-database.sh"
+			"detail": "docker compose -f .devcontainer/docker-compose.yml up -d postgres"
 		},
 		{
 			"label": "Stop Database",
 			"type": "shell",
-			"command": "./stop-database.sh",
+			"command": "docker compose -f .devcontainer/docker-compose.yml stop postgres",
 			"problemMatcher": [],
 			"group": {
 				"kind": "build",

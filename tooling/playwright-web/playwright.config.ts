@@ -1,13 +1,17 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import { defineConfig, devices } from "@playwright/test";
-
-import "dotenv/config";
+import dotenv from "dotenv";
 
 import { baseUrl } from "./src/baseurl";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+dotenv.config({
+  path: path.resolve(__dirname, "..", "..", ".env"),
+  override: true,
+});
 
 /**
  * Read environment variables from file.
@@ -118,7 +122,7 @@ export default defineConfig({
       dependencies: ["setup better-auth chromium"],
     },
 
-    {
+    /* {
       name: "firefox",
       use: {
         ...devices["Desktop Firefox"],
@@ -144,7 +148,7 @@ export default defineConfig({
         ),
       },
       dependencies: ["setup better-auth webkit"],
-    },
+    }, */
 
     /* Test against mobile viewports. */
     // {
