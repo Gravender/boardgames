@@ -201,9 +201,13 @@ CREATE TABLE "boardgames_player" (
 CREATE TABLE "boardgames_round" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"parent_id" integer,
+	"round_key" uuid DEFAULT gen_random_uuid() NOT NULL,
+	"template_round_id" integer,
 	"name" varchar(256) NOT NULL,
 	"scoresheet_id" integer NOT NULL,
 	"type" text DEFAULT 'Numeric' NOT NULL,
+	"kind" text,
+	"config" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"color" varchar(256),
 	"score" integer DEFAULT 0 NOT NULL,
 	"win_condition" integer,
@@ -212,14 +216,17 @@ CREATE TABLE "boardgames_round" (
 	"lookup" integer,
 	"order" integer NOT NULL,
 	"created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	"updated_at" timestamp with time zone
+	"updated_at" timestamp with time zone,
+	"deleted_at" timestamp with time zone
 );
 --> statement-breakpoint
 CREATE TABLE "boardgames_round_player" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"score" integer,
+	"value" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"round" integer NOT NULL,
 	"match_player_id" integer NOT NULL,
+	"updated_by" text,
 	"created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updated_at" timestamp with time zone,
 	CONSTRAINT "boardgames_round_player_round_match_player_id_unique" UNIQUE("round","match_player_id")
@@ -452,6 +459,7 @@ ALTER TABLE "boardgames_player" ADD CONSTRAINT "boardgames_player_image_id_board
 ALTER TABLE "boardgames_round" ADD CONSTRAINT "boardgames_round_scoresheet_id_boardgames_scoresheet_id_fk" FOREIGN KEY ("scoresheet_id") REFERENCES "public"."boardgames_scoresheet"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "boardgames_round_player" ADD CONSTRAINT "boardgames_round_player_round_boardgames_round_id_fk" FOREIGN KEY ("round") REFERENCES "public"."boardgames_round"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "boardgames_round_player" ADD CONSTRAINT "boardgames_round_player_match_player_id_boardgames_match_player_id_fk" FOREIGN KEY ("match_player_id") REFERENCES "public"."boardgames_match_player"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "boardgames_round_player" ADD CONSTRAINT "boardgames_round_player_updated_by_boardgames_user_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."boardgames_user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "boardgames_scoresheet" ADD CONSTRAINT "boardgames_scoresheet_game_id_boardgames_game_id_fk" FOREIGN KEY ("game_id") REFERENCES "public"."boardgames_game"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "boardgames_scoresheet" ADD CONSTRAINT "boardgames_scoresheet_created_by_boardgames_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."boardgames_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "boardgames_session" ADD CONSTRAINT "boardgames_session_user_id_boardgames_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."boardgames_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -512,6 +520,8 @@ CREATE INDEX "name_idx" ON "boardgames_player" USING btree ("name");--> statemen
 CREATE INDEX "boardgames_player_id_index" ON "boardgames_player" USING btree ("id");--> statement-breakpoint
 CREATE UNIQUE INDEX "boardgames_player_is_user_created_by" ON "boardgames_player" USING btree ("created_by") WHERE "boardgames_player"."is_user" = true;--> statement-breakpoint
 CREATE INDEX "boardgames_round_scoresheet_id_index" ON "boardgames_round" USING btree ("scoresheet_id");--> statement-breakpoint
+CREATE INDEX "boardgames_round_round_key_index" ON "boardgames_round" USING btree ("round_key");--> statement-breakpoint
+CREATE UNIQUE INDEX "boardgames_round_scoresheet_round_key_active_unique" ON "boardgames_round" USING btree ("scoresheet_id","round_key") WHERE "boardgames_round"."deleted_at" IS NULL;--> statement-breakpoint
 CREATE INDEX "boardgames_scoresheet_game_id_index" ON "boardgames_scoresheet" USING btree ("game_id");--> statement-breakpoint
 CREATE INDEX "boardgames_share_request_parent_share_id_index" ON "boardgames_share_request" USING btree ("parent_share_id");--> statement-breakpoint
 CREATE INDEX "boardgames_share_request_owner_id_index" ON "boardgames_share_request" USING btree ("owner_id");--> statement-breakpoint

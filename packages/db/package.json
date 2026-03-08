@@ -36,7 +36,7 @@
     "format": "oxfmt --check .",
     "lint": "oxlint --report-unused-disable-directives",
     "push": "pnpm with-env drizzle-kit push",
-    "createviews": "sh -c 'POSTGRES_CONTAINER_ID=\"$(docker compose -f ../../.devcontainer/docker-compose.yml ps -q postgres)\"; if [ -z \"$POSTGRES_CONTAINER_ID\" ]; then echo \"Could not determine postgres container ID from docker compose\"; exit 1; fi; docker exec -i \"$POSTGRES_CONTAINER_ID\" psql -U postgres -d games < src/migrations/0001_create_views.sql'",
+    "createviews": "sh -c 'POSTGRES_CONTAINER_ID=\"$(docker compose -f ../../.devcontainer/docker-compose.yml ps -q postgres)\"; if [ -z \"$POSTGRES_CONTAINER_ID\" ]; then echo \"Could not determine postgres container ID from docker compose\"; exit 1; fi; docker exec -i \"$POSTGRES_CONTAINER_ID\" psql -X -v ON_ERROR_STOP=1 -U postgres -d games < src/migrations/0001_create_views.sql'",
     "migrate": "pnpm with-env drizzle-kit migrate",
     "generate": "pnpm with-env drizzle-kit generate",
     "seed": "pnpm with-env tsx src/seeding/seed.ts",

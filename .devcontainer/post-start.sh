@@ -84,13 +84,15 @@ cd /workspace
 
 echo "Checking .env setup..."
 
+DESIRED_POSTGRES_URL='postgresql://postgres:password@localhost:5432/games'
+
 if [ ! -f ".env" ] && [ -f ".env.example" ]; then
   cp .env.example .env
   echo "Created .env from .env.example"
 fi
 
 if [ -f ".env" ]; then
-  DESIRED_URL='POSTGRES_URL="postgresql://postgres:password@localhost:5432/games"'
+  DESIRED_URL="POSTGRES_URL=\"${DESIRED_POSTGRES_URL}\""
 
   if ! grep -q "^POSTGRES_URL=" .env; then
     printf "\n%s\n" "$DESIRED_URL" >> .env
@@ -102,6 +104,10 @@ fi
 
 DB_HOST="localhost"
 DB_PORT="5432"
+if [[ "$DESIRED_POSTGRES_URL" =~ @([^:/]+):([0-9]+) ]]; then
+  DB_HOST="${BASH_REMATCH[1]}"
+  DB_PORT="${BASH_REMATCH[2]}"
+fi
 
 DB_TARGET_LABEL="${DB_HOST}:${DB_PORT}"
 echo "Using database target ${DB_TARGET_LABEL}"
@@ -119,14 +125,14 @@ is_db_reachable() {
 if is_db_reachable; then
   echo "Postgres is already reachable at ${DB_TARGET_LABEL}"
 else
-  echo "Postgres is not reachable yet; starting docker compose services (postgres, pgweb)..."
+  echo "Postgres is not reachable yet; starting docker compose services (postgres, pgweb, playwright)..."
   COMPOSE_FILE=".devcontainer/docker-compose.yml"
   COMPOSE_MAX_RETRIES=5
   COMPOSE_RETRY_DELAY_SECONDS=2
   COMPOSE_SUCCEEDED=false
 
   for ATTEMPT in $(seq 1 "$COMPOSE_MAX_RETRIES"); do
-    if docker compose -f "$COMPOSE_FILE" up -d postgres pgweb; then
+    if docker compose -f "$COMPOSE_FILE" up -d postgres pgweb playwright; then
       COMPOSE_SUCCEEDED=true
       echo "Docker compose services are up"
       break
@@ -146,7 +152,10 @@ else
   fi
 fi
 
-DB_READY_MAX_RETRIES=20
+echo "Ensuring Playwright sidecar is running..."
+docker compose -f .devcontainer/docker-compose.yml up -d playwright
+
+DB_READY_MAX_RETRIES=5
 DB_READY_DELAY_SECONDS=1
 
 for ATTEMPT in $(seq 1 "$DB_READY_MAX_RETRIES"); do

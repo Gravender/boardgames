@@ -7,8 +7,16 @@ echo "Setting up pnpm..."
 
 # Shared cache paths are mounted as named Docker volumes in docker-compose.
 PNPM_STORE_PATH="${PNPM_STORE_PATH:-$HOME/.pnpm-store}"
-PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright}"
-mkdir -p "$PNPM_STORE_PATH" "$PLAYWRIGHT_BROWSERS_PATH"
+mkdir -p "$PNPM_STORE_PATH"
+
+# Named Docker volumes may be root-owned on first mount; ensure node can write caches.
+if [ ! -w "$PNPM_STORE_PATH" ]; then
+  if command -v sudo >/dev/null 2>&1; then
+    sudo mkdir -p "$PNPM_STORE_PATH"
+    sudo chown -R "$(id -u)":"$(id -g)" "$PNPM_STORE_PATH" || true
+    sudo chmod -R ug+rwX,o-rwx "$PNPM_STORE_PATH" || true
+  fi
+fi
 
 # Activate pnpm without writing to /usr/local/bin
 corepack prepare pnpm@10.15.1 --activate
@@ -17,20 +25,17 @@ corepack prepare pnpm@10.15.1 --activate
 pnpm config set store-dir "$PNPM_STORE_PATH"
 
 echo "Installing dependencies..."
-pnpm install
+pnpm install --prefer-offline
 
-if [ -d "tooling/playwright-web" ]; then
-  echo "Installing Playwright browsers..."
-  PLAYWRIGHT_BROWSERS_PATH="$PLAYWRIGHT_BROWSERS_PATH" \
-    pnpm --dir tooling/playwright-web exec playwright install --with-deps
-fi
+echo "Starting Playwright sidecar..."
+docker compose -f .devcontainer/docker-compose.yml up -d playwright
 
 if [ -d "apps/nextjs" ]; then
   echo "Preparing Next.js runtime directories..."
   (
     cd apps/nextjs
     mkdir -p .next .turbo
-    chmod -R 777 .next .turbo || true
+    chmod -R ug+rwX,o-rwx .next .turbo || true
   )
 fi
 

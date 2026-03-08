@@ -26,7 +26,7 @@
     "postinstall": "pnpm lint:ws",
     "typecheck": "turbo run typecheck --filter=!@board-games/expo",
     "ui-add": "turbo run ui-add",
-    "e2e": "turbo -F @board-games/playwright-web e2e"
+    "e2e": "docker compose -f .devcontainer/docker-compose.yml up -d playwright && docker compose -f .devcontainer/docker-compose.yml exec -T playwright pnpm --dir /workspace --filter @board-games/playwright-web e2e"
   },
   "devDependencies": {
     "@turbo/gen": "^2.7.3",

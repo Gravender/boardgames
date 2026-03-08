@@ -5,14 +5,14 @@ This repo includes a preconfigured dev container with:
 - Node.js `22` on `bookworm`
 - Docker-in-Docker support
 - A sidecar PostgreSQL service (`postgres:16`)
+- A sidecar Playwright runner service (`mcr.microsoft.com/playwright:v1.53.1-noble`)
 - Firewall restrictions via `ghcr.io/w3cj/devcontainer-features/firewall:latest`
-- Playwright browser/dependency bootstrap for e2e tests
-- Persistent caches for pnpm store and Playwright browsers
+- Persistent cache for pnpm store
 
 ## First run
 
 1. In VS Code/Cursor, run **Dev Containers: Reopen in Container**.
-2. Wait for `post-create.sh` to complete (`pnpm install` + Playwright install).
+2. Wait for `post-create.sh` to complete (`pnpm install` + Playwright sidecar startup).
 3. The container startup script will create `.env` from `.env.example` if missing and automatically run a schema push.
 
 ## What is configured
@@ -20,9 +20,9 @@ This repo includes a preconfigured dev container with:
 - App workspace path: `/workspace`
 - App service name: `app`
 - Database service name: `postgres`
+- Playwright service name: `playwright`
 - Persistent devcontainer volumes:
   - `pnpm-store-cache` mounted at `/home/node/.pnpm-store`
-  - `playwright-cache` mounted at `/home/node/.cache/ms-playwright`
 - Default DB URL inside container:
   - `postgresql://postgres:password@postgres:5432/games`
 - Forwarded ports:
@@ -30,6 +30,7 @@ This repo includes a preconfigured dev container with:
   - `5432` (Postgres)
   - `8081` (pgweb)
   - `4983` (Drizzle Studio)
+  - `9323` (Playwright HTML report)
 
 ## Daily commands
 
@@ -62,8 +63,11 @@ If you only want the web app process, use:
 
 ## E2E testing notes
 
-- Playwright browsers are installed by `.devcontainer/post-create.sh`.
-- Playwright tests target `http://localhost:3000` by default in local mode.
+- `pnpm e2e` runs inside the `playwright` compose service via `docker compose exec`.
+- Playwright tests target `http://localhost:3000` inside the sidecar (overridden by `PLAYWRIGHT_BASE_URL`).
+- Playwright `webServer` config auto-starts Next.js for E2E when no server is already listening on `3000`.
+- The sidecar exposes `9323` so failed test HTML reports can be opened from the host.
+- Outside the sidecar, tests still default to `http://localhost:3000`.
 - Some tests may still require valid env values (for example auth-related test credentials):
   - `E2E_TEST_USERNAME`
   - `E2E_TEST_PASSWORD`
@@ -73,8 +77,8 @@ If you only want the web app process, use:
 
 Recommended flow:
 
-1. Terminal A: `pnpm dev` and wait for the app to be ready on `3000`
-2. Terminal B: `pnpm e2e`
+1. Run `pnpm e2e` (runs in the Playwright sidecar)
+2. Playwright reuses an existing server on `3000` or starts Next.js automatically via `webServer`
 
 Helpful checks before running:
 

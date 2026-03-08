@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { expect, test as setup } from "@playwright/test";
+import { expect, test as setup, type Page } from "@playwright/test";
 
 import { baseUrl } from "./baseurl";
 
@@ -9,6 +9,43 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 setup.describe.configure({ mode: "serial" });
+
+const getAuthenticatedUserId = async (page: Page): Promise<string | undefined> => {
+  const sessionResponse = await page.request.get(`${baseUrl}/api/auth/get-session`);
+  if (!sessionResponse.ok()) {
+    return undefined;
+  }
+
+  const sessionData = (await sessionResponse.json()) as
+    | {
+        user?: { id?: string };
+      }
+    | null;
+  return sessionData?.user?.id;
+};
+
+const waitForAuthenticatedUserId = async (
+  page: Page,
+  timeout = 15000,
+): Promise<string> => {
+  let userId: string | undefined;
+
+  await expect
+    .poll(
+      async () => {
+        userId = await getAuthenticatedUserId(page);
+        return userId ?? "";
+      },
+      { timeout },
+    )
+    .not.toBe("");
+
+  if (!userId) {
+    throw new Error("Failed to get userId from Better Auth");
+  }
+
+  return userId;
+};
 
 setup("authenticate", async ({ page, browserName }) => {
   let username = process.env.E2E_TEST_USERNAME;
@@ -61,18 +98,15 @@ setup("authenticate", async ({ page, browserName }) => {
   await page.fill('input[placeholder="username"]', username);
   await page.fill('input[type="password"]', password);
 
-  // Submit the form and wait for navigation
-  const loginPromise = page.waitForURL(`${baseUrl}/dashboard`, {
-    timeout: 15000,
-  });
+  // Submit the form and wait for either redirect or authenticated session.
+  const loginRedirectPromise = page.waitForURL(/\/dashboard/, { timeout: 15000 });
   await page.click('button[type="submit"]:has-text("Login")');
 
-  // Check if login was successful
+  // Check if login was successful.
   try {
-    await loginPromise;
-    // Login successful - we're now on the dashboard
+    await Promise.race([loginRedirectPromise, waitForAuthenticatedUserId(page)]);
   } catch {
-    // Login failed, try to sign up instead
+    // Login failed, try to sign up instead.
     await page.goto(`${baseUrl}/sign-up`);
     await expect(page).toHaveURL(/\/sign-up/);
 
@@ -94,13 +128,12 @@ setup("authenticate", async ({ page, browserName }) => {
     await page.fill('input[placeholder="m@example.com"]', email);
     await page.fill('input[type="password"]', password);
 
-    // Submit the sign-up form
-    const signupPromise = page.waitForURL(/\/dashboard/, { timeout: 15000 });
+    // Submit the sign-up form and wait for either redirect or authenticated session.
+    const signupRedirectPromise = page.waitForURL(/\/dashboard/, { timeout: 15000 });
     await page.click('button[type="submit"]:has-text("Signup")');
 
     try {
-      await signupPromise;
-      // Sign-up successful - we're now on the dashboard
+      await Promise.race([signupRedirectPromise, waitForAuthenticatedUserId(page)]);
     } catch (error) {
       throw new Error(
         `Failed to sign up: ${error instanceof Error ? error.message : String(error)}`,
@@ -109,26 +142,15 @@ setup("authenticate", async ({ page, browserName }) => {
     }
   }
 
-  // Get userId from session API
-  const sessionResponse = await page.request.get(
-    `${baseUrl}/api/auth/get-session`,
-  );
-  if (sessionResponse.ok()) {
-    const sessionData = (await sessionResponse.json()) as {
-      user?: { id?: string };
-    };
-    userId = sessionData.user?.id;
-  }
-
-  if (!userId) {
-    throw new Error("Failed to get userId from Better Auth");
-  }
+  // Ensure auth settled before persisting storage state.
+  userId = await waitForAuthenticatedUserId(page, 15000);
 
   // Save userId to file for use in tests
   writeFileSync(userIdFile, JSON.stringify({ userId }, null, 2));
 
-  // Verify we're on the dashboard
-  await expect(page).toHaveURL(`${baseUrl}/dashboard`);
+  // Ensure we can reach the authenticated dashboard route before continuing.
+  await page.goto(`${baseUrl}/dashboard`);
+  await expect(page).toHaveURL(/\/dashboard/);
 
   // Save authenticated state (cookies are automatically captured from page context)
   await page.context().storageState({ path: authFile });

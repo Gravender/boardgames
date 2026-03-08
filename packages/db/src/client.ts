@@ -10,9 +10,11 @@ import { Pool } from "pg";
 
 import { relations } from "./relations";
 
-if (!process.env.NODE_ENV || !process.env.POSTGRES_URL) {
+if (!process.env.POSTGRES_URL) {
   throw new Error("POSTGRES_URL is not set");
 }
+
+const isProd = process.env.NODE_ENV === "production";
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
@@ -20,7 +22,7 @@ const pool = new Pool({
 });
 
 export const db =
-  process.env.NODE_ENV !== "production"
+  !isProd
     ? LocalDrizzle({
         client: pool,
         relations,
