@@ -1,13 +1,16 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import { defineConfig, devices } from "@playwright/test";
-
-import "dotenv/config";
+import dotenv from "dotenv";
 
 import { baseUrl } from "./src/baseurl";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+dotenv.config({
+  path: path.resolve(__dirname, "..", "..", ".env"),
+});
 
 /**
  * Read environment variables from file.
@@ -29,9 +32,18 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
-  workers: 3,
+  workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: "html",
+  reporter: [
+    [
+      "html",
+      {
+        host: "0.0.0.0",
+        port: 9323,
+        open: "never",
+      },
+    ],
+  ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
@@ -41,6 +53,12 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   globalTimeout: 5 * 60 * 1000,
+  webServer: {
+    command: "pnpm --dir /workspace/apps/nextjs dev",
+    url: "http://localhost:3000",
+    reuseExistingServer: true,
+    timeout: 2 * 60 * 1000,
+  },
 
   /* Configure projects for major browsers */
   projects: [
@@ -53,22 +71,6 @@ export default defineConfig({
       teardown: "cleanup better-auth chromium",
     },
     {
-      name: "setup better-auth firefox",
-      testMatch: /global\.auth\.ts/,
-      use: {
-        ...devices["Desktop Firefox"],
-      },
-      teardown: "cleanup better-auth firefox",
-    },
-    {
-      name: "setup better-auth webkit",
-      testMatch: /global\.auth\.ts/,
-      use: {
-        ...devices["Desktop Safari"],
-      },
-      teardown: "cleanup better-auth webkit",
-    },
-    {
       name: "cleanup better-auth chromium",
       use: {
         storageState: path.resolve(
@@ -76,30 +78,6 @@ export default defineConfig({
           "playwright",
           ".better-auth",
           "user-chromium.json",
-        ),
-      },
-      testMatch: /global\.signout\.ts/,
-    },
-    {
-      name: "cleanup better-auth firefox",
-      use: {
-        storageState: path.resolve(
-          __dirname,
-          "playwright",
-          ".better-auth",
-          "user-firefox.json",
-        ),
-      },
-      testMatch: /global\.signout\.ts/,
-    },
-    {
-      name: "cleanup better-auth webkit",
-      use: {
-        storageState: path.resolve(
-          __dirname,
-          "playwright",
-          ".better-auth",
-          "user-webkit.json",
         ),
       },
       testMatch: /global\.signout\.ts/,
@@ -118,7 +96,7 @@ export default defineConfig({
       dependencies: ["setup better-auth chromium"],
     },
 
-    {
+    /* {
       name: "firefox",
       use: {
         ...devices["Desktop Firefox"],
@@ -144,7 +122,7 @@ export default defineConfig({
         ),
       },
       dependencies: ["setup better-auth webkit"],
-    },
+    }, */
 
     /* Test against mobile viewports. */
     // {

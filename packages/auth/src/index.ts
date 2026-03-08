@@ -29,7 +29,34 @@ export function initAuth<
   googleClientSecret: string;
 
   extraPlugins?: TExtraPlugins;
+  trustedOrigins?: string[];
 }) {
+  const normalizeOrigin = (value: string): string | undefined => {
+    if (value === "expo://" || value === "exp://") {
+      return value;
+    }
+
+    try {
+      return new URL(value).origin;
+    } catch {
+      return undefined;
+    }
+  };
+
+  const trustedOrigins = Array.from(
+    new Set(
+      [
+        "expo://",
+        "exp://",
+        options.baseUrl,
+        options.productionUrl,
+        ...(options.trustedOrigins ?? []),
+      ]
+        .map(normalizeOrigin)
+        .filter((origin): origin is string => Boolean(origin)),
+    ),
+  );
+
   const config = {
     database: drizzleAdapter(db, {
       provider: "pg",
@@ -98,7 +125,7 @@ export function initAuth<
         redirectURI: `${options.productionUrl}/api/auth/callback/google`,
       },
     },
-    trustedOrigins: ["expo://"],
+    trustedOrigins,
     onAPIError: {
       onError(error, ctx) {
         console.error("BETTER AUTH API ERROR", error, ctx);

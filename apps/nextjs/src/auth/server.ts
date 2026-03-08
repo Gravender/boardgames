@@ -23,6 +23,10 @@ export const auth = initAuth({
   githubClientSecret: env.AUTH_GITHUB_CLIENT_SECRET,
   googleClientId: env.AUTH_GOOGLE_CLIENT_ID,
   googleClientSecret: env.AUTH_GOOGLE_CLIENT_SECRET,
+  trustedOrigins:
+    env.VERCEL_ENV === "production" || env.VERCEL_ENV === "preview"
+      ? []
+      : ["http://hostmachine:3000"],
   extraPlugins: [nextCookies()],
 });
 

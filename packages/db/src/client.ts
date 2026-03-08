@@ -10,22 +10,19 @@ import { Pool } from "pg";
 
 import { relations } from "./relations";
 
+if (!process.env.POSTGRES_URL) {
+  throw new Error("POSTGRES_URL is not set");
+}
+
+const isProd = process.env.NODE_ENV === "production";
+
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
   ssl: false,
 });
 
-/**
- * Cache the database connection in development. This avoids creating a new connection on every HMR
- * update.
- */
-
-if (!process.env.NODE_ENV || !process.env.POSTGRES_URL) {
-  throw new Error("POSTGRES_URL is not set");
-}
-
 export const db =
-  process.env.NODE_ENV === "development"
+  !isProd
     ? LocalDrizzle({
         client: pool,
         relations,

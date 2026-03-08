@@ -60,6 +60,10 @@
       "cache": false,
       "persistent": false
     },
+    "createviews": {
+      "cache": false,
+      "persistent": false
+    },
     "ui-add": {
       "cache": false,
       "interactive": true
