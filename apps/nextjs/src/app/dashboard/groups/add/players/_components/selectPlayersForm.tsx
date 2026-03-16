@@ -30,12 +30,7 @@ const playersSchema = z
   .array(
     insertPlayerSchema
       .pick({ name: true, id: true })
-      .required({ name: true, id: true })
-      .extend({
-        imageUrl: z.string().nullable(),
-        matches: z.number(),
-        team: z.number().nullable(),
-      }),
+      .required({ name: true, id: true }),
   )
   .refine((players) => players.length > 0, {
     message: "You must add at least one player",

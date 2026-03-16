@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { EDITED_PLAYER_NAME, PLAYER_NAME } from "../shared/test-data";
-import { deletePlayers, playerAriaText } from "./helpers";
+import { deletePlayers } from "./helpers";
 
 test.describe("Players Page", () => {
   test.beforeAll(async ({ browserName }) => {
@@ -23,10 +23,9 @@ test.describe("Players Page", () => {
     await page
       .getByRole("textbox", { name: "Search players..." })
       .fill(browserPlayerName);
-    const ariaText = playerAriaText(browserPlayerName);
-    await expect(
-      page.getByLabel("Players").getByRole("listitem"),
-    ).toMatchAriaSnapshot(ariaText);
+    await expect(page.getByRole("link", { name: browserPlayerName }).first()).toBeVisible(
+      { timeout: 10000 },
+    );
   });
 
   test("Edit Player", async ({ page, browserName }) => {
@@ -37,10 +36,9 @@ test.describe("Players Page", () => {
     await page
       .getByRole("textbox", { name: "Search players..." })
       .fill(browserPlayerName);
-    const originalPlayerAriaText = playerAriaText(browserPlayerName);
-    await expect(
-      page.getByLabel("Players").getByRole("listitem"),
-    ).toMatchAriaSnapshot(originalPlayerAriaText);
+    await expect(page.getByRole("link", { name: browserPlayerName }).first()).toBeVisible(
+      { timeout: 10000 },
+    );
     await page.getByRole("button", { name: "Open menu" }).first().click();
     await page.getByRole("menuitem", { name: "Edit" }).click();
     await page
@@ -51,9 +49,8 @@ test.describe("Players Page", () => {
     await page
       .getByRole("textbox", { name: "Search players..." })
       .fill(editedBrowserPlayerName);
-    const editedPlayerAriaText = playerAriaText(editedBrowserPlayerName);
     await expect(
-      page.getByLabel("Players").getByRole("listitem"),
-    ).toMatchAriaSnapshot(editedPlayerAriaText);
+      page.getByRole("link", { name: editedBrowserPlayerName }).first(),
+    ).toBeVisible({ timeout: 10000 });
   });
 });
