@@ -155,7 +155,7 @@ async function deleteGameRelatedData(
  * Deletes all games created by a user and all their related data.
  *
  * This function performs a complete cascade deletion of:
- * - Match-related data: matchPlayerRole, roundPlayer, matchPlayer, match
+ * - Match-related data: matchPlayerRole, roundPlayer, matchPlayer, matchImage, team, match
  * - Scoresheet-related data: round, scoresheet
  * - Game-related data: gameRole, game
  *

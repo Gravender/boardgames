@@ -1,5 +1,6 @@
 "use client";
 
+import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
@@ -16,13 +17,10 @@ import { AddPlayerDialog } from "~/components/player/add-player-dialog";
 import { PlayerDropDown } from "~/components/player/player-dropdown";
 import { useTRPC } from "~/trpc/react";
 
-export function PlayersTable({
-  defaultIsOpen = false,
-  groupId,
-}: {
-  defaultIsOpen?: boolean;
-  groupId?: number;
-}) {
+const getPlayerIdentity = (player: { id: number; type: string }) =>
+  `${player.id}-${player.type}`;
+
+function usePlayersData(groupId?: number) {
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(trpc.player.getPlayers.queryOptions());
   const { data: groupPlayers } = useQuery({
@@ -32,21 +30,41 @@ export function PlayersTable({
     enabled: groupId !== undefined,
   });
   const filteredPlayers = useMemo(() => {
-    if (groupId === undefined || !groupPlayers) {
+    if (groupId === undefined) {
       return data;
+    }
+    if (!groupPlayers) {
+      return [];
     }
     const groupPlayerIds = new Set(
       groupPlayers
         .filter((player) => player.inGroup)
-        .map((player) => player.id),
+        .map((player) => `${player.id}-original`),
     );
-    return data.filter((player) => groupPlayerIds.has(player.id));
+    return data.filter((player) =>
+      groupPlayerIds.has(getPlayerIdentity(player)),
+    );
   }, [data, groupId, groupPlayers]);
   const [players, setPlayers] = useState(filteredPlayers);
   useEffect(() => {
     setPlayers(filteredPlayers);
   }, [filteredPlayers]);
+  return { filteredPlayers, players, setPlayers };
+}
 
+function PlayersList({
+  filteredPlayers,
+  players,
+  setPlayers,
+  defaultIsOpen,
+}: {
+  filteredPlayers: ReturnType<typeof usePlayersData>["filteredPlayers"];
+  players: ReturnType<typeof usePlayersData>["players"];
+  setPlayers: Dispatch<
+    SetStateAction<ReturnType<typeof usePlayersData>["players"]>
+  >;
+  defaultIsOpen: boolean;
+}) {
   return (
     <div className="relative container mx-auto h-[90vh] max-w-3xl px-4">
       <CardHeader>
@@ -71,7 +89,7 @@ export function PlayersTable({
               <li
                 data-slot="card"
                 className="bg-card text-card-foreground rounded-lg border pb-2 shadow-sm"
-                key={`${player.id}-${player.type}`}
+                key={getPlayerIdentity(player)}
               >
                 <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">
                   <Link
@@ -136,5 +154,23 @@ export function PlayersTable({
         <AddPlayerDialog defaultIsOpen={defaultIsOpen} />
       </div>
     </div>
+  );
+}
+
+export function PlayersTable({
+  defaultIsOpen = false,
+  groupId,
+}: {
+  defaultIsOpen?: boolean;
+  groupId?: number;
+}) {
+  const { filteredPlayers, players, setPlayers } = usePlayersData(groupId);
+  return (
+    <PlayersList
+      filteredPlayers={filteredPlayers}
+      players={players}
+      setPlayers={setPlayers}
+      defaultIsOpen={defaultIsOpen}
+    />
   );
 }

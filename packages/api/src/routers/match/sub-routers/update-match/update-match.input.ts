@@ -120,7 +120,7 @@ export type UpdateMatchPlacementsOutputType = z.infer<
 
 export const updateMatchCommentInput = z.object({
   match: matchInputSchema,
-  comment: z.string().min(1),
+  comment: z.string().trim().min(1).nullable(),
 });
 
 export type UpdateMatchCommentInputType = z.infer<
@@ -132,13 +132,13 @@ export const updateMatchDetailsInput = z.discriminatedUnion("type", [
     type: z.literal("player"),
     id: z.number(),
     match: matchInputSchema,
-    details: z.string(),
+    details: z.string().trim().min(1).nullable(),
   }),
   z.object({
     type: z.literal("team"),
     teamId: z.number(),
     match: matchInputSchema,
-    details: z.string(),
+    details: z.string().trim().min(1).nullable(),
   }),
 ]);
 

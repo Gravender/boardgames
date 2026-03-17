@@ -84,19 +84,21 @@ function Content({
       onSubmit: FormSchema,
     },
     onSubmit: async ({ value }) => {
+      const trimmedDetail = value.detail.trim();
+      const details = trimmedDetail === "" ? null : trimmedDetail;
       updateMatchDetailsMutation.mutate(
         data.type === "player"
           ? {
               type: "player",
               match,
               id: data.id,
-              details: value.detail,
+              details,
             }
           : {
               type: "team",
               match,
               teamId: data.id,
-              details: value.detail,
+              details,
             },
         {
           onSuccess: () => {

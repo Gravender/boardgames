@@ -267,6 +267,27 @@ function AddImageDialogContent({
   const posthog = usePostHog();
   const queryClient = useQueryClient();
   const { startUpload } = useUploadThing("imageUploader");
+  const handleImageSubmit = async ({
+    value,
+  }: {
+    value: z.infer<typeof AddImageSchema>;
+  }) => {
+    posthog.capture("image create begin");
+    const uploadResult = await startUpload([value.file], {
+      usageType: "match",
+      matchId: matchId,
+      caption: value.caption,
+      duration: duration,
+    });
+    if (!uploadResult) {
+      throw new Error("Image upload failed");
+    }
+    await queryClient.invalidateQueries(
+      trpc.image.getMatchImages.queryOptions({ matchId: matchId }),
+    );
+    toast.success("Image added successfully!");
+    setIsAddImageDialogOpen(false);
+  };
   const form = useAppForm({
     defaultValues: {
       caption: "" as string | undefined,
@@ -278,24 +299,7 @@ function AddImageDialogContent({
     onSubmit: async ({ value }) => {
       setIsSubmitting(true);
       try {
-        posthog.capture("image create begin");
-        const uploadResult = await startUpload([value.file], {
-          usageType: "match",
-          matchId: matchId,
-          caption: value.caption,
-          duration: duration,
-        });
-        if (!uploadResult) {
-          toast.error("Error", {
-            description: "There was a problem uploading your Image.",
-          });
-          posthog.capture("upload error", { error: "Image upload failed" });
-          throw new Error("Image upload failed");
-        }
-        await queryClient.invalidateQueries(
-          trpc.image.getMatchImages.queryOptions({ matchId: matchId }),
-        );
-        toast.success("Image added successfully!");
+        await handleImageSubmit({ value });
       } catch (error) {
         const normalizedError =
           error instanceof Error
@@ -312,7 +316,6 @@ function AddImageDialogContent({
           description: "There was a problem uploading your Image.",
         });
       } finally {
-        setIsAddImageDialogOpen(false);
         setIsSubmitting(false);
       }
     },

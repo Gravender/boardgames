@@ -87,12 +87,8 @@ test.describe("Match Scoresheet Dialogs - Manual Winner and Tie Breaker", () => 
     await scoreInputs.nth(0).fill("10");
     await scoreInputs.nth(1).fill("10");
 
-    const finishButton = page.getByRole("button", {
-      name: "Finish",
-      exact: true,
-    });
-    await expect(finishButton).toBeEnabled({ timeout: 10000 });
-    await finishButton.click();
+    await page.waitForTimeout(2500);
+    await page.getByRole("button", { name: "Finish", exact: true }).click();
 
     const tieDialog = page.getByLabel("Tie Breaker");
     await expect(tieDialog).toBeVisible();

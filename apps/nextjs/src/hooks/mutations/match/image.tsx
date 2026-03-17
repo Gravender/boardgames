@@ -20,11 +20,9 @@ export const useMatchImages = ({ matchId }: { matchId: number }) => {
 export const useDeleteMatchImageMutation = ({
   matchId,
   onSuccess,
-  onError,
 }: {
   matchId: number;
   onSuccess?: () => void;
-  onError?: (error: Error) => void;
 }) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -45,7 +43,6 @@ export const useDeleteMatchImageMutation = ({
           errorMessage: error.message,
         });
         toast.error("Failed to delete image");
-        onError?.(error);
       },
     }),
   );

@@ -65,10 +65,11 @@ function Content({
       onSubmit: FormSchema,
     },
     onSubmit: ({ value }) => {
+      const trimmedComment = value.comment.trim();
       updateMatchCommentMutation.mutate(
         {
           match,
-          comment: value.comment,
+          comment: trimmedComment === "" ? null : trimmedComment,
         },
         {
           onSuccess: () => {

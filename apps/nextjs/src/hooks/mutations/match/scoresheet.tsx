@@ -246,8 +246,7 @@ export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
               ? {
                   sharedMatchId: data.match.sharedMatchId,
                   sharedGameId: data.game.sharedGameId,
-                  type: data.game.type,
-                  linkedGameId: data.game.linkedGameId,
+                  type: data.game.type as "shared" | "linked",
                   finished: true,
                 }
               : {
@@ -293,8 +292,7 @@ export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
               ? {
                   sharedMatchId: data.match.sharedMatchId,
                   sharedGameId: data.game.sharedGameId,
-                  type: data.game.type,
-                  linkedGameId: data.game.linkedGameId,
+                  type: data.game.type as "shared" | "linked",
                   finished: true,
                 }
               : {
@@ -316,44 +314,6 @@ export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
   );
   return {
     updateMatchPlacementsMutation,
-  };
-};
-
-export const useAddRoundMutation = (input: MatchInput) => {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const posthog = usePostHog();
-  const addRoundMutation = useMutation(
-    trpc.round.addRound.mutationOptions({
-      onSuccess: async () => {
-        await Promise.all([
-          queryClient.invalidateQueries(
-            trpc.match.getMatch.queryOptions(input),
-          ),
-          queryClient.invalidateQueries(
-            trpc.match.getMatchScoresheet.queryOptions(input),
-          ),
-          queryClient.invalidateQueries(
-            trpc.match.getMatchPlayersAndTeams.queryOptions(input),
-          ),
-          queryClient.invalidateQueries(
-            trpc.match.getMatchSummary.queryOptions(input),
-          ),
-        ]);
-        posthog.capture("round added to match", {
-          input,
-        });
-      },
-      onError: (error) => {
-        posthog.capture("round added to match error", { error });
-        toast.error("Error", {
-          description: "There was a problem adding your round.",
-        });
-      },
-    }),
-  );
-  return {
-    addRoundMutation,
   };
 };
 

@@ -19,7 +19,7 @@ import { Field, FieldError, FieldLabel } from "@board-games/ui/field";
 import type { MatchInput } from "../types/input";
 import { GradientPicker } from "~/components/color-picker";
 import { useAppForm } from "~/hooks/form";
-import { useAddRoundMutation } from "~/hooks/mutations/match/scoresheet";
+import { useAddRoundMutation } from "~/hooks/mutations/match/add-round";
 import { usePlayersAndTeams, useScoresheet } from "~/hooks/queries/match/match";
 
 export const AddRoundDialog = ({ match }: { match: MatchInput }) => {
