@@ -217,25 +217,13 @@ export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
   const router = useRouter();
   const posthog = usePostHog();
   const queryClient = useQueryClient();
+  const removeMatchQueries = useRemoveMatchQueries();
   const updateMatchManualWinnerMutation = useMutation(
     trpc.match.update.updateMatchManualWinner.mutationOptions({
-      onSuccess: async (data) => {
-        // Invalidate match-related queries so the summary page refetches
-        // fresh server data instead of relying on stale client cache.
-        await Promise.all([
-          queryClient.invalidateQueries(
-            trpc.match.getMatch.queryOptions(input),
-          ),
-          queryClient.invalidateQueries(
-            trpc.match.getMatchScoresheet.queryOptions(input),
-          ),
-          queryClient.invalidateQueries(
-            trpc.match.getMatchPlayersAndTeams.queryOptions(input),
-          ),
-          queryClient.invalidateQueries(
-            trpc.match.getMatchSummary.queryOptions(input),
-          ),
-        ]);
+      onSuccess: (data) => {
+        // Remove match queries so the summary page hydrates with fresh
+        // server-prefetched data instead of stale client cache.
+        removeMatchQueries(input);
         posthog.capture("match finished", {
           input: input,
           finishedType: "manual",
@@ -257,6 +245,19 @@ export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
                 },
           ),
         );
+        // Trigger broader cache invalidations after navigation.
+        void Promise.all([
+          queryClient.invalidateQueries(trpc.match.getMatch.queryOptions(input)),
+          queryClient.invalidateQueries(
+            trpc.match.getMatchScoresheet.queryOptions(input),
+          ),
+          queryClient.invalidateQueries(
+            trpc.match.getMatchPlayersAndTeams.queryOptions(input),
+          ),
+          queryClient.invalidateQueries(
+            trpc.match.getMatchSummary.queryOptions(input),
+          ),
+        ]);
       },
       onError: (error) => {
         posthog.capture("manual winner update error", { error });

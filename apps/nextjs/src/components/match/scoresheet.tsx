@@ -628,7 +628,9 @@ function ScoresheetFooter(input: { match: MatchInput }) {
             <CommentDialog match={match} comment={match.comment} />
           </CardContent>
         </Card>
-        <MatchImages matchId={match.id} duration={duration} />
+        <Suspense fallback={null}>
+          <MatchImages matchId={match.id} duration={duration} />
+        </Suspense>
       </div>
       <ManualWinnerDialog
         isOpen={openManualWinnerDialog}

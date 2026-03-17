@@ -83,7 +83,7 @@ function Content({
     validators: {
       onSubmit: FormSchema,
     },
-    onSubmit: async ({ value }) => {
+    onSubmit: ({ value }) => {
       const trimmedDetail = value.detail.trim();
       const details = trimmedDetail === "" ? null : trimmedDetail;
       updateMatchDetailsMutation.mutate(

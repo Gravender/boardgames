@@ -37,7 +37,11 @@ export const useAddRoundMutation = (input: MatchInput) => {
         });
       },
       onError: (error) => {
-        posthog.capture("round added to match error", { error });
+        posthog.capture("round added to match error", {
+          message: error instanceof Error ? error.message : "Unknown error",
+          // include stable non-sensitive fields only when available
+          // code: (error as { data?: { code?: string } }).data?.code,
+        });
         toast.error("Error", {
           description: "There was a problem adding your round.",
         });
