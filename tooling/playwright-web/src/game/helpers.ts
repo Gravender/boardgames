@@ -8,6 +8,7 @@ import {
   game,
   gameRole,
   match,
+  matchImage,
   matchPlayer,
   matchPlayerRole,
   round,
@@ -66,7 +67,7 @@ async function fetchUserGames(userId: string) {
 
 /**
  * Deletes all match-related data in the correct cascade order.
- * Deletion order: matchPlayerRole -> roundPlayer -> matchPlayer -> match
+ * Deletion order: matchPlayerRole -> roundPlayer -> matchPlayer -> matchImage -> team -> match
  *
  * @param games - Array of games with their matches and matchPlayers
  * @param tx - Database transaction (optional, defaults to direct db access)
@@ -99,6 +100,10 @@ async function deleteMatchRelatedData(
   }
 
   if (matches.length > 0) {
+    // Delete dependent match images before deleting matches.
+    await database
+      .delete(matchImage)
+      .where(inArray(matchImage.matchId, matches));
     await database.delete(team).where(inArray(team.matchId, matches));
     await database.delete(match).where(inArray(match.id, matches));
   }
@@ -150,7 +155,7 @@ async function deleteGameRelatedData(
  * Deletes all games created by a user and all their related data.
  *
  * This function performs a complete cascade deletion of:
- * - Match-related data: matchPlayerRole, roundPlayer, matchPlayer, match
+ * - Match-related data: matchPlayerRole, roundPlayer, matchPlayer, matchImage, team, match
  * - Scoresheet-related data: round, scoresheet
  * - Game-related data: gameRole, game
  *

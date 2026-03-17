@@ -68,6 +68,34 @@ export type UpdateMatchManualWinnerInputType = z.infer<
   typeof updateMatchManualWinnerInput
 >;
 
+export const updateMatchManualWinnerOutput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("original"),
+    match: z.object({
+      id: z.number(),
+    }),
+    game: z.object({
+      id: z.number(),
+      type: z.literal("original"),
+    }),
+  }),
+  z.object({
+    type: z.literal("shared"),
+    match: z.object({
+      sharedMatchId: z.number(),
+    }),
+    game: z.object({
+      type: z.literal("shared").or(z.literal("linked")),
+      sharedGameId: z.number(),
+      linkedGameId: z.number().nullable(),
+    }),
+  }),
+]);
+
+export type UpdateMatchManualWinnerOutputType = z.infer<
+  typeof updateMatchManualWinnerOutput
+>;
+
 export const updateMatchPlacementsInput = z.object({
   match: matchInputSchema,
   playersPlacement: z
@@ -84,9 +112,15 @@ export type UpdateMatchPlacementsInputType = z.infer<
   typeof updateMatchPlacementsInput
 >;
 
+export const updateMatchPlacementsOutput = updateMatchManualWinnerOutput;
+
+export type UpdateMatchPlacementsOutputType = z.infer<
+  typeof updateMatchPlacementsOutput
+>;
+
 export const updateMatchCommentInput = z.object({
   match: matchInputSchema,
-  comment: z.string().min(1),
+  comment: z.string().trim().min(1).nullable(),
 });
 
 export type UpdateMatchCommentInputType = z.infer<
@@ -98,13 +132,13 @@ export const updateMatchDetailsInput = z.discriminatedUnion("type", [
     type: z.literal("player"),
     id: z.number(),
     match: matchInputSchema,
-    details: z.string(),
+    details: z.string().trim().min(1).nullable(),
   }),
   z.object({
     type: z.literal("team"),
     teamId: z.number(),
     match: matchInputSchema,
-    details: z.string(),
+    details: z.string().trim().min(1).nullable(),
   }),
 ]);
 

@@ -32,7 +32,6 @@ test.describe("Match Summary", () => {
     page,
     browserName,
   }) => {
-    test.slow();
     const browserGameName = browserName + PREFIX + "high_" + MATCH_GAME_NAME;
 
     const { gameId, match } = await createAndFinishMatchViaTrpc(
@@ -113,7 +112,6 @@ test.describe("Match Summary", () => {
     page,
     browserName,
   }) => {
-    test.slow();
     const browserGameName = browserName + PREFIX + "low_" + MATCH_GAME_NAME;
 
     const { gameId, match } = await createAndFinishMatchViaTrpc(
@@ -169,7 +167,6 @@ test.describe("Match Summary", () => {
     page,
     browserName,
   }) => {
-    test.slow();
     const browserGameName = browserName + PREFIX + "multi_" + MATCH_GAME_NAME;
     const playerPrefix = browserName + "_SumP";
 
@@ -291,7 +288,6 @@ test.describe("Match Summary", () => {
     page,
     browserName,
   }) => {
-    test.slow();
     const browserGameName = browserName + PREFIX + "target_" + MATCH_GAME_NAME;
 
     const { gameId, match } = await createAndFinishMatchViaTrpc(
@@ -340,7 +336,6 @@ test.describe("Match Summary", () => {
     page,
     browserName,
   }) => {
-    test.slow();
     const browserGameName = browserName + PREFIX + "manual_" + MATCH_GAME_NAME;
 
     // Create match with Manual win condition

@@ -1,9 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { PlayersTable } from "~/app/dashboard/players/_components/players";
 
-import { caller, HydrateClient } from "~/trpc/server";
-import { PlayersTable } from "./_components/playerTable";
+import { HydrateClient } from "~/trpc/server";
 
 export default async function Page({
   params,
@@ -12,19 +12,10 @@ export default async function Page({
 }) {
   const id = (await params).id;
   if (isNaN(Number(id))) redirect("/dashboard/groups");
-  const players = await caller.player.getPlayersByGroup({
-    group: { id: Number(id) },
-  });
 
   return (
     <HydrateClient>
-      <PlayersTable
-        data={players.map((player) =>
-          Object.assign(player, { matches: Number(player.matches) }),
-        )}
-        groupId={Number(id)}
-      />
-      ;
+      <PlayersTable groupId={Number(id)} />
     </HydrateClient>
   );
 }

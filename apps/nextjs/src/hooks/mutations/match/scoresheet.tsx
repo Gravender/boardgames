@@ -2,10 +2,12 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { differenceInSeconds } from "date-fns";
+import { useRouter } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 
 import { toast } from "@board-games/ui/toast";
 
+import { formatMatchLink } from "~/utils/linkFormatting";
 import { useTRPC } from "~/trpc/react";
 
 type MatchInput =
@@ -212,12 +214,13 @@ export const useUpdateFinish = (input: MatchInput, onFinished?: () => void) => {
 
 export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
+  const router = useRouter();
   const posthog = usePostHog();
+  const queryClient = useQueryClient();
   const removeMatchQueries = useRemoveMatchQueries();
   const updateMatchManualWinnerMutation = useMutation(
     trpc.match.update.updateMatchManualWinner.mutationOptions({
-      onSuccess: () => {
+      onSuccess: (data) => {
         // Remove match queries so the summary page hydrates with fresh
         // server-prefetched data instead of stale client cache.
         removeMatchQueries(input);
@@ -225,10 +228,36 @@ export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
           input: input,
           finishedType: "manual",
         });
-        // Invalidate remaining queries (e.g. game matches list).
-        // Match queries were already removed above so only game-level
-        // and other unrelated queries will refetch.
-        void queryClient.invalidateQueries();
+        router.push(
+          formatMatchLink(
+            data.type === "shared"
+              ? {
+                  sharedMatchId: data.match.sharedMatchId,
+                  sharedGameId: data.game.sharedGameId,
+                  type: data.game.type as "shared" | "linked",
+                  finished: true,
+                }
+              : {
+                  matchId: data.match.id,
+                  gameId: data.game.id,
+                  type: data.game.type,
+                  finished: true,
+                },
+          ),
+        );
+        // Trigger broader cache invalidations after navigation.
+        void Promise.all([
+          queryClient.invalidateQueries(trpc.match.getMatch.queryOptions(input)),
+          queryClient.invalidateQueries(
+            trpc.match.getMatchScoresheet.queryOptions(input),
+          ),
+          queryClient.invalidateQueries(
+            trpc.match.getMatchPlayersAndTeams.queryOptions(input),
+          ),
+          queryClient.invalidateQueries(
+            trpc.match.getMatchSummary.queryOptions(input),
+          ),
+        ]);
       },
       onError: (error) => {
         posthog.capture("manual winner update error", { error });
@@ -245,12 +274,12 @@ export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
 
 export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
+  const router = useRouter();
   const posthog = usePostHog();
   const removeMatchQueries = useRemoveMatchQueries();
   const updateMatchPlacementsMutation = useMutation(
     trpc.match.update.updateMatchPlacements.mutationOptions({
-      onSuccess: () => {
+      onSuccess: (data) => {
         // Remove match queries so the summary page hydrates with fresh
         // server-prefetched data instead of stale client cache.
         removeMatchQueries(input);
@@ -258,10 +287,23 @@ export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
           input: input,
           finishedType: "tie-breaker",
         });
-        // Invalidate remaining queries (e.g. game matches list).
-        // Match queries were already removed above so only game-level
-        // and other unrelated queries will refetch.
-        void queryClient.invalidateQueries();
+        router.push(
+          formatMatchLink(
+            data.type === "shared"
+              ? {
+                  sharedMatchId: data.match.sharedMatchId,
+                  sharedGameId: data.game.sharedGameId,
+                  type: data.game.type as "shared" | "linked",
+                  finished: true,
+                }
+              : {
+                  matchId: data.match.id,
+                  gameId: data.game.id,
+                  type: data.game.type,
+                  finished: true,
+                },
+          ),
+        );
       },
       onError: (error) => {
         posthog.capture("match finished error", { error });

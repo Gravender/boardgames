@@ -377,12 +377,12 @@ function ManualScoreSheet(input: { match: MatchInput }) {
       <TeamEditorDialog
         team={team}
         matchInput={input.match}
-        onClose={() => setTeam(null)}
+        onCloseAction={() => setTeam(null)}
       />
       <PlayerEditorDialog
         player={player}
         matchInput={input.match}
-        onClose={() => setPlayer(null)}
+        onCloseAction={() => setPlayer(null)}
       />
     </>
   );
@@ -628,11 +628,13 @@ function ScoresheetFooter(input: { match: MatchInput }) {
             <CommentDialog match={match} comment={match.comment} />
           </CardContent>
         </Card>
-        <MatchImages matchId={match.id} duration={duration} />
+        <Suspense fallback={null}>
+          <MatchImages matchId={match.id} duration={duration} />
+        </Suspense>
       </div>
       <ManualWinnerDialog
         isOpen={openManualWinnerDialog}
-        setIsOpen={setOpenManualWinnerDialog}
+        setIsOpenAction={setOpenManualWinnerDialog}
         gameAndMatch={
           match.type === "original"
             ? { type: "original", game: match.game, match: match }
@@ -642,7 +644,7 @@ function ScoresheetFooter(input: { match: MatchInput }) {
       />
       <TieBreakerDialog
         isOpen={openTieBreakerDialog}
-        setIsOpen={setOpenTieBreakerDialog}
+        setIsOpenAction={setOpenTieBreakerDialog}
         gameAndMatch={
           match.type === "original"
             ? { type: "original", game: match.game, match: match }

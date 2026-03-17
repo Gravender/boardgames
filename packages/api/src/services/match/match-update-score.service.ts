@@ -4,6 +4,10 @@ import { db } from "@board-games/db/client";
 import { calculatePlacement } from "@board-games/shared";
 
 import type {
+  UpdateMatchManualWinnerOutputType,
+  UpdateMatchPlacementsOutputType,
+} from "../../routers/match/sub-routers/update-match/update-match.input";
+import type {
   MatchStartArgs,
   UpdateMatchManualWinnerArgs,
   UpdateMatchPlacementsArgs,
@@ -283,6 +287,7 @@ class MatchUpdateScoreService {
 
   public async updateMatchManualWinner(args: UpdateMatchManualWinnerArgs) {
     const { input, ctx } = args;
+    let output: UpdateMatchManualWinnerOutputType | null = null;
     await db.transaction(async (tx) => {
       const returnedMatch = await getMatchForUpdate({
         input: input.match,
@@ -326,11 +331,67 @@ class MatchUpdateScoreService {
         },
         tx,
       });
+
+      if (input.match.type === "original") {
+        output = {
+          type: "original" as const,
+          match: {
+            id: returnedMatch.id,
+          },
+          game: {
+            id: returnedMatch.gameId,
+            type: "original" as const,
+          },
+        };
+        return;
+      }
+
+      const returnedSharedMatch = await matchRepository.getShared({
+        id: input.match.sharedMatchId,
+        sharedWithId: ctx.userId,
+        with: {
+          sharedGame: true,
+        },
+        tx,
+      });
+      assertFound(
+        returnedSharedMatch,
+        {
+          userId: ctx.userId,
+          value: input.match,
+        },
+        "Shared match not found.",
+      );
+
+      output = {
+        type: "shared" as const,
+        match: {
+          sharedMatchId: input.match.sharedMatchId,
+        },
+        game: {
+          type: returnedSharedMatch.sharedGame.linkedGameId
+            ? ("linked" as const)
+            : ("shared" as const),
+          sharedGameId: returnedSharedMatch.sharedGameId,
+          linkedGameId: returnedSharedMatch.sharedGame.linkedGameId,
+        },
+      };
     });
+
+    assertFound(
+      output,
+      {
+        userId: ctx.userId,
+        value: input.match,
+      },
+      "Manual winner output not found.",
+    );
+    return output;
   }
 
   public async updateMatchPlacements(args: UpdateMatchPlacementsArgs) {
     const { input, ctx } = args;
+    let output: UpdateMatchPlacementsOutputType | null = null;
     await db.transaction(async (tx) => {
       const returnedMatch = await getMatchForUpdate({
         input: input.match,
@@ -384,7 +445,62 @@ class MatchUpdateScoreService {
           tx,
         },
       );
+
+      if (input.match.type === "original") {
+        output = {
+          type: "original" as const,
+          match: {
+            id: returnedMatch.id,
+          },
+          game: {
+            id: returnedMatch.gameId,
+            type: "original" as const,
+          },
+        };
+        return;
+      }
+
+      const returnedSharedMatch = await matchRepository.getShared({
+        id: input.match.sharedMatchId,
+        sharedWithId: ctx.userId,
+        with: {
+          sharedGame: true,
+        },
+        tx,
+      });
+      assertFound(
+        returnedSharedMatch,
+        {
+          userId: ctx.userId,
+          value: input.match,
+        },
+        "Shared match not found.",
+      );
+
+      output = {
+        type: "shared" as const,
+        match: {
+          sharedMatchId: input.match.sharedMatchId,
+        },
+        game: {
+          type: returnedSharedMatch.sharedGame.linkedGameId
+            ? ("linked" as const)
+            : ("shared" as const),
+          sharedGameId: returnedSharedMatch.sharedGameId,
+          linkedGameId: returnedSharedMatch.sharedGame.linkedGameId,
+        },
+      };
     });
+
+    assertFound(
+      output,
+      {
+        userId: ctx.userId,
+        value: input.match,
+      },
+      "Placements output not found.",
+    );
+    return output;
   }
 }
 

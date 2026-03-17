@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { z } from "zod/v4";
 
@@ -10,20 +12,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@board-games/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  useForm,
-} from "@board-games/ui/form";
 import { ScrollArea, ScrollBar } from "@board-games/ui/scroll-area";
-import { Textarea } from "@board-games/ui/textarea";
 
 import type { MatchInput } from "../types/input";
 import { useUpdateMatchDetailsMutation } from "~/hooks/mutations/match/scoresheet";
+import { useAppForm } from "~/hooks/form";
 
 export function DetailDialog({
   match,
@@ -50,7 +43,7 @@ export function DetailDialog({
           <ScrollArea>
             <div className="max-h-10 w-full">
               {data.details && data.details !== "" ? (
-                <p className="text-start text-wrap break-words whitespace-normal">
+                <p className="text-start text-wrap wrap-break-word whitespace-normal">
                   {data.details}
                 </p>
               ) : (
@@ -85,41 +78,36 @@ function Content({
   setIsOpen: (isOpen: boolean) => void;
 }) {
   const { updateMatchDetailsMutation } = useUpdateMatchDetailsMutation(match);
-  const form = useForm({
-    schema: FormSchema,
+  const form = useAppForm({
     defaultValues: { detail: data.details ?? "" },
+    validators: {
+      onSubmit: FormSchema,
+    },
+    onSubmit: ({ value }) => {
+      const trimmedDetail = value.detail.trim();
+      const details = trimmedDetail === "" ? null : trimmedDetail;
+      updateMatchDetailsMutation.mutate(
+        data.type === "player"
+          ? {
+              type: "player",
+              match,
+              id: data.id,
+              details,
+            }
+          : {
+              type: "team",
+              match,
+              teamId: data.id,
+              details,
+            },
+        {
+          onSuccess: () => {
+            setIsOpen(false);
+          },
+        },
+      );
+    },
   });
-  function onSubmitForm(values: z.infer<typeof FormSchema>) {
-    if (data.type === "player") {
-      updateMatchDetailsMutation.mutate(
-        {
-          type: "player",
-          match: match,
-          id: data.id,
-          details: values.detail,
-        },
-        {
-          onSuccess: () => {
-            setIsOpen(false);
-          },
-        },
-      );
-    } else {
-      updateMatchDetailsMutation.mutate(
-        {
-          type: "team",
-          match: match,
-          teamId: data.id,
-          details: values.detail,
-        },
-        {
-          onSuccess: () => {
-            setIsOpen(false);
-          },
-        },
-      );
-    }
-  }
   return (
     <>
       <DialogHeader>
@@ -127,33 +115,27 @@ function Content({
           {data.type === "team" ? `Team: ${data.name}` : data.name}
         </DialogTitle>
       </DialogHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmitForm)} className="space-y-8">
-          <FormField
-            control={form.control}
-            name="detail"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Details:</FormLabel>
-                <FormControl>
-                  <Textarea className="resize-none" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <DialogFooter className="flex gap-2">
-            <Button
-              variant="secondary"
-              type="button"
-              onClick={() => setIsOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">Ok</Button>
-          </DialogFooter>
-        </form>
-      </Form>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          await form.handleSubmit();
+        }}
+        className="space-y-8"
+      >
+        <form.AppField name="detail">
+          {(field) => <field.TextAreaField label="Details" rows={6} />}
+        </form.AppField>
+        <DialogFooter className="flex gap-2">
+          <Button
+            variant="secondary"
+            type="button"
+            onClick={() => setIsOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button type="submit">Ok</Button>
+        </DialogFooter>
+      </form>
     </>
   );
 }

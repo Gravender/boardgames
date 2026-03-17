@@ -15,7 +15,9 @@
   "typescript.preferences.autoImportFileExcludePatterns": [
     "next/router.d.ts",
     "next/dist/client/router.d.ts"
-  ],
+  ], 
+  "oxc.unusedDisableDirectives": "deny",
+  "oxc.typeAware": true,
   "typescript.tsdk": "node_modules/typescript/lib",
   "conventionalCommits.scopes": ["api", "expo", "next"],
   "cSpell.words": ["nativewind", "scoresheet", "uploadthing"]

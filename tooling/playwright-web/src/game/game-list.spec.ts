@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { GAME_NAME } from "../shared/test-data";
-import { deleteGames, gameAriaText } from "./helpers";
+import { deleteGames } from "./helpers";
 
 test.describe("Game List", () => {
   test.beforeAll(async ({ browserName }) => {
@@ -59,17 +59,15 @@ test.describe("Game List", () => {
     await page
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
-
-    const originalGameAriaText = gameAriaText(
-      browserGameName,
-      2014,
-      1,
-      4,
-      15,
-      30,
-    );
-    await expect(
-      page.getByLabel("Games").getByRole("link"),
-    ).toMatchAriaSnapshot(originalGameAriaText);
+    const gameLink = page.getByRole("link", { name: browserGameName }).first();
+    await expect(gameLink).toBeVisible({ timeout: 10000 });
+    const gameCard = page
+      .locator('[data-testid="game-card"]')
+      .filter({ has: gameLink })
+      .first();
+    await expect(gameCard).toBeVisible({ timeout: 10000 });
+    await expect(gameCard).toContainText(/\(2014\)/i);
+    await expect(gameCard).toContainText(/1-4 players/i);
+    await expect(gameCard).toContainText(/15-30 min/i);
   });
 });

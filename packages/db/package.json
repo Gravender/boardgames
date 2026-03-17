@@ -35,7 +35,7 @@
     "dev": "tsc",
     "format": "oxfmt --check .",
     "lint": "oxlint --report-unused-disable-directives",
-    "push": "pnpm with-env drizzle-kit push",
+    "push": "pnpm with-env drizzle-kit push && pnpm with-env tsx src/migrations/applyCreateViews.ts",
     "migrate": "pnpm with-env drizzle-kit migrate",
     "generate": "pnpm with-env drizzle-kit generate",
     "seed": "pnpm with-env tsx src/seeding/seed.ts",

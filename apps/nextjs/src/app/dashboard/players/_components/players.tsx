@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 
 import { Badge } from "@board-games/ui/badge";
@@ -16,22 +17,61 @@ import { AddPlayerDialog } from "~/components/player/add-player-dialog";
 import { PlayerDropDown } from "~/components/player/player-dropdown";
 import { useTRPC } from "~/trpc/react";
 
-export function PlayersTable({
-  defaultIsOpen = false,
-}: {
-  defaultIsOpen?: boolean;
-}) {
+const getPlayerIdentity = (player: { id: number; type: string }) =>
+  `${player.id}-${player.type}`;
+
+function usePlayersData(groupId?: number) {
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(trpc.player.getPlayers.queryOptions());
-  const [players, setPlayers] = useState(data);
+  const { data: groupPlayers } = useQuery({
+    ...trpc.player.getPlayersByGroup.queryOptions({
+      group: { id: groupId ?? 0 },
+    }),
+    enabled: groupId !== undefined,
+  });
+  const filteredPlayers = useMemo(() => {
+    if (groupId === undefined) {
+      return data;
+    }
+    if (!groupPlayers) {
+      return [];
+    }
+    const groupPlayerIds = new Set(
+      groupPlayers
+        .filter((player) => player.inGroup)
+        .map((player) => `${player.id}-original`),
+    );
+    return data.filter((player) =>
+      groupPlayerIds.has(getPlayerIdentity(player)),
+    );
+  }, [data, groupId, groupPlayers]);
+  const [players, setPlayers] = useState(filteredPlayers);
+  useEffect(() => {
+    setPlayers(filteredPlayers);
+  }, [filteredPlayers]);
+  return { filteredPlayers, players, setPlayers };
+}
 
+function PlayersList({
+  filteredPlayers,
+  players,
+  setPlayers,
+  defaultIsOpen,
+}: {
+  filteredPlayers: ReturnType<typeof usePlayersData>["filteredPlayers"];
+  players: ReturnType<typeof usePlayersData>["players"];
+  setPlayers: Dispatch<
+    SetStateAction<ReturnType<typeof usePlayersData>["players"]>
+  >;
+  defaultIsOpen: boolean;
+}) {
   return (
     <div className="relative container mx-auto h-[90vh] max-w-3xl px-4">
       <CardHeader>
         <CardTitle>Players</CardTitle>
       </CardHeader>
       <FilterAndSearch
-        items={data}
+        items={filteredPlayers}
         setItems={setPlayers}
         sortFields={["matches", "name", "lastPlayed"]}
         defaultSortField="name"
@@ -49,7 +89,7 @@ export function PlayersTable({
               <li
                 data-slot="card"
                 className="bg-card text-card-foreground rounded-lg border pb-2 shadow-sm"
-                key={`${player.id}-${player.type}`}
+                key={getPlayerIdentity(player)}
               >
                 <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">
                   <Link
@@ -114,5 +154,23 @@ export function PlayersTable({
         <AddPlayerDialog defaultIsOpen={defaultIsOpen} />
       </div>
     </div>
+  );
+}
+
+export function PlayersTable({
+  defaultIsOpen = false,
+  groupId,
+}: {
+  defaultIsOpen?: boolean;
+  groupId?: number;
+}) {
+  const { filteredPlayers, players, setPlayers } = usePlayersData(groupId);
+  return (
+    <PlayersList
+      filteredPlayers={filteredPlayers}
+      players={players}
+      setPlayers={setPlayers}
+      defaultIsOpen={defaultIsOpen}
+    />
   );
 }

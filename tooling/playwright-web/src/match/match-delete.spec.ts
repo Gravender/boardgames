@@ -23,7 +23,6 @@ test.describe("Match Delete", () => {
     page,
     browserName,
   }) => {
-    test.slow();
     const browserGameName = browserName + PREFIX + MATCH_GAME_NAME;
     const matchName = browserName + "_Delete Me";
 
@@ -91,7 +90,6 @@ test.describe("Match Delete", () => {
   });
 
   test("Cancel delete keeps the match", async ({ page, browserName }) => {
-    test.slow();
     const browserGameName = browserName + PREFIX + "cancel_" + MATCH_GAME_NAME;
     const matchName = browserName + "_Keep Me";
 
