@@ -297,8 +297,17 @@ function AddImageDialogContent({
         );
         toast.success("Image added successfully!");
       } catch (error) {
-        console.error("Error uploading Image:", error);
-        posthog.capture("upload error", { error });
+        const normalizedError =
+          error instanceof Error
+            ? { message: error.message, stack: error.stack }
+            : { message: String(error), stack: undefined };
+        posthog.capture("upload error", {
+          matchId,
+          duration,
+          caption: value.caption ?? null,
+          errorMessage: normalizedError.message,
+          errorStack: normalizedError.stack,
+        });
         toast.error("Error", {
           description: "There was a problem uploading your Image.",
         });

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 
 import { Badge } from "@board-games/ui/badge";
@@ -18,12 +18,34 @@ import { useTRPC } from "~/trpc/react";
 
 export function PlayersTable({
   defaultIsOpen = false,
+  groupId,
 }: {
   defaultIsOpen?: boolean;
+  groupId?: number;
 }) {
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(trpc.player.getPlayers.queryOptions());
-  const [players, setPlayers] = useState(data);
+  const { data: groupPlayers } = useQuery({
+    ...trpc.player.getPlayersByGroup.queryOptions({
+      group: { id: groupId ?? 0 },
+    }),
+    enabled: groupId !== undefined,
+  });
+  const filteredPlayers = useMemo(() => {
+    if (groupId === undefined || !groupPlayers) {
+      return data;
+    }
+    const groupPlayerIds = new Set(
+      groupPlayers
+        .filter((player) => player.inGroup)
+        .map((player) => player.id),
+    );
+    return data.filter((player) => groupPlayerIds.has(player.id));
+  }, [data, groupId, groupPlayers]);
+  const [players, setPlayers] = useState(filteredPlayers);
+  useEffect(() => {
+    setPlayers(filteredPlayers);
+  }, [filteredPlayers]);
 
   return (
     <div className="relative container mx-auto h-[90vh] max-w-3xl px-4">
@@ -31,7 +53,7 @@ export function PlayersTable({
         <CardTitle>Players</CardTitle>
       </CardHeader>
       <FilterAndSearch
-        items={data}
+        items={filteredPlayers}
         setItems={setPlayers}
         sortFields={["matches", "name", "lastPlayed"]}
         defaultSortField="name"

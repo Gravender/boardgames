@@ -49,6 +49,7 @@ export function GameItem({ game }: GameCardProps) {
     <Item
       variant="outline"
       aria-label={`${game.name} game item`}
+      data-testid="game-card"
       className="hover:bg-muted/50 transition-colors"
     >
       <Link

@@ -64,9 +64,7 @@ test.describe("Match Scoresheet Dialogs - Basic", () => {
         name: `${browserName}${PLAYER_PREFIX} 1`,
       }),
     ).toBeVisible();
-    await page
-      .getByRole("textbox", { name: "Details" })
-      .fill(playerDetailText);
+    await page.getByRole("textbox", { name: "Details" }).fill(playerDetailText);
     await page.getByRole("button", { name: "Ok" }).click();
     await expect(detailsOptionalRow.getByText(playerDetailText)).toBeVisible({
       timeout: 7000,

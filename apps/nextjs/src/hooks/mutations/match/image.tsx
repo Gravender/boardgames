@@ -5,6 +5,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import { usePostHog } from "posthog-js/react";
 
 import { toast } from "@board-games/ui/toast";
 
@@ -19,12 +20,15 @@ export const useMatchImages = ({ matchId }: { matchId: number }) => {
 export const useDeleteMatchImageMutation = ({
   matchId,
   onSuccess,
+  onError,
 }: {
   matchId: number;
   onSuccess?: () => void;
+  onError?: (error: Error) => void;
 }) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const posthog = usePostHog();
 
   return useMutation(
     trpc.image.deleteMatchImage.mutationOptions({
@@ -34,6 +38,14 @@ export const useDeleteMatchImageMutation = ({
         );
         toast.success("Image deleted successfully!");
         onSuccess?.();
+      },
+      onError: (error) => {
+        posthog.capture("match image delete error", {
+          matchId,
+          errorMessage: error.message,
+        });
+        toast.error("Failed to delete image");
+        onError?.(error);
       },
     }),
   );

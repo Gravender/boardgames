@@ -72,12 +72,12 @@ export function ScoreSheetTable(input: { match: MatchInput }) {
       <TeamEditorDialog
         team={team}
         matchInput={input.match}
-        onClose={() => setTeam(null)}
+        onCloseAction={() => setTeam(null)}
       />
       <PlayerEditorDialog
         player={player}
         matchInput={input.match}
-        onClose={() => setPlayer(null)}
+        onCloseAction={() => setPlayer(null)}
       />
     </>
   );

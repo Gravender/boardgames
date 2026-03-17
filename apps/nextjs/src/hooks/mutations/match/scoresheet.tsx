@@ -2,13 +2,13 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { differenceInSeconds } from "date-fns";
+import { useRouter } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 
 import { toast } from "@board-games/ui/toast";
 
-import { useTRPC } from "~/trpc/react";
-import { useRouter } from "next/navigation";
 import { formatMatchLink } from "~/utils/linkFormatting";
+import { useTRPC } from "~/trpc/react";
 
 type MatchInput =
   | { type: "shared"; sharedMatchId: number }
@@ -220,8 +220,8 @@ export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
   const updateMatchManualWinnerMutation = useMutation(
     trpc.match.update.updateMatchManualWinner.mutationOptions({
       onSuccess: async (data) => {
-        // Remove match queries so the summary page hydrates with fresh
-        // server-prefetched data instead of stale client cache.
+        // Invalidate match-related queries so the summary page refetches
+        // fresh server data instead of relying on stale client cache.
         await Promise.all([
           queryClient.invalidateQueries(
             trpc.match.getMatch.queryOptions(input),

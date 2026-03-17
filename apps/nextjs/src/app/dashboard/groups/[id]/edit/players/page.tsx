@@ -15,7 +15,7 @@ export default async function Page({
 
   return (
     <HydrateClient>
-      <PlayersTable />;
+      <PlayersTable groupId={Number(id)} />
     </HydrateClient>
   );
 }

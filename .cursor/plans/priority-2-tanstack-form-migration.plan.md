@@ -221,46 +221,28 @@ Migrate simpler forms first to build up confidence, then tackle the complex ones
 
 ---
 
-## Batch B: Group Player Selectors (2 forms)
+## Batch B: Group Player Selection Entry Points
 
-### Form 9: Select Players for Group Add
+### Form 9: Shared Players Table (used by Add/Edit Group flows)
 
-- **File**: `apps/nextjs/src/app/dashboard/groups/add/players/_components/selectPlayersForm.tsx`
-- **Lines**: 177
+- **File**: `apps/nextjs/src/app/dashboard/players/_components/players.tsx`
+- **Used by**:
+  - `apps/nextjs/src/app/dashboard/groups/add/players/page.tsx`
+  - `apps/nextjs/src/app/dashboard/groups/[id]/edit/players/page.tsx`
 - **Complexity**: Medium
 
 #### Current Implementation
 
-- **Schema**: `z.object({ players: z.array(insertPlayerSchema.pick({name, id}).required().extend({imageUrl, matches, team})).refine(players => players.length > 0) })`
-- **Fields**: `players` -- array built by checkbox multi-select
-- **Submission**: No API call -- sets Zustand store via `setPlayers(data.players)` and navigates back
+- Shared `PlayersTable` component powers both add/edit group player flows.
+- Add flow reads selected players from group add store and navigates back.
+- Edit flow is group-scoped via route param and `PlayersTable` filtering.
 
 #### Migration Notes
 
-- Replace `useForm` with `useAppForm`
-- `players` field: `form.Field` with inline render for checkbox toggle (players are added/removed from the array by clicking)
-- The Zustand store interaction stays the same -- just move `setPlayers` call into `onSubmit`
-- Replace `form.setValue("players", [...])` with `form.setFieldValue("players", [...])`
-
----
-
-### Form 10: Select Players for Group Edit
-
-- **File**: `apps/nextjs/src/app/dashboard/groups/[id]/edit/players/_components/selectPlayerForm.tsx`
-- **Lines**: 205
-- **Complexity**: Medium
-
-#### Current Implementation
-
-- **Schema**: `z.object({ players: z.array(insertPlayerSchema.pick({name, id}).required()).refine(players => players.length > 0) })`
-- **Fields**: `players` -- checkbox multi-select array
-- **Submission**: `trpc.group.updatePlayers` mutation with diff computation (playersToAdd/playersToRemove)
-
-#### Migration Notes
-
-- Same pattern as Form 9
-- The diff computation in `onSubmit` stays the same
-- Replace `form.setValue("players", [...])` with `form.setFieldValue("players", [...])`
+- Replace any remaining `useForm` usage in group player selection entry points with `useAppForm`.
+- Move store writes like `setPlayers(...)` into `useAppForm` `onSubmit` handlers.
+- Replace any `form.setValue("players", [...])` calls with `form.setFieldValue("players", [...])`.
+- Keep group add/edit routes using the shared `PlayersTable` so selection logic stays centralized.
 
 ---
 

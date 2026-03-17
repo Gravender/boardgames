@@ -1,3 +1,5 @@
+"use client";
+
 import { Users } from "lucide-react";
 import { z } from "zod/v4";
 
@@ -44,12 +46,12 @@ export const TieBreakerPlayerSchema = z
 type Scoresheet = RouterOutputs["match"]["getMatchScoresheet"];
 export function TieBreakerDialog({
   isOpen,
-  setIsOpen,
+  setIsOpenAction,
   gameAndMatch,
   scoresheet,
 }: {
   isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
+  setIsOpenAction: (isOpen: boolean) => void;
   gameAndMatch: GameAndMatchInput;
   scoresheet: Scoresheet;
 }) {
@@ -93,10 +95,9 @@ export function TieBreakerDialog({
     },
   );
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+    <AlertDialog open={isOpen} onOpenChange={setIsOpenAction}>
       <AlertDialogContent>
         <Content
-          setIsOpen={setIsOpen}
           players={mappedPlayers}
           teams={teams}
           gameAndMatch={gameAndMatch}
@@ -115,7 +116,6 @@ function Content({
   gameAndMatch,
 }: {
   gameAndMatch: GameAndMatchInput;
-  setIsOpen: (isOpen: boolean) => void;
   teams: { id: number; name: string }[];
   players: z.infer<typeof TieBreakerPlayerSchema>;
 }) {
@@ -228,19 +228,20 @@ function Content({
                 };
                 const isInvalid =
                   field.state.meta.isTouched && !field.state.meta.isValid;
+                const placements = uniqueInOrderPlacements();
                 return (
                   <Field data-invalid={isInvalid}>
                     <FieldLabel className="hidden">Players</FieldLabel>
                     <ScrollArea className="h-96">
                       <div className="flex flex-col gap-2 rounded-lg">
-                        {uniqueInOrderPlacements().map((player, index) => {
+                        {placements.map((player, index) => {
                           const numberPlacements = countPlacement(
                             player.placement,
                           );
                           if (
                             player.teamId !== null &&
                             index > 0 &&
-                            uniqueInOrderPlacements()
+                            placements
                               .slice(0, index)
                               .find(
                                 (prevPlayer) =>

@@ -67,7 +67,7 @@ async function fetchUserGames(userId: string) {
 
 /**
  * Deletes all match-related data in the correct cascade order.
- * Deletion order: matchPlayerRole -> roundPlayer -> matchPlayer -> match
+ * Deletion order: matchPlayerRole -> roundPlayer -> matchPlayer -> matchImage -> team -> match
  *
  * @param games - Array of games with their matches and matchPlayers
  * @param tx - Database transaction (optional, defaults to direct db access)

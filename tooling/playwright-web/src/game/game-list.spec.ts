@@ -61,9 +61,10 @@ test.describe("Game List", () => {
       .fill(browserGameName);
     const gameLink = page.getByRole("link", { name: browserGameName }).first();
     await expect(gameLink).toBeVisible({ timeout: 10000 });
-    const gameCard = gameLink.locator(
-      "xpath=ancestor::*[self::a or self::li or self::article or self::div][1]",
-    );
+    const gameCard = page
+      .locator('[data-testid="game-card"]')
+      .filter({ has: gameLink })
+      .first();
     await expect(gameCard).toBeVisible({ timeout: 10000 });
     await expect(gameCard).toContainText(/\(2014\)/i);
     await expect(gameCard).toContainText(/1-4 players/i);

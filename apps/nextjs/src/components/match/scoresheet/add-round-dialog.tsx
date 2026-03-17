@@ -1,3 +1,5 @@
+"use client";
+
 import type { z } from "zod/v4";
 import { useState } from "react";
 import { ListPlus } from "lucide-react";

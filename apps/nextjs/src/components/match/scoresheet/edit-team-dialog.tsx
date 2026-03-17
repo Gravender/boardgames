@@ -48,11 +48,11 @@ type TeamRole = OriginalRole | SharedRole;
 export default function TeamEditorDialog({
   team,
   matchInput,
-  onClose,
+  onCloseAction,
 }: {
   team: Team | null;
   matchInput: MatchInput;
-  onClose: () => void;
+  onCloseAction: () => void;
 }) {
   const { match } = useMatch(matchInput);
   const { players } = usePlayersAndTeams(matchInput);
@@ -69,7 +69,7 @@ export default function TeamEditorDialog({
   );
 
   return (
-    <Dialog open={team !== null} onOpenChange={onClose}>
+    <Dialog open={team !== null} onOpenChange={onCloseAction}>
       <DialogContent className="gap-2 p-4 sm:max-w-[800px] sm:gap-4 sm:p-6">
         {team && (
           <Content
@@ -77,7 +77,7 @@ export default function TeamEditorDialog({
             team={team}
             players={players}
             roles={gameRoles}
-            onClose={onClose}
+            onCloseAction={onCloseAction}
           />
         )}
       </DialogContent>
@@ -89,13 +89,13 @@ function Content({
   team,
   players,
   roles,
-  onClose,
+  onCloseAction,
 }: {
   matchInput: MatchInput;
   team: Team;
   players: Player[];
   roles: RouterOutputs["game"]["gameRoles"];
-  onClose: () => void;
+  onCloseAction: () => void;
 }) {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
 
@@ -118,6 +118,24 @@ function Content({
     });
     return acc;
   }, []);
+  const getPlayerFormId = (player: Player) => {
+    if (matchInput.type === "original") {
+      return player.baseMatchPlayerId;
+    }
+    if (
+      "sharedMatchPlayerId" in player &&
+      typeof player.sharedMatchPlayerId === "number"
+    ) {
+      return player.sharedMatchPlayerId;
+    }
+    if ("id" in player && typeof player.id === "number") {
+      return player.id;
+    }
+    return player.baseMatchPlayerId;
+  };
+  const originalTeamPlayerIds = new Set(
+    originalTeamPlayers.map((player) => getPlayerFormId(player)),
+  );
 
   const originalMatchFormSchema = z.object({
     name: z.string(),
@@ -159,7 +177,7 @@ function Content({
         .filter((player) => player.teamId === team.id)
         .map((player) => {
           return {
-            id: player.baseMatchPlayerId,
+            id: getPlayerFormId(player),
             name: player.name,
             roles: player.roles,
           };
@@ -174,11 +192,11 @@ function Content({
       const playersToAdd = data.players
         .filter(
           (player) =>
-            !originalTeamPlayers.find((p) => p.baseMatchPlayerId === player.id),
+            !originalTeamPlayers.find((p) => getPlayerFormId(p) === player.id),
         )
         .map((p) => {
           const foundPlayer = players.find(
-            (player) => player.baseMatchPlayerId === p.id,
+            (player) => getPlayerFormId(player) === p.id,
           );
           if (!foundPlayer) return null;
           const rolesToAdd = data.roles.filter(
@@ -200,18 +218,18 @@ function Content({
       const playersToRemove = originalTeamPlayers
         .filter(
           (player) =>
-            !data.players.find((p) => p.id === player.baseMatchPlayerId),
+            !data.players.find((p) => p.id === getPlayerFormId(player)),
         )
         .map((p) => {
           const foundPlayer = players.find(
-            (player) => player.baseMatchPlayerId === p.baseMatchPlayerId,
+            (player) => getPlayerFormId(player) === getPlayerFormId(p),
           );
           if (!foundPlayer) return null;
           const rolesToRemove = foundPlayer.roles.filter((role) =>
-            data.roles.find((r) => isSameRole(r, role)),
+            teamRoles.find((r) => isSameRole(r, role)),
           );
           return {
-            id: p.baseMatchPlayerId,
+            id: getPlayerFormId(p),
             roles: rolesToRemove,
           };
         })
@@ -225,8 +243,9 @@ function Content({
         );
       const playersToUpdate = data.players
         .map((player) => {
+          if (!originalTeamPlayerIds.has(player.id)) return null;
           const foundPlayer = players.find(
-            (p) => p.baseMatchPlayerId === player.id,
+            (p) => getPlayerFormId(p) === player.id,
           );
           if (!foundPlayer) return null;
           const rolesToAdd = data.roles.filter(
@@ -240,7 +259,7 @@ function Content({
           if (rolesToAdd.length === 0 && rolesToRemove.length === 0)
             return null;
           return {
-            id: foundPlayer.baseMatchPlayerId,
+            id: getPlayerFormId(foundPlayer),
             rolesToAdd: rolesToAdd,
             rolesToRemove: rolesToRemove,
           };
@@ -298,7 +317,7 @@ function Content({
             },
         {
           onSuccess: () => {
-            onClose();
+            onCloseAction();
           },
         },
       );
@@ -345,7 +364,7 @@ function Content({
           {({ players: formPlayers, roles: formRoles }) => {
             const availablePlayers = players.filter(
               (player) =>
-                !formPlayers.find((p) => p.id === player.baseMatchPlayerId),
+                !formPlayers.find((p) => p.id === getPlayerFormId(player)),
             );
 
             return (
@@ -434,7 +453,7 @@ function Content({
                         <div className="flex max-h-[15vh] flex-col gap-2">
                           {formPlayers.map((player) => {
                             const foundPlayer = players.find(
-                              (p) => p.baseMatchPlayerId === player.id,
+                              (p) => getPlayerFormId(p) === player.id,
                             );
                             if (!foundPlayer) return null;
                             return (
@@ -488,13 +507,12 @@ function Content({
                           {availablePlayers.map((player) => {
                             const foundPlayer = players.find(
                               (p) =>
-                                p.baseMatchPlayerId ===
-                                player.baseMatchPlayerId,
+                                getPlayerFormId(p) === getPlayerFormId(player),
                             );
                             if (!foundPlayer) return null;
                             return (
                               <div
-                                key={player.baseMatchPlayerId}
+                                key={getPlayerFormId(player)}
                                 className="flex w-full items-center justify-between gap-2"
                               >
                                 <div className="flex w-full items-center gap-1 text-sm font-normal sm:gap-2">
@@ -521,7 +539,7 @@ function Content({
                                     form.setFieldValue("players", [
                                       ...formPlayers,
                                       {
-                                        id: player.baseMatchPlayerId,
+                                        id: getPlayerFormId(player),
                                         name: foundPlayer.name,
                                         roles: formRoles,
                                       },
@@ -546,7 +564,11 @@ function Content({
           <form.AppForm>
             <form.SubscribeButton label="Save" />
           </form.AppForm>
-          <Button type="button" variant="secondary" onClick={() => onClose()}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => onCloseAction()}
+          >
             Cancel
           </Button>
         </DialogFooter>

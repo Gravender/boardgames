@@ -22,6 +22,8 @@ test.describe("Match Scoresheet Dialogs - Edit Player and Team", () => {
     browserName,
   }) => {
     const playerOne = `${browserName}${PLAYER_PREFIX} 1`;
+    const playerTwo = `${browserName}${PLAYER_PREFIX} 2`;
+    const playerThree = `${browserName}${PLAYER_PREFIX} 3`;
     const updatedTeamName = `${browserName} Team Updated`;
 
     await setupAndOpenScoresheetMatch(page, {
@@ -58,16 +60,15 @@ test.describe("Match Scoresheet Dialogs - Edit Player and Team", () => {
       .getByRole("textbox", { name: "Team Name" })
       .fill(updatedTeamName);
 
-    const teamPlayerRemoveButton = editTeamDialog.getByText('chromium_P2EditorPlayer 2Remove')
+    const teamPlayerRemoveButton = editTeamDialog.getByText(
+      `${playerTwo}Remove`,
+    );
     await expect(teamPlayerRemoveButton).toBeVisible({ timeout: 10000 });
-    
-    await teamPlayerRemoveButton.getByRole('button', { name: 'Remove' }).click();
 
-    await expect(page.locator('div').filter({ hasText: /^chromium_P2EditorPlayer 1$/ }).first()).toBeVisible();
-
-    await expect(page.locator('div').filter({ hasText: /^chromium_P2EditorPlayer 2$/ }).first()).toBeVisible();
-    await expect(page.locator('div').filter({ hasText: /^chromium_P2EditorPlayer 3$/ }).first()).toBeVisible();
-
-   
+    await teamPlayerRemoveButton
+      .getByRole("button", { name: "Remove" })
+      .click();
+    await editTeamDialog.getByRole("button", { name: "Save" }).click();
+    await expect(editTeamDialog).not.toBeVisible({ timeout: 10000 });
   });
 });

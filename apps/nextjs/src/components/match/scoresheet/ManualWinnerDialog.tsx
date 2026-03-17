@@ -1,3 +1,5 @@
+"use client";
+
 import { Users } from "lucide-react";
 import { z } from "zod/v4";
 
@@ -33,12 +35,12 @@ export const ManualWinnerPlayerSchema = z.array(playerSchema);
 type Scoresheet = RouterOutputs["match"]["getMatchScoresheet"];
 export function ManualWinnerDialog({
   isOpen,
-  setIsOpen,
+  setIsOpenAction,
   gameAndMatch,
   scoresheet,
 }: {
   isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
+  setIsOpenAction: (isOpen: boolean) => void;
   gameAndMatch: GameAndMatchInput;
   scoresheet: Scoresheet;
 }) {
@@ -57,10 +59,10 @@ export function ManualWinnerDialog({
     teamId: p.teamId,
   }));
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={setIsOpenAction}>
       <DialogContent>
         <Content
-          setIsOpen={setIsOpen}
+          setIsOpenAction={setIsOpenAction}
           gameAndMatch={gameAndMatch}
           scoresheet={scoresheet}
           teams={teams}
@@ -72,14 +74,14 @@ export function ManualWinnerDialog({
 }
 
 function Content({
-  setIsOpen,
+  setIsOpenAction,
   players,
   gameAndMatch,
   teams,
   scoresheet,
 }: {
   gameAndMatch: GameAndMatchInput;
-  setIsOpen: (isOpen: boolean) => void;
+  setIsOpenAction: (isOpen: boolean) => void;
 
   teams: { id: number; name: string }[];
   players: z.infer<typeof ManualWinnerPlayerSchema>;
@@ -257,24 +259,18 @@ function Content({
               type="button"
               onClick={() => {
                 form.setFieldValue("players", []);
-                setIsOpen(false);
+                setIsOpenAction(false);
               }}
             >
               Clear
             </Button>
-            <form.AppField name="players" mode="array">
-              {(field) => {
-                return (
-                  <Button
-                    variant="secondary"
-                    type="button"
-                    onClick={() => field.handleChange(players)}
-                  >
-                    Select All
-                  </Button>
-                );
-              }}
-            </form.AppField>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => form.setFieldValue("players", players)}
+            >
+              Select All
+            </Button>
           </div>
           <Button type="submit">Ok</Button>
         </DialogFooter>

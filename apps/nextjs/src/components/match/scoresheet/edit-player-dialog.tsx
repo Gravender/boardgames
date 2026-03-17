@@ -49,11 +49,11 @@ type Team = NonNullable<
 export default function PlayerEditorDialog({
   player,
   matchInput,
-  onClose,
+  onCloseAction,
 }: {
   player: Player | null;
   matchInput: MatchInput;
-  onClose: () => void;
+  onCloseAction: () => void;
 }) {
   const { match } = useMatch(matchInput);
   const { players, teams } = usePlayersAndTeams(matchInput);
@@ -70,7 +70,7 @@ export default function PlayerEditorDialog({
   );
 
   return (
-    <Dialog open={player !== null} onOpenChange={onClose}>
+    <Dialog open={player !== null} onOpenChange={onCloseAction}>
       <DialogContent className="p-4 sm:max-w-[800px] sm:p-6">
         {player && (
           <Content
@@ -78,7 +78,7 @@ export default function PlayerEditorDialog({
             player={player}
             players={players}
             roles={gameRoles}
-            onClose={onClose}
+            onCloseAction={onCloseAction}
           />
         )}
       </DialogContent>
@@ -90,13 +90,13 @@ function Content({
   player,
   roles,
   players,
-  onClose,
+  onCloseAction,
 }: {
   teams: Team[];
   player: Player;
   players: Player[];
   roles: RouterOutputs["game"]["gameRoles"];
-  onClose: () => void;
+  onCloseAction: () => void;
 }) {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
 
@@ -150,7 +150,7 @@ function Content({
 
       updateMatchPlayerTeamAndRolesMutation.mutate(updateInput, {
         onSuccess: () => {
-          onClose();
+          onCloseAction();
         },
       });
     },
@@ -230,6 +230,20 @@ function Content({
                             }
                             onValueChange={(value) => {
                               if (value === "no-team") {
+                                const previousTeamPlayers = players.filter(
+                                  (p) => p.teamId === field.state.value,
+                                );
+                                const previousTeamRoles = getTeamRoles(
+                                  previousTeamPlayers,
+                                  roles,
+                                );
+                                const updatedRoles = formRoles.filter(
+                                  (formRole) =>
+                                    !previousTeamRoles.find((teamRole) =>
+                                      isSameRole(teamRole, formRole),
+                                    ),
+                                );
+                                form.setFieldValue("roles", updatedRoles);
                                 field.handleChange(null);
                                 return;
                               }
@@ -409,7 +423,11 @@ function Content({
           <form.AppForm>
             <form.SubscribeButton label="Save" />
           </form.AppForm>
-          <Button type="button" variant="secondary" onClick={() => onClose()}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => onCloseAction()}
+          >
             Cancel
           </Button>
         </DialogFooter>

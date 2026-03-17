@@ -29,9 +29,8 @@ const runCreateViewsMigration = async () => {
     connectionString: getPostgresUrl(),
   });
 
-  await client.connect();
-
   try {
+    await client.connect();
     await client.query(sql);
     console.log("Applied migration: 0001_create_views.sql");
   } finally {

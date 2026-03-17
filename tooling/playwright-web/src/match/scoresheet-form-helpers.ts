@@ -1,7 +1,10 @@
 import type { Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 
-import { createFullMatchViaTrpc, createGameWithScoresheetViaTrpc } from "../trpc/procedures";
+import {
+  createFullMatchViaTrpc,
+  createGameWithScoresheetViaTrpc,
+} from "../trpc/procedures";
 
 type SetupScoresheetMatchOptions = {
   browserName: string;
@@ -44,6 +47,9 @@ export async function setupAndOpenScoresheetMatch(
 }
 
 export async function openAddRoundDialog(page: Page) {
+  // This intentionally targets the header action button in the table's thead/th.
+  // We use `.first()` because the current scoresheet renders a single add-round
+  // button in that header region.
   const addRoundButton = page
     .locator('[data-slot="table"] thead th button[type="button"]')
     .first();
