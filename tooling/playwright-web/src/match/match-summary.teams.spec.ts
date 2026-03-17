@@ -22,7 +22,6 @@ test.describe("Match Summary - Teams", () => {
     page,
     browserName,
   }) => {
-    test.slow();
     const browserGameName =
       browserName + PREFIX + "team_high_" + MATCH_GAME_NAME;
 
@@ -121,7 +120,6 @@ test.describe("Match Summary - Teams", () => {
     page,
     browserName,
   }) => {
-    test.slow();
     const browserGameName =
       browserName + PREFIX + "team_multi_" + MATCH_GAME_NAME;
     const playerPrefix = browserName + "_TMP";

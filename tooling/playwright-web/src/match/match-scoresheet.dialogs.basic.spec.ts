@@ -24,7 +24,6 @@ test.describe("Match Scoresheet Dialogs - Basic", () => {
     page,
     browserName,
   }) => {
-    test.slow();
     const matchName = `${browserName}_P2 Dialog Basic`;
     const commentText = `${browserName} comment regression text`;
     const playerDetailText = `${browserName} player detail regression text`;
@@ -65,7 +64,9 @@ test.describe("Match Scoresheet Dialogs - Basic", () => {
         name: `${browserName}${PLAYER_PREFIX} 1`,
       }),
     ).toBeVisible();
-    await page.getByRole("textbox", { name: "Details:" }).fill(playerDetailText);
+    await page
+      .getByRole("textbox", { name: "Details" })
+      .fill(playerDetailText);
     await page.getByRole("button", { name: "Ok" }).click();
     await expect(detailsOptionalRow.getByText(playerDetailText)).toBeVisible({
       timeout: 7000,
@@ -82,7 +83,6 @@ test.describe("Match Scoresheet Dialogs - Basic", () => {
   });
 
   test("updates team detail via team branch", async ({ page, browserName }) => {
-    test.slow();
     const teamDetailText = `${browserName} team detail regression text`;
 
     await setupAndOpenScoresheetMatch(page, {
@@ -99,7 +99,7 @@ test.describe("Match Scoresheet Dialogs - Basic", () => {
     await expect(
       page.getByRole("heading", { name: "Team: Blue Team" }),
     ).toBeVisible();
-    await page.getByRole("textbox", { name: "Details:" }).fill(teamDetailText);
+    await page.getByRole("textbox", { name: "Details" }).fill(teamDetailText);
     await page.getByRole("button", { name: "Ok" }).click();
 
     await expect(detailsRow.getByText(teamDetailText)).toBeVisible({

@@ -5,11 +5,11 @@ todos: []
 isProject: false
 ---
 
-# Priority 2: TanStack Form Migration -- Scoresheet Dialogs, Sharing Flows, Group Selectors
+# Priority 2: TanStack Form Migration -- Scoresheet Dialogs and Group Selectors
 
 ## Overview
 
-Priority 2 covers **15 forms** split into three batches: the 8 match scoresheet dialog forms, the 5 sharing/share-request forms, and the 2 group player selector forms. These are moderately complex, moderately used forms. Migrating them in batches by domain keeps changes cohesive and testable.
+Priority 2 covers **10 forms** split into two batches: the 8 match scoresheet dialog forms and the 2 group player selector forms. These are moderately complex, moderately used forms. Migrating them in batches by domain keeps changes cohesive and testable.
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ Priority 2 covers **15 forms** split into three batches: the 8 match scoresheet 
 
 ## Dependencies
 
-- Scoresheet dialogs (Batch A) are independent of sharing forms (Batch B) and group selectors (Batch C) -- batches can be done in any order
+- Scoresheet dialogs (Batch A) are independent of group selectors (Batch B) -- batches can be done in any order
 - Within Batch A, forms are independent of each other
 
 ---
@@ -221,143 +221,9 @@ Migrate simpler forms first to build up confidence, then tackle the complex ones
 
 ---
 
-## Batch B: Sharing Flows (5 forms)
+## Batch B: Group Player Selectors (2 forms)
 
-These forms share very similar patterns (friend multi-select, permission selection, tabs for share method). Consider extracting shared patterns after migration.
-
-### Migration Order
-
-1. share-game (largest, establishes the pattern)
-2. share-player (near-duplicate of share-game)
-3. game-request (simpler accept/reject)
-4. player-request (most complex share request)
-5. match-request (complex, similar to game-request)
-
----
-
-### Form 9: Share Game
-
-- **File**: `apps/nextjs/src/app/dashboard/games/[id]/share/_components/share-game.tsx`
-- **Lines**: 1003
-- **Complexity**: Very High
-
-#### Current Implementation
-
-- **Schema**: Complex `z.object({ shareMethod, friendIds, permission, linkExpiry, matchIds, scoresheetIds }).check(...)`
-- **Fields**: `shareMethod` (radio), `friendIds` (multi-select combobox), `permission` (select), `linkExpiry` (select), `matchIds` (array of objects with nested `includePlayers` and `permission`), `scoresheetIds` (array of objects with `permission`)
-- **Submission**: `trpc.sharing.requestShareGame` mutation, branches on share method
-- **Watches**: `form.watch("shareMethod")`, `form.watch("matchIds")`, `form.watch("scoresheetIds")`
-
-#### Migration Notes
-
-- Replace `useForm` with `useAppForm`
-- `shareMethod`: `form.Field` with inline render (radio group, not a standard select)
-- `friendIds`: `form.Field` with inline render (Command + Popover combobox multi-select)
-- `permission` / `linkExpiry`: `<form.AppField>{(field) => <field.SelectField ... />}</form.AppField>`
-- `matchIds` and `scoresheetIds`: `form.Field mode="array"` for the arrays. Nested fields for per-item `includePlayers` and `permission`
-- Replace all `form.watch(...)` calls with `form.useStore(s => s.values.x)`
-- Replace `form.setValue("matchIds", [...])` with `form.setFieldValue("matchIds", [...])`
-- The "Select All" checkbox logic for matches/scoresheets uses `form.setValue` -- update to `form.setFieldValue`
-- This file is 1003 lines -- consider if it can be split into sub-components using `withForm` or `withFieldGroup`
-
----
-
-### Form 10: Share Player
-
-- **File**: `apps/nextjs/src/app/dashboard/players/[id]/share/_components/share-player.tsx`
-- **Lines**: 844
-- **Complexity**: High
-
-#### Current Implementation
-
-- Nearly identical to share-game but without `scoresheetIds`
-- **Schema**: `z.object({ shareMethod, friendIds, permission, linkExpiry, matchIds }).check(...)`
-- **Submission**: `trpc.sharing.requestSharePlayer` mutation
-
-#### Migration Notes
-
-- Same migration pattern as Form 9 (share-game)
-- One fewer array field (no `scoresheetIds`)
-- Consider extracting shared sharing form components after both Form 9 and 10 are migrated
-
----
-
-### Form 11: Game Share Request
-
-- **File**: `apps/nextjs/src/app/dashboard/share-requests/[id]/_componenets/game-request.tsx`
-- **Lines**: 696
-- **Complexity**: High
-
-#### Current Implementation
-
-- **Schema**: `z.object({ gameOption, existingGameId, scoresheets }).check(...)` requiring at least one accepted scoresheet
-- **Fields**: `gameOption` (radio: "new"/"existing"), `existingGameId` (combobox search), `scoresheets` (array with accept boolean)
-- **Submission**: `trpc.sharing.acceptGameShareRequest` mutation, merges with external state (`players`, `matches`, `locations`)
-- **External state**: `useState` for `players`, `matches`, `locations` outside the form
-
-#### Migration Notes
-
-- Replace `useForm` with `useAppForm`
-- `gameOption`: `form.Field` with inline render (RadioGroup)
-- `existingGameId`: `form.Field` with inline render (Command + Popover combobox)
-- `scoresheets`: `form.Field mode="array"` for the scoresheet accept/reject list
-- The external `useState` for players/matches/locations stays external -- these are child component state, not form fields
-- Replace `form.watch("gameOption")` with `form.useStore(s => s.values.gameOption)`
-- Replace `form.setValue(...)` calls with `form.setFieldValue(...)`
-
----
-
-### Form 12: Player Share Request
-
-- **File**: `apps/nextjs/src/app/dashboard/share-requests/[id]/_componenets/player-request.tsx`
-- **Lines**: 1421
-- **Complexity**: Very High (most complex form in the app)
-
-#### Current Implementation
-
-- **Schema**: Deeply nested -- `z.object({ playerOption, existingPlayerId, games: z.array(union of sharedGameSchema | requesteeGameSchema) })`. Each game has `gameOption`, `existingGameId`, `accept`, `matches[].accept`, `scoresheets[].accept`
-- **Fields**: `playerOption` (radio), `existingPlayerId` (combobox), `games` (deeply nested array with per-game options)
-- **Submission**: `trpc.sharing.acceptPersonShareRequest` mutation
-- **Array operations**: `useFieldArray` for `games.${gameIndex}.matches`
-
-#### Migration Notes
-
-- This file is **1421 lines** and exceeds the 500-line guideline. Consider splitting into sub-components with `withForm` during migration:
-  - `PlayerRequestForm` (top-level with `useAppForm`)
-  - `GameRequestItem` (per-game card, could be a `withForm` sub-form or just a component receiving form)
-  - `MatchRequests` (per-game match list)
-- Replace `useFieldArray` for matches with `form.Field name={\`games[${gameIndex}].matches} mode="array"`
-- Replace all `form.watch(...)` and `form.setValue(...)` calls
-- The external `useState` for `players`, `locations` stays external
-- The deeply nested field paths like `games.${gameIndex}.scoresheets.${scoresheetIndex}.accept` become `games[${gameIndex}].scoresheets[${scoresheetIndex}].accept` in TanStack Form
-
----
-
-### Form 13: Match Share Request
-
-- **File**: `apps/nextjs/src/app/dashboard/share-requests/[id]/_componenets/match-request.tsx`
-- **Lines**: 1101
-- **Complexity**: Very High
-
-#### Current Implementation
-
-- **Schema**: `z.object({ gameOption, existingGameId, scoresheets }).check(...)`
-- **Fields**: Same as game-request but with different context (match sharing)
-- **Submission**: `trpc.sharing.acceptMatchShareRequest` mutation
-- **Special**: Two entirely different renders based on whether `"sharedGame" in match` or `gameChildItem` exists
-
-#### Migration Notes
-
-- Same patterns as Form 11 (game-request)
-- The two conditional render paths each potentially have their own form or a shared form with different fields visible
-- Replace all RHF patterns as described
-- This file is also over the 500-line guideline -- consider splitting during migration
-
----
-
-## Batch C: Group Player Selectors (2 forms)
-
-### Form 14: Select Players for Group Add
+### Form 9: Select Players for Group Add
 
 - **File**: `apps/nextjs/src/app/dashboard/groups/add/players/_components/selectPlayersForm.tsx`
 - **Lines**: 177
@@ -378,7 +244,7 @@ These forms share very similar patterns (friend multi-select, permission selecti
 
 ---
 
-### Form 15: Select Players for Group Edit
+### Form 10: Select Players for Group Edit
 
 - **File**: `apps/nextjs/src/app/dashboard/groups/[id]/edit/players/_components/selectPlayerForm.tsx`
 - **Lines**: 205
@@ -392,7 +258,7 @@ These forms share very similar patterns (friend multi-select, permission selecti
 
 #### Migration Notes
 
-- Same pattern as Form 14
+- Same pattern as Form 9
 - The diff computation in `onSubmit` stays the same
 - Replace `form.setValue("players", [...])` with `form.setFieldValue("players", [...])`
 
@@ -400,13 +266,87 @@ These forms share very similar patterns (friend multi-select, permission selecti
 
 ## Shared Cleanup After Priority 2
 
-After all 15 forms are migrated:
+After all 10 forms are migrated:
 
 - Run `pnpm turbo run lint typecheck --filter=@board-games/nextjs`
 - Test the entire match scoresheet flow (add round, edit player/team, tie breaker, manual winner, comments, details, images)
-- Test all sharing flows (share game, share player, accept/reject share requests)
 - Test group player selection (add and edit flows)
 - Look for opportunities to extract shared patterns:
-  - Checkbox multi-select array field (used in 6+ forms)
-  - Friend/item combobox selector (used in sharing forms)
-  - Permission select pattern (used in sharing forms)
+  - Checkbox multi-select array field (used in scoresheet and group selector forms)
+
+## Before vs After Playwright Comparison
+
+Use these tests as Priority 2 regression gates and compare baseline (before migration) to post-migration behavior:
+
+- `tooling/playwright-web/src/match/match-scoresheet.dialogs.basic.spec.ts`
+- `tooling/playwright-web/src/match/match-scoresheet.edit-player-team.spec.ts`
+- `tooling/playwright-web/src/match/match-scoresheet.winner-tiebreaker.spec.ts`
+- `tooling/playwright-web/src/group/group-player-selection.spec.ts`
+
+Execution method:
+
+- Use Playwright MCP flows for validation runs and artifact capture.
+- Do not run Playwright via shell commands for this Priority 2 verification.
+
+Run sequence:
+
+1. Capture a baseline run before migration for the four specs.
+2. Migrate Priority 2 forms.
+3. Re-run the same four specs after migration.
+4. Compare outcomes and artifacts.
+
+Pass criteria:
+
+- All four specs pass in the post-migration run.
+- No new failures or flaky regressions are introduced in these flows.
+- Functional behavior stays equivalent before and after migration for:
+  - scoresheet comment/detail/edit dialogs
+  - manual winner and tie-breaker finish paths
+  - group add/edit player selection and add/remove diff behavior
+
+## Playwright Screenshots
+
+Capture deterministic screenshots in both baseline and post-migration runs for direct visual comparison.
+
+Capture method:
+
+- Use Playwright MCP screenshot capture during the before/after verification flow.
+- Do not generate screenshots by invoking Playwright CLI commands from the terminal.
+
+Naming convention:
+
+- `before-<spec-key>-<checkpoint>.png`
+- `after-<spec-key>-<checkpoint>.png`
+
+Store under a stable artifact directory (for example `tooling/playwright-web/artifacts/priority-2/`) so screenshots can be diffed by filename pair.
+
+Required checkpoints:
+
+- `dialogs-basic`:
+  - comment dialog open with edited text
+  - player/team detail dialog open after value entry
+  - add-round dialog after selecting `Checkbox` type
+- `edit-player-team`:
+  - edit-player dialog with team assignment selection visible
+  - edit-team dialog showing player removed/added state before save
+  - reopened edit-team dialog showing persisted players after save
+- `winner-tiebreaker`:
+  - manual winner dialog with selections made before confirm
+  - tie-breaker dialog with placement editor open
+- `group-player-selection`:
+  - group add player selector with selected pills visible
+  - group edit player selector showing remove/add diff state
+
+Screenshot criteria:
+
+- Same viewport, theme, and browser mode for before/after captures.
+- Use the same checkpoint names in both runs.
+- Keep screenshots tied to assertions already covered by the four specs.
+
+## Exit Criteria
+
+- Plan contains zero references to out-of-scope share/share-request forms for Priority 2.
+- Plan explicitly names the four new Playwright specs as migration regression gates.
+- Before/after runs are compared for pass/fail parity and behavior parity in targeted flows.
+- Before/after screenshot artifacts are captured with matching checkpoint names and diffable filenames.
+- Verification and screenshots are executed through Playwright MCP (not shell Playwright commands).

@@ -20,7 +20,6 @@ test.describe("Match Scores - Numeric", () => {
     page,
     browserName,
   }) => {
-    test.slow();
     const browserGameName = browserName + PREFIX + MATCH_GAME_NAME;
     const matchName = browserName + "_Score Entry Test";
 

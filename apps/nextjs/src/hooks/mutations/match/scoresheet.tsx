@@ -7,6 +7,8 @@ import { usePostHog } from "posthog-js/react";
 import { toast } from "@board-games/ui/toast";
 
 import { useTRPC } from "~/trpc/react";
+import { useRouter } from "next/navigation";
+import { formatMatchLink } from "~/utils/linkFormatting";
 
 type MatchInput =
   | { type: "shared"; sharedMatchId: number }
@@ -212,23 +214,50 @@ export const useUpdateFinish = (input: MatchInput, onFinished?: () => void) => {
 
 export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
+  const router = useRouter();
   const posthog = usePostHog();
-  const removeMatchQueries = useRemoveMatchQueries();
+  const queryClient = useQueryClient();
   const updateMatchManualWinnerMutation = useMutation(
     trpc.match.update.updateMatchManualWinner.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async (data) => {
         // Remove match queries so the summary page hydrates with fresh
         // server-prefetched data instead of stale client cache.
-        removeMatchQueries(input);
+        await Promise.all([
+          queryClient.invalidateQueries(
+            trpc.match.getMatch.queryOptions(input),
+          ),
+          queryClient.invalidateQueries(
+            trpc.match.getMatchScoresheet.queryOptions(input),
+          ),
+          queryClient.invalidateQueries(
+            trpc.match.getMatchPlayersAndTeams.queryOptions(input),
+          ),
+          queryClient.invalidateQueries(
+            trpc.match.getMatchSummary.queryOptions(input),
+          ),
+        ]);
         posthog.capture("match finished", {
           input: input,
           finishedType: "manual",
         });
-        // Invalidate remaining queries (e.g. game matches list).
-        // Match queries were already removed above so only game-level
-        // and other unrelated queries will refetch.
-        void queryClient.invalidateQueries();
+        router.push(
+          formatMatchLink(
+            data.type === "shared"
+              ? {
+                  sharedMatchId: data.match.sharedMatchId,
+                  sharedGameId: data.game.sharedGameId,
+                  type: data.game.type,
+                  linkedGameId: data.game.linkedGameId,
+                  finished: true,
+                }
+              : {
+                  matchId: data.match.id,
+                  gameId: data.game.id,
+                  type: data.game.type,
+                  finished: true,
+                },
+          ),
+        );
       },
       onError: (error) => {
         posthog.capture("manual winner update error", { error });
@@ -245,12 +274,12 @@ export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
 
 export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
+  const router = useRouter();
   const posthog = usePostHog();
   const removeMatchQueries = useRemoveMatchQueries();
   const updateMatchPlacementsMutation = useMutation(
     trpc.match.update.updateMatchPlacements.mutationOptions({
-      onSuccess: () => {
+      onSuccess: (data) => {
         // Remove match queries so the summary page hydrates with fresh
         // server-prefetched data instead of stale client cache.
         removeMatchQueries(input);
@@ -258,10 +287,24 @@ export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
           input: input,
           finishedType: "tie-breaker",
         });
-        // Invalidate remaining queries (e.g. game matches list).
-        // Match queries were already removed above so only game-level
-        // and other unrelated queries will refetch.
-        void queryClient.invalidateQueries();
+        router.push(
+          formatMatchLink(
+            data.type === "shared"
+              ? {
+                  sharedMatchId: data.match.sharedMatchId,
+                  sharedGameId: data.game.sharedGameId,
+                  type: data.game.type,
+                  linkedGameId: data.game.linkedGameId,
+                  finished: true,
+                }
+              : {
+                  matchId: data.match.id,
+                  gameId: data.game.id,
+                  type: data.game.type,
+                  finished: true,
+                },
+          ),
+        );
       },
       onError: (error) => {
         posthog.capture("match finished error", { error });
@@ -273,6 +316,44 @@ export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
   );
   return {
     updateMatchPlacementsMutation,
+  };
+};
+
+export const useAddRoundMutation = (input: MatchInput) => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const posthog = usePostHog();
+  const addRoundMutation = useMutation(
+    trpc.round.addRound.mutationOptions({
+      onSuccess: async () => {
+        await Promise.all([
+          queryClient.invalidateQueries(
+            trpc.match.getMatch.queryOptions(input),
+          ),
+          queryClient.invalidateQueries(
+            trpc.match.getMatchScoresheet.queryOptions(input),
+          ),
+          queryClient.invalidateQueries(
+            trpc.match.getMatchPlayersAndTeams.queryOptions(input),
+          ),
+          queryClient.invalidateQueries(
+            trpc.match.getMatchSummary.queryOptions(input),
+          ),
+        ]);
+        posthog.capture("round added to match", {
+          input,
+        });
+      },
+      onError: (error) => {
+        posthog.capture("round added to match error", { error });
+        toast.error("Error", {
+          description: "There was a problem adding your round.",
+        });
+      },
+    }),
+  );
+  return {
+    addRoundMutation,
   };
 };
 

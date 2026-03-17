@@ -21,8 +21,6 @@ test.describe("Match Scoresheet Dialogs - Manual Winner and Tie Breaker", () => 
     page,
     browserName,
   }) => {
-    test.slow();
-
     const created = await setupAndOpenScoresheetMatch(page, {
       browserName,
       browserGameName: browserName + PREFIX + "manual",
@@ -53,7 +51,9 @@ test.describe("Match Scoresheet Dialogs - Manual Winner and Tie Breaker", () => 
     await page.getByRole("button", { name: "Ok" }).click();
 
     await expect(page).toHaveURL(
-      new RegExp(`/dashboard/games/${created.gameId}/${created.match.id}/summary`),
+      new RegExp(
+        `/dashboard/games/${created.gameId}/${created.match.id}/summary`,
+      ),
       { timeout: 20000 },
     );
   });
@@ -62,7 +62,6 @@ test.describe("Match Scoresheet Dialogs - Manual Winner and Tie Breaker", () => 
     page,
     browserName,
   }) => {
-    test.slow();
     const playerOne = `${browserName}${PLAYER_PREFIX} 1`;
 
     const created = await setupAndOpenScoresheetMatch(page, {
@@ -82,7 +81,9 @@ test.describe("Match Scoresheet Dialogs - Manual Winner and Tie Breaker", () => 
     });
 
     const table = page.locator('[data-slot="table"]').first();
-    const scoreInputs = table.locator('input[type="text"][inputmode="numeric"]');
+    const scoreInputs = table.locator(
+      'input[type="text"][inputmode="numeric"]',
+    );
     await scoreInputs.nth(0).fill("10");
     await scoreInputs.nth(1).fill("10");
 
@@ -105,7 +106,9 @@ test.describe("Match Scoresheet Dialogs - Manual Winner and Tie Breaker", () => 
 
     await page.getByRole("button", { name: "Finish", exact: true }).click();
     await expect(page).toHaveURL(
-      new RegExp(`/dashboard/games/${created.gameId}/${created.match.id}/summary`),
+      new RegExp(
+        `/dashboard/games/${created.gameId}/${created.match.id}/summary`,
+      ),
       { timeout: 20000 },
     );
   });

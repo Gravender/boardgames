@@ -24,7 +24,6 @@ test.describe("Match Create - Basic", () => {
     page,
     browserName,
   }) => {
-    test.slow();
     const browserGameName = browserName + PREFIX + MATCH_GAME_NAME;
     const matchName = browserName + "_Test Match Create";
 

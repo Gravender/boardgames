@@ -101,7 +101,9 @@ async function deleteMatchRelatedData(
 
   if (matches.length > 0) {
     // Delete dependent match images before deleting matches.
-    await database.delete(matchImage).where(inArray(matchImage.matchId, matches));
+    await database
+      .delete(matchImage)
+      .where(inArray(matchImage.matchId, matches));
     await database.delete(team).where(inArray(team.matchId, matches));
     await database.delete(match).where(inArray(match.id, matches));
   }

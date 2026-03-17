@@ -23,9 +23,9 @@ test.describe("Players Page", () => {
     await page
       .getByRole("textbox", { name: "Search players..." })
       .fill(browserPlayerName);
-    await expect(page.getByRole("link", { name: browserPlayerName }).first()).toBeVisible(
-      { timeout: 10000 },
-    );
+    await expect(
+      page.getByRole("link", { name: browserPlayerName }).first(),
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Edit Player", async ({ page, browserName }) => {
@@ -36,9 +36,9 @@ test.describe("Players Page", () => {
     await page
       .getByRole("textbox", { name: "Search players..." })
       .fill(browserPlayerName);
-    await expect(page.getByRole("link", { name: browserPlayerName }).first()).toBeVisible(
-      { timeout: 10000 },
-    );
+    await expect(
+      page.getByRole("link", { name: browserPlayerName }).first(),
+    ).toBeVisible({ timeout: 10000 });
     await page.getByRole("button", { name: "Open menu" }).first().click();
     await page.getByRole("menuitem", { name: "Edit" }).click();
     await page

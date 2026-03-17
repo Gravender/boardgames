@@ -10,20 +10,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@board-games/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  useForm,
-} from "@board-games/ui/form";
 import { ScrollArea } from "@board-games/ui/scroll-area";
-import { Textarea } from "@board-games/ui/textarea";
 
 import type { MatchInput } from "../types/input";
 import { useUpdateMatchCommentMutation } from "~/hooks/mutations/match/scoresheet";
+import { useAppForm } from "~/hooks/form";
 
 export function CommentDialog({
   match,
@@ -66,55 +57,53 @@ function Content({
   comment: string;
 }) {
   const { updateMatchCommentMutation } = useUpdateMatchCommentMutation(match);
-  const form = useForm({
-    schema: FormSchema,
+  const form = useAppForm({
     defaultValues: { comment },
-  });
-  function onSubmitForm(values: z.infer<typeof FormSchema>) {
-    updateMatchCommentMutation.mutate(
-      {
-        match: match,
-        comment: values.comment,
-      },
-      {
-        onSuccess: () => {
-          setIsOpen(false);
+    validators: {
+      onSubmit: FormSchema,
+    },
+    onSubmit: ({ value }) => {
+      updateMatchCommentMutation.mutate(
+        {
+          match,
+          comment: value.comment,
         },
-      },
-    );
-  }
+        {
+          onSuccess: () => {
+            setIsOpen(false);
+          },
+        },
+      );
+    },
+  });
   return (
     <>
       <DialogHeader>
         <DialogTitle>Match Comment</DialogTitle>
       </DialogHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmitForm)} className="space-y-8">
-          <FormField
-            control={form.control}
-            name="comment"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="hidden">Comment:</FormLabel>
-                <FormControl>
-                  <Textarea {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <DialogFooter className="flex gap-2">
-            <Button
-              variant="secondary"
-              type="button"
-              onClick={() => setIsOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">Ok</Button>
-          </DialogFooter>
-        </form>
-      </Form>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          await form.handleSubmit();
+        }}
+        className="space-y-8"
+      >
+        <form.AppField name="comment">
+          {(field) => (
+            <field.TextAreaField label="Comment" hideLabel rows={4} />
+          )}
+        </form.AppField>
+        <DialogFooter className="flex gap-2">
+          <Button
+            variant="secondary"
+            type="button"
+            onClick={() => setIsOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button type="submit">Ok</Button>
+        </DialogFooter>
+      </form>
     </>
   );
 }

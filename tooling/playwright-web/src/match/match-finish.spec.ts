@@ -22,7 +22,6 @@ test.describe("Match Finish", () => {
     page,
     browserName,
   }) => {
-    test.slow();
     const browserGameName = browserName + PREFIX + MATCH_GAME_NAME;
 
     // Create a match via tRPC with Highest Score win condition
@@ -121,7 +120,6 @@ test.describe("Match Finish", () => {
     page,
     browserName,
   }) => {
-    test.slow();
     const browserGameName = browserName + PREFIX + "manual_" + MATCH_GAME_NAME;
 
     // Create a match with Manual win condition
@@ -186,6 +184,8 @@ test.describe("Match Finish", () => {
 
     const resultRows = page.locator('[data-testid="result-row"]');
     await expect(resultRows).toHaveCount(2);
+
+    await page.reload();
 
     // Both players were selected as winners → both have check mark
     for (let i = 0; i < 2; i++) {

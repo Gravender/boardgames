@@ -1,19 +1,12 @@
 "use server";
 
-import { caller, HydrateClient } from "~/trpc/server";
-import { PlayersTable } from "./_components/playerTable";
+import { HydrateClient } from "~/trpc/server";
+import { PlayersTable } from "~/app/dashboard/players/_components/players";
 
 export default async function Page() {
-  const players = await caller.player.getPlayers();
-
   return (
     <HydrateClient>
-      <PlayersTable
-        data={players.map((player) =>
-          Object.assign(player, { matches: Number(player.matches) }),
-        )}
-      />
-      ;
+      <PlayersTable />
     </HydrateClient>
   );
 }

@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 
-import { createFullMatchViaTrpc } from "../trpc/procedures";
+import { createFullMatchViaTrpc, createGameWithScoresheetViaTrpc } from "../trpc/procedures";
 
 type SetupScoresheetMatchOptions = {
   browserName: string;
@@ -10,7 +10,7 @@ type SetupScoresheetMatchOptions = {
   playerPrefix: string;
   playerCount?: number;
   teams?: { name: string; playerIndices: number[] }[];
-  scoresheetConfigs?: Parameters<typeof createFullMatchViaTrpc>[2]["scoresheetConfigs"];
+  scoresheetConfigs?: Parameters<typeof createGameWithScoresheetViaTrpc>[2];
 };
 
 export async function setupAndOpenScoresheetMatch(
@@ -23,16 +23,14 @@ export async function setupAndOpenScoresheetMatch(
     playerPrefix,
     playerCount: options.playerCount ?? 2,
     teams: options.teams,
-    scoresheetConfigs:
-      options.scoresheetConfigs ??
-      [
-        {
-          name: "Default",
-          winCondition: "Highest Score",
-          roundsScore: "Aggregate",
-          rounds: [{ name: "Round 1", type: "Numeric" }],
-        },
-      ],
+    scoresheetConfigs: options.scoresheetConfigs ?? [
+      {
+        name: "Default",
+        winCondition: "Highest Score",
+        roundsScore: "Aggregate",
+        rounds: [{ name: "Round 1", type: "Numeric" }],
+      },
+    ],
   });
 
   await page.goto(`/dashboard/games/${created.gameId}/${created.match.id}`);
@@ -51,7 +49,7 @@ export async function openAddRoundDialog(page: Page) {
     .first();
   await expect(addRoundButton).toBeVisible({ timeout: 5000 });
   await addRoundButton.click();
-  await expect(
-    page.getByRole("heading", { name: "Add Round" }),
-  ).toBeVisible({ timeout: 5000 });
+  await expect(page.getByRole("heading", { name: "Add Round" })).toBeVisible({
+    timeout: 5000,
+  });
 }

@@ -7,7 +7,9 @@ import {
   updateMatchCommentInput,
   updateMatchDetailsInput,
   updateMatchManualWinnerInput,
+  updateMatchManualWinnerOutput,
   updateMatchPlacementsInput,
+  updateMatchPlacementsOutput,
   updateMatchPlayerScoreInput,
   updateMatchPlayerTeamAndRolesInput,
   updateMatchScoreInput,
@@ -52,13 +54,15 @@ export const updateMatchRouter = {
     }),
   updateMatchManualWinner: protectedUserProcedure
     .input(updateMatchManualWinnerInput)
+    .output(updateMatchManualWinnerOutput)
     .mutation(async ({ ctx, input }) => {
-      await updateMatchService.updateMatchManualWinner({ ctx, input });
+      return updateMatchService.updateMatchManualWinner({ ctx, input });
     }),
   updateMatchPlacements: protectedUserProcedure
     .input(updateMatchPlacementsInput)
+    .output(updateMatchPlacementsOutput)
     .mutation(async ({ ctx, input }) => {
-      await updateMatchService.updateMatchPlacements({ ctx, input });
+      return updateMatchService.updateMatchPlacements({ ctx, input });
     }),
   updateMatchComment: protectedUserProcedure
     .input(updateMatchCommentInput)
