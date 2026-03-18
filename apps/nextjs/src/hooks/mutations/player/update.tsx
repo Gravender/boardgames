@@ -18,7 +18,7 @@ export const useUpdatePlayerMutation = () => {
     trpc.player.update.mutationOptions({
       onSuccess: async (_data, variables) => {
         await Promise.all([
-          ...invalidatePlayer(variables.id),
+          ...invalidatePlayer(variables.id, variables.type),
           ...invalidatePlayers(),
         ]);
         toast.success("Player updated successfully!");

@@ -31,7 +31,7 @@ import { useTRPC } from "~/trpc/react";
 export function PlayerDropDown({
   data,
 }: {
-  data: RouterOutputs["player"]["getPlayers"][number];
+  data: RouterOutputs["newPlayer"]["getPlayers"][number];
 }) {
   const [isDeletePlayerDialogOpen, setIsDeletePlayerDialogOpen] =
     useState(false);
@@ -46,8 +46,9 @@ export function PlayerDropDown({
       },
     }),
   );
+  const playerId = data.type === "shared" ? data.sharedPlayerId : data.id;
   const onDelete = () => {
-    deletePlayer.mutate({ id: data.id });
+    deletePlayer.mutate({ id: playerId });
   };
 
   const canEdit =
@@ -71,7 +72,7 @@ export function PlayerDropDown({
           )}
           <DropdownMenuItem asChild>
             <Link
-              href={`/dashboard/players${data.type === "original" ? "/" : "/shared/"}${data.id}/stats`}
+              href={`/dashboard/players${data.type === "original" ? "/" : "/shared/"}${playerId}/stats`}
             >
               Stats
             </Link>

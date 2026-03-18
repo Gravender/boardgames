@@ -15,7 +15,7 @@ export default async function Page({
 }: {
   searchParams: Promise<{ add?: string }>;
 }) {
-  void prefetch(trpc.player.getPlayers.queryOptions());
+  void prefetch(trpc.newPlayer.getPlayers.queryOptions());
   const addPlayer = (await searchParams).add === "true";
   return (
     <div className="flex w-full items-center justify-center">

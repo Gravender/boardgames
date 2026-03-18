@@ -10,10 +10,22 @@ import { db } from "@board-games/db/client";
 import { player, sharedPlayer } from "@board-games/db/schema";
 
 import type {
+  GetOriginalPlayerByIdArgs,
+  GetPlayersArgs,
+  GetPlayersByGameArgs,
   GetPlayersForMatchArgs,
   GetRecentMatchWithPlayersArgs,
+  GetSharedPlayerByIdArgs,
   InsertSharedPlayerInputType,
 } from "./player.repository.types";
+import {
+  getOriginalPlayerByIdRead,
+  getPlayersByGameRead,
+  getPlayersForMatchRead,
+  getPlayersRead,
+  getRecentMatchWithPlayersRead,
+  getSharedPlayerByIdRead,
+} from "./player.read.repository";
 
 class PlayerRepository {
   public async insert(args: {
@@ -167,161 +179,28 @@ class PlayerRepository {
   }
   /** Fetch both original and shared (unlinked) players for match setup. */
   public async getPlayersForMatch(args: GetPlayersForMatchArgs) {
-    const database = args.tx ?? db;
-    const [originalPlayers, sharedPlayers] = await Promise.all([
-      this.getOriginalPlayersForMatch(database, args.createdBy),
-      this.getSharedPlayersForMatch(database, args.createdBy),
-    ]);
-    return { originalPlayers, sharedPlayers };
+    return getPlayersForMatchRead(args);
   }
 
   /** Fetch the five most recent matches with their players. */
   public async getRecentMatchWithPlayers(args: GetRecentMatchWithPlayersArgs) {
-    const database = args.tx ?? db;
-    const response = await database.query.match.findMany({
-      columns: {
-        id: true,
-        name: true,
-        date: true,
-      },
-      where: {
-        createdBy: args.createdBy,
-        deletedAt: {
-          isNull: true,
-        },
-      },
-      with: {
-        players: {
-          columns: {
-            id: true,
-            name: true,
-          },
-          with: {
-            image: {
-              columns: {
-                name: true,
-                url: true,
-                type: true,
-                usageType: true,
-              },
-            },
-          },
-        },
-      },
-      limit: 5,
-      orderBy: {
-        date: "desc",
-      },
-    });
-    return response;
+    return getRecentMatchWithPlayersRead(args);
   }
 
-  // ── Private helpers ──────────────────────────────────────────────
-
-  private async getOriginalPlayersForMatch(
-    database: TransactionType | typeof db,
-    createdBy: string,
-  ) {
-    return database.query.player.findMany({
-      columns: {
-        name: true,
-        id: true,
-        isUser: true,
-      },
-      where: {
-        createdBy,
-        deletedAt: {
-          isNull: true,
-        },
-      },
-      with: {
-        image: {
-          columns: {
-            name: true,
-            url: true,
-            type: true,
-            usageType: true,
-          },
-        },
-        sharedLinkedPlayers: {
-          columns: {},
-          where: {
-            sharedWithId: createdBy,
-          },
-          with: {
-            sharedMatchPlayers: {
-              columns: {},
-              with: {
-                match: {
-                  columns: {
-                    date: true,
-                    finished: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        matchPlayers: {
-          columns: {},
-          with: {
-            match: {
-              columns: {
-                date: true,
-                finished: true,
-              },
-            },
-          },
-        },
-      },
-    });
+  public async getPlayers(args: GetPlayersArgs) {
+    return getPlayersRead(args);
   }
 
-  private async getSharedPlayersForMatch(
-    database: TransactionType | typeof db,
-    createdBy: string,
-  ) {
-    return database.query.sharedPlayer.findMany({
-      columns: {
-        id: true,
-      },
-      where: {
-        sharedWithId: createdBy,
-        linkedPlayerId: {
-          isNull: true,
-        },
-      },
-      with: {
-        player: {
-          columns: {
-            name: true,
-            id: true,
-            isUser: true,
-          },
-          with: {
-            image: {
-              columns: {
-                name: true,
-                url: true,
-                type: true,
-                usageType: true,
-              },
-            },
-          },
-        },
-        sharedMatchPlayers: {
-          columns: {},
-          with: {
-            match: {
-              columns: {
-                date: true,
-                finished: true,
-              },
-            },
-          },
-        },
-      },
-    });
+  public async getPlayersByGame(args: GetPlayersByGameArgs) {
+    return getPlayersByGameRead(args);
+  }
+
+  public async getOriginalPlayerById(args: GetOriginalPlayerByIdArgs) {
+    return getOriginalPlayerByIdRead(args);
+  }
+
+  public async getSharedPlayerById(args: GetSharedPlayerByIdArgs) {
+    return getSharedPlayerByIdRead(args);
   }
 }
 export const playerRepository = new PlayerRepository();

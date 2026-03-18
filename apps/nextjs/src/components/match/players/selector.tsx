@@ -77,6 +77,13 @@ export interface Team {
     | z.infer<typeof sharedRoleSchema>
   )[];
 }
+
+const getQueriedPlayerId = (
+  player:
+    | { type: "original"; id: number }
+    | { type: "shared"; sharedPlayerId: number },
+) => (player.type === "shared" ? player.sharedPlayerId : player.id);
+
 export const AddPlayersDialogForm = ({
   game,
   players,
@@ -104,10 +111,17 @@ export const AddPlayersDialogForm = ({
 
   const { data: groups } = useQuery(trpc.group.getGroups.queryOptions());
   const { data: gamePlayers } = useQuery(
-    trpc.player.getPlayersByGame.queryOptions({
-      id: game.type === "original" ? game.id : game.sharedGameId,
-      type: game.type,
-    }),
+    trpc.newPlayer.getPlayersByGame.queryOptions(
+      game.type === "shared"
+        ? {
+            type: "shared",
+            sharedId: game.sharedGameId,
+          }
+        : {
+            type: "original",
+            id: game.id,
+          },
+    ),
   );
 
   const currentUser = gamePlayers?.find((player) => player.isUser);
@@ -119,7 +133,7 @@ export const AddPlayersDialogForm = ({
           : currentUser
             ? [
                 {
-                  id: currentUser.id,
+                  id: getQueriedPlayerId(currentUser),
                   type: currentUser.type,
                   imageUrl: currentUser.image?.url ?? null,
                   name: currentUser.name,
@@ -333,11 +347,19 @@ export const AddPlayersDialogForm = ({
                                       .includes(searchTerm.toLowerCase()),
                                   )
                                   .toSorted((a, b) => {
+                                    const queriedPlayerIdA =
+                                      getQueriedPlayerId(a);
+                                    const queriedPlayerIdB =
+                                      getQueriedPlayerId(b);
                                     const foundA = players.find(
-                                      (p) => p.id === a.id && p.type === a.type,
+                                      (p) =>
+                                        p.id === queriedPlayerIdA &&
+                                        p.type === a.type,
                                     );
                                     const foundB = players.find(
-                                      (p) => p.id === b.id && p.type === b.type,
+                                      (p) =>
+                                        p.id === queriedPlayerIdB &&
+                                        p.type === b.type,
                                     );
                                     if (foundA && foundB) return 0;
                                     if (foundA) return -1;
@@ -348,21 +370,23 @@ export const AddPlayersDialogForm = ({
                                     return b.matches - a.matches;
                                   })
                                   .map((player) => {
-                                    const playerCheckboxId = `player-${player.id}-${player.type}`;
+                                    const queriedPlayerId =
+                                      getQueriedPlayerId(player);
+                                    const playerCheckboxId = `player-${queriedPlayerId}-${player.type}`;
                                     const foundPlayer = players.find(
                                       (p) =>
-                                        p.id === player.id &&
+                                        p.id === queriedPlayerId &&
                                         p.type === player.type,
                                     );
                                     const playerIdx = players.findIndex(
                                       (p) =>
-                                        p.id === player.id &&
+                                        p.id === queriedPlayerId &&
                                         p.type === player.type,
                                     );
 
                                     return (
                                       <div
-                                        key={`${player.id}-${player.type}`}
+                                        key={`${queriedPlayerId}-${player.type}`}
                                         className={cn(
                                           "flex flex-row items-center space-y-0 space-x-3 rounded-sm p-1 sm:p-2",
                                           foundPlayer
@@ -377,7 +401,7 @@ export const AddPlayersDialogForm = ({
                                           onCheckedChange={(checked) => {
                                             if (checked) {
                                               playersField.pushValue({
-                                                id: player.id,
+                                                id: queriedPlayerId,
                                                 type: player.type,
                                                 imageUrl:
                                                   player.image?.url ?? null,
@@ -390,7 +414,7 @@ export const AddPlayersDialogForm = ({
                                               const removeIdx =
                                                 playersField.state.value.findIndex(
                                                   (i) =>
-                                                    i.id === player.id &&
+                                                    i.id === queriedPlayerId &&
                                                     i.type === player.type,
                                                 );
                                               if (removeIdx > -1) {

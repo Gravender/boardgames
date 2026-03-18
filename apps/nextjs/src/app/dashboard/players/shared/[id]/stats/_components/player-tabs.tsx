@@ -19,7 +19,10 @@ import { PlayerOverview } from "~/app/dashboard/players/[id]/stats/_components/p
 import { PlayerTeams } from "~/app/dashboard/players/[id]/stats/_components/player-teams";
 import { PlayerTrends } from "~/app/dashboard/players/[id]/stats/_components/player-trends";
 
-type Player = RouterOutputs["sharing"]["getSharedPlayer"];
+type Player = Extract<
+  RouterOutputs["newPlayer"]["getPlayer"],
+  { type: "shared" }
+>;
 export function PlayerTabs({ player }: { player: Player }) {
   const [activeTab, setActiveTab] = useState("overview");
 

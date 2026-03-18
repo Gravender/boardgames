@@ -22,7 +22,7 @@ import {
 
 import { GameDetails } from "./GameDetailsTable";
 
-type Player = RouterOutputs["player"]["getPlayer"];
+type Player = RouterOutputs["newPlayer"]["getPlayer"];
 export function PlayerGames({ player }: { player: Player }) {
   const [gameChartMode, setGameChartMode] = useState<
     "overall" | "competitive" | "cooperative"

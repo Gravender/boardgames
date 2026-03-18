@@ -32,7 +32,7 @@ import {
   ChartTooltipContent,
 } from "@board-games/ui/chart";
 
-type Player = RouterOutputs["player"]["getPlayer"];
+type Player = RouterOutputs["newPlayer"]["getPlayer"];
 
 export function PlayerTrends({ player }: { player: Player }) {
   const calculatePerformanceData = () => {

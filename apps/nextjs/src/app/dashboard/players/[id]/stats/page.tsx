@@ -13,8 +13,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // fetch data
   if (isNaN(Number(id))) return { title: "Player" };
-  const player = await caller.player.getPlayer({
+  const player = await caller.newPlayer.getPlayer({
     id: Number(id),
+    type: "original",
   });
   if (!player.image?.url)
     return {
@@ -37,9 +38,13 @@ export default async function Page({ params }: Props) {
   const slugs = await params;
   const playerId = slugs.id;
   if (isNaN(Number(playerId))) redirect("/dashboard/players");
-  const player = await caller.player.getPlayer({
+  const player = await caller.newPlayer.getPlayer({
     id: Number(playerId),
+    type: "original",
   });
+  if (player.type !== "original") {
+    redirect("/dashboard/players");
+  }
 
   return (
     <div className="flex w-full items-center justify-center">

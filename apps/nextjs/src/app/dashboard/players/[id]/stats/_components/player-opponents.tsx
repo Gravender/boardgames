@@ -17,7 +17,7 @@ import { Separator } from "@board-games/ui/separator";
 import { GameImage } from "~/components/game-image";
 import { PlayerImage } from "~/components/player-image";
 
-type Player = RouterOutputs["player"]["getPlayer"];
+type Player = RouterOutputs["newPlayer"]["getPlayer"];
 type Games = Player["games"];
 type Opponent = Player["headToHead"][number];
 export function PlayerOpponents({
