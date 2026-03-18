@@ -48,10 +48,22 @@ class PlayerReadService {
     );
 
     for (const returnedSharedPlayer of response.sharedPlayers) {
-      const sharedMatches = returnedSharedPlayer.sharedMatches.toSorted(
-        (a, b) => compareDesc(a.match.date, b.match.date),
-      );
+      const sharedMatches = returnedSharedPlayer.sharedMatches
+        .filter((sharedMatch) => {
+          if (!sharedMatch.match?.date) {
+            return false;
+          }
+          const sharedGame = sharedMatch.sharedGame;
+          if (!sharedGame) {
+            return false;
+          }
+          return sharedGame.linkedGame !== null || sharedGame.game !== null;
+        })
+        .toSorted((a, b) => compareDesc(a.match.date, b.match.date));
       const firstMatch = sharedMatches[0];
+      const firstMatchSharedGame = firstMatch?.sharedGame;
+      const firstMatchLinkedGame = firstMatchSharedGame?.linkedGame;
+      const firstMatchGame = firstMatchSharedGame?.game;
       mappedPlayers.push({
         type: "shared",
         sharedId: returnedSharedPlayer.id,
@@ -59,14 +71,10 @@ class PlayerReadService {
         name: returnedSharedPlayer.player.name,
         image: returnedSharedPlayer.player.image,
         matches: sharedMatches.length,
-        lastPlayed: firstMatch?.match.date,
-        gameName: firstMatch?.sharedGame.linkedGame
-          ? firstMatch.sharedGame.linkedGame.name
-          : firstMatch?.sharedGame.game.name,
-        gameId: firstMatch?.sharedGame.linkedGame
-          ? firstMatch.sharedGame.linkedGame.id
-          : firstMatch?.sharedGame.id,
-        gameType: firstMatch?.sharedGame.linkedGame ? "original" : "shared",
+        lastPlayed: firstMatch?.match?.date,
+        gameName: firstMatchLinkedGame?.name ?? firstMatchGame?.name,
+        gameId: firstMatchLinkedGame?.id ?? firstMatchSharedGame?.id,
+        gameType: firstMatchLinkedGame ? "original" : "shared",
         permissions: returnedSharedPlayer.permission,
       });
     }
@@ -139,7 +147,7 @@ class PlayerReadService {
       return compareDesc(
         args.firstPlayerMatch.date,
         args.firstLinkedMatch.date,
-      ) === 1
+      ) === -1
         ? args.firstPlayerMatch
         : args.firstLinkedMatch;
     }

@@ -155,15 +155,10 @@ class PlayerReadDetailService {
       id: args.basePlayer.id,
       type: args.basePlayer.type,
     });
-    const playerStats = playersStats.find(
-      (p) => p.id === args.basePlayer.id && p.type === args.basePlayer.type,
-    );
-    if (!playerStats) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Player stats not found.",
-      });
-    }
+    const playerStats: GetPlayerOutputType["stats"] =
+      playersStats.find(
+        (p) => p.id === args.basePlayer.id && p.type === args.basePlayer.type,
+      ) ?? this.buildEmptyPlayerStats(args.basePlayer);
 
     const games = args.playerGames
       .map((game) => {
@@ -210,6 +205,56 @@ class PlayerReadDetailService {
       headToHead,
       matches: sortedMatches,
       games,
+    };
+  }
+
+  private buildEmptyPlayerStats(args: {
+    id: number;
+    type: "original" | "shared";
+    name: string;
+    isUser: boolean;
+    image: {
+      name: string;
+      url: string | null;
+      type: "file" | "svg";
+      usageType: "player" | "match" | "game";
+    } | null;
+  }): GetPlayerOutputType["stats"] {
+    return {
+      id: args.id,
+      type: args.type,
+      name: args.name,
+      isUser: args.isUser,
+      plays: 0,
+      wins: 0,
+      winRate: 0,
+      coopPlays: 0,
+      coopWins: 0,
+      coopWinRate: 0,
+      competitivePlays: 0,
+      competitiveWins: 0,
+      competitiveWinRate: 0,
+      image:
+        args.image === null
+          ? null
+          : {
+              ...args.image,
+              usageType: "player",
+            },
+      placements: {},
+      playtime: 0,
+      streaks: {
+        current: {
+          type: "loss",
+          count: 0,
+        },
+        longest: {
+          type: "win",
+          count: 0,
+        },
+      },
+      recentForm: [],
+      gameStats: [],
     };
   }
 

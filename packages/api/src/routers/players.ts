@@ -55,28 +55,6 @@ const recomputePlacements = (
 };
 
 export const playerRouter = {
-  getPlayersByGame: protectedUserProcedure
-    .input(
-      z.object({
-        id: z.number(),
-        type: z.literal("original").or(z.literal("shared")),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      return playerService.getPlayersByGame({
-        ctx,
-        input:
-          input.type === "shared"
-            ? {
-                type: "shared",
-                sharedId: input.id,
-              }
-            : {
-                type: "original",
-                id: input.id,
-              },
-      });
-    }),
   getPlayersByGroup: protectedUserProcedure
     .input(
       z.object({
@@ -163,41 +141,6 @@ export const playerRouter = {
       });
 
       return mappedGroupResponse;
-    }),
-  getPlayers: protectedUserProcedure.query(async ({ ctx }) => {
-    return playerService.getPlayers({
-      ctx,
-    });
-  }),
-  getPlayer: protectedUserProcedure
-    .input(selectPlayerSchema.pick({ id: true }))
-    .query(async ({ ctx, input }) => {
-      const response = await playerService.getPlayer({
-        ctx,
-        input: {
-          id: input.id,
-          type: "original",
-        },
-      });
-      if (response.type !== "original") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Expected original player response.",
-        });
-      }
-      return {
-        id: response.id,
-        isUser: response.isUser,
-        createdAt: response.createdAt,
-        name: response.name,
-        image: response.image,
-        stats: response.stats,
-        teamStats: response.teamStats,
-        teammateFrequency: response.teammateFrequency,
-        headToHead: response.headToHead,
-        matches: response.matches,
-        games: response.games,
-      };
     }),
   getPlayerToShare: protectedUserProcedure
     .input(selectPlayerSchema.pick({ id: true }))

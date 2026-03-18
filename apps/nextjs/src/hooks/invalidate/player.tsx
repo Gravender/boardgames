@@ -7,7 +7,7 @@ export function useInvalidatePlayer() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   return useCallback(
-    (playerId: number, type: "original" | "shared" = "original") => {
+    (playerId: number, type: "original" | "shared") => {
       const input =
         type === "shared"
           ? {
