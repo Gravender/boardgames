@@ -11,7 +11,7 @@ import { ScrollArea } from "@board-games/ui/scroll-area";
 import { FormattedDate } from "~/components/formatted-date";
 import { PlayerImage } from "~/components/player-image";
 
-type Player = RouterOutputs["player"]["getPlayer"];
+type Player = RouterOutputs["newPlayer"]["getPlayer"];
 export function PlayerTeams({ player }: { player: Player }) {
   const favoriteTeammates = player.teammateFrequency
     .toSorted((a, b) => {

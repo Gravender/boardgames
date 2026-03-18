@@ -48,8 +48,9 @@ import { FormattedDate } from "~/components/formatted-date";
 import { GameImage } from "~/components/game-image";
 import { PlayerImage } from "~/components/player-image";
 
-type Player = RouterOutputs["player"]["getPlayer"];
+type Player = RouterOutputs["newPlayer"]["getPlayer"];
 export function PlayerOverview({ player }: { player: Player }) {
+  const playerId = player.type === "shared" ? player.sharedPlayerId : player.id;
   const [gameChartMode, setGameChartMode] = useState<
     "overall" | "competitive" | "cooperative"
   >("overall");
@@ -294,7 +295,7 @@ export function PlayerOverview({ player }: { player: Player }) {
                   .toSorted((a, b) => compareDesc(a.date, b.date))
                   .map((match) => {
                     const playerInMatch = match.players.find(
-                      (p) => p.id === player.id && p.type === "original",
+                      (p) => p.id === playerId && p.type === player.type,
                     );
                     const isWinner = playerInMatch?.isWinner;
                     const isCoop = match.scoresheet.isCoop;

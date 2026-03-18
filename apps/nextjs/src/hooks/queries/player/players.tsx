@@ -9,8 +9,18 @@ export const useGetPlayersByGame = (
   type: "original" | "shared",
 ) => {
   const trpc = useTRPC();
+  const input =
+    type === "shared"
+      ? {
+          type: "shared" as const,
+          sharedId: id,
+        }
+      : {
+          type: "original" as const,
+          id,
+        };
   const { data: gamePlayers } = useSuspenseQuery(
-    trpc.player.getPlayersByGame.queryOptions({ id, type }),
+    trpc.newPlayer.getPlayersByGame.queryOptions(input),
   );
   return {
     gamePlayers,

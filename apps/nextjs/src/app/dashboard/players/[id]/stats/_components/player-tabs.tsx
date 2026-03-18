@@ -36,7 +36,10 @@ import { PlayerOverview } from "./player-overview";
 import { PlayerTeams } from "./player-teams";
 import { PlayerTrends } from "./player-trends";
 
-type Player = RouterOutputs["player"]["getPlayer"];
+type Player = Extract<
+  RouterOutputs["newPlayer"]["getPlayer"],
+  { type: "original" }
+>;
 export function PlayerTabs({ player }: { player: Player }) {
   const [activeTab, setActiveTab] = useState("overview");
 

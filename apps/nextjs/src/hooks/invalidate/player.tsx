@@ -7,12 +7,20 @@ export function useInvalidatePlayer() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   return useCallback(
-    (playerId: number) => {
+    (playerId: number, type: "original" | "shared" = "original") => {
+      const input =
+        type === "shared"
+          ? {
+              type: "shared" as const,
+              sharedId: playerId,
+            }
+          : {
+              type: "original" as const,
+              id: playerId,
+            };
       return [
         queryClient.invalidateQueries(
-          trpc.player.getPlayer.queryOptions({
-            id: playerId,
-          }),
+          trpc.newPlayer.getPlayer.queryOptions(input),
         ),
       ];
     },
@@ -24,8 +32,10 @@ export function useInvalidatePlayers() {
   const queryClient = useQueryClient();
   return useCallback(() => {
     return [
-      queryClient.invalidateQueries(trpc.player.getPlayers.pathFilter()),
-      queryClient.invalidateQueries(trpc.player.getPlayersByGame.pathFilter()),
+      queryClient.invalidateQueries(trpc.newPlayer.getPlayers.pathFilter()),
+      queryClient.invalidateQueries(
+        trpc.newPlayer.getPlayersByGame.pathFilter(),
+      ),
     ];
   }, [queryClient, trpc]);
 }

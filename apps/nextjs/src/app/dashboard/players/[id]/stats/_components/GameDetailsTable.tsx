@@ -16,7 +16,7 @@ import {
 import { GameImage } from "~/components/game-image";
 import { SortIcon } from "~/components/sort-icon";
 
-type Games = NonNullable<RouterOutputs["player"]["getPlayer"]>["games"];
+type Games = NonNullable<RouterOutputs["newPlayer"]["getPlayer"]>["games"];
 type SortField =
   | "name"
   | "plays"

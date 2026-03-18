@@ -12,6 +12,42 @@ export interface GetRecentMatchWithPlayersArgs {
   };
 }
 
+export interface GetPlayersArgs {
+  ctx: {
+    userId: string;
+  };
+}
+
+export interface GetPlayersByGameArgs {
+  ctx: {
+    userId: string;
+  };
+  input:
+    | {
+        type: "original";
+        id: number;
+      }
+    | {
+        type: "shared";
+        sharedId: number;
+      };
+}
+
+export interface GetPlayerArgs {
+  ctx: {
+    userId: string;
+  };
+  input:
+    | {
+        type: "original";
+        id: number;
+      }
+    | {
+        type: "shared";
+        sharedId: number;
+      };
+}
+
 export interface CreatePlayerArgs {
   ctx: {
     userId: string;

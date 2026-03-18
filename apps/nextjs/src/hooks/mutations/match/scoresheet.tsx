@@ -247,7 +247,9 @@ export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
         );
         // Trigger broader cache invalidations after navigation.
         void Promise.all([
-          queryClient.invalidateQueries(trpc.match.getMatch.queryOptions(input)),
+          queryClient.invalidateQueries(
+            trpc.match.getMatch.queryOptions(input),
+          ),
           queryClient.invalidateQueries(
             trpc.match.getMatchScoresheet.queryOptions(input),
           ),

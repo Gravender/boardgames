@@ -9,6 +9,9 @@ import type {
 } from "../../routers/player/player.output";
 import type {
   CreatePlayerArgs,
+  GetPlayerArgs,
+  GetPlayersArgs,
+  GetPlayersByGameArgs,
   GetPlayersForMatchArgs,
   GetRecentMatchWithPlayersArgs,
   UpdatePlayerArgs,
@@ -17,6 +20,7 @@ import { imageRepository } from "../../repositories/image/image.repository";
 import { playerRepository } from "../../repositories/player/player.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 import { mapPlayer, sortPlayersForMatch } from "./player-match-sorting";
+import { playerReadService } from "./player.read.service";
 
 class PlayerService {
   private async getAuthorizedImageById(args: {
@@ -96,7 +100,11 @@ class PlayerService {
       });
 
       return Object.assign(
-        { sharedId: sharedPlayer.id, type: `shared` as const },
+        {
+          sharedId: sharedPlayer.id,
+          sharedPlayerId: sharedPlayer.id,
+          type: `shared` as const,
+        },
         mappedBase,
       );
     });
@@ -118,6 +126,18 @@ class PlayerService {
     return {
       recentMatches: response,
     };
+  }
+
+  public async getPlayers(args: GetPlayersArgs) {
+    return playerReadService.getPlayers(args);
+  }
+
+  public async getPlayersByGame(args: GetPlayersByGameArgs) {
+    return playerReadService.getPlayersByGame(args);
+  }
+
+  public async getPlayer(args: GetPlayerArgs) {
+    return playerReadService.getPlayer(args);
   }
 
   public async createPlayer(args: CreatePlayerArgs) {

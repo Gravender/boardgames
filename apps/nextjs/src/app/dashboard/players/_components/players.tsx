@@ -17,12 +17,21 @@ import { AddPlayerDialog } from "~/components/player/add-player-dialog";
 import { PlayerDropDown } from "~/components/player/player-dropdown";
 import { useTRPC } from "~/trpc/react";
 
-const getPlayerIdentity = (player: { id: number; type: string }) =>
-  `${player.id}-${player.type}`;
+const getPlayerId = (
+  player:
+    | { type: "original"; id: number }
+    | { type: "shared"; sharedPlayerId: number },
+) => (player.type === "shared" ? player.sharedPlayerId : player.id);
+
+const getPlayerIdentity = (
+  player:
+    | { type: "original"; id: number }
+    | { type: "shared"; sharedPlayerId: number },
+) => `${getPlayerId(player)}-${player.type}`;
 
 function usePlayersData(groupId?: number) {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(trpc.player.getPlayers.queryOptions());
+  const { data } = useSuspenseQuery(trpc.newPlayer.getPlayers.queryOptions());
   const { data: groupPlayers } = useQuery({
     ...trpc.player.getPlayersByGroup.queryOptions({
       group: { id: groupId ?? 0 },
@@ -94,7 +103,7 @@ function PlayersList({
                 <CardContent className="flex w-full items-center justify-between gap-2 p-3 pt-3">
                   <Link
                     prefetch={true}
-                    href={`/dashboard/players/${player.type === "shared" ? "shared/" : ""}${player.id}/stats`}
+                    href={`/dashboard/players/${player.type === "shared" ? "shared/" : ""}${getPlayerId(player)}/stats`}
                   >
                     <div className="flex items-center gap-2">
                       <PlayerImage

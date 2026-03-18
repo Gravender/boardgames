@@ -33,7 +33,9 @@ const sharedPlayerSchema = insertPlayerSchema
     imageUrl: fileSchema.or(z.string().nullable()),
   });
 
-type PlayerType = RouterOutputs["player"]["getPlayers"][number];
+type PlayerType = RouterOutputs["newPlayer"]["getPlayers"][number];
+type OriginalPlayerType = Extract<PlayerType, { type: "original" }>;
+type SharedPlayerType = Extract<PlayerType, { type: "shared" }>;
 interface PlayerValues {
   name: string;
   imageUrl: File | string | null;
@@ -77,7 +79,7 @@ const useUpdateOriginalPlayer = ({
     values,
     imageId,
   }: {
-    player: PlayerType;
+    player: OriginalPlayerType;
     values: PlayerValues;
     imageId: number | undefined;
   }) => {
@@ -170,7 +172,7 @@ const useUpdateSharedPlayer = ({
     player,
     values,
   }: {
-    player: PlayerType;
+    player: SharedPlayerType;
     values: PlayerValues;
   }) => {
     const nameChanged = values.name !== player.name;
@@ -179,7 +181,7 @@ const useUpdateSharedPlayer = ({
     }
     await updatePlayerMutation.mutateAsync({
       type: "shared",
-      id: player.id,
+      id: player.sharedPlayerId,
       name: values.name,
     });
     handleMutationSuccess();
@@ -344,7 +346,7 @@ export const EditPlayerDialog = ({
   player,
   setOpen,
 }: {
-  player: RouterOutputs["player"]["getPlayers"][number];
+  player: PlayerType;
   setOpen: (isOpen: boolean) => void;
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -379,7 +381,7 @@ const PlayerContent = ({
   setIsSubmitting,
 }: {
   setOpen: (isOpen: boolean) => void;
-  player: RouterOutputs["player"]["getPlayers"][number];
+  player: PlayerType;
   isSubmitting: boolean;
   setIsSubmitting: (isSubmitting: boolean) => void;
 }) => {
