@@ -12,7 +12,11 @@ import {
   round,
   roundPlayer,
   scoresheet,
+  sharedGame,
+  sharedMatch,
+  sharedMatchPlayer,
   sharedPlayer,
+  sharedScoresheet,
   team,
   user,
   userSharingPreference,
@@ -182,9 +186,59 @@ async function deleteUserRecord(userId: string) {
 }
 
 /**
+ * Helper function to delete shared-domain rows where a user appears
+ * as either owner or recipient.
+ */
+async function deleteUserSharedArtifacts(userId: string) {
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(sharedMatchPlayer)
+      .where(
+        or(
+          eq(sharedMatchPlayer.ownerId, userId),
+          eq(sharedMatchPlayer.sharedWithId, userId),
+        ),
+      );
+    await tx
+      .delete(sharedMatch)
+      .where(
+        or(
+          eq(sharedMatch.ownerId, userId),
+          eq(sharedMatch.sharedWithId, userId),
+        ),
+      );
+    await tx
+      .delete(sharedScoresheet)
+      .where(
+        or(
+          eq(sharedScoresheet.ownerId, userId),
+          eq(sharedScoresheet.sharedWithId, userId),
+        ),
+      );
+    await tx
+      .delete(sharedGame)
+      .where(
+        or(eq(sharedGame.ownerId, userId), eq(sharedGame.sharedWithId, userId)),
+      );
+    await tx
+      .delete(sharedPlayer)
+      .where(
+        or(
+          eq(sharedPlayer.ownerId, userId),
+          eq(sharedPlayer.sharedWithId, userId),
+        ),
+      );
+  });
+}
+
+/**
  * Helper function to delete a test user from the database and all related data
  */
 export async function deleteTestUser(userId: string) {
+  // Clean shared artifacts first so dangling rows never survive between tests
+  // when this user is owner or recipient.
+  await deleteUserSharedArtifacts(userId);
+
   const [returnedUser] = await db
     .select()
     .from(user)
