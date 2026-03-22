@@ -1,7 +1,4 @@
-import type { PostHog } from "posthog-node";
 import { TRPCError } from "@trpc/server";
-
-import type { TransactionType } from "@board-games/db/client";
 
 export function assertFound<T>(
   value: T | null | undefined,
@@ -48,25 +45,4 @@ export function assertUpdated<T>(
       message,
     });
   }
-}
-
-export interface BaseRepoArgs<TInput> {
-  input: TInput;
-  tx?: TransactionType;
-}
-export interface BaseServiceArgs<TInput> {
-  input: TInput;
-  ctx: {
-    userId: string;
-    posthog: PostHog;
-  };
-}
-
-export interface WithTx {
-  tx?: TransactionType;
-}
-
-export interface UserScopedArgs<T> {
-  input: T;
-  userId: string;
 }

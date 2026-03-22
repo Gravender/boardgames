@@ -1,4 +1,4 @@
-import type { BaseRepoArgs } from "../../utils/databaseHelpers";
+import type { BaseRepoArgs } from "../../utils/shared-args.types";
 
 export type UpdateMatchPlayerDetailsRepoArgs = BaseRepoArgs<{
   id: number;

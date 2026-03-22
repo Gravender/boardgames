@@ -2,7 +2,7 @@ import type z from "zod";
 
 import { insertSharedMatchPlayerSchema } from "@board-games/db/zodSchema";
 
-import type { BaseRepoArgs } from "../../utils/databaseHelpers";
+import type { BaseRepoArgs } from "../../utils/shared-args.types";
 
 export const insertSharedMatchPlayerSchemaInput =
   insertSharedMatchPlayerSchema.omit({

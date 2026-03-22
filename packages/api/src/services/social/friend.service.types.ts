@@ -1,4 +1,7 @@
-import type { TransactionType } from "@board-games/db/client";
+import type {
+  WithRepoUserIdInputRequiredTx,
+  WithUserIdCtx,
+} from "../../utils/shared-args.types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -23,11 +26,9 @@ export interface ShareFriendConfig {
 }
 
 /** Common context threaded through every sharing helper. */
-export interface ShareContext {
-  userId: string;
-  input: { matchId: number };
-  tx: TransactionType;
-}
+export type ShareContext = WithRepoUserIdInputRequiredTx<{
+  matchId: number;
+}>;
 
 /** Match data shape required by auto-share helpers (structural subset). */
 export interface AutoShareMatchData {
@@ -66,11 +67,6 @@ export type SharedScoresheetResult = {
 } | null;
 export type SharedMatchResult = { sharedMatchId: number } | null;
 
-export interface GetFriendSettingsArgs {
-  ctx: {
-    userId: string;
-  };
-  input: {
-    friendId: string;
-  };
-}
+export type GetFriendSettingsArgs = WithUserIdCtx<{
+  friendId: string;
+}>;

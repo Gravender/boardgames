@@ -1,22 +1,23 @@
 import type { z } from "zod/v4";
 
-import type { TransactionType } from "@board-games/db/client";
 import { insertGameRoleSchema } from "@board-games/db/zodSchema";
 
 import type {
   CreateGameInputType,
   GetGameInputType,
 } from "../../routers/game/game.input";
+import type {
+  WithRepoUserIdInput,
+  WithRepoUserIdInputRequiredTx,
+  WithTxInput,
+} from "../../utils/shared-args.types";
 
-export interface GetGameArgs {
-  input: GetGameInputType;
-  userId: string;
-}
-export interface CreateGameArgs {
-  input: CreateGameInputType["game"] & { imageId: number | null };
-  userId: string;
-  tx?: TransactionType;
-}
+export type GetGameArgs = WithRepoUserIdInput<GetGameInputType>;
+
+export type CreateGameArgs = WithRepoUserIdInput<
+  CreateGameInputType["game"] & { imageId: number | null }
+>;
+
 const createGameRoleInput = insertGameRoleSchema.omit({
   id: true,
   createdAt: true,
@@ -24,14 +25,11 @@ const createGameRoleInput = insertGameRoleSchema.omit({
   deletedAt: true,
 });
 type CreateGameRoleInputType = z.infer<typeof createGameRoleInput>;
-export interface CreateGameRoleArgs {
-  input: CreateGameRoleInputType;
-  tx?: TransactionType;
-}
-export interface CreateGameRolesArgs {
-  input: CreateGameRoleInputType[];
-  tx?: TransactionType;
-}
+
+export type CreateGameRoleArgs = WithTxInput<CreateGameRoleInputType>;
+
+export type CreateGameRolesArgs = WithTxInput<CreateGameRoleInputType[]>;
+
 export interface GetGameMatchesOutputType {
   matches: {
     id: number;
@@ -86,66 +84,43 @@ export interface GetGameMatchesOutputType {
   };
 }
 
-export interface GetGameRolesArgs {
-  input: {
-    sourceType: "original" | "shared";
-    canonicalGameId: number;
-  };
-  userId: string;
-  tx: TransactionType;
-}
+export type GetGameRolesArgs = WithRepoUserIdInputRequiredTx<{
+  sourceType: "original" | "shared";
+  canonicalGameId: number;
+}>;
 
-export interface UpdateGameArgs {
-  input: {
-    id: number;
-    name?: string;
-    ownedBy?: boolean | null;
-    playersMin?: number | null;
-    playersMax?: number | null;
-    playtimeMin?: number | null;
-    playtimeMax?: number | null;
-    yearPublished?: number | null;
-    imageId?: number | null;
-  };
-  tx?: TransactionType;
-}
+export type UpdateGameArgs = WithTxInput<{
+  id: number;
+  name?: string;
+  ownedBy?: boolean | null;
+  playersMin?: number | null;
+  playersMax?: number | null;
+  playtimeMin?: number | null;
+  playtimeMax?: number | null;
+  yearPublished?: number | null;
+  imageId?: number | null;
+}>;
 
-export interface UpdateGameRoleArgs {
-  input: {
-    id: number;
-    name: string;
-    description: string | null;
-  };
-  tx?: TransactionType;
-}
+export type UpdateGameRoleArgs = WithTxInput<{
+  id: number;
+  name: string;
+  description: string | null;
+}>;
 
-export interface DeleteGameRoleArgs {
-  input: {
-    gameId: number;
-    roleIds: number[];
-  };
-  tx?: TransactionType;
-}
+export type DeleteGameRoleArgs = WithTxInput<{
+  gameId: number;
+  roleIds: number[];
+}>;
 
-export interface GetSharedRoleArgs {
-  input: {
-    sharedRoleId: number;
-  };
-  userId: string;
-  tx?: TransactionType;
-}
+export type GetSharedRoleArgs = WithRepoUserIdInput<{
+  sharedRoleId: number;
+}>;
 
-export interface DeleteSharedGameRoleArgs {
-  input: {
-    sharedRoleIds: number[];
-  };
-  tx?: TransactionType;
-}
+export type DeleteSharedGameRoleArgs = WithTxInput<{
+  sharedRoleIds: number[];
+}>;
 
-export interface GetGameStatsHeaderArgs {
-  input: GetGameInputType;
-  userId: string;
-}
+export type GetGameStatsHeaderArgs = WithRepoUserIdInput<GetGameInputType>;
 
 export interface GetGameStatsHeaderOutputType {
   winRate: number; // 0-100 percentage
@@ -157,18 +132,9 @@ export interface GetGameStatsHeaderOutputType {
   userMatchesPlayed: number;
 }
 
-export interface GetGameScoresheetStatsDataArgs {
-  input: GetGameInputType;
-  userId: string;
-  tx?: TransactionType;
-}
+export type GetGameScoresheetStatsDataArgs =
+  WithRepoUserIdInput<GetGameInputType>;
 
-export interface GetGameInsightsDataArgs {
-  input: GetGameInputType;
-  userId: string;
-}
+export type GetGameInsightsDataArgs = WithRepoUserIdInput<GetGameInputType>;
 
-export interface GetGameInsightsRoleDataArgs {
-  input: GetGameInputType;
-  userId: string;
-}
+export type GetGameInsightsRoleDataArgs = WithRepoUserIdInput<GetGameInputType>;

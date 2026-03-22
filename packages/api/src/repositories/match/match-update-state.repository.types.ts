@@ -1,5 +1,5 @@
 import type { UpdateMatchCommentInputType } from "../../routers/match/sub-routers/update-match/update-match.input";
-import type { BaseRepoArgs } from "../../utils/databaseHelpers";
+import type { BaseRepoArgs } from "../../utils/shared-args.types";
 
 export type MatchStartRepoArgs = BaseRepoArgs<{
   id: number;
