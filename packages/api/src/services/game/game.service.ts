@@ -19,6 +19,7 @@ import { roundRepository } from "../../repositories/scoresheet/round.repository"
 import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
 import { friendRepository } from "../../repositories/social/friend.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
+import { mapGameImageRowWithLogging } from "../../utils/image";
 
 class GameService {
   public async createGame(args: CreateGameArgs) {
@@ -205,28 +206,18 @@ class GameService {
           },
           "Game not found",
         );
-        if (returnedGame.image?.usageType !== "game") {
-          await ctx.posthog.captureImmediate({
-            distinctId: ctx.userId,
-            event: "game image not found",
-            properties: {
-              gameId: returnedGame.id,
-            },
-          });
-        }
+        const originalGameImage = await mapGameImageRowWithLogging({
+          ctx,
+          input: {
+            image: returnedGame.image,
+            gameId: returnedGame.id,
+          },
+        });
         return {
           type: "original" as const,
           id: returnedGame.id,
           name: returnedGame.name,
-          image:
-            returnedGame.image?.usageType === "game"
-              ? {
-                  name: returnedGame.image.name,
-                  url: returnedGame.image.url,
-                  type: returnedGame.image.type,
-                  usageType: "game" as const,
-                }
-              : null,
+          image: originalGameImage,
           players: {
             min: returnedGame.playersMin,
             max: returnedGame.playersMax,
@@ -291,29 +282,19 @@ class GameService {
           },
           "Shared by not found",
         );
-        if (returnedSharedGame.game.image?.usageType !== "game") {
-          await ctx.posthog.captureImmediate({
-            distinctId: ctx.userId,
-            event: "game image not found",
-            properties: {
-              gameId: returnedSharedGame.game.id,
-            },
-          });
-        }
+        const sharedGameImage = await mapGameImageRowWithLogging({
+          ctx,
+          input: {
+            image: returnedSharedGame.game.image,
+            gameId: returnedSharedGame.game.id,
+          },
+        });
         return {
           type: "shared" as const,
           id: returnedSharedGame.game.id,
           sharedGameId: returnedSharedGame.id,
           name: returnedSharedGame.game.name,
-          image:
-            returnedSharedGame.game.image?.usageType === "game"
-              ? {
-                  name: returnedSharedGame.game.image.name,
-                  url: returnedSharedGame.game.image.url,
-                  type: returnedSharedGame.game.image.type,
-                  usageType: "game" as const,
-                }
-              : null,
+          image: sharedGameImage,
           players: {
             min: returnedSharedGame.game.playersMin,
             max: returnedSharedGame.game.playersMax,

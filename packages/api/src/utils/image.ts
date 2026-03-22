@@ -53,9 +53,15 @@ export type MapGameImageRowInput = {
   gameId: number;
 };
 
+/** Minimum fields to map a joined row to {@link PlayerImage} / {@link GameImage} (`id` not required). */
+export type ImageRowUsageFields = Pick<
+  ImageRowWithUsage,
+  "name" | "url" | "type" | "usageType"
+>;
+
 /** Map without side effects. Returns `null` when the row is missing or `usageType` is not `player`. */
 export function mapImageRowToPlayerImage(
-  row: ImageRowWithUsage | null,
+  row: ImageRowUsageFields | null,
 ): PlayerImage | null {
   if (row === null || row.usageType !== "player") {
     return null;
@@ -70,7 +76,7 @@ export function mapImageRowToPlayerImage(
 
 /** Map without side effects. Returns `null` when the row is missing or `usageType` is not `game`. */
 export function mapImageRowToGameImage(
-  row: ImageRowWithUsage | null,
+  row: ImageRowUsageFields | null,
 ): GameImage | null {
   if (row === null || row.usageType !== "game") {
     return null;

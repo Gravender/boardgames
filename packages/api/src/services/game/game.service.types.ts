@@ -1,12 +1,9 @@
-import { z } from "zod/v4";
-
 import type {
   CreateGameInputType,
   EditGameInputType,
   GetGameInputType,
   ImportBGGGamesInputType,
 } from "../../routers/game/game.input";
-import { getGameInput } from "../../routers/game/game.input";
 import type {
   PosthogUserCtx,
   WithPosthogUserCtx,
@@ -41,13 +38,7 @@ export type EditGameArgs = WithServiceCtx<EditGameCtx, EditGameInputType>;
 
 export type GetGameStatsHeaderArgs = WithUserIdCtx<GetGameInputType>;
 
-export const getGamePlayerStatsArgsSchema = z.object({
-  input: getGameInput,
-  ctx: z.object({ userId: z.string() }),
-});
-export type GetGamePlayerStatsArgs = z.infer<
-  typeof getGamePlayerStatsArgsSchema
->;
+export type GetGamePlayerStatsArgs = WithPosthogUserCtx<GetGameInputType>;
 
 export type GetGameScoresheetStatsArgs = WithUserIdCtx<GetGameInputType>;
 

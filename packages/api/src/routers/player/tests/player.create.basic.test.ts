@@ -90,8 +90,8 @@ describe("Player Create - Basic Tests", () => {
       });
       expect(result.id).toBeDefined();
       expect(result.image).toBeDefined();
-      expect(result.image?.id).toBe(createdImage.id);
       expect(result.image?.name).toBe("Test Image");
+      expect(result.image?.usageType).toBe("player");
     });
 
     test("creates multiple players", async () => {

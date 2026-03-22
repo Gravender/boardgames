@@ -4,21 +4,28 @@ import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 
 import type {
+  GetPlayerHeaderOutputType,
   GetPlayersForMatchOutputType,
+  GetPlayerSummaryOutputType,
   GetRecentMatchWithPlayersOutputType,
 } from "../../routers/player/player.output";
 import type {
   CreatePlayerArgs,
-  GetPlayerArgs,
+  GetPlayerHeaderArgs,
   GetPlayersArgs,
   GetPlayersByGameArgs,
   GetPlayersForMatchArgs,
+  GetPlayerSummaryArgs,
   GetRecentMatchWithPlayersArgs,
   UpdatePlayerArgs,
 } from "./player.service.types";
 import { imageRepository } from "../../repositories/image/image.repository";
 import { playerRepository } from "../../repositories/player/player.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
+import {
+  mapImageRowToPlayerImage,
+  mapPlayerImageRowWithLogging,
+} from "../../utils/image";
 import { mapPlayer, sortPlayersForMatch } from "./player-match-sorting";
 import { playerReadService } from "./player.read.service";
 
@@ -44,6 +51,13 @@ class PlayerService {
       },
       "Image not found.",
     );
+
+    if (returnedImage.usageType !== "player") {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Image must be a player image.",
+      });
+    }
 
     if (returnedImage.createdBy && returnedImage.createdBy !== args.userId) {
       throw new TRPCError({
@@ -73,7 +87,7 @@ class PlayerService {
       const mappedBase = mapPlayer({
         base: {
           name: player.name,
-          image: player.image,
+          image: mapImageRowToPlayerImage(player.image),
           isUser: player.isUser,
           matches: mergedMatches,
         },
@@ -92,7 +106,7 @@ class PlayerService {
       const mappedBase = mapPlayer({
         base: {
           name: sharedPlayer.player.name,
-          image: sharedPlayer.player.image,
+          image: mapImageRowToPlayerImage(sharedPlayer.player.image),
           isUser: false,
           matches,
         },
@@ -124,7 +138,16 @@ class PlayerService {
       createdBy: args.ctx.userId,
     });
     return {
-      recentMatches: response,
+      recentMatches: response.map((match) => ({
+        id: match.id,
+        name: match.name,
+        date: match.date,
+        players: match.players.map((p) => ({
+          id: p.id,
+          name: p.name,
+          image: mapImageRowToPlayerImage(p.image),
+        })),
+      })),
     };
   }
 
@@ -134,10 +157,6 @@ class PlayerService {
 
   public async getPlayersByGame(args: GetPlayersByGameArgs) {
     return playerReadService.getPlayersByGame(args);
-  }
-
-  public async getPlayer(args: GetPlayerArgs) {
-    return playerReadService.getPlayer(args);
   }
 
   public async createPlayer(args: CreatePlayerArgs) {
@@ -175,7 +194,7 @@ class PlayerService {
     return {
       id: returnedPlayer.id,
       name: returnedPlayer.name,
-      image: returnedPlayerImage?.image ?? null,
+      image: mapImageRowToPlayerImage(returnedPlayerImage?.image ?? null),
       matches: 0,
       team: 0,
     };
@@ -351,6 +370,83 @@ class PlayerService {
         error,
       });
     }
+  }
+
+  public async getPlayerHeader(
+    args: GetPlayerHeaderArgs,
+  ): Promise<GetPlayerHeaderOutputType> {
+    const { ctx, input } = args;
+    if (input.type === "original") {
+      const returnedPlayer = await playerRepository.getPlayer({
+        id: input.id,
+        createdBy: args.ctx.userId,
+        with: {
+          image: true,
+        },
+      });
+      assertFound(
+        returnedPlayer,
+        {
+          userId: args.ctx.userId,
+          value: args.input,
+        },
+        "Player not found.",
+      );
+      const playerImage = await mapPlayerImageRowWithLogging({
+        ctx: args.ctx,
+        input: {
+          image: returnedPlayer.image,
+          playerId: returnedPlayer.id,
+        },
+      });
+      return {
+        type: "original" as const,
+        id: returnedPlayer.id,
+        name: returnedPlayer.name,
+        image: playerImage,
+        isUser: returnedPlayer.isUser,
+      };
+    }
+
+    const returnedSharedPlayer = await playerRepository.getSharedPlayer({
+      id: input.sharedPlayerId,
+      sharedWithId: ctx.userId,
+      with: {
+        player: {
+          with: {
+            image: true,
+          },
+        },
+      },
+    });
+    assertFound(
+      returnedSharedPlayer,
+      {
+        userId: ctx.userId,
+        value: input,
+      },
+      "Player not found.",
+    );
+    const sharedPlayerImage = await mapPlayerImageRowWithLogging({
+      ctx: args.ctx,
+      input: {
+        image: returnedSharedPlayer.player.image,
+        playerId: returnedSharedPlayer.player.id,
+      },
+    });
+    return {
+      type: "shared" as const,
+      sharedPlayerId: returnedSharedPlayer.id,
+      name: returnedSharedPlayer.player.name,
+      image: sharedPlayerImage,
+      permissions: returnedSharedPlayer.permission,
+    };
+  }
+
+  public async getPlayerSummary(
+    args: GetPlayerSummaryArgs,
+  ): Promise<GetPlayerSummaryOutputType> {
+    return playerReadService.getPlayerSummary(args);
   }
 }
 

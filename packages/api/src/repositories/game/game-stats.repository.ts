@@ -41,6 +41,7 @@ class GameStatsRepository {
         sharedId: vMatchPlayerCanonicalForUser.sharedPlayerId,
         name: player.name,
         image: caseWhen<{
+          id: number;
           name: string;
           url: string | null;
           type: "file" | "svg";
@@ -48,6 +49,7 @@ class GameStatsRepository {
         } | null>(sql`${image.id} IS NULL`, sql`NULL`)
           .else(
             jsonBuildObject({
+              id: image.id,
               name: image.name,
               url: image.url,
               type: image.type,
