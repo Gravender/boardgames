@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, isNull, ne, or, sql } from "drizzle-orm";
+import { and, eq, isNull, ne, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { caseWhen } from "drizzle-plus";
 import { jsonBuildObject } from "drizzle-plus/pg";
@@ -21,6 +21,11 @@ import {
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
 
+import {
+  vMatchCanonicalVisibleToUser,
+  vMatchPlayerCanonicalViewerForUser,
+  vMatchPlayerCanonicalViewerForUserExcludingNotSharedOnSharedBranch,
+} from "../../utils/drizzle/canonical-clauses";
 import type {
   GetGameArgs,
   GetGameScoresheetStatsDataArgs,
@@ -73,16 +78,9 @@ class GameStatsRepository {
             vMatchPlayerCanonicalForUser.canonicalMatchId,
             vMatchCanonical.matchId,
           ),
-          or(
-            and(
-              eq(vMatchPlayerCanonicalForUser.ownerId, userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
-            ),
-            and(
-              eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
-              ne(vMatchPlayerCanonicalForUser.playerSourceType, "not-shared"),
-            ),
+          vMatchPlayerCanonicalViewerForUserExcludingNotSharedOnSharedBranch(
+            vMatchPlayerCanonicalForUser,
+            userId,
           ),
         ),
       )
@@ -97,11 +95,11 @@ class GameStatsRepository {
           input.type === "original"
             ? and(
                 eq(vMatchCanonical.canonicalGameId, input.id),
-                eq(vMatchCanonical.visibleToUserId, userId),
+                vMatchCanonicalVisibleToUser(vMatchCanonical, userId),
               )
             : and(
                 eq(vMatchCanonical.sharedGameId, input.sharedGameId),
-                eq(vMatchCanonical.visibleToUserId, userId),
+                vMatchCanonicalVisibleToUser(vMatchCanonical, userId),
               ),
         ),
       );
@@ -138,15 +136,9 @@ class GameStatsRepository {
         .where(
           and(
             eq(vMatchPlayerCanonicalForUser.canonicalPlayerId, userPlayer.id),
-            or(
-              and(
-                eq(vMatchPlayerCanonicalForUser.ownerId, userId),
-                eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
-              ),
-              and(
-                eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
-                eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
-              ),
+            vMatchPlayerCanonicalViewerForUser(
+              vMatchPlayerCanonicalForUser,
+              userId,
             ),
           ),
         )
@@ -176,7 +168,7 @@ class GameStatsRepository {
           input.type === "original"
             ? eq(vMatchCanonical.canonicalGameId, input.id)
             : eq(vMatchCanonical.sharedGameId, input.sharedGameId),
-          eq(vMatchCanonical.visibleToUserId, userId),
+          vMatchCanonicalVisibleToUser(vMatchCanonical, userId),
         ),
       );
 
@@ -340,7 +332,7 @@ class GameStatsRepository {
       .where(
         and(
           eq(vMatchCanonical.finished, true),
-          eq(vMatchCanonical.visibleToUserId, userId),
+          vMatchCanonicalVisibleToUser(vMatchCanonical, userId),
           input.type === "original"
             ? eq(vMatchCanonical.canonicalGameId, input.id)
             : eq(vMatchCanonical.sharedGameId, input.sharedGameId),

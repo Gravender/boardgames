@@ -1,10 +1,4 @@
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  test,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import type { InsightsUserIds } from "./player.insights.test-utils";
 import {

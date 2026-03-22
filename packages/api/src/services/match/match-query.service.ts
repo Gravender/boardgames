@@ -100,6 +100,22 @@ class MatchQueryService {
     return matchRepository.getPlayerInsightsMatches({
       userId: args.ctx.userId,
       input: args.input,
+      tx: args.tx,
+    });
+  }
+
+  public async getPlayerInsightsMatchSummaries(
+    args: GetPlayerInsightsMatchesArgs & {
+      order?: "asc" | "desc";
+      limit?: number;
+    },
+  ) {
+    return matchRepository.getPlayerInsightsMatchSummaries({
+      userId: args.ctx.userId,
+      input: args.input,
+      order: args.order,
+      limit: args.limit,
+      tx: args.tx,
     });
   }
 

@@ -326,25 +326,6 @@ export const getPlayerRecentMatchesOutput = z.object({
   matches: z.array(playerInsightsMatchEntrySchema),
 });
 
-export const getPlayerGamePerformanceTableOutput = z.object({
-  player: playerInsightsTargetSchema,
-  rows: z.array(
-    z.object({
-      game: playerInsightsGameEntrySchema,
-      matches: z.number(),
-      wins: z.number(),
-      losses: z.number(),
-      ties: z.number(),
-      winRate: z.number(),
-      avgPlacement: z.number().nullable(),
-      avgScore: z.number().nullable(),
-      bestScore: z.number().nullable(),
-      worstScore: z.number().nullable(),
-      totalPlaytime: z.number(),
-    }),
-  ),
-});
-
 export const getPlayerGameWinRateChartsOutput = z.object({
   player: playerInsightsTargetSchema,
   series: z.object({
@@ -399,28 +380,6 @@ export const getPlayerTopTeammatesOutput = z.object({
       winsTogether: z.number(),
       winRateTogether: z.number(),
       avgTeamPlacement: z.number().nullable(),
-    }),
-  ),
-});
-
-export const getPlayerGroupAnalysisOutput = z.object({
-  player: playerInsightsTargetSchema,
-  groups: z.array(
-    z.object({
-      signature: z.string(),
-      players: z.array(
-        z.object({
-          type: z.enum(["original", "shared"]),
-          id: z.number(),
-          sharedId: z.number().optional(),
-          name: z.string(),
-        }),
-      ),
-      matches: z.number(),
-      wins: z.number(),
-      winRate: z.number(),
-      avgScore: z.number().nullable(),
-      avgPlacement: z.number().nullable(),
     }),
   ),
 });
@@ -558,9 +517,6 @@ export type GetPlayerFavoriteGamesOutputType = z.infer<
 export type GetPlayerRecentMatchesOutputType = z.infer<
   typeof getPlayerRecentMatchesOutput
 >;
-export type GetPlayerGamePerformanceTableOutputType = z.infer<
-  typeof getPlayerGamePerformanceTableOutput
->;
 export type GetPlayerGameWinRateChartsOutputType = z.infer<
   typeof getPlayerGameWinRateChartsOutput
 >;
@@ -569,9 +525,6 @@ export type GetPlayerTopRivalsOutputType = z.infer<
 >;
 export type GetPlayerTopTeammatesOutputType = z.infer<
   typeof getPlayerTopTeammatesOutput
->;
-export type GetPlayerGroupAnalysisOutputType = z.infer<
-  typeof getPlayerGroupAnalysisOutput
 >;
 export type GetPlayerPlayedWithGroupsOutputType = z.infer<
   typeof getPlayerPlayedWithGroupsOutput

@@ -92,7 +92,9 @@ describe("Game getGames Tests", () => {
       await otherLifecycle.createTestUser();
 
       try {
-        const otherCaller = await createAuthenticatedCaller(otherLifecycle.userId);
+        const otherCaller = await createAuthenticatedCaller(
+          otherLifecycle.userId,
+        );
         await createGameWithScoresheet(otherCaller, "Other User Game");
 
         const myGames = await caller.game.getGames();

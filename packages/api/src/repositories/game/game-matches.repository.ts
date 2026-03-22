@@ -1,6 +1,6 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, or, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { caseWhen } from "drizzle-plus";
 import { jsonAgg, jsonAggNotNull, jsonBuildObject } from "drizzle-plus/pg";
 
@@ -19,6 +19,10 @@ import {
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
 
+import {
+  vMatchCanonicalVisibleToUser,
+  vMatchPlayerCanonicalViewerForUser,
+} from "../../utils/drizzle/canonical-clauses";
 import type { GetGameArgs } from "./game.repository.types";
 
 class GameMatchesRepository {
@@ -102,15 +106,9 @@ class GameMatchesRepository {
         )
         .from(vMatchPlayerCanonicalForUser)
         .where(
-          or(
-            and(
-              eq(vMatchPlayerCanonicalForUser.ownerId, args.userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
-            ),
-            and(
-              eq(vMatchPlayerCanonicalForUser.sharedWithId, args.userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
-            ),
+          vMatchPlayerCanonicalViewerForUser(
+            vMatchPlayerCanonicalForUser,
+            args.userId,
           ),
         )
         .innerJoin(
@@ -279,7 +277,7 @@ class GameMatchesRepository {
         userId: args.userId,
         where: and(
           eq(vMatchCanonical.canonicalGameId, returnedGame.id),
-          eq(vMatchCanonical.visibleToUserId, args.userId),
+          vMatchCanonicalVisibleToUser(vMatchCanonical, args.userId),
         ),
       });
 
@@ -305,7 +303,7 @@ class GameMatchesRepository {
         userId: args.userId,
         where: and(
           eq(vMatchCanonical.sharedGameId, returnedSharedGame.id),
-          eq(vMatchCanonical.visibleToUserId, args.userId),
+          vMatchCanonicalVisibleToUser(vMatchCanonical, args.userId),
         ),
       });
 

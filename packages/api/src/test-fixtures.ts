@@ -124,7 +124,9 @@ export const testLifecycle = () => {
     },
     get userId(): string {
       if (!userId) {
-        throw new Error("createTestUser() must be called before accessing userId");
+        throw new Error(
+          "createTestUser() must be called before accessing userId",
+        );
       }
       return userId;
     },

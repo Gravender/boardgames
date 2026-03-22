@@ -7,6 +7,7 @@ import type {
 } from "../../routers/match/match.input";
 import type { GetPlayerInsightsInputType } from "../../routers/player/player.input";
 import type {
+  WithOptionalTx,
   WithPosthogUserCtx,
   WithUserIdCtx,
 } from "../../utils/shared-args.types";
@@ -16,7 +17,7 @@ export type CreateMatchArgs = WithPosthogUserCtx<CreateMatchInputType>;
 export type GetMatchArgs = WithUserIdCtx<GetMatchInputType>;
 
 export type GetPlayerInsightsMatchesArgs =
-  WithUserIdCtx<GetPlayerInsightsInputType>;
+  WithUserIdCtx<GetPlayerInsightsInputType> & WithOptionalTx;
 
 export type GetMatchScoresheetArgs = WithUserIdCtx<GetMatchInputType>;
 

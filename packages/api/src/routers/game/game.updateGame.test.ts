@@ -184,7 +184,9 @@ describe("Game updateGame Tests", () => {
       await otherLifecycle.createTestUser();
 
       try {
-        const otherCaller = await createAuthenticatedCaller(otherLifecycle.userId);
+        const otherCaller = await createAuthenticatedCaller(
+          otherLifecycle.userId,
+        );
         await expect(
           otherCaller.game.updateGame({
             game: {

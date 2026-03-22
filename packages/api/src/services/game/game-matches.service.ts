@@ -11,7 +11,10 @@ import { gameMatchesRepository } from "../../repositories/game/game-matches.repo
 import { gameRoleRepository } from "../../repositories/game/game-role.repository";
 import { gameRepository } from "../../repositories/game/game.repository";
 import { assertFound } from "../../utils/databaseHelpers";
-import { mapImageRowToGameImage, mapImageRowToPlayerImage } from "../../utils/image";
+import {
+  mapImageRowToGameImage,
+  mapImageRowToPlayerImage,
+} from "../../utils/image";
 
 type RepositoryMatchRow = Awaited<
   ReturnType<typeof gameMatchesRepository.getGameMatches>

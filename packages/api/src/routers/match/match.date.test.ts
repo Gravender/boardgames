@@ -171,7 +171,9 @@ describe("Match Date - getMatchesByDate & getMatchesByCalendar", () => {
         await otherLifecycle.createTestUser();
 
         try {
-          const otherCaller = await createAuthenticatedCaller(otherLifecycle.userId);
+          const otherCaller = await createAuthenticatedCaller(
+            otherLifecycle.userId,
+          );
           await ensureUserPlayer(otherCaller);
           await createFullMatch(otherCaller, {
             matchName: "Other User Match",
@@ -291,7 +293,9 @@ describe("Match Date - getMatchesByDate & getMatchesByCalendar", () => {
         await otherLifecycle.createTestUser();
 
         try {
-          const otherCaller = await createAuthenticatedCaller(otherLifecycle.userId);
+          const otherCaller = await createAuthenticatedCaller(
+            otherLifecycle.userId,
+          );
           await ensureUserPlayer(otherCaller);
           const otherDate = new Date("2025-06-01");
           await createFullMatch(otherCaller, {

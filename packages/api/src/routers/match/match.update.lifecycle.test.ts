@@ -73,7 +73,9 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
       await otherLifecycle.createTestUser();
 
       try {
-        const otherCaller = await createAuthenticatedCaller(otherLifecycle.userId);
+        const otherCaller = await createAuthenticatedCaller(
+          otherLifecycle.userId,
+        );
         await expect(
           otherCaller.match.update.matchStart({
             type: "original",

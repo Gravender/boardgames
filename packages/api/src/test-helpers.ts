@@ -85,9 +85,7 @@ async function deleteUserGames(userId: string) {
       }
       if (matches.length > 0) {
         await tx.delete(team).where(inArray(team.matchId, matches));
-        await tx
-          .delete(matchImage)
-          .where(inArray(matchImage.matchId, matches));
+        await tx.delete(matchImage).where(inArray(matchImage.matchId, matches));
         await tx
           .update(scoresheet)
           .set({ forkedForMatchId: null })
@@ -257,11 +255,13 @@ async function deleteUserSharedArtifacts(userId: string) {
       );
     }
     if (sharedMatchPlayerRoleConditions.length > 0) {
-      await tx.delete(sharedMatchPlayerRole).where(
-        sharedMatchPlayerRoleConditions.length === 1
-          ? sharedMatchPlayerRoleConditions[0]
-          : or(...sharedMatchPlayerRoleConditions),
-      );
+      await tx
+        .delete(sharedMatchPlayerRole)
+        .where(
+          sharedMatchPlayerRoleConditions.length === 1
+            ? sharedMatchPlayerRoleConditions[0]
+            : or(...sharedMatchPlayerRoleConditions),
+        );
     }
     await tx
       .delete(sharedMatchPlayer)

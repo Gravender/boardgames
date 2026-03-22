@@ -94,7 +94,9 @@ describe("Match Get - Queries", () => {
       await otherLifecycle.createTestUser();
 
       try {
-        const otherCaller = await createAuthenticatedCaller(otherLifecycle.userId);
+        const otherCaller = await createAuthenticatedCaller(
+          otherLifecycle.userId,
+        );
         await expect(
           otherCaller.match.getMatch({ type: "original", id: match.id }),
         ).rejects.toThrow();

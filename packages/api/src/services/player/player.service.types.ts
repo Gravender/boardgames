@@ -7,6 +7,7 @@ import type {
   GetPlayersByGameInputType,
 } from "../../routers/player/player.input";
 import type {
+  WithOptionalTx,
   WithPosthogUserCtx,
   WithUserIdCtx,
   WithUserIdCtxOnly,
@@ -77,7 +78,7 @@ export type GetPlayerHeaderArgs = WithPosthogUserCtx<GetPlayerInputType>;
 export type GetPlayerSummaryArgs = GetPlayerHeaderArgs;
 
 export type GetPlayerInsightsArgs =
-  WithPosthogUserCtx<GetPlayerInsightsInputType>;
+  WithPosthogUserCtx<GetPlayerInsightsInputType> & WithOptionalTx;
 
 export type GetPlayerInsightsPerGameArgs =
   WithUserIdCtx<GetPlayerInsightsPerGameInputType>;

@@ -4,6 +4,7 @@ import { db } from "@board-games/db/client";
 import { gameRole, sharedGameRole } from "@board-games/db/schema";
 import { vGameRoleCanonical } from "@board-games/db/views";
 
+import { vGameRoleCanonicalVisibleToUser } from "../../utils/drizzle/canonical-clauses";
 import type {
   CreateGameRoleArgs,
   CreateGameRolesArgs,
@@ -51,7 +52,7 @@ class GameRoleRepository {
       .where(
         and(
           eq(vGameRoleCanonical.canonicalGameId, input.canonicalGameId),
-          eq(vGameRoleCanonical.visibleToUserId, args.userId),
+          vGameRoleCanonicalVisibleToUser(vGameRoleCanonical, args.userId),
           isNull(vGameRoleCanonical.linkedGameRoleId),
           input.sourceType === "shared"
             ? eq(vGameRoleCanonical.sourceType, "shared")

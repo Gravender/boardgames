@@ -89,3 +89,22 @@ export interface PlayerInsightsMatchRow {
   duration: number;
   participants: PlayerInsightsMatchParticipantRow[];
 }
+
+/** Same as PlayerInsightsMatchRow but without participant JSON (lighter query). */
+export interface PlayerInsightsMatchSummaryRow {
+  matchId: number;
+  sharedMatchId: number | null;
+  matchType: "original" | "shared";
+  date: Date;
+  isCoop: boolean;
+  gameId: number;
+  sharedGameId: number | null;
+  gameType: "original" | "shared" | "linked";
+  gameName: string;
+  gameImage: ImageRowWithUsage | null;
+  outcomePlacement: number | null;
+  outcomeScore: number | null;
+  outcomeWinner: boolean | null;
+  duration: number;
+  playerCount: number;
+}

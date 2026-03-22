@@ -1,4 +1,4 @@
-import { and, eq, isNull, ne, or, sql } from "drizzle-orm";
+import { and, eq, isNull, ne, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@board-games/db/client";
@@ -16,6 +16,10 @@ import {
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
 
+import {
+  vMatchCanonicalVisibleToUser,
+  vMatchPlayerCanonicalViewerForUserExcludingNotSharedOnSharedBranch,
+} from "../../utils/drizzle/canonical-clauses";
 import type {
   GetGameInsightsDataArgs,
   GetGameInsightsRoleDataArgs,
@@ -46,20 +50,13 @@ class GameInsightsRepository {
         .where(
           and(
             eq(vMatchCanonical.finished, true),
-            eq(vMatchCanonical.visibleToUserId, userId),
+            vMatchCanonicalVisibleToUser(vMatchCanonical, userId),
             input.type === "original"
               ? eq(vMatchCanonical.canonicalGameId, input.id)
               : eq(vMatchCanonical.sharedGameId, input.sharedGameId),
-            or(
-              and(
-                eq(vMatchPlayerCanonicalForUser.ownerId, userId),
-                eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
-              ),
-              and(
-                eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
-                eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
-                ne(vMatchPlayerCanonicalForUser.playerSourceType, "not-shared"),
-              ),
+            vMatchPlayerCanonicalViewerForUserExcludingNotSharedOnSharedBranch(
+              vMatchPlayerCanonicalForUser,
+              userId,
             ),
           ),
         )
@@ -100,16 +97,9 @@ class GameInsightsRepository {
             vMatchPlayerCanonicalForUser.canonicalMatchId,
             vMatchCanonical.matchId,
           ),
-          or(
-            and(
-              eq(vMatchPlayerCanonicalForUser.ownerId, userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
-            ),
-            and(
-              eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
-              ne(vMatchPlayerCanonicalForUser.playerSourceType, "not-shared"),
-            ),
+          vMatchPlayerCanonicalViewerForUserExcludingNotSharedOnSharedBranch(
+            vMatchPlayerCanonicalForUser,
+            userId,
           ),
         ),
       )
@@ -126,7 +116,7 @@ class GameInsightsRepository {
       .where(
         and(
           eq(vMatchCanonical.finished, true),
-          eq(vMatchCanonical.visibleToUserId, userId),
+          vMatchCanonicalVisibleToUser(vMatchCanonical, userId),
           input.type === "original"
             ? eq(vMatchCanonical.canonicalGameId, input.id)
             : eq(vMatchCanonical.sharedGameId, input.sharedGameId),
@@ -171,16 +161,9 @@ class GameInsightsRepository {
             vMatchPlayerCanonicalForUser.baseMatchPlayerId,
             matchPlayerRole.matchPlayerId,
           ),
-          or(
-            and(
-              eq(vMatchPlayerCanonicalForUser.ownerId, userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
-            ),
-            and(
-              eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
-              ne(vMatchPlayerCanonicalForUser.playerSourceType, "not-shared"),
-            ),
+          vMatchPlayerCanonicalViewerForUserExcludingNotSharedOnSharedBranch(
+            vMatchPlayerCanonicalForUser,
+            userId,
           ),
         ),
       )
@@ -191,7 +174,7 @@ class GameInsightsRepository {
             vMatchCanonical.matchId,
             vMatchPlayerCanonicalForUser.canonicalMatchId,
           ),
-          eq(vMatchCanonical.visibleToUserId, userId),
+          vMatchCanonicalVisibleToUser(vMatchCanonical, userId),
         ),
       )
       .innerJoin(gameRole, eq(gameRole.id, matchPlayerRole.roleId))

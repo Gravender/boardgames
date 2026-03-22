@@ -1,5 +1,8 @@
 import type { UpdateMatchPlayerScoreInputType } from "../../routers/match/sub-routers/update-match/update-match.input";
-import type { BaseRepoArgs, UserScopedArgs } from "../../utils/shared-args.types";
+import type {
+  BaseRepoArgs,
+  UserScopedArgs,
+} from "../../utils/shared-args.types";
 
 export type UpdateMatchPlayerScoreRepoArgs =
   UserScopedArgs<UpdateMatchPlayerScoreInputType>;

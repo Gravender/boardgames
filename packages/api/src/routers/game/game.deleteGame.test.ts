@@ -78,7 +78,9 @@ describe("Game deleteGame Tests", () => {
       await otherLifecycle.createTestUser();
 
       try {
-        const otherCaller = await createAuthenticatedCaller(otherLifecycle.userId);
+        const otherCaller = await createAuthenticatedCaller(
+          otherLifecycle.userId,
+        );
         await expect(
           otherCaller.game.deleteGame({ id: gameId }),
         ).rejects.toThrow();

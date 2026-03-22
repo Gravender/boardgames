@@ -1,4 +1,4 @@
-import { and, eq, isNull, or, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import type {
   Filter,
@@ -27,6 +27,12 @@ import {
   vMatchCanonical,
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
+
+import {
+  vMatchCanonicalVisibleToUser,
+  vMatchPlayerCanonicalTargetPlayer,
+  vMatchPlayerCanonicalViewerForUser,
+} from "../../utils/drizzle/canonical-clauses";
 
 class PlayerRepository {
   public async insert(args: {
@@ -196,6 +202,7 @@ class PlayerRepository {
     return getPlayersByGameRead(args);
   }
 
+  /** See player-insights.repository for insights rollups; align when changing win semantics. */
   public async getPlayerSummary(args: GetPlayerSummaryArgs) {
     const { userId, input, tx } = args;
     const database = tx ?? db;
@@ -208,24 +215,13 @@ class PlayerRepository {
         .from(vMatchPlayerCanonicalForUser)
         .where(
           and(
-            input.type === "original"
-              ? eq(vMatchPlayerCanonicalForUser.canonicalPlayerId, input.id)
-              : and(
-                  eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
-                  eq(
-                    vMatchPlayerCanonicalForUser.sharedPlayerId,
-                    input.sharedPlayerId,
-                  ),
-                ),
-            or(
-              and(
-                eq(vMatchPlayerCanonicalForUser.ownerId, userId),
-                eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
-              ),
-              and(
-                eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
-                eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
-              ),
+            vMatchPlayerCanonicalTargetPlayer(
+              vMatchPlayerCanonicalForUser,
+              input,
+            ),
+            vMatchPlayerCanonicalViewerForUser(
+              vMatchPlayerCanonicalForUser,
+              userId,
             ),
           ),
         )
@@ -282,7 +278,7 @@ class PlayerRepository {
         userMatchPlayers,
         eq(userMatchPlayers.matchId, vMatchCanonical.matchId),
       )
-      .where(eq(vMatchCanonical.visibleToUserId, userId));
+      .where(vMatchCanonicalVisibleToUser(vMatchCanonical, userId));
     return stats;
   }
 }

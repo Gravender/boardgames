@@ -14,9 +14,7 @@ import {
   getPlayerHeaderOutput,
   getPlayerPerformanceSummaryOutput,
   getPlayerFavoriteGamesOutput,
-  getPlayerGamePerformanceTableOutput,
   getPlayerGameWinRateChartsOutput,
-  getPlayerGroupAnalysisOutput,
   getPlayerMatchHistoryTimelineOutput,
   getPlayerPlacementDistributionOutput,
   getPlayerPlayedWithGroupsOutput,
@@ -101,15 +99,6 @@ export const playerRouter = {
     .query(async ({ ctx, input }) => {
       return playerInsightsReadService.getPlayerRecentMatches({ ctx, input });
     }),
-  getPlayerGamePerformanceTable: protectedUserProcedure
-    .input(getPlayerInsightsInput)
-    .output(getPlayerGamePerformanceTableOutput)
-    .query(async ({ ctx, input }) => {
-      return playerInsightsReadService.getPlayerGamePerformanceTable({
-        ctx,
-        input,
-      });
-    }),
   getPlayerGameWinRateCharts: protectedUserProcedure
     .input(getPlayerInsightsInput)
     .output(getPlayerGameWinRateChartsOutput)
@@ -130,12 +119,6 @@ export const playerRouter = {
     .output(getPlayerTopTeammatesOutput)
     .query(async ({ ctx, input }) => {
       return playerInsightsReadService.getPlayerTopTeammates({ ctx, input });
-    }),
-  getPlayerGroupAnalysis: protectedUserProcedure
-    .input(getPlayerInsightsInput)
-    .output(getPlayerGroupAnalysisOutput)
-    .query(async ({ ctx, input }) => {
-      return playerInsightsReadService.getPlayerGroupAnalysis({ ctx, input });
     }),
   getPlayerPlayedWithGroups: protectedUserProcedure
     .input(getPlayerInsightsInput)

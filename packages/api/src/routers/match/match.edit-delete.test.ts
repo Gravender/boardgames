@@ -67,7 +67,9 @@ describe("Match Edit & Delete", () => {
       await otherLifecycle.createTestUser();
 
       try {
-        const otherCaller = await createAuthenticatedCaller(otherLifecycle.userId);
+        const otherCaller = await createAuthenticatedCaller(
+          otherLifecycle.userId,
+        );
         await expect(
           otherCaller.match.deleteMatch({ id: result.match.id }),
         ).rejects.toThrow();
@@ -194,7 +196,9 @@ describe("Match Edit & Delete", () => {
       await otherLifecycle.createTestUser();
 
       try {
-        const otherCaller = await createAuthenticatedCaller(otherLifecycle.userId);
+        const otherCaller = await createAuthenticatedCaller(
+          otherLifecycle.userId,
+        );
         await expect(
           otherCaller.match.editMatch({
             type: "original",
