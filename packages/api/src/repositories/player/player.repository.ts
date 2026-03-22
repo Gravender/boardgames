@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 
 import type {
   Filter,
@@ -7,25 +7,26 @@ import type {
   TransactionType,
 } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
-import { player, sharedPlayer } from "@board-games/db/schema";
+import { match, player, sharedPlayer } from "@board-games/db/schema";
 
 import type {
-  GetOriginalPlayerByIdArgs,
   GetPlayersArgs,
   GetPlayersByGameArgs,
   GetPlayersForMatchArgs,
+  GetPlayerSummaryArgs,
   GetRecentMatchWithPlayersArgs,
-  GetSharedPlayerByIdArgs,
   InsertSharedPlayerInputType,
 } from "./player.repository.types";
 import {
-  getOriginalPlayerByIdRead,
   getPlayersByGameRead,
   getPlayersForMatchRead,
   getPlayersRead,
   getRecentMatchWithPlayersRead,
-  getSharedPlayerByIdRead,
 } from "./player.read.repository";
+import {
+  vMatchCanonical,
+  vMatchPlayerCanonicalForUser,
+} from "@board-games/db/views";
 
 class PlayerRepository {
   public async insert(args: {
@@ -195,12 +196,94 @@ class PlayerRepository {
     return getPlayersByGameRead(args);
   }
 
-  public async getOriginalPlayerById(args: GetOriginalPlayerByIdArgs) {
-    return getOriginalPlayerByIdRead(args);
-  }
+  public async getPlayerSummary(args: GetPlayerSummaryArgs) {
+    const { userId, input, tx } = args;
+    const database = tx ?? db;
+    const userMatchPlayers = database.$with("user_match_players").as(
+      db
+        .selectDistinctOn([vMatchPlayerCanonicalForUser.canonicalMatchId], {
+          matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
+          winner: vMatchPlayerCanonicalForUser.winner,
+        })
+        .from(vMatchPlayerCanonicalForUser)
+        .where(
+          and(
+            input.type === "original"
+              ? eq(vMatchPlayerCanonicalForUser.canonicalPlayerId, input.id)
+              : and(
+                  eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
+                  eq(
+                    vMatchPlayerCanonicalForUser.sharedPlayerId,
+                    input.sharedPlayerId,
+                  ),
+                ),
+            or(
+              and(
+                eq(vMatchPlayerCanonicalForUser.ownerId, userId),
+                eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
+              ),
+              and(
+                eq(vMatchPlayerCanonicalForUser.sharedWithId, userId),
+                eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
+              ),
+            ),
+          ),
+        )
+        .orderBy(vMatchPlayerCanonicalForUser.canonicalMatchId),
+    );
+    const [stats] = await database
+      .with(userMatchPlayers)
+      .select({
+        finishedMatches: sql<number>`
+      COUNT(DISTINCT ${match.id})
+      FILTER (WHERE ${match.finished} = true)
+    `,
 
-  public async getSharedPlayerById(args: GetSharedPlayerByIdArgs) {
-    return getSharedPlayerByIdRead(args);
+        wins: sql<number>`
+      COUNT(DISTINCT ${match.id})
+      FILTER (
+        WHERE ${match.finished} = true
+        AND ${userMatchPlayers.winner} IS TRUE
+      )
+    `,
+
+        winRate: sql<number>`
+      CASE
+        WHEN COUNT(*) FILTER (WHERE ${match.finished} = true) = 0
+        THEN 0
+        ELSE
+          COUNT(*) FILTER (
+            WHERE ${match.finished} = true
+            AND ${userMatchPlayers.winner} IS TRUE
+          )::float
+          /
+          COUNT(*) FILTER (WHERE ${match.finished} = true)
+          * 100
+      END
+    `,
+
+        gamesPlayed: sql<number>`
+      COUNT(DISTINCT ${vMatchCanonical.canonicalGameId})
+    `,
+        totalPlaytime: sql<number>`
+      COALESCE(
+        SUM(${match.duration})
+        FILTER (
+          WHERE ${match.finished} = true
+          AND ${match.duration} >= 300
+        ),
+        0
+      )
+    `,
+      })
+      .from(vMatchCanonical)
+      .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
+      .innerJoin(
+        userMatchPlayers,
+        eq(userMatchPlayers.matchId, vMatchCanonical.matchId),
+      )
+      .where(eq(vMatchCanonical.visibleToUserId, userId));
+    return stats;
   }
 }
 export const playerRepository = new PlayerRepository();

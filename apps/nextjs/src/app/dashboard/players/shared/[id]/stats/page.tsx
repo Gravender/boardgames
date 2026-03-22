@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // fetch data
   if (isNaN(Number(id))) return { title: "Player" };
   const player = await caller.newPlayer.getPlayer({
-    sharedId: Number(id),
+    sharedPlayerId: Number(id),
     type: "shared",
   });
   if (!player.image?.url)
@@ -45,7 +45,7 @@ export default async function Page({ params }: Props) {
   const playerId = slugs.id;
   if (isNaN(Number(playerId))) redirect("/dashboard/players");
   const player = await caller.newPlayer.getPlayer({
-    sharedId: Number(playerId),
+    sharedPlayerId: Number(playerId),
     type: "shared",
   });
   if (player.type !== "shared") {

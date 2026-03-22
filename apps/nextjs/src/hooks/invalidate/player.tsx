@@ -12,7 +12,7 @@ export function useInvalidatePlayer() {
         type === "shared"
           ? {
               type: "shared" as const,
-              sharedId: playerId,
+              sharedPlayerId: playerId,
             }
           : {
               type: "original" as const,
@@ -20,7 +20,10 @@ export function useInvalidatePlayer() {
             };
       return [
         queryClient.invalidateQueries(
-          trpc.newPlayer.getPlayer.queryOptions(input),
+          trpc.newPlayer.getPlayerHeader.queryOptions(input),
+        ),
+        queryClient.invalidateQueries(
+          trpc.newPlayer.getPlayerSummary.queryOptions(input),
         ),
       ];
     },

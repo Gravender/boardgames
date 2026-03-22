@@ -8,6 +8,7 @@ import type {
 } from "../../routers/match/match.output";
 import type {
   GetMatchArgs,
+  GetPlayerInsightsMatchesArgs,
   GetMatchPlayersAndTeamsArgs,
   GetMatchScoresheetArgs,
   MatchPlayersAndTeamsResponse,
@@ -92,6 +93,13 @@ class MatchQueryService {
     return {
       playerStats,
     };
+  }
+
+  public async getPlayerInsightsMatches(args: GetPlayerInsightsMatchesArgs) {
+    return matchRepository.getPlayerInsightsMatches({
+      userId: args.ctx.userId,
+      input: args.input,
+    });
   }
 
   private mapOriginalPlayers(

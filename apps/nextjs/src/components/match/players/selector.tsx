@@ -115,7 +115,7 @@ export const AddPlayersDialogForm = ({
       game.type === "shared"
         ? {
             type: "shared",
-            sharedId: game.sharedGameId,
+            sharedGameId: game.sharedGameId,
           }
         : {
             type: "original",

@@ -29,6 +29,8 @@ class MatchService {
     matchQueryService.getMatchPlayersAndTeams.bind(matchQueryService);
   public readonly getMatchSummary =
     matchQueryService.getMatchSummary.bind(matchQueryService);
+  public readonly getPlayerInsightsMatches =
+    matchQueryService.getPlayerInsightsMatches.bind(matchQueryService);
 
   // ── Create ────────────────────────────────────────────────────
 
