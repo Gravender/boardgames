@@ -16,8 +16,7 @@ import {
 } from "./game-test-fixtures";
 
 describe("Game getGameToShare Tests", () => {
-  const testUserId = "test-user-game-gettoshare";
-  const lifecycle = gameTestLifecycle(testUserId);
+  const lifecycle = gameTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -37,7 +36,7 @@ describe("Game getGameToShare Tests", () => {
 
   describe("game.getGameToShare", () => {
     test("returns game data for sharing", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(caller, "Share Game");
 
       const result = await caller.game.getGameToShare({ id: gameId });
@@ -51,7 +50,7 @@ describe("Game getGameToShare Tests", () => {
     });
 
     test("includes matches in share data", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithFinishedMatch(caller, {
         gameName: "Share With Match",
         matchName: "Shared Match",
@@ -71,7 +70,7 @@ describe("Game getGameToShare Tests", () => {
     });
 
     test("includes scoresheets in share data", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "Share Scoresheets",
@@ -90,7 +89,7 @@ describe("Game getGameToShare Tests", () => {
     });
 
     test("throws for non-existent game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.game.getGameToShare({ id: 999999 }),

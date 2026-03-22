@@ -12,36 +12,33 @@ import {
 import type { AppRouter } from "../../root";
 import { createContextInner } from "../../context";
 import { appRouter } from "../../root";
-import {
-  createTestSession,
-  createTestUser,
-  deleteTestUser,
-} from "../../test-helpers";
+import { testLifecycle } from "../../test-fixtures";
+import { createTestSession } from "../../test-helpers";
 import { createCallerFactory } from "../../trpc";
 
 describe("Match Create - Invalid Reference Error Tests", () => {
-  const testUserId = "test-user-1-match-errors-refs";
+  const lifecycle = testLifecycle();
 
   beforeAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   afterAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   beforeEach(async () => {
-    await createTestUser(testUserId);
+    await lifecycle.createTestUser();
   });
 
   afterEach(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   describe("invalid reference error cases", () => {
     test("fails with invalid game reference (non-existent game ID)", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -112,7 +109,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
 
     test("fails with invalid scoresheet reference (non-existent scoresheet ID)", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -169,7 +166,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
 
     test("fails with invalid player reference (non-existent player ID)", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -235,7 +232,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
 
     test("fails with invalid location reference (non-existent location ID)", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 

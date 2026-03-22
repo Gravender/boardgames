@@ -14,33 +14,30 @@ import {
 import { db } from "@board-games/db/client";
 import { player } from "@board-games/db/schema";
 
-import type { AppRouter } from "../../root";
-import { createContextInner } from "../../context";
-import { appRouter } from "../../root";
-import {
-  createTestSession,
-  createTestUser,
-  deleteTestUser,
-} from "../../test-helpers";
-import { createCallerFactory } from "../../trpc";
+import type { AppRouter } from "../../../root";
+import { createContextInner } from "../../../context";
+import { appRouter } from "../../../root";
+import { testLifecycle } from "../../../test-fixtures";
+import { createTestSession } from "../../../test-helpers";
+import { createCallerFactory } from "../../../trpc";
 
 describe("Player Update - updateValues variants", () => {
-  const testUserId = "test-user-player-update-variants";
+  const lifecycle = testLifecycle();
 
   beforeAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   afterAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   beforeEach(async () => {
-    await createTestUser(testUserId);
+    await lifecycle.createTestUser();
   });
 
   afterEach(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   test("updates only name with updateValues.type=name", async () => {
@@ -51,7 +48,7 @@ describe("Player Update - updateValues variants", () => {
       }),
     );
     const ctx = await createContextInner({
-      session: createTestSession(testUserId),
+      session: createTestSession(lifecycle.userId),
       deleteFiles: deleteFilesSpy,
     });
     const caller = createCallerFactory(appRouter)(ctx);
@@ -103,7 +100,7 @@ describe("Player Update - updateValues variants", () => {
       }),
     );
     const ctx = await createContextInner({
-      session: createTestSession(testUserId),
+      session: createTestSession(lifecycle.userId),
       deleteFiles: deleteFilesSpy,
     });
     const caller = createCallerFactory(appRouter)(ctx);
@@ -164,7 +161,7 @@ describe("Player Update - updateValues variants", () => {
       }),
     );
     const ctx = await createContextInner({
-      session: createTestSession(testUserId),
+      session: createTestSession(lifecycle.userId),
       deleteFiles: deleteFilesSpy,
     });
     const caller = createCallerFactory(appRouter)(ctx);
@@ -226,7 +223,7 @@ describe("Player Update - updateValues variants", () => {
       }),
     );
     const ctx = await createContextInner({
-      session: createTestSession(testUserId),
+      session: createTestSession(lifecycle.userId),
       deleteFiles: deleteFilesSpy,
     });
     const caller = createCallerFactory(appRouter)(ctx);
@@ -279,7 +276,7 @@ describe("Player Update - updateValues variants", () => {
       }),
     );
     const ctx = await createContextInner({
-      session: createTestSession(testUserId),
+      session: createTestSession(lifecycle.userId),
       deleteFiles: deleteFilesSpy,
     });
     const caller = createCallerFactory(appRouter)(ctx);
@@ -331,7 +328,7 @@ describe("Player Update - updateValues variants", () => {
       }),
     );
     const ctx = await createContextInner({
-      session: createTestSession(testUserId),
+      session: createTestSession(lifecycle.userId),
       deleteFiles: deleteFilesSpy,
     });
     const caller = createCallerFactory(appRouter)(ctx);

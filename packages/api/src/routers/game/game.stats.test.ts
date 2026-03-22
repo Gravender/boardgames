@@ -17,8 +17,7 @@ import {
 } from "./game-test-fixtures";
 
 describe("Game Stats Tests (header, playerStats, scoresheetStats)", () => {
-  const testUserId = "test-user-game-stats";
-  const lifecycle = gameTestLifecycle(testUserId);
+  const lifecycle = gameTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -40,7 +39,7 @@ describe("Game Stats Tests (header, playerStats, scoresheetStats)", () => {
 
   describe("game.getGameStatsHeader", () => {
     test("returns default stats for game with no matches", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       await ensureUserPlayer(caller);
       const { gameId } = await createGameWithScoresheet(
         caller,
@@ -64,7 +63,7 @@ describe("Game Stats Tests (header, playerStats, scoresheetStats)", () => {
     });
 
     test("returns stats for game with finished match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       await ensureUserPlayer(caller);
       const { gameId } = await createGameWithFinishedMatch(caller, {
         gameName: "Stats Game",
@@ -82,7 +81,7 @@ describe("Game Stats Tests (header, playerStats, scoresheetStats)", () => {
     });
 
     test("throws for user without player record", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "No Player Stats Game",
@@ -99,7 +98,7 @@ describe("Game Stats Tests (header, playerStats, scoresheetStats)", () => {
 
   describe("game.getGamePlayerStats", () => {
     test("returns empty players for game with no matches", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "No Players Stats Game",
@@ -117,7 +116,7 @@ describe("Game Stats Tests (header, playerStats, scoresheetStats)", () => {
     });
 
     test("returns player stats for game with finished match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId, players } = await createGameWithFinishedMatch(caller, {
         gameName: "Player Stats Game",
         matchName: "Player Stats Match",
@@ -146,7 +145,7 @@ describe("Game Stats Tests (header, playerStats, scoresheetStats)", () => {
     });
 
     test("throws for non-existent game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       // Consistent with getGameScoresheetStats: both throw NOT_FOUND
       // for non-existent games rather than returning empty results
@@ -163,7 +162,7 @@ describe("Game Stats Tests (header, playerStats, scoresheetStats)", () => {
 
   describe("game.getGameScoresheetStats", () => {
     test("returns empty scoresheet stats for game with no matches", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "No Match SS Stats Game",
@@ -180,7 +179,7 @@ describe("Game Stats Tests (header, playerStats, scoresheetStats)", () => {
     });
 
     test("returns scoresheet stats for game with finished match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithFinishedMatch(caller, {
         gameName: "SS Stats Game",
         matchName: "SS Stats Match",
@@ -202,7 +201,7 @@ describe("Game Stats Tests (header, playerStats, scoresheetStats)", () => {
     });
 
     test("scoresheet stats have correct shape", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithFinishedMatch(caller, {
         gameName: "SS Shape Game",
       });
@@ -228,7 +227,7 @@ describe("Game Stats Tests (header, playerStats, scoresheetStats)", () => {
     });
 
     test("throws for non-existent game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.game.getGameScoresheetStats({ type: "original", id: 999999 }),

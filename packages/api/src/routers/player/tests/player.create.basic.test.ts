@@ -9,39 +9,36 @@ import {
   test,
 } from "vitest";
 
-import type { AppRouter } from "../../root";
-import { createContextInner } from "../../context";
-import { appRouter } from "../../root";
-import {
-  createTestSession,
-  createTestUser,
-  deleteTestUser,
-} from "../../test-helpers";
-import { createCallerFactory } from "../../trpc";
+import type { AppRouter } from "../../../root";
+import { createContextInner } from "../../../context";
+import { appRouter } from "../../../root";
+import { testLifecycle } from "../../../test-fixtures";
+import { createTestSession } from "../../../test-helpers";
+import { createCallerFactory } from "../../../trpc";
 
 describe("Player Create - Basic Tests", () => {
-  const testUserId = "test-user-1-player-basic";
+  const lifecycle = testLifecycle();
 
   beforeAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   afterAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   beforeEach(async () => {
-    await createTestUser(testUserId);
+    await lifecycle.createTestUser();
   });
 
   afterEach(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   describe("basic player creation", () => {
     test("creates a player with minimal required data", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -64,7 +61,7 @@ describe("Player Create - Basic Tests", () => {
 
     test("creates a player with optional imageId", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -99,7 +96,7 @@ describe("Player Create - Basic Tests", () => {
 
     test("creates multiple players", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -121,7 +118,7 @@ describe("Player Create - Basic Tests", () => {
 
     test("verifies player output structure matches expected schema", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -149,7 +146,7 @@ describe("Player Create - Basic Tests", () => {
 
     test("verifies player is associated with correct user", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -174,7 +171,7 @@ describe("Player Create - Basic Tests", () => {
         .where(eq(playerSchema.id, result.id));
 
       expect(dbPlayer).toBeDefined();
-      expect(dbPlayer?.createdBy).toBe(testUserId);
+      expect(dbPlayer?.createdBy).toBe(lifecycle.userId);
     });
   });
 });

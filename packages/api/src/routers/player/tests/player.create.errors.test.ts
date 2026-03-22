@@ -9,39 +9,36 @@ import {
   test,
 } from "vitest";
 
-import type { AppRouter } from "../../root";
-import { createContextInner } from "../../context";
-import { appRouter } from "../../root";
-import {
-  createTestSession,
-  createTestUser,
-  deleteTestUser,
-} from "../../test-helpers";
-import { createCallerFactory } from "../../trpc";
+import type { AppRouter } from "../../../root";
+import { createContextInner } from "../../../context";
+import { appRouter } from "../../../root";
+import { testLifecycle } from "../../../test-fixtures";
+import { createTestSession } from "../../../test-helpers";
+import { createCallerFactory } from "../../../trpc";
 
 describe("Player Create - Error Tests", () => {
-  const testUserId = "test-user-1-player-errors";
+  const lifecycle = testLifecycle();
 
   beforeAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   afterAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   beforeEach(async () => {
-    await createTestUser(testUserId);
+    await lifecycle.createTestUser();
   });
 
   afterEach(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   describe("error cases", () => {
     test("fails with missing required name field", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -54,7 +51,7 @@ describe("Player Create - Error Tests", () => {
 
     test("fails with invalid imageId reference (non-existent image ID)", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -68,7 +65,7 @@ describe("Player Create - Error Tests", () => {
 
     test("fails with empty name string", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 

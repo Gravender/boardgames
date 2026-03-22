@@ -12,36 +12,33 @@ import {
 import type { AppRouter } from "../../root";
 import { createContextInner } from "../../context";
 import { appRouter } from "../../root";
-import {
-  createTestSession,
-  createTestUser,
-  deleteTestUser,
-} from "../../test-helpers";
+import { testLifecycle } from "../../test-fixtures";
+import { createTestSession } from "../../test-helpers";
 import { createCallerFactory } from "../../trpc";
 
 describe("Game Create - Scoresheet Tests", () => {
-  const testUserId = "test-user-1-game-scoresheets";
+  const lifecycle = testLifecycle();
 
   beforeAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   afterAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   beforeEach(async () => {
-    await createTestUser(testUserId);
+    await lifecycle.createTestUser();
   });
 
   afterEach(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   describe("scoresheet configurations", () => {
     test("creates a game with empty scoresheets array (creates default)", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -87,7 +84,7 @@ describe("Game Create - Scoresheet Tests", () => {
 
     test("creates a game with single scoresheet with multiple rounds", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -176,7 +173,7 @@ describe("Game Create - Scoresheet Tests", () => {
 
     test("creates a game with multiple scoresheets", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 

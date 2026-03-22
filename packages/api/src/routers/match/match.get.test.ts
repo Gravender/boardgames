@@ -15,8 +15,7 @@ import {
 } from "./match-test-fixtures";
 
 describe("Match Get - Queries", () => {
-  const testUserId = "test-user-match-get";
-  const lifecycle = matchTestLifecycle(testUserId);
+  const lifecycle = matchTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -38,7 +37,7 @@ describe("Match Get - Queries", () => {
 
   describe("getMatch", () => {
     test("returns match data for an original match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller, {
         matchName: "Get Match Test",
         matchDate: new Date("2024-06-15"),
@@ -63,7 +62,7 @@ describe("Match Get - Queries", () => {
     });
 
     test("returns match without location when none set", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller, {
         matchName: "No Location Match",
       });
@@ -79,7 +78,7 @@ describe("Match Get - Queries", () => {
     });
 
     test("throws NOT_FOUND for invalid match id", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.getMatch({ type: "original", id: 999999 }),
@@ -87,16 +86,15 @@ describe("Match Get - Queries", () => {
     });
 
     test("throws for match owned by another user", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       // Different user trying to access
-      const otherUserId = "test-user-match-get-other";
-      const otherLifecycle = matchTestLifecycle(otherUserId);
+      const otherLifecycle = matchTestLifecycle();
       await otherLifecycle.createTestUser();
 
       try {
-        const otherCaller = await createAuthenticatedCaller(otherUserId);
+        const otherCaller = await createAuthenticatedCaller(otherLifecycle.userId);
         await expect(
           otherCaller.match.getMatch({ type: "original", id: match.id }),
         ).rejects.toThrow();
@@ -110,7 +108,7 @@ describe("Match Get - Queries", () => {
 
   describe("getMatchScoresheet", () => {
     test("returns scoresheet with rounds for an original match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       const result = await caller.match.getMatchScoresheet({
@@ -127,7 +125,7 @@ describe("Match Get - Queries", () => {
     });
 
     test("throws NOT_FOUND for invalid match id", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.getMatchScoresheet({ type: "original", id: 999999 }),
@@ -139,7 +137,7 @@ describe("Match Get - Queries", () => {
 
   describe("getMatchPlayersAndTeams", () => {
     test("returns players for an original match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match, players } = await createFullMatch(caller, {
         playerCount: 3,
       });
@@ -169,7 +167,7 @@ describe("Match Get - Queries", () => {
     });
 
     test("returns empty teams when match has no teams", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       const result = await caller.match.getMatchPlayersAndTeams({
@@ -181,7 +179,7 @@ describe("Match Get - Queries", () => {
     });
 
     test("throws NOT_FOUND for invalid match id", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.getMatchPlayersAndTeams({
@@ -196,7 +194,7 @@ describe("Match Get - Queries", () => {
 
   describe("getMatchSummary", () => {
     test("returns player stats for an original match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller, {
         playerCount: 2,
       });
@@ -222,7 +220,7 @@ describe("Match Get - Queries", () => {
     });
 
     test("throws NOT_FOUND for invalid match id", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.getMatchSummary({ type: "original", id: 999999 }),

@@ -1,26 +1,45 @@
+import { randomUUID } from "node:crypto";
+
 import { eq, inArray, or } from "drizzle-orm";
 
 import { db } from "@board-games/db/client";
 import {
   game,
   gameRole,
+  gameTag,
   groupPlayer,
   match,
+  matchImage,
   matchPlayer,
   matchPlayerRole,
   player,
   round,
   roundPlayer,
   scoresheet,
+  shareRequest,
   sharedGame,
+  sharedGameRole,
+  sharedLocation,
   sharedMatch,
   sharedMatchPlayer,
+  sharedMatchPlayerRole,
   sharedPlayer,
+  sharedRound,
   sharedScoresheet,
   team,
   user,
   userSharingPreference,
 } from "@board-games/db/schema";
+
+/** Row shape returned by `createTestUser` (matches `user` table). */
+export type TestUser = typeof user.$inferSelect;
+
+/**
+ * Better Auth uses text primary keys; new users get opaque ids (we use UUID v4 like production).
+ */
+function newTestUserId(): string {
+  return randomUUID();
+}
 
 /**
  * Helper function to delete all games and related data created by a user
@@ -67,6 +86,9 @@ async function deleteUserGames(userId: string) {
       if (matches.length > 0) {
         await tx.delete(team).where(inArray(team.matchId, matches));
         await tx
+          .delete(matchImage)
+          .where(inArray(matchImage.matchId, matches));
+        await tx
           .update(scoresheet)
           .set({ forkedForMatchId: null })
           .where(inArray(scoresheet.forkedForMatchId, matches));
@@ -106,6 +128,9 @@ async function deleteUserGames(userId: string) {
 
           await tx.delete(team).where(inArray(team.matchId, orphanedMatchIds));
           await tx
+            .delete(matchImage)
+            .where(inArray(matchImage.matchId, orphanedMatchIds));
+          await tx
             .update(scoresheet)
             .set({ forkedForMatchId: null })
             .where(inArray(scoresheet.forkedForMatchId, orphanedMatchIds));
@@ -135,6 +160,7 @@ async function deleteUserGames(userId: string) {
           .where(inArray(scoresheet.id, scoresheetIds));
       }
       const gameIds = returnedGames.map((g) => g.id);
+      await tx.delete(gameTag).where(inArray(gameTag.gameId, gameIds));
       await tx.delete(gameRole).where(inArray(gameRole.gameId, gameIds));
       await tx.delete(game).where(inArray(game.id, gameIds));
     });
@@ -192,11 +218,73 @@ async function deleteUserRecord(userId: string) {
 async function deleteUserSharedArtifacts(userId: string) {
   await db.transaction(async (tx) => {
     await tx
+      .delete(shareRequest)
+      .where(
+        or(
+          eq(shareRequest.ownerId, userId),
+          eq(shareRequest.sharedWithId, userId),
+        ),
+      );
+    const sharedMatchPlayerIdsForUser = await tx
+      .select({ id: sharedMatchPlayer.id })
+      .from(sharedMatchPlayer)
+      .where(
+        or(
+          eq(sharedMatchPlayer.ownerId, userId),
+          eq(sharedMatchPlayer.sharedWithId, userId),
+        ),
+      );
+    const sharedGameRoleIdsForUser = await tx
+      .select({ id: sharedGameRole.id })
+      .from(sharedGameRole)
+      .where(
+        or(
+          eq(sharedGameRole.ownerId, userId),
+          eq(sharedGameRole.sharedWithId, userId),
+        ),
+      );
+    const smpIdList = sharedMatchPlayerIdsForUser.map((r) => r.id);
+    const sgrIdList = sharedGameRoleIdsForUser.map((r) => r.id);
+    const sharedMatchPlayerRoleConditions = [];
+    if (smpIdList.length > 0) {
+      sharedMatchPlayerRoleConditions.push(
+        inArray(sharedMatchPlayerRole.sharedMatchPlayerId, smpIdList),
+      );
+    }
+    if (sgrIdList.length > 0) {
+      sharedMatchPlayerRoleConditions.push(
+        inArray(sharedMatchPlayerRole.sharedGameRoleId, sgrIdList),
+      );
+    }
+    if (sharedMatchPlayerRoleConditions.length > 0) {
+      await tx.delete(sharedMatchPlayerRole).where(
+        sharedMatchPlayerRoleConditions.length === 1
+          ? sharedMatchPlayerRoleConditions[0]
+          : or(...sharedMatchPlayerRoleConditions),
+      );
+    }
+    await tx
       .delete(sharedMatchPlayer)
       .where(
         or(
           eq(sharedMatchPlayer.ownerId, userId),
           eq(sharedMatchPlayer.sharedWithId, userId),
+        ),
+      );
+    await tx
+      .delete(sharedGameRole)
+      .where(
+        or(
+          eq(sharedGameRole.ownerId, userId),
+          eq(sharedGameRole.sharedWithId, userId),
+        ),
+      );
+    await tx
+      .delete(sharedRound)
+      .where(
+        or(
+          eq(sharedRound.ownerId, userId),
+          eq(sharedRound.sharedWithId, userId),
         ),
       );
     await tx
@@ -213,6 +301,14 @@ async function deleteUserSharedArtifacts(userId: string) {
         or(
           eq(sharedScoresheet.ownerId, userId),
           eq(sharedScoresheet.sharedWithId, userId),
+        ),
+      );
+    await tx
+      .delete(sharedLocation)
+      .where(
+        or(
+          eq(sharedLocation.ownerId, userId),
+          eq(sharedLocation.sharedWithId, userId),
         ),
       );
     await tx
@@ -254,25 +350,29 @@ export async function deleteTestUser(userId: string) {
 /**
  * Helper function to create a test user in the database
  */
-export async function createTestUser(userId = "test-user-1") {
-  // Try to delete first in case it exists from a previous test run
-  await deleteTestUser(userId);
+export async function createTestUser(): Promise<TestUser> {
+  const id = newTestUserId();
+  await deleteTestUser(id);
 
   const [createdUser] = await db
     .insert(user)
     .values({
-      id: userId,
+      id,
       name: "Test User",
-      email: `test-${userId}@example.com`,
+      email: `test-${id}@example.com`,
       emailVerified: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     })
     .returning();
 
+  if (!createdUser) {
+    throw new Error("Failed to create test user.");
+  }
+
   // Create user sharing preference
   await db.insert(userSharingPreference).values({
-    userId: userId,
+    userId: createdUser.id,
   });
 
   return createdUser;
@@ -281,13 +381,14 @@ export async function createTestUser(userId = "test-user-1") {
 /**
  * Helper function to create a test session for authenticated tests
  */
-export function createTestSession(userId = "test-user-1") {
+export function createTestSession(userId: string) {
+  const sessionId = newTestUserId();
   return {
     session: {
-      id: `test-session-${userId}`,
-      userId: userId,
+      id: sessionId,
+      userId,
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
-      token: `test-token-${userId}`,
+      token: `test-token-${sessionId}`,
       createdAt: new Date(),
       updatedAt: new Date(),
     },

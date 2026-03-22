@@ -16,8 +16,7 @@ import {
 } from "./game-test-fixtures";
 
 describe("Game Create - Basic Tests", () => {
-  const testUserId = "test-user-1-game-basic";
-  const lifecycle = gameTestLifecycle(testUserId);
+  const lifecycle = gameTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -37,7 +36,7 @@ describe("Game Create - Basic Tests", () => {
 
   describe("basic game creation", () => {
     test("creates a game with minimal required data", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       const input: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {
@@ -74,7 +73,7 @@ describe("Game Create - Basic Tests", () => {
     });
 
     test("creates a game with all optional fields", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       const input: inferProcedureInput<AppRouter["game"]["create"]> = {
         game: {

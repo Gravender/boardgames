@@ -16,8 +16,7 @@ import {
 } from "./match-test-fixtures";
 
 describe("Match Update - Structure (details, teams, roles)", () => {
-  const testUserId = "test-user-match-structure";
-  const lifecycle = matchTestLifecycle(testUserId);
+  const lifecycle = matchTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -39,7 +38,7 @@ describe("Match Update - Structure (details, teams, roles)", () => {
 
   describe("updateMatchDetails (player)", () => {
     test("sets player details on a match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       const playersAndTeams = await caller.match.getMatchPlayersAndTeams({
@@ -72,7 +71,7 @@ describe("Match Update - Structure (details, teams, roles)", () => {
     });
 
     test("throws NOT_FOUND for non-existent match player", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       await expect(
@@ -86,7 +85,7 @@ describe("Match Update - Structure (details, teams, roles)", () => {
     });
 
     test("throws NOT_FOUND for non-existent match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.update.updateMatchDetails({
@@ -103,7 +102,7 @@ describe("Match Update - Structure (details, teams, roles)", () => {
 
   describe("updateMatchDetails (team)", () => {
     test("sets team details on a match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatchWithTeams(caller);
 
       const playersAndTeams = await caller.match.getMatchPlayersAndTeams({
@@ -136,7 +135,7 @@ describe("Match Update - Structure (details, teams, roles)", () => {
     });
 
     test("throws NOT_FOUND for non-existent team", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       await expect(
@@ -154,7 +153,7 @@ describe("Match Update - Structure (details, teams, roles)", () => {
 
   describe("updateMatchPlayerTeamAndRoles", () => {
     test("assigns a player to a team", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatchWithTeams(caller);
 
       const playersAndTeams = await caller.match.getMatchPlayersAndTeams({
@@ -198,7 +197,7 @@ describe("Match Update - Structure (details, teams, roles)", () => {
     });
 
     test("removes a player from a team", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatchWithTeams(caller);
 
       const playersAndTeams = await caller.match.getMatchPlayersAndTeams({
@@ -235,7 +234,7 @@ describe("Match Update - Structure (details, teams, roles)", () => {
     });
 
     test("throws NOT_FOUND for non-existent match player", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.update.updateMatchPlayerTeamAndRoles({
@@ -252,7 +251,7 @@ describe("Match Update - Structure (details, teams, roles)", () => {
 
   describe("updateMatchTeam", () => {
     test("renames a team", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatchWithTeams(caller);
 
       const playersAndTeams = await caller.match.getMatchPlayersAndTeams({
@@ -290,7 +289,7 @@ describe("Match Update - Structure (details, teams, roles)", () => {
     });
 
     test("adds a player to a team", { timeout: 15000 }, async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatchWithTeams(caller);
 
       const playersAndTeams = await caller.match.getMatchPlayersAndTeams({
@@ -349,7 +348,7 @@ describe("Match Update - Structure (details, teams, roles)", () => {
     });
 
     test("removes a player from a team via updateMatchTeam", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatchWithTeams(caller);
 
       const playersAndTeams = await caller.match.getMatchPlayersAndTeams({
@@ -395,7 +394,7 @@ describe("Match Update - Structure (details, teams, roles)", () => {
     });
 
     test("throws NOT_FOUND for non-existent team", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       await expect(
@@ -411,7 +410,7 @@ describe("Match Update - Structure (details, teams, roles)", () => {
     });
 
     test("throws NOT_FOUND for non-existent match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.update.updateMatchTeam({

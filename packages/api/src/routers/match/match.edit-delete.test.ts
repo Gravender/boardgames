@@ -17,8 +17,7 @@ import {
 } from "./match-test-fixtures";
 
 describe("Match Edit & Delete", () => {
-  const testUserId = "test-user-match-edit-del";
-  const lifecycle = matchTestLifecycle(testUserId);
+  const lifecycle = matchTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -40,7 +39,7 @@ describe("Match Edit & Delete", () => {
 
   describe("deleteMatch", () => {
     test("deletes a match successfully", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const result = await createFullMatch(caller, {
         matchName: "To Be Deleted",
       });
@@ -55,21 +54,20 @@ describe("Match Edit & Delete", () => {
     });
 
     test("throws NOT_FOUND when deleting non-existent match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(caller.match.deleteMatch({ id: 999999 })).rejects.toThrow();
     });
 
     test("throws when deleting a match owned by another user", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const result = await createFullMatch(caller);
 
-      const otherUserId = "test-user-match-del-other";
-      const otherLifecycle = matchTestLifecycle(otherUserId);
+      const otherLifecycle = matchTestLifecycle();
       await otherLifecycle.createTestUser();
 
       try {
-        const otherCaller = await createAuthenticatedCaller(otherUserId);
+        const otherCaller = await createAuthenticatedCaller(otherLifecycle.userId);
         await expect(
           otherCaller.match.deleteMatch({ id: result.match.id }),
         ).rejects.toThrow();
@@ -83,7 +81,7 @@ describe("Match Edit & Delete", () => {
 
   describe("editMatch (original)", () => {
     test("updates match name", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const result = await createFullMatch(caller, {
         matchName: "Original Name",
       });
@@ -108,7 +106,7 @@ describe("Match Edit & Delete", () => {
     });
 
     test("updates match date", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const result = await createFullMatch(caller, {
         matchDate: new Date("2024-01-01"),
       });
@@ -136,7 +134,7 @@ describe("Match Edit & Delete", () => {
     });
 
     test("updates match with location", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const result = await createFullMatch(caller);
 
       // Create a location
@@ -167,7 +165,7 @@ describe("Match Edit & Delete", () => {
     });
 
     test("throws NOT_FOUND when editing non-existent match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const result = await createFullMatch(caller);
 
       await expect(
@@ -189,15 +187,14 @@ describe("Match Edit & Delete", () => {
     });
 
     test("throws when editing a match owned by another user", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const result = await createFullMatch(caller);
 
-      const otherUserId = "test-user-match-edit-other";
-      const otherLifecycle = matchTestLifecycle(otherUserId);
+      const otherLifecycle = matchTestLifecycle();
       await otherLifecycle.createTestUser();
 
       try {
-        const otherCaller = await createAuthenticatedCaller(otherUserId);
+        const otherCaller = await createAuthenticatedCaller(otherLifecycle.userId);
         await expect(
           otherCaller.match.editMatch({
             type: "original",

@@ -15,8 +15,7 @@ import {
 } from "./game-test-fixtures";
 
 describe("Game deleteGame Tests", () => {
-  const testUserId = "test-user-game-delete";
-  const lifecycle = gameTestLifecycle(testUserId);
+  const lifecycle = gameTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -36,7 +35,7 @@ describe("Game deleteGame Tests", () => {
 
   describe("game.deleteGame", () => {
     test("deletes a game successfully", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "Game to Delete",
@@ -52,7 +51,7 @@ describe("Game deleteGame Tests", () => {
     });
 
     test("deleted game is not retrievable via getGame", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "Delete and Retrieve",
@@ -66,21 +65,20 @@ describe("Game deleteGame Tests", () => {
     });
 
     test("throws for non-existent game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(caller.game.deleteGame({ id: 999999 })).rejects.toThrow();
     });
 
     test("throws when deleting another user's game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(caller, "My Game");
 
-      const otherUserId = "test-user-game-delete-other";
-      const otherLifecycle = gameTestLifecycle(otherUserId);
+      const otherLifecycle = gameTestLifecycle();
       await otherLifecycle.createTestUser();
 
       try {
-        const otherCaller = await createAuthenticatedCaller(otherUserId);
+        const otherCaller = await createAuthenticatedCaller(otherLifecycle.userId);
         await expect(
           otherCaller.game.deleteGame({ id: gameId }),
         ).rejects.toThrow();

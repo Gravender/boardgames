@@ -15,8 +15,7 @@ import {
 } from "./match-test-fixtures";
 
 describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
-  const testUserId = "test-user-match-scores";
-  const lifecycle = matchTestLifecycle(testUserId);
+  const lifecycle = matchTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -38,7 +37,7 @@ describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
 
   describe("updateMatchRoundScore", () => {
     test("updates a player round score", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       // Get players and their rounds
@@ -84,7 +83,7 @@ describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
     });
 
     test("throws NOT_FOUND for non-existent match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.update.updateMatchRoundScore({
@@ -97,7 +96,7 @@ describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
     });
 
     test("throws NOT_FOUND for non-existent match player", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       await expect(
@@ -115,7 +114,7 @@ describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
 
   describe("updateMatchPlayerScore", () => {
     test("updates a player overall score", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       const playersAndTeams = await caller.match.getMatchPlayersAndTeams({
@@ -148,7 +147,7 @@ describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
     });
 
     test("sets score to null", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       const playersAndTeams = await caller.match.getMatchPlayersAndTeams({
@@ -190,7 +189,7 @@ describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
     });
 
     test("throws NOT_FOUND for non-existent match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.update.updateMatchPlayerScore({
@@ -207,7 +206,7 @@ describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
 
   describe("updateMatchFinalScores", () => {
     test("calculates and sets final scores for a match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       // Set some round scores first
@@ -254,7 +253,7 @@ describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
     });
 
     test("throws NOT_FOUND for non-existent match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.update.updateMatchFinalScores({
@@ -269,7 +268,7 @@ describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
 
   describe("updateMatchManualWinner", () => {
     test("sets a manual winner", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       const playersAndTeams = await caller.match.getMatchPlayersAndTeams({
@@ -316,7 +315,7 @@ describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
     });
 
     test("sets multiple winners", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller, { playerCount: 3 });
 
       const playersAndTeams = await caller.match.getMatchPlayersAndTeams({
@@ -349,7 +348,7 @@ describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
     });
 
     test("throws NOT_FOUND for non-existent match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.update.updateMatchManualWinner({
@@ -364,7 +363,7 @@ describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
 
   describe("updateMatchPlacements", () => {
     test("sets placements for players", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller, { playerCount: 3 });
 
       const playersAndTeams = await caller.match.getMatchPlayersAndTeams({
@@ -412,7 +411,7 @@ describe("Match Update - Scores, Winners, Placements, Final Scores", () => {
     });
 
     test("throws NOT_FOUND for non-existent match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.update.updateMatchPlacements({

@@ -3,6 +3,7 @@ import type { inferProcedureInput } from "@trpc/server";
 import type { AppRouter } from "./root";
 import { createContextInner } from "./context";
 import { appRouter } from "./root";
+import type { TestUser } from "./test-helpers";
 import {
   createTestSession,
   createTestUser,
@@ -103,9 +104,31 @@ export async function ensureUserPlayer(caller: TestCaller): Promise<void> {
 }
 
 /**
- * Standard lifecycle hooks for test suites.
+ * Standard lifecycle hooks for test suites. Each `createTestUser()` assigns a
+ * new UUID user id (aligned with Better Auth text ids); use `userId` after create.
  */
-export const testLifecycle = (testUserId: string) => ({
-  createTestUser: () => createTestUser(testUserId),
-  deleteTestUser: () => deleteTestUser(testUserId),
-});
+export const testLifecycle = () => {
+  let userId: string | null = null;
+
+  return {
+    async createTestUser(): Promise<TestUser> {
+      const created = await createTestUser();
+      userId = created.id;
+      return created;
+    },
+    async deleteTestUser(): Promise<void> {
+      if (userId) {
+        await deleteTestUser(userId);
+        userId = null;
+      }
+    },
+    get userId(): string {
+      if (!userId) {
+        throw new Error("createTestUser() must be called before accessing userId");
+      }
+      return userId;
+    },
+  };
+};
+
+export type TestLifecycle = ReturnType<typeof testLifecycle>;

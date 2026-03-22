@@ -16,8 +16,7 @@ import {
 } from "./game-test-fixtures";
 
 describe("Game Scoresheets Tests (gameScoresheets & gameScoreSheetsWithRounds)", () => {
-  const testUserId = "test-user-game-scoresheets-direct";
-  const lifecycle = gameTestLifecycle(testUserId);
+  const lifecycle = gameTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -39,7 +38,7 @@ describe("Game Scoresheets Tests (gameScoresheets & gameScoreSheetsWithRounds)",
 
   describe("game.gameScoresheets", () => {
     test("returns default scoresheet for new game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "Default SS Game",
@@ -59,7 +58,7 @@ describe("Game Scoresheets Tests (gameScoresheets & gameScoreSheetsWithRounds)",
     });
 
     test("returns custom scoresheets", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameFull(caller, {
         gameName: "Custom SS Game",
         scoresheets: [
@@ -96,7 +95,7 @@ describe("Game Scoresheets Tests (gameScoresheets & gameScoreSheetsWithRounds)",
     });
 
     test("scoresheet has correct shape", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(caller, "Shape Game");
 
       const result = await caller.game.gameScoresheets({
@@ -120,7 +119,7 @@ describe("Game Scoresheets Tests (gameScoresheets & gameScoreSheetsWithRounds)",
     });
 
     test("throws for non-existent game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.game.gameScoresheets({ type: "original", id: 999999 }),
@@ -132,7 +131,7 @@ describe("Game Scoresheets Tests (gameScoresheets & gameScoreSheetsWithRounds)",
 
   describe("game.gameScoreSheetsWithRounds", () => {
     test("returns default scoresheet with rounds for new game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "Rounds Default Game",
@@ -154,7 +153,7 @@ describe("Game Scoresheets Tests (gameScoresheets & gameScoreSheetsWithRounds)",
     });
 
     test("returns custom scoresheets with their rounds", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameFull(caller, {
         gameName: "Rounds Custom Game",
         scoresheets: [
@@ -193,7 +192,7 @@ describe("Game Scoresheets Tests (gameScoresheets & gameScoreSheetsWithRounds)",
     });
 
     test("round has correct shape", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "Round Shape Game",
@@ -216,7 +215,7 @@ describe("Game Scoresheets Tests (gameScoresheets & gameScoreSheetsWithRounds)",
     });
 
     test("throws for non-existent game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.game.gameScoreSheetsWithRounds({

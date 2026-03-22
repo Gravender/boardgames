@@ -16,8 +16,7 @@ import {
 } from "./game-test-fixtures";
 
 describe("Game getGameInsights Tests", () => {
-  const testUserId = "test-user-game-insights";
-  const lifecycle = gameTestLifecycle(testUserId);
+  const lifecycle = gameTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -37,7 +36,7 @@ describe("Game getGameInsights Tests", () => {
 
   describe("game.getGameInsights", () => {
     test("returns default insights for game with no matches", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "No Match Insights Game",
@@ -57,7 +56,7 @@ describe("Game getGameInsights Tests", () => {
     });
 
     test("returns insights structure for game with finished match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithFinishedMatch(caller, {
         gameName: "Insights Game",
         matchName: "Insights Match",
@@ -79,7 +78,7 @@ describe("Game getGameInsights Tests", () => {
     });
 
     test("summary has correct shape", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "Summary Shape Game",
@@ -106,7 +105,7 @@ describe("Game getGameInsights Tests", () => {
     });
 
     test("cores structure is correct", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "Cores Shape Game",
@@ -124,7 +123,7 @@ describe("Game getGameInsights Tests", () => {
     });
 
     test("returns player count distribution with match data", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithFinishedMatch(caller, {
         gameName: "Distribution Game",
         playerCount: 4,
@@ -146,7 +145,7 @@ describe("Game getGameInsights Tests", () => {
     });
 
     test("returns empty insights for non-existent game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       const result = await caller.game.getGameInsights({
         type: "original",
