@@ -1,56 +1,62 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { TRPCError } from "@trpc/server";
 
-import { caller } from "~/trpc/server";
-import { PlayerTabs } from "./_components/player-tabs";
+import { PlayerInsightsShell } from "~/components/player/insights/player-insights-shell";
+import { caller, HydrateClient } from "~/trpc/server";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  // read route params
   const id = (await params).id;
-
-  // fetch data
   if (isNaN(Number(id))) return { title: "Player" };
-  const player = await caller.newPlayer.getPlayer({
-    id: Number(id),
-    type: "original",
-  });
-  if (!player.image?.url)
-    return {
-      title: `${player.name}'s Stats`,
-      description: `${player.name} Board Game Stats`,
-
+  try {
+    const header = await caller.newPlayer.getPlayerHeader({
+      id: Number(id),
+      type: "original",
+    });
+    const imageUrl =
+      header.image?.type === "file" ? header.image.url : undefined;
+    const base = {
+      title: `${header.name}'s Stats`,
+      description: `Stats and trends for ${header.name}`,
       icons: [{ rel: "icon", url: "/user.ico" }],
     };
-  return {
-    title: `${player.name}'s Stats`,
-    description: `${player.name} Board Game Stats`,
-    icons: [{ rel: "icon", url: "/user.ico" }],
-    openGraph: {
-      images: [player.image.url],
-    },
-  };
+    if (!imageUrl) return base;
+    return {
+      ...base,
+      openGraph: { images: [imageUrl] },
+    };
+  } catch (error) {
+    if (error instanceof TRPCError && error.code === "NOT_FOUND") {
+      return { title: "Player" };
+    }
+    return { title: "Player" };
+  }
 }
 
 export default async function Page({ params }: Props) {
-  const slugs = await params;
-  const playerId = slugs.id;
-  if (isNaN(Number(playerId))) redirect("/dashboard/players");
-  const player = await caller.newPlayer.getPlayer({
-    id: Number(playerId),
-    type: "original",
-  });
-  if (player.type !== "original") {
-    redirect("/dashboard/players");
+  const id = (await params).id;
+  if (isNaN(Number(id))) redirect("/dashboard/players");
+
+  const playerInput = { id: Number(id), type: "original" as const };
+
+  try {
+    await caller.newPlayer.getPlayerHeader(playerInput);
+  } catch (error) {
+    if (error instanceof TRPCError && error.code === "NOT_FOUND") {
+      redirect("/dashboard/players");
+    }
+    throw error;
   }
 
   return (
-    <div className="flex w-full items-center justify-center">
-      <div className="flex w-full max-w-5xl flex-col items-center p-2 pt-0">
-        <PlayerTabs player={player} />
+    <HydrateClient>
+      <div className="flex w-full justify-center">
+        <PlayerInsightsShell playerInput={playerInput} />
       </div>
-    </div>
+    </HydrateClient>
   );
 }

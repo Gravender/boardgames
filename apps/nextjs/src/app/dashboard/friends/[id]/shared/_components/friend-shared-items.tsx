@@ -11,7 +11,6 @@ import {
   Users,
 } from "lucide-react";
 
-import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
 import {
   Card,
@@ -31,12 +30,59 @@ const formatDate = (date: Date) => {
   });
 };
 
+/**
+ * Mirrors API `SharedEntry` from `collectShares`. Declared locally because the
+ * API package does not emit `dist/utils/sharing.d.ts`, so `RouterOutputs` can
+ * lose payload typing for nested arrays.
+ */
+type FriendSharedEntry = {
+  id: number;
+  name: string;
+  permission: "view" | "edit";
+  createdAt: Date;
+} & (
+  | {
+      type: "game";
+      matches: {
+        id: number;
+        permission: "view" | "edit";
+        name: string;
+        date: Date;
+        duration: number;
+        finished: boolean;
+        comment: string | null;
+      }[];
+      scoresheets: {
+        id: number;
+        permission: "view" | "edit";
+        name: string;
+        gameId: number;
+        createdBy: string | null;
+        createdAt: Date;
+        updatedAt: Date | null;
+        deletedAt: Date | null;
+        isCoop: boolean;
+        winCondition:
+          | "Manual"
+          | "Highest Score"
+          | "Lowest Score"
+          | "No Winner"
+          | "Target Score";
+        targetScore: number;
+        roundsScore: string;
+        type: "Template" | "Default" | "Match" | "Game";
+      }[];
+    }
+  | { type: "player" }
+  | { type: "location" }
+);
+
 export function FriendSharedItems({
   sharedWith,
   sharedTo,
 }: {
-  sharedWith: RouterOutputs["friend"]["getFriend"]["sharedWith"];
-  sharedTo: RouterOutputs["friend"]["getFriend"]["sharedTo"];
+  sharedWith: FriendSharedEntry[];
+  sharedTo: FriendSharedEntry[];
 }) {
   const [withSearchTerm, setWithSearchTerm] = useState("");
   const [toSearchTerm, setToSearchTerm] = useState("");
@@ -95,7 +141,7 @@ function SharedItemsList({
   items,
   searchTerm,
 }: {
-  items: RouterOutputs["friend"]["getFriend"]["sharedWith"];
+  items: FriendSharedEntry[];
   searchTerm: string;
 }) {
   // Filter items based on search term
@@ -189,10 +235,7 @@ function GameItem({
   item,
   searchTerm,
 }: {
-  item: Extract<
-    RouterOutputs["friend"]["getFriend"]["sharedWith"][number],
-    { type: "game" }
-  >;
+  item: Extract<FriendSharedEntry, { type: "game" }>;
   searchTerm: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -362,7 +405,7 @@ function SimpleItem({
   item,
   icon,
 }: {
-  item: RouterOutputs["friend"]["getFriend"]["sharedWith"][number];
+  item: FriendSharedEntry;
   icon: React.ReactNode;
 }) {
   return (

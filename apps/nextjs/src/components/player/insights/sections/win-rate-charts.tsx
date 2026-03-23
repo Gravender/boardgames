@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { TooltipProps } from "recharts";
 
 import type { RouterOutputs } from "@board-games/api";
 import {
@@ -83,7 +84,7 @@ const overTimeChartTooltipClassName =
   "border-border/50 bg-background grid min-w-44 max-w-xs gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl";
 
 const tooltipMonthForSeries = (
-  seriesName: string | undefined,
+  seriesName: string | number | undefined,
   slot: number | undefined,
   monthSlotLabels: readonly string[],
   priorMonthSlotLabels: readonly string[],
@@ -91,10 +92,15 @@ const tooltipMonthForSeries = (
   if (slot == null || slot < 1 || slot > 12) {
     return undefined;
   }
-  if (seriesName === "Previous 12 months") {
+  if (String(seriesName) === "Previous 12 months") {
     return priorMonthSlotLabels[slot - 1];
   }
   return monthSlotLabels[slot - 1];
+};
+
+type OverTimeChartTooltipProps = TooltipProps<number, string> & {
+  monthSlotLabels: readonly string[];
+  priorMonthSlotLabels: readonly string[];
 };
 
 const OverTimeChartTooltip = ({
@@ -102,17 +108,7 @@ const OverTimeChartTooltip = ({
   payload,
   monthSlotLabels,
   priorMonthSlotLabels,
-}: {
-  active?: boolean;
-  monthSlotLabels: readonly string[];
-  priorMonthSlotLabels: readonly string[];
-  payload?: ReadonlyArray<{
-    name?: string;
-    value?: number | string;
-    dataKey?: string | number;
-    payload?: { monthLabelShort?: string; monthSlot?: number };
-  }>;
-}) => {
+}: OverTimeChartTooltipProps) => {
   if (!active || !payload?.length) {
     return null;
   }
@@ -128,10 +124,11 @@ const OverTimeChartTooltip = ({
         );
         return (
           <p
+            // oxlint-disable-next-line react/no-array-index-key
             key={`${String(p.name ?? "series")}-${String(p.dataKey ?? "value")}-${index}`}
             className="text-foreground font-mono font-medium tabular-nums"
           >
-            {p.name}: {p.value}%
+            {String(p.name ?? "")}: {p.value}%
             {monthLabel != null && monthLabel !== "" && (
               <span className="text-muted-foreground font-sans font-normal">
                 {" "}
@@ -373,7 +370,7 @@ export function WinRateChartsSection({ data }: { data: Data }) {
                   axisLine={false}
                 />
                 <ChartTooltip
-                  content={(props) => (
+                  content={(props: TooltipProps<number, string>) => (
                     <OverTimeChartTooltip
                       {...props}
                       monthSlotLabels={monthSlotLabels}

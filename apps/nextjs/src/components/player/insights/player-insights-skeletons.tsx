@@ -14,7 +14,7 @@ export function PlayerInsightsHeroSkeleton() {
     <div
       className="border-border/80 bg-card/60 overflow-hidden rounded-xl border shadow-sm backdrop-blur-sm"
       aria-busy
-      aria-label="Loading player insights header"
+      aria-label="Loading player stats header"
     >
       <div className="px-4 pt-4 pb-3 md:px-5 md:pt-4 md:pb-3">
         <div className="flex flex-col items-center gap-3 md:flex-row md:items-center md:gap-4">
@@ -38,7 +38,7 @@ export function PlayerInsightsHeroSkeleton() {
 
 export function PlayerInsightsBodySkeleton() {
   return (
-    <div className="space-y-8" aria-busy aria-label="Loading player insights">
+    <div className="space-y-8" aria-busy aria-label="Loading player stats">
       {["s1", "s2", "s3", "s4", "s5"].map((k) => (
         <div
           key={k}

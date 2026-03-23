@@ -102,7 +102,7 @@ export function PlayerInsightsBody({
       <div className="flex flex-col gap-3">
         <div className="md:hidden">
           <Label
-            htmlFor="insights-section-mobile"
+            htmlFor="stats-section-mobile"
             className="mb-1.5 block text-sm font-medium"
           >
             Section
@@ -112,9 +112,9 @@ export function PlayerInsightsBody({
             onValueChange={(v) => setActiveTab(v as TabValue)}
           >
             <SelectTrigger
-              id="insights-section-mobile"
+              id="stats-section-mobile"
               className="w-full"
-              aria-label="Choose insights section"
+              aria-label="Choose stats section"
             >
               <SelectValue placeholder="Choose section" />
             </SelectTrigger>

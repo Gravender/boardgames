@@ -108,9 +108,7 @@ export function PlayerInsightsHeroSection({
                     {header.permissions === "edit" ? " · edit" : " · view"}
                   </Badge>
                 )}
-                <span className="text-muted-foreground text-xs">
-                  Player insights
-                </span>
+                <span className="text-muted-foreground text-xs">Stats</span>
               </div>
             </div>
           </div>
