@@ -1,12 +1,13 @@
 /**
  * Aggregated player insights using Drizzle + canonical match/player views.
- * Win/tie detection (`isWinSql` / `isTieSql`) matches `getOutcomeLabel` in
+ * Win/tie detection (`insightWinSql` / `insightTieSql`) matches `getOutcomeLabel` in
  * player-insights.read.service.ts and should stay aligned with
  * playerRepository.getPlayerSummary (finished matches, viewer scope).
  */
 import { and, asc, desc, eq, or, sql } from "drizzle-orm";
+import type { AnyColumn } from "drizzle-orm";
 
-import { db } from "@board-games/db/client";
+import { db, type TransactionType } from "@board-games/db/client";
 import { game, image, match, scoresheet } from "@board-games/db/schema";
 import {
   vMatchCanonical,
@@ -110,22 +111,35 @@ const targetClause = (input: GetPlayerInputType) =>
         eq(vMatchPlayerCanonicalForUser.sharedPlayerId, input.sharedPlayerId),
       );
 
-/** Matches `getOutcomeLabel` in player-insights.read.service.ts */
-const isWinSql = sql`(
-  ${vMatchPlayerCanonicalForUser.winner} IS TRUE
+/**
+ * Win/tie SQL over one row per finished match for the target player (deduped).
+ * Matches `getOutcomeLabel` in player-insights.read.service.ts.
+ */
+const insightWinSql = (cols: {
+  winner: AnyColumn;
+  placement: AnyColumn;
+  score: AnyColumn;
+}) =>
+  sql`(
+  ${cols.winner} IS TRUE
   OR (
     NOT (
-      ${vMatchPlayerCanonicalForUser.placement} IS NULL
-      AND ${vMatchPlayerCanonicalForUser.score} IS NULL
+      ${cols.placement} IS NULL
+      AND ${cols.score} IS NULL
     )
-    AND ${vMatchPlayerCanonicalForUser.placement} = 1
+    AND ${cols.placement} = 1
   )
 )`;
 
-const isTieSql = sql`(
-  (${vMatchPlayerCanonicalForUser.winner} IS NOT TRUE)
-  AND ${vMatchPlayerCanonicalForUser.placement} IS NULL
-  AND ${vMatchPlayerCanonicalForUser.score} IS NULL
+const insightTieSql = (cols: {
+  winner: AnyColumn;
+  placement: AnyColumn;
+  score: AnyColumn;
+}) =>
+  sql`(
+  (${cols.winner} IS NOT TRUE)
+  AND ${cols.placement} IS NULL
+  AND ${cols.score} IS NULL
 )`;
 
 const baseInsightWhere = (args: {
@@ -139,49 +153,17 @@ const baseInsightWhere = (args: {
     eq(vMatchCanonical.finished, true),
   );
 
-class PlayerInsightsRepository {
-  public async getPerformanceRollup(
-    args: WithRepoUserIdInput<GetPlayerInputType>,
-  ): Promise<PlayerInsightPerformanceRollup> {
-    const { userId, input, tx } = args;
-    const database = tx ?? db;
-    const [row] = await database
-      .select({
-        totalMatches: sql<number>`count(*)::int`.mapWith(Number),
-        wins: sql<number>`count(*) filter (where ${isWinSql})::int`.mapWith(
-          Number,
-        ),
-        ties: sql<number>`count(*) filter (where ${isTieSql})::int`.mapWith(
-          Number,
-        ),
-        avgPlacement: sql<
-          number | null
-        >`avg(${vMatchPlayerCanonicalForUser.placement}) filter (where ${vMatchPlayerCanonicalForUser.placement} is not null)`.mapWith(
-          Number,
-        ),
-        avgScore: sql<
-          number | null
-        >`avg(${vMatchPlayerCanonicalForUser.score}) filter (where ${vMatchPlayerCanonicalForUser.score} is not null)`.mapWith(
-          Number,
-        ),
-        totalPlaytime:
-          sql<number>`coalesce(sum(${match.duration}), 0)::int`.mapWith(Number),
-        coopMatches:
-          sql<number>`count(*) filter (where ${scoresheet.isCoop})::int`.mapWith(
-            Number,
-          ),
-        coopWins:
-          sql<number>`count(*) filter (where ${scoresheet.isCoop} and ${isWinSql})::int`.mapWith(
-            Number,
-          ),
-        competitiveMatches:
-          sql<number>`count(*) filter (where not ${scoresheet.isCoop})::int`.mapWith(
-            Number,
-          ),
-        competitiveWins:
-          sql<number>`count(*) filter (where not ${scoresheet.isCoop} and ${isWinSql})::int`.mapWith(
-            Number,
-          ),
+const insightMatchPlayersDedupe = (
+  database: typeof db | TransactionType,
+  args: { userId: string; input: GetPlayerInputType },
+) =>
+  database.$with("insight_match_players").as(
+    db
+      .selectDistinctOn([vMatchPlayerCanonicalForUser.canonicalMatchId], {
+        canonicalMatchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
+        winner: vMatchPlayerCanonicalForUser.winner,
+        placement: vMatchPlayerCanonicalForUser.placement,
+        score: vMatchPlayerCanonicalForUser.score,
       })
       .from(vMatchPlayerCanonicalForUser)
       .innerJoin(
@@ -196,7 +178,84 @@ class PlayerInsightsRepository {
         scoresheet,
         eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
-      .where(baseInsightWhere({ userId, input }));
+      .where(baseInsightWhere(args))
+      .orderBy(vMatchPlayerCanonicalForUser.canonicalMatchId),
+  );
+
+class PlayerInsightsRepository {
+  public async getPerformanceRollup(
+    args: WithRepoUserIdInput<GetPlayerInputType>,
+  ): Promise<PlayerInsightPerformanceRollup> {
+    const { userId, input, tx } = args;
+    const database = tx ?? db;
+    const insightMatchPlayers = insightMatchPlayersDedupe(database, {
+      userId,
+      input,
+    });
+    const mpCols = {
+      winner: insightMatchPlayers.winner,
+      placement: insightMatchPlayers.placement,
+      score: insightMatchPlayers.score,
+    };
+    const winSql = insightWinSql(mpCols);
+    const tieSql = insightTieSql(mpCols);
+    const [row] = await database
+      .with(insightMatchPlayers)
+      .select({
+        totalMatches: sql<number>`count(*)::int`.mapWith(Number),
+        wins: sql<number>`count(*) filter (where ${winSql})::int`.mapWith(
+          Number,
+        ),
+        ties: sql<number>`count(*) filter (where ${tieSql})::int`.mapWith(
+          Number,
+        ),
+        avgPlacement: sql<
+          number | null
+        >`avg(${insightMatchPlayers.placement}) filter (where ${insightMatchPlayers.placement} is not null)`.mapWith(
+          Number,
+        ),
+        avgScore: sql<
+          number | null
+        >`avg(${insightMatchPlayers.score}) filter (where ${insightMatchPlayers.score} is not null)`.mapWith(
+          Number,
+        ),
+        totalPlaytime: sql<number>`coalesce(
+          sum(
+            case
+              when ${match.finished}
+                and ${match.duration} >= 300
+              then ${match.duration}
+            end
+          ),
+          0
+        )::int`.mapWith(Number),
+        coopMatches:
+          sql<number>`count(*) filter (where ${scoresheet.isCoop})::int`.mapWith(
+            Number,
+          ),
+        coopWins:
+          sql<number>`count(*) filter (where ${scoresheet.isCoop} and ${winSql})::int`.mapWith(
+            Number,
+          ),
+        competitiveMatches:
+          sql<number>`count(*) filter (where not ${scoresheet.isCoop})::int`.mapWith(
+            Number,
+          ),
+        competitiveWins:
+          sql<number>`count(*) filter (where not ${scoresheet.isCoop} and ${winSql})::int`.mapWith(
+            Number,
+          ),
+      })
+      .from(insightMatchPlayers)
+      .innerJoin(
+        vMatchCanonical,
+        eq(vMatchCanonical.matchId, insightMatchPlayers.canonicalMatchId),
+      )
+      .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
+      .innerJoin(
+        scoresheet,
+        eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
+      );
     if (!row) {
       return {
         totalMatches: 0,
@@ -236,29 +295,30 @@ class PlayerInsightsRepository {
   ): Promise<PlayerInsightsOutcome[]> {
     const { userId, input, tx } = args;
     const database = tx ?? db;
+    const insightMatchPlayers = insightMatchPlayersDedupe(database, {
+      userId,
+      input,
+    });
     const rows = await database
+      .with(insightMatchPlayers)
       .select({
         outcome: sql<PlayerInsightsOutcome>`CASE
-          WHEN ${vMatchPlayerCanonicalForUser.winner} IS TRUE THEN 'win'
-          WHEN ${vMatchPlayerCanonicalForUser.placement} IS NULL AND ${vMatchPlayerCanonicalForUser.score} IS NULL THEN 'tie'
-          WHEN ${vMatchPlayerCanonicalForUser.placement} = 1 THEN 'win'
+          WHEN ${insightMatchPlayers.winner} IS TRUE THEN 'win'
+          WHEN ${insightMatchPlayers.placement} IS NULL AND ${insightMatchPlayers.score} IS NULL THEN 'tie'
+          WHEN ${insightMatchPlayers.placement} = 1 THEN 'win'
           ELSE 'loss'
         END`,
       })
-      .from(vMatchPlayerCanonicalForUser)
+      .from(insightMatchPlayers)
       .innerJoin(
         vMatchCanonical,
-        eq(
-          vMatchCanonical.matchId,
-          vMatchPlayerCanonicalForUser.canonicalMatchId,
-        ),
+        eq(vMatchCanonical.matchId, insightMatchPlayers.canonicalMatchId),
       )
       .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
       .innerJoin(
         scoresheet,
         eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
-      .where(baseInsightWhere({ userId, input }))
       .orderBy(desc(vMatchCanonical.matchDate))
       .limit(limit);
     return rows.map((r) => r.outcome);
@@ -269,7 +329,18 @@ class PlayerInsightsRepository {
   ): Promise<PlayerInsightFavoriteGameRow[]> {
     const { userId, input, tx } = args;
     const database = tx ?? db;
+    const insightMatchPlayers = insightMatchPlayersDedupe(database, {
+      userId,
+      input,
+    });
+    const mpCols = {
+      winner: insightMatchPlayers.winner,
+      placement: insightMatchPlayers.placement,
+      score: insightMatchPlayers.score,
+    };
+    const winSql = insightWinSql(mpCols);
     return database
+      .with(insightMatchPlayers)
       .select({
         canonicalGameId: vMatchCanonical.canonicalGameId,
         sharedGameId: vMatchCanonical.sharedGameId,
@@ -293,25 +364,22 @@ class PlayerInsightsRepository {
           )
           .as("game_image"),
         plays: sql<number>`count(*)::int`.mapWith(Number),
-        wins: sql<number>`count(*) filter (where ${isWinSql})::int`.mapWith(
+        wins: sql<number>`count(*) filter (where ${winSql})::int`.mapWith(
           Number,
         ),
         avgScore: sql<
           number | null
-        >`avg(${vMatchPlayerCanonicalForUser.score}) filter (where ${vMatchPlayerCanonicalForUser.score} is not null)`.mapWith(
+        >`avg(${insightMatchPlayers.score}) filter (where ${insightMatchPlayers.score} is not null)`.mapWith(
           Number,
         ),
         lastPlayed: sql<Date>`max(${vMatchCanonical.matchDate})`.mapWith(
           (v) => v as Date,
         ),
       })
-      .from(vMatchPlayerCanonicalForUser)
+      .from(insightMatchPlayers)
       .innerJoin(
         vMatchCanonical,
-        eq(
-          vMatchCanonical.matchId,
-          vMatchPlayerCanonicalForUser.canonicalMatchId,
-        ),
+        eq(vMatchCanonical.matchId, insightMatchPlayers.canonicalMatchId),
       )
       .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
       .innerJoin(game, eq(game.id, vMatchCanonical.canonicalGameId))
@@ -320,7 +388,6 @@ class PlayerInsightsRepository {
         scoresheet,
         eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
-      .where(baseInsightWhere({ userId, input }))
       .groupBy(
         vMatchCanonical.canonicalGameId,
         vMatchCanonical.sharedGameId,
@@ -349,7 +416,7 @@ class PlayerInsightsRepository {
       database
         .select({
           matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
-          playerCount: sql<number>`count(*)::int`
+          playerCount: sql<number>`count(distinct ${vMatchPlayerCanonicalForUser.baseMatchPlayerId})::int`
             .mapWith(Number)
             .as("player_count"),
         })
@@ -358,47 +425,42 @@ class PlayerInsightsRepository {
         .groupBy(vMatchPlayerCanonicalForUser.canonicalMatchId),
     );
 
+    const insightMatchPlayers = insightMatchPlayersDedupe(database, {
+      userId,
+      input,
+    });
+
     const placements = await database
+      .with(insightMatchPlayers)
       .select({
-        placement: vMatchPlayerCanonicalForUser.placement,
+        placement: insightMatchPlayers.placement,
         count: sql<number>`count(*)::int`.mapWith(Number),
       })
-      .from(vMatchPlayerCanonicalForUser)
+      .from(insightMatchPlayers)
       .innerJoin(
         vMatchCanonical,
-        eq(
-          vMatchCanonical.matchId,
-          vMatchPlayerCanonicalForUser.canonicalMatchId,
-        ),
+        eq(vMatchCanonical.matchId, insightMatchPlayers.canonicalMatchId),
       )
       .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
       .innerJoin(
         scoresheet,
         eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
-      .where(
-        and(
-          baseInsightWhere({ userId, input }),
-          sql`${vMatchPlayerCanonicalForUser.placement} is not null`,
-        ),
-      )
-      .groupBy(vMatchPlayerCanonicalForUser.placement)
-      .orderBy(asc(vMatchPlayerCanonicalForUser.placement));
+      .where(sql`${insightMatchPlayers.placement} is not null`)
+      .groupBy(insightMatchPlayers.placement)
+      .orderBy(asc(insightMatchPlayers.placement));
 
     const byGameSize = await database
-      .with(matchSizes)
+      .with(insightMatchPlayers, matchSizes)
       .select({
         playerCount: matchSizes.playerCount,
-        placement: vMatchPlayerCanonicalForUser.placement,
+        placement: insightMatchPlayers.placement,
         count: sql<number>`count(*)::int`.mapWith(Number),
       })
-      .from(vMatchPlayerCanonicalForUser)
+      .from(insightMatchPlayers)
       .innerJoin(
         vMatchCanonical,
-        eq(
-          vMatchCanonical.matchId,
-          vMatchPlayerCanonicalForUser.canonicalMatchId,
-        ),
+        eq(vMatchCanonical.matchId, insightMatchPlayers.canonicalMatchId),
       )
       .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
       .innerJoin(
@@ -406,16 +468,11 @@ class PlayerInsightsRepository {
         eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
       .innerJoin(matchSizes, eq(matchSizes.matchId, vMatchCanonical.matchId))
-      .where(
-        and(
-          baseInsightWhere({ userId, input }),
-          sql`${vMatchPlayerCanonicalForUser.placement} is not null`,
-        ),
-      )
-      .groupBy(matchSizes.playerCount, vMatchPlayerCanonicalForUser.placement)
+      .where(sql`${insightMatchPlayers.placement} is not null`)
+      .groupBy(matchSizes.playerCount, insightMatchPlayers.placement)
       .orderBy(
         asc(matchSizes.playerCount),
-        asc(vMatchPlayerCanonicalForUser.placement),
+        asc(insightMatchPlayers.placement),
       );
 
     return {
@@ -445,7 +502,7 @@ class PlayerInsightsRepository {
       database
         .select({
           matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
-          playerCount: sql<number>`count(*)::int`
+          playerCount: sql<number>`count(distinct ${vMatchPlayerCanonicalForUser.baseMatchPlayerId})::int`
             .mapWith(Number)
             .as("player_count"),
         })
@@ -454,32 +511,40 @@ class PlayerInsightsRepository {
         .groupBy(vMatchPlayerCanonicalForUser.canonicalMatchId),
     );
 
+    const insightMatchPlayers = insightMatchPlayersDedupe(database, {
+      userId,
+      input,
+    });
+    const mpCols = {
+      winner: insightMatchPlayers.winner,
+      placement: insightMatchPlayers.placement,
+      score: insightMatchPlayers.score,
+    };
+    const winSql = insightWinSql(mpCols);
+
     const rows = await database
-      .with(matchSizes)
+      .with(insightMatchPlayers, matchSizes)
       .select({
         playerCount: matchSizes.playerCount,
         matches: sql<number>`count(*)::int`.mapWith(Number),
-        wins: sql<number>`count(*) filter (where ${isWinSql})::int`.mapWith(
+        wins: sql<number>`count(*) filter (where ${winSql})::int`.mapWith(
           Number,
         ),
         avgPlacement: sql<
           number | null
-        >`avg(${vMatchPlayerCanonicalForUser.placement}) filter (where ${vMatchPlayerCanonicalForUser.placement} is not null)`.mapWith(
+        >`avg(${insightMatchPlayers.placement}) filter (where ${insightMatchPlayers.placement} is not null)`.mapWith(
           Number,
         ),
         avgScore: sql<
           number | null
-        >`avg(${vMatchPlayerCanonicalForUser.score}) filter (where ${vMatchPlayerCanonicalForUser.score} is not null)`.mapWith(
+        >`avg(${insightMatchPlayers.score}) filter (where ${insightMatchPlayers.score} is not null)`.mapWith(
           Number,
         ),
       })
-      .from(vMatchPlayerCanonicalForUser)
+      .from(insightMatchPlayers)
       .innerJoin(
         vMatchCanonical,
-        eq(
-          vMatchCanonical.matchId,
-          vMatchPlayerCanonicalForUser.canonicalMatchId,
-        ),
+        eq(vMatchCanonical.matchId, insightMatchPlayers.canonicalMatchId),
       )
       .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
       .innerJoin(
@@ -487,7 +552,6 @@ class PlayerInsightsRepository {
         eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
       .innerJoin(matchSizes, eq(matchSizes.matchId, vMatchCanonical.matchId))
-      .where(baseInsightWhere({ userId, input }))
       .groupBy(matchSizes.playerCount)
       .orderBy(asc(matchSizes.playerCount));
 
@@ -505,32 +569,39 @@ class PlayerInsightsRepository {
   ): Promise<PlayerInsightMonthlyBucketRow[]> {
     const { userId, input, tx } = args;
     const database = tx ?? db;
+    const insightMatchPlayers = insightMatchPlayersDedupe(database, {
+      userId,
+      input,
+    });
+    const mpCols = {
+      winner: insightMatchPlayers.winner,
+      placement: insightMatchPlayers.placement,
+      score: insightMatchPlayers.score,
+    };
+    const winSql = insightWinSql(mpCols);
 
     const rows = await database
+      .with(insightMatchPlayers)
       .select({
         periodStart:
           sql<Date>`date_trunc('month', ${vMatchCanonical.matchDate}::timestamp)`.mapWith(
             (v) => v as Date,
           ),
         matches: sql<number>`count(*)::int`.mapWith(Number),
-        wins: sql<number>`count(*) filter (where ${isWinSql})::int`.mapWith(
+        wins: sql<number>`count(*) filter (where ${winSql})::int`.mapWith(
           Number,
         ),
       })
-      .from(vMatchPlayerCanonicalForUser)
+      .from(insightMatchPlayers)
       .innerJoin(
         vMatchCanonical,
-        eq(
-          vMatchCanonical.matchId,
-          vMatchPlayerCanonicalForUser.canonicalMatchId,
-        ),
+        eq(vMatchCanonical.matchId, insightMatchPlayers.canonicalMatchId),
       )
       .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
       .innerJoin(
         scoresheet,
         eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
-      .where(baseInsightWhere({ userId, input }))
       .groupBy(
         sql`date_trunc('month', ${vMatchCanonical.matchDate}::timestamp)`,
       )
@@ -557,47 +628,48 @@ class PlayerInsightsRepository {
   ): Promise<PlayerInsightMonthlyScoreRow[]> {
     const { userId, input, tx } = args;
     const database = tx ?? db;
+    const insightMatchPlayers = insightMatchPlayersDedupe(database, {
+      userId,
+      input,
+    });
 
     const rows = await database
+      .with(insightMatchPlayers)
       .select({
         periodStart:
           sql<Date>`date_trunc('month', ${vMatchCanonical.matchDate}::timestamp)`.mapWith(
             (v) => v as Date,
           ),
         matches:
-          sql<number>`count(*) filter (where ${vMatchPlayerCanonicalForUser.score} is not null)::int`.mapWith(
+          sql<number>`count(*) filter (where ${insightMatchPlayers.score} is not null)::int`.mapWith(
             Number,
           ),
         avgScore: sql<
           number | null
-        >`avg(${vMatchPlayerCanonicalForUser.score}) filter (where ${vMatchPlayerCanonicalForUser.score} is not null)`.mapWith(
+        >`avg(${insightMatchPlayers.score}) filter (where ${insightMatchPlayers.score} is not null)`.mapWith(
           Number,
         ),
         minScore: sql<
           number | null
-        >`min(${vMatchPlayerCanonicalForUser.score}) filter (where ${vMatchPlayerCanonicalForUser.score} is not null)`.mapWith(
+        >`min(${insightMatchPlayers.score}) filter (where ${insightMatchPlayers.score} is not null)`.mapWith(
           Number,
         ),
         maxScore: sql<
           number | null
-        >`max(${vMatchPlayerCanonicalForUser.score}) filter (where ${vMatchPlayerCanonicalForUser.score} is not null)`.mapWith(
+        >`max(${insightMatchPlayers.score}) filter (where ${insightMatchPlayers.score} is not null)`.mapWith(
           Number,
         ),
       })
-      .from(vMatchPlayerCanonicalForUser)
+      .from(insightMatchPlayers)
       .innerJoin(
         vMatchCanonical,
-        eq(
-          vMatchCanonical.matchId,
-          vMatchPlayerCanonicalForUser.canonicalMatchId,
-        ),
+        eq(vMatchCanonical.matchId, insightMatchPlayers.canonicalMatchId),
       )
       .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
       .innerJoin(
         scoresheet,
         eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
-      .where(baseInsightWhere({ userId, input }))
       .groupBy(
         sql`date_trunc('month', ${vMatchCanonical.matchDate}::timestamp)`,
       )
@@ -624,29 +696,30 @@ class PlayerInsightsRepository {
   ): Promise<PlayerInsightChronologicalRow[]> {
     const { userId, input, tx } = args;
     const database = tx ?? db;
+    const insightMatchPlayers = insightMatchPlayersDedupe(database, {
+      userId,
+      input,
+    });
 
     return database
+      .with(insightMatchPlayers)
       .select({
         date: vMatchCanonical.matchDate,
-        outcomePlacement: vMatchPlayerCanonicalForUser.placement,
-        outcomeScore: vMatchPlayerCanonicalForUser.score,
-        outcomeWinner: vMatchPlayerCanonicalForUser.winner,
+        outcomePlacement: insightMatchPlayers.placement,
+        outcomeScore: insightMatchPlayers.score,
+        outcomeWinner: insightMatchPlayers.winner,
         isCoop: scoresheet.isCoop,
       })
-      .from(vMatchPlayerCanonicalForUser)
+      .from(insightMatchPlayers)
       .innerJoin(
         vMatchCanonical,
-        eq(
-          vMatchCanonical.matchId,
-          vMatchPlayerCanonicalForUser.canonicalMatchId,
-        ),
+        eq(vMatchCanonical.matchId, insightMatchPlayers.canonicalMatchId),
       )
       .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
       .innerJoin(
         scoresheet,
         eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
-      .where(baseInsightWhere({ userId, input }))
       .orderBy(asc(vMatchCanonical.matchDate));
   }
 }

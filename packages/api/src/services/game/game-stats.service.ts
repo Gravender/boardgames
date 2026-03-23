@@ -17,6 +17,7 @@ import type {
   AggregatedScoresheet,
   AggregatedScoresheetMap,
   GamePlayerStatsAccEntry,
+  GamePlayerStatsPlayerImage,
   GetGameScoresheetStatsScoreSheetType,
   MatchResult,
   MatchResultByPlayerEntry,
@@ -240,6 +241,10 @@ class GameStatsService {
             playerId: mp.playerId,
           },
         });
+        const imageForStats: GamePlayerStatsPlayerImage | null =
+          playerImage === null || mp.image === null
+            ? null
+            : { id: mp.image.id, ...playerImage };
         if (mp.type === "shared") {
           if (mp.sharedId === null) {
             continue;
@@ -248,7 +253,7 @@ class GameStatsService {
             sharedId: mp.sharedId,
             type: "shared",
             name: mp.name,
-            image: playerImage,
+            image: imageForStats,
             coopMatches: 0,
             competitiveMatches: 0,
             coopWins: 0,
@@ -259,7 +264,7 @@ class GameStatsService {
             id: mp.playerId,
             type: "original",
             name: mp.name,
-            image: playerImage,
+            image: imageForStats,
             coopMatches: 0,
             competitiveMatches: 0,
             coopWins: 0,
@@ -268,12 +273,16 @@ class GameStatsService {
         }
         acc.set(key, p);
       }
+      const entry = acc.get(key);
+      if (!entry) {
+        continue;
+      }
       if (mp.isCoop) {
-        p.coopMatches++;
-        if (mp.winner) p.coopWins++;
+        entry.coopMatches++;
+        if (mp.winner) entry.coopWins++;
       } else {
-        p.competitiveMatches++;
-        if (mp.winner) p.competitiveWins++;
+        entry.competitiveMatches++;
+        if (mp.winner) entry.competitiveWins++;
       }
     }
 

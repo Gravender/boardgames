@@ -59,10 +59,15 @@ class PlayerInsightsMatchQueryService {
       },
     });
     if (gameType === "shared") {
+      if (sharedGameId == null) {
+        throw new Error(
+          "sharedGameId is required when gameType is \"shared\" for player insights match mapping.",
+        );
+      }
       return {
         type: "shared",
         id: gameId,
-        sharedGameId: sharedGameId ?? gameId,
+        sharedGameId,
         name: gameName,
         image: image,
       };
@@ -89,7 +94,12 @@ class PlayerInsightsMatchQueryService {
         gameImage: input.gameImage,
       },
     });
-    if (input.matchType === "shared" && input.sharedMatchId !== null) {
+    if (input.matchType === "shared") {
+      if (input.sharedMatchId == null) {
+        throw new Error(
+          "sharedMatchId is required when matchType is \"shared\" for player insights match mapping.",
+        );
+      }
       return {
         type: "shared",
         sharedMatchId: input.sharedMatchId,

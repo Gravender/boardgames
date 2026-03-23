@@ -43,6 +43,11 @@ describe("Player Insights - getPlayerMatchHistoryTimeline", () => {
     });
     expect(result.timeline.length).toBeGreaterThan(0);
     expect(result.timeline[0]?.delta.streakAfter).toBeGreaterThanOrEqual(0);
+    for (let i = 1; i < result.timeline.length; i++) {
+      const prev = result.timeline[i - 1]!.date.getTime();
+      const cur = result.timeline[i]!.date.getTime();
+      expect(cur).toBeGreaterThanOrEqual(prev);
+    }
   });
 
   test("worst case: throws for missing player", async () => {

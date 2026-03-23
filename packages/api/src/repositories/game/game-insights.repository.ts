@@ -18,6 +18,7 @@ import {
 
 import {
   vMatchCanonicalVisibleToUser,
+  vMatchPlayerCanonicalViewerForUser,
   vMatchPlayerCanonicalViewerForUserExcludingNotSharedOnSharedBranch,
 } from "../../utils/drizzle/canonical-clauses";
 import type {
@@ -97,7 +98,7 @@ class GameInsightsRepository {
             vMatchPlayerCanonicalForUser.canonicalMatchId,
             vMatchCanonical.matchId,
           ),
-          vMatchPlayerCanonicalViewerForUserExcludingNotSharedOnSharedBranch(
+          vMatchPlayerCanonicalViewerForUser(
             vMatchPlayerCanonicalForUser,
             userId,
           ),
@@ -161,7 +162,7 @@ class GameInsightsRepository {
             vMatchPlayerCanonicalForUser.baseMatchPlayerId,
             matchPlayerRole.matchPlayerId,
           ),
-          vMatchPlayerCanonicalViewerForUserExcludingNotSharedOnSharedBranch(
+          vMatchPlayerCanonicalViewerForUser(
             vMatchPlayerCanonicalForUser,
             userId,
           ),

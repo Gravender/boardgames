@@ -7,6 +7,7 @@ import { baseRoundSchema, scoreSheetSchema } from "@board-games/shared";
 // ---------------------------------------------------------------------------
 
 export interface GamePlayerStatsPlayerImage {
+  id: number;
   name: string;
   url: string | null;
   type: "file" | "svg";

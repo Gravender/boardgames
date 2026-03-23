@@ -5,6 +5,7 @@ import type {
   GetPlayersOutputType,
   GetPlayerSummaryOutputType,
 } from "../../routers/player/player.output";
+import type { GetPlayerInputType } from "../../routers/player/player.input";
 import { playerRepository } from "../../repositories/player/player.repository";
 import type {
   GetPlayersArgs,
@@ -171,7 +172,10 @@ class PlayerReadService {
           },
           tx,
         );
-        if (!returnedPlayer) {
+        let summaryInput: GetPlayerInputType;
+        if (returnedPlayer) {
+          summaryInput = { type: "original", id: input.id };
+        } else {
           const returnedSharedPlayer =
             await playerRepository.getSharedPlayerByPlayerId(
               {
@@ -190,13 +194,14 @@ class PlayerReadService {
             },
             "Player not found.",
           );
+          summaryInput = {
+            type: "shared",
+            sharedPlayerId: returnedSharedPlayer.id,
+          };
         }
         const playerStats = await playerRepository.getPlayerSummary({
           userId: ctx.userId,
-          input: {
-            type: "original",
-            id: input.id,
-          },
+          input: summaryInput,
           tx,
         });
         assertFound(

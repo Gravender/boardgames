@@ -16,6 +16,7 @@ import type {
   GetPlayerTopRivalsOutputType,
   GetPlayerTopTeammatesOutputType,
   PlayerInsightsIdentityType,
+  PlayerInsightsMatchEntryType,
   PlayerInsightsPlayedWithGroupType,
   PlayerInsightsTargetType,
 } from "../../routers/player/player.output";
@@ -31,6 +32,19 @@ type InsightMatchRow = Awaited<
 >[number];
 
 type InsightMatchParticipant = InsightMatchRow["participants"][number];
+
+type PlayedWithGroupAcc = {
+  groupKey: string;
+  members: PlayerInsightsIdentityType[];
+  matches: number;
+  winsWithGroup: number;
+  winRateWithGroup: number;
+  placementSum: number;
+  placementCount: number;
+  scoreSum: number;
+  scoreCount: number;
+  recentMatches: PlayerInsightsMatchEntryType[];
+};
 
 class PlayerInsightsReadService {
   private async getInsightsTarget(
@@ -82,7 +96,11 @@ class PlayerInsightsReadService {
     return rows.toSorted((a, b) => b.date.getTime() - a.date.getTime());
   }
 
-  /** Matches SQL `isWinSql` / `isTieSql` in player-insights.repository.ts */
+  /**
+   * Matches SQL `insightWinSql` / `insightTieSql` in player-insights.repository.ts.
+   * Tie outcomes do not advance or reset win streaks in {@link getPlayerStreaks} /
+   * {@link getPlayerMatchHistoryTimeline}.
+   */
   private getOutcomeLabelFromFields(args: {
     outcomeWinner: boolean | null;
     outcomePlacement: number | null;
@@ -196,7 +214,7 @@ class PlayerInsightsReadService {
     input: GetPlayerInsightsArgs["input"];
     ctx: GetPlayerInsightsArgs["ctx"];
   }): Promise<PlayerInsightsPlayedWithGroupType[]> {
-    const grouped = new Map<string, PlayerInsightsPlayedWithGroupType>();
+    const grouped = new Map<string, PlayedWithGroupAcc>();
     for (const row of args.rows) {
       const targetParticipant = this.getTargetParticipant({
         row,
@@ -275,8 +293,10 @@ class PlayerInsightsReadService {
           matches: 1,
           winsWithGroup: result === "win" ? 1 : 0,
           winRateWithGroup: result === "win" ? 1 : 0,
-          avgPlacement: row.outcomePlacement,
-          avgScore: row.outcomeScore,
+          placementSum: row.outcomePlacement ?? 0,
+          placementCount: row.outcomePlacement !== null ? 1 : 0,
+          scoreSum: row.outcomeScore ?? 0,
+          scoreCount: row.outcomeScore !== null ? 1 : 0,
           recentMatches: [matchEntry],
         });
         continue;
@@ -287,28 +307,31 @@ class PlayerInsightsReadService {
       }
       existing.winRateWithGroup =
         existing.matches > 0 ? existing.winsWithGroup / existing.matches : 0;
-      const placements = [existing.avgPlacement, row.outcomePlacement].filter(
-        (value): value is number => value !== null,
-      );
-      existing.avgPlacement =
-        placements.length > 0
-          ? placements.reduce((acc, value) => acc + value, 0) /
-            placements.length
-          : null;
-      const scores = [existing.avgScore, row.outcomeScore].filter(
-        (value): value is number => value !== null,
-      );
-      existing.avgScore =
-        scores.length > 0
-          ? scores.reduce((acc, value) => acc + value, 0) / scores.length
-          : null;
+      if (row.outcomePlacement !== null) {
+        existing.placementSum += row.outcomePlacement;
+        existing.placementCount += 1;
+      }
+      if (row.outcomeScore !== null) {
+        existing.scoreSum += row.outcomeScore;
+        existing.scoreCount += 1;
+      }
       existing.recentMatches = [...existing.recentMatches, matchEntry]
         .toSorted((a, b) => b.date.getTime() - a.date.getTime())
         .slice(0, 5);
     }
-    return Array.from(grouped.values()).toSorted(
-      (a, b) => b.matches - a.matches,
-    );
+    return Array.from(grouped.values())
+      .map((g): PlayerInsightsPlayedWithGroupType => ({
+        groupKey: g.groupKey,
+        members: g.members,
+        matches: g.matches,
+        winsWithGroup: g.winsWithGroup,
+        winRateWithGroup: g.winRateWithGroup,
+        avgPlacement:
+          g.placementCount > 0 ? g.placementSum / g.placementCount : null,
+        avgScore: g.scoreCount > 0 ? g.scoreSum / g.scoreCount : null,
+        recentMatches: g.recentMatches,
+      }))
+      .toSorted((a, b) => b.matches - a.matches);
   }
 
   public async getPlayerPerformanceSummary(
@@ -714,7 +737,12 @@ class PlayerInsightsReadService {
         outcomeScore: row.outcomeScore,
       });
       const streakBefore = streak;
-      streak = result === "win" ? streak + 1 : 0;
+      // Ties are neutral: same rule as getPlayerStreaks (ties do not break a win streak).
+      if (result === "win") {
+        streak += 1;
+      } else if (result === "loss") {
+        streak = 0;
+      }
       const streakAfter = streak;
       const game = await playerInsightsMatchQueryService.mapGameEntryFromRow({
         ctx: args.ctx,
@@ -793,6 +821,7 @@ class PlayerInsightsReadService {
         outcomePlacement: row.outcomePlacement,
         outcomeScore: row.outcomeScore,
       });
+      // Ties are neutral: they do not extend or reset win/loss runs (unlike losses).
       if (result === "tie") {
         continue;
       }
