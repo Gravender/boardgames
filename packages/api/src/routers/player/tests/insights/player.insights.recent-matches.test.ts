@@ -45,8 +45,20 @@ describe("Player Insights - getPlayerRecentMatches", () => {
     });
     expect(original.matches.length).toBeGreaterThan(0);
     expect(original.matches[0]?.type).toBe("original");
+    expect(original.matches[0]?.viewerParticipation).toEqual(
+      expect.objectContaining({
+        inMatch: expect.any(Boolean),
+        isSameAsProfilePlayer: expect.any(Boolean),
+      }),
+    );
     expect(shared.matches.length).toBeGreaterThan(0);
     expect(shared.matches[0]?.type).toBe("shared");
+    expect(shared.matches[0]?.viewerParticipation).toEqual(
+      expect.objectContaining({
+        inMatch: expect.any(Boolean),
+        isSameAsProfilePlayer: expect.any(Boolean),
+      }),
+    );
   });
 
   test("worst case: throws for missing players", async () => {

@@ -15,11 +15,9 @@ import {
   getPlayerPerformanceSummaryOutput,
   getPlayerFavoriteGamesOutput,
   getPlayerGameWinRateChartsOutput,
-  getPlayerMatchHistoryTimelineOutput,
   getPlayerPlacementDistributionOutput,
   getPlayerPlayedWithGroupsOutput,
   getPlayerRecentMatchesOutput,
-  getPlayerScoreTrendsOutput,
   getPlayerStreaksOutput,
   getPlayerSummaryOutput,
   getPlayerTopRivalsOutput,
@@ -129,15 +127,6 @@ export const playerRouter = {
         input,
       });
     }),
-  getPlayerMatchHistoryTimeline: protectedUserProcedure
-    .input(getPlayerInsightsInput)
-    .output(getPlayerMatchHistoryTimelineOutput)
-    .query(async ({ ctx, input }) => {
-      return playerInsightsReadService.getPlayerMatchHistoryTimeline({
-        ctx,
-        input,
-      });
-    }),
   getPlayerStreaks: protectedUserProcedure
     .input(getPlayerInsightsInput)
     .output(getPlayerStreaksOutput)
@@ -158,11 +147,5 @@ export const playerRouter = {
         ctx,
         input,
       });
-    }),
-  getPlayerScoreTrends: protectedUserProcedure
-    .input(getPlayerInsightsInput)
-    .output(getPlayerScoreTrendsOutput)
-    .query(async ({ ctx, input }) => {
-      return playerInsightsReadService.getPlayerScoreTrends({ ctx, input });
     }),
 } satisfies TRPCRouterRecord;

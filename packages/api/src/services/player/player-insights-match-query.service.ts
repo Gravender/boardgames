@@ -2,6 +2,7 @@ import type {
   PlayerInsightsGameEntryType,
   PlayerInsightsMatchEntryType,
 } from "../../routers/player/player.output";
+import type { PlayerInsightsScoresheetWinCondition } from "../../repositories/match/match.repository.types";
 import type { ImageRowWithUsage } from "@board-games/shared";
 import { mapGameImageRowWithLogging } from "../../utils/image";
 import type { WithPosthogUserCtx } from "../../utils/shared-args.types";
@@ -22,6 +23,7 @@ export type MapMatchEntryFromRowInput = {
   matchType: "original" | "shared";
   date: Date;
   isCoop: boolean;
+  scoresheetWinCondition: PlayerInsightsScoresheetWinCondition;
   gameId: number;
   sharedGameId: number | null;
   gameType: "original" | "shared" | "linked";
@@ -61,7 +63,7 @@ class PlayerInsightsMatchQueryService {
     if (gameType === "shared") {
       if (sharedGameId == null) {
         throw new Error(
-          "sharedGameId is required when gameType is \"shared\" for player insights match mapping.",
+          'sharedGameId is required when gameType is "shared" for player insights match mapping.',
         );
       }
       return {
@@ -97,7 +99,7 @@ class PlayerInsightsMatchQueryService {
     if (input.matchType === "shared") {
       if (input.sharedMatchId == null) {
         throw new Error(
-          "sharedMatchId is required when matchType is \"shared\" for player insights match mapping.",
+          'sharedMatchId is required when matchType is "shared" for player insights match mapping.',
         );
       }
       return {
@@ -113,6 +115,7 @@ class PlayerInsightsMatchQueryService {
         },
         playerCount: input.playerCount,
         isCoop: input.isCoop,
+        scoresheetWinCondition: input.scoresheetWinCondition,
       };
     }
     return {
@@ -127,6 +130,7 @@ class PlayerInsightsMatchQueryService {
       },
       playerCount: input.playerCount,
       isCoop: input.isCoop,
+      scoresheetWinCondition: input.scoresheetWinCondition,
     };
   }
 }

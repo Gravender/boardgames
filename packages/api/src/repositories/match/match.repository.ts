@@ -833,6 +833,7 @@ class MatchRepository {
         matchType: vMatchCanonical.visibilitySource,
         date: vMatchCanonical.matchDate,
         isCoop: scoresheet.isCoop,
+        scoresheetWinCondition: scoresheet.winCondition,
         gameId: vMatchCanonical.canonicalGameId,
         sharedGameId: vMatchCanonical.sharedGameId,
         gameType: vMatchCanonical.gameVisibilitySource,
@@ -935,6 +936,7 @@ class MatchRepository {
         matchType: vMatchCanonical.visibilitySource,
         date: vMatchCanonical.matchDate,
         isCoop: scoresheet.isCoop,
+        scoresheetWinCondition: scoresheet.winCondition,
         gameId: vMatchCanonical.canonicalGameId,
         sharedGameId: vMatchCanonical.sharedGameId,
         gameType: vMatchCanonical.gameVisibilitySource,
@@ -1002,6 +1004,62 @@ class MatchRepository {
       return ordered.limit(limit);
     }
     return ordered;
+  }
+
+  /**
+   * For the logged-in user's primary player, load outcomes on the given matches (if they played).
+   */
+  public async getViewerOutcomesForCanonicalMatches(args: {
+    userId: string;
+    viewerPlayerId: number;
+    canonicalMatchIds: number[];
+    tx?: TransactionType;
+  }): Promise<
+    Map<
+      number,
+      {
+        placement: number | null;
+        score: number | null;
+        winner: boolean | null;
+      }
+    >
+  > {
+    const { userId, viewerPlayerId, canonicalMatchIds, tx } = args;
+    const database = tx ?? db;
+    if (canonicalMatchIds.length === 0) {
+      return new Map();
+    }
+    const rows = await database
+      .select({
+        matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
+        placement: vMatchPlayerCanonicalForUser.placement,
+        score: vMatchPlayerCanonicalForUser.score,
+        winner: vMatchPlayerCanonicalForUser.winner,
+      })
+      .from(vMatchPlayerCanonicalForUser)
+      .where(
+        and(
+          inArray(
+            vMatchPlayerCanonicalForUser.canonicalMatchId,
+            canonicalMatchIds,
+          ),
+          eq(vMatchPlayerCanonicalForUser.canonicalPlayerId, viewerPlayerId),
+          vMatchPlayerCanonicalViewerForUser(
+            vMatchPlayerCanonicalForUser,
+            userId,
+          ),
+        ),
+      );
+    return new Map(
+      rows.map((r) => [
+        r.matchId,
+        {
+          placement: r.placement,
+          score: r.score,
+          winner: r.winner,
+        },
+      ]),
+    );
   }
 
   public async deleteMatch(args: {

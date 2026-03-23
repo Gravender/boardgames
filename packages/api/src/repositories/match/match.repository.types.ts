@@ -72,12 +72,21 @@ export interface PlayerInsightsMatchParticipantRow {
   image: ImageRowWithUsage | null;
 }
 
+/** Matches `scoresheet.win_condition` on the match's canonical scoresheet. */
+export type PlayerInsightsScoresheetWinCondition =
+  | "Manual"
+  | "Highest Score"
+  | "Lowest Score"
+  | "No Winner"
+  | "Target Score";
+
 export interface PlayerInsightsMatchRow {
   matchId: number;
   sharedMatchId: number | null;
   matchType: "original" | "shared";
   date: Date;
   isCoop: boolean;
+  scoresheetWinCondition: PlayerInsightsScoresheetWinCondition;
   gameId: number;
   sharedGameId: number | null;
   gameType: "original" | "shared" | "linked";
@@ -97,6 +106,7 @@ export interface PlayerInsightsMatchSummaryRow {
   matchType: "original" | "shared";
   date: Date;
   isCoop: boolean;
+  scoresheetWinCondition: PlayerInsightsScoresheetWinCondition;
   gameId: number;
   sharedGameId: number | null;
   gameType: "original" | "shared" | "linked";

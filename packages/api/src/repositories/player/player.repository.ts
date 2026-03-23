@@ -106,6 +106,23 @@ class PlayerRepository {
     });
   }
 
+  /** Primary "You" player row for insights / viewer context. */
+  public async getUserPlayerIdForUser(args: {
+    userId: string;
+    tx?: TransactionType;
+  }): Promise<number | null> {
+    const database = args.tx ?? db;
+    const row = await database.query.player.findFirst({
+      columns: { id: true },
+      where: {
+        createdBy: args.userId,
+        isUser: true,
+        deletedAt: { isNull: true },
+      },
+    });
+    return row?.id ?? null;
+  }
+
   public async getPlayer<TConfig extends QueryConfig<"player">>(
     filters: {
       id: NonNullable<Filter<"player">["id"]>;

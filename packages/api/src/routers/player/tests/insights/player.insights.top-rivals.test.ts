@@ -32,15 +32,26 @@ describe("Player Insights - getPlayerTopRivals", () => {
     expect(result.rivals).toEqual([]);
   });
 
-  test("best case: returns rival leaderboard", async () => {
+  test("fixture under five head-to-head games: no rivals listed", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
     const result = await ownerCaller.newPlayer.getPlayerTopRivals({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
-    expect(result.rivals.length).toBeGreaterThan(0);
-    expect(result.rivals[0]?.matches).toBeGreaterThan(0);
+    expect(result.rivals).toEqual([]);
+  });
+
+  test("invariant: any listed rival has >=5 matches and byGame rows", async () => {
+    const { ownerCaller } = await createInsightsCallers(ids!);
+    const seeded = await seedInsightsHistory(ids!);
+    const result = await ownerCaller.newPlayer.getPlayerTopRivals({
+      type: "original",
+      id: seeded.ownerTargetPlayerId,
+    });
+    expect(
+      result.rivals.every((r) => r.matches >= 5 && r.byGame.length > 0),
+    ).toBe(true);
   });
 
   test("worst case: throws for missing player", async () => {

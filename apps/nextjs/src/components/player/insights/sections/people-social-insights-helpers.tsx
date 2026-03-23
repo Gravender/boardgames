@@ -1,0 +1,211 @@
+"use client";
+
+import { useMemo } from "react";
+
+import type { RouterOutputs } from "@board-games/api";
+import { Label } from "@board-games/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@board-games/ui/select";
+import { cn } from "@board-games/ui/utils";
+
+export type RivalsData = RouterOutputs["newPlayer"]["getPlayerTopRivals"];
+export type TeammatesData = RouterOutputs["newPlayer"]["getPlayerTopTeammates"];
+
+export type RivalRow = RivalsData["rivals"][number];
+export type TeammateRow = TeammatesData["teammates"][number];
+
+export const ALL_GAMES_VALUE = "all";
+
+export const useRivalGameFilterOptions = (rivals: RivalRow[]) => {
+  return useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of rivals) {
+      for (const g of r.byGame) {
+        map.set(g.gameIdKey, g.gameName);
+      }
+    }
+    return [...map.entries()].toSorted((a, b) => a[1].localeCompare(b[1]));
+  }, [rivals]);
+};
+
+export const useTeammateGameFilterOptions = (teammates: TeammateRow[]) => {
+  return useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of teammates) {
+      for (const g of t.byGame) {
+        map.set(g.gameIdKey, g.gameName);
+      }
+    }
+    return [...map.entries()].toSorted((a, b) => a[1].localeCompare(b[1]));
+  }, [teammates]);
+};
+
+export const getRivalDisplayStats = (
+  r: RivalRow,
+  gameFilter: string,
+): {
+  matches: number;
+  winsVs: number;
+  lossesVs: number;
+  tiesVs: number;
+  winRateVs: number;
+  recentDelta: number;
+} => {
+  if (gameFilter === ALL_GAMES_VALUE) {
+    return {
+      matches: r.matches,
+      winsVs: r.winsVs,
+      lossesVs: r.lossesVs,
+      tiesVs: r.tiesVs,
+      winRateVs: r.winRateVs,
+      recentDelta: r.recentDelta,
+    };
+  }
+  const g = r.byGame.find((x) => x.gameIdKey === gameFilter);
+  if (!g) {
+    return {
+      matches: 0,
+      winsVs: 0,
+      lossesVs: 0,
+      tiesVs: 0,
+      winRateVs: 0,
+      recentDelta: 0,
+    };
+  }
+  return {
+    matches: g.matches,
+    winsVs: g.winsVs,
+    lossesVs: g.lossesVs,
+    tiesVs: g.tiesVs,
+    winRateVs: g.winRateVs,
+    recentDelta: g.winsVs - g.lossesVs,
+  };
+};
+
+/** Positive = profile player finished better on average (lower placement is better). */
+export const formatPlacementAdvantage = (value: number | null): string => {
+  if (value === null) {
+    return "—";
+  }
+  const rounded = Math.round(value * 10) / 10;
+  if (rounded > 0) {
+    return `+${rounded}`;
+  }
+  return String(rounded);
+};
+
+export const getRivalRivalryMeta = (
+  r: RivalRow,
+  gameFilter: string,
+): {
+  secondsPlayedTogether: number;
+  competitiveMatches: number;
+  secondsPlayedCompetitiveTogether: number;
+  avgPlacementAdvantage: number | null;
+} => {
+  if (gameFilter === ALL_GAMES_VALUE) {
+    return {
+      secondsPlayedTogether: r.secondsPlayedTogether,
+      competitiveMatches: r.competitiveMatches,
+      secondsPlayedCompetitiveTogether: r.secondsPlayedCompetitiveTogether,
+      avgPlacementAdvantage: r.avgPlacementAdvantage,
+    };
+  }
+  const g = r.byGame.find((x) => x.gameIdKey === gameFilter);
+  if (!g) {
+    return {
+      secondsPlayedTogether: 0,
+      competitiveMatches: 0,
+      secondsPlayedCompetitiveTogether: 0,
+      avgPlacementAdvantage: null,
+    };
+  }
+  return {
+    secondsPlayedTogether: g.secondsPlayedTogether,
+    competitiveMatches: g.competitiveMatches,
+    secondsPlayedCompetitiveTogether: g.secondsPlayedCompetitiveTogether,
+    avgPlacementAdvantage: g.avgPlacementAdvantage,
+  };
+};
+
+export const getTeammateDisplayStats = (
+  t: TeammateRow,
+  gameFilter: string,
+): {
+  matchesTogether: number;
+  winsTogether: number;
+  nonWinsTogether: number;
+  winRateTogether: number;
+} => {
+  if (gameFilter === ALL_GAMES_VALUE) {
+    return {
+      matchesTogether: t.matchesTogether,
+      winsTogether: t.winsTogether,
+      nonWinsTogether: t.nonWinsTogether,
+      winRateTogether: t.winRateTogether,
+    };
+  }
+  const g = t.byGame.find((x) => x.gameIdKey === gameFilter);
+  if (!g) {
+    return {
+      matchesTogether: 0,
+      winsTogether: 0,
+      nonWinsTogether: 0,
+      winRateTogether: 0,
+    };
+  }
+  return {
+    matchesTogether: g.matchesTogether,
+    winsTogether: g.winsTogether,
+    nonWinsTogether: g.nonWinsTogether,
+    winRateTogether: g.winRateTogether,
+  };
+};
+
+type SocialGameFilterSelectProps = {
+  id: string;
+  label: string;
+  value: string;
+  onValueChange: (value: string) => void;
+  options: [string, string][];
+  className?: string;
+};
+
+export const SocialGameFilterSelect = ({
+  id,
+  label,
+  value,
+  onValueChange,
+  options,
+  className,
+}: SocialGameFilterSelectProps) => {
+  if (options.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
+      <Label htmlFor={id} className="text-sm font-medium">
+        {label}
+      </Label>
+      <Select value={value} onValueChange={onValueChange}>
+        <SelectTrigger id={id} className="w-full">
+          <SelectValue placeholder="All games" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL_GAMES_VALUE}>All games (totals)</SelectItem>
+          {options.map(([gameIdKey, gameName]) => (
+            <SelectItem key={gameIdKey} value={gameIdKey}>
+              {gameName}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+};

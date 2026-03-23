@@ -214,6 +214,15 @@ const playerInsightsOutcomeSchema = z.object({
   isWinner: z.boolean(),
 });
 
+/** Canonical scoresheet `win_condition` for the match (drives manual vs placement-based UI). */
+export const playerInsightsScoresheetWinConditionSchema = z.enum([
+  "Manual",
+  "Highest Score",
+  "Lowest Score",
+  "No Winner",
+  "Target Score",
+]);
+
 export const playerInsightsMatchEntrySchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("original"),
@@ -223,6 +232,7 @@ export const playerInsightsMatchEntrySchema = z.discriminatedUnion("type", [
     outcome: playerInsightsOutcomeSchema,
     playerCount: z.number(),
     isCoop: z.boolean(),
+    scoresheetWinCondition: playerInsightsScoresheetWinConditionSchema,
   }),
   z.object({
     type: z.literal("shared"),
@@ -233,8 +243,45 @@ export const playerInsightsMatchEntrySchema = z.discriminatedUnion("type", [
     outcome: playerInsightsOutcomeSchema,
     playerCount: z.number(),
     isCoop: z.boolean(),
+    scoresheetWinCondition: playerInsightsScoresheetWinConditionSchema,
   }),
 ]);
+
+const playerInsightsViewerParticipationSchema = z.object({
+  inMatch: z.boolean(),
+  outcome: playerInsightsOutcomeSchema.optional(),
+  isSameAsProfilePlayer: z.boolean(),
+});
+
+/** Recent matches list includes how the logged-in user (if they have a player) performed when they played. */
+export const playerInsightsRecentMatchEntrySchema = z.discriminatedUnion(
+  "type",
+  [
+    z.object({
+      type: z.literal("original"),
+      matchId: z.number(),
+      date: z.date(),
+      game: playerInsightsGameEntrySchema,
+      outcome: playerInsightsOutcomeSchema,
+      playerCount: z.number(),
+      isCoop: z.boolean(),
+      scoresheetWinCondition: playerInsightsScoresheetWinConditionSchema,
+      viewerParticipation: playerInsightsViewerParticipationSchema,
+    }),
+    z.object({
+      type: z.literal("shared"),
+      sharedMatchId: z.number(),
+      matchId: z.number(),
+      date: z.date(),
+      game: playerInsightsGameEntrySchema,
+      outcome: playerInsightsOutcomeSchema,
+      playerCount: z.number(),
+      isCoop: z.boolean(),
+      scoresheetWinCondition: playerInsightsScoresheetWinConditionSchema,
+      viewerParticipation: playerInsightsViewerParticipationSchema,
+    }),
+  ],
+);
 
 const playerInsightsIdentitySchema = z.discriminatedUnion("type", [
   z.object({
@@ -260,6 +307,8 @@ export const playerInsightsPlayedWithGroupSchema = z.object({
   winRateWithGroup: z.number(),
   avgPlacement: z.number().nullable(),
   avgScore: z.number().nullable(),
+  uniqueGamesPlayed: z.number(),
+  lastPlayedAt: z.date().nullable(),
   recentMatches: z.array(playerInsightsMatchEntrySchema),
 });
 
@@ -323,7 +372,7 @@ export const getPlayerFavoriteGamesOutput = z.object({
 
 export const getPlayerRecentMatchesOutput = z.object({
   player: playerInsightsTargetSchema,
-  matches: z.array(playerInsightsMatchEntrySchema),
+  matches: z.array(playerInsightsRecentMatchEntrySchema),
 });
 
 export const getPlayerGameWinRateChartsOutput = z.object({
@@ -344,16 +393,71 @@ export const getPlayerGameWinRateChartsOutput = z.object({
         matches: z.number(),
       }),
     ),
-    byTime: z.array(
-      z.object({
-        periodStart: z.date(),
-        periodEnd: z.date(),
+    /** Competitive-only running win rate within each rolling 365-day window. */
+    byTime: z.object({
+      /** Tick labels for month slots 1–12 (current rolling window vs prior window). */
+      monthSlotLabels: z.array(z.string()).length(12),
+      priorMonthSlotLabels: z.array(z.string()).length(12),
+      last12Months: z.array(
+        z.object({
+          matchDate: z.date(),
+          matchIndex: z.number(),
+          cumulativeMatches: z.number(),
+          cumulativeWins: z.number(),
+          winRate: z.number(),
+          monthSlot: z.number().int().min(1).max(12),
+          monthLabelShort: z.string(),
+        }),
+      ),
+      prior12Months: z.array(
+        z.object({
+          matchDate: z.date(),
+          matchIndex: z.number(),
+          cumulativeMatches: z.number(),
+          cumulativeWins: z.number(),
+          winRate: z.number(),
+          monthSlot: z.number().int().min(1).max(12),
+          monthLabelShort: z.string(),
+        }),
+      ),
+    }),
+    /** Competitive (non–co-op) only; rolling 365-day windows vs prior 365 days. */
+    competitiveRolling12: z.object({
+      last12Months: z.object({
         matches: z.number(),
         wins: z.number(),
         winRate: z.number(),
       }),
-    ),
+      prior12Months: z.object({
+        matches: z.number(),
+        wins: z.number(),
+        winRate: z.number(),
+      }),
+    }),
   }),
+});
+
+export const playerInsightsRivalByGameSchema = z.object({
+  gameIdKey: z.string(),
+  gameName: z.string(),
+  matches: z.number(),
+  winsVs: z.number(),
+  lossesVs: z.number(),
+  tiesVs: z.number(),
+  winRateVs: z.number(),
+  secondsPlayedTogether: z.number(),
+  competitiveMatches: z.number(),
+  secondsPlayedCompetitiveTogether: z.number(),
+  avgPlacementAdvantage: z.number().nullable(),
+});
+
+export const playerInsightsTeammateByGameSchema = z.object({
+  gameIdKey: z.string(),
+  gameName: z.string(),
+  matchesTogether: z.number(),
+  winsTogether: z.number(),
+  nonWinsTogether: z.number(),
+  winRateTogether: z.number(),
 });
 
 export const getPlayerTopRivalsOutput = z.object({
@@ -367,6 +471,13 @@ export const getPlayerTopRivalsOutput = z.object({
       tiesVs: z.number(),
       winRateVs: z.number(),
       recentDelta: z.number(),
+      uniqueGamesPlayed: z.number(),
+      lastPlayedAt: z.date().nullable(),
+      secondsPlayedTogether: z.number(),
+      competitiveMatches: z.number(),
+      secondsPlayedCompetitiveTogether: z.number(),
+      avgPlacementAdvantage: z.number().nullable(),
+      byGame: z.array(playerInsightsRivalByGameSchema),
     }),
   ),
 });
@@ -378,8 +489,12 @@ export const getPlayerTopTeammatesOutput = z.object({
       teammate: playerInsightsIdentitySchema,
       matchesTogether: z.number(),
       winsTogether: z.number(),
+      nonWinsTogether: z.number(),
       winRateTogether: z.number(),
       avgTeamPlacement: z.number().nullable(),
+      uniqueGamesPlayed: z.number(),
+      lastPlayedAt: z.date().nullable(),
+      byGame: z.array(playerInsightsTeammateByGameSchema),
     }),
   ),
 });
@@ -387,24 +502,6 @@ export const getPlayerTopTeammatesOutput = z.object({
 export const getPlayerPlayedWithGroupsOutput = z.object({
   player: playerInsightsTargetSchema,
   playedWithGroups: z.array(playerInsightsPlayedWithGroupSchema),
-});
-
-export const getPlayerMatchHistoryTimelineOutput = z.object({
-  player: playerInsightsTargetSchema,
-  timeline: z.array(
-    z.object({
-      date: z.date(),
-      matchId: z.number(),
-      matchType: z.enum(["original", "shared"]),
-      game: playerInsightsGameEntrySchema,
-      outcome: playerInsightsOutcomeSchema,
-      delta: z.object({
-        streakBefore: z.number(),
-        streakAfter: z.number(),
-        ratingLikeDelta: z.number().optional(),
-      }),
-    }),
-  ),
 });
 
 export const getPlayerStreaksOutput = z.object({
@@ -470,28 +567,6 @@ export const getPlayerPlacementDistributionOutput = z.object({
   ),
 });
 
-export const getPlayerScoreTrendsOutput = z.object({
-  player: playerInsightsTargetSchema,
-  trend: z.array(
-    z.object({
-      dateBucket: z.string(),
-      avgScore: z.number().nullable(),
-      medianScore: z.number().nullable(),
-      bestScore: z.number().nullable(),
-      worstScore: z.number().nullable(),
-      matches: z.number(),
-    }),
-  ),
-  rolling: z.array(
-    z.object({
-      date: z.date(),
-      rollingAvgScore: z.number().nullable(),
-      rollingWinRate: z.number(),
-      windowSize: z.number(),
-    }),
-  ),
-});
-
 export type PlayerInsightsTargetType = z.infer<
   typeof playerInsightsTargetSchema
 >;
@@ -529,16 +604,10 @@ export type GetPlayerTopTeammatesOutputType = z.infer<
 export type GetPlayerPlayedWithGroupsOutputType = z.infer<
   typeof getPlayerPlayedWithGroupsOutput
 >;
-export type GetPlayerMatchHistoryTimelineOutputType = z.infer<
-  typeof getPlayerMatchHistoryTimelineOutput
->;
 export type GetPlayerStreaksOutputType = z.infer<typeof getPlayerStreaksOutput>;
 export type GetPlayerCountStatsOutputType = z.infer<
   typeof getPlayerCountStatsOutput
 >;
 export type GetPlayerPlacementDistributionOutputType = z.infer<
   typeof getPlayerPlacementDistributionOutput
->;
-export type GetPlayerScoreTrendsOutputType = z.infer<
-  typeof getPlayerScoreTrendsOutput
 >;

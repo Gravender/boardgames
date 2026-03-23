@@ -32,14 +32,28 @@ describe("Player Insights - getPlayerTopTeammates", () => {
     expect(result.teammates).toEqual([]);
   });
 
-  test("best case: returns teammate leaderboard", async () => {
+  test("fixture under five co-op games together: no teammates listed", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
     const result = await ownerCaller.newPlayer.getPlayerTopTeammates({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
-    expect(result.teammates.length).toBeGreaterThan(0);
+    expect(result.teammates).toEqual([]);
+  });
+
+  test("invariant: any listed teammate has >=5 matches and byGame rows", async () => {
+    const { ownerCaller } = await createInsightsCallers(ids!);
+    const seeded = await seedInsightsHistory(ids!);
+    const result = await ownerCaller.newPlayer.getPlayerTopTeammates({
+      type: "original",
+      id: seeded.ownerTargetPlayerId,
+    });
+    expect(
+      result.teammates.every(
+        (t) => t.matchesTogether >= 5 && t.byGame.length > 0,
+      ),
+    ).toBe(true);
   });
 
   test("worst case: throws for missing player", async () => {

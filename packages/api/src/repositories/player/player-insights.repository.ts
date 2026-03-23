@@ -4,7 +4,7 @@
  * player-insights.read.service.ts and should stay aligned with
  * playerRepository.getPlayerSummary (finished matches, viewer scope).
  */
-import { and, asc, desc, eq, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lt, lte, ne, or, sql } from "drizzle-orm";
 import type { AnyColumn } from "drizzle-orm";
 
 import { db, type TransactionType } from "@board-games/db/client";
@@ -68,11 +68,16 @@ export type PlayerInsightCountByTableSizeRow = {
   avgScore: number | null;
 };
 
-export type PlayerInsightMonthlyBucketRow = {
-  periodStart: Date;
-  periodEnd: Date;
+/** One finished match for the profile player, ordered oldest-first for running win rate. */
+export type PlayerInsightChronologicalMatchOutcomeRow = {
+  matchDate: Date;
+  isWin: boolean;
+};
+
+export type PlayerInsightCompetitiveWinRateWindow = {
   matches: number;
   wins: number;
+  winRate: number;
 };
 
 export type PlayerInsightMonthlyScoreRow = {
@@ -81,14 +86,6 @@ export type PlayerInsightMonthlyScoreRow = {
   avgScore: number | null;
   minScore: number | null;
   maxScore: number | null;
-};
-
-export type PlayerInsightChronologicalRow = {
-  date: Date;
-  outcomePlacement: number | null;
-  outcomeScore: number | null;
-  outcomeWinner: boolean | null;
-  isCoop: boolean;
 };
 
 const viewerClause = (userId: string) =>
@@ -416,9 +413,10 @@ class PlayerInsightsRepository {
       database
         .select({
           matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
-          playerCount: sql<number>`count(distinct ${vMatchPlayerCanonicalForUser.baseMatchPlayerId})::int`
-            .mapWith(Number)
-            .as("player_count"),
+          playerCount:
+            sql<number>`count(distinct ${vMatchPlayerCanonicalForUser.baseMatchPlayerId})::int`
+              .mapWith(Number)
+              .as("player_count"),
         })
         .from(vMatchPlayerCanonicalForUser)
         .where(viewerClause(userId))
@@ -446,7 +444,12 @@ class PlayerInsightsRepository {
         scoresheet,
         eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
-      .where(sql`${insightMatchPlayers.placement} is not null`)
+      .where(
+        and(
+          sql`${insightMatchPlayers.placement} is not null`,
+          ne(scoresheet.winCondition, "Manual"),
+        ),
+      )
       .groupBy(insightMatchPlayers.placement)
       .orderBy(asc(insightMatchPlayers.placement));
 
@@ -468,12 +471,14 @@ class PlayerInsightsRepository {
         eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
       .innerJoin(matchSizes, eq(matchSizes.matchId, vMatchCanonical.matchId))
-      .where(sql`${insightMatchPlayers.placement} is not null`)
+      .where(
+        and(
+          sql`${insightMatchPlayers.placement} is not null`,
+          ne(scoresheet.winCondition, "Manual"),
+        ),
+      )
       .groupBy(matchSizes.playerCount, insightMatchPlayers.placement)
-      .orderBy(
-        asc(matchSizes.playerCount),
-        asc(insightMatchPlayers.placement),
-      );
+      .orderBy(asc(matchSizes.playerCount), asc(insightMatchPlayers.placement));
 
     return {
       placements: placements
@@ -502,9 +507,10 @@ class PlayerInsightsRepository {
       database
         .select({
           matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
-          playerCount: sql<number>`count(distinct ${vMatchPlayerCanonicalForUser.baseMatchPlayerId})::int`
-            .mapWith(Number)
-            .as("player_count"),
+          playerCount:
+            sql<number>`count(distinct ${vMatchPlayerCanonicalForUser.baseMatchPlayerId})::int`
+              .mapWith(Number)
+              .as("player_count"),
         })
         .from(vMatchPlayerCanonicalForUser)
         .where(viewerClause(userId))
@@ -564,9 +570,17 @@ class PlayerInsightsRepository {
     }));
   }
 
-  public async getMonthlyWinRateBuckets(
+  /**
+   * Competitive (non–co-op) matches only. Rolling 365-day windows from `now`:
+   * last = [now − 365d, now], prior = [now − 730d, now − 365d).
+   */
+  public async getCompetitiveWinRatesLastTwoRollingYears(
     args: WithRepoUserIdInput<GetPlayerInputType>,
-  ): Promise<PlayerInsightMonthlyBucketRow[]> {
+    now: Date,
+  ): Promise<{
+    last12Months: PlayerInsightCompetitiveWinRateWindow;
+    prior12Months: PlayerInsightCompetitiveWinRateWindow;
+  }> {
     const { userId, input, tx } = args;
     const database = tx ?? db;
     const insightMatchPlayers = insightMatchPlayersDedupe(database, {
@@ -580,13 +594,27 @@ class PlayerInsightsRepository {
     };
     const winSql = insightWinSql(mpCols);
 
-    const rows = await database
+    const MS_PER_DAY = 86_400_000;
+    const ROLLING_DAYS = 365;
+    const oneYearMs = ROLLING_DAYS * MS_PER_DAY;
+    const last12Start = new Date(now.getTime() - oneYearMs);
+    const prior12Start = new Date(now.getTime() - 2 * oneYearMs);
+
+    const competitiveDate = and(
+      eq(scoresheet.isCoop, false),
+      gte(vMatchCanonical.matchDate, last12Start),
+      lte(vMatchCanonical.matchDate, now),
+    );
+
+    const priorDate = and(
+      eq(scoresheet.isCoop, false),
+      gte(vMatchCanonical.matchDate, prior12Start),
+      lt(vMatchCanonical.matchDate, last12Start),
+    );
+
+    const [lastRow] = await database
       .with(insightMatchPlayers)
       .select({
-        periodStart:
-          sql<Date>`date_trunc('month', ${vMatchCanonical.matchDate}::timestamp)`.mapWith(
-            (v) => v as Date,
-          ),
         matches: sql<number>`count(*)::int`.mapWith(Number),
         wins: sql<number>`count(*) filter (where ${winSql})::int`.mapWith(
           Number,
@@ -602,25 +630,137 @@ class PlayerInsightsRepository {
         scoresheet,
         eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
       )
-      .groupBy(
-        sql`date_trunc('month', ${vMatchCanonical.matchDate}::timestamp)`,
-      )
-      .orderBy(
-        sql`date_trunc('month', ${vMatchCanonical.matchDate}::timestamp)`,
-      );
+      .where(competitiveDate);
 
-    return rows.map((r) => {
-      const d = new Date(r.periodStart as unknown as string | Date);
-      const y = d.getUTCFullYear();
-      const m = d.getUTCMonth();
-      const periodEnd = new Date(Date.UTC(y, m + 1, 0));
+    const [priorRow] = await database
+      .with(insightMatchPlayers)
+      .select({
+        matches: sql<number>`count(*)::int`.mapWith(Number),
+        wins: sql<number>`count(*) filter (where ${winSql})::int`.mapWith(
+          Number,
+        ),
+      })
+      .from(insightMatchPlayers)
+      .innerJoin(
+        vMatchCanonical,
+        eq(vMatchCanonical.matchId, insightMatchPlayers.canonicalMatchId),
+      )
+      .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
+      .innerJoin(
+        scoresheet,
+        eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
+      )
+      .where(priorDate);
+
+    const pack = (
+      row: { matches: number; wins: number } | undefined,
+    ): PlayerInsightCompetitiveWinRateWindow => {
+      const matches = row?.matches ?? 0;
+      const wins = row?.wins ?? 0;
       return {
-        periodStart: new Date(Date.UTC(y, m, 1)),
-        periodEnd,
-        matches: r.matches,
-        wins: r.wins,
+        matches,
+        wins,
+        winRate: matches > 0 ? wins / matches : 0,
       };
+    };
+
+    return {
+      last12Months: pack(lastRow),
+      prior12Months: pack(priorRow),
+    };
+  }
+
+  /**
+   * Competitive matches in each rolling 365-day window, oldest first (for running win rate lines).
+   */
+  public async getChronologicalCompetitiveMatchOutcomesInRollingWindows(
+    args: WithRepoUserIdInput<GetPlayerInputType>,
+    now: Date,
+  ): Promise<{
+    last12Months: PlayerInsightChronologicalMatchOutcomeRow[];
+    prior12Months: PlayerInsightChronologicalMatchOutcomeRow[];
+  }> {
+    const { userId, input, tx } = args;
+    const database = tx ?? db;
+    const insightMatchPlayers = insightMatchPlayersDedupe(database, {
+      userId,
+      input,
     });
+    const mpCols = {
+      winner: insightMatchPlayers.winner,
+      placement: insightMatchPlayers.placement,
+      score: insightMatchPlayers.score,
+    };
+    const winSql = insightWinSql(mpCols);
+
+    const MS_PER_DAY = 86_400_000;
+    const ROLLING_DAYS = 365;
+    const oneYearMs = ROLLING_DAYS * MS_PER_DAY;
+    const last12Start = new Date(now.getTime() - oneYearMs);
+    const prior12Start = new Date(now.getTime() - 2 * oneYearMs);
+
+    const lastWhere = and(
+      eq(scoresheet.isCoop, false),
+      gte(vMatchCanonical.matchDate, last12Start),
+      lte(vMatchCanonical.matchDate, now),
+    );
+
+    const priorWhere = and(
+      eq(scoresheet.isCoop, false),
+      gte(vMatchCanonical.matchDate, prior12Start),
+      lt(vMatchCanonical.matchDate, last12Start),
+    );
+
+    const mapRows = (
+      rows: { matchDate: unknown; isWin: boolean }[],
+    ): PlayerInsightChronologicalMatchOutcomeRow[] =>
+      rows.map((r) => ({
+        matchDate: new Date(r.matchDate as Date),
+        isWin: r.isWin,
+      }));
+
+    const lastRows = await database
+      .with(insightMatchPlayers)
+      .select({
+        matchDate: vMatchCanonical.matchDate,
+        isWin: sql<boolean>`(${winSql})`.mapWith(Boolean),
+      })
+      .from(insightMatchPlayers)
+      .innerJoin(
+        vMatchCanonical,
+        eq(vMatchCanonical.matchId, insightMatchPlayers.canonicalMatchId),
+      )
+      .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
+      .innerJoin(
+        scoresheet,
+        eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
+      )
+      .where(lastWhere)
+      .orderBy(asc(vMatchCanonical.matchDate), asc(vMatchCanonical.matchId));
+
+    const priorRows = await database
+      .with(insightMatchPlayers)
+      .select({
+        matchDate: vMatchCanonical.matchDate,
+        isWin: sql<boolean>`(${winSql})`.mapWith(Boolean),
+      })
+      .from(insightMatchPlayers)
+      .innerJoin(
+        vMatchCanonical,
+        eq(vMatchCanonical.matchId, insightMatchPlayers.canonicalMatchId),
+      )
+      .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
+      .innerJoin(
+        scoresheet,
+        eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
+      )
+      .where(priorWhere)
+      .orderBy(asc(vMatchCanonical.matchDate), asc(vMatchCanonical.matchId));
+
+    return {
+      last12Months: mapRows(lastRows),
+      prior12Months: mapRows(priorRows),
+    };
   }
 
   public async getMonthlyScoreAggregates(
@@ -689,38 +829,6 @@ class PlayerInsightsRepository {
         maxScore: r.maxScore,
       };
     });
-  }
-
-  public async getChronologicalOutcomes(
-    args: WithRepoUserIdInput<GetPlayerInputType>,
-  ): Promise<PlayerInsightChronologicalRow[]> {
-    const { userId, input, tx } = args;
-    const database = tx ?? db;
-    const insightMatchPlayers = insightMatchPlayersDedupe(database, {
-      userId,
-      input,
-    });
-
-    return database
-      .with(insightMatchPlayers)
-      .select({
-        date: vMatchCanonical.matchDate,
-        outcomePlacement: insightMatchPlayers.placement,
-        outcomeScore: insightMatchPlayers.score,
-        outcomeWinner: insightMatchPlayers.winner,
-        isCoop: scoresheet.isCoop,
-      })
-      .from(insightMatchPlayers)
-      .innerJoin(
-        vMatchCanonical,
-        eq(vMatchCanonical.matchId, insightMatchPlayers.canonicalMatchId),
-      )
-      .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
-      .innerJoin(
-        scoresheet,
-        eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
-      )
-      .orderBy(asc(vMatchCanonical.matchDate));
   }
 }
 
