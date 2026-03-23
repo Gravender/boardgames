@@ -3,7 +3,7 @@ import type { RouterOutputs } from "@board-games/api";
 export type InsightOutcomeFields = {
   placement: number | null;
   score: number | null;
-  isWinner: boolean;
+  isWinner: boolean | null;
 };
 
 export type InsightScoresheetWinCondition =
@@ -11,13 +11,13 @@ export type InsightScoresheetWinCondition =
 
 /**
  * Aligns with `getOutcomeLabelFromFields` / `insightWinSql` in the API: win if
- * `isWinner`, else tie if both placement and score are null, else win if
+ * `isWinner === true`, else tie if both placement and score are null, else win if
  * placement is 1, else loss.
  */
 export const deriveInsightOutcomeKind = (
   o: InsightOutcomeFields,
 ): "win" | "loss" | "tie" => {
-  if (o.isWinner) {
+  if (o.isWinner === true) {
     return "win";
   }
   if (o.placement === null && o.score === null) {

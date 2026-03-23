@@ -224,7 +224,7 @@ class PlayerRepository {
     const { userId, input, tx } = args;
     const database = tx ?? db;
     const userMatchPlayers = database.$with("user_match_players").as(
-      db
+      database
         .selectDistinctOn([vMatchPlayerCanonicalForUser.canonicalMatchId], {
           matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
           winner: vMatchPlayerCanonicalForUser.winner,

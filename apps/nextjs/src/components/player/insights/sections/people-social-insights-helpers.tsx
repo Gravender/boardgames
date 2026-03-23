@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import type { ReactNode } from "react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Label } from "@board-games/ui/label";
@@ -20,6 +21,28 @@ export type RivalRow = RivalsData["rivals"][number];
 export type TeammateRow = TeammatesData["teammates"][number];
 
 export const ALL_GAMES_VALUE = "all";
+
+export const StatBlock = ({
+  label,
+  value,
+  title: titleAttr,
+}: {
+  label: string;
+  value: ReactNode;
+  title?: string;
+}) => (
+  <div
+    className="border-border/50 bg-background/60 rounded-lg border px-2.5 py-2"
+    title={titleAttr}
+  >
+    <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
+      {label}
+    </p>
+    <div className="text-foreground mt-0.5 text-sm font-semibold tabular-nums">
+      {value}
+    </div>
+  </div>
+);
 
 export const useRivalGameFilterOptions = (rivals: RivalRow[]) => {
   return useMemo(() => {

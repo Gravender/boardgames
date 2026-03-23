@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Calendar, Clock, Gamepad2, Info, Users } from "lucide-react";
-import { useSuspenseQuery } from "@tanstack/react-query";
-
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
@@ -30,16 +28,12 @@ import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
 import { GameImage } from "~/components/game-image";
-import { useTRPC } from "~/trpc/react";
-
 import {
   deriveInsightOutcomeKind,
   formatInsightOutcomeStatsLine,
   isManualWinCondition,
 } from "../insight-outcome";
 import { insightMatchHref } from "../player-insights-match-links";
-import type { PlayerInsightsPageInput } from "../player-insights-types";
-
 type Data = RouterOutputs["newPlayer"]["getPlayerRecentMatches"];
 type MatchRow = Data["matches"][number];
 type Outcome = MatchRow["outcome"];
@@ -91,17 +85,11 @@ const viewerOutcomePresentation = (
 
 export function RecentMatchesSection({
   data,
-  playerInput,
+  profileName,
 }: {
   data: Data;
-  playerInput: PlayerInsightsPageInput;
+  profileName: string;
 }) {
-  const trpc = useTRPC();
-  const { data: header } = useSuspenseQuery(
-    trpc.newPlayer.getPlayerHeader.queryOptions(playerInput),
-  );
-  const profileName = header.name;
-
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [showViewerColumn, setShowViewerColumn] = useState(true);
@@ -269,12 +257,21 @@ export function RecentMatchesSection({
                               containerClassName="size-12 shrink-0 rounded-lg"
                             />
                             <div className="min-w-0 flex-1">
-                              <Link
-                                href={href}
-                                className="block truncate font-medium hover:underline"
-                              >
-                                {m.game.name}
-                              </Link>
+                              {href ? (
+                                <Link
+                                  href={href}
+                                  className="block truncate font-medium hover:underline"
+                                >
+                                  {m.game.name}
+                                </Link>
+                              ) : (
+                                <span
+                                  className="text-muted-foreground block truncate font-medium"
+                                  title="Match summary link unavailable for this game and match pairing"
+                                >
+                                  {m.game.name}
+                                </span>
+                              )}
                               <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                                 <FormattedDate
                                   date={m.date}

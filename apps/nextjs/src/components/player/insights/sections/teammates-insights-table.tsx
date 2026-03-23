@@ -38,6 +38,7 @@ import {
   ALL_GAMES_VALUE,
   getTeammateDisplayStats,
   SocialGameFilterSelect,
+  StatBlock,
   useTeammateGameFilterOptions,
 } from "./people-social-insights-helpers";
 import { TeammatePerGameBreakdown } from "./social-by-game-breakdown";
@@ -70,30 +71,6 @@ const TEAMMATE_SORT_PRESETS: {
   { key: "lastPlayedAt", dir: "desc", label: "Recently played" },
   { key: "name", dir: "asc", label: "Name (A–Z)" },
 ];
-
-function StatBlock({
-  label,
-  value,
-  title: titleAttr,
-}: {
-  label: string;
-  value: React.ReactNode;
-  title?: string;
-}) {
-  return (
-    <div
-      className="border-border/50 bg-background/60 rounded-lg border px-2.5 py-2"
-      title={titleAttr}
-    >
-      <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
-        {label}
-      </p>
-      <div className="text-foreground mt-0.5 text-sm font-semibold tabular-nums">
-        {value}
-      </div>
-    </div>
-  );
-}
 
 export function TeammatesTable({ data }: { data: Teammates }) {
   const [gameFilter, setGameFilter] = useState(ALL_GAMES_VALUE);

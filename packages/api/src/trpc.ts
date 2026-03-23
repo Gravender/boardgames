@@ -133,7 +133,7 @@ const isUser = t.middleware(async ({ ctx, next }) => {
   return next({
     ctx: {
       session: { ...ctx.session },
-      userId: "user_2pQh2eeL1vVDuMfAyPscFfZ6yoe",
+      userId: ctx.session.user.id,
     },
   });
 });

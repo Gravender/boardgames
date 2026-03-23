@@ -919,9 +919,10 @@ class MatchRepository {
       database
         .select({
           matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
-          playerCount: sql<number>`count(*)::int`
-            .mapWith(Number)
-            .as("player_count"),
+          playerCount:
+            sql<number>`count(distinct ${vMatchPlayerCanonicalForUser.baseMatchPlayerId})::int`
+              .mapWith(Number)
+              .as("player_count"),
         })
         .from(vMatchPlayerCanonicalForUser)
         .where(viewerClause)

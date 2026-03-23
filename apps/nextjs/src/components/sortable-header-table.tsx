@@ -34,7 +34,9 @@ export function useSortableTableState<K extends string>(
       setSortKey(key);
       const textKeys = optionsRef.current?.textAscendingKeys ?? [];
       const textDefault = textKeys.includes(key);
-      setSortDir(textDefault ? "asc" : "desc");
+      setSortDir(
+        textDefault ? "asc" : (optionsRef.current?.defaultDir ?? "desc"),
+      );
     },
     [sortKey],
   );
@@ -70,13 +72,6 @@ export function SortableTableHead<K extends string>({
     onSort(columnKey);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      onSort(columnKey);
-    }
-  };
-
   const alignClass =
     align === "right"
       ? "justify-end"
@@ -95,7 +90,6 @@ export function SortableTableHead<K extends string>({
       <button
         type="button"
         onClick={handleClick}
-        onKeyDown={handleKeyDown}
         className={cn(
           "hover:text-foreground inline-flex w-full items-center gap-1 rounded-sm",
           alignClass,

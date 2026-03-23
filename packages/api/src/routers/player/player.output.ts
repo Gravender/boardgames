@@ -211,7 +211,7 @@ export const playerInsightsGameEntrySchema = z.discriminatedUnion("type", [
 const playerInsightsOutcomeSchema = z.object({
   placement: z.number().nullable(),
   score: z.number().nullable(),
-  isWinner: z.boolean(),
+  isWinner: z.boolean().nullable(),
 });
 
 /** Canonical scoresheet `win_condition` for the match (drives manual vs placement-based UI). */

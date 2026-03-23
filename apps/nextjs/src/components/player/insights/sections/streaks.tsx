@@ -97,11 +97,8 @@ export function StreaksSection({ data }: { data: Data }) {
             <div className="flex flex-wrap gap-1.5">
               {streaks.recent.map((r, i) => (
                 <span
-                  // oxlint-disable-next-line react/no-array-index-key
-                  key={streaks.recent
-                    .slice(0, i + 1)
-                    .map((x) => `${x.date.toISOString()}-${x.result}`)
-                    .join("|")}
+                  // oxlint-disable-next-line react/no-array-index-key -- tie-break when date+result repeat
+                  key={`${r.date.toISOString()}-${r.result}-${i}`}
                   className={cn(
                     "inline-flex size-8 items-center justify-center rounded-md text-xs font-bold uppercase",
                     r.result === "win" &&

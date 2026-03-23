@@ -34,8 +34,8 @@ const MIN_RIVAL_OR_TEAMMATE_MATCHES = 5;
 const MIN_COHORT_OPPONENTS = 2;
 const MAX_COHORT_OPPONENTS = 5;
 /** Aligned with game core detection (often 3+); 1 keeps thin histories visible. */
-const MIN_MATCHES_PER_COHORT_GROUP = 1;
-const MAX_PLAYED_WITH_GROUPS = 30;
+const MIN_MATCHES_PER_COHORT_GROUP = 5;
+const MAX_PLAYED_WITH_GROUPS = 300;
 
 const MS_PER_DAY = 86_400_000;
 const ROLLING_DAYS = 365;
@@ -955,7 +955,7 @@ class PlayerInsightsReadService {
                 ? {
                     placement: viewerRow.placement,
                     score: viewerRow.score,
-                    isWinner: viewerRow.winner ?? false,
+                    isWinner: viewerRow.winner,
                   }
                 : undefined,
             isSameAsProfilePlayer: sameAsProfile && viewerRow !== undefined,

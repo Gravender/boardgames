@@ -241,6 +241,12 @@ class GameStatsService {
             playerId: mp.playerId,
           },
         });
+        if (mp.image !== null && playerImage === null) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Player image mapping failed for playerId ${mp.playerId}, image id ${mp.image.id}.`,
+          });
+        }
         const imageForStats: GamePlayerStatsPlayerImage | null =
           playerImage === null || mp.image === null
             ? null
@@ -275,7 +281,10 @@ class GameStatsService {
       }
       const entry = acc.get(key);
       if (!entry) {
-        continue;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Game player stats accumulator missing entry for key ${key} (playerId ${mp.playerId}).`,
+        });
       }
       if (mp.isCoop) {
         entry.coopMatches++;

@@ -29,10 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ...base,
       openGraph: { images: [imageUrl] },
     };
-  } catch (error) {
-    if (error instanceof TRPCError && error.code === "NOT_FOUND") {
-      return { title: "Player" };
-    }
+  } catch {
     return { title: "Player" };
   }
 }

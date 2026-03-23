@@ -75,7 +75,7 @@ type CohortSizeFilter = "all" | "3" | "4" | "5" | "6";
 
 const OVERVIEW_COUNT = 5;
 
-const TEXT_ASC_SORT_KEYS: readonly SortKey[] = ["groupKey"];
+const TEXT_ASC_SORT_KEYS: readonly SortKey[] = new Set(["groupKey"]);
 
 const GROUP_SORT_PRESETS: {
   value: `${SortKey}:${"asc" | "desc"}`;
@@ -340,33 +340,57 @@ const RecentMatchesCollapsible = ({
                 outcome: rm.outcome,
                 winCondition: rm.scoresheetWinCondition,
               });
+              const href = insightMatchHref(rm);
+              const rowClass =
+                "hover:bg-muted/45 -mx-0.5 flex items-center gap-2 rounded-md px-1.5 py-1.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none sm:text-sm";
               return (
-                <li
-                  key={`${rm.type}-${rm.matchId}-${rm.date.toISOString()}`}
-                >
-                  <Link
-                    href={insightMatchHref(rm)}
-                    className="hover:bg-muted/45 -mx-0.5 flex items-center gap-2 rounded-md px-1.5 py-1.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none sm:text-sm"
-                  >
-                    <GameImage
-                      image={rm.game.image}
-                      alt={rm.game.name}
-                      containerClassName="size-7 shrink-0 rounded-md"
-                    />
-                    <span className="min-w-0 flex-1 truncate font-medium">
-                      {rm.game.name}
-                    </span>
-                    {statsLine !== null && (
-                      <span className="text-muted-foreground tabular-nums">
-                        {statsLine}
+                <li key={`${rm.type}-${rm.matchId}-${rm.date.toISOString()}`}>
+                  {href ? (
+                    <Link href={href} className={rowClass}>
+                      <GameImage
+                        image={rm.game.image}
+                        alt={rm.game.name}
+                        containerClassName="size-7 shrink-0 rounded-md"
+                      />
+                      <span className="min-w-0 flex-1 truncate font-medium">
+                        {rm.game.name}
                       </span>
-                    )}
-                    <FormattedDate
-                      date={rm.date}
-                      pattern="MMM d"
-                      className="text-muted-foreground shrink-0 tabular-nums"
-                    />
-                  </Link>
+                      {statsLine !== null && (
+                        <span className="text-muted-foreground tabular-nums">
+                          {statsLine}
+                        </span>
+                      )}
+                      <FormattedDate
+                        date={rm.date}
+                        pattern="MMM d"
+                        className="text-muted-foreground shrink-0 tabular-nums"
+                      />
+                    </Link>
+                  ) : (
+                    <div
+                      className={rowClass}
+                      title="Match summary link unavailable for this game and match pairing"
+                    >
+                      <GameImage
+                        image={rm.game.image}
+                        alt={rm.game.name}
+                        containerClassName="size-7 shrink-0 rounded-md"
+                      />
+                      <span className="text-muted-foreground min-w-0 flex-1 truncate font-medium">
+                        {rm.game.name}
+                      </span>
+                      {statsLine !== null && (
+                        <span className="text-muted-foreground tabular-nums">
+                          {statsLine}
+                        </span>
+                      )}
+                      <FormattedDate
+                        date={rm.date}
+                        pattern="MMM d"
+                        className="text-muted-foreground shrink-0 tabular-nums"
+                      />
+                    </div>
+                  )}
                 </li>
               );
             })}
@@ -471,14 +495,24 @@ const sortGroups = (
         return (at - bt) * dir;
       }
       case "avgPlacement": {
-        const av = a.avgPlacement ?? -Infinity;
-        const bv = b.avgPlacement ?? -Infinity;
-        return (av - bv) * dir;
+        const an = a.avgPlacement;
+        const bn = b.avgPlacement;
+        if (an === null || an === undefined) {
+          if (bn === null || bn === undefined) return 0;
+          return 1;
+        }
+        if (bn === null || bn === undefined) return -1;
+        return (an - bn) * dir;
       }
       case "avgScore": {
-        const av = a.avgScore ?? -Infinity;
-        const bv = b.avgScore ?? -Infinity;
-        return (av - bv) * dir;
+        const an = a.avgScore;
+        const bn = b.avgScore;
+        if (an === null || an === undefined) {
+          if (bn === null || bn === undefined) return 0;
+          return 1;
+        }
+        if (bn === null || bn === undefined) return -1;
+        return (an - bn) * dir;
       }
       default:
         return 0;
@@ -503,7 +537,7 @@ export function PlayedWithGroupsSection({ data }: { data: Data }) {
         return;
       }
       setSortKey(key);
-      setSortDir(TEXT_ASC_SORT_KEYS.includes(key) ? "asc" : "desc");
+      setSortDir(TEXT_ASC_SORT_KEYS.has(key) ? "asc" : "desc");
     },
     [sortKey],
   );

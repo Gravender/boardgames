@@ -20,10 +20,10 @@ export const insightMatchHref = (match: MatchEntryForInsightHref): string => {
     if (match.game.type === "shared") {
       return `/dashboard/games/shared/${match.game.sharedGameId}/${match.sharedMatchId}/summary`;
     }
-    return `/dashboard/games/${match.game.id}/${match.sharedMatchId}/summary`;
+    return "";
   }
   if (match.game.type === "shared") {
-    return `/dashboard/games/shared/${match.game.sharedGameId}/${match.matchId}/summary`;
+    return "";
   }
   return `/dashboard/games/${match.game.id}/${match.matchId}/summary`;
 };

@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { scoreSheetRoundsScore } from "@board-games/db/constants";
 import { Badge } from "@board-games/ui/badge";
 import {
   Card,
@@ -69,13 +70,18 @@ type FriendSharedEntry = {
           | "No Winner"
           | "Target Score";
         targetScore: number;
-        roundsScore: string;
+        roundsScore: (typeof scoreSheetRoundsScore)[number];
         type: "Template" | "Default" | "Match" | "Game";
       }[];
     }
   | { type: "player" }
   | { type: "location" }
 );
+
+type FriendSharedPlayerOrLocation = Extract<
+  FriendSharedEntry,
+  { type: "player" } | { type: "location" }
+>;
 
 export function FriendSharedItems({
   sharedWith,
@@ -239,6 +245,7 @@ function GameItem({
   searchTerm: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const sharedDetailsId = `shared-game-details-${item.id}`;
 
   // Auto-expand if there's a search term that matches matches or scoresheets but not the game name
   const shouldAutoExpand = useMemo(() => {
@@ -312,20 +319,26 @@ function GameItem({
             {item.permission}
           </Badge>
           <button
+            type="button"
             className="rounded-full p-1 hover:bg-gray-100"
             onClick={() => setIsOpen(!isOpen)}
+            aria-expanded={isOpen}
+            aria-controls={sharedDetailsId}
+            aria-label={
+              isOpen ? "Collapse shared items" : "Expand shared items"
+            }
           >
             {isOpen ? (
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-4 w-4" aria-hidden />
             ) : (
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" aria-hidden />
             )}
           </button>
         </div>
       </div>
 
       {isOpen && (
-        <div className="space-y-3 px-3 pb-3">
+        <div id={sharedDetailsId} className="space-y-3 px-3 pb-3">
           {filteredMatches.length > 0 && (
             <div>
               <h4 className="mb-2 text-sm font-medium">Matches</h4>
@@ -405,7 +418,7 @@ function SimpleItem({
   item,
   icon,
 }: {
-  item: FriendSharedEntry;
+  item: FriendSharedPlayerOrLocation;
   icon: React.ReactNode;
 }) {
   return (

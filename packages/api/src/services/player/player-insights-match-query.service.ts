@@ -111,7 +111,7 @@ class PlayerInsightsMatchQueryService {
         outcome: {
           placement: input.outcomePlacement,
           score: input.outcomeScore,
-          isWinner: input.outcomeWinner ?? false,
+          isWinner: input.outcomeWinner,
         },
         playerCount: input.playerCount,
         isCoop: input.isCoop,
@@ -126,7 +126,7 @@ class PlayerInsightsMatchQueryService {
       outcome: {
         placement: input.outcomePlacement,
         score: input.outcomeScore,
-        isWinner: input.outcomeWinner ?? false,
+        isWinner: input.outcomeWinner,
       },
       playerCount: input.playerCount,
       isCoop: input.isCoop,

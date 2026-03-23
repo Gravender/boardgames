@@ -69,6 +69,7 @@ export function PlayerInsightsBody({
     performance,
     favoriteGames,
     recentMatches,
+    playerHeader,
     winRateCharts,
     topRivals,
     topTeammates,
@@ -81,6 +82,7 @@ export function PlayerInsightsBody({
       trpc.newPlayer.getPlayerPerformanceSummary.queryOptions(playerInput),
       trpc.newPlayer.getPlayerFavoriteGames.queryOptions(playerInput),
       trpc.newPlayer.getPlayerRecentMatches.queryOptions(playerInput),
+      trpc.newPlayer.getPlayerHeader.queryOptions(playerInput),
       trpc.newPlayer.getPlayerGameWinRateCharts.queryOptions(playerInput),
       trpc.newPlayer.getPlayerTopRivals.queryOptions(playerInput),
       trpc.newPlayer.getPlayerTopTeammates.queryOptions(playerInput),
@@ -158,7 +160,7 @@ export function PlayerInsightsBody({
           <FavoriteGamesSection data={favoriteGames.data} />
           <RecentMatchesSection
             data={recentMatches.data}
-            playerInput={playerInput}
+            profileName={playerHeader.data.name}
           />
           <WinRateChartsSection data={winRateCharts.data} />
         </div>
