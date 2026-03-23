@@ -40,7 +40,14 @@ describe("Player Insights - getPlayerPlayedWithGroups", () => {
       id: seeded.ownerTargetPlayerId,
     });
     expect(result.playedWithGroups.length).toBeGreaterThan(0);
-    expect(result.playedWithGroups[0]?.recentMatches.length).toBeGreaterThan(0);
+    const first = result.playedWithGroups[0];
+    expect(first).toBeDefined();
+    expect(first?.recentMatches.length).toBeGreaterThan(0);
+    expect(first?.profileInCohort.name).toBe("Owner Target");
+    expect(first?.members.length).toBeGreaterThanOrEqual(2);
+    expect(first?.stability).toBeGreaterThanOrEqual(0);
+    expect(first?.groupOrdering.length).toBeGreaterThan(0);
+    expect(first?.pairwiseWithinCohort.length).toBeGreaterThan(0);
   });
 
   test("worst case: throws for missing player", async () => {

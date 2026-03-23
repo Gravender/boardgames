@@ -1,3 +1,4 @@
+import { kCombinations } from "../../utils/combinations";
 import type {
   CorePlayer,
   DetectedCore,
@@ -10,30 +11,6 @@ import type {
 } from "./game-insights.service.types";
 
 // ─── Helpers ─────────────────────────────────────────────────────
-
-/** Generate all k-sized combinations from arr. */
-const kCombinations = <T>(arr: T[], k: number): T[][] => {
-  if (k > arr.length || k <= 0) return [];
-  if (k === arr.length) return [arr.slice()];
-  if (k === 1) return arr.map((item) => [item]);
-
-  const result: T[][] = [];
-  const helper = (start: number, combo: T[]) => {
-    if (combo.length === k) {
-      result.push([...combo]);
-      return;
-    }
-    for (let i = start; i <= arr.length - (k - combo.length); i++) {
-      const item = arr[i];
-      if (item === undefined) continue;
-      combo.push(item);
-      helper(i + 1, combo);
-      combo.pop();
-    }
-  };
-  helper(0, []);
-  return result;
-};
 
 const getPlayerCountBucket = (count: number): string => {
   if (count <= 4) return `${count}p`;

@@ -23,11 +23,19 @@ import { playerInsightsRepository } from "../../repositories/player/player-insig
 import { matchRepository } from "../../repositories/match/match.repository";
 import { playerRepository } from "../../repositories/player/player.repository";
 import { mapPlayerImageRowWithLogging } from "../../utils/image";
+import { kCombinations } from "../../utils/combinations";
 import { playerInsightsMatchQueryService } from "./player-insights-match-query.service";
 import type { GetPlayerInsightsArgs } from "./player.service.types";
 
 /** Minimum head-to-head or co-op games together to list someone as a rival or teammate. */
 const MIN_RIVAL_OR_TEAMMATE_MATCHES = 5;
+
+/** Played-with cohorts: at least two opponents; at most five (profile + five = 6). */
+const MIN_COHORT_OPPONENTS = 2;
+const MAX_COHORT_OPPONENTS = 5;
+/** Aligned with game core detection (often 3+); 1 keeps thin histories visible. */
+const MIN_MATCHES_PER_COHORT_GROUP = 1;
+const MAX_PLAYED_WITH_GROUPS = 30;
 
 const MS_PER_DAY = 86_400_000;
 const ROLLING_DAYS = 365;
@@ -116,12 +124,25 @@ type InsightMatchRow = Awaited<
 
 type InsightMatchParticipant = InsightMatchRow["participants"][number];
 
-type PlayedWithGroupAcc = {
+type CohortPairwiseAcc = {
+  keyA: string;
+  keyB: string;
+  identityA: PlayerInsightsIdentityType;
+  identityB: PlayerInsightsIdentityType;
+  matches: number;
+  winsA: number;
+  lossesA: number;
+  ties: number;
+  placementDeltaSum: number;
+  placementDeltaCount: number;
+};
+
+type CohortGroupAcc = {
   groupKey: string;
   members: PlayerInsightsIdentityType[];
   matches: number;
-  winsWithGroup: number;
-  winRateWithGroup: number;
+  sweptWins: number;
+  exactMatches: number;
   placementSum: number;
   placementCount: number;
   scoreSum: number;
@@ -129,6 +150,9 @@ type PlayedWithGroupAcc = {
   recentMatches: PlayerInsightsMatchEntryType[];
   gameKeys: Set<string>;
   lastPlayedAt: Date | null;
+  placementsByPlayerKey: Map<string, { sum: number; count: number }>;
+  pairwise: Map<string, CohortPairwiseAcc>;
+  identityByKey: Map<string, PlayerInsightsIdentityType>;
 };
 
 class PlayerInsightsReadService {
@@ -280,33 +304,6 @@ class PlayerInsightsReadService {
   }
 
   /**
-   * Used for played-with groups: whether the target “beat” another participant
-   * on this row (winner / placement / tie semantics for group win rate).
-   */
-  private compareResults(args: {
-    target: InsightMatchParticipant;
-    other: InsightMatchParticipant;
-  }): "win" | "loss" | "tie" {
-    const { target, other } = args;
-    if (target.winner === true && other.winner !== true) {
-      return "win";
-    }
-    if (target.winner !== true && other.winner === true) {
-      return "loss";
-    }
-    if (target.placement !== null && other.placement !== null) {
-      if (target.placement < other.placement) {
-        return "win";
-      }
-      if (target.placement > other.placement) {
-        return "loss";
-      }
-      return "tie";
-    }
-    return "tie";
-  }
-
-  /**
    * Rivals head-to-head: better finish (lower placement number) wins. Same
    * placement ⇒ tie. For Manual win condition only: if both are marked winner
    * or neither is, count as tie; otherwise use placement when present, else
@@ -346,13 +343,135 @@ class PlayerInsightsReadService {
     return "tie";
   }
 
+  private participantIdentityKey(p: InsightMatchParticipant): string {
+    if (p.playerType === "shared" && p.sharedPlayerId !== null) {
+      return `shared-${p.sharedPlayerId}`;
+    }
+    return `original-${p.playerId}`;
+  }
+
+  private identityKeyFromIdentity(
+    identity: PlayerInsightsIdentityType,
+  ): string {
+    return identity.type === "shared"
+      ? `shared-${identity.sharedId}`
+      : `original-${identity.id}`;
+  }
+
+  private async resolveProfileIdentityForGroups(
+    args: GetPlayerInsightsArgs,
+    rows: InsightMatchRow[],
+  ): Promise<PlayerInsightsIdentityType> {
+    for (const row of rows) {
+      const t = this.getTargetParticipant({
+        row,
+        input: args.input,
+      });
+      if (t) {
+        return this.toIdentity(t, args.ctx);
+      }
+    }
+    if (args.input.type === "original") {
+      const p = await playerRepository.getPlayer({
+        id: args.input.id,
+        createdBy: args.ctx.userId,
+        with: {
+          image: true,
+        },
+      });
+      assertFound(
+        p,
+        { userId: args.ctx.userId, value: args.input },
+        "Player not found.",
+      );
+      return {
+        type: "original",
+        id: p.id,
+        name: p.name,
+        image: await mapPlayerImageRowWithLogging({
+          ctx: args.ctx,
+          input: {
+            image: p.image,
+            playerId: p.id,
+          },
+        }),
+      };
+    }
+    const sp = await playerRepository.getSharedPlayer({
+      id: args.input.sharedPlayerId,
+      sharedWithId: args.ctx.userId,
+      with: {
+        player: {
+          with: {
+            image: true,
+          },
+        },
+      },
+    });
+    assertFound(
+      sp,
+      { userId: args.ctx.userId, value: args.input },
+      "Shared player not found.",
+    );
+    return {
+      type: "shared",
+      sharedId: sp.id,
+      id: sp.playerId,
+      name: sp.player.name,
+      image: await mapPlayerImageRowWithLogging({
+        ctx: args.ctx,
+        input: {
+          image: sp.player.image,
+          playerId: sp.playerId,
+        },
+      }),
+    };
+  }
+
+  private bumpPlacementForKey(
+    map: Map<string, { sum: number; count: number }>,
+    key: string,
+    placement: number | null,
+  ) {
+    if (placement === null) {
+      return;
+    }
+    const cur = map.get(key);
+    if (cur) {
+      cur.sum += placement;
+      cur.count += 1;
+    } else {
+      map.set(key, { sum: placement, count: 1 });
+    }
+  }
+
   private async buildPlayedWithGroups(args: {
     rows: InsightMatchRow[];
     input: GetPlayerInsightsArgs["input"];
     ctx: GetPlayerInsightsArgs["ctx"];
+    profileIdentity: PlayerInsightsIdentityType;
   }): Promise<PlayerInsightsPlayedWithGroupType[]> {
-    const grouped = new Map<string, PlayedWithGroupAcc>();
+    const profileKey = this.identityKeyFromIdentity(args.profileIdentity);
+    const identityCache = new Map<string, PlayerInsightsIdentityType>();
+    const getCachedIdentity = async (
+      participant: InsightMatchParticipant,
+    ): Promise<PlayerInsightsIdentityType> => {
+      const k = this.participantIdentityKey(participant);
+      const hit = identityCache.get(k);
+      if (hit) {
+        return hit;
+      }
+      const id = await this.toIdentity(participant, args.ctx);
+      identityCache.set(k, id);
+      return id;
+    };
+
+    const grouped = new Map<string, CohortGroupAcc>();
+
     for (const row of args.rows) {
+      if (row.isCoop) {
+        continue;
+      }
       const targetParticipant = this.getTargetParticipant({
         row,
         input: args.input,
@@ -360,29 +479,30 @@ class PlayerInsightsReadService {
       if (!targetParticipant) {
         continue;
       }
-      const filteredParticipants = row.participants.filter(
-        (participant) => participant.playerId !== targetParticipant.playerId,
-      );
-      const members: PlayerInsightsIdentityType[] = [];
-      for (const participant of filteredParticipants) {
-        members.push(await this.toIdentity(participant, args.ctx));
-      }
-      members.sort((a, b) => {
-        if (a.type !== b.type) {
-          return a.type.localeCompare(b.type);
+
+      const opponents = row.participants.filter((participant) => {
+        if (participant.playerId === targetParticipant.playerId) {
+          return false;
         }
-        return a.name.localeCompare(b.name);
+        if (
+          targetParticipant.teamId !== null &&
+          participant.teamId === targetParticipant.teamId
+        ) {
+          return false;
+        }
+        return true;
       });
-      const groupKey = members
-        .map((member) =>
-          member.type === "shared"
-            ? `${member.type}-${member.sharedId}`
-            : `${member.type}-${member.id}`,
-        )
-        .join("|");
-      if (groupKey.length === 0) {
+
+      if (opponents.length < MIN_COHORT_OPPONENTS) {
         continue;
       }
+
+      const opponentsSorted = opponents.toSorted((a, b) =>
+        this.participantIdentityKey(a).localeCompare(
+          this.participantIdentityKey(b),
+        ),
+      );
+
       const matchEntry =
         await playerInsightsMatchQueryService.mapMatchEntryFromRow({
           ctx: args.ctx,
@@ -404,83 +524,244 @@ class PlayerInsightsReadService {
             playerCount: row.participants.length,
           },
         });
-      const existing = grouped.get(groupKey);
-      const result = members.every((member) => {
-        const participant = row.participants.find((player) => {
-          if (member.type === "shared") {
-            return player.sharedPlayerId === member.sharedId;
-          }
-          return player.playerId === member.id;
-        });
-        if (!participant) {
-          return false;
-        }
-        return (
-          this.compareResults({
-            target: targetParticipant,
-            other: participant,
-          }) === "win"
-        );
-      })
-        ? "win"
-        : "loss";
       const gk = this.gameIdentityKey(row);
-      if (!existing) {
-        grouped.set(groupKey, {
-          groupKey,
-          members,
-          matches: 1,
-          winsWithGroup: result === "win" ? 1 : 0,
-          winRateWithGroup: result === "win" ? 1 : 0,
-          placementSum: row.outcomePlacement ?? 0,
-          placementCount: row.outcomePlacement !== null ? 1 : 0,
-          scoreSum: row.outcomeScore ?? 0,
-          scoreCount: row.outcomeScore !== null ? 1 : 0,
-          recentMatches: [matchEntry],
-          gameKeys: new Set([gk]),
-          lastPlayedAt: row.date,
-        });
-        continue;
+
+      const maxK = Math.min(MAX_COHORT_OPPONENTS, opponentsSorted.length);
+      for (let k = MIN_COHORT_OPPONENTS; k <= maxK; k++) {
+        const combos = kCombinations(opponentsSorted, k);
+        for (const subset of combos) {
+          const memberIdentities: PlayerInsightsIdentityType[] = [];
+          for (const op of subset) {
+            memberIdentities.push(await getCachedIdentity(op));
+          }
+          memberIdentities.sort((a, b) =>
+            this.identityKeyFromIdentity(a).localeCompare(
+              this.identityKeyFromIdentity(b),
+            ),
+          );
+          const groupKey = memberIdentities
+            .map((m) => this.identityKeyFromIdentity(m))
+            .join("|");
+
+          const swept = subset.every(
+            (op) =>
+              this.compareRivalHeadToHead({
+                row,
+                target: targetParticipant,
+                other: op,
+              }) === "win",
+          );
+
+          const cohortParticipants: InsightMatchParticipant[] = [
+            targetParticipant,
+            ...subset,
+          ];
+          const cohortSize = cohortParticipants.length;
+          const isExact = row.participants.length === cohortSize ? 1 : 0;
+
+          let acc = grouped.get(groupKey);
+          if (!acc) {
+            const identityByKey = new Map<string, PlayerInsightsIdentityType>();
+            identityByKey.set(profileKey, args.profileIdentity);
+            for (const m of memberIdentities) {
+              identityByKey.set(this.identityKeyFromIdentity(m), m);
+            }
+            acc = {
+              groupKey,
+              members: memberIdentities,
+              matches: 0,
+              sweptWins: 0,
+              exactMatches: 0,
+              placementSum: 0,
+              placementCount: 0,
+              scoreSum: 0,
+              scoreCount: 0,
+              recentMatches: [],
+              gameKeys: new Set<string>(),
+              lastPlayedAt: null,
+              placementsByPlayerKey: new Map(),
+              pairwise: new Map<string, CohortPairwiseAcc>(),
+              identityByKey,
+            };
+            grouped.set(groupKey, acc);
+          }
+
+          acc.matches += 1;
+          if (swept) {
+            acc.sweptWins += 1;
+          }
+          acc.exactMatches += isExact;
+
+          if (row.outcomePlacement !== null) {
+            acc.placementSum += row.outcomePlacement;
+            acc.placementCount += 1;
+          }
+          if (row.outcomeScore !== null) {
+            acc.scoreSum += row.outcomeScore;
+            acc.scoreCount += 1;
+          }
+          acc.gameKeys.add(gk);
+          if (acc.lastPlayedAt === null || row.date > acc.lastPlayedAt) {
+            acc.lastPlayedAt = row.date;
+          }
+          acc.recentMatches = [...acc.recentMatches, matchEntry]
+            .toSorted((a, b) => b.date.getTime() - a.date.getTime())
+            .slice(0, 5);
+
+          this.bumpPlacementForKey(
+            acc.placementsByPlayerKey,
+            profileKey,
+            targetParticipant.placement,
+          );
+          for (const op of subset) {
+            this.bumpPlacementForKey(
+              acc.placementsByPlayerKey,
+              this.participantIdentityKey(op),
+              op.placement,
+            );
+          }
+
+          for (let i = 0; i < cohortParticipants.length; i++) {
+            for (let j = i + 1; j < cohortParticipants.length; j++) {
+              const pA = cohortParticipants[i]!;
+              const pB = cohortParticipants[j]!;
+              const kA = this.participantIdentityKey(pA);
+              const kB = this.participantIdentityKey(pB);
+              const firstKey = kA < kB ? kA : kB;
+              const secondKey = kA < kB ? kB : kA;
+              const firstP = kA < kB ? pA : pB;
+              const secondP = kA < kB ? pB : pA;
+              const pairKey = `${firstKey}|${secondKey}`;
+
+              const r = this.compareRivalHeadToHead({
+                row,
+                target: firstP,
+                other: secondP,
+              });
+
+              let pairAcc = acc.pairwise.get(pairKey);
+              if (!pairAcc) {
+                const identityA = acc.identityByKey.get(firstKey)!;
+                const identityB = acc.identityByKey.get(secondKey)!;
+                pairAcc = {
+                  keyA: firstKey,
+                  keyB: secondKey,
+                  identityA,
+                  identityB,
+                  matches: 0,
+                  winsA: 0,
+                  lossesA: 0,
+                  ties: 0,
+                  placementDeltaSum: 0,
+                  placementDeltaCount: 0,
+                };
+                acc.pairwise.set(pairKey, pairAcc);
+              }
+              pairAcc.matches += 1;
+              if (r === "win") {
+                pairAcc.winsA += 1;
+              } else if (r === "loss") {
+                pairAcc.lossesA += 1;
+              } else {
+                pairAcc.ties += 1;
+              }
+              if (firstP.placement !== null && secondP.placement !== null) {
+                pairAcc.placementDeltaSum +=
+                  secondP.placement - firstP.placement;
+                pairAcc.placementDeltaCount += 1;
+              }
+            }
+          }
+        }
       }
-      existing.matches += 1;
-      if (result === "win") {
-        existing.winsWithGroup += 1;
-      }
-      existing.winRateWithGroup =
-        existing.matches > 0 ? existing.winsWithGroup / existing.matches : 0;
-      if (row.outcomePlacement !== null) {
-        existing.placementSum += row.outcomePlacement;
-        existing.placementCount += 1;
-      }
-      if (row.outcomeScore !== null) {
-        existing.scoreSum += row.outcomeScore;
-        existing.scoreCount += 1;
-      }
-      existing.gameKeys.add(gk);
-      if (existing.lastPlayedAt === null || row.date > existing.lastPlayedAt) {
-        existing.lastPlayedAt = row.date;
-      }
-      existing.recentMatches = [...existing.recentMatches, matchEntry]
-        .toSorted((a, b) => b.date.getTime() - a.date.getTime())
-        .slice(0, 5);
     }
-    return Array.from(grouped.values())
-      .map(
-        (g): PlayerInsightsPlayedWithGroupType => ({
+
+    const filtered = Array.from(grouped.values()).filter(
+      (g) => g.matches >= MIN_MATCHES_PER_COHORT_GROUP,
+    );
+
+    return filtered
+      .map((g): PlayerInsightsPlayedWithGroupType => {
+        const stability = g.matches > 0 ? g.exactMatches / g.matches : 0;
+
+        const cohortKeys = [
+          profileKey,
+          ...g.members.map((m) => this.identityKeyFromIdentity(m)),
+        ];
+
+        const groupOrdering = cohortKeys
+          .map((key) => {
+            const pl = g.placementsByPlayerKey.get(key);
+            const avgPlacement =
+              pl !== undefined && pl.count > 0 ? pl.sum / pl.count : null;
+            const player = g.identityByKey.get(key);
+            return {
+              player: player!,
+              avgPlacement,
+              rank: 0,
+            };
+          })
+          .toSorted((a, b) => {
+            if (a.avgPlacement === null && b.avgPlacement === null) {
+              return a.player.name.localeCompare(b.player.name);
+            }
+            if (a.avgPlacement === null) {
+              return 1;
+            }
+            if (b.avgPlacement === null) {
+              return -1;
+            }
+            if (a.avgPlacement !== b.avgPlacement) {
+              return a.avgPlacement - b.avgPlacement;
+            }
+            return a.player.name.localeCompare(b.player.name);
+          })
+          .map((entry, idx) => ({
+            player: entry.player,
+            avgPlacement: entry.avgPlacement,
+            rank: idx + 1,
+          }));
+
+        const pairwiseWithinCohort = Array.from(g.pairwise.values())
+          .map((p) => ({
+            playerA: p.identityA,
+            playerB: p.identityB,
+            matches: p.matches,
+            winsA: p.winsA,
+            lossesA: p.lossesA,
+            ties: p.ties,
+            winRateA: p.matches > 0 ? p.winsA / p.matches : 0,
+            avgPlacementDeltaA:
+              p.placementDeltaCount > 0
+                ? p.placementDeltaSum / p.placementDeltaCount
+                : null,
+          }))
+          .toSorted((a, b) => {
+            const na = `${a.playerA.name}|${a.playerB.name}`;
+            const nb = `${b.playerA.name}|${b.playerB.name}`;
+            return na.localeCompare(nb);
+          });
+
+        return {
           groupKey: g.groupKey,
+          profileInCohort: args.profileIdentity,
           members: g.members,
           matches: g.matches,
-          winsWithGroup: g.winsWithGroup,
-          winRateWithGroup: g.winRateWithGroup,
+          winsWithGroup: g.sweptWins,
+          winRateWithGroup: g.matches > 0 ? g.sweptWins / g.matches : 0,
           avgPlacement:
             g.placementCount > 0 ? g.placementSum / g.placementCount : null,
           avgScore: g.scoreCount > 0 ? g.scoreSum / g.scoreCount : null,
           uniqueGamesPlayed: g.gameKeys.size,
           lastPlayedAt: g.lastPlayedAt,
           recentMatches: g.recentMatches,
-        }),
-      )
-      .toSorted((a, b) => b.matches - a.matches);
+          stability,
+          groupOrdering,
+          pairwiseWithinCohort,
+        };
+      })
+      .toSorted((a, b) => b.matches - a.matches)
+      .slice(0, MAX_PLAYED_WITH_GROUPS);
   }
 
   public async getPlayerPerformanceSummary(
@@ -1157,12 +1438,17 @@ class PlayerInsightsReadService {
       const r = await this.getRows({ ...args, tx });
       return { player: p, rows: r };
     });
+    const profileIdentity = await this.resolveProfileIdentityForGroups(
+      args,
+      rows,
+    );
     return {
       player,
       playedWithGroups: await this.buildPlayedWithGroups({
         rows,
         input: args.input,
         ctx: args.ctx,
+        profileIdentity,
       }),
     };
   }

@@ -299,8 +299,26 @@ const playerInsightsIdentitySchema = z.discriminatedUnion("type", [
   }),
 ]);
 
+export const playerInsightsGroupOrderingEntrySchema = z.object({
+  player: playerInsightsIdentitySchema,
+  avgPlacement: z.number().nullable(),
+  rank: z.number(),
+});
+
+export const playerInsightsPairwiseWithinCohortSchema = z.object({
+  playerA: playerInsightsIdentitySchema,
+  playerB: playerInsightsIdentitySchema,
+  matches: z.number(),
+  winsA: z.number(),
+  lossesA: z.number(),
+  ties: z.number(),
+  winRateA: z.number(),
+  avgPlacementDeltaA: z.number().nullable(),
+});
+
 export const playerInsightsPlayedWithGroupSchema = z.object({
   groupKey: z.string(),
+  profileInCohort: playerInsightsIdentitySchema,
   members: z.array(playerInsightsIdentitySchema),
   matches: z.number(),
   winsWithGroup: z.number(),
@@ -310,6 +328,9 @@ export const playerInsightsPlayedWithGroupSchema = z.object({
   uniqueGamesPlayed: z.number(),
   lastPlayedAt: z.date().nullable(),
   recentMatches: z.array(playerInsightsMatchEntrySchema),
+  stability: z.number(),
+  groupOrdering: z.array(playerInsightsGroupOrderingEntrySchema),
+  pairwiseWithinCohort: z.array(playerInsightsPairwiseWithinCohortSchema),
 });
 
 export const getPlayerPerformanceSummaryOutput = z.object({
