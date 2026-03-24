@@ -34,7 +34,9 @@ describe("Player Insights - getPlayerTopRivals", () => {
 
   test("fixture under five head-to-head games: no rivals listed", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
-    const seeded = await seedInsightsHistory(ids!);
+    const seeded = await seedInsightsHistory(ids!, {
+      extraCompetitiveMatchCopies: 0,
+    });
     const result = await ownerCaller.newPlayer.getPlayerTopRivals({
       type: "original",
       id: seeded.ownerTargetPlayerId,

@@ -11,8 +11,7 @@ export const kCombinations = <T>(arr: T[], k: number): T[][] => {
       return;
     }
     for (let i = start; i <= arr.length - (k - combo.length); i++) {
-      const item = arr[i];
-      if (item === undefined) continue;
+      const item = arr[i]!;
       combo.push(item);
       helper(i + 1, combo);
       combo.pop();

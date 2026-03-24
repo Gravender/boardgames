@@ -44,9 +44,10 @@ describe("Player Insights - getPlayerFavoriteGames", () => {
       sharedPlayerId: seeded.receiverSharedTargetPlayerId,
     });
     expect(original.games.length).toBeGreaterThan(0);
-    expect(original.games[0]?.type).toBe("original");
+    expect(original.games.some((g) => g.type === "original")).toBe(true);
+    expect(original.games.some((g) => g.type === "shared")).toBe(true);
     expect(shared.games.length).toBeGreaterThan(0);
-    expect(shared.games[0]?.type).toBe("shared");
+    expect(shared.games.some((g) => g.type === "shared")).toBe(true);
   });
 
   test("worst case: throws for missing players", async () => {

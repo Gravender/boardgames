@@ -4,6 +4,7 @@ import {
   selectGameSchema,
   selectMatchSchema,
   selectPlayerSchema,
+  selectScoreSheetSchema,
   selectSharedPlayerSchema,
 } from "@board-games/db/zodSchema";
 import {
@@ -183,7 +184,7 @@ const playerInsightsTargetSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("original"),
     id: playerIdentitySchema.shape.id,
-    permissions: z.literal("edit"),
+    permissions: permissionsSchema,
   }),
   z.object({
     type: z.literal("shared"),
@@ -214,70 +215,56 @@ const playerInsightsOutcomeSchema = z.object({
   isWinner: z.boolean().nullable(),
 });
 
-/** Canonical scoresheet `win_condition` for the match (drives manual vs placement-based UI). */
-export const playerInsightsScoresheetWinConditionSchema = z.enum([
-  "Manual",
-  "Highest Score",
-  "Lowest Score",
-  "No Winner",
-  "Target Score",
-]);
+/** Canonical scoresheet `win_condition` from DB schema (single source of truth). */
+export const playerInsightsScoresheetWinConditionSchema =
+  selectScoreSheetSchema.shape.winCondition;
+
+const playerInsightsMatchEntryBaseSchema = z.object({
+  matchId: z.number(),
+  date: z.date(),
+  game: playerInsightsGameEntrySchema,
+  outcome: playerInsightsOutcomeSchema,
+  playerCount: z.number(),
+  isCoop: z.boolean(),
+  scoresheetWinCondition: playerInsightsScoresheetWinConditionSchema,
+});
 
 export const playerInsightsMatchEntrySchema = z.discriminatedUnion("type", [
-  z.object({
+  playerInsightsMatchEntryBaseSchema.extend({
     type: z.literal("original"),
-    matchId: z.number(),
-    date: z.date(),
-    game: playerInsightsGameEntrySchema,
-    outcome: playerInsightsOutcomeSchema,
-    playerCount: z.number(),
-    isCoop: z.boolean(),
-    scoresheetWinCondition: playerInsightsScoresheetWinConditionSchema,
   }),
-  z.object({
+  playerInsightsMatchEntryBaseSchema.extend({
     type: z.literal("shared"),
     sharedMatchId: z.number(),
-    matchId: z.number(),
-    date: z.date(),
-    game: playerInsightsGameEntrySchema,
-    outcome: playerInsightsOutcomeSchema,
-    playerCount: z.number(),
-    isCoop: z.boolean(),
-    scoresheetWinCondition: playerInsightsScoresheetWinConditionSchema,
   }),
 ]);
 
-const playerInsightsViewerParticipationSchema = z.object({
-  inMatch: z.boolean(),
-  outcome: playerInsightsOutcomeSchema.optional(),
-  isSameAsProfilePlayer: z.boolean(),
-});
+const playerInsightsViewerParticipationSchema = z.discriminatedUnion(
+  "inMatch",
+  [
+    z.object({
+      inMatch: z.literal(true),
+      outcome: playerInsightsOutcomeSchema,
+      isSameAsProfilePlayer: z.boolean(),
+    }),
+    z.object({
+      inMatch: z.literal(false),
+      isSameAsProfilePlayer: z.boolean(),
+    }),
+  ],
+);
 
 /** Recent matches list includes how the logged-in user (if they have a player) performed when they played. */
 export const playerInsightsRecentMatchEntrySchema = z.discriminatedUnion(
   "type",
   [
-    z.object({
+    playerInsightsMatchEntryBaseSchema.extend({
       type: z.literal("original"),
-      matchId: z.number(),
-      date: z.date(),
-      game: playerInsightsGameEntrySchema,
-      outcome: playerInsightsOutcomeSchema,
-      playerCount: z.number(),
-      isCoop: z.boolean(),
-      scoresheetWinCondition: playerInsightsScoresheetWinConditionSchema,
       viewerParticipation: playerInsightsViewerParticipationSchema,
     }),
-    z.object({
+    playerInsightsMatchEntryBaseSchema.extend({
       type: z.literal("shared"),
       sharedMatchId: z.number(),
-      matchId: z.number(),
-      date: z.date(),
-      game: playerInsightsGameEntrySchema,
-      outcome: playerInsightsOutcomeSchema,
-      playerCount: z.number(),
-      isCoop: z.boolean(),
-      scoresheetWinCondition: playerInsightsScoresheetWinConditionSchema,
       viewerParticipation: playerInsightsViewerParticipationSchema,
     }),
   ],
@@ -466,6 +453,8 @@ export const playerInsightsRivalByGameSchema = z.object({
   lossesVs: z.number(),
   tiesVs: z.number(),
   winRateVs: z.number(),
+  /** Win/loss differential for this game (mirrors aggregate `recentDelta` semantics). */
+  recentDelta: z.number(),
   secondsPlayedTogether: z.number(),
   competitiveMatches: z.number(),
   secondsPlayedCompetitiveTogether: z.number(),

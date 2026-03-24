@@ -91,7 +91,21 @@ export const createSharedPlayerFixture = async (ids: InsightsUserIds) => {
   };
 };
 
-export const seedInsightsHistory = async (ids: InsightsUserIds) => {
+export type SeedInsightsHistoryOptions = {
+  /**
+   * Extra copies of the competitive FFA match (same three players) so played-with cohorts
+   * reach MIN_MATCHES_PER_COHORT_GROUP. Use `0` when tests need fewer than five
+   * head-to-head games (e.g. top-rivals threshold).
+   * @default 4
+   */
+  extraCompetitiveMatchCopies?: number;
+};
+
+export const seedInsightsHistory = async (
+  ids: InsightsUserIds,
+  options?: SeedInsightsHistoryOptions,
+) => {
+  const extraCopies = options?.extraCompetitiveMatchCopies ?? 4;
   const { ownerCaller } = await createInsightsCallers(ids);
   const ownerTarget = await ownerCaller.player.create({
     name: "Owner Target",
@@ -370,6 +384,90 @@ export const seedInsightsHistory = async (ids: InsightsUserIds) => {
     message: "Failed to create coop shared scoresheet fixture.",
   });
 
+  /** Same lineup repeated so played-with cohorts reach MIN_MATCHES_PER_COHORT_GROUP in insights. */
+  type MatchPlayerRow = typeof targetCompetitiveMp;
+  const extraCompetitiveSharedLinks: {
+    sharedMatchId: number;
+    mp: MatchPlayerRow;
+  }[] = [];
+  for (let extra = 0; extra < extraCopies; extra++) {
+    const m = await insertOne({
+      promise: db
+        .insert(match)
+        .values({
+          name: `Insights Competitive Match Extra ${extra + 1}`,
+          createdBy: ids.ownerUserId,
+          gameId: competitiveGame.id,
+          scoresheetId: competitiveScoresheet.id,
+          date: new Date(Date.UTC(2026, 0, 11 + extra, 12, 0, 0)),
+          finished: true,
+          running: false,
+          duration: 3600,
+        })
+        .returning(),
+      message: "Failed to create extra competitive match fixture.",
+    });
+    const tMp = await insertOne({
+      promise: db
+        .insert(matchPlayer)
+        .values({
+          matchId: m.id,
+          playerId: ownerTarget.id,
+          winner: false,
+          score: 12,
+          placement: 2,
+        })
+        .returning(),
+      message: "Failed to create extra target competitive match player fixture.",
+    });
+    const rMp = await insertOne({
+      promise: db
+        .insert(matchPlayer)
+        .values({
+          matchId: m.id,
+          playerId: ownerRival.id,
+          winner: true,
+          score: 18,
+          placement: 1,
+        })
+        .returning(),
+      message: "Failed to create extra rival competitive match player fixture.",
+    });
+    const tmMp = await insertOne({
+      promise: db
+        .insert(matchPlayer)
+        .values({
+          matchId: m.id,
+          playerId: ownerTeammate.id,
+          winner: false,
+          score: 8,
+          placement: 3,
+        })
+        .returning(),
+      message:
+        "Failed to create extra teammate competitive match player fixture.",
+    });
+    const sm = await insertOne({
+      promise: db
+        .insert(sharedMatch)
+        .values({
+          ownerId: ids.ownerUserId,
+          sharedWithId: ids.receiverUserId,
+          matchId: m.id,
+          sharedGameId: competitiveSharedGame.id,
+          sharedScoresheetId: competitiveSharedScoresheet.id,
+          permission: "view",
+        })
+        .returning(),
+      message: "Failed to create extra competitive shared match fixture.",
+    });
+    extraCompetitiveSharedLinks.push(
+      { sharedMatchId: sm.id, mp: tMp },
+      { sharedMatchId: sm.id, mp: rMp },
+      { sharedMatchId: sm.id, mp: tmMp },
+    );
+  }
+
   const competitiveSharedMatch = await insertOne({
     promise: db
       .insert(sharedMatch)
@@ -409,6 +507,7 @@ export const seedInsightsHistory = async (ids: InsightsUserIds) => {
     { sharedMatchId: competitiveSharedMatch.id, mp: targetCompetitiveMp },
     { sharedMatchId: competitiveSharedMatch.id, mp: rivalCompetitiveMp },
     { sharedMatchId: competitiveSharedMatch.id, mp: teammateCompetitiveMp },
+    ...extraCompetitiveSharedLinks,
     { sharedMatchId: coopSharedMatch.id, mp: targetCoopMp },
     { sharedMatchId: coopSharedMatch.id, mp: rivalCoopMp },
     { sharedMatchId: coopSharedMatch.id, mp: teammateCoopMp },

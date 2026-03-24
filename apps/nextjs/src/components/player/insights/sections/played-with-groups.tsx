@@ -75,7 +75,9 @@ type CohortSizeFilter = "all" | "3" | "4" | "5" | "6";
 
 const OVERVIEW_COUNT = 5;
 
-const TEXT_ASC_SORT_KEYS: readonly SortKey[] = new Set(["groupKey"]);
+const TEXT_ASC_SORT_KEYS: ReadonlySet<SortKey> = new Set<SortKey>([
+  "groupKey",
+]);
 
 const GROUP_SORT_PRESETS: {
   value: `${SortKey}:${"asc" | "desc"}`;
@@ -104,6 +106,14 @@ const cohortIdentityKey = (
 const cohortSize = (g: GroupRow) => g.members.length + 1;
 
 const pct = (rate: number) => `${Math.round(rate * 100)}%`;
+
+const cohortLabelShort = (g: GroupRow) => {
+  const cohort = [g.profileInCohort, ...g.members];
+  if (cohort.length <= 2) {
+    return cohort.map((p) => p.name).join(", ");
+  }
+  return `${cohort[0]?.name ?? ""}, ${cohort[1]?.name ?? ""} +${cohort.length - 2}`;
+};
 
 const GroupStatBlock = ({
   label,
@@ -497,21 +507,21 @@ const sortGroups = (
       case "avgPlacement": {
         const an = a.avgPlacement;
         const bn = b.avgPlacement;
-        if (an === null || an === undefined) {
-          if (bn === null || bn === undefined) return 0;
+        if (an === null) {
+          if (bn === null) return 0;
           return 1;
         }
-        if (bn === null || bn === undefined) return -1;
+        if (bn === null) return -1;
         return (an - bn) * dir;
       }
       case "avgScore": {
         const an = a.avgScore;
         const bn = b.avgScore;
-        if (an === null || an === undefined) {
-          if (bn === null || bn === undefined) return 0;
+        if (an === null) {
+          if (bn === null) return 0;
           return 1;
         }
-        if (bn === null || bn === undefined) return -1;
+        if (bn === null) return -1;
         return (an - bn) * dir;
       }
       default:
@@ -625,14 +635,6 @@ export function PlayedWithGroupsSection({ data }: { data: Data }) {
       </Card>
     );
   }
-
-  const cohortLabelShort = (g: GroupRow) => {
-    const cohort = [g.profileInCohort, ...g.members];
-    if (cohort.length <= 2) {
-      return cohort.map((p) => p.name).join(", ");
-    }
-    return `${cohort[0]?.name ?? ""}, ${cohort[1]?.name ?? ""} +${cohort.length - 2}`;
-  };
 
   const toolbar = (
     <div

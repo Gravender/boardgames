@@ -22,6 +22,22 @@ export type TeammateRow = TeammatesData["teammates"][number];
 
 export const ALL_GAMES_VALUE = "all";
 
+type WithByGame = {
+  byGame: readonly { gameIdKey: string; gameName: string }[];
+};
+
+export const useGameFilterOptions = <T extends WithByGame>(items: T[]) => {
+  return useMemo(() => {
+    const map = new Map<string, string>();
+    for (const item of items) {
+      for (const g of item.byGame) {
+        map.set(g.gameIdKey, g.gameName);
+      }
+    }
+    return [...map.entries()].toSorted((a, b) => a[1].localeCompare(b[1]));
+  }, [items]);
+};
+
 export const StatBlock = ({
   label,
   value,
@@ -44,29 +60,11 @@ export const StatBlock = ({
   </div>
 );
 
-export const useRivalGameFilterOptions = (rivals: RivalRow[]) => {
-  return useMemo(() => {
-    const map = new Map<string, string>();
-    for (const r of rivals) {
-      for (const g of r.byGame) {
-        map.set(g.gameIdKey, g.gameName);
-      }
-    }
-    return [...map.entries()].toSorted((a, b) => a[1].localeCompare(b[1]));
-  }, [rivals]);
-};
+export const useRivalGameFilterOptions = (rivals: RivalRow[]) =>
+  useGameFilterOptions(rivals);
 
-export const useTeammateGameFilterOptions = (teammates: TeammateRow[]) => {
-  return useMemo(() => {
-    const map = new Map<string, string>();
-    for (const t of teammates) {
-      for (const g of t.byGame) {
-        map.set(g.gameIdKey, g.gameName);
-      }
-    }
-    return [...map.entries()].toSorted((a, b) => a[1].localeCompare(b[1]));
-  }, [teammates]);
-};
+export const useTeammateGameFilterOptions = (teammates: TeammateRow[]) =>
+  useGameFilterOptions(teammates);
 
 export const getRivalDisplayStats = (
   r: RivalRow,
@@ -106,7 +104,8 @@ export const getRivalDisplayStats = (
     lossesVs: g.lossesVs,
     tiesVs: g.tiesVs,
     winRateVs: g.winRateVs,
-    recentDelta: g.winsVs - g.lossesVs,
+    // Prefer API per-game recentDelta; fallback matches aggregate formula (wins − losses).
+    recentDelta: g.recentDelta ?? g.winsVs - g.lossesVs,
   };
 };
 

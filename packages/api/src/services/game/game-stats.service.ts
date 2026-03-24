@@ -234,21 +234,26 @@ class GameStatsService {
       const key = `${mp.playerId}`;
       let p = acc.get(key);
       if (!p) {
-        const playerImage = await mapPlayerImageRowWithLogging({
-          ctx,
-          input: {
-            image: mp.image,
-            playerId: mp.playerId,
-          },
-        });
-        if (mp.image !== null && playerImage === null) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: `Player image mapping failed for playerId ${mp.playerId}, image id ${mp.image.id}.`,
+        let playerImage: Awaited<
+          ReturnType<typeof mapPlayerImageRowWithLogging>
+        > | null = null;
+        if (mp.image !== null) {
+          playerImage = await mapPlayerImageRowWithLogging({
+            ctx,
+            input: {
+              image: mp.image,
+              playerId: mp.playerId,
+            },
           });
+          if (playerImage === null) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: `Player image mapping failed for playerId ${mp.playerId}, image id ${mp.image.id}.`,
+            });
+          }
         }
         const imageForStats: GamePlayerStatsPlayerImage | null =
-          playerImage === null || mp.image === null
+          mp.image === null || playerImage === null
             ? null
             : { id: mp.image.id, ...playerImage };
         if (mp.type === "shared") {

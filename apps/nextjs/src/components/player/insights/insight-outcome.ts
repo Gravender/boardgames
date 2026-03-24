@@ -54,6 +54,7 @@ export const formatInsightOutcomeStatsLine = (args: {
   return parts.length > 0 ? parts.join(" · ") : null;
 };
 
-export const isManualWinCondition = (
+/** True when placement order is not meaningful — show score only (see `formatInsightOutcomeStatsLine`). */
+export const isScoreOnlyWinCondition = (
   w: InsightScoresheetWinCondition,
-): boolean => w === "Manual";
+): boolean => w === "Manual" || w === "No Winner";

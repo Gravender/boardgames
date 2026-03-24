@@ -31,7 +31,7 @@ import { GameImage } from "~/components/game-image";
 import {
   deriveInsightOutcomeKind,
   formatInsightOutcomeStatsLine,
-  isManualWinCondition,
+  isScoreOnlyWinCondition,
 } from "../insight-outcome";
 import { insightMatchHref } from "../player-insights-match-links";
 type Data = RouterOutputs["newPlayer"]["getPlayerRecentMatches"];
@@ -118,8 +118,7 @@ export function RecentMatchesSection({
   const hasViewerExtras = data.matches.some(
     (m) =>
       m.viewerParticipation.inMatch &&
-      !m.viewerParticipation.isSameAsProfilePlayer &&
-      m.viewerParticipation.outcome !== undefined,
+      !m.viewerParticipation.isSameAsProfilePlayer,
   );
 
   return (
@@ -230,13 +229,11 @@ export function RecentMatchesSection({
                   const showViewer =
                     showViewerColumn &&
                     vp.inMatch &&
-                    !vp.isSameAsProfilePlayer &&
-                    vp.outcome !== undefined;
+                    !vp.isSameAsProfilePlayer;
 
-                  const viewer =
-                    vp.outcome !== undefined
-                      ? viewerOutcomePresentation(vp.outcome, m.isCoop)
-                      : null;
+                  const viewer = vp.inMatch
+                    ? viewerOutcomePresentation(vp.outcome, m.isCoop)
+                    : null;
 
                   const ariaLabel = `View match ${m.game.name}, ${
                     vp.isSameAsProfilePlayer
@@ -291,7 +288,7 @@ export function RecentMatchesSection({
                                     Co-op
                                   </span>
                                 )}
-                                {isManualWinCondition(
+                                {isScoreOnlyWinCondition(
                                   m.scoresheetWinCondition,
                                 ) && (
                                   <span className="flex items-center gap-1">
@@ -350,7 +347,7 @@ export function RecentMatchesSection({
                                 });
                                 if (
                                   line === null &&
-                                  isManualWinCondition(m.scoresheetWinCondition)
+                                  isScoreOnlyWinCondition(m.scoresheetWinCondition)
                                 ) {
                                   return null;
                                 }

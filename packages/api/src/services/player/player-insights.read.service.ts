@@ -33,6 +33,8 @@ const MIN_RIVAL_OR_TEAMMATE_MATCHES = 5;
 /** Played-with cohorts: at least two opponents; at most five (profile + five = 6). */
 const MIN_COHORT_OPPONENTS = 2;
 const MAX_COHORT_OPPONENTS = 5;
+/** Caps combinatorial cohort subset work across all matches (opponents × k-combinations). */
+const MAX_COHORT_SUBSETS = 50_000;
 /** Aligned with game core detection (often 3+); 1 keeps thin histories visible. */
 const MIN_MATCHES_PER_COHORT_GROUP = 5;
 const MAX_PLAYED_WITH_GROUPS = 300;
@@ -41,18 +43,21 @@ const MS_PER_DAY = 86_400_000;
 const ROLLING_DAYS = 365;
 const rollingOneYearMs = (): number => ROLLING_DAYS * MS_PER_DAY;
 
+/** Map a match into one of 12 month slots for the 12 calendar months ending at `windowEnd`. */
 const monthSlotForMatchInWindow = (
   matchDate: Date,
-  windowStart: Date,
+  windowEnd: Date,
 ): number => {
-  const anchor = new Date(
-    Date.UTC(windowStart.getUTCFullYear(), windowStart.getUTCMonth(), 1),
+  const endY = windowEnd.getUTCFullYear();
+  const endM = windowEnd.getUTCMonth();
+  const start = new Date(Date.UTC(endY, endM - 11, 1));
+  const match = new Date(
+    Date.UTC(matchDate.getUTCFullYear(), matchDate.getUTCMonth(), 1),
   );
-  const y = matchDate.getUTCFullYear();
-  const m = matchDate.getUTCMonth();
-  const ay = anchor.getUTCFullYear();
-  const am = anchor.getUTCMonth();
-  const slot = (y - ay) * 12 + (m - am) + 1;
+  const slot =
+    (match.getUTCFullYear() - start.getUTCFullYear()) * 12 +
+    (match.getUTCMonth() - start.getUTCMonth()) +
+    1;
   if (slot < 1) {
     return 1;
   }
@@ -69,13 +74,13 @@ const formatMonthLabelShortUtc = (d: Date): string =>
     timeZone: "UTC",
   }).format(d);
 
-const buildMonthSlotLabelsUtc = (windowStart: Date): string[] => {
-  const anchor = new Date(
-    Date.UTC(windowStart.getUTCFullYear(), windowStart.getUTCMonth(), 1),
-  );
+/** Labels for the 12 calendar months ending at `windowEnd` (UTC month boundaries). */
+const buildMonthSlotLabelsUtc = (windowEnd: Date): string[] => {
+  const endY = windowEnd.getUTCFullYear();
+  const endM = windowEnd.getUTCMonth();
   const labels: string[] = [];
-  let d = new Date(anchor);
   for (let i = 0; i < 12; i++) {
+    const d = new Date(Date.UTC(endY, endM - 11 + i, 1));
     labels.push(
       new Intl.DateTimeFormat("en-US", {
         month: "short",
@@ -83,7 +88,6 @@ const buildMonthSlotLabelsUtc = (windowStart: Date): string[] => {
         timeZone: "UTC",
       }).format(d),
     );
-    d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1));
   }
   return labels;
 };
@@ -98,11 +102,11 @@ type RunningWinRatePoint = {
 
 const collapseRunningPointsByMonthSlot = (
   points: RunningWinRatePoint[],
-  windowStart: Date,
+  windowEnd: Date,
 ): GetPlayerGameWinRateChartsOutputType["series"]["byTime"]["last12Months"] => {
   const withSlot = points.map((p) => ({
     ...p,
-    monthSlot: monthSlotForMatchInWindow(new Date(p.matchDate), windowStart),
+    monthSlot: monthSlotForMatchInWindow(new Date(p.matchDate), windowEnd),
     monthLabelShort: formatMonthLabelShortUtc(new Date(p.matchDate)),
   }));
   const bySlot = new Map<number, (typeof withSlot)[number]>();
@@ -526,10 +530,22 @@ class PlayerInsightsReadService {
         });
       const gk = this.gameIdentityKey(row);
 
+      /** Per-match cap so one pathological row cannot skip cohort updates from later matches. */
+      let rowSubsetsConsidered = 0;
+      let rowSubsetBudgetExhausted = false;
       const maxK = Math.min(MAX_COHORT_OPPONENTS, opponentsSorted.length);
-      for (let k = MIN_COHORT_OPPONENTS; k <= maxK; k++) {
+      for (
+        let k = MIN_COHORT_OPPONENTS;
+        k <= maxK && !rowSubsetBudgetExhausted;
+        k++
+      ) {
         const combos = kCombinations(opponentsSorted, k);
         for (const subset of combos) {
+          if (rowSubsetsConsidered >= MAX_COHORT_SUBSETS) {
+            rowSubsetBudgetExhausted = true;
+            break;
+          }
+          rowSubsetsConsidered += 1;
           const memberIdentities: PlayerInsightsIdentityType[] = [];
           for (const op of subset) {
             memberIdentities.push(await getCachedIdentity(op));
@@ -948,18 +964,21 @@ class PlayerInsightsReadService {
         const viewerRow = viewerByMatch.get(row.matchId);
         matches.push({
           ...entry,
-          viewerParticipation: {
-            inMatch: viewerRow !== undefined,
-            outcome:
-              viewerRow !== undefined
-                ? {
+          viewerParticipation:
+            viewerRow !== undefined
+              ? {
+                  inMatch: true,
+                  outcome: {
                     placement: viewerRow.placement,
                     score: viewerRow.score,
                     isWinner: viewerRow.winner,
-                  }
-                : undefined,
-            isSameAsProfilePlayer: sameAsProfile && viewerRow !== undefined,
-          },
+                  },
+                  isSameAsProfilePlayer: sameAsProfile,
+                }
+              : {
+                  inMatch: false,
+                  isSameAsProfilePlayer: false,
+                },
         });
       }
       return {
@@ -1025,15 +1044,15 @@ class PlayerInsightsReadService {
         return points;
       };
       const byTime: GetPlayerGameWinRateChartsOutputType["series"]["byTime"] = {
-        monthSlotLabels: buildMonthSlotLabelsUtc(last12Start),
-        priorMonthSlotLabels: buildMonthSlotLabelsUtc(prior12Start),
+        monthSlotLabels: buildMonthSlotLabelsUtc(now),
+        priorMonthSlotLabels: buildMonthSlotLabelsUtc(last12Start),
         last12Months: collapseRunningPointsByMonthSlot(
           buildRunningWinRateByWindow(lastWindowOutcomes),
-          last12Start,
+          now,
         ),
         prior12Months: collapseRunningPointsByMonthSlot(
           buildRunningWinRateByWindow(priorWindowOutcomes),
-          prior12Start,
+          last12Start,
         ),
       };
       return {
@@ -1041,9 +1060,9 @@ class PlayerInsightsReadService {
         series: {
           byGame: gameAgg.map((row) => ({
             gameIdKey:
-              row.gameVisibilitySource === "original"
-                ? `original-${row.canonicalGameId}`
-                : `shared-${row.sharedGameId ?? row.canonicalGameId}`,
+              row.gameVisibilitySource === "shared" && row.sharedGameId != null
+                ? `shared-${row.sharedGameId}`
+                : `original-${row.canonicalGameId}`,
             gameName: row.gameName,
             winRate: row.plays > 0 ? row.wins / row.plays : 0,
             matches: row.plays,
@@ -1261,6 +1280,7 @@ class PlayerInsightsReadService {
               lossesVs: g.lossesVs,
               tiesVs: g.tiesVs,
               winRateVs: g.matches > 0 ? g.winsVs / g.matches : 0,
+              recentDelta: g.winsVs - g.lossesVs,
               secondsPlayedTogether: g.secondsPlayedTogether,
               competitiveMatches: g.competitiveVs.matches,
               secondsPlayedCompetitiveTogether: g.competitiveVs.secondsSum,
