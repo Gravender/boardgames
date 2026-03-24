@@ -418,7 +418,8 @@ export const seedInsightsHistory = async (
           placement: 2,
         })
         .returning(),
-      message: "Failed to create extra target competitive match player fixture.",
+      message:
+        "Failed to create extra target competitive match player fixture.",
     });
     const rMp = await insertOne({
       promise: db

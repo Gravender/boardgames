@@ -75,9 +75,7 @@ type CohortSizeFilter = "all" | "3" | "4" | "5" | "6";
 
 const OVERVIEW_COUNT = 5;
 
-const TEXT_ASC_SORT_KEYS: ReadonlySet<SortKey> = new Set<SortKey>([
-  "groupKey",
-]);
+const TEXT_ASC_SORT_KEYS: ReadonlySet<SortKey> = new Set<SortKey>(["groupKey"]);
 
 const GROUP_SORT_PRESETS: {
   value: `${SortKey}:${"asc" | "desc"}`;

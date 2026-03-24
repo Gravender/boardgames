@@ -227,9 +227,7 @@ export function RecentMatchesSection({
                   );
                   const vp = m.viewerParticipation;
                   const showViewer =
-                    showViewerColumn &&
-                    vp.inMatch &&
-                    !vp.isSameAsProfilePlayer;
+                    showViewerColumn && vp.inMatch && !vp.isSameAsProfilePlayer;
 
                   const viewer = vp.inMatch
                     ? viewerOutcomePresentation(vp.outcome, m.isCoop)
@@ -347,7 +345,9 @@ export function RecentMatchesSection({
                                 });
                                 if (
                                   line === null &&
-                                  isScoreOnlyWinCondition(m.scoresheetWinCondition)
+                                  isScoreOnlyWinCondition(
+                                    m.scoresheetWinCondition,
+                                  )
                                 ) {
                                   return null;
                                 }

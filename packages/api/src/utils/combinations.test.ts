@@ -19,11 +19,7 @@ describe("kCombinations", () => {
   });
 
   test("k is 1 returns singleton arrays", () => {
-    expect(kCombinations(["x", "y", "z"], 1)).toEqual([
-      ["x"],
-      ["y"],
-      ["z"],
-    ]);
+    expect(kCombinations(["x", "y", "z"], 1)).toEqual([["x"], ["y"], ["z"]]);
   });
 
   test("larger k on multi-element arrays (production cohort sizes)", () => {
