@@ -119,8 +119,7 @@ export function PlayedWithGroupsSection({ data }: { data: Data }) {
     [sortedGroups],
   );
 
-  const isFiltered =
-    searchQuery.trim().length > 0 || sizeFilter !== "all";
+  const isFiltered = searchQuery.trim().length > 0 || sizeFilter !== "all";
 
   if (groups.length === 0) {
     return (

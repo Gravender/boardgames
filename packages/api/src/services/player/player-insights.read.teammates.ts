@@ -113,8 +113,7 @@ export const computePlayerTopTeammates = async (args: {
           winsTogether: bothWon ? 1 : 0,
           nonWinsTogether: bothWon ? 0 : 1,
           // Team placement is shared; use the profile player's row (not pairwise avg).
-          placements:
-            target.placement !== null ? [target.placement] : [],
+          placements: target.placement !== null ? [target.placement] : [],
           gameKeys: new Set([gk]),
           lastPlayedAt: row.date,
           perGame,

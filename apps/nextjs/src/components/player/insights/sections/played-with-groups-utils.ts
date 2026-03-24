@@ -57,11 +57,7 @@ export const cohortLabelShort = (g: GroupRow) => {
   return `${cohort[0]?.name ?? ""}, ${cohort[1]?.name ?? ""} +${cohort.length - 2}`;
 };
 
-const compareLastPlayed = (
-  a: GroupRow,
-  b: GroupRow,
-  dir: 1 | -1,
-): number => {
+const compareLastPlayed = (a: GroupRow, b: GroupRow, dir: 1 | -1): number => {
   const at = a.lastPlayedAt?.getTime() ?? 0;
   const bt = b.lastPlayedAt?.getTime() ?? 0;
   return (at - bt) * dir;

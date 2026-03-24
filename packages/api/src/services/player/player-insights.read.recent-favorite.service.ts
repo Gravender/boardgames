@@ -9,9 +9,7 @@ import { matchRepository } from "../../repositories/match/match.repository";
 import { playerRepository } from "../../repositories/player/player.repository";
 import { playerInsightsMatchQueryService } from "./player-insights-match-query.service";
 import type { GetPlayerInsightsArgs } from "./player.service.types";
-import {
-  isViewerSameAsProfileTarget,
-} from "./player-insights.read.identity";
+import { isViewerSameAsProfileTarget } from "./player-insights.read.identity";
 import { getInsightsTarget } from "./player-insights.read.target";
 
 class PlayerRecentFavoriteReadService {

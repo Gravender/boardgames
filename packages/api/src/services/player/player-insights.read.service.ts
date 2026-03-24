@@ -163,9 +163,7 @@ class PlayerInsightsReadService {
   public getPlayerPlacementDistribution = (
     args: GetPlayerInsightsArgs,
   ): Promise<GetPlayerPlacementDistributionOutputType> =>
-    playerPlacementDistributionReadService.getPlayerPlacementDistribution(
-      args,
-    );
+    playerPlacementDistributionReadService.getPlayerPlacementDistribution(args);
 }
 
 export const playerInsightsReadService = new PlayerInsightsReadService();

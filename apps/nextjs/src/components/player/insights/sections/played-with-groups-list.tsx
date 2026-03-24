@@ -101,9 +101,7 @@ export const PlayedWithGroupsList = ({
                     />
                     <GroupStatBlock
                       label="Your avg score"
-                      value={
-                        g.avgScore !== null ? g.avgScore.toFixed(1) : "—"
-                      }
+                      value={g.avgScore !== null ? g.avgScore.toFixed(1) : "—"}
                     />
                     <GroupStatBlock
                       label="Last played"

@@ -63,10 +63,7 @@ export const collapseRunningPointsByMonthSlot = (
   const bySlot = new Map<number, (typeof withSlot)[number]>();
   for (const p of withSlot) {
     const prev = bySlot.get(p.monthSlot);
-    if (
-      !prev ||
-      p.matchDate.getTime() > prev.matchDate.getTime()
-    ) {
+    if (!prev || p.matchDate.getTime() > prev.matchDate.getTime()) {
       bySlot.set(p.monthSlot, p);
     }
   }

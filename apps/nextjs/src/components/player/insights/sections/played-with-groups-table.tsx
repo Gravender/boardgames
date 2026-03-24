@@ -13,11 +13,7 @@ import {
 } from "@board-games/ui/table";
 
 import type { GroupRow, SortKey } from "./played-with-groups-types";
-import {
-  cohortLabelShort,
-  cohortSize,
-  pct,
-} from "./played-with-groups-utils";
+import { cohortLabelShort, cohortSize, pct } from "./played-with-groups-utils";
 
 type PlayedWithGroupsTableProps = {
   sortedGroups: GroupRow[];
