@@ -2,7 +2,7 @@ import { kCombinations } from "../../utils/combinations";
 import type {
   PlayerInsightsIdentityType,
   PlayerInsightsPlayedWithGroupType,
-} from "../../routers/player/player.output";
+} from "../../routers/player/player-insights.output";
 import { playerInsightsMatchQueryService } from "./player-insights-match-query.service";
 import type { GetPlayerInsightsArgs } from "./player.service.types";
 import {
@@ -124,10 +124,9 @@ export const buildPlayedWithGroups = async (args: {
           break;
         }
         rowSubsetsConsidered += 1;
-        const memberIdentities: PlayerInsightsIdentityType[] = [];
-        for (const op of subset) {
-          memberIdentities.push(await getCachedIdentity(op));
-        }
+        const memberIdentities = await Promise.all(
+          subset.map((op) => getCachedIdentity(op)),
+        );
         memberIdentities.sort((a, b) =>
           identityKeyFromIdentity(a).localeCompare(identityKeyFromIdentity(b)),
         );
@@ -212,12 +211,24 @@ export const buildPlayedWithGroups = async (args: {
           const avgPlacement =
             pl !== undefined && pl.count > 0 ? pl.sum / pl.count : null;
           const player = g.identityByKey.get(key);
+          if (player === undefined) {
+            return null;
+          }
           return {
-            player: player!,
+            player,
             avgPlacement,
             rank: 0,
           };
         })
+        .filter(
+          (
+            entry,
+          ): entry is {
+            player: PlayerInsightsIdentityType;
+            avgPlacement: number | null;
+            rank: number;
+          } => entry !== null,
+        )
         .toSorted((a, b) => {
           if (a.avgPlacement === null && b.avgPlacement === null) {
             return a.player.name.localeCompare(b.player.name);

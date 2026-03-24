@@ -1,6 +1,6 @@
 import type { TransactionType } from "@board-games/db/client";
 
-import type { GetPlayerGameWinRateChartsOutputType } from "../../routers/player/player.output";
+import type { GetPlayerGameWinRateChartsOutputType } from "../../routers/player/player-insights.output";
 import { playerInsightsRepository } from "../../repositories/player/player-insights.repository";
 import type { GetPlayerInsightsArgs } from "./player.service.types";
 import {

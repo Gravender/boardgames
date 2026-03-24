@@ -23,7 +23,7 @@ import { FavoriteGamesSection } from "./sections/favorite-games";
 import { PerformanceSummarySection } from "./sections/performance-summary";
 import { PlacementDistributionSection } from "./sections/placement-distribution";
 import { PeopleInsightsSection } from "./sections/people-insights";
-import { RecentMatchesSection } from "./sections/recent-matches";
+import { RecentMatches } from "./sections/RecentMatches";
 import { StreaksSection } from "./sections/streaks";
 import { WinRateChartsSection } from "./sections/win-rate-charts";
 
@@ -158,7 +158,7 @@ export function PlayerInsightsBody({
       <TabsContent value="games" className="mt-0 outline-none">
         <div className={sectionStackClass}>
           <FavoriteGamesSection data={favoriteGames.data} />
-          <RecentMatchesSection
+          <RecentMatches
             data={recentMatches.data}
             profileName={playerHeader.data.name}
           />

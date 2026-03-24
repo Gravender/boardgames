@@ -1,7 +1,7 @@
 import type { TransactionType } from "@board-games/db/client";
 
 import { assertFound } from "../../utils/databaseHelpers";
-import type { PlayerInsightsTargetType } from "../../routers/player/player.output";
+import type { PlayerInsightsTargetType } from "../../routers/player/player-insights.output";
 import { playerRepository } from "../../repositories/player/player.repository";
 import type { GetPlayerInsightsArgs } from "./player.service.types";
 

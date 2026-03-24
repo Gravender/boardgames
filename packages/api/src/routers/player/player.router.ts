@@ -10,18 +10,20 @@ import {
 } from "./player.input";
 import {
   getPlayerCountStatsOutput,
-  getPlayersByGameOutput,
-  getPlayerHeaderOutput,
-  getPlayerPerformanceSummaryOutput,
   getPlayerFavoriteGamesOutput,
   getPlayerGameWinRateChartsOutput,
+  getPlayerPerformanceSummaryOutput,
   getPlayerPlacementDistributionOutput,
   getPlayerPlayedWithGroupsOutput,
   getPlayerRecentMatchesOutput,
   getPlayerStreaksOutput,
-  getPlayerSummaryOutput,
   getPlayerTopRivalsOutput,
   getPlayerTopTeammatesOutput,
+} from "./player-insights.output";
+import {
+  getPlayersByGameOutput,
+  getPlayerHeaderOutput,
+  getPlayerSummaryOutput,
   getPlayersOutput,
   getPlayersForMatchOutput,
   getRecentMatchWithPlayersOutput,

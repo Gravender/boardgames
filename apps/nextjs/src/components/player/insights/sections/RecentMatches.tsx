@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { Calendar, Clock, Gamepad2, Info, Users } from "lucide-react";
 import type { RouterOutputs } from "@board-games/api";
@@ -83,7 +84,28 @@ const viewerOutcomePresentation = (
   };
 };
 
-export function RecentMatchesSection({
+const renderViewerStatsLine = ({
+  outcome,
+  winCondition,
+}: {
+  outcome: Outcome;
+  winCondition: MatchRow["scoresheetWinCondition"];
+}): ReactNode => {
+  const line = formatInsightOutcomeStatsLine({
+    outcome,
+    winCondition,
+  });
+  if (line === null && isScoreOnlyWinCondition(winCondition)) {
+    return null;
+  }
+  return (
+    <span className="border-border border-l pl-3 tabular-nums">
+      {line === null ? "You: —" : `You: ${line}`}
+    </span>
+  );
+};
+
+export function RecentMatches({
   data,
   profileName,
 }: {
@@ -127,7 +149,7 @@ export function RecentMatchesSection({
         <CardTitle
           className={cn(
             "flex flex-wrap items-center gap-2 text-xl font-semibold md:text-2xl",
-            "font-[family-name:var(--font-insights-display)]",
+            "font-(family-name:--font-insights-display)",
           )}
         >
           <Calendar className="h-5 w-5 shrink-0" aria-hidden />
@@ -342,25 +364,10 @@ export function RecentMatchesSection({
                             {showViewer &&
                               viewer !== null &&
                               vp.outcome !== undefined &&
-                              (() => {
-                                const line = formatInsightOutcomeStatsLine({
-                                  outcome: vp.outcome,
-                                  winCondition: m.scoresheetWinCondition,
-                                });
-                                if (
-                                  line === null &&
-                                  isScoreOnlyWinCondition(
-                                    m.scoresheetWinCondition,
-                                  )
-                                ) {
-                                  return null;
-                                }
-                                return (
-                                  <span className="border-border border-l pl-3 tabular-nums">
-                                    {line === null ? "You: —" : `You: ${line}`}
-                                  </span>
-                                );
-                              })()}
+                              renderViewerStatsLine({
+                                outcome: vp.outcome,
+                                winCondition: m.scoresheetWinCondition,
+                              })}
                           </div>
                           {href ? (
                             <Button variant="ghost" size="sm" asChild>

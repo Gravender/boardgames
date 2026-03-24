@@ -22,6 +22,7 @@ import type {
 import {
   GROUP_SORT_PRESETS,
   OVERVIEW_COUNT,
+  SORT_KEY_SET,
   TEXT_ASC_SORT_KEYS,
   cohortSize,
   sortGroups,
@@ -54,9 +55,23 @@ export function PlayedWithGroupsSection({ data }: { data: Data }) {
   );
 
   const handlePresetChange = (value: string) => {
-    const [key, dir] = value.split(":") as [SortKey, "asc" | "desc"];
-    setSortKey(key);
-    setSortDir(dir);
+    const parts = value.split(":");
+    if (parts.length !== 2) {
+      return;
+    }
+    const keyStr = parts[0];
+    const dirStr = parts[1];
+    if (keyStr === undefined || dirStr === undefined) {
+      return;
+    }
+    if (dirStr !== "asc" && dirStr !== "desc") {
+      return;
+    }
+    if (!SORT_KEY_SET.has(keyStr)) {
+      return;
+    }
+    setSortKey(keyStr as SortKey);
+    setSortDir(dirStr);
   };
 
   const presetValue = `${sortKey}:${sortDir}` as const;

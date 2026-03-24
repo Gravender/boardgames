@@ -1,4 +1,4 @@
-import type { GetPlayerGameWinRateChartsOutputType } from "../../routers/player/player.output";
+import type { GetPlayerGameWinRateChartsOutputType } from "../../routers/player/player-insights.output";
 
 export type RunningWinRatePoint = {
   matchDate: Date;

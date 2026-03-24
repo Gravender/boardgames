@@ -78,6 +78,19 @@ const RIVAL_SORT_PRESETS: {
   { key: "name", dir: "asc", label: "Name (A–Z)" },
 ];
 
+const RIVAL_SORT_KEYS = [
+  "name",
+  "matches",
+  "winRateVs",
+  "uniqueGamesPlayed",
+  "lastPlayedAt",
+  "competitiveMatches",
+  "secondsPlayedTogether",
+  "avgPlacementAdvantage",
+] as const satisfies readonly RivalSortKey[];
+
+const RIVAL_SORT_KEY_SET = new Set<string>(RIVAL_SORT_KEYS);
+
 export function RivalsTable({ data }: { data: Rivals }) {
   const [gameFilter, setGameFilter] = useState(ALL_GAMES_VALUE);
   const gameOptions = useRivalGameFilterOptions(data.rivals);
@@ -88,9 +101,23 @@ export function RivalsTable({ data }: { data: Rivals }) {
   const sortPresetValue = `${sortKey}:${sortDir}`;
 
   const handleSortPresetChange = (v: string) => {
-    const [key, dir] = v.split(":") as [RivalSortKey, "asc" | "desc"];
-    setSortKey(key);
-    setSortDir(dir);
+    const parts = v.split(":");
+    if (parts.length !== 2) {
+      return;
+    }
+    const keyStr = parts[0];
+    const dirStr = parts[1];
+    if (keyStr === undefined || dirStr === undefined) {
+      return;
+    }
+    if (dirStr !== "asc" && dirStr !== "desc") {
+      return;
+    }
+    if (!RIVAL_SORT_KEY_SET.has(keyStr)) {
+      return;
+    }
+    setSortKey(keyStr as RivalSortKey);
+    setSortDir(dirStr);
   };
 
   const sorted = useMemo(() => {
@@ -181,7 +208,7 @@ export function RivalsTable({ data }: { data: Rivals }) {
         <CardTitle
           className={cn(
             "text-xl font-semibold md:text-2xl",
-            "font-[family-name:var(--font-insights-display)]",
+            "font-(family-name:--font-insights-display)",
           )}
         >
           Rivals

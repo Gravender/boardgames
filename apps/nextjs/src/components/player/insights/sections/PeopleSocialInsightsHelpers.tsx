@@ -131,8 +131,7 @@ export const getRivalDisplayStats = (
     lossesVs: g.lossesVs,
     tiesVs: g.tiesVs,
     winRateVs: g.winRateVs,
-    winLossDifferential:
-      g.winLossDifferential ?? g.winsVs - g.lossesVs,
+    winLossDifferential: g.winLossDifferential,
   };
 };
 

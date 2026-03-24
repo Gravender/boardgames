@@ -1,5 +1,5 @@
 import { assertFound } from "../../utils/databaseHelpers";
-import type { PlayerInsightsIdentityType } from "../../routers/player/player.output";
+import type { PlayerInsightsIdentityType } from "../../routers/player/player-insights.output";
 import type { GetPlayerInputType } from "../../routers/player/player.input";
 import { playerRepository } from "../../repositories/player/player.repository";
 import { mapPlayerImageRowWithLogging } from "../../utils/image";

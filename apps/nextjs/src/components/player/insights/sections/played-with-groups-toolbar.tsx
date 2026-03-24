@@ -14,6 +14,14 @@ import {
 
 import type { CohortSizeFilter } from "./played-with-groups-types";
 
+const SIZE_OPTIONS: { value: CohortSizeFilter; label: string }[] = [
+  { value: "all", label: "Any size" },
+  { value: "3", label: "3+ players" },
+  { value: "4", label: "4+ players" },
+  { value: "5", label: "5+ players" },
+  { value: "6", label: "6 players" },
+];
+
 type SortPresetOption = { value: string; label: string };
 
 type PlayedWithGroupsToolbarProps = {
@@ -82,17 +90,22 @@ export const PlayedWithGroupsToolbar = ({
         </Label>
         <Select
           value={sizeFilter}
-          onValueChange={(v) => onSizeFilterChange(v as CohortSizeFilter)}
+          onValueChange={(v) => {
+            const opt = SIZE_OPTIONS.find((o) => o.value === v);
+            if (opt) {
+              onSizeFilterChange(opt.value);
+            }
+          }}
         >
           <SelectTrigger id="groups-size" className="bg-background/80 w-full">
             <SelectValue placeholder="Cohort size" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Any size</SelectItem>
-            <SelectItem value="3">3+ players</SelectItem>
-            <SelectItem value="4">4+ players</SelectItem>
-            <SelectItem value="5">5+ players</SelectItem>
-            <SelectItem value="6">6 players</SelectItem>
+            {SIZE_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

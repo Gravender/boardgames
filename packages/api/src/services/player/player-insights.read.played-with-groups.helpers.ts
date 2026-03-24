@@ -1,7 +1,7 @@
 import type {
   PlayerInsightsIdentityType,
   PlayerInsightsMatchEntryType,
-} from "../../routers/player/player.output";
+} from "../../routers/player/player-insights.output";
 import { compareRivalHeadToHead } from "./player-insights.read.outcome";
 import { participantIdentityKey } from "./player-insights.read.identity";
 import type {

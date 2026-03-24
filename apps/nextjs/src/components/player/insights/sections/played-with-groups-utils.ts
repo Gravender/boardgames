@@ -1,5 +1,20 @@
 import type { GroupRow, SortKey } from "./played-with-groups-types";
 
+/** All valid `SortKey` values for runtime validation (keeps in sync with the type). */
+export const ALL_SORT_KEYS = [
+  "playerCount",
+  "matches",
+  "winRate",
+  "avgPlacement",
+  "avgScore",
+  "groupKey",
+  "stability",
+  "lastPlayed",
+  "uniqueGames",
+] as const satisfies readonly SortKey[];
+
+export const SORT_KEY_SET = new Set<string>(ALL_SORT_KEYS);
+
 export const OVERVIEW_COUNT = 5;
 
 export const TEXT_ASC_SORT_KEYS: ReadonlySet<SortKey> = new Set<SortKey>([
