@@ -4,6 +4,7 @@ import { MIN_RIVAL_OR_TEAMMATE_MATCHES } from "./player-insights.read.constants"
 import {
   gameIdentityKey,
   getTargetParticipant,
+  participantIdentityKey,
   toIdentity,
 } from "./player-insights.read.identity";
 import type { GetPlayerInsightsArgs } from "./player.service.types";
@@ -14,6 +15,35 @@ export const computePlayerTopTeammates = async (args: {
   input: GetPlayerInsightsArgs["input"];
   rows: InsightMatchRow[];
 }): Promise<GetPlayerTopTeammatesOutputType["teammates"]> => {
+  const teammateKeyToParticipant = new Map<
+    string,
+    InsightMatchRow["participants"][number]
+  >();
+  for (const row of args.rows) {
+    const target = getTargetParticipant({ row, input: args.input });
+    if (!target || target.teamId === null) {
+      continue;
+    }
+    for (const participant of row.participants) {
+      if (participant.playerId === target.playerId) {
+        continue;
+      }
+      if (participant.teamId !== target.teamId) {
+        continue;
+      }
+      const tk = participantIdentityKey(participant);
+      if (!teammateKeyToParticipant.has(tk)) {
+        teammateKeyToParticipant.set(tk, participant);
+      }
+    }
+  }
+  const teammateIdentityByKey = new Map<string, PlayerInsightsIdentityType>();
+  await Promise.all(
+    [...teammateKeyToParticipant.entries()].map(async ([key, participant]) => {
+      teammateIdentityByKey.set(key, await toIdentity(participant, args.ctx));
+    }),
+  );
+
   const teammates = new Map<
     string,
     {
@@ -48,7 +78,13 @@ export const computePlayerTopTeammates = async (args: {
       if (participant.teamId !== target.teamId) {
         continue;
       }
-      const teammate = await toIdentity(participant, args.ctx);
+      const tk = participantIdentityKey(participant);
+      const teammate = teammateIdentityByKey.get(tk);
+      if (!teammate) {
+        throw new Error(
+          `Teammates insights: missing resolved identity for teammate key "${tk}".`,
+        );
+      }
       const key =
         teammate.type === "shared"
           ? `shared-${teammate.sharedId}`
@@ -76,10 +112,9 @@ export const computePlayerTopTeammates = async (args: {
           matchesTogether: 1,
           winsTogether: bothWon ? 1 : 0,
           nonWinsTogether: bothWon ? 0 : 1,
+          // Team placement is shared; use the profile player's row (not pairwise avg).
           placements:
-            target.placement !== null && participant.placement !== null
-              ? [(target.placement + participant.placement) / 2]
-              : [],
+            target.placement !== null ? [target.placement] : [],
           gameKeys: new Set([gk]),
           lastPlayedAt: row.date,
           perGame,
@@ -108,10 +143,8 @@ export const computePlayerTopTeammates = async (args: {
           pg.nonWinsTogether += 1;
         }
       }
-      if (target.placement !== null && participant.placement !== null) {
-        existing.placements.push(
-          (target.placement + participant.placement) / 2,
-        );
+      if (target.placement !== null) {
+        existing.placements.push(target.placement);
       }
       existing.gameKeys.add(gk);
       if (existing.lastPlayedAt === null || row.date > existing.lastPlayedAt) {

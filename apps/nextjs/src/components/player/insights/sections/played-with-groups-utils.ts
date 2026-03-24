@@ -42,6 +42,29 @@ export const cohortLabelShort = (g: GroupRow) => {
   return `${cohort[0]?.name ?? ""}, ${cohort[1]?.name ?? ""} +${cohort.length - 2}`;
 };
 
+const compareLastPlayed = (
+  a: GroupRow,
+  b: GroupRow,
+  dir: 1 | -1,
+): number => {
+  const at = a.lastPlayedAt?.getTime() ?? 0;
+  const bt = b.lastPlayedAt?.getTime() ?? 0;
+  return (at - bt) * dir;
+};
+
+const compareNullableNumber = (
+  a: number | null,
+  b: number | null,
+  dir: 1 | -1,
+): number => {
+  if (a === null) {
+    if (b === null) return 0;
+    return 1;
+  }
+  if (b === null) return -1;
+  return (a - b) * dir;
+};
+
 export const sortGroups = (
   list: GroupRow[],
   sortKey: SortKey,
@@ -63,31 +86,12 @@ export const sortGroups = (
         return (a.stability - b.stability) * dir;
       case "uniqueGames":
         return (a.uniqueGamesPlayed - b.uniqueGamesPlayed) * dir;
-      case "lastPlayed": {
-        const at = a.lastPlayedAt?.getTime() ?? 0;
-        const bt = b.lastPlayedAt?.getTime() ?? 0;
-        return (at - bt) * dir;
-      }
-      case "avgPlacement": {
-        const an = a.avgPlacement;
-        const bn = b.avgPlacement;
-        if (an === null) {
-          if (bn === null) return 0;
-          return 1;
-        }
-        if (bn === null) return -1;
-        return (an - bn) * dir;
-      }
-      case "avgScore": {
-        const an = a.avgScore;
-        const bn = b.avgScore;
-        if (an === null) {
-          if (bn === null) return 0;
-          return 1;
-        }
-        if (bn === null) return -1;
-        return (an - bn) * dir;
-      }
+      case "lastPlayed":
+        return compareLastPlayed(a, b, dir);
+      case "avgPlacement":
+        return compareNullableNumber(a.avgPlacement, b.avgPlacement, dir);
+      case "avgScore":
+        return compareNullableNumber(a.avgScore, b.avgScore, dir);
       default:
         return 0;
     }

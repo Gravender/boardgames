@@ -286,12 +286,16 @@ export function RecentMatchesSection({
                                     Co-op
                                   </span>
                                 )}
-                                {isScoreOnlyWinCondition(
-                                  m.scoresheetWinCondition,
-                                ) && (
+                                {m.scoresheetWinCondition === "Manual" && (
                                   <span className="flex items-center gap-1">
                                     <Info className="h-3.5 w-3.5" aria-hidden />
                                     Manual winners
+                                  </span>
+                                )}
+                                {m.scoresheetWinCondition === "No Winner" && (
+                                  <span className="flex items-center gap-1">
+                                    <Info className="h-3.5 w-3.5" aria-hidden />
+                                    No winner
                                   </span>
                                 )}
                               </div>
@@ -358,11 +362,13 @@ export function RecentMatchesSection({
                                 );
                               })()}
                           </div>
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link href={href} aria-label={ariaLabel}>
-                              Open match
-                            </Link>
-                          </Button>
+                          {href ? (
+                            <Button variant="ghost" size="sm" asChild>
+                              <Link href={href} aria-label={ariaLabel}>
+                                Open match
+                              </Link>
+                            </Button>
+                          ) : null}
                         </div>
                       </div>
                     </li>

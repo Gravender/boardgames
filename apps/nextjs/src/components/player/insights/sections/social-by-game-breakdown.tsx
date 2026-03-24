@@ -11,8 +11,8 @@ import {
 } from "@board-games/ui/table";
 import { cn } from "@board-games/ui/utils";
 
-import type { RivalRow, TeammateRow } from "./people-social-insights-helpers";
-import { formatPlacementAdvantage } from "./people-social-insights-helpers";
+import type { RivalRow, TeammateRow } from "./PeopleSocialInsightsHelpers";
+import { formatPlacementAdvantage } from "./PeopleSocialInsightsHelpers";
 
 type RivalByGame = RivalRow["byGame"][number];
 type TeammateByGame = TeammateRow["byGame"][number];

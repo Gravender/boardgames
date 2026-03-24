@@ -7,6 +7,7 @@ import { MIN_RIVAL_OR_TEAMMATE_MATCHES } from "./player-insights.read.constants"
 import {
   gameIdentityKey,
   getTargetParticipant,
+  participantIdentityKey,
   toIdentity,
 } from "./player-insights.read.identity";
 import type { GetPlayerInsightsArgs } from "./player.service.types";
@@ -31,6 +32,35 @@ export const computePlayerTopRivals = async (args: {
   input: GetPlayerInsightsArgs["input"];
   rows: InsightMatchRow[];
 }): Promise<GetPlayerTopRivalsOutputType["rivals"]> => {
+  const opponentKeyToParticipant = new Map<
+    string,
+    InsightMatchRow["participants"][number]
+  >();
+  for (const row of args.rows) {
+    const target = getTargetParticipant({ row, input: args.input });
+    if (!target) {
+      continue;
+    }
+    for (const participant of row.participants) {
+      if (participant.playerId === target.playerId) {
+        continue;
+      }
+      if (target.teamId !== null && participant.teamId === target.teamId) {
+        continue;
+      }
+      const pk = participantIdentityKey(participant);
+      if (!opponentKeyToParticipant.has(pk)) {
+        opponentKeyToParticipant.set(pk, participant);
+      }
+    }
+  }
+  const opponentIdentityByKey = new Map<string, PlayerInsightsIdentityType>();
+  await Promise.all(
+    [...opponentKeyToParticipant.entries()].map(async ([key, participant]) => {
+      opponentIdentityByKey.set(key, await toIdentity(participant, args.ctx));
+    }),
+  );
+
   const rivals = new Map<
     string,
     {
@@ -70,7 +100,13 @@ export const computePlayerTopRivals = async (args: {
       if (target.teamId !== null && participant.teamId === target.teamId) {
         continue;
       }
-      const opponent = await toIdentity(participant, args.ctx);
+      const pk = participantIdentityKey(participant);
+      const opponent = opponentIdentityByKey.get(pk);
+      if (!opponent) {
+        throw new Error(
+          `Rivals insights: missing resolved identity for opponent key "${pk}".`,
+        );
+      }
       const key =
         opponent.type === "shared"
           ? `shared-${opponent.sharedId}`
@@ -174,7 +210,7 @@ export const computePlayerTopRivals = async (args: {
       lossesVs: entry.lossesVs,
       tiesVs: entry.tiesVs,
       winRateVs: entry.matches > 0 ? entry.winsVs / entry.matches : 0,
-      recentDelta: entry.winsVs - entry.lossesVs,
+      winLossDifferential: entry.winsVs - entry.lossesVs,
       uniqueGamesPlayed: entry.gameKeys.size,
       lastPlayedAt: entry.lastPlayedAt,
       secondsPlayedTogether: entry.secondsPlayedTogether,
@@ -194,7 +230,7 @@ export const computePlayerTopRivals = async (args: {
           lossesVs: g.lossesVs,
           tiesVs: g.tiesVs,
           winRateVs: g.matches > 0 ? g.winsVs / g.matches : 0,
-          recentDelta: g.winsVs - g.lossesVs,
+          winLossDifferential: g.winsVs - g.lossesVs,
           secondsPlayedTogether: g.secondsPlayedTogether,
           competitiveMatches: g.competitiveVs.matches,
           secondsPlayedCompetitiveTogether: g.competitiveVs.secondsSum,

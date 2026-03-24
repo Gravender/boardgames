@@ -103,6 +103,7 @@ class PlayerInsightsReadService {
             gameImage: row.gameImage,
           },
         });
+        const lastPlayed = new Date(row.lastPlayed as string | Date);
         if (game.type === "shared") {
           games.push({
             type: "shared" as const,
@@ -114,7 +115,7 @@ class PlayerInsightsReadService {
             wins: row.wins,
             winRate: row.plays > 0 ? row.wins / row.plays : 0,
             avgScore: row.avgScore,
-            lastPlayed: new Date(row.lastPlayed as string | Date),
+            lastPlayed,
           });
         } else {
           games.push({
@@ -126,7 +127,7 @@ class PlayerInsightsReadService {
             wins: row.wins,
             winRate: row.plays > 0 ? row.wins / row.plays : 0,
             avgScore: row.avgScore,
-            lastPlayed: new Date(row.lastPlayed as string | Date),
+            lastPlayed,
           });
         }
       }

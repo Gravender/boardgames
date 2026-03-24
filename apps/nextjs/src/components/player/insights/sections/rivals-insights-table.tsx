@@ -44,7 +44,7 @@ import {
   SocialGameFilterSelect,
   StatBlock,
   useRivalGameFilterOptions,
-} from "./people-social-insights-helpers";
+} from "./PeopleSocialInsightsHelpers";
 import { RivalPerGameBreakdown } from "./social-by-game-breakdown";
 
 type Rivals = RouterOutputs["newPlayer"]["getPlayerTopRivals"];
@@ -297,14 +297,14 @@ export function RivalsTable({ data }: { data: Rivals }) {
                             <span
                               className={cn(
                                 "tabular-nums",
-                                s.recentDelta > 0 &&
+                                s.winLossDifferential > 0 &&
                                   "text-emerald-600 dark:text-emerald-400",
-                                s.recentDelta < 0 &&
+                                s.winLossDifferential < 0 &&
                                   "text-rose-600 dark:text-rose-400",
                               )}
                             >
-                              Δ{s.recentDelta > 0 ? "+" : ""}
-                              {s.recentDelta}
+                              Δ{s.winLossDifferential > 0 ? "+" : ""}
+                              {s.winLossDifferential}
                             </span>
                             {r.lastPlayedAt && (
                               <span className="tabular-nums">

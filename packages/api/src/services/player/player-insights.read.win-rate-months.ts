@@ -46,13 +46,7 @@ export const buildMonthSlotLabelsUtc = (windowEnd: Date): string[] => {
   const labels: string[] = [];
   for (let i = 0; i < 12; i++) {
     const d = new Date(Date.UTC(endY, endM - 11 + i, 1));
-    labels.push(
-      new Intl.DateTimeFormat("en-US", {
-        month: "short",
-        year: "2-digit",
-        timeZone: "UTC",
-      }).format(d),
-    );
+    labels.push(formatMonthLabelShortUtc(d));
   }
   return labels;
 };
@@ -63,15 +57,15 @@ export const collapseRunningPointsByMonthSlot = (
 ): GetPlayerGameWinRateChartsOutputType["series"]["byTime"]["last12Months"] => {
   const withSlot = points.map((p) => ({
     ...p,
-    monthSlot: monthSlotForMatchInWindow(new Date(p.matchDate), windowEnd),
-    monthLabelShort: formatMonthLabelShortUtc(new Date(p.matchDate)),
+    monthSlot: monthSlotForMatchInWindow(p.matchDate, windowEnd),
+    monthLabelShort: formatMonthLabelShortUtc(p.matchDate),
   }));
   const bySlot = new Map<number, (typeof withSlot)[number]>();
   for (const p of withSlot) {
     const prev = bySlot.get(p.monthSlot);
     if (
       !prev ||
-      new Date(p.matchDate).getTime() > new Date(prev.matchDate).getTime()
+      p.matchDate.getTime() > prev.matchDate.getTime()
     ) {
       bySlot.set(p.monthSlot, p);
     }

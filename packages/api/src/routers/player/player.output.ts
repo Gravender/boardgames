@@ -453,8 +453,8 @@ export const playerInsightsRivalByGameSchema = z.object({
   lossesVs: z.number(),
   tiesVs: z.number(),
   winRateVs: z.number(),
-  /** Win/loss differential for this game (mirrors aggregate `recentDelta` semantics). */
-  recentDelta: z.number(),
+  /** Wins minus losses vs this opponent for this game (cumulative, not a time window). */
+  winLossDifferential: z.number(),
   secondsPlayedTogether: z.number(),
   competitiveMatches: z.number(),
   secondsPlayedCompetitiveTogether: z.number(),
@@ -480,7 +480,7 @@ export const getPlayerTopRivalsOutput = z.object({
       lossesVs: z.number(),
       tiesVs: z.number(),
       winRateVs: z.number(),
-      recentDelta: z.number(),
+      winLossDifferential: z.number(),
       uniqueGamesPlayed: z.number(),
       lastPlayedAt: z.date().nullable(),
       secondsPlayedTogether: z.number(),

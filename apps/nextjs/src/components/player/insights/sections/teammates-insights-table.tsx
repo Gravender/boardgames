@@ -40,7 +40,7 @@ import {
   SocialGameFilterSelect,
   StatBlock,
   useTeammateGameFilterOptions,
-} from "./people-social-insights-helpers";
+} from "./PeopleSocialInsightsHelpers";
 import { TeammatePerGameBreakdown } from "./social-by-game-breakdown";
 
 type Teammates = RouterOutputs["newPlayer"]["getPlayerTopTeammates"];

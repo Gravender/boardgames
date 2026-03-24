@@ -3,7 +3,10 @@ import type { TransactionType } from "@board-games/db/client";
 import type { GetPlayerGameWinRateChartsOutputType } from "../../routers/player/player.output";
 import { playerInsightsRepository } from "../../repositories/player/player-insights.repository";
 import type { GetPlayerInsightsArgs } from "./player.service.types";
-import { rollingOneYearMs } from "./player-insights.read.constants";
+import {
+  MIN_MATCHES_FOR_RUNNING_WIN_RATE_CHART,
+  rollingOneYearMs,
+} from "./player-insights.read.constants";
 import {
   buildMonthSlotLabelsUtc,
   collapseRunningPointsByMonthSlot,
@@ -36,7 +39,6 @@ export const loadPlayerGameWinRateCharts = async (
       repoArgs,
       now,
     );
-  const MIN_MATCHES_FOR_RUNNING_WIN_RATE_CHART = 5;
   const oneYearMs = rollingOneYearMs();
   const last12Start = new Date(now.getTime() - oneYearMs);
   const buildRunningWinRateByWindow = (

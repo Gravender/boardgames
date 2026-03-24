@@ -1,6 +1,9 @@
 /** Minimum head-to-head or co-op games together to list someone as a rival or teammate. */
 export const MIN_RIVAL_OR_TEAMMATE_MATCHES = 5;
 
+/** Minimum competitive matches before a point appears on the running win-rate chart. */
+export const MIN_MATCHES_FOR_RUNNING_WIN_RATE_CHART = 5;
+
 /** Played-with cohorts: at least two opponents; at most five (profile + five = 6). */
 export const MIN_COHORT_OPPONENTS = 2;
 export const MAX_COHORT_OPPONENTS = 5;

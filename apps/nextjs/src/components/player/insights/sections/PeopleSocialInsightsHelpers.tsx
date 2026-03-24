@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import type { RouterOutputs } from "@board-games/api";
 import { Label } from "@board-games/ui/label";
@@ -26,7 +26,18 @@ type WithByGame = {
   byGame: readonly { gameIdKey: string; gameName: string }[];
 };
 
-export const useGameFilterOptions = <T extends WithByGame>(items: T[]) => {
+type GameFilterOptionPair = [string, string];
+
+/**
+ * Builds a sorted, de-duplicated list of `[gameIdKey, gameName]` pairs from
+ * `items[].byGame` for use in game filter selects (rivals / teammates).
+ *
+ * @param items — Rows that include a `byGame` breakdown (rivals or teammates).
+ * @returns Pairs sorted by game name (localeCompare).
+ */
+export const useGameFilterOptions = <T extends WithByGame>(
+  items: T[],
+): Array<GameFilterOptionPair> => {
   return useMemo(() => {
     const map = new Map<string, string>();
     for (const item of items) {
@@ -46,7 +57,7 @@ export const StatBlock = ({
   label: string;
   value: ReactNode;
   title?: string;
-}) => (
+}): ReactElement => (
   <div
     className="border-border/50 bg-background/60 rounded-lg border px-2.5 py-2"
     title={titleAttr}
@@ -60,23 +71,46 @@ export const StatBlock = ({
   </div>
 );
 
-export const useRivalGameFilterOptions = (rivals: RivalRow[]) =>
-  useGameFilterOptions(rivals);
+export const useRivalGameFilterOptions = (
+  rivals: RivalRow[],
+): Array<GameFilterOptionPair> => useGameFilterOptions(rivals);
 
-export const useTeammateGameFilterOptions = (teammates: TeammateRow[]) =>
-  useGameFilterOptions(teammates);
+export const useTeammateGameFilterOptions = (
+  teammates: TeammateRow[],
+): Array<GameFilterOptionPair> => useGameFilterOptions(teammates);
 
-export const getRivalDisplayStats = (
-  r: RivalRow,
-  gameFilter: string,
-): {
+type RivalDisplayStats = {
   matches: number;
   winsVs: number;
   lossesVs: number;
   tiesVs: number;
   winRateVs: number;
-  recentDelta: number;
-} => {
+  winLossDifferential: number;
+};
+
+export const emptyRivalStats = (): RivalDisplayStats => ({
+  matches: 0,
+  winsVs: 0,
+  lossesVs: 0,
+  tiesVs: 0,
+  winRateVs: 0,
+  winLossDifferential: 0,
+});
+
+export const selectGameRow = (
+  r: RivalRow,
+  gameFilter: string,
+): RivalRow["byGame"][number] | null => {
+  if (gameFilter === ALL_GAMES_VALUE) {
+    return null;
+  }
+  return r.byGame.find((x) => x.gameIdKey === gameFilter) ?? null;
+};
+
+export const getRivalDisplayStats = (
+  r: RivalRow,
+  gameFilter: string,
+): RivalDisplayStats => {
   if (gameFilter === ALL_GAMES_VALUE) {
     return {
       matches: r.matches,
@@ -84,19 +118,12 @@ export const getRivalDisplayStats = (
       lossesVs: r.lossesVs,
       tiesVs: r.tiesVs,
       winRateVs: r.winRateVs,
-      recentDelta: r.recentDelta,
+      winLossDifferential: r.winLossDifferential,
     };
   }
-  const g = r.byGame.find((x) => x.gameIdKey === gameFilter);
+  const g = selectGameRow(r, gameFilter);
   if (!g) {
-    return {
-      matches: 0,
-      winsVs: 0,
-      lossesVs: 0,
-      tiesVs: 0,
-      winRateVs: 0,
-      recentDelta: 0,
-    };
+    return emptyRivalStats();
   }
   return {
     matches: g.matches,
@@ -104,8 +131,8 @@ export const getRivalDisplayStats = (
     lossesVs: g.lossesVs,
     tiesVs: g.tiesVs,
     winRateVs: g.winRateVs,
-    // Prefer API per-game recentDelta; fallback matches aggregate formula (wins − losses).
-    recentDelta: g.recentDelta ?? g.winsVs - g.lossesVs,
+    winLossDifferential:
+      g.winLossDifferential ?? g.winsVs - g.lossesVs,
   };
 };
 
@@ -138,7 +165,7 @@ export const getRivalRivalryMeta = (
       avgPlacementAdvantage: r.avgPlacementAdvantage,
     };
   }
-  const g = r.byGame.find((x) => x.gameIdKey === gameFilter);
+  const g = selectGameRow(r, gameFilter);
   if (!g) {
     return {
       secondsPlayedTogether: 0,
@@ -194,7 +221,7 @@ type SocialGameFilterSelectProps = {
   label: string;
   value: string;
   onValueChange: (value: string) => void;
-  options: [string, string][];
+  options: GameFilterOptionPair[];
   className?: string;
 };
 
@@ -205,7 +232,7 @@ export const SocialGameFilterSelect = ({
   onValueChange,
   options,
   className,
-}: SocialGameFilterSelectProps) => {
+}: SocialGameFilterSelectProps): ReactElement | null => {
   if (options.length === 0) {
     return null;
   }
