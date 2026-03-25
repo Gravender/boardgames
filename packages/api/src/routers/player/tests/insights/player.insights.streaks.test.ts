@@ -25,7 +25,7 @@ describe("Player Insights - getPlayerStreaks", () => {
       name: "Empty",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.getPlayerStreaks({
+    const result = await receiverCaller.newPlayer.stats.getPlayerStreaks({
       type: "original",
       id: player.id,
     });
@@ -36,7 +36,7 @@ describe("Player Insights - getPlayerStreaks", () => {
   test("best case: returns populated streak payload", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const result = await ownerCaller.newPlayer.getPlayerStreaks({
+    const result = await ownerCaller.newPlayer.stats.getPlayerStreaks({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
@@ -46,7 +46,7 @@ describe("Player Insights - getPlayerStreaks", () => {
   test("worst case: throws for missing player", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.getPlayerStreaks({
+      receiverCaller.newPlayer.stats.getPlayerStreaks({
         type: "original",
         id: 99999999,
       }),

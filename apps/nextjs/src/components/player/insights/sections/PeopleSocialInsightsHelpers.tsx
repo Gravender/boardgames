@@ -14,8 +14,10 @@ import {
 } from "@board-games/ui/select";
 import { cn } from "@board-games/ui/utils";
 
-export type RivalsData = RouterOutputs["newPlayer"]["getPlayerTopRivals"];
-export type TeammatesData = RouterOutputs["newPlayer"]["getPlayerTopTeammates"];
+export type RivalsData =
+  RouterOutputs["newPlayer"]["stats"]["getPlayerTopRivals"];
+export type TeammatesData =
+  RouterOutputs["newPlayer"]["stats"]["getPlayerTopTeammates"];
 
 export type RivalRow = RivalsData["rivals"][number];
 export type TeammateRow = TeammatesData["teammates"][number];

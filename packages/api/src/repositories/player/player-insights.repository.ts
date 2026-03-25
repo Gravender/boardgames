@@ -4,7 +4,7 @@
  * player-insights.read.service.ts and should stay aligned with
  * playerRepository.getPlayerSummary (finished matches, viewer scope).
  */
-import { and, asc, desc, eq, gte, lt, lte, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, lt, lte, ne, or, sql } from "drizzle-orm";
 import type { AnyColumn } from "drizzle-orm";
 
 import { db, type TransactionType } from "@board-games/db/client";
@@ -14,7 +14,7 @@ import {
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
 
-import type { GetPlayerInputType } from "../../routers/player/player.input";
+import type { GetPlayerInputType } from "../../routers/player/sub-routers/stats/player-stats.input";
 import type { WithRepoUserIdInput } from "../../utils/shared-args.types";
 import type { ImageRowWithUsage } from "@board-games/shared";
 import { caseWhen } from "drizzle-plus";
@@ -28,8 +28,6 @@ export type PlayerInsightPerformanceRollup = {
   losses: number;
   ties: number;
   winRate: number;
-  avgPlacement: number | null;
-  avgScore: number | null;
   totalPlaytime: number;
   coopMatches: number;
   coopWins: number;
@@ -74,10 +72,30 @@ export type PlayerInsightChronologicalMatchOutcomeRow = {
   isWin: boolean;
 };
 
+const mapChronologicalMatchOutcomeRows = (
+  rows: { matchDate: unknown; isWin: boolean }[],
+): PlayerInsightChronologicalMatchOutcomeRow[] =>
+  rows.map((r) => ({
+    matchDate: new Date(r.matchDate as Date),
+    isWin: r.isWin,
+  }));
+
 export type PlayerInsightCompetitiveWinRateWindow = {
   matches: number;
   wins: number;
   winRate: number;
+};
+
+const packCompetitiveWinRateWindow = (
+  row: { matches: number; wins: number } | undefined,
+): PlayerInsightCompetitiveWinRateWindow => {
+  const matches = row?.matches ?? 0;
+  const wins = row?.wins ?? 0;
+  return {
+    matches,
+    wins,
+    winRate: matches > 0 ? wins / matches : 0,
+  };
 };
 
 export type PlayerInsightMonthlyScoreRow = {
@@ -206,16 +224,6 @@ class PlayerInsightsRepository {
         ties: sql<number>`count(*) filter (where ${tieSql})::int`.mapWith(
           Number,
         ),
-        avgPlacement: sql<
-          number | null
-        >`avg(${insightMatchPlayers.placement}) filter (where ${insightMatchPlayers.placement} is not null)`.mapWith(
-          Number,
-        ),
-        avgScore: sql<
-          number | null
-        >`avg(${insightMatchPlayers.score}) filter (where ${insightMatchPlayers.score} is not null)`.mapWith(
-          Number,
-        ),
         totalPlaytime: sql<number>`coalesce(
           sum(
             case
@@ -260,8 +268,6 @@ class PlayerInsightsRepository {
         losses: 0,
         ties: 0,
         winRate: 0,
-        avgPlacement: null,
-        avgScore: null,
         totalPlaytime: 0,
         coopMatches: 0,
         coopWins: 0,
@@ -276,8 +282,6 @@ class PlayerInsightsRepository {
       losses,
       ties: row.ties,
       winRate: row.totalMatches > 0 ? row.wins / row.totalMatches : 0,
-      avgPlacement: row.avgPlacement,
-      avgScore: row.avgScore,
       totalPlaytime: row.totalPlaytime,
       coopMatches: row.coopMatches,
       coopWins: row.coopWins,
@@ -447,6 +451,7 @@ class PlayerInsightsRepository {
       .where(
         and(
           sql`${insightMatchPlayers.placement} is not null`,
+          gt(insightMatchPlayers.placement, 0),
           ne(scoresheet.winCondition, "Manual"),
         ),
       )
@@ -474,6 +479,7 @@ class PlayerInsightsRepository {
       .where(
         and(
           sql`${insightMatchPlayers.placement} is not null`,
+          gt(insightMatchPlayers.placement, 0),
           ne(scoresheet.winCondition, "Manual"),
         ),
       )
@@ -538,7 +544,7 @@ class PlayerInsightsRepository {
         ),
         avgPlacement: sql<
           number | null
-        >`avg(${insightMatchPlayers.placement}) filter (where ${insightMatchPlayers.placement} is not null)`.mapWith(
+        >`avg(${insightMatchPlayers.placement}) filter (where ${insightMatchPlayers.placement} is not null and ${insightMatchPlayers.placement} >= 1)`.mapWith(
           Number,
         ),
         avgScore: sql<
@@ -652,21 +658,9 @@ class PlayerInsightsRepository {
       )
       .where(priorDate);
 
-    const pack = (
-      row: { matches: number; wins: number } | undefined,
-    ): PlayerInsightCompetitiveWinRateWindow => {
-      const matches = row?.matches ?? 0;
-      const wins = row?.wins ?? 0;
-      return {
-        matches,
-        wins,
-        winRate: matches > 0 ? wins / matches : 0,
-      };
-    };
-
     return {
-      last12Months: pack(lastRow),
-      prior12Months: pack(priorRow),
+      last12Months: packCompetitiveWinRateWindow(lastRow),
+      prior12Months: packCompetitiveWinRateWindow(priorRow),
     };
   }
 
@@ -711,14 +705,6 @@ class PlayerInsightsRepository {
       lt(vMatchCanonical.matchDate, last12Start),
     );
 
-    const mapRows = (
-      rows: { matchDate: unknown; isWin: boolean }[],
-    ): PlayerInsightChronologicalMatchOutcomeRow[] =>
-      rows.map((r) => ({
-        matchDate: new Date(r.matchDate as Date),
-        isWin: r.isWin,
-      }));
-
     const lastRows = await database
       .with(insightMatchPlayers)
       .select({
@@ -758,8 +744,8 @@ class PlayerInsightsRepository {
       .orderBy(asc(vMatchCanonical.matchDate), asc(vMatchCanonical.matchId));
 
     return {
-      last12Months: mapRows(lastRows),
-      prior12Months: mapRows(priorRows),
+      last12Months: mapChronologicalMatchOutcomeRows(lastRows),
+      prior12Months: mapChronologicalMatchOutcomeRows(priorRows),
     };
   }
 

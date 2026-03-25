@@ -1,5 +1,7 @@
-import type { GetPlayerTopTeammatesOutputType } from "../../routers/player/player-insights.output";
-import type { PlayerInsightsIdentityType } from "../../routers/player/player-insights.output";
+import type {
+  GetPlayerTopTeammatesOutputType,
+  PlayerInsightsIdentityType,
+} from "../../routers/player/sub-routers/stats/player-insights.output";
 import { MIN_RIVAL_OR_TEAMMATE_MATCHES } from "./player-insights.read.constants";
 import {
   gameIdentityKey,

@@ -1,6 +1,6 @@
 import { db } from "@board-games/db/client";
 
-import type { GetPlayerStreaksOutputType } from "../../routers/player/player-insights.output";
+import type { GetPlayerStreaksOutputType } from "../../routers/player/sub-routers/stats/player-insights.output";
 import { playerInsightsMatchQueryService } from "./player-insights-match-query.service";
 import { getOutcomeLabelFromFields } from "./player-insights.read.outcome";
 import type { GetPlayerInsightsArgs } from "./player.service.types";

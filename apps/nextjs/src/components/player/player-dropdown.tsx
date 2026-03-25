@@ -26,6 +26,10 @@ import {
 } from "@board-games/ui/dropdown-menu";
 
 import { EditPlayerDialog } from "~/components/player/EditPlayerDialog";
+import {
+  useInvalidateAllNewPlayerQueries,
+  useInvalidatePlayers,
+} from "~/hooks/invalidate/player";
 import { useTRPC } from "~/trpc/react";
 
 export function PlayerDropDown({
@@ -39,10 +43,16 @@ export function PlayerDropDown({
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const invalidateNewPlayerQueries = useInvalidateAllNewPlayerQueries();
+  const invalidatePlayers = useInvalidatePlayers();
   const deletePlayer = useMutation(
     trpc.player.deletePlayer.mutationOptions({
       onSuccess: async () => {
-        return queryClient.invalidateQueries();
+        await Promise.all([
+          invalidateNewPlayerQueries(),
+          ...invalidatePlayers(),
+          queryClient.invalidateQueries(trpc.match.pathFilter()),
+        ]);
       },
     }),
   );

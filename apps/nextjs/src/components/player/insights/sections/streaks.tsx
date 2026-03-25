@@ -12,7 +12,7 @@ import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
 
-type Data = RouterOutputs["newPlayer"]["getPlayerStreaks"];
+type Data = RouterOutputs["newPlayer"]["stats"]["getPlayerStreaks"];
 
 export function StreaksSection({ data }: { data: Data }) {
   const { streaks } = data;
@@ -24,7 +24,7 @@ export function StreaksSection({ data }: { data: Data }) {
         <CardTitle
           className={cn(
             "text-xl font-semibold md:text-2xl",
-            "font-[family-name:var(--font-insights-display)]",
+            "font-(family-name:--font-insights-display)",
           )}
         >
           Streaks

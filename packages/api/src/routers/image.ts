@@ -1,7 +1,7 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
-import z from "zod/v4";
+import { z } from "zod/v4";
 
 import { image, matchImage } from "@board-games/db/schema";
 import { insertImageSchema } from "@board-games/db/zodSchema";

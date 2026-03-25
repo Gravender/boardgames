@@ -1,11 +1,11 @@
 import type { PostHog } from "posthog-node";
 
+import type { GetPlayersByGameInputType } from "../../routers/player/player.input";
 import type {
   GetPlayerInsightsInputType,
   GetPlayerInsightsPerGameInputType,
   GetPlayerInputType,
-  GetPlayersByGameInputType,
-} from "../../routers/player/player.input";
+} from "../../routers/player/sub-routers/stats/player-stats.input";
 import type {
   WithOptionalTx,
   WithPosthogUserCtx,

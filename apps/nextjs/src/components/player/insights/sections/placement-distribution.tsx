@@ -33,7 +33,8 @@ import {
 } from "@board-games/ui/chart";
 import { cn } from "@board-games/ui/utils";
 
-type Data = RouterOutputs["newPlayer"]["getPlayerPlacementDistribution"];
+type Data =
+  RouterOutputs["newPlayer"]["stats"]["getPlayerPlacementDistribution"];
 
 const chartConfig = {
   pct: {
@@ -43,6 +44,8 @@ const chartConfig = {
 } as const;
 
 const formatMatchCount = (n: number) => `${n} ${n === 1 ? "match" : "matches"}`;
+
+const formatAvg = (n: number | null) => (n === null ? "—" : n.toFixed(2));
 
 const placementTooltip = (
   <ChartTooltipContent
@@ -57,10 +60,53 @@ const placementTooltip = (
   />
 );
 
-type ByGameSizeRow = Data["byGameSize"][number];
-
-const totalMatchesForTableSize = (row: ByGameSizeRow) =>
-  row.placements.reduce((sum, p) => sum + p.count, 0);
+const PlacementBenchmarkCallout = ({
+  title,
+  helper,
+  expectedLabel,
+  expectedValue,
+  actualLabel,
+  actualValue,
+}: {
+  title: string;
+  helper: string;
+  expectedLabel: string;
+  actualLabel: string;
+  expectedValue: string;
+  actualValue: string;
+}) => (
+  <div className="border-border/60 bg-muted/25 rounded-xl border p-4">
+    <p
+      className={cn(
+        "text-foreground mb-1 text-sm font-semibold",
+        "font-(family-name:--font-insights-display)",
+      )}
+    >
+      {title}
+    </p>
+    <p className="text-muted-foreground mb-3 text-xs leading-relaxed">
+      {helper}
+    </p>
+    <div className="grid gap-3 sm:grid-cols-2">
+      <div>
+        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+          {expectedLabel}
+        </p>
+        <p className="text-foreground mt-1 text-xl font-semibold tabular-nums">
+          {expectedValue}
+        </p>
+      </div>
+      <div>
+        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+          {actualLabel}
+        </p>
+        <p className="text-foreground mt-1 text-xl font-semibold tabular-nums">
+          {actualValue}
+        </p>
+      </div>
+    </div>
+  </div>
+);
 
 export function PlacementDistributionSection({ data }: { data: Data }) {
   const placementChart = data.placements.map((p) => ({
@@ -73,7 +119,7 @@ export function PlacementDistributionSection({ data }: { data: Data }) {
     return [...data.byGameSize]
       .map((row) => ({
         playerCount: row.playerCount,
-        matchCount: totalMatchesForTableSize(row),
+        matchCount: row.matchCount,
         row,
       }))
       .toSorted((a, b) => a.playerCount - b.playerCount);
@@ -114,13 +160,15 @@ export function PlacementDistributionSection({ data }: { data: Data }) {
     }));
   }, [selectedTableRow]);
 
+  const { overallPlacementBenchmark } = data;
+
   return (
     <Card className="border-border/80 bg-card/70 border shadow-sm backdrop-blur-md">
       <CardHeader>
         <CardTitle
           className={cn(
             "text-xl font-semibold md:text-2xl",
-            "font-[family-name:var(--font-insights-display)]",
+            "font-(family-name:--font-insights-display)",
           )}
         >
           Placements
@@ -136,8 +184,24 @@ export function PlacementDistributionSection({ data }: { data: Data }) {
             No placement data yet, or only manual-winner matches on record.
           </p>
         ) : (
-          <div>
-            <h3 className="mb-3 text-sm font-medium">Overall</h3>
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">Overall</h3>
+            {overallPlacementBenchmark.matchCount > 0 &&
+              overallPlacementBenchmark.expectedAvgPlacement != null &&
+              overallPlacementBenchmark.actualAvgPlacement != null && (
+                <PlacementBenchmarkCallout
+                  title="Expected vs actual (all table sizes)"
+                  helper="Baseline is the average rank you would expect if every finish position were equally likely, weighted by how often you play at each table size."
+                  expectedLabel="Expected (baseline)"
+                  actualLabel="Your average"
+                  expectedValue={formatAvg(
+                    overallPlacementBenchmark.expectedAvgPlacement,
+                  )}
+                  actualValue={formatAvg(
+                    overallPlacementBenchmark.actualAvgPlacement,
+                  )}
+                />
+              )}
             <ChartContainer config={chartConfig} className="h-64 w-full">
               <BarChart data={placementChart} accessibilityLayer>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -200,6 +264,16 @@ export function PlacementDistributionSection({ data }: { data: Data }) {
                 </Select>
               </div>
             </div>
+            {selectedTableRow != null && selectedTableRow.matchCount > 0 && (
+              <PlacementBenchmarkCallout
+                title={`At ${selectedTableRow.playerCount}-player tables`}
+                helper={`If ranks 1–${selectedTableRow.playerCount} were equally likely, the average rank would be ${selectedTableRow.expectedAvgPlacement.toFixed(2)}.`}
+                expectedLabel="Expected (baseline)"
+                actualLabel="Your average"
+                expectedValue={selectedTableRow.expectedAvgPlacement.toFixed(2)}
+                actualValue={formatAvg(selectedTableRow.actualAvgPlacement)}
+              />
+            )}
             {selectedSizeChart.length > 0 ? (
               <ChartContainer config={chartConfig} className="h-48 w-full">
                 <BarChart data={selectedSizeChart} accessibilityLayer>

@@ -47,7 +47,7 @@ import {
 } from "./PeopleSocialInsightsHelpers";
 import { RivalPerGameBreakdown } from "./social-by-game-breakdown";
 
-type Rivals = RouterOutputs["newPlayer"]["getPlayerTopRivals"];
+type Rivals = RouterOutputs["newPlayer"]["stats"]["getPlayerTopRivals"];
 
 type RivalSortKey =
   | "name"

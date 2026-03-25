@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useSuspenseQueries } from "@tanstack/react-query";
+import { lazy, Suspense, useState } from "react";
 import { BarChart3, Gamepad2, LayoutDashboard, Users } from "lucide-react";
 
 import { Label } from "@board-games/ui/label";
@@ -15,17 +14,24 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { cn } from "@board-games/ui/utils";
 
-import { useTRPC } from "~/trpc/react";
-
 import type { PlayerInsightsPageInput } from "./player-insights-types";
-import { CountStatsSection } from "./sections/count-stats";
-import { FavoriteGamesSection } from "./sections/favorite-games";
-import { PerformanceSummarySection } from "./sections/performance-summary";
-import { PlacementDistributionSection } from "./sections/placement-distribution";
-import { PeopleInsightsSection } from "./sections/people-insights";
-import { RecentMatches } from "./sections/RecentMatches";
-import { StreaksSection } from "./sections/streaks";
-import { WinRateChartsSection } from "./sections/win-rate-charts";
+import {
+  PlayerInsightsAdvancedTabSkeleton,
+  PlayerInsightsGamesTabSkeleton,
+  PlayerInsightsOverviewTabSkeleton,
+  PlayerInsightsPeopleTabSkeleton,
+} from "./player-insights-skeletons";
+import { PlayerInsightsOverviewTab } from "./tabs/PlayerInsightsOverviewTab";
+
+const PlayerInsightsGamesTab = lazy(
+  () => import("./tabs/PlayerInsightsGamesTab"),
+);
+const PlayerInsightsPeopleTab = lazy(
+  () => import("./tabs/PlayerInsightsPeopleTab"),
+);
+const PlayerInsightsAdvancedTab = lazy(
+  () => import("./tabs/player-insights-advanced-tab"),
+);
 
 const INSIGHT_TABS = [
   {
@@ -56,43 +62,11 @@ const INSIGHT_TABS = [
 
 type TabValue = (typeof INSIGHT_TABS)[number]["value"];
 
-const sectionStackClass = "space-y-10";
-
 export function PlayerInsightsBody({
   playerInput,
 }: {
   playerInput: PlayerInsightsPageInput;
 }) {
-  const trpc = useTRPC();
-
-  const [
-    performance,
-    favoriteGames,
-    recentMatches,
-    playerHeader,
-    winRateCharts,
-    topRivals,
-    topTeammates,
-    playedWithGroups,
-    streaks,
-    countStats,
-    placementDistribution,
-  ] = useSuspenseQueries({
-    queries: [
-      trpc.newPlayer.getPlayerPerformanceSummary.queryOptions(playerInput),
-      trpc.newPlayer.getPlayerFavoriteGames.queryOptions(playerInput),
-      trpc.newPlayer.getPlayerRecentMatches.queryOptions(playerInput),
-      trpc.newPlayer.getPlayerHeader.queryOptions(playerInput),
-      trpc.newPlayer.getPlayerGameWinRateCharts.queryOptions(playerInput),
-      trpc.newPlayer.getPlayerTopRivals.queryOptions(playerInput),
-      trpc.newPlayer.getPlayerTopTeammates.queryOptions(playerInput),
-      trpc.newPlayer.getPlayerPlayedWithGroups.queryOptions(playerInput),
-      trpc.newPlayer.getPlayerStreaks.queryOptions(playerInput),
-      trpc.newPlayer.getPlayerCountStats.queryOptions(playerInput),
-      trpc.newPlayer.getPlayerPlacementDistribution.queryOptions(playerInput),
-    ],
-  });
-
   const [activeTab, setActiveTab] = useState<TabValue>("overview");
 
   return (
@@ -150,36 +124,27 @@ export function PlayerInsightsBody({
       </div>
 
       <TabsContent value="overview" className="mt-0 outline-none">
-        <div className={sectionStackClass}>
-          <PerformanceSummarySection data={performance.data} />
-        </div>
+        <Suspense fallback={<PlayerInsightsOverviewTabSkeleton />}>
+          <PlayerInsightsOverviewTab playerInput={playerInput} />
+        </Suspense>
       </TabsContent>
 
       <TabsContent value="games" className="mt-0 outline-none">
-        <div className={sectionStackClass}>
-          <FavoriteGamesSection data={favoriteGames.data} />
-          <RecentMatches
-            data={recentMatches.data}
-            profileName={playerHeader.data.name}
-          />
-          <WinRateChartsSection data={winRateCharts.data} />
-        </div>
+        <Suspense fallback={<PlayerInsightsGamesTabSkeleton />}>
+          <PlayerInsightsGamesTab playerInput={playerInput} />
+        </Suspense>
       </TabsContent>
 
       <TabsContent value="people" className="mt-0 outline-none">
-        <PeopleInsightsSection
-          rivals={topRivals.data}
-          teammates={topTeammates.data}
-          groups={playedWithGroups.data}
-        />
+        <Suspense fallback={<PlayerInsightsPeopleTabSkeleton />}>
+          <PlayerInsightsPeopleTab playerInput={playerInput} />
+        </Suspense>
       </TabsContent>
 
       <TabsContent value="advanced" className="mt-0 outline-none">
-        <div className={sectionStackClass}>
-          <StreaksSection data={streaks.data} />
-          <CountStatsSection data={countStats.data} />
-          <PlacementDistributionSection data={placementDistribution.data} />
-        </div>
+        <Suspense fallback={<PlayerInsightsAdvancedTabSkeleton />}>
+          <PlayerInsightsAdvancedTab playerInput={playerInput} />
+        </Suspense>
       </TabsContent>
     </Tabs>
   );

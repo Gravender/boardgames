@@ -7,7 +7,7 @@ export type InsightOutcomeFields = {
 };
 
 export type InsightScoresheetWinCondition =
-  RouterOutputs["newPlayer"]["getPlayerRecentMatches"]["matches"][number]["scoresheetWinCondition"];
+  RouterOutputs["newPlayer"]["stats"]["getPlayerRecentMatches"]["matches"][number]["scoresheetWinCondition"];
 
 /**
  * Aligns with `getOutcomeLabelFromFields` / `insightWinSql` in the API: win if

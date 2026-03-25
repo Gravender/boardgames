@@ -2,11 +2,11 @@ import type z from "zod";
 
 import { insertSharedPlayerSchema } from "@board-games/db/zodSchema";
 
+import type { GetPlayersByGameInputType } from "../../routers/player/player.input";
 import type {
   GetPlayerInputType,
   GetPlayerInsightsPerGameInputType,
-  GetPlayersByGameInputType,
-} from "../../routers/player/player.input";
+} from "../../routers/player/sub-routers/stats/player-stats.input";
 import type {
   WithCreatedByInput,
   WithCreatedByTx,

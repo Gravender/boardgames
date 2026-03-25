@@ -43,7 +43,7 @@ import {
 } from "./PeopleSocialInsightsHelpers";
 import { TeammatePerGameBreakdown } from "./social-by-game-breakdown";
 
-type Teammates = RouterOutputs["newPlayer"]["getPlayerTopTeammates"];
+type Teammates = RouterOutputs["newPlayer"]["stats"]["getPlayerTopTeammates"];
 
 type MateSortKey =
   | "name"
@@ -155,7 +155,7 @@ export function TeammatesTable({ data }: { data: Teammates }) {
         <CardTitle
           className={cn(
             "text-xl font-semibold md:text-2xl",
-            "font-[family-name:var(--font-insights-display)]",
+            "font-(family-name:--font-insights-display)",
           )}
         >
           Teammates

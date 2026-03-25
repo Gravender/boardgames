@@ -25,7 +25,7 @@ describe("Player - getPlayerHeader", () => {
       name: "Header",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.getPlayerHeader({
+    const result = await receiverCaller.newPlayer.stats.getPlayerHeader({
       type: "original",
       id: player.id,
     });
@@ -35,7 +35,7 @@ describe("Player - getPlayerHeader", () => {
   test("best case: returns shared header with permissions", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     const fixture = await createSharedPlayerFixture(ids!);
-    const result = await receiverCaller.newPlayer.getPlayerHeader({
+    const result = await receiverCaller.newPlayer.stats.getPlayerHeader({
       type: "shared",
       sharedPlayerId: fixture.sharedPlayerId,
     });
@@ -48,7 +48,7 @@ describe("Player - getPlayerHeader", () => {
   test("worst case: throws for missing player", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.getPlayerHeader({
+      receiverCaller.newPlayer.stats.getPlayerHeader({
         type: "original",
         id: 99999999,
       }),

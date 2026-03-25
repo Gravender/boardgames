@@ -26,28 +26,47 @@ describe("Player Insights - getPlayerPlacementDistribution", () => {
       imageId: null,
     });
     const result =
-      await receiverCaller.newPlayer.getPlayerPlacementDistribution({
+      await receiverCaller.newPlayer.stats.getPlayerPlacementDistribution({
         type: "original",
         id: player.id,
       });
     expect(result.placements).toEqual([]);
     expect(result.byGameSize).toEqual([]);
+    expect(result.overallPlacementBenchmark).toEqual({
+      matchCount: 0,
+      expectedAvgPlacement: null,
+      actualAvgPlacement: null,
+    });
   });
 
   test("best case: returns populated distributions", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const result = await ownerCaller.newPlayer.getPlayerPlacementDistribution({
-      type: "original",
-      id: seeded.ownerTargetPlayerId,
-    });
+    const result =
+      await ownerCaller.newPlayer.stats.getPlayerPlacementDistribution({
+        type: "original",
+        id: seeded.ownerTargetPlayerId,
+      });
     expect(result.placements.length).toBeGreaterThan(0);
+    expect(result.overallPlacementBenchmark.matchCount).toBeGreaterThan(0);
+    expect(
+      result.overallPlacementBenchmark.expectedAvgPlacement,
+    ).not.toBeNull();
+    expect(result.overallPlacementBenchmark.actualAvgPlacement).not.toBeNull();
+    const firstSize = result.byGameSize[0];
+    expect(firstSize).toBeDefined();
+    if (firstSize) {
+      expect(firstSize.matchCount).toBeGreaterThan(0);
+      expect(firstSize.expectedAvgPlacement).toBe(
+        (firstSize.playerCount + 1) / 2,
+      );
+    }
   });
 
   test("worst case: throws for missing player", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.getPlayerPlacementDistribution({
+      receiverCaller.newPlayer.stats.getPlayerPlacementDistribution({
         type: "original",
         id: 99999999,
       }),

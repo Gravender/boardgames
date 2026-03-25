@@ -11,7 +11,7 @@ import type {
   GetPlayerStreaksOutputType,
   GetPlayerTopRivalsOutputType,
   GetPlayerTopTeammatesOutputType,
-} from "../../routers/player/player-insights.output";
+} from "../../routers/player/sub-routers/stats/player-insights.output";
 import { playerInsightsRepository } from "../../repositories/player/player-insights.repository";
 import type { GetPlayerInsightsArgs } from "./player.service.types";
 import { resolveProfileIdentityForGroups } from "./player-insights.read.identity";
@@ -49,8 +49,6 @@ class PlayerInsightsReadService {
           losses: rollup.losses,
           ties: rollup.ties,
           winRate: rollup.winRate,
-          avgPlacement: rollup.avgPlacement,
-          avgScore: rollup.avgScore,
           totalPlaytime: rollup.totalPlaytime,
         },
         modeBreakdown: {

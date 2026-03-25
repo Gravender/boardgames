@@ -5,6 +5,7 @@ import { usePostHog } from "posthog-js/react";
 
 import { toast } from "@board-games/ui/toast";
 
+import { invalidateNewPlayerStatsQueries } from "~/hooks/invalidate/player";
 import { useTRPC } from "~/trpc/react";
 
 type MatchInput =
@@ -17,8 +18,11 @@ export const useEditMatchMutation = (input: MatchInput) => {
   const editMatchMutation = useMutation(
     trpc.match.editMatch.mutationOptions({
       onSuccess: async (result) => {
-        await queryClient.invalidateQueries(trpc.match.pathFilter());
-        await queryClient.invalidateQueries(trpc.game.pathFilter());
+        await Promise.all([
+          queryClient.invalidateQueries(trpc.match.pathFilter()),
+          queryClient.invalidateQueries(trpc.game.pathFilter()),
+          invalidateNewPlayerStatsQueries(queryClient, trpc),
+        ]);
         toast.success("Match updated successfully.");
         posthog.capture("match edited successfully", {
           input: input,

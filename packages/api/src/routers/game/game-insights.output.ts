@@ -1,4 +1,4 @@
-import z from "zod/v4";
+import { z } from "zod/v4";
 
 import { scoreSheetWinConditions } from "@board-games/db/constants";
 import { playerImageSchema } from "@board-games/shared";

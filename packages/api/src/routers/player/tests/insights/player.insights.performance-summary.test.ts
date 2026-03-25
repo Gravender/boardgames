@@ -25,10 +25,11 @@ describe("Player Insights - getPlayerPerformanceSummary", () => {
       name: "Empty",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.getPlayerPerformanceSummary({
-      type: "original",
-      id: player.id,
-    });
+    const result =
+      await receiverCaller.newPlayer.stats.getPlayerPerformanceSummary({
+        type: "original",
+        id: player.id,
+      });
     expect(result.overall.totalMatches).toBe(0);
     expect(result.recentForm).toEqual([]);
   });
@@ -36,14 +37,16 @@ describe("Player Insights - getPlayerPerformanceSummary", () => {
   test("best case: returns populated summary for original and shared", async () => {
     const { ownerCaller, receiverCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const original = await ownerCaller.newPlayer.getPlayerPerformanceSummary({
-      type: "original",
-      id: seeded.ownerTargetPlayerId,
-    });
-    const shared = await receiverCaller.newPlayer.getPlayerPerformanceSummary({
-      type: "shared",
-      sharedPlayerId: seeded.receiverSharedTargetPlayerId,
-    });
+    const original =
+      await ownerCaller.newPlayer.stats.getPlayerPerformanceSummary({
+        type: "original",
+        id: seeded.ownerTargetPlayerId,
+      });
+    const shared =
+      await receiverCaller.newPlayer.stats.getPlayerPerformanceSummary({
+        type: "shared",
+        sharedPlayerId: seeded.receiverSharedTargetPlayerId,
+      });
     expect(original.player.type).toBe("original");
     expect(shared.player.type).toBe("shared");
     expect(original.overall.totalMatches).toBeGreaterThan(0);
@@ -53,13 +56,13 @@ describe("Player Insights - getPlayerPerformanceSummary", () => {
   test("worst case: throws for missing players", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.getPlayerPerformanceSummary({
+      receiverCaller.newPlayer.stats.getPlayerPerformanceSummary({
         type: "original",
         id: 99999999,
       }),
     ).rejects.toThrow("Player not found.");
     await expect(
-      receiverCaller.newPlayer.getPlayerPerformanceSummary({
+      receiverCaller.newPlayer.stats.getPlayerPerformanceSummary({
         type: "shared",
         sharedPlayerId: 99999999,
       }),

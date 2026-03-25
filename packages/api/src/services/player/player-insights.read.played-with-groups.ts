@@ -2,7 +2,7 @@ import { kCombinations } from "../../utils/combinations";
 import type {
   PlayerInsightsIdentityType,
   PlayerInsightsPlayedWithGroupType,
-} from "../../routers/player/player-insights.output";
+} from "../../routers/player/sub-routers/stats/player-insights.output";
 import { playerInsightsMatchQueryService } from "./player-insights-match-query.service";
 import type { GetPlayerInsightsArgs } from "./player.service.types";
 import {

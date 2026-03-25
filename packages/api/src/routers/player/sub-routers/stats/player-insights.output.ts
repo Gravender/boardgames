@@ -1,4 +1,4 @@
-import z from "zod/v4";
+import { z } from "zod/v4";
 
 import { selectScoreSheetSchema } from "@board-games/db/zodSchema";
 import { gameImageSchema, playerImageSchema } from "@board-games/shared";
@@ -8,7 +8,7 @@ import {
   permissionsSchema,
   playerIdentitySchema,
   sharedPlayerIdSchema,
-} from "./player.output";
+} from "../../player.output";
 
 const playerInsightsTargetSchema = z.discriminatedUnion("type", [
   z.object({
@@ -158,8 +158,6 @@ export const getPlayerPerformanceSummaryOutput = z.object({
     losses: z.number(),
     ties: z.number(),
     winRate: z.number(),
-    avgPlacement: z.number().nullable(),
-    avgScore: z.number().nullable(),
     totalPlaytime: z.number(),
   }),
   modeBreakdown: z.object({
@@ -384,27 +382,36 @@ export const getPlayerCountStatsOutput = z.object({
   ),
 });
 
+const placementRowSchema = z.object({
+  placement: z.number(),
+  count: z.number(),
+  percentage: z.number(),
+});
+
 export const getPlayerPlacementDistributionOutput = z.object({
   player: playerInsightsTargetSchema,
-  placements: z.array(
-    z.object({
-      placement: z.number(),
-      count: z.number(),
-      percentage: z.number(),
-    }),
-  ),
+  placements: z.array(placementRowSchema),
   byGameSize: z.array(
     z.object({
       playerCount: z.number(),
-      placements: z.array(
-        z.object({
-          placement: z.number(),
-          count: z.number(),
-          percentage: z.number(),
-        }),
-      ),
+      matchCount: z.number(),
+      /** Mean rank 1..N if finishing order were uniformly random. */
+      expectedAvgPlacement: z.number(),
+      /** Weighted average observed finish rank for this table size. */
+      actualAvgPlacement: z.number().nullable(),
+      placements: z.array(placementRowSchema),
     }),
   ),
+  /**
+   * Pool-wide benchmark: `expectedAvgPlacement` is null when there is not enough
+   * aggregated data across table sizes to derive a meaningful overall expected rank
+   * (per-size values in `byGameSize` still expose `expectedAvgPlacement` when that size has matches).
+   */
+  overallPlacementBenchmark: z.object({
+    matchCount: z.number(),
+    expectedAvgPlacement: z.number().nullable(),
+    actualAvgPlacement: z.number().nullable(),
+  }),
 });
 
 export type PlayerInsightsTargetType = z.infer<

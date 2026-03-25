@@ -25,7 +25,7 @@ describe("Player Insights - getPlayerFavoriteGames", () => {
       name: "Empty",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.getPlayerFavoriteGames({
+    const result = await receiverCaller.newPlayer.stats.getPlayerFavoriteGames({
       type: "original",
       id: player.id,
     });
@@ -35,11 +35,11 @@ describe("Player Insights - getPlayerFavoriteGames", () => {
   test("best case: returns discriminated game entries", async () => {
     const { ownerCaller, receiverCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const original = await ownerCaller.newPlayer.getPlayerFavoriteGames({
+    const original = await ownerCaller.newPlayer.stats.getPlayerFavoriteGames({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
-    const shared = await receiverCaller.newPlayer.getPlayerFavoriteGames({
+    const shared = await receiverCaller.newPlayer.stats.getPlayerFavoriteGames({
       type: "shared",
       sharedPlayerId: seeded.receiverSharedTargetPlayerId,
     });
@@ -53,13 +53,13 @@ describe("Player Insights - getPlayerFavoriteGames", () => {
   test("worst case: throws for missing players", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.getPlayerFavoriteGames({
+      receiverCaller.newPlayer.stats.getPlayerFavoriteGames({
         type: "original",
         id: 99999999,
       }),
     ).rejects.toThrow("Player not found.");
     await expect(
-      receiverCaller.newPlayer.getPlayerFavoriteGames({
+      receiverCaller.newPlayer.stats.getPlayerFavoriteGames({
         type: "shared",
         sharedPlayerId: 99999999,
       }),

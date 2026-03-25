@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const id = (await params).id;
   if (isNaN(Number(id))) return { title: "Player" };
   try {
-    const header = await caller.newPlayer.getPlayerHeader({
+    const header = await caller.newPlayer.stats.getPlayerHeader({
       sharedPlayerId: Number(id),
       type: "shared",
     });
@@ -47,7 +47,7 @@ export default async function Page({ params }: Props) {
   };
 
   try {
-    await caller.newPlayer.getPlayerHeader(playerInput);
+    await caller.newPlayer.stats.getPlayerHeader(playerInput);
   } catch (error) {
     if (error instanceof TRPCError && error.code === "NOT_FOUND") {
       redirect("/dashboard/players");

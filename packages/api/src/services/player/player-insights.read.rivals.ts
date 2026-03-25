@@ -1,7 +1,7 @@
 import type {
   GetPlayerTopRivalsOutputType,
   PlayerInsightsIdentityType,
-} from "../../routers/player/player-insights.output";
+} from "../../routers/player/sub-routers/stats/player-insights.output";
 import { compareRivalHeadToHead } from "./player-insights.read.outcome";
 import { MIN_RIVAL_OR_TEAMMATE_MATCHES } from "./player-insights.read.constants";
 import {

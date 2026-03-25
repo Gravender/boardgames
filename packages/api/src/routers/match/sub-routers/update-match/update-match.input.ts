@@ -100,9 +100,9 @@ export const updateMatchPlacementsInput = z.object({
   match: matchInputSchema,
   playersPlacement: z
     .array(
-      selectMatchPlayerSchema.pick({
-        id: true,
-        placement: true,
+      z.object({
+        id: z.number(),
+        placement: z.number().int().min(1).nullable(),
       }),
     )
     .refine((placements) => placements.length > 0),

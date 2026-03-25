@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
+import { usePostHog } from "posthog-js/react";
 import { z } from "zod/v4";
 
 import type { RouterInputs, RouterOutputs } from "@board-games/api";
@@ -33,9 +34,21 @@ const sharedPlayerSchema = insertPlayerSchema
     imageUrl: fileSchema.or(z.string().nullable()),
   });
 
-type PlayerType = RouterOutputs["newPlayer"]["getPlayers"][number];
-type OriginalPlayerType = Extract<PlayerType, { type: "original" }>;
-type SharedPlayerType = Extract<PlayerType, { type: "shared" }>;
+type ListPlayer = RouterOutputs["newPlayer"]["getPlayers"][number];
+
+/** Minimal player shape for edit (list row or stats header). */
+export type EditPlayerDialogPlayer =
+  | Pick<
+      Extract<ListPlayer, { type: "original" }>,
+      "type" | "id" | "name" | "image"
+    >
+  | Pick<
+      Extract<ListPlayer, { type: "shared" }>,
+      "type" | "sharedPlayerId" | "name" | "image" | "permissions"
+    >;
+
+type OriginalPlayerType = Extract<EditPlayerDialogPlayer, { type: "original" }>;
+type SharedPlayerType = Extract<EditPlayerDialogPlayer, { type: "shared" }>;
 interface PlayerValues {
   name: string;
   imageUrl: File | string | null;
@@ -43,7 +56,7 @@ interface PlayerValues {
 type UpdatePlayerInput = RouterInputs["player"]["update"];
 
 const buildPlayerSchema = (
-  player: PlayerType,
+  player: EditPlayerDialogPlayer,
   initialImageUrl: string | null,
 ) => {
   return (
@@ -194,6 +207,7 @@ const useUpdateSharedPlayer = ({
 };
 
 const useHandleImageUploadAndUpdate = () => {
+  const posthog = usePostHog();
   const { startUpload } = useUploadThing("imageUploader");
   const trpc = useTRPC();
   const deleteImageMutation = useMutation(trpc.image.delete.mutationOptions());
@@ -204,7 +218,7 @@ const useHandleImageUploadAndUpdate = () => {
     values,
     onUpdate,
   }: {
-    player: PlayerType;
+    player: EditPlayerDialogPlayer;
     values: PlayerValues;
     onUpdate: (imageId: number | undefined) => Promise<void>;
   }) => {
@@ -237,7 +251,22 @@ const useHandleImageUploadAndUpdate = () => {
       try {
         await deleteImage({ id: imageId });
       } catch (cleanupError) {
-        console.error("Failed to cleanup uploaded player image", cleanupError);
+        const playerId =
+          player.type === "original" ? player.id : player.sharedPlayerId;
+        const fileName =
+          values.imageUrl instanceof File ? values.imageUrl.name : undefined;
+        const normalizedCleanupError =
+          cleanupError instanceof Error
+            ? { message: cleanupError.message, stack: cleanupError.stack }
+            : { message: String(cleanupError), stack: undefined };
+        posthog.capture("player image cleanup error", {
+          context: "Failed to cleanup uploaded player image",
+          playerId,
+          fileName,
+          imageId,
+          errorMessage: normalizedCleanupError.message,
+          errorStack: normalizedCleanupError.stack,
+        });
       }
       throw error;
     }
@@ -251,7 +280,7 @@ const useEditPlayerSubmit = ({
   setIsSubmitting,
   handleMutationSuccess,
 }: {
-  player: PlayerType;
+  player: EditPlayerDialogPlayer;
   setIsSubmitting: (isSubmitting: boolean) => void;
   handleMutationSuccess: () => void;
 }) => {
@@ -306,7 +335,7 @@ const useEditPlayerForm = ({
   initialImageUrl,
   handleSubmitValues,
 }: {
-  player: PlayerType;
+  player: EditPlayerDialogPlayer;
   initialImageUrl: string | null;
   handleSubmitValues: (values: PlayerValues) => Promise<void>;
 }) => {
@@ -346,7 +375,7 @@ export const EditPlayerDialog = ({
   player,
   setOpen,
 }: {
-  player: PlayerType;
+  player: EditPlayerDialogPlayer;
   setOpen: (isOpen: boolean) => void;
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -381,7 +410,7 @@ const PlayerContent = ({
   setIsSubmitting,
 }: {
   setOpen: (isOpen: boolean) => void;
-  player: PlayerType;
+  player: EditPlayerDialogPlayer;
   isSubmitting: boolean;
   setIsSubmitting: (isSubmitting: boolean) => void;
 }) => {
@@ -451,18 +480,23 @@ const PlayerContent = ({
           >
             Cancel
           </Button>
-          <form.Subscribe>
-            {(state) => (
+          <form.Subscribe
+            selector={(state) => ({
+              formIsSubmitting: state.isSubmitting,
+              formIsDirty: state.isDirty,
+            })}
+          >
+            {({ formIsSubmitting, formIsDirty }) => (
               <Button
                 type="submit"
                 disabled={
                   isSubmitting ||
-                  state.isSubmitting ||
-                  !state.isDirty ||
+                  formIsSubmitting ||
+                  !formIsDirty ||
                   isUpdatePending
                 }
               >
-                {isSubmitting || state.isSubmitting || isUpdatePending ? (
+                {isSubmitting || formIsSubmitting || isUpdatePending ? (
                   <>
                     <Spinner />
                     <span>Saving...</span>

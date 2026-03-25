@@ -1,6 +1,6 @@
 import { assertFound } from "../../utils/databaseHelpers";
-import type { PlayerInsightsIdentityType } from "../../routers/player/player-insights.output";
-import type { GetPlayerInputType } from "../../routers/player/player.input";
+import type { PlayerInsightsIdentityType } from "../../routers/player/sub-routers/stats/player-insights.output";
+import type { GetPlayerInputType } from "../../routers/player/sub-routers/stats/player-stats.input";
 import { playerRepository } from "../../repositories/player/player.repository";
 import { mapPlayerImageRowWithLogging } from "../../utils/image";
 import type { GetPlayerInsightsArgs } from "./player.service.types";

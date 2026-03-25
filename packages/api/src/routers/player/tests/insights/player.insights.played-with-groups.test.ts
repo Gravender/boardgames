@@ -25,17 +25,18 @@ describe("Player Insights - getPlayerPlayedWithGroups", () => {
       name: "Empty",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.getPlayerPlayedWithGroups({
-      type: "original",
-      id: player.id,
-    });
+    const result =
+      await receiverCaller.newPlayer.stats.getPlayerPlayedWithGroups({
+        type: "original",
+        id: player.id,
+      });
     expect(result.playedWithGroups).toEqual([]);
   });
 
   test("best case: returns grouped played-with data", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const result = await ownerCaller.newPlayer.getPlayerPlayedWithGroups({
+    const result = await ownerCaller.newPlayer.stats.getPlayerPlayedWithGroups({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
@@ -53,7 +54,7 @@ describe("Player Insights - getPlayerPlayedWithGroups", () => {
   test("worst case: throws for missing player", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.getPlayerPlayedWithGroups({
+      receiverCaller.newPlayer.stats.getPlayerPlayedWithGroups({
         type: "original",
         id: 99999999,
       }),

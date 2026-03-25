@@ -6,7 +6,7 @@ import {
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
 
-import type { GetPlayerInputType } from "../../routers/player/player.input";
+import type { GetPlayerInputType } from "../../routers/player/sub-routers/stats/player-stats.input";
 
 /** Match rows visible to the current user in `v_match_canonical`. */
 export const vMatchCanonicalVisibleToUser = (

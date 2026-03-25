@@ -8,6 +8,7 @@ import { usePostHog } from "posthog-js/react";
 import { toast } from "@board-games/ui/toast";
 
 import { formatMatchLink } from "~/utils/linkFormatting";
+import { invalidateNewPlayerStatsQueries } from "~/hooks/invalidate/player";
 import { useTRPC } from "~/trpc/react";
 
 type MatchInput =
@@ -162,9 +163,12 @@ export const useUpdateFinalScores = (input: MatchInput) => {
   const updateFinalScoresMutation = useMutation(
     trpc.match.update.updateMatchFinalScores.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatchPlayersAndTeams.queryOptions(input),
-        );
+        await Promise.all([
+          queryClient.invalidateQueries(
+            trpc.match.getMatchPlayersAndTeams.queryOptions(input),
+          ),
+          invalidateNewPlayerStatsQueries(queryClient, trpc),
+        ]);
       },
       onError: (error) => {
         posthog.capture("final scores update error", { error });
@@ -259,6 +263,7 @@ export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
           queryClient.invalidateQueries(
             trpc.match.getMatchSummary.queryOptions(input),
           ),
+          invalidateNewPlayerStatsQueries(queryClient, trpc),
         ]);
       },
       onError: (error) => {
@@ -278,6 +283,7 @@ export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
   const trpc = useTRPC();
   const router = useRouter();
   const posthog = usePostHog();
+  const queryClient = useQueryClient();
   const removeMatchQueries = useRemoveMatchQueries();
   const updateMatchPlacementsMutation = useMutation(
     trpc.match.update.updateMatchPlacements.mutationOptions({
@@ -306,6 +312,7 @@ export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
                 },
           ),
         );
+        void invalidateNewPlayerStatsQueries(queryClient, trpc);
       },
       onError: (error) => {
         posthog.capture("match finished error", { error });
@@ -437,9 +444,12 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
         // Fire-and-forget (void) so the mutation settles immediately — onFinish
         // uses fetchQuery to get authoritative data from the server.
         if (queryClient.isMutating() <= 1) {
-          void queryClient.invalidateQueries(
-            trpc.match.getMatchPlayersAndTeams.queryOptions(input),
-          );
+          void Promise.all([
+            queryClient.invalidateQueries(
+              trpc.match.getMatchPlayersAndTeams.queryOptions(input),
+            ),
+            invalidateNewPlayerStatsQueries(queryClient, trpc),
+          ]);
         }
       },
     }),
@@ -536,9 +546,12 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
         // Fire-and-forget (void) so the mutation settles immediately — onFinish
         // uses fetchQuery to get authoritative data from the server.
         if (queryClient.isMutating() <= 1) {
-          void queryClient.invalidateQueries(
-            trpc.match.getMatchPlayersAndTeams.queryOptions(input),
-          );
+          void Promise.all([
+            queryClient.invalidateQueries(
+              trpc.match.getMatchPlayersAndTeams.queryOptions(input),
+            ),
+            invalidateNewPlayerStatsQueries(queryClient, trpc),
+          ]);
         }
       },
     }),

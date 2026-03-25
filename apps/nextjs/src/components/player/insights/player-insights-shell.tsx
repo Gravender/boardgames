@@ -7,6 +7,7 @@ import { prefetch, trpc } from "~/trpc/server";
 
 import type { PlayerInsightsPageInput } from "./player-insights-types";
 import { PlayerInsightsBody } from "./player-insights-body";
+import { PlayerInsightsDataProvider } from "./player-insights-data-context";
 import { PlayerInsightsHeroSection } from "./player-insights-hero-section";
 import {
   PlayerInsightsBodySkeleton,
@@ -23,30 +24,14 @@ const dmSans = DM_Sans({
   variable: "--font-insights-body",
 });
 
+/** First paint: hero + overview only; other tabs fetch on demand. */
 const prefetchPlayerInsights = (playerInput: PlayerInsightsPageInput) => {
-  void prefetch(trpc.newPlayer.getPlayerHeader.queryOptions(playerInput));
-  void prefetch(trpc.newPlayer.getPlayerSummary.queryOptions(playerInput));
+  void prefetch(trpc.newPlayer.stats.getPlayerHeader.queryOptions(playerInput));
   void prefetch(
-    trpc.newPlayer.getPlayerPerformanceSummary.queryOptions(playerInput),
+    trpc.newPlayer.stats.getPlayerSummary.queryOptions(playerInput),
   );
   void prefetch(
-    trpc.newPlayer.getPlayerFavoriteGames.queryOptions(playerInput),
-  );
-  void prefetch(
-    trpc.newPlayer.getPlayerRecentMatches.queryOptions(playerInput),
-  );
-  void prefetch(
-    trpc.newPlayer.getPlayerGameWinRateCharts.queryOptions(playerInput),
-  );
-  void prefetch(trpc.newPlayer.getPlayerTopRivals.queryOptions(playerInput));
-  void prefetch(trpc.newPlayer.getPlayerTopTeammates.queryOptions(playerInput));
-  void prefetch(
-    trpc.newPlayer.getPlayerPlayedWithGroups.queryOptions(playerInput),
-  );
-  void prefetch(trpc.newPlayer.getPlayerStreaks.queryOptions(playerInput));
-  void prefetch(trpc.newPlayer.getPlayerCountStats.queryOptions(playerInput));
-  void prefetch(
-    trpc.newPlayer.getPlayerPlacementDistribution.queryOptions(playerInput),
+    trpc.newPlayer.stats.getPlayerPerformanceSummary.queryOptions(playerInput),
   );
 };
 
@@ -67,12 +52,18 @@ export function PlayerInsightsShell({
       )}
     >
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-3 py-6 md:px-6 md:py-10">
-        <Suspense fallback={<PlayerInsightsHeroSkeleton />}>
-          <PlayerInsightsHeroSection playerInput={playerInput} />
-        </Suspense>
-
-        <Suspense fallback={<PlayerInsightsBodySkeleton />}>
-          <PlayerInsightsBody playerInput={playerInput} />
+        <Suspense
+          fallback={
+            <>
+              <PlayerInsightsHeroSkeleton />
+              <PlayerInsightsBodySkeleton />
+            </>
+          }
+        >
+          <PlayerInsightsDataProvider playerInput={playerInput}>
+            <PlayerInsightsHeroSection playerInput={playerInput} />
+            <PlayerInsightsBody playerInput={playerInput} />
+          </PlayerInsightsDataProvider>
         </Suspense>
       </div>
     </div>
