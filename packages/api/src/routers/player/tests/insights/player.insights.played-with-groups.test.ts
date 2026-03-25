@@ -25,10 +25,11 @@ describe("Player Insights - getPlayerPlayedWithGroups", () => {
       name: "Empty",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.stats.getPlayerPlayedWithGroups({
-      type: "original",
-      id: player.id,
-    });
+    const result =
+      await receiverCaller.newPlayer.stats.getPlayerPlayedWithGroups({
+        type: "original",
+        id: player.id,
+      });
     expect(result.playedWithGroups).toEqual([]);
   });
 

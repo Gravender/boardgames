@@ -25,20 +25,23 @@ describe("Player Insights - getPlayerGameWinRateCharts", () => {
       name: "Empty",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.stats.getPlayerGameWinRateCharts({
-      type: "original",
-      id: player.id,
-    });
+    const result =
+      await receiverCaller.newPlayer.stats.getPlayerGameWinRateCharts({
+        type: "original",
+        id: player.id,
+      });
     expect(result.series.byGame).toEqual([]);
   });
 
   test("best case: returns populated chart series", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const result = await ownerCaller.newPlayer.stats.getPlayerGameWinRateCharts({
-      type: "original",
-      id: seeded.ownerTargetPlayerId,
-    });
+    const result = await ownerCaller.newPlayer.stats.getPlayerGameWinRateCharts(
+      {
+        type: "original",
+        id: seeded.ownerTargetPlayerId,
+      },
+    );
     expect(result.series.byGame.length).toBeGreaterThan(0);
     expect(result.series.byMode.length).toBe(2);
   });

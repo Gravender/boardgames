@@ -63,7 +63,9 @@ export function useInvalidatePlayer() {
           trpc.newPlayer.stats.getPlayerCountStats.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.stats.getPlayerPlacementDistribution.queryOptions(input),
+          trpc.newPlayer.stats.getPlayerPlacementDistribution.queryOptions(
+            input,
+          ),
         ),
       ];
     },

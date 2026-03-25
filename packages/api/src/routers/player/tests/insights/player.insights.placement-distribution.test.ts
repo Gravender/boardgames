@@ -42,10 +42,11 @@ describe("Player Insights - getPlayerPlacementDistribution", () => {
   test("best case: returns populated distributions", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const result = await ownerCaller.newPlayer.stats.getPlayerPlacementDistribution({
-      type: "original",
-      id: seeded.ownerTargetPlayerId,
-    });
+    const result =
+      await ownerCaller.newPlayer.stats.getPlayerPlacementDistribution({
+        type: "original",
+        id: seeded.ownerTargetPlayerId,
+      });
     expect(result.placements.length).toBeGreaterThan(0);
     expect(result.overallPlacementBenchmark.matchCount).toBeGreaterThan(0);
     expect(

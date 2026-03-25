@@ -41,7 +41,9 @@ export const usePlayerInsightsGamesTab = (
         trpc.newPlayer.stats.getPlayerFavoriteGames.queryOptions(playerInput),
         trpc.newPlayer.stats.getPlayerRecentMatches.queryOptions(playerInput),
         trpc.newPlayer.stats.getPlayerHeader.queryOptions(playerInput),
-        trpc.newPlayer.stats.getPlayerGameWinRateCharts.queryOptions(playerInput),
+        trpc.newPlayer.stats.getPlayerGameWinRateCharts.queryOptions(
+          playerInput,
+        ),
       ],
     });
   return {
@@ -78,7 +80,9 @@ export const usePlayerInsightsAdvancedTab = (
     queries: [
       trpc.newPlayer.stats.getPlayerStreaks.queryOptions(playerInput),
       trpc.newPlayer.stats.getPlayerCountStats.queryOptions(playerInput),
-      trpc.newPlayer.stats.getPlayerPlacementDistribution.queryOptions(playerInput),
+      trpc.newPlayer.stats.getPlayerPlacementDistribution.queryOptions(
+        playerInput,
+      ),
     ],
   });
   return {
