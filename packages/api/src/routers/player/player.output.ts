@@ -6,7 +6,11 @@ import {
   selectPlayerSchema,
   selectSharedPlayerSchema,
 } from "@board-games/db/zodSchema";
-import { imageSchema, sharedOrOriginalSchema } from "@board-games/shared";
+import {
+  gameImageSchema,
+  imageSchema,
+  sharedOrOriginalSchema,
+} from "@board-games/shared";
 
 export const getPlayersForMatchOutput = z.object({
   players: z.array(
@@ -134,3 +138,58 @@ export const getPlayersOutput = z.array(getPlayersPlayerSchema);
 
 export type GetPlayersByGameOutputType = z.infer<typeof getPlayersByGameOutput>;
 export type GetPlayersOutputType = z.infer<typeof getPlayersOutput>;
+
+const getPlayerToShareMatchTeamSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  matchId: z.number(),
+});
+
+export const getPlayerToShareOutput = z.object({
+  id: z.number(),
+  name: z.string(),
+  image: imageOutputSchema,
+  matches: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      date: z.date(),
+      duration: z.number(),
+      locationName: z.string().optional(),
+      comment: z.string().nullable(),
+      gameId: z.number(),
+      gameName: z.string(),
+      gameImage: gameImageSchema.nullable(),
+      gameYearPublished: z.number().nullable(),
+      players: z.array(
+        z.object({
+          id: z.number(),
+          name: z.string(),
+          score: z.number().nullable(),
+          isWinner: z.boolean().nullable(),
+          playerId: z.number(),
+          team: getPlayerToShareMatchTeamSchema.nullable(),
+        }),
+      ),
+      teams: z.array(getPlayerToShareMatchTeamSchema),
+    }),
+  ),
+});
+
+export type GetPlayerToShareOutputType = z.infer<typeof getPlayerToShareOutput>;
+
+export const createPlayerOutput = z.object({
+  id: z.number(),
+  name: z.string(),
+  image: imageOutputSchema,
+  matches: z.number(),
+  team: z.number(),
+});
+
+export type CreatePlayerOutputType = z.infer<typeof createPlayerOutput>;
+
+export const updatePlayerOutput = z.void();
+export type UpdatePlayerOutputType = z.infer<typeof updatePlayerOutput>;
+
+export const deletePlayerOutput = z.void();
+export type DeletePlayerOutputType = z.infer<typeof deletePlayerOutput>;

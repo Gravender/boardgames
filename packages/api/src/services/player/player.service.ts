@@ -4,6 +4,7 @@ import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 
 import type {
+  GetPlayerToShareOutputType,
   GetPlayersForMatchOutputType,
   GetRecentMatchWithPlayersOutputType,
 } from "../../routers/player/player.output";
@@ -13,7 +14,9 @@ import type {
 } from "../../routers/player/sub-routers/stats/player-stats.output";
 import type {
   CreatePlayerArgs,
+  DeletePlayerArgs,
   GetPlayerHeaderArgs,
+  GetPlayerToShareArgs,
   GetPlayersArgs,
   GetPlayersByGameArgs,
   GetPlayersForMatchArgs,
@@ -23,12 +26,15 @@ import type {
 } from "./player.service.types";
 import { imageRepository } from "../../repositories/image/image.repository";
 import { playerRepository } from "../../repositories/player/player.repository";
+import { playerWriteRepository } from "../../repositories/player/player.write.repository";
 import { assertFound, assertInserted } from "../../utils/databaseHelpers";
 import {
+  mapImageRowToGameImage,
   mapImageRowToPlayerImage,
   mapPlayerImageRowWithLogging,
 } from "../../utils/image";
 import { mapPlayer, sortPlayersForMatch } from "./player-match-sorting";
+import { runOriginalPlayerSoftDeleteInTransaction } from "./player-original-soft-delete.service";
 import { playerReadService } from "./player.read.service";
 
 class PlayerService {
@@ -212,7 +218,7 @@ class PlayerService {
       if (input.type === "shared") {
         const returnedSharedPlayer = await playerRepository.getSharedPlayer(
           {
-            id: input.id,
+            id: input.sharedId,
             sharedWithId: userId,
             with: {
               player: true,
@@ -372,6 +378,133 @@ class PlayerService {
         error,
       });
     }
+  }
+
+  public async deletePlayer(args: DeletePlayerArgs): Promise<void> {
+    const { ctx, input, tx: existingTx } = args;
+
+    if (input.type === "shared") {
+      const sharedId = input.sharedId;
+      const deleteSharedInTx = async (tx: TransactionType) => {
+        const exists =
+          await playerWriteRepository.findSharedPlayerIdForRecipient({
+            sharedPlayerId: sharedId,
+            sharedWithId: ctx.userId,
+            tx,
+          });
+        if (!exists) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Player not found.",
+          });
+        }
+        await playerWriteRepository.clearSharedMatchPlayerSharedPlayerRefs({
+          sharedPlayerId: sharedId,
+          sharedWithId: ctx.userId,
+          tx,
+        });
+        const deleted =
+          await playerWriteRepository.deleteSharedPlayerRowForRecipient({
+            sharedPlayerId: sharedId,
+            sharedWithId: ctx.userId,
+            tx,
+          });
+        if (!deleted) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Player not found.",
+          });
+        }
+      };
+
+      if (existingTx) {
+        await deleteSharedInTx(existingTx);
+        return;
+      }
+      await db.transaction(deleteSharedInTx);
+      return;
+    }
+
+    const playerId = input.id;
+    const runOriginal = async (tx: TransactionType) => {
+      await runOriginalPlayerSoftDeleteInTransaction(tx, {
+        playerId,
+        createdBy: ctx.userId,
+        sharedWithIdForUnlink: ctx.userId,
+      });
+    };
+
+    if (existingTx) {
+      await runOriginal(existingTx);
+    } else {
+      await db.transaction(runOriginal);
+    }
+  }
+
+  public async getPlayerToShare(
+    args: GetPlayerToShareArgs,
+  ): Promise<GetPlayerToShareOutputType> {
+    const returnedPlayer = await playerWriteRepository.getPlayerForShare({
+      id: args.input.id,
+      createdBy: args.ctx.userId,
+    });
+    assertFound(
+      returnedPlayer,
+      {
+        userId: args.ctx.userId,
+        value: args.input,
+      },
+      "Player not found.",
+    );
+
+    const filteredMatches = returnedPlayer.matchPlayers
+      .filter((mPlayer) => mPlayer.match.finished)
+      .map((mPlayer) => ({
+        id: mPlayer.match.id,
+        name: mPlayer.match.name,
+        date: mPlayer.match.date,
+        duration: mPlayer.match.duration,
+        locationName: mPlayer.match.location?.name,
+        comment: mPlayer.match.comment,
+        gameId: mPlayer.match.gameId,
+        gameName: mPlayer.match.game.name,
+        gameImage: mapImageRowToGameImage(mPlayer.match.game.image),
+        gameYearPublished: mPlayer.match.game.yearPublished,
+        players: mPlayer.match.matchPlayers
+          .map((matchPlayerRow) => ({
+            id: matchPlayerRow.player.id,
+            name: matchPlayerRow.player.name,
+            score: matchPlayerRow.score,
+            isWinner: matchPlayerRow.winner,
+            playerId: matchPlayerRow.player.id,
+            team: matchPlayerRow.team,
+          }))
+          .toSorted((a, b) => {
+            if (a.team === null || b.team === null) {
+              if (a.score === b.score) {
+                return a.name.localeCompare(b.name);
+              }
+              if (a.score === null) return 1;
+              if (b.score === null) return -1;
+              return b.score - a.score;
+            }
+            if (a.team.id === b.team.id) return 0;
+            if (a.score === b.score) {
+              return a.name.localeCompare(b.name);
+            }
+            if (a.score === null) return 1;
+            if (b.score === null) return -1;
+            return b.score - a.score;
+          }),
+        teams: mPlayer.match.teams,
+      }));
+
+    return {
+      id: returnedPlayer.id,
+      name: returnedPlayer.name,
+      image: mapImageRowToPlayerImage(returnedPlayer.image),
+      matches: filteredMatches,
+    };
   }
 
   public async getPlayerHeader(

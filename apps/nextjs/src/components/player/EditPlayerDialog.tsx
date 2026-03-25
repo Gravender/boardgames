@@ -194,7 +194,7 @@ const useUpdateSharedPlayer = ({
     }
     await updatePlayerMutation.mutateAsync({
       type: "shared",
-      id: player.sharedPlayerId,
+      sharedId: player.sharedPlayerId,
       name: values.name,
     });
     handleMutationSuccess();

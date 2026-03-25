@@ -54,7 +54,7 @@ export function AddPlayerForm({
   const [isUploading, setIsUploading] = useState(false);
   const { startUpload } = useUploadThing("imageUploader");
   const createPlayer = useMutation(
-    trpc.player.create.mutationOptions({
+    trpc.newPlayer.create.mutationOptions({
       onSuccess: async (player) => {
         await queryClient.cancelQueries(
           trpc.newPlayer.getPlayersForMatch.queryOptions(),
