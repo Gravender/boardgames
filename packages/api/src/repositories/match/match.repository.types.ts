@@ -1,16 +1,22 @@
 import type z from "zod";
 
-import type { TransactionType } from "@board-games/db/client";
 import {
   insertMatchSchema,
   insertSharedMatchSchema,
 } from "@board-games/db/zodSchema";
+import type { ImageRowWithUsage } from "@board-games/shared";
 
 import type {
   CreateMatchInputType,
   EditMatchInputType,
   GetMatchInputType,
 } from "../../routers/match/match.input";
+import type { GetPlayerInputType } from "../../routers/player/player.input";
+import type {
+  WithCreatedByInput,
+  WithRepoUserIdInput,
+  WithTxInput,
+} from "../../utils/shared-args.types";
 
 export const insertMatchSchemaInput = insertMatchSchema.pick({
   createdBy: true,
@@ -31,37 +37,84 @@ export const insertSharedMatchSchemaInput = insertSharedMatchSchema.omit({
 export type InsertSharedMatchInputType = z.infer<
   typeof insertSharedMatchSchemaInput
 >;
-export interface CreateMatchArgs {
-  input: CreateMatchInputType;
-  createdBy: string;
+
+export type CreateMatchArgs = WithCreatedByInput<CreateMatchInputType>;
+
+export type GetMatchArgs = WithRepoUserIdInput<GetMatchInputType>;
+
+export type GetMatchScoresheetArgs = WithRepoUserIdInput<GetMatchInputType>;
+
+export type GetMatchPlayersAndTeamsArgs =
+  WithRepoUserIdInput<GetMatchInputType>;
+
+export type EditMatchArgs = WithRepoUserIdInput<EditMatchInputType>;
+
+export type UpdateMatchArgs = WithTxInput<{
+  id: number;
+  name?: string;
+  date?: Date;
+  locationId?: number | null;
+}>;
+
+export type GetPlayerInsightsMatchesArgs =
+  WithRepoUserIdInput<GetPlayerInputType>;
+
+export interface PlayerInsightsMatchParticipantRow {
+  matchId: number;
+  playerId: number;
+  playerType: "original" | "shared" | "linked" | "not-shared";
+  sharedPlayerId: number | null;
+  teamId: number | null;
+  placement: number | null;
+  score: number | null;
+  winner: boolean | null;
+  name: string;
+  image: ImageRowWithUsage | null;
 }
 
-export interface GetMatchArgs {
-  input: GetMatchInputType;
-  userId: string;
+/** Matches `scoresheet.win_condition` on the match's canonical scoresheet. */
+export type PlayerInsightsScoresheetWinCondition =
+  | "Manual"
+  | "Highest Score"
+  | "Lowest Score"
+  | "No Winner"
+  | "Target Score";
+
+export interface PlayerInsightsMatchRow {
+  matchId: number;
+  sharedMatchId: number | null;
+  matchType: "original" | "shared";
+  date: Date;
+  isCoop: boolean;
+  scoresheetWinCondition: PlayerInsightsScoresheetWinCondition;
+  gameId: number;
+  sharedGameId: number | null;
+  gameType: "original" | "shared" | "linked";
+  gameName: string;
+  gameImage: ImageRowWithUsage | null;
+  outcomePlacement: number | null;
+  outcomeScore: number | null;
+  outcomeWinner: boolean | null;
+  duration: number;
+  participants: PlayerInsightsMatchParticipantRow[];
 }
 
-export interface GetMatchScoresheetArgs {
-  input: GetMatchInputType;
-  userId: string;
-}
-
-export interface GetMatchPlayersAndTeamsArgs {
-  input: GetMatchInputType;
-  userId: string;
-}
-
-export interface EditMatchArgs {
-  input: EditMatchInputType;
-  userId: string;
-}
-
-export interface UpdateMatchArgs {
-  input: {
-    id: number;
-    name?: string;
-    date?: Date;
-    locationId?: number | null;
-  };
-  tx?: TransactionType;
+/** Same as PlayerInsightsMatchRow but without participant JSON (lighter query). */
+export interface PlayerInsightsMatchSummaryRow {
+  matchId: number;
+  sharedMatchId: number | null;
+  matchType: "original" | "shared";
+  date: Date;
+  isCoop: boolean;
+  scoresheetWinCondition: PlayerInsightsScoresheetWinCondition;
+  gameId: number;
+  sharedGameId: number | null;
+  gameType: "original" | "shared" | "linked";
+  gameName: string;
+  gameImage: ImageRowWithUsage | null;
+  outcomePlacement: number | null;
+  outcomeScore: number | null;
+  outcomeWinner: boolean | null;
+  duration: number;
+  playerCount: number;
 }

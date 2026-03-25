@@ -13,7 +13,7 @@ export const useGetPlayersByGame = (
     type === "shared"
       ? {
           type: "shared" as const,
-          sharedId: id,
+          sharedGameId: id,
         }
       : {
           type: "original" as const,

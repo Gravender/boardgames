@@ -3,14 +3,18 @@ import { compareDesc } from "date-fns";
 import type {
   GetPlayersByGameOutputType,
   GetPlayersOutputType,
+  GetPlayerSummaryOutputType,
 } from "../../routers/player/player.output";
+import type { GetPlayerInputType } from "../../routers/player/player.input";
 import { playerRepository } from "../../repositories/player/player.repository";
 import type {
-  GetPlayerArgs,
   GetPlayersArgs,
   GetPlayersByGameArgs,
+  GetPlayerSummaryArgs,
 } from "./player.service.types";
-import { playerReadDetailService } from "./player.read.detail.service";
+import { db } from "@board-games/db/client";
+import { assertFound } from "../../utils/databaseHelpers";
+import { mapImageRowToPlayerImage } from "../../utils/image";
 
 class PlayerReadService {
   public async getPlayers(args: GetPlayersArgs): Promise<GetPlayersOutputType> {
@@ -36,7 +40,7 @@ class PlayerReadService {
           type: "original",
           id: player.id,
           name: player.name,
-          image: player.image,
+          image: mapImageRowToPlayerImage(player.image),
           matches: player.matches.length + linkedMatches.length,
           lastPlayed: firstMatch?.date,
           gameName: firstMatch?.game.name,
@@ -69,7 +73,7 @@ class PlayerReadService {
         sharedId: returnedSharedPlayer.id,
         sharedPlayerId: returnedSharedPlayer.id,
         name: returnedSharedPlayer.player.name,
-        image: returnedSharedPlayer.player.image,
+        image: mapImageRowToPlayerImage(returnedSharedPlayer.player.image),
         matches: sharedMatches.length,
         lastPlayed: firstMatch?.match?.date,
         gameName: firstMatchLinkedGame?.name ?? firstMatchGame?.name,
@@ -103,7 +107,7 @@ class PlayerReadService {
           type: "original",
           isUser: player.isUser,
           name: player.name,
-          image: player.image,
+          image: mapImageRowToPlayerImage(player.image),
           matches: (player.matches?.length ?? 0) + (linkedMatches.length ?? 0),
         };
       });
@@ -117,16 +121,12 @@ class PlayerReadService {
         sharedId: returnedSharedPlayer.id,
         sharedPlayerId: returnedSharedPlayer.id,
         name: returnedSharedPlayer.player.name,
-        image: returnedSharedPlayer.player.image,
+        image: mapImageRowToPlayerImage(returnedSharedPlayer.player.image),
         matches: filteredMatches.length,
       });
     }
     mappedPlayers.sort((a, b) => b.matches - a.matches);
     return mappedPlayers;
-  }
-
-  public async getPlayer(args: GetPlayerArgs) {
-    return playerReadDetailService.getPlayer(args);
   }
 
   private getFirstMatch(args: {
@@ -158,6 +158,118 @@ class PlayerReadService {
       return args.firstLinkedMatch;
     }
     return null;
+  }
+  public async getPlayerSummary(
+    args: GetPlayerSummaryArgs,
+  ): Promise<GetPlayerSummaryOutputType> {
+    const { ctx, input } = args;
+    if (input.type === "original") {
+      const response = await db.transaction(async (tx) => {
+        const returnedPlayer = await playerRepository.getPlayer(
+          {
+            id: input.id,
+            createdBy: ctx.userId,
+          },
+          tx,
+        );
+        let summaryInput: GetPlayerInputType;
+        if (returnedPlayer) {
+          summaryInput = { type: "original", id: input.id };
+        } else {
+          const returnedSharedPlayer =
+            await playerRepository.getSharedPlayerByPlayerId(
+              {
+                playerId: input.id,
+                sharedWithId: ctx.userId,
+              },
+              tx,
+            );
+          assertFound(
+            returnedSharedPlayer,
+            {
+              userId: ctx.userId,
+              value: {
+                id: input.id,
+              },
+            },
+            "Player not found.",
+          );
+          summaryInput = {
+            type: "shared",
+            sharedPlayerId: returnedSharedPlayer.id,
+          };
+        }
+        const playerStats = await playerRepository.getPlayerSummary({
+          userId: ctx.userId,
+          input: summaryInput,
+          tx,
+        });
+        assertFound(
+          playerStats,
+          {
+            userId: ctx.userId,
+            value: {
+              id: input.id,
+            },
+          },
+          "Player not found.",
+        );
+        return {
+          type: "original" as const,
+          id: input.id,
+          finishedMatches: Number(playerStats.finishedMatches),
+          wins: Number(playerStats.wins),
+          winRate: Number(playerStats.winRate),
+          gamesPlayed: Number(playerStats.gamesPlayed),
+          totalPlaytime: Number(playerStats.totalPlaytime),
+        };
+      });
+      return response;
+    } else {
+      const response = await db.transaction(async (tx) => {
+        const returnedSharedPlayer = await playerRepository.getSharedPlayer(
+          {
+            id: input.sharedPlayerId,
+            sharedWithId: ctx.userId,
+          },
+          tx,
+        );
+        assertFound(returnedSharedPlayer, {
+          userId: ctx.userId,
+          value: {
+            sharedPlayerId: input.sharedPlayerId,
+          },
+        });
+        const playerStats = await playerRepository.getPlayerSummary({
+          userId: ctx.userId,
+          input: {
+            type: "shared",
+            sharedPlayerId: input.sharedPlayerId,
+          },
+          tx,
+        });
+        assertFound(
+          playerStats,
+          {
+            userId: ctx.userId,
+            value: {
+              sharedPlayerId: input.sharedPlayerId,
+            },
+          },
+          "Player not found.",
+        );
+        return {
+          type: "shared" as const,
+          sharedPlayerId: returnedSharedPlayer.id,
+          finishedMatches: Number(playerStats.finishedMatches),
+          wins: Number(playerStats.wins),
+          winRate: Number(playerStats.winRate),
+          gamesPlayed: Number(playerStats.gamesPlayed),
+          totalPlaytime: Number(playerStats.totalPlaytime),
+        };
+      });
+      return response;
+    }
   }
 }
 

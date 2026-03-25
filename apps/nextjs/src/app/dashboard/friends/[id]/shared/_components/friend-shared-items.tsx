@@ -11,7 +11,7 @@ import {
   Users,
 } from "lucide-react";
 
-import type { RouterOutputs } from "@board-games/api";
+import { scoreSheetRoundsScore } from "@board-games/db/constants";
 import { Badge } from "@board-games/ui/badge";
 import {
   Card,
@@ -31,12 +31,64 @@ const formatDate = (date: Date) => {
   });
 };
 
+/**
+ * Mirrors API `SharedEntry` from `collectShares`. Declared locally because the
+ * API package does not emit `dist/utils/sharing.d.ts`, so `RouterOutputs` can
+ * lose payload typing for nested arrays.
+ */
+type FriendSharedEntry = {
+  id: number;
+  name: string;
+  permission: "view" | "edit";
+  createdAt: Date;
+} & (
+  | {
+      type: "game";
+      matches: {
+        id: number;
+        permission: "view" | "edit";
+        name: string;
+        date: Date;
+        duration: number;
+        finished: boolean;
+        comment: string | null;
+      }[];
+      scoresheets: {
+        id: number;
+        permission: "view" | "edit";
+        name: string;
+        gameId: number;
+        createdBy: string | null;
+        createdAt: Date;
+        updatedAt: Date | null;
+        deletedAt: Date | null;
+        isCoop: boolean;
+        winCondition:
+          | "Manual"
+          | "Highest Score"
+          | "Lowest Score"
+          | "No Winner"
+          | "Target Score";
+        targetScore: number;
+        roundsScore: (typeof scoreSheetRoundsScore)[number];
+        type: "Template" | "Default" | "Match" | "Game";
+      }[];
+    }
+  | { type: "player" }
+  | { type: "location" }
+);
+
+type FriendSharedPlayerOrLocation = Extract<
+  FriendSharedEntry,
+  { type: "player" } | { type: "location" }
+>;
+
 export function FriendSharedItems({
   sharedWith,
   sharedTo,
 }: {
-  sharedWith: RouterOutputs["friend"]["getFriend"]["sharedWith"];
-  sharedTo: RouterOutputs["friend"]["getFriend"]["sharedTo"];
+  sharedWith: FriendSharedEntry[];
+  sharedTo: FriendSharedEntry[];
 }) {
   const [withSearchTerm, setWithSearchTerm] = useState("");
   const [toSearchTerm, setToSearchTerm] = useState("");
@@ -95,7 +147,7 @@ function SharedItemsList({
   items,
   searchTerm,
 }: {
-  items: RouterOutputs["friend"]["getFriend"]["sharedWith"];
+  items: FriendSharedEntry[];
   searchTerm: string;
 }) {
   // Filter items based on search term
@@ -189,13 +241,11 @@ function GameItem({
   item,
   searchTerm,
 }: {
-  item: Extract<
-    RouterOutputs["friend"]["getFriend"]["sharedWith"][number],
-    { type: "game" }
-  >;
+  item: Extract<FriendSharedEntry, { type: "game" }>;
   searchTerm: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const sharedDetailsId = `shared-game-details-${item.id}`;
 
   // Auto-expand if there's a search term that matches matches or scoresheets but not the game name
   const shouldAutoExpand = useMemo(() => {
@@ -269,20 +319,26 @@ function GameItem({
             {item.permission}
           </Badge>
           <button
+            type="button"
             className="rounded-full p-1 hover:bg-gray-100"
             onClick={() => setIsOpen(!isOpen)}
+            aria-expanded={isOpen}
+            aria-controls={sharedDetailsId}
+            aria-label={
+              isOpen ? "Collapse shared items" : "Expand shared items"
+            }
           >
             {isOpen ? (
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-4 w-4" aria-hidden />
             ) : (
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" aria-hidden />
             )}
           </button>
         </div>
       </div>
 
       {isOpen && (
-        <div className="space-y-3 px-3 pb-3">
+        <div id={sharedDetailsId} className="space-y-3 px-3 pb-3">
           {filteredMatches.length > 0 && (
             <div>
               <h4 className="mb-2 text-sm font-medium">Matches</h4>
@@ -362,7 +418,7 @@ function SimpleItem({
   item,
   icon,
 }: {
-  item: RouterOutputs["friend"]["getFriend"]["sharedWith"][number];
+  item: FriendSharedPlayerOrLocation;
   icon: React.ReactNode;
 }) {
   return (

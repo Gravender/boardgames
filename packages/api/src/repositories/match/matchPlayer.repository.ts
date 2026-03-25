@@ -1,4 +1,4 @@
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import type {
   Filter,
@@ -15,6 +15,7 @@ import {
 } from "@board-games/db/schema";
 import { vMatchPlayerCanonicalForUser } from "@board-games/db/views";
 
+import { vMatchPlayerCanonicalViewerForUser } from "../../utils/drizzle/canonical-clauses";
 import type {
   GetAllMatchPlayersFromViewCanonicalForUserArgs,
   GetFromViewCanonicalForUserArgs,
@@ -46,15 +47,9 @@ class MatchPlayerRepository {
         and(
           eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.matchId),
           eq(vMatchPlayerCanonicalForUser.baseMatchPlayerId, input.id),
-          or(
-            and(
-              eq(vMatchPlayerCanonicalForUser.sharedWithId, input.userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
-            ),
-            and(
-              eq(vMatchPlayerCanonicalForUser.ownerId, input.userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
-            ),
+          vMatchPlayerCanonicalViewerForUser(
+            vMatchPlayerCanonicalForUser,
+            input.userId,
           ),
         ),
       );
@@ -109,15 +104,9 @@ class MatchPlayerRepository {
         and(
           eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.matchId),
           eq(vMatchPlayerCanonicalForUser.teamId, input.teamId),
-          or(
-            and(
-              eq(vMatchPlayerCanonicalForUser.sharedWithId, input.userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
-            ),
-            and(
-              eq(vMatchPlayerCanonicalForUser.ownerId, input.userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
-            ),
+          vMatchPlayerCanonicalViewerForUser(
+            vMatchPlayerCanonicalForUser,
+            input.userId,
           ),
         ),
       );
@@ -135,15 +124,9 @@ class MatchPlayerRepository {
       .where(
         and(
           eq(vMatchPlayerCanonicalForUser.canonicalMatchId, input.matchId),
-          or(
-            and(
-              eq(vMatchPlayerCanonicalForUser.sharedWithId, input.userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
-            ),
-            and(
-              eq(vMatchPlayerCanonicalForUser.ownerId, input.userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
-            ),
+          vMatchPlayerCanonicalViewerForUser(
+            vMatchPlayerCanonicalForUser,
+            input.userId,
           ),
         ),
       );

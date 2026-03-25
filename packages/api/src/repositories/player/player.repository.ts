@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import type {
   Filter,
@@ -7,25 +7,32 @@ import type {
   TransactionType,
 } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
-import { player, sharedPlayer } from "@board-games/db/schema";
+import { match, player, sharedPlayer } from "@board-games/db/schema";
 
 import type {
-  GetOriginalPlayerByIdArgs,
   GetPlayersArgs,
   GetPlayersByGameArgs,
   GetPlayersForMatchArgs,
+  GetPlayerSummaryArgs,
   GetRecentMatchWithPlayersArgs,
-  GetSharedPlayerByIdArgs,
   InsertSharedPlayerInputType,
 } from "./player.repository.types";
 import {
-  getOriginalPlayerByIdRead,
   getPlayersByGameRead,
   getPlayersForMatchRead,
   getPlayersRead,
   getRecentMatchWithPlayersRead,
-  getSharedPlayerByIdRead,
 } from "./player.read.repository";
+import {
+  vMatchCanonical,
+  vMatchPlayerCanonicalForUser,
+} from "@board-games/db/views";
+
+import {
+  vMatchCanonicalVisibleToUser,
+  vMatchPlayerCanonicalTargetPlayer,
+  vMatchPlayerCanonicalViewerForUser,
+} from "../../utils/drizzle/canonical-clauses";
 
 class PlayerRepository {
   public async insert(args: {
@@ -97,6 +104,23 @@ class PlayerRepository {
       columns: { id: true, name: true },
       where: { createdBy, deletedAt: { isNull: true } },
     });
+  }
+
+  /** Primary "You" player row for insights / viewer context. */
+  public async getUserPlayerIdForUser(args: {
+    userId: string;
+    tx?: TransactionType;
+  }): Promise<number | null> {
+    const database = args.tx ?? db;
+    const row = await database.query.player.findFirst({
+      columns: { id: true },
+      where: {
+        createdBy: args.userId,
+        isUser: true,
+        deletedAt: { isNull: true },
+      },
+    });
+    return row?.id ?? null;
   }
 
   public async getPlayer<TConfig extends QueryConfig<"player">>(
@@ -195,12 +219,84 @@ class PlayerRepository {
     return getPlayersByGameRead(args);
   }
 
-  public async getOriginalPlayerById(args: GetOriginalPlayerByIdArgs) {
-    return getOriginalPlayerByIdRead(args);
-  }
+  /** See player-insights.repository for insights rollups; align when changing win semantics. */
+  public async getPlayerSummary(args: GetPlayerSummaryArgs) {
+    const { userId, input, tx } = args;
+    const database = tx ?? db;
+    const userMatchPlayers = database.$with("user_match_players").as(
+      database
+        .selectDistinctOn([vMatchPlayerCanonicalForUser.canonicalMatchId], {
+          matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
+          winner: vMatchPlayerCanonicalForUser.winner,
+        })
+        .from(vMatchPlayerCanonicalForUser)
+        .where(
+          and(
+            vMatchPlayerCanonicalTargetPlayer(
+              vMatchPlayerCanonicalForUser,
+              input,
+            ),
+            vMatchPlayerCanonicalViewerForUser(
+              vMatchPlayerCanonicalForUser,
+              userId,
+            ),
+          ),
+        )
+        .orderBy(vMatchPlayerCanonicalForUser.canonicalMatchId),
+    );
+    const [stats] = await database
+      .with(userMatchPlayers)
+      .select({
+        finishedMatches: sql<number>`
+      COUNT(DISTINCT ${match.id})
+      FILTER (WHERE ${match.finished} = true)
+    `,
 
-  public async getSharedPlayerById(args: GetSharedPlayerByIdArgs) {
-    return getSharedPlayerByIdRead(args);
+        wins: sql<number>`
+      COUNT(DISTINCT ${match.id})
+      FILTER (
+        WHERE ${match.finished} = true
+        AND ${userMatchPlayers.winner} IS TRUE
+      )
+    `,
+
+        winRate: sql<number>`
+      CASE
+        WHEN COUNT(*) FILTER (WHERE ${match.finished} = true) = 0
+        THEN 0
+        ELSE
+          COUNT(*) FILTER (
+            WHERE ${match.finished} = true
+            AND ${userMatchPlayers.winner} IS TRUE
+          )::float
+          /
+          COUNT(*) FILTER (WHERE ${match.finished} = true)
+          * 100
+      END
+    `,
+
+        gamesPlayed: sql<number>`
+      COUNT(DISTINCT ${vMatchCanonical.canonicalGameId})
+    `,
+        totalPlaytime: sql<number>`
+      COALESCE(
+        SUM(${match.duration})
+        FILTER (
+          WHERE ${match.finished} = true
+          AND ${match.duration} >= 300
+        ),
+        0
+      )
+    `,
+      })
+      .from(vMatchCanonical)
+      .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
+      .innerJoin(
+        userMatchPlayers,
+        eq(userMatchPlayers.matchId, vMatchCanonical.matchId),
+      )
+      .where(vMatchCanonicalVisibleToUser(vMatchCanonical, userId));
+    return stats;
   }
 }
 export const playerRepository = new PlayerRepository();

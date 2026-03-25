@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 
 import type {
   Filter,
@@ -8,7 +8,14 @@ import type {
   TransactionType,
 } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
-import { match, scoresheet, sharedMatch } from "@board-games/db/schema";
+import {
+  game,
+  image,
+  match,
+  player,
+  scoresheet,
+  sharedMatch,
+} from "@board-games/db/schema";
 import {
   vMatchCanonical,
   vMatchPlayerCanonicalForUser,
@@ -18,15 +25,27 @@ import type {
   GetMatchOutputType,
   GetMatchScoresheetOutputType,
 } from "../../routers/match/match.output";
+import {
+  vMatchCanonicalVisibleToUser,
+  vMatchPlayerCanonicalOwnerOrSharedRecipient,
+  vMatchPlayerCanonicalTargetPlayer,
+  vMatchPlayerCanonicalViewerForUser,
+} from "../../utils/drizzle/canonical-clauses";
 import type {
   GetMatchArgs,
+  GetPlayerInsightsMatchesArgs,
   GetMatchPlayersAndTeamsArgs,
   GetMatchScoresheetArgs,
   InsertMatchInputType,
   InsertSharedMatchInputType,
+  PlayerInsightsMatchParticipantRow,
+  PlayerInsightsMatchRow,
+  PlayerInsightsMatchSummaryRow,
   UpdateMatchArgs,
 } from "./match.repository.types";
 import { Logger } from "../../common/logger";
+import { caseWhen } from "drizzle-plus";
+import { jsonAggNotNull, jsonBuildObject } from "drizzle-plus/pg";
 
 class MatchRepository {
   private readonly logger = new Logger(MatchRepository.name);
@@ -485,7 +504,7 @@ class MatchRepository {
               and(
                 eq(scoresheet.parentId, returnedMatch.scoresheet.parentId ?? 0),
                 eq(vMatchCanonical.finished, true),
-                eq(vMatchCanonical.visibleToUserId, args.userId),
+                vMatchCanonicalVisibleToUser(vMatchCanonical, args.userId),
               ),
             )
             .groupBy(vMatchCanonical.matchId),
@@ -502,9 +521,9 @@ class MatchRepository {
             eq(match.id, vMatchPlayerCanonicalForUser.canonicalMatchId),
           )
           .where(
-            or(
-              eq(vMatchPlayerCanonicalForUser.ownerId, args.userId),
-              eq(vMatchPlayerCanonicalForUser.sharedWithId, args.userId),
+            vMatchPlayerCanonicalOwnerOrSharedRecipient(
+              vMatchPlayerCanonicalForUser,
+              args.userId,
             ),
           )
           // earliest by date, then by id for tie-breaking
@@ -543,9 +562,9 @@ class MatchRepository {
         )
         .where(
           and(
-            or(
-              eq(vMatchPlayerCanonicalForUser.ownerId, args.userId),
-              eq(vMatchPlayerCanonicalForUser.sharedWithId, args.userId),
+            vMatchPlayerCanonicalOwnerOrSharedRecipient(
+              vMatchPlayerCanonicalForUser,
+              args.userId,
             ),
             inArray(
               vMatchPlayerCanonicalForUser.canonicalPlayerId,
@@ -613,7 +632,7 @@ class MatchRepository {
             and(
               eq(scoresheet.parentId, parentScoresheet.parentId ?? 0),
               eq(vMatchCanonical.finished, true),
-              eq(vMatchCanonical.visibleToUserId, args.userId),
+              vMatchCanonicalVisibleToUser(vMatchCanonical, args.userId),
             ),
           )
           .groupBy(vMatchCanonical.matchId),
@@ -630,9 +649,9 @@ class MatchRepository {
           eq(match.id, vMatchPlayerCanonicalForUser.canonicalMatchId),
         )
         .where(
-          or(
-            eq(vMatchPlayerCanonicalForUser.ownerId, args.userId),
-            eq(vMatchPlayerCanonicalForUser.sharedWithId, args.userId),
+          vMatchPlayerCanonicalOwnerOrSharedRecipient(
+            vMatchPlayerCanonicalForUser,
+            args.userId,
           ),
         )
         // earliest by date, then by id for tie-breaking
@@ -671,9 +690,9 @@ class MatchRepository {
       )
       .where(
         and(
-          or(
-            eq(vMatchPlayerCanonicalForUser.ownerId, args.userId),
-            eq(vMatchPlayerCanonicalForUser.sharedWithId, args.userId),
+          vMatchPlayerCanonicalOwnerOrSharedRecipient(
+            vMatchPlayerCanonicalForUser,
+            args.userId,
           ),
           inArray(
             vMatchPlayerCanonicalForUser.canonicalPlayerId,
@@ -713,6 +732,337 @@ class MatchRepository {
       matchPlayers: matchPlayersResults,
     };
   }
+
+  public async getPlayerInsightsMatches(
+    args: GetPlayerInsightsMatchesArgs,
+  ): Promise<PlayerInsightsMatchRow[]> {
+    const { userId, input, tx } = args;
+    const database = tx ?? db;
+    const visibleToUserClause = vMatchCanonicalVisibleToUser(
+      vMatchCanonical,
+      userId,
+    );
+    const viewerClause = vMatchPlayerCanonicalViewerForUser(
+      vMatchPlayerCanonicalForUser,
+      userId,
+    );
+    const targetPlayerClause = vMatchPlayerCanonicalTargetPlayer(
+      vMatchPlayerCanonicalForUser,
+      input,
+    );
+
+    const playersByMatch = database.$with("insights_players_by_match").as(
+      database
+        .selectDistinctOn(
+          [
+            vMatchPlayerCanonicalForUser.canonicalMatchId,
+            vMatchPlayerCanonicalForUser.baseMatchPlayerId,
+          ],
+          {
+            matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
+            baseMatchPlayerId: vMatchPlayerCanonicalForUser.baseMatchPlayerId,
+            playerId: vMatchPlayerCanonicalForUser.canonicalPlayerId,
+            playerType: vMatchPlayerCanonicalForUser.playerSourceType,
+            sharedPlayerId: vMatchPlayerCanonicalForUser.sharedPlayerId,
+            teamId: vMatchPlayerCanonicalForUser.teamId,
+            placement: vMatchPlayerCanonicalForUser.placement,
+            score: vMatchPlayerCanonicalForUser.score,
+            winner: vMatchPlayerCanonicalForUser.winner,
+            name: player.name,
+            image: caseWhen<{
+              id: number;
+              name: string;
+              url: string | null;
+              type: "file" | "svg";
+              usageType: "game" | "player" | "match";
+            } | null>(sql`${image.id} IS NULL`, sql`NULL`)
+              .else(
+                jsonBuildObject({
+                  id: image.id,
+                  name: image.name,
+                  url: image.url,
+                  type: image.type,
+                  usageType: image.usageType,
+                }),
+              )
+              .as("image"),
+          },
+        )
+        .from(vMatchPlayerCanonicalForUser)
+        .innerJoin(
+          player,
+          eq(player.id, vMatchPlayerCanonicalForUser.canonicalPlayerId),
+        )
+        .leftJoin(image, eq(image.id, player.imageId))
+        .where(viewerClause)
+        .orderBy(
+          vMatchPlayerCanonicalForUser.canonicalMatchId,
+          vMatchPlayerCanonicalForUser.baseMatchPlayerId,
+        ),
+    );
+
+    const playersAgg = database.$with("insights_players_agg").as(
+      database
+        .select({
+          matchId: playersByMatch.matchId,
+          participants: jsonAggNotNull(
+            jsonBuildObject({
+              matchId: playersByMatch.matchId,
+              playerId: playersByMatch.playerId,
+              playerType: playersByMatch.playerType,
+              sharedPlayerId: playersByMatch.sharedPlayerId,
+              teamId: playersByMatch.teamId,
+              placement: playersByMatch.placement,
+              score: playersByMatch.score,
+              winner: playersByMatch.winner,
+              name: playersByMatch.name,
+              image: playersByMatch.image,
+            }),
+            { orderBy: asc(playersByMatch.baseMatchPlayerId) },
+          ).as("participants"),
+        })
+        .from(playersByMatch)
+        .groupBy(playersByMatch.matchId),
+    );
+
+    return database
+      .with(playersByMatch, playersAgg)
+      .selectDistinctOn([vMatchCanonical.matchId], {
+        matchId: vMatchCanonical.matchId,
+        sharedMatchId: vMatchCanonical.sharedMatchId,
+        matchType: vMatchCanonical.visibilitySource,
+        date: vMatchCanonical.matchDate,
+        isCoop: scoresheet.isCoop,
+        scoresheetWinCondition: scoresheet.winCondition,
+        gameId: vMatchCanonical.canonicalGameId,
+        sharedGameId: vMatchCanonical.sharedGameId,
+        gameType: vMatchCanonical.gameVisibilitySource,
+        gameName: game.name,
+        gameImage: caseWhen<{
+          id: number;
+          name: string;
+          url: string | null;
+          type: "file" | "svg";
+          usageType: "game" | "player" | "match";
+        } | null>(sql`${image.id} IS NULL`, sql`NULL`)
+          .else(
+            jsonBuildObject({
+              id: image.id,
+              name: image.name,
+              url: image.url,
+              type: image.type,
+              usageType: image.usageType,
+            }),
+          )
+          .as("game_image"),
+        outcomePlacement: vMatchPlayerCanonicalForUser.placement,
+        outcomeScore: vMatchPlayerCanonicalForUser.score,
+        outcomeWinner: vMatchPlayerCanonicalForUser.winner,
+        duration: match.duration,
+        participants: sql<
+          PlayerInsightsMatchParticipantRow[]
+        >`coalesce(${playersAgg.participants}, '[]'::jsonb)`.as("participants"),
+      })
+      .from(vMatchPlayerCanonicalForUser)
+      .innerJoin(
+        vMatchCanonical,
+        eq(
+          vMatchCanonical.matchId,
+          vMatchPlayerCanonicalForUser.canonicalMatchId,
+        ),
+      )
+      .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
+      .innerJoin(game, eq(game.id, vMatchCanonical.canonicalGameId))
+      .innerJoin(
+        scoresheet,
+        eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
+      )
+      .leftJoin(image, eq(image.id, game.imageId))
+      .leftJoin(playersAgg, eq(playersAgg.matchId, vMatchCanonical.matchId))
+      .where(
+        and(
+          visibleToUserClause,
+          viewerClause,
+          targetPlayerClause,
+          eq(vMatchCanonical.finished, true),
+        ),
+      )
+      .orderBy(vMatchCanonical.matchId, vMatchCanonical.matchDate);
+  }
+
+  /**
+   * Insight matches for the target player without per-match participant JSON.
+   * Uses the same visibility rules as {@link getPlayerInsightsMatches}.
+   */
+  public async getPlayerInsightsMatchSummaries(
+    args: GetPlayerInsightsMatchesArgs & {
+      order?: "asc" | "desc";
+      limit?: number;
+    },
+  ): Promise<PlayerInsightsMatchSummaryRow[]> {
+    const { userId, input, tx, order = "desc", limit } = args;
+    const database = tx ?? db;
+    const visibleToUserClause = vMatchCanonicalVisibleToUser(
+      vMatchCanonical,
+      userId,
+    );
+    const viewerClause = vMatchPlayerCanonicalViewerForUser(
+      vMatchPlayerCanonicalForUser,
+      userId,
+    );
+    const targetPlayerClause = vMatchPlayerCanonicalTargetPlayer(
+      vMatchPlayerCanonicalForUser,
+      input,
+    );
+
+    const participantCounts = database.$with("insight_pc").as(
+      database
+        .select({
+          matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
+          playerCount:
+            sql<number>`count(distinct ${vMatchPlayerCanonicalForUser.baseMatchPlayerId})::int`
+              .mapWith(Number)
+              .as("player_count"),
+        })
+        .from(vMatchPlayerCanonicalForUser)
+        .where(viewerClause)
+        .groupBy(vMatchPlayerCanonicalForUser.canonicalMatchId),
+    );
+
+    const base = database
+      .with(participantCounts)
+      .select({
+        matchId: vMatchCanonical.matchId,
+        sharedMatchId: vMatchCanonical.sharedMatchId,
+        matchType: vMatchCanonical.visibilitySource,
+        date: vMatchCanonical.matchDate,
+        isCoop: scoresheet.isCoop,
+        scoresheetWinCondition: scoresheet.winCondition,
+        gameId: vMatchCanonical.canonicalGameId,
+        sharedGameId: vMatchCanonical.sharedGameId,
+        gameType: vMatchCanonical.gameVisibilitySource,
+        gameName: game.name,
+        gameImage: caseWhen<{
+          id: number;
+          name: string;
+          url: string | null;
+          type: "file" | "svg";
+          usageType: "game" | "player" | "match";
+        } | null>(sql`${image.id} IS NULL`, sql`NULL`)
+          .else(
+            jsonBuildObject({
+              id: image.id,
+              name: image.name,
+              url: image.url,
+              type: image.type,
+              usageType: image.usageType,
+            }),
+          )
+          .as("game_image"),
+        outcomePlacement: vMatchPlayerCanonicalForUser.placement,
+        outcomeScore: vMatchPlayerCanonicalForUser.score,
+        outcomeWinner: vMatchPlayerCanonicalForUser.winner,
+        duration: match.duration,
+        playerCount:
+          sql<number>`coalesce(${participantCounts.playerCount}, 0)::int`.mapWith(
+            Number,
+          ),
+      })
+      .from(vMatchPlayerCanonicalForUser)
+      .innerJoin(
+        vMatchCanonical,
+        eq(
+          vMatchCanonical.matchId,
+          vMatchPlayerCanonicalForUser.canonicalMatchId,
+        ),
+      )
+      .innerJoin(match, eq(match.id, vMatchCanonical.matchId))
+      .innerJoin(game, eq(game.id, vMatchCanonical.canonicalGameId))
+      .innerJoin(
+        scoresheet,
+        eq(scoresheet.id, vMatchCanonical.canonicalScoresheetId),
+      )
+      .leftJoin(image, eq(image.id, game.imageId))
+      .leftJoin(
+        participantCounts,
+        eq(participantCounts.matchId, vMatchCanonical.matchId),
+      )
+      .where(
+        and(
+          visibleToUserClause,
+          viewerClause,
+          targetPlayerClause,
+          eq(vMatchCanonical.finished, true),
+        ),
+      );
+
+    const ordered =
+      order === "asc"
+        ? base.orderBy(asc(vMatchCanonical.matchDate))
+        : base.orderBy(desc(vMatchCanonical.matchDate));
+
+    if (limit !== undefined) {
+      return ordered.limit(limit);
+    }
+    return ordered;
+  }
+
+  /**
+   * For the logged-in user's primary player, load outcomes on the given matches (if they played).
+   */
+  public async getViewerOutcomesForCanonicalMatches(args: {
+    userId: string;
+    viewerPlayerId: number;
+    canonicalMatchIds: number[];
+    tx?: TransactionType;
+  }): Promise<
+    Map<
+      number,
+      {
+        placement: number | null;
+        score: number | null;
+        winner: boolean | null;
+      }
+    >
+  > {
+    const { userId, viewerPlayerId, canonicalMatchIds, tx } = args;
+    const database = tx ?? db;
+    if (canonicalMatchIds.length === 0) {
+      return new Map();
+    }
+    const rows = await database
+      .select({
+        matchId: vMatchPlayerCanonicalForUser.canonicalMatchId,
+        placement: vMatchPlayerCanonicalForUser.placement,
+        score: vMatchPlayerCanonicalForUser.score,
+        winner: vMatchPlayerCanonicalForUser.winner,
+      })
+      .from(vMatchPlayerCanonicalForUser)
+      .where(
+        and(
+          inArray(
+            vMatchPlayerCanonicalForUser.canonicalMatchId,
+            canonicalMatchIds,
+          ),
+          eq(vMatchPlayerCanonicalForUser.canonicalPlayerId, viewerPlayerId),
+          vMatchPlayerCanonicalViewerForUser(
+            vMatchPlayerCanonicalForUser,
+            userId,
+          ),
+        ),
+      );
+    return new Map(
+      rows.map((r) => [
+        r.matchId,
+        {
+          placement: r.placement,
+          score: r.score,
+          winner: r.winner,
+        },
+      ]),
+    );
+  }
+
   public async deleteMatch(args: {
     input: {
       id: number;

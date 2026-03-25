@@ -7,6 +7,7 @@ import type {
 import type { GetGamesArgs, GetGameToShareArgs } from "./game.service.types";
 import { gameRepository } from "../../repositories/game/game.repository";
 import { assertFound } from "../../utils/databaseHelpers";
+import { mapImageRowToGameImage } from "../../utils/image";
 
 class GameListService {
   public async getGames(args: GetGamesArgs): Promise<GetGamesOutputType> {
@@ -88,14 +89,7 @@ class GameListService {
           max: returnedGame.playtimeMax,
         },
         yearPublished: returnedGame.yearPublished,
-        image: returnedGame.image
-          ? {
-              name: returnedGame.image.name,
-              url: returnedGame.image.url,
-              type: returnedGame.image.type,
-              usageType: "game" as const,
-            }
-          : null,
+        image: mapImageRowToGameImage(returnedGame.image),
         ownedBy: returnedGame.ownedBy ?? false,
         games: linkedMatches.length + returnedGame.matches.length,
         lastPlayed: {
@@ -150,14 +144,7 @@ class GameListService {
         },
         yearPublished: returnedSharedGame.game.yearPublished,
         ownedBy: returnedSharedGame.game.ownedBy ?? false,
-        image: returnedSharedGame.game.image
-          ? {
-              name: returnedSharedGame.game.image.name,
-              url: returnedSharedGame.game.image.url,
-              type: returnedSharedGame.game.image.type,
-              usageType: "game" as const,
-            }
-          : null,
+        image: mapImageRowToGameImage(returnedSharedGame.game.image),
         games: returnedSharedMatches.length,
         lastPlayed: {
           date: firstMatch?.date ?? null,
@@ -232,14 +219,7 @@ class GameListService {
     return {
       id: result.id,
       name: result.name,
-      image: result.image
-        ? {
-            name: result.image.name,
-            url: result.image.url,
-            type: result.image.type,
-            usageType: "game" as const,
-          }
-        : null,
+      image: mapImageRowToGameImage(result.image),
       players: {
         min: result.playersMin,
         max: result.playersMax,

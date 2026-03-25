@@ -1,5 +1,3 @@
-import type { PostHog } from "posthog-node";
-
 import type { matchRepository } from "../../repositories/match/match.repository";
 import type {
   CreateMatchInputType,
@@ -7,49 +5,28 @@ import type {
   EditMatchInputType,
   GetMatchInputType,
 } from "../../routers/match/match.input";
+import type { GetPlayerInsightsInputType } from "../../routers/player/player.input";
+import type {
+  WithOptionalTx,
+  WithPosthogUserCtx,
+  WithUserIdCtx,
+} from "../../utils/shared-args.types";
 
-export interface CreateMatchArgs {
-  input: CreateMatchInputType;
-  ctx: {
-    userId: string;
-    posthog: PostHog;
-  };
-}
+export type CreateMatchArgs = WithPosthogUserCtx<CreateMatchInputType>;
 
-export interface GetMatchArgs {
-  input: GetMatchInputType;
-  ctx: {
-    userId: string;
-  };
-}
+export type GetMatchArgs = WithUserIdCtx<GetMatchInputType>;
 
-export interface GetMatchScoresheetArgs {
-  input: GetMatchInputType;
-  ctx: {
-    userId: string;
-  };
-}
+export type GetPlayerInsightsMatchesArgs =
+  WithUserIdCtx<GetPlayerInsightsInputType> & WithOptionalTx;
 
-export interface GetMatchPlayersAndTeamsArgs {
-  input: GetMatchInputType;
-  ctx: {
-    userId: string;
-  };
-}
+export type GetMatchScoresheetArgs = WithUserIdCtx<GetMatchInputType>;
 
-export interface DeleteMatchArgs {
-  input: DeleteMatchInputType;
-  ctx: {
-    userId: string;
-  };
-}
+export type GetMatchPlayersAndTeamsArgs = WithUserIdCtx<GetMatchInputType>;
 
-export interface EditMatchArgs {
-  input: EditMatchInputType;
-  ctx: {
-    userId: string;
-  };
-}
+export type DeleteMatchArgs = WithUserIdCtx<DeleteMatchInputType>;
+
+export type EditMatchArgs = WithUserIdCtx<EditMatchInputType>;
+
 export type MatchPlayersAndTeamsResponse = Awaited<
   ReturnType<typeof matchRepository.getMatchPlayersAndTeams>
 >;

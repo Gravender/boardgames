@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, gte, lt, or, sql } from "drizzle-orm";
+import { and, eq, gte, lt, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import type {
@@ -22,6 +22,10 @@ import {
 } from "@board-games/db/views";
 
 import type { GetMatchesByCalendarOutputType } from "../date-match.output";
+import {
+  vMatchCanonicalVisibleToUser,
+  vMatchPlayerCanonicalViewerForUser,
+} from "../../../../../utils/drizzle/canonical-clauses";
 import type {
   GetMatchesByCalendarArgs,
   GetMatchesByDateArgs,
@@ -106,15 +110,9 @@ class DateMatchRepository {
         )
         .from(vMatchPlayerCanonicalForUser)
         .where(
-          or(
-            and(
-              eq(vMatchPlayerCanonicalForUser.ownerId, args.userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "original"),
-            ),
-            and(
-              eq(vMatchPlayerCanonicalForUser.sharedWithId, args.userId),
-              eq(vMatchPlayerCanonicalForUser.sourceType, "shared"),
-            ),
+          vMatchPlayerCanonicalViewerForUser(
+            vMatchPlayerCanonicalForUser,
+            args.userId,
           ),
         )
         .innerJoin(
@@ -313,7 +311,7 @@ class DateMatchRepository {
         and(
           gte(vMatchCanonical.matchDate, dayStartUtc),
           lt(vMatchCanonical.matchDate, nextDayUtc),
-          eq(vMatchCanonical.visibleToUserId, args.userId),
+          vMatchCanonicalVisibleToUser(vMatchCanonical, args.userId),
         ),
       )
       .leftJoin(
@@ -356,7 +354,7 @@ class DateMatchRepository {
         count: sql<number>`count(*)`.as("count"),
       })
       .from(vMatchCanonical)
-      .where(eq(vMatchCanonical.visibleToUserId, args.userId))
+      .where(vMatchCanonicalVisibleToUser(vMatchCanonical, args.userId))
       .groupBy(sql`date_trunc('day', ${vMatchCanonical.matchDate})`)
       .orderBy(sql`date_trunc('day', ${vMatchCanonical.matchDate})`);
     return matches.map((match) => ({

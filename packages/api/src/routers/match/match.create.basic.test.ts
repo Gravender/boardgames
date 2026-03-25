@@ -12,36 +12,33 @@ import {
 import type { AppRouter } from "../../root";
 import { createContextInner } from "../../context";
 import { appRouter } from "../../root";
-import {
-  createTestSession,
-  createTestUser,
-  deleteTestUser,
-} from "../../test-helpers";
+import { testLifecycle } from "../../test-fixtures";
+import { createTestSession } from "../../test-helpers";
 import { createCallerFactory } from "../../trpc";
 
 describe("Match Create - Basic Tests", () => {
-  const testUserId = "test-user-1-match-basic";
+  const lifecycle = testLifecycle();
 
   beforeAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   afterAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   beforeEach(async () => {
-    await createTestUser(testUserId);
+    await lifecycle.createTestUser();
   });
 
   afterEach(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   describe("basic match creation", () => {
     test("creates a match with minimal required data", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -141,7 +138,7 @@ describe("Match Create - Basic Tests", () => {
 
     test("verifies match output structure matches schema", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 

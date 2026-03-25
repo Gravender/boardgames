@@ -1,113 +1,45 @@
-import type { PostHog } from "posthog-node";
-import { z } from "zod/v4";
-
 import type {
   CreateGameInputType,
   EditGameInputType,
   GetGameInputType,
   ImportBGGGamesInputType,
 } from "../../routers/game/game.input";
-import { getGameInput } from "../../routers/game/game.input";
+import type {
+  PosthogUserCtx,
+  WithPosthogUserCtx,
+  WithServiceCtx,
+  WithUserIdCtx,
+  WithUserIdCtxOnly,
+} from "../../utils/shared-args.types";
 
-export interface CreateGameArgs {
-  input: CreateGameInputType;
-  ctx: {
-    userId: string;
-    posthog: PostHog;
-  };
-}
+export type CreateGameArgs = WithPosthogUserCtx<CreateGameInputType>;
 
-export interface GetGamesArgs {
-  ctx: {
-    userId: string;
-  };
-}
+export type GetGamesArgs = WithUserIdCtxOnly;
 
-export interface GetGameArgs {
-  input: GetGameInputType;
-  ctx: {
-    userId: string;
-    posthog: PostHog;
-  };
-}
+export type GetGameArgs = WithPosthogUserCtx<GetGameInputType>;
 
-export interface GetGameToShareArgs {
-  input: { id: number };
-  ctx: {
-    userId: string;
-  };
-}
+export type GetGameToShareArgs = WithUserIdCtx<{ id: number }>;
 
-export interface DeleteGameArgs {
-  input: { id: number };
-  ctx: {
-    userId: string;
-    posthog: PostHog;
-  };
-}
+export type DeleteGameArgs = WithPosthogUserCtx<{ id: number }>;
 
-export interface ImportBGGGamesArgs {
-  input: ImportBGGGamesInputType;
-  ctx: {
-    userId: string;
-  };
-}
+export type ImportBGGGamesArgs = WithUserIdCtx<ImportBGGGamesInputType>;
 
-export interface GetGameRolesArgs {
-  input: GetGameInputType;
-  ctx: {
-    userId: string;
-  };
-}
+export type GetGameRolesArgs = WithUserIdCtx<GetGameInputType>;
 
-export interface GetGameScoresheetsArgs {
-  input: GetGameInputType;
-  ctx: {
-    userId: string;
-  };
-}
+export type GetGameScoresheetsArgs = WithUserIdCtx<GetGameInputType>;
 
-export interface GetGameScoreSheetsWithRoundsArgs {
-  input: GetGameInputType;
-  ctx: {
-    userId: string;
-  };
-}
+export type GetGameScoreSheetsWithRoundsArgs = WithUserIdCtx<GetGameInputType>;
 
-export interface EditGameArgs {
-  input: EditGameInputType;
-  ctx: {
-    userId: string;
-    posthog: PostHog;
-    deleteFiles: (fileId: string) => Promise<{ success: boolean }>;
-  };
-}
+export type EditGameCtx = PosthogUserCtx & {
+  deleteFiles: (fileId: string) => Promise<{ success: boolean }>;
+};
 
-export interface GetGameStatsHeaderArgs {
-  input: GetGameInputType;
-  ctx: {
-    userId: string;
-  };
-}
+export type EditGameArgs = WithServiceCtx<EditGameCtx, EditGameInputType>;
 
-export const getGamePlayerStatsArgsSchema = z.object({
-  input: getGameInput,
-  ctx: z.object({ userId: z.string() }),
-});
-export type GetGamePlayerStatsArgs = z.infer<
-  typeof getGamePlayerStatsArgsSchema
->;
+export type GetGameStatsHeaderArgs = WithUserIdCtx<GetGameInputType>;
 
-export interface GetGameScoresheetStatsArgs {
-  input: GetGameInputType;
-  ctx: {
-    userId: string;
-  };
-}
+export type GetGamePlayerStatsArgs = WithPosthogUserCtx<GetGameInputType>;
 
-export interface GetGameInsightsArgs {
-  input: GetGameInputType;
-  ctx: {
-    userId: string;
-  };
-}
+export type GetGameScoresheetStatsArgs = WithUserIdCtx<GetGameInputType>;
+
+export type GetGameInsightsArgs = WithUserIdCtx<GetGameInputType>;

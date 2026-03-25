@@ -17,8 +17,7 @@ import {
 } from "./match-test-fixtures";
 
 describe("Match Create - Error Tests", () => {
-  const testUserId = "test-user-1-match-errors";
-  const lifecycle = matchTestLifecycle(testUserId);
+  const lifecycle = matchTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -38,7 +37,7 @@ describe("Match Create - Error Tests", () => {
 
   describe("error cases", () => {
     test("fails with missing required name", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId, scoresheetId } = await createGameWithScoresheet(caller);
 
       const player = await caller.player.create({
@@ -66,7 +65,7 @@ describe("Match Create - Error Tests", () => {
     });
 
     test("fails with missing required date", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId, scoresheetId } = await createGameWithScoresheet(caller);
 
       const player = await caller.player.create({
@@ -94,7 +93,7 @@ describe("Match Create - Error Tests", () => {
     });
 
     test("fails with missing required game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { scoresheetId } = await createGameWithScoresheet(caller);
 
       const player = await caller.player.create({
@@ -122,7 +121,7 @@ describe("Match Create - Error Tests", () => {
     });
 
     test("fails with missing required scoresheet", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(caller);
 
       const player = await caller.player.create({
@@ -150,7 +149,7 @@ describe("Match Create - Error Tests", () => {
     });
 
     test("fails with missing required players", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId, scoresheetId } = await createGameWithScoresheet(caller);
 
       const input = {

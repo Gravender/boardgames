@@ -1,47 +1,42 @@
 import type z from "zod";
 
-import type { TransactionType } from "@board-games/db/client";
 import { insertSharedPlayerSchema } from "@board-games/db/zodSchema";
 
-export interface GetPlayersForMatchArgs {
-  createdBy: string;
-  tx?: TransactionType;
-}
-export interface GetRecentMatchWithPlayersArgs {
-  createdBy: string;
-  tx?: TransactionType;
-}
+import type {
+  GetPlayerInputType,
+  GetPlayerInsightsPerGameInputType,
+  GetPlayersByGameInputType,
+} from "../../routers/player/player.input";
+import type {
+  WithCreatedByInput,
+  WithCreatedByTx,
+  WithOptionalTx,
+  WithRepoUserIdInput,
+} from "../../utils/shared-args.types";
 
-export interface GetPlayersArgs {
-  createdBy: string;
-  tx?: TransactionType;
-}
+export type GetPlayersForMatchArgs = WithCreatedByTx;
 
-export interface GetPlayersByGameArgs {
-  createdBy: string;
-  input:
-    | {
-        type: "original";
-        id: number;
-      }
-    | {
-        type: "shared";
-        sharedId: number;
-      };
-  tx?: TransactionType;
-}
+export type GetRecentMatchWithPlayersArgs = WithCreatedByTx;
 
-export interface GetOriginalPlayerByIdArgs {
+export type GetPlayersArgs = WithCreatedByTx;
+
+export type GetPlayersByGameArgs =
+  WithCreatedByInput<GetPlayersByGameInputType>;
+
+export type GetOriginalPlayerByIdArgs = {
   createdBy: string;
   id: number;
-  tx?: TransactionType;
-}
+} & WithOptionalTx;
 
-export interface GetSharedPlayerByIdArgs {
+export type GetSharedPlayerByIdArgs = {
   sharedWithId: string;
   id: number;
-  tx?: TransactionType;
-}
+} & WithOptionalTx;
+
+export type GetPlayerInsightsArgs = WithRepoUserIdInput<GetPlayerInputType>;
+
+export type GetPlayerInsightsPerGameArgs =
+  WithRepoUserIdInput<GetPlayerInsightsPerGameInputType>;
 
 export const insertSharedPlayerSchemaInput = insertSharedPlayerSchema.omit({
   id: true,
@@ -51,3 +46,5 @@ export const insertSharedPlayerSchemaInput = insertSharedPlayerSchema.omit({
 export type InsertSharedPlayerInputType = z.infer<
   typeof insertSharedPlayerSchemaInput
 >;
+
+export type GetPlayerSummaryArgs = WithRepoUserIdInput<GetPlayerInputType>;

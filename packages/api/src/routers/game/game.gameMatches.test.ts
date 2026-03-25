@@ -17,8 +17,7 @@ import {
 } from "./game-test-fixtures";
 
 describe("Game gameMatches Tests", () => {
-  const testUserId = "test-user-game-matches";
-  const lifecycle = gameTestLifecycle(testUserId);
+  const lifecycle = gameTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -38,7 +37,7 @@ describe("Game gameMatches Tests", () => {
 
   describe("game.gameMatches", () => {
     test("returns empty array for game with no matches", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       await ensureUserPlayer(caller);
       const { gameId } = await createGameWithScoresheet(
         caller,
@@ -55,7 +54,7 @@ describe("Game gameMatches Tests", () => {
     });
 
     test("returns matches for a game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       await ensureUserPlayer(caller);
       const { gameId } = await createGameWithFinishedMatch(caller, {
         gameName: "Game with Match",
@@ -83,7 +82,7 @@ describe("Game gameMatches Tests", () => {
       "returns multiple matches for the same game",
       { timeout: 15000 },
       async () => {
-        const caller = await createAuthenticatedCaller(testUserId);
+        const caller = await createAuthenticatedCaller(lifecycle.userId);
         await ensureUserPlayer(caller);
         const { gameId, scoresheetId, players } =
           await createGameWithFinishedMatch(caller, {
@@ -129,7 +128,7 @@ describe("Game gameMatches Tests", () => {
     );
 
     test("throws for non-existent game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       await ensureUserPlayer(caller);
 
       await expect(

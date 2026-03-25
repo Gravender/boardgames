@@ -1,52 +1,25 @@
 import type { PostHog } from "posthog-node";
 
-export interface GetPlayersForMatchArgs {
-  ctx: {
-    userId: string;
-  };
-}
+import type {
+  GetPlayerInsightsInputType,
+  GetPlayerInsightsPerGameInputType,
+  GetPlayerInputType,
+  GetPlayersByGameInputType,
+} from "../../routers/player/player.input";
+import type {
+  WithOptionalTx,
+  WithPosthogUserCtx,
+  WithUserIdCtx,
+  WithUserIdCtxOnly,
+} from "../../utils/shared-args.types";
 
-export interface GetRecentMatchWithPlayersArgs {
-  ctx: {
-    userId: string;
-  };
-}
+export type GetPlayersForMatchArgs = WithUserIdCtxOnly;
 
-export interface GetPlayersArgs {
-  ctx: {
-    userId: string;
-  };
-}
+export type GetRecentMatchWithPlayersArgs = WithUserIdCtxOnly;
 
-export interface GetPlayersByGameArgs {
-  ctx: {
-    userId: string;
-  };
-  input:
-    | {
-        type: "original";
-        id: number;
-      }
-    | {
-        type: "shared";
-        sharedId: number;
-      };
-}
+export type GetPlayersArgs = WithUserIdCtxOnly;
 
-export interface GetPlayerArgs {
-  ctx: {
-    userId: string;
-  };
-  input:
-    | {
-        type: "original";
-        id: number;
-      }
-    | {
-        type: "shared";
-        sharedId: number;
-      };
-}
+export type GetPlayersByGameArgs = WithUserIdCtx<GetPlayersByGameInputType>;
 
 export interface CreatePlayerArgs {
   ctx: {
@@ -99,3 +72,15 @@ export interface UpdatePlayerArgs {
         name: string;
       };
 }
+
+export type GetPlayerHeaderArgs = WithPosthogUserCtx<GetPlayerInputType>;
+
+export type GetPlayerSummaryArgs = GetPlayerHeaderArgs;
+
+export type GetPlayerInsightsArgs =
+  WithPosthogUserCtx<GetPlayerInsightsInputType> & WithOptionalTx;
+
+export type GetPlayerInsightsPerGameArgs =
+  WithUserIdCtx<GetPlayerInsightsPerGameInputType>;
+
+export type GetPlayerRecentMatchesArgs = WithUserIdCtx<GetPlayerInputType>;

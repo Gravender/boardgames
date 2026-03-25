@@ -180,37 +180,42 @@ async function cleanupSharedRecords(userIds: string[]) {
 // ─── Test suite ───────────────────────────────────────────────────────────
 
 describe("Match Permissions - Shared match access", () => {
-  const ownerUserId = "test-user-match-perm-owner";
-  const sharedUserId = "test-user-match-perm-shared";
-  const unrelatedUserId = "test-user-match-perm-unrelated";
-  const allUserIds = [ownerUserId, sharedUserId, unrelatedUserId];
+  let lastOwnerUserId: string | undefined;
+  let lastSharedUserId: string | undefined;
+  let lastUnrelatedUserId: string | undefined;
 
-  const ownerLifecycle = matchTestLifecycle(ownerUserId);
-  const sharedLifecycle = matchTestLifecycle(sharedUserId);
-  const unrelatedLifecycle = matchTestLifecycle(unrelatedUserId);
+  const ownerLifecycle = matchTestLifecycle();
+  const sharedLifecycle = matchTestLifecycle();
+  const unrelatedLifecycle = matchTestLifecycle();
+
+  const lastSharedUserIds = (): string[] =>
+    [lastOwnerUserId, lastSharedUserId, lastUnrelatedUserId].filter(
+      (id): id is string => Boolean(id),
+    );
 
   beforeAll(async () => {
-    await cleanupSharedRecords(allUserIds);
-    await ownerLifecycle.deleteTestUser();
-    await sharedLifecycle.deleteTestUser();
-    await unrelatedLifecycle.deleteTestUser();
+    await cleanupSharedRecords(lastSharedUserIds());
   });
 
   afterAll(async () => {
-    await cleanupSharedRecords(allUserIds);
+    await cleanupSharedRecords(lastSharedUserIds());
     await ownerLifecycle.deleteTestUser();
     await sharedLifecycle.deleteTestUser();
     await unrelatedLifecycle.deleteTestUser();
   });
 
   beforeEach(async () => {
+    await cleanupSharedRecords(lastSharedUserIds());
     await ownerLifecycle.createTestUser();
+    lastOwnerUserId = ownerLifecycle.userId;
     await sharedLifecycle.createTestUser();
+    lastSharedUserId = sharedLifecycle.userId;
     await unrelatedLifecycle.createTestUser();
+    lastUnrelatedUserId = unrelatedLifecycle.userId;
   });
 
   afterEach(async () => {
-    await cleanupSharedRecords(allUserIds);
+    await cleanupSharedRecords(lastSharedUserIds());
     await ownerLifecycle.deleteTestUser();
     await sharedLifecycle.deleteTestUser();
     await unrelatedLifecycle.deleteTestUser();
@@ -220,7 +225,9 @@ describe("Match Permissions - Shared match access", () => {
 
   describe("Shared read access (view permission)", () => {
     test("shared user can read a match via getMatch", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller, {
         matchName: "Shared Read Match",
       });
@@ -232,15 +239,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "view",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
       const result = await sharedCaller.match.getMatch({
         type: "shared",
         sharedMatchId,
@@ -251,7 +260,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("shared user can read scoresheet via getMatchScoresheet", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -260,15 +271,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "view",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
       const result = await sharedCaller.match.getMatchScoresheet({
         type: "shared",
         sharedMatchId,
@@ -280,7 +293,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("shared user can read players via getMatchPlayersAndTeams", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller, {
         playerCount: 3,
       });
@@ -291,15 +306,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "view",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
       const result = await sharedCaller.match.getMatchPlayersAndTeams({
         type: "shared",
         sharedMatchId,
@@ -309,7 +326,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("shared user can read summary via getMatchSummary", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller, {
         playerCount: 2,
       });
@@ -320,15 +339,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "view",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
       const result = await sharedCaller.match.getMatchSummary({
         type: "shared",
         sharedMatchId,
@@ -343,7 +364,9 @@ describe("Match Permissions - Shared match access", () => {
 
   describe("Unauthorized users cannot read shared matches", () => {
     test("unrelated user is rejected when accessing a shared match", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -352,8 +375,8 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
@@ -361,7 +384,9 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       // A third user who is NOT the sharedWithId should be rejected
-      const unrelatedCaller = await createAuthenticatedCaller(unrelatedUserId);
+      const unrelatedCaller = await createAuthenticatedCaller(
+        unrelatedLifecycle.userId,
+      );
 
       await expect(
         unrelatedCaller.match.getMatch({ type: "shared", sharedMatchId }),
@@ -369,7 +394,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("unrelated user cannot read scoresheet of shared match", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -378,15 +405,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "edit",
       });
 
-      const unrelatedCaller = await createAuthenticatedCaller(unrelatedUserId);
+      const unrelatedCaller = await createAuthenticatedCaller(
+        unrelatedLifecycle.userId,
+      );
 
       await expect(
         unrelatedCaller.match.getMatchScoresheet({
@@ -397,7 +426,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("unrelated user cannot read players of shared match", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -406,15 +437,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "view",
       });
 
-      const unrelatedCaller = await createAuthenticatedCaller(unrelatedUserId);
+      const unrelatedCaller = await createAuthenticatedCaller(
+        unrelatedLifecycle.userId,
+      );
 
       await expect(
         unrelatedCaller.match.getMatchPlayersAndTeams({
@@ -429,7 +462,9 @@ describe("Match Permissions - Shared match access", () => {
 
   describe("View-only shared user cannot mutate", () => {
     test("view-only user cannot start a shared match", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -438,15 +473,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "view",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
 
       await expect(
         sharedCaller.match.update.matchStart({
@@ -457,7 +494,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("view-only user cannot pause a shared match", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -466,15 +505,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "view",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
 
       await expect(
         sharedCaller.match.update.matchPause({
@@ -485,7 +526,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("view-only user cannot finish a shared match", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -494,15 +537,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "view",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
 
       await expect(
         sharedCaller.match.update.updateMatchFinish({
@@ -513,7 +558,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("view-only user cannot update a round score", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -534,15 +581,17 @@ describe("Match Permissions - Shared match access", () => {
       if (!firstRound) return;
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "view",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
 
       await expect(
         sharedCaller.match.update.updateMatchRoundScore({
@@ -555,7 +604,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("view-only user cannot set a comment", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -564,15 +615,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "view",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
 
       await expect(
         sharedCaller.match.update.updateMatchComment({
@@ -587,7 +640,9 @@ describe("Match Permissions - Shared match access", () => {
 
   describe("Edit-permission shared user can mutate", () => {
     test("edit user can start a shared match", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -596,15 +651,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "edit",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
 
       // Should not throw
       await sharedCaller.match.update.matchStart({
@@ -621,7 +678,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("edit user can update a round score on a shared match", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -641,15 +700,17 @@ describe("Match Permissions - Shared match access", () => {
       if (!firstRound) return;
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "edit",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
 
       await sharedCaller.match.update.updateMatchRoundScore({
         type: "player",
@@ -673,7 +734,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("edit user can finish a shared match", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -682,15 +745,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "edit",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
 
       await sharedCaller.match.update.updateMatchFinish({
         type: "shared",
@@ -706,7 +771,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("edit user can set a comment on a shared match", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -715,15 +782,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "edit",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
 
       await sharedCaller.match.update.updateMatchComment({
         match: { type: "shared", sharedMatchId },
@@ -738,7 +807,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("edit user can reset duration on a shared match", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -747,15 +818,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "edit",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
 
       await sharedCaller.match.update.matchResetDuration({
         type: "shared",
@@ -774,7 +847,9 @@ describe("Match Permissions - Shared match access", () => {
 
   describe("Cross-user negative cases", () => {
     test("owner cannot use sharedMatchId to access own match", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -783,8 +858,8 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       const { sharedMatchId } = await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
@@ -799,7 +874,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("non-existent sharedMatchId throws NOT_FOUND", async () => {
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
 
       await expect(
         sharedCaller.match.getMatch({ type: "shared", sharedMatchId: 999999 }),
@@ -807,7 +884,9 @@ describe("Match Permissions - Shared match access", () => {
     });
 
     test("another user cannot delete a match they only have shared access to", async () => {
-      const ownerCaller = await createAuthenticatedCaller(ownerUserId);
+      const ownerCaller = await createAuthenticatedCaller(
+        ownerLifecycle.userId,
+      );
       const { match, gameId } = await createFullMatch(ownerCaller);
 
       const matchScoresheet = await ownerCaller.match.getMatchScoresheet({
@@ -816,15 +895,17 @@ describe("Match Permissions - Shared match access", () => {
       });
 
       await shareMatchBetweenUsers({
-        ownerId: ownerUserId,
-        sharedWithId: sharedUserId,
+        ownerId: ownerLifecycle.userId,
+        sharedWithId: sharedLifecycle.userId,
         matchId: match.id,
         gameId,
         scoresheetId: matchScoresheet.id,
         permission: "edit",
       });
 
-      const sharedCaller = await createAuthenticatedCaller(sharedUserId);
+      const sharedCaller = await createAuthenticatedCaller(
+        sharedLifecycle.userId,
+      );
 
       // deleteMatch uses the original match id; the shared user is not the
       // owner so it should be rejected.

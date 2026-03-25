@@ -16,8 +16,7 @@ import {
 } from "./game-test-fixtures";
 
 describe("Game gameRoles Tests", () => {
-  const testUserId = "test-user-game-roles-direct";
-  const lifecycle = gameTestLifecycle(testUserId);
+  const lifecycle = gameTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -37,7 +36,7 @@ describe("Game gameRoles Tests", () => {
 
   describe("game.gameRoles", () => {
     test("returns empty array for game with no roles", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "No Roles Game",
@@ -53,7 +52,7 @@ describe("Game gameRoles Tests", () => {
     });
 
     test("returns roles for a game with single role", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameFull(caller, {
         gameName: "Single Role Game",
         roles: [{ name: "Leader", description: "The team leader" }],
@@ -74,7 +73,7 @@ describe("Game gameRoles Tests", () => {
     });
 
     test("returns multiple roles for a game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameFull(caller, {
         gameName: "Multi Role Game",
         roles: [
@@ -104,7 +103,7 @@ describe("Game gameRoles Tests", () => {
     });
 
     test("does not return roles from a different game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       const { gameId: gameA } = await createGameFull(caller, {
         gameName: "Game A",
@@ -130,7 +129,7 @@ describe("Game gameRoles Tests", () => {
     });
 
     test("throws for non-existent game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.game.gameRoles({ type: "original", id: 999999 }),

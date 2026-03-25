@@ -1,5 +1,7 @@
 import { differenceInDays, isSameDay, max } from "date-fns";
 
+import type { PlayerImage } from "@board-games/shared";
+
 const NINETY_DAYS = 90;
 const HALF_LIFE_IN_DAYS = 30;
 const MATCH_FREQUENCY_LIMIT = 30;
@@ -16,12 +18,7 @@ export interface MatchHistory {
 export interface PlayerMapBase {
   name: string;
   isUser: boolean;
-  image: {
-    name: string;
-    url: string | null;
-    type: "file" | "svg";
-    usageType: "match" | "game" | "player";
-  } | null;
+  image: PlayerImage | null;
   matches: MatchHistory[];
 }
 

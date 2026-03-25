@@ -12,36 +12,33 @@ import {
 import type { AppRouter } from "../../root";
 import { createContextInner } from "../../context";
 import { appRouter } from "../../root";
-import {
-  createTestSession,
-  createTestUser,
-  deleteTestUser,
-} from "../../test-helpers";
+import { testLifecycle } from "../../test-fixtures";
+import { createTestSession } from "../../test-helpers";
 import { createCallerFactory } from "../../trpc";
 
 describe("Game Create - Role Tests", () => {
-  const testUserId = "test-user-1-game-roles";
+  const lifecycle = testLifecycle();
 
   beforeAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   afterAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   beforeEach(async () => {
-    await createTestUser(testUserId);
+    await lifecycle.createTestUser();
   });
 
   afterEach(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   describe("role configurations", () => {
     test("creates a game with single role (no description)", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -88,7 +85,7 @@ describe("Game Create - Role Tests", () => {
 
     test("creates a game with single role (with description)", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -135,7 +132,7 @@ describe("Game Create - Role Tests", () => {
 
     test("creates a game with multiple roles", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 

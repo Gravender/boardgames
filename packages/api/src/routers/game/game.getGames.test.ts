@@ -15,8 +15,7 @@ import {
 } from "./game-test-fixtures";
 
 describe("Game getGames Tests", () => {
-  const testUserId = "test-user-game-getgames";
-  const lifecycle = gameTestLifecycle(testUserId);
+  const lifecycle = gameTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -36,7 +35,7 @@ describe("Game getGames Tests", () => {
 
   describe("game.getGames", () => {
     test("returns empty array for user with no games", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       const result = await caller.game.getGames();
 
@@ -45,7 +44,7 @@ describe("Game getGames Tests", () => {
     });
 
     test("returns created games", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await createGameWithScoresheet(caller, "Game Alpha");
       await createGameWithScoresheet(caller, "Game Beta");
@@ -59,7 +58,7 @@ describe("Game getGames Tests", () => {
     });
 
     test("returns correct game shape", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await createGameWithScoresheet(caller, "Shape Test Game");
 
@@ -86,15 +85,16 @@ describe("Game getGames Tests", () => {
     });
 
     test("does not return games from another user", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       await createGameWithScoresheet(caller, "My Game");
 
-      const otherUserId = "test-user-game-getgames-other";
-      const otherLifecycle = gameTestLifecycle(otherUserId);
+      const otherLifecycle = gameTestLifecycle();
       await otherLifecycle.createTestUser();
 
       try {
-        const otherCaller = await createAuthenticatedCaller(otherUserId);
+        const otherCaller = await createAuthenticatedCaller(
+          otherLifecycle.userId,
+        );
         await createGameWithScoresheet(otherCaller, "Other User Game");
 
         const myGames = await caller.game.getGames();

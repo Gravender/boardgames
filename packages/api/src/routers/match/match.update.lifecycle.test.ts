@@ -15,8 +15,7 @@ import {
 } from "./match-test-fixtures";
 
 describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
-  const testUserId = "test-user-match-lifecycle";
-  const lifecycle = matchTestLifecycle(testUserId);
+  const lifecycle = matchTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -38,7 +37,7 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
 
   describe("matchStart", () => {
     test("starts a match successfully", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       // Should not throw
@@ -59,7 +58,7 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
     });
 
     test("throws NOT_FOUND for non-existent match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.update.matchStart({ type: "original", id: 999999 }),
@@ -67,15 +66,16 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
     });
 
     test("throws when starting another user's match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
-      const otherUserId = "test-user-match-start-other";
-      const otherLifecycle = matchTestLifecycle(otherUserId);
+      const otherLifecycle = matchTestLifecycle();
       await otherLifecycle.createTestUser();
 
       try {
-        const otherCaller = await createAuthenticatedCaller(otherUserId);
+        const otherCaller = await createAuthenticatedCaller(
+          otherLifecycle.userId,
+        );
         await expect(
           otherCaller.match.update.matchStart({
             type: "original",
@@ -92,7 +92,7 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
 
   describe("matchPause", () => {
     test("pauses a running match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       // Start the match first
@@ -115,7 +115,7 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
     });
 
     test("throws NOT_FOUND for non-existent match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.update.matchPause({ type: "original", id: 999999 }),
@@ -127,7 +127,7 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
 
   describe("matchResetDuration", () => {
     test("resets match duration", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       // Reset should not throw
@@ -144,7 +144,7 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
     });
 
     test("throws NOT_FOUND for non-existent match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.update.matchResetDuration({
@@ -159,7 +159,7 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
 
   describe("updateMatchFinish", () => {
     test("finishes a running match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       await caller.match.update.updateMatchFinish({
@@ -176,7 +176,7 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
     });
 
     test("finishes a paused match (not running)", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       // Start and pause first
@@ -204,7 +204,7 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
     });
 
     test("throws NOT_FOUND for non-existent match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.update.updateMatchFinish({
@@ -219,7 +219,7 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
 
   describe("updateMatchComment", () => {
     test("sets a comment on a match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       await caller.match.update.updateMatchComment({
@@ -235,7 +235,7 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
     });
 
     test("updates an existing comment", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { match } = await createFullMatch(caller);
 
       await caller.match.update.updateMatchComment({
@@ -256,7 +256,7 @@ describe("Match Update - Lifecycle (start/pause/reset/finish)", () => {
     });
 
     test("throws NOT_FOUND for non-existent match", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.match.update.updateMatchComment({

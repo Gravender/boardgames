@@ -9,7 +9,7 @@ import type {
   UpdateMatchScoreInputType,
   UpdateMatchTeamInputType,
 } from "../../routers/match/sub-routers/update-match/update-match.input";
-import type { BaseServiceArgs, WithTx } from "../../utils/databaseHelpers";
+import type { BaseServiceArgs, WithTx } from "../../utils/shared-args.types";
 
 type GetMatchInput =
   | {

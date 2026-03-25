@@ -7,10 +7,6 @@ import type {
   GetPlayersForMatchArgs,
   GetRecentMatchWithPlayersArgs,
 } from "./player.repository.types";
-export {
-  getOriginalPlayerByIdRead,
-  getSharedPlayerByIdRead,
-} from "./player.read.repository.detail";
 
 type Database = TransactionType | typeof db;
 
@@ -164,7 +160,7 @@ export async function getPlayersRead(args: GetPlayersArgs) {
 export async function getPlayersByGameRead(args: GetPlayersByGameArgs) {
   const database = args.tx ?? db;
   const gameId =
-    args.input.type === "shared" ? args.input.sharedId : args.input.id;
+    args.input.type === "shared" ? args.input.sharedGameId : args.input.id;
   const originalPlayers = await database.query.player.findMany({
     where: {
       createdBy: args.createdBy,

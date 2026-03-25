@@ -11,6 +11,10 @@ import { gameMatchesRepository } from "../../repositories/game/game-matches.repo
 import { gameRoleRepository } from "../../repositories/game/game-role.repository";
 import { gameRepository } from "../../repositories/game/game.repository";
 import { assertFound } from "../../utils/databaseHelpers";
+import {
+  mapImageRowToGameImage,
+  mapImageRowToPlayerImage,
+} from "../../utils/image";
 
 type RepositoryMatchRow = Awaited<
   ReturnType<typeof gameMatchesRepository.getGameMatches>
@@ -49,7 +53,7 @@ const mapSharedMatch = (
     game: {
       id: match.game.id,
       name: match.game.name,
-      image: match.game.image,
+      image: mapImageRowToGameImage(match.game.image),
       linkedGameId: match.game.linkedGameId,
       sharedGameId: match.game.sharedGameId,
       type:
@@ -85,12 +89,7 @@ const mapSharedMatch = (
               : ("shared" as const),
         sharedPlayerId: mp.sharedPlayerId,
         linkedPlayerId: mp.linkedPlayerId,
-        image: mp.image as {
-          name: string;
-          url: string | null;
-          type: "file" | "svg";
-          usageType: "game" | "player" | "match";
-        } | null,
+        image: mapImageRowToPlayerImage(mp.image),
       };
     }),
   };
@@ -121,7 +120,7 @@ class GameMatchesService {
               id: match.game.id,
               type: "original" as const,
               name: match.game.name,
-              image: match.game.image,
+              image: mapImageRowToGameImage(match.game.image),
             },
             type: "original",
             hasUser: userMatchPlayer !== undefined,
@@ -145,12 +144,7 @@ class GameMatchesService {
                 placement: mp.placement,
                 winner: mp.winner,
                 playerType: "original" as const,
-                image: mp.image as {
-                  name: string;
-                  url: string | null;
-                  type: "file" | "svg";
-                  usageType: "game" | "player" | "match";
-                } | null,
+                image: mapImageRowToPlayerImage(mp.image),
               };
             }),
           };

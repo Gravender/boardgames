@@ -12,36 +12,33 @@ import {
 import type { AppRouter } from "../../root";
 import { createContextInner } from "../../context";
 import { appRouter } from "../../root";
-import {
-  createTestSession,
-  createTestUser,
-  deleteTestUser,
-} from "../../test-helpers";
+import { testLifecycle } from "../../test-fixtures";
+import { createTestSession } from "../../test-helpers";
 import { createCallerFactory } from "../../trpc";
 
 describe("Game Create - Image Tests", () => {
-  const testUserId = "test-user-1-game-images";
+  const lifecycle = testLifecycle();
 
   beforeAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   afterAll(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   beforeEach(async () => {
-    await createTestUser(testUserId);
+    await lifecycle.createTestUser();
   });
 
   afterEach(async () => {
-    await deleteTestUser(testUserId);
+    await lifecycle.deleteTestUser();
   });
 
   describe("image configurations", () => {
     test("creates a game with SVG image", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
@@ -87,7 +84,7 @@ describe("Game Create - Image Tests", () => {
 
     test("creates a game with null image", async () => {
       const ctx = await createContextInner({
-        session: createTestSession(testUserId),
+        session: createTestSession(lifecycle.userId),
       });
       const caller = createCallerFactory(appRouter)(ctx);
 

@@ -8,12 +8,14 @@ import type {
 } from "../../routers/match/match.output";
 import type {
   GetMatchArgs,
+  GetPlayerInsightsMatchesArgs,
   GetMatchPlayersAndTeamsArgs,
   GetMatchScoresheetArgs,
   MatchPlayersAndTeamsResponse,
 } from "./match.service.types";
 import { Logger } from "../../common/logger";
 import { matchRepository } from "../../repositories/match/match.repository";
+import { mapImageRowToPlayerImage } from "../../utils/image";
 
 class MatchQueryService {
   private readonly logger = new Logger(MatchQueryService.name);
@@ -94,6 +96,29 @@ class MatchQueryService {
     };
   }
 
+  public async getPlayerInsightsMatches(args: GetPlayerInsightsMatchesArgs) {
+    return matchRepository.getPlayerInsightsMatches({
+      userId: args.ctx.userId,
+      input: args.input,
+      tx: args.tx,
+    });
+  }
+
+  public async getPlayerInsightsMatchSummaries(
+    args: GetPlayerInsightsMatchesArgs & {
+      order?: "asc" | "desc";
+      limit?: number;
+    },
+  ) {
+    return matchRepository.getPlayerInsightsMatchSummaries({
+      userId: args.ctx.userId,
+      input: args.input,
+      order: args.order,
+      limit: args.limit,
+      tx: args.tx,
+    });
+  }
+
   private mapOriginalPlayers(
     response: Extract<MatchPlayersAndTeamsResponse, { type: "original" }>,
   ) {
@@ -121,15 +146,7 @@ class MatchQueryService {
         playerType: "original" as const,
         permissions: "edit" as const,
         playerId: matchPlayer.player.id,
-        image:
-          matchPlayer.player.image?.usageType === "player"
-            ? {
-                name: matchPlayer.player.image.name,
-                url: matchPlayer.player.image.url,
-                type: matchPlayer.player.image.type,
-                usageType: "player" as const,
-              }
-            : null,
+        image: mapImageRowToPlayerImage(matchPlayer.player.image),
         details: matchPlayer.details,
         teamId: matchPlayer.teamId,
         isUser: matchPlayer.player.isUser,
@@ -212,15 +229,9 @@ class MatchQueryService {
           playerId: sharedMatchPlayer.matchPlayer.player.id,
           sharedPlayerId: null,
           linkedPlayerId: null,
-          image:
-            sharedMatchPlayer.matchPlayer.player.image?.usageType === "player"
-              ? {
-                  name: sharedMatchPlayer.matchPlayer.player.image.name,
-                  url: sharedMatchPlayer.matchPlayer.player.image.url,
-                  type: sharedMatchPlayer.matchPlayer.player.image.type,
-                  usageType: "player" as const,
-                }
-              : null,
+          image: mapImageRowToPlayerImage(
+            sharedMatchPlayer.matchPlayer.player.image,
+          ),
         };
       }
       const linkedPlayer = sharedPlayer.linkedPlayer;
@@ -232,15 +243,7 @@ class MatchQueryService {
           playerId: sharedPlayer.player.id,
           sharedPlayerId: sharedPlayer.id,
           linkedPlayerId: null,
-          image:
-            sharedPlayer.player.image?.usageType === "player"
-              ? {
-                  name: sharedPlayer.player.image.name,
-                  url: sharedPlayer.player.image.url,
-                  type: sharedPlayer.player.image.type,
-                  usageType: "player" as const,
-                }
-              : null,
+          image: mapImageRowToPlayerImage(sharedPlayer.player.image),
         };
       }
       return {
@@ -250,15 +253,7 @@ class MatchQueryService {
         playerId: linkedPlayer.id,
         sharedPlayerId: sharedPlayer.id,
         linkedPlayerId: linkedPlayer.id,
-        image:
-          linkedPlayer.image?.usageType === "player"
-            ? {
-                name: linkedPlayer.image.name,
-                url: linkedPlayer.image.url,
-                type: linkedPlayer.image.type,
-                usageType: "player" as const,
-              }
-            : null,
+        image: mapImageRowToPlayerImage(linkedPlayer.image),
         isUser: linkedPlayer.isUser,
       };
     });

@@ -16,8 +16,7 @@ import {
 } from "./match-test-fixtures";
 
 describe("Match Date - getMatchesByDate & getMatchesByCalendar", () => {
-  const testUserId = "test-user-match-date";
-  const lifecycle = matchTestLifecycle(testUserId);
+  const lifecycle = matchTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -39,7 +38,7 @@ describe("Match Date - getMatchesByDate & getMatchesByCalendar", () => {
 
   describe("getMatchesByDate", () => {
     test("returns matches for a given date", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       await ensureUserPlayer(caller);
       const matchDate = new Date("2024-07-15");
 
@@ -64,7 +63,7 @@ describe("Match Date - getMatchesByDate & getMatchesByCalendar", () => {
       "returns multiple matches for the same date",
       { timeout: 15000 },
       async () => {
-        const caller = await createAuthenticatedCaller(testUserId);
+        const caller = await createAuthenticatedCaller(lifecycle.userId);
         await ensureUserPlayer(caller);
         const matchDate = new Date("2024-08-20");
 
@@ -89,7 +88,7 @@ describe("Match Date - getMatchesByDate & getMatchesByCalendar", () => {
     );
 
     test("returns empty matches for a date with no matches", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       await ensureUserPlayer(caller);
 
       const result = await caller.match.date.getMatchesByDate({
@@ -103,7 +102,7 @@ describe("Match Date - getMatchesByDate & getMatchesByCalendar", () => {
       "returns player stats with correct shape",
       { timeout: 15000 },
       async () => {
-        const caller = await createAuthenticatedCaller(testUserId);
+        const caller = await createAuthenticatedCaller(lifecycle.userId);
         await ensureUserPlayer(caller);
         const matchDate = new Date("2024-09-10");
 
@@ -158,7 +157,7 @@ describe("Match Date - getMatchesByDate & getMatchesByCalendar", () => {
       "only returns matches owned by the current user",
       { timeout: 15000 },
       async () => {
-        const caller = await createAuthenticatedCaller(testUserId);
+        const caller = await createAuthenticatedCaller(lifecycle.userId);
         await ensureUserPlayer(caller);
         const matchDate = new Date("2024-10-05");
 
@@ -168,12 +167,13 @@ describe("Match Date - getMatchesByDate & getMatchesByCalendar", () => {
         });
 
         // Create another user and their match on the same date
-        const otherUserId = "test-user-match-date-other";
-        const otherLifecycle = matchTestLifecycle(otherUserId);
+        const otherLifecycle = matchTestLifecycle();
         await otherLifecycle.createTestUser();
 
         try {
-          const otherCaller = await createAuthenticatedCaller(otherUserId);
+          const otherCaller = await createAuthenticatedCaller(
+            otherLifecycle.userId,
+          );
           await ensureUserPlayer(otherCaller);
           await createFullMatch(otherCaller, {
             matchName: "Other User Match",
@@ -200,7 +200,7 @@ describe("Match Date - getMatchesByDate & getMatchesByCalendar", () => {
 
   describe("getMatchesByCalendar", () => {
     test("returns calendar data with dates and counts", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       await ensureUserPlayer(caller);
 
       // Create matches on different dates
@@ -231,7 +231,7 @@ describe("Match Date - getMatchesByDate & getMatchesByCalendar", () => {
     });
 
     test("returns empty array for user with no matches", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       await ensureUserPlayer(caller);
 
       // Fresh user with no matches should have empty calendar
@@ -245,7 +245,7 @@ describe("Match Date - getMatchesByDate & getMatchesByCalendar", () => {
       "correctly counts multiple matches on same date",
       { timeout: 15000 },
       async () => {
-        const caller = await createAuthenticatedCaller(testUserId);
+        const caller = await createAuthenticatedCaller(lifecycle.userId);
         await ensureUserPlayer(caller);
         const sameDate = new Date("2024-12-25");
 
@@ -279,7 +279,7 @@ describe("Match Date - getMatchesByDate & getMatchesByCalendar", () => {
       "does not include matches from another user",
       { timeout: 15000 },
       async () => {
-        const caller = await createAuthenticatedCaller(testUserId);
+        const caller = await createAuthenticatedCaller(lifecycle.userId);
         await ensureUserPlayer(caller);
         const uniqueDate = new Date("2025-03-14");
 
@@ -289,12 +289,13 @@ describe("Match Date - getMatchesByDate & getMatchesByCalendar", () => {
         });
 
         // Create another user with a match on a different date
-        const otherUserId = "test-user-match-cal-other";
-        const otherLifecycle = matchTestLifecycle(otherUserId);
+        const otherLifecycle = matchTestLifecycle();
         await otherLifecycle.createTestUser();
 
         try {
-          const otherCaller = await createAuthenticatedCaller(otherUserId);
+          const otherCaller = await createAuthenticatedCaller(
+            otherLifecycle.userId,
+          );
           await ensureUserPlayer(otherCaller);
           const otherDate = new Date("2025-06-01");
           await createFullMatch(otherCaller, {

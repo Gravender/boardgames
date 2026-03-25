@@ -15,8 +15,7 @@ import {
 } from "./game-test-fixtures";
 
 describe("Game updateGame Tests", () => {
-  const testUserId = "test-user-game-update";
-  const lifecycle = gameTestLifecycle(testUserId);
+  const lifecycle = gameTestLifecycle();
 
   beforeAll(async () => {
     await lifecycle.deleteTestUser();
@@ -36,7 +35,7 @@ describe("Game updateGame Tests", () => {
 
   describe("game.updateGame", () => {
     test("updates game name", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "Original Name",
@@ -63,7 +62,7 @@ describe("Game updateGame Tests", () => {
     });
 
     test("updates game player range", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "Range Update Game",
@@ -92,7 +91,7 @@ describe("Game updateGame Tests", () => {
     });
 
     test("updates game ownedBy flag", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "Owned Update Game",
@@ -126,7 +125,7 @@ describe("Game updateGame Tests", () => {
     });
 
     test("adds new roles via updateGame", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(
         caller,
         "Roles Update Game",
@@ -159,7 +158,7 @@ describe("Game updateGame Tests", () => {
     });
 
     test("throws for non-existent game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
 
       await expect(
         caller.game.updateGame({
@@ -178,15 +177,16 @@ describe("Game updateGame Tests", () => {
     });
 
     test("throws when updating another user's game", async () => {
-      const caller = await createAuthenticatedCaller(testUserId);
+      const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(caller, "My Game");
 
-      const otherUserId = "test-user-game-update-other";
-      const otherLifecycle = gameTestLifecycle(otherUserId);
+      const otherLifecycle = gameTestLifecycle();
       await otherLifecycle.createTestUser();
 
       try {
-        const otherCaller = await createAuthenticatedCaller(otherUserId);
+        const otherCaller = await createAuthenticatedCaller(
+          otherLifecycle.userId,
+        );
         await expect(
           otherCaller.game.updateGame({
             game: {

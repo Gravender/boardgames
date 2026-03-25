@@ -17,6 +17,7 @@ import type {
   AggregatedScoresheet,
   AggregatedScoresheetMap,
   GamePlayerStatsAccEntry,
+  GamePlayerStatsPlayerImage,
   GetGameScoresheetStatsScoreSheetType,
   MatchResult,
   MatchResultByPlayerEntry,
@@ -30,6 +31,7 @@ import type {
 import { gameStatsRepository } from "../../repositories/game/game-stats.repository";
 import { gameRepository } from "../../repositories/game/game.repository";
 import { scoresheetRepository } from "../../repositories/scoresheet/scoresheet.repository";
+import { mapPlayerImageRowWithLogging } from "../../utils/image";
 
 /** One shared round from getAllSharedScoresheetsWithRounds (round + optional linked id). */
 type SharedRoundWithRound = Awaited<
@@ -232,12 +234,28 @@ class GameStatsService {
       const key = `${mp.playerId}`;
       let p = acc.get(key);
       if (!p) {
-        if (mp.image !== null && mp.image.usageType !== "player") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Image is not of type player.",
+        let playerImage: Awaited<
+          ReturnType<typeof mapPlayerImageRowWithLogging>
+        > | null = null;
+        if (mp.image !== null) {
+          playerImage = await mapPlayerImageRowWithLogging({
+            ctx,
+            input: {
+              image: mp.image,
+              playerId: mp.playerId,
+            },
           });
+          if (playerImage === null) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: `Player image mapping failed for playerId ${mp.playerId}, image id ${mp.image.id}.`,
+            });
+          }
         }
+        const imageForStats: GamePlayerStatsPlayerImage | null =
+          mp.image === null || playerImage === null
+            ? null
+            : { id: mp.image.id, ...playerImage };
         if (mp.type === "shared") {
           if (mp.sharedId === null) {
             continue;
@@ -246,14 +264,7 @@ class GameStatsService {
             sharedId: mp.sharedId,
             type: "shared",
             name: mp.name,
-            image: mp.image
-              ? {
-                  name: mp.image.name,
-                  url: mp.image.url,
-                  type: mp.image.type,
-                  usageType: "player" as const,
-                }
-              : null,
+            image: imageForStats,
             coopMatches: 0,
             competitiveMatches: 0,
             coopWins: 0,
@@ -264,14 +275,7 @@ class GameStatsService {
             id: mp.playerId,
             type: "original",
             name: mp.name,
-            image: mp.image
-              ? {
-                  name: mp.image.name,
-                  url: mp.image.url,
-                  type: mp.image.type,
-                  usageType: "player" as const,
-                }
-              : null,
+            image: imageForStats,
             coopMatches: 0,
             competitiveMatches: 0,
             coopWins: 0,
@@ -280,12 +284,19 @@ class GameStatsService {
         }
         acc.set(key, p);
       }
+      const entry = acc.get(key);
+      if (!entry) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Game player stats accumulator missing entry for key ${key} (playerId ${mp.playerId}).`,
+        });
+      }
       if (mp.isCoop) {
-        p.coopMatches++;
-        if (mp.winner) p.coopWins++;
+        entry.coopMatches++;
+        if (mp.winner) entry.coopWins++;
       } else {
-        p.competitiveMatches++;
-        if (mp.winner) p.competitiveWins++;
+        entry.competitiveMatches++;
+        if (mp.winner) entry.competitiveWins++;
       }
     }
 
