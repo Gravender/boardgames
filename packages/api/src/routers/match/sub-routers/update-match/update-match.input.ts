@@ -105,7 +105,12 @@ export const updateMatchPlacementsInput = z.object({
         placement: true,
       }),
     )
-    .refine((placements) => placements.length > 0),
+    .refine((placements) => placements.length > 0)
+    .refine(
+      (placements) =>
+        placements.every((p) => p.placement != null && p.placement >= 1),
+      { message: "Each placement must be at least 1" },
+    ),
 });
 
 export type UpdateMatchPlacementsInputType = z.infer<

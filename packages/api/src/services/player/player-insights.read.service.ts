@@ -49,8 +49,6 @@ class PlayerInsightsReadService {
           losses: rollup.losses,
           ties: rollup.ties,
           winRate: rollup.winRate,
-          avgPlacement: rollup.avgPlacement,
-          avgScore: rollup.avgScore,
           totalPlaytime: rollup.totalPlaytime,
         },
         modeBreakdown: {

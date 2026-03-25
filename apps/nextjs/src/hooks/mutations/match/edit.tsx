@@ -19,6 +19,7 @@ export const useEditMatchMutation = (input: MatchInput) => {
       onSuccess: async (result) => {
         await queryClient.invalidateQueries(trpc.match.pathFilter());
         await queryClient.invalidateQueries(trpc.game.pathFilter());
+        await queryClient.invalidateQueries(trpc.newPlayer.pathFilter());
         toast.success("Match updated successfully.");
         posthog.capture("match edited successfully", {
           input: input,

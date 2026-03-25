@@ -158,8 +158,6 @@ export const getPlayerPerformanceSummaryOutput = z.object({
     losses: z.number(),
     ties: z.number(),
     winRate: z.number(),
-    avgPlacement: z.number().nullable(),
-    avgScore: z.number().nullable(),
     totalPlaytime: z.number(),
   }),
   modeBreakdown: z.object({
@@ -384,27 +382,31 @@ export const getPlayerCountStatsOutput = z.object({
   ),
 });
 
+const placementRowSchema = z.object({
+  placement: z.number(),
+  count: z.number(),
+  percentage: z.number(),
+});
+
 export const getPlayerPlacementDistributionOutput = z.object({
   player: playerInsightsTargetSchema,
-  placements: z.array(
-    z.object({
-      placement: z.number(),
-      count: z.number(),
-      percentage: z.number(),
-    }),
-  ),
+  placements: z.array(placementRowSchema),
   byGameSize: z.array(
     z.object({
       playerCount: z.number(),
-      placements: z.array(
-        z.object({
-          placement: z.number(),
-          count: z.number(),
-          percentage: z.number(),
-        }),
-      ),
+      matchCount: z.number(),
+      /** Mean rank 1..N if finishing order were uniformly random. */
+      expectedAvgPlacement: z.number(),
+      /** Weighted average observed finish rank for this table size. */
+      actualAvgPlacement: z.number().nullable(),
+      placements: z.array(placementRowSchema),
     }),
   ),
+  overallPlacementBenchmark: z.object({
+    matchCount: z.number(),
+    expectedAvgPlacement: z.number().nullable(),
+    actualAvgPlacement: z.number().nullable(),
+  }),
 });
 
 export type PlayerInsightsTargetType = z.infer<

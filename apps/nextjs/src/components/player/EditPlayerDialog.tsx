@@ -33,9 +33,21 @@ const sharedPlayerSchema = insertPlayerSchema
     imageUrl: fileSchema.or(z.string().nullable()),
   });
 
-type PlayerType = RouterOutputs["newPlayer"]["getPlayers"][number];
-type OriginalPlayerType = Extract<PlayerType, { type: "original" }>;
-type SharedPlayerType = Extract<PlayerType, { type: "shared" }>;
+type ListPlayer = RouterOutputs["newPlayer"]["getPlayers"][number];
+
+/** Minimal player shape for edit (list row or stats header). */
+export type EditPlayerDialogPlayer =
+  | Pick<
+      Extract<ListPlayer, { type: "original" }>,
+      "type" | "id" | "name" | "image"
+    >
+  | Pick<
+      Extract<ListPlayer, { type: "shared" }>,
+      "type" | "sharedPlayerId" | "name" | "image" | "permissions"
+    >;
+
+type OriginalPlayerType = Extract<EditPlayerDialogPlayer, { type: "original" }>;
+type SharedPlayerType = Extract<EditPlayerDialogPlayer, { type: "shared" }>;
 interface PlayerValues {
   name: string;
   imageUrl: File | string | null;
@@ -43,7 +55,7 @@ interface PlayerValues {
 type UpdatePlayerInput = RouterInputs["player"]["update"];
 
 const buildPlayerSchema = (
-  player: PlayerType,
+  player: EditPlayerDialogPlayer,
   initialImageUrl: string | null,
 ) => {
   return (
@@ -204,7 +216,7 @@ const useHandleImageUploadAndUpdate = () => {
     values,
     onUpdate,
   }: {
-    player: PlayerType;
+    player: EditPlayerDialogPlayer;
     values: PlayerValues;
     onUpdate: (imageId: number | undefined) => Promise<void>;
   }) => {
@@ -251,7 +263,7 @@ const useEditPlayerSubmit = ({
   setIsSubmitting,
   handleMutationSuccess,
 }: {
-  player: PlayerType;
+  player: EditPlayerDialogPlayer;
   setIsSubmitting: (isSubmitting: boolean) => void;
   handleMutationSuccess: () => void;
 }) => {
@@ -306,7 +318,7 @@ const useEditPlayerForm = ({
   initialImageUrl,
   handleSubmitValues,
 }: {
-  player: PlayerType;
+  player: EditPlayerDialogPlayer;
   initialImageUrl: string | null;
   handleSubmitValues: (values: PlayerValues) => Promise<void>;
 }) => {
@@ -346,7 +358,7 @@ export const EditPlayerDialog = ({
   player,
   setOpen,
 }: {
-  player: PlayerType;
+  player: EditPlayerDialogPlayer;
   setOpen: (isOpen: boolean) => void;
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -381,7 +393,7 @@ const PlayerContent = ({
   setIsSubmitting,
 }: {
   setOpen: (isOpen: boolean) => void;
-  player: PlayerType;
+  player: EditPlayerDialogPlayer;
   isSubmitting: boolean;
   setIsSubmitting: (isSubmitting: boolean) => void;
 }) => {

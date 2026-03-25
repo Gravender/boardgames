@@ -1,37 +1,61 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Clock, Gamepad2, Medal, Share2, Trophy } from "lucide-react";
-import { useSuspenseQueries } from "@tanstack/react-query";
-
+import { Clock, Gamepad2, Medal, Pencil, Share2, Trophy } from "lucide-react";
+import type { RouterOutputs } from "@board-games/api";
 import { formatDuration } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
 import { Card, CardContent } from "@board-games/ui/card";
+import { Dialog } from "@board-games/ui/dialog";
 import { cn } from "@board-games/ui/utils";
 
+import {
+  EditPlayerDialog,
+  type EditPlayerDialogPlayer,
+} from "~/components/player/EditPlayerDialog";
 import { PlayerImage } from "~/components/player-image";
-import { useTRPC } from "~/trpc/react";
+import { usePlayerInsightsHeroData } from "~/hooks/queries/player/player-insights";
 
 import type { PlayerInsightsPageInput } from "./player-insights-types";
+
+type PlayerHeader = RouterOutputs["newPlayer"]["getPlayerHeader"];
+
+const headerToEditPlayer = (header: PlayerHeader): EditPlayerDialogPlayer => {
+  if (header.type === "original") {
+    return {
+      type: "original",
+      id: header.id,
+      name: header.name,
+      image: header.image,
+    };
+  }
+  return {
+    type: "shared",
+    sharedPlayerId: header.sharedPlayerId,
+    name: header.name,
+    image: header.image,
+    permissions: header.permissions,
+  };
+};
 
 export function PlayerInsightsHeroSection({
   playerInput,
 }: {
   playerInput: PlayerInsightsPageInput;
 }) {
-  const trpc = useTRPC();
-  const [{ data: header }, { data: summary }] = useSuspenseQueries({
-    queries: [
-      trpc.newPlayer.getPlayerHeader.queryOptions(playerInput),
-      trpc.newPlayer.getPlayerSummary.queryOptions(playerInput),
-    ],
-  });
+  const { header, summary } = usePlayerInsightsHeroData(playerInput);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const shareHref =
     playerInput.type === "original"
       ? `/dashboard/players/${playerInput.id}/share`
       : null;
+
+  const canEdit =
+    header.type === "original" ||
+    (header.type === "shared" && header.permissions === "edit");
 
   const glanceItems = [
     {
@@ -113,15 +137,28 @@ export function PlayerInsightsHeroSection({
             </div>
           </div>
 
-          {shareHref !== null && (
-            <div className="flex shrink-0 justify-center md:justify-end">
+          <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 md:justify-end">
+            {canEdit && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setIsEditOpen(true)}
+                aria-label={`Edit ${header.name}`}
+              >
+                <Pencil className="h-3.5 w-3.5" aria-hidden />
+                Edit
+              </Button>
+            )}
+            {shareHref !== null && (
               <Button variant="ghost" size="icon" className="size-9" asChild>
                 <Link href={shareHref} aria-label="Share player profile">
                   <Share2 className="h-4 w-4" />
                 </Link>
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <section
@@ -152,6 +189,15 @@ export function PlayerInsightsHeroSection({
           </ul>
         </section>
       </CardContent>
+
+      {canEdit && (
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <EditPlayerDialog
+            player={headerToEditPlayer(header)}
+            setOpen={setIsEditOpen}
+          />
+        </Dialog>
+      )}
     </Card>
   );
 }

@@ -32,6 +32,11 @@ describe("Player Insights - getPlayerPlacementDistribution", () => {
       });
     expect(result.placements).toEqual([]);
     expect(result.byGameSize).toEqual([]);
+    expect(result.overallPlacementBenchmark).toEqual({
+      matchCount: 0,
+      expectedAvgPlacement: null,
+      actualAvgPlacement: null,
+    });
   });
 
   test("best case: returns populated distributions", async () => {
@@ -42,6 +47,15 @@ describe("Player Insights - getPlayerPlacementDistribution", () => {
       id: seeded.ownerTargetPlayerId,
     });
     expect(result.placements.length).toBeGreaterThan(0);
+    expect(result.overallPlacementBenchmark.matchCount).toBeGreaterThan(0);
+    expect(result.overallPlacementBenchmark.expectedAvgPlacement).not.toBeNull();
+    expect(result.overallPlacementBenchmark.actualAvgPlacement).not.toBeNull();
+    const firstSize = result.byGameSize[0];
+    expect(firstSize).toBeDefined();
+    if (firstSize) {
+      expect(firstSize.matchCount).toBeGreaterThan(0);
+      expect(firstSize.expectedAvgPlacement).toBe((firstSize.playerCount + 1) / 2);
+    }
   });
 
   test("worst case: throws for missing player", async () => {

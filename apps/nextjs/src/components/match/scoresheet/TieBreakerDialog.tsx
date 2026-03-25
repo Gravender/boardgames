@@ -205,7 +205,11 @@ function Content({
                     const findTeam = teams.find((team) => team.id === teamId);
                     return {
                       teamId: teamId,
-                      placement: findFirstPlayer?.placement ?? 0,
+                      placement:
+                        findFirstPlayer?.placement != null &&
+                        findFirstPlayer.placement >= 1
+                          ? findFirstPlayer.placement
+                          : 1,
                       name: findTeam?.name ?? "",
                       id: findTeam?.id,
                       image: findFirstPlayer?.image ?? null,

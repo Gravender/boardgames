@@ -31,6 +31,7 @@ export const useAddRoundMutation = (input: MatchInput) => {
           queryClient.invalidateQueries(
             trpc.match.getMatchSummary.queryOptions(input),
           ),
+          queryClient.invalidateQueries(trpc.newPlayer.pathFilter()),
         ]);
         posthog.capture("round added to match", {
           input,

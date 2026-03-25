@@ -8,10 +8,7 @@ import { prefetch, trpc } from "~/trpc/server";
 import type { PlayerInsightsPageInput } from "./player-insights-types";
 import { PlayerInsightsBody } from "./player-insights-body";
 import { PlayerInsightsHeroSection } from "./player-insights-hero-section";
-import {
-  PlayerInsightsBodySkeleton,
-  PlayerInsightsHeroSkeleton,
-} from "./player-insights-skeletons";
+import { PlayerInsightsHeroSkeleton } from "./player-insights-skeletons";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -23,30 +20,12 @@ const dmSans = DM_Sans({
   variable: "--font-insights-body",
 });
 
+/** First paint: hero + overview only; other tabs fetch on demand. */
 const prefetchPlayerInsights = (playerInput: PlayerInsightsPageInput) => {
   void prefetch(trpc.newPlayer.getPlayerHeader.queryOptions(playerInput));
   void prefetch(trpc.newPlayer.getPlayerSummary.queryOptions(playerInput));
   void prefetch(
     trpc.newPlayer.getPlayerPerformanceSummary.queryOptions(playerInput),
-  );
-  void prefetch(
-    trpc.newPlayer.getPlayerFavoriteGames.queryOptions(playerInput),
-  );
-  void prefetch(
-    trpc.newPlayer.getPlayerRecentMatches.queryOptions(playerInput),
-  );
-  void prefetch(
-    trpc.newPlayer.getPlayerGameWinRateCharts.queryOptions(playerInput),
-  );
-  void prefetch(trpc.newPlayer.getPlayerTopRivals.queryOptions(playerInput));
-  void prefetch(trpc.newPlayer.getPlayerTopTeammates.queryOptions(playerInput));
-  void prefetch(
-    trpc.newPlayer.getPlayerPlayedWithGroups.queryOptions(playerInput),
-  );
-  void prefetch(trpc.newPlayer.getPlayerStreaks.queryOptions(playerInput));
-  void prefetch(trpc.newPlayer.getPlayerCountStats.queryOptions(playerInput));
-  void prefetch(
-    trpc.newPlayer.getPlayerPlacementDistribution.queryOptions(playerInput),
   );
 };
 
@@ -71,9 +50,7 @@ export function PlayerInsightsShell({
           <PlayerInsightsHeroSection playerInput={playerInput} />
         </Suspense>
 
-        <Suspense fallback={<PlayerInsightsBodySkeleton />}>
-          <PlayerInsightsBody playerInput={playerInput} />
-        </Suspense>
+        <PlayerInsightsBody playerInput={playerInput} />
       </div>
     </div>
   );

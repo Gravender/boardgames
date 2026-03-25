@@ -98,16 +98,6 @@ export function PerformanceSummarySection({ data }: { data: Data }) {
             ))}
           </div>
         </div>
-        {(overall.avgPlacement !== null || overall.avgScore !== null) && (
-          <div className="text-muted-foreground flex flex-wrap gap-6 text-sm">
-            {overall.avgPlacement !== null && (
-              <span>Avg placement: {overall.avgPlacement.toFixed(2)}</span>
-            )}
-            {overall.avgScore !== null && (
-              <span>Avg score: {overall.avgScore.toFixed(2)}</span>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );
