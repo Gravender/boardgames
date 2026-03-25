@@ -1,4 +1,4 @@
-import z from "zod/v4";
+import { z } from "zod/v4";
 
 import { baseRoundSchema, scoreSheetSchema } from "@board-games/shared";
 

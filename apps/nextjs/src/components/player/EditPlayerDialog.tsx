@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
+import { usePostHog } from "posthog-js/react";
 import { z } from "zod/v4";
 
 import type { RouterInputs, RouterOutputs } from "@board-games/api";
@@ -206,6 +207,7 @@ const useUpdateSharedPlayer = ({
 };
 
 const useHandleImageUploadAndUpdate = () => {
+  const posthog = usePostHog();
   const { startUpload } = useUploadThing("imageUploader");
   const trpc = useTRPC();
   const deleteImageMutation = useMutation(trpc.image.delete.mutationOptions());
@@ -249,7 +251,22 @@ const useHandleImageUploadAndUpdate = () => {
       try {
         await deleteImage({ id: imageId });
       } catch (cleanupError) {
-        console.error("Failed to cleanup uploaded player image", cleanupError);
+        const playerId =
+          player.type === "original" ? player.id : player.sharedPlayerId;
+        const fileName =
+          values.imageUrl instanceof File ? values.imageUrl.name : undefined;
+        const normalizedCleanupError =
+          cleanupError instanceof Error
+            ? { message: cleanupError.message, stack: cleanupError.stack }
+            : { message: String(cleanupError), stack: undefined };
+        posthog.capture("player image cleanup error", {
+          context: "Failed to cleanup uploaded player image",
+          playerId,
+          fileName,
+          imageId,
+          errorMessage: normalizedCleanupError.message,
+          errorStack: normalizedCleanupError.stack,
+        });
       }
       throw error;
     }
@@ -463,18 +480,23 @@ const PlayerContent = ({
           >
             Cancel
           </Button>
-          <form.Subscribe>
-            {(state) => (
+          <form.Subscribe
+            selector={(state) => ({
+              formIsSubmitting: state.isSubmitting,
+              formIsDirty: state.isDirty,
+            })}
+          >
+            {({ formIsSubmitting, formIsDirty }) => (
               <Button
                 type="submit"
                 disabled={
                   isSubmitting ||
-                  state.isSubmitting ||
-                  !state.isDirty ||
+                  formIsSubmitting ||
+                  !formIsDirty ||
                   isUpdatePending
                 }
               >
-                {isSubmitting || state.isSubmitting || isUpdatePending ? (
+                {isSubmitting || formIsSubmitting || isUpdatePending ? (
                   <>
                     <Spinner />
                     <span>Saving...</span>

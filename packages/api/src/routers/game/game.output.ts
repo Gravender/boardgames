@@ -1,4 +1,4 @@
-import z from "zod/v4";
+import { z } from "zod/v4";
 
 import { selectGameSchema } from "@board-games/db/zodSchema";
 import {

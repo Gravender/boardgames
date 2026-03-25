@@ -21,13 +21,13 @@ import {
   PlayerInsightsOverviewTabSkeleton,
   PlayerInsightsPeopleTabSkeleton,
 } from "./player-insights-skeletons";
-import { PlayerInsightsOverviewTab } from "./tabs/player-insights-overview-tab";
+import { PlayerInsightsOverviewTab } from "./tabs/PlayerInsightsOverviewTab";
 
 const PlayerInsightsGamesTab = lazy(
-  () => import("./tabs/player-insights-games-tab"),
+  () => import("./tabs/PlayerInsightsGamesTab"),
 );
 const PlayerInsightsPeopleTab = lazy(
-  () => import("./tabs/player-insights-people-tab"),
+  () => import("./tabs/PlayerInsightsPeopleTab"),
 );
 const PlayerInsightsAdvancedTab = lazy(
   () => import("./tabs/player-insights-advanced-tab"),

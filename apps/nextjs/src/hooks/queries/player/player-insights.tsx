@@ -35,21 +35,16 @@ export const usePlayerInsightsGamesTab = (
   playerInput: PlayerInsightsPageInput,
 ) => {
   const trpc = useTRPC();
-  const [favoriteGames, recentMatches, playerHeader, winRateCharts] =
-    useSuspenseQueries({
-      queries: [
-        trpc.newPlayer.stats.getPlayerFavoriteGames.queryOptions(playerInput),
-        trpc.newPlayer.stats.getPlayerRecentMatches.queryOptions(playerInput),
-        trpc.newPlayer.stats.getPlayerHeader.queryOptions(playerInput),
-        trpc.newPlayer.stats.getPlayerGameWinRateCharts.queryOptions(
-          playerInput,
-        ),
-      ],
-    });
+  const [favoriteGames, recentMatches, winRateCharts] = useSuspenseQueries({
+    queries: [
+      trpc.newPlayer.stats.getPlayerFavoriteGames.queryOptions(playerInput),
+      trpc.newPlayer.stats.getPlayerRecentMatches.queryOptions(playerInput),
+      trpc.newPlayer.stats.getPlayerGameWinRateCharts.queryOptions(playerInput),
+    ],
+  });
   return {
     favoriteGames: favoriteGames.data,
     recentMatches: recentMatches.data,
-    playerHeader: playerHeader.data,
     winRateCharts: winRateCharts.data,
   };
 };

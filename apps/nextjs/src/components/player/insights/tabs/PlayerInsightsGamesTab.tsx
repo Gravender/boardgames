@@ -2,6 +2,7 @@
 
 import { usePlayerInsightsGamesTab } from "~/hooks/queries/player/player-insights";
 
+import { usePlayerInsightsPageData } from "../player-insights-data-context";
 import type { PlayerInsightsPageInput } from "../player-insights-types";
 import { FavoriteGamesSection } from "../sections/favorite-games";
 import { RecentMatches } from "../sections/RecentMatches";
@@ -14,13 +15,14 @@ export default function PlayerInsightsGamesTab({
 }: {
   playerInput: PlayerInsightsPageInput;
 }) {
-  const { favoriteGames, recentMatches, playerHeader, winRateCharts } =
+  const { header } = usePlayerInsightsPageData();
+  const { favoriteGames, recentMatches, winRateCharts } =
     usePlayerInsightsGamesTab(playerInput);
 
   return (
     <div className={sectionStackClass}>
       <FavoriteGamesSection data={favoriteGames} />
-      <RecentMatches data={recentMatches} profileName={playerHeader.name} />
+      <RecentMatches data={recentMatches} profileName={header.name} />
       <WinRateChartsSection data={winRateCharts} />
     </div>
   );

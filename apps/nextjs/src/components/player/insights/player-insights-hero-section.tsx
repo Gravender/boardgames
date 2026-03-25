@@ -16,7 +16,7 @@ import {
   type EditPlayerDialogPlayer,
 } from "~/components/player/EditPlayerDialog";
 import { PlayerImage } from "~/components/player-image";
-import { usePlayerInsightsHeroData } from "~/hooks/queries/player/player-insights";
+import { usePlayerInsightsPageData } from "./player-insights-data-context";
 
 import type { PlayerInsightsPageInput } from "./player-insights-types";
 
@@ -45,7 +45,7 @@ export function PlayerInsightsHeroSection({
 }: {
   playerInput: PlayerInsightsPageInput;
 }) {
-  const { header, summary } = usePlayerInsightsHeroData(playerInput);
+  const { header, summary } = usePlayerInsightsPageData();
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   const shareHref =

@@ -102,7 +102,7 @@ export const updateMatchPlacementsInput = z.object({
     .array(
       z.object({
         id: z.number(),
-        placement: z.number().min(1).nullable(),
+        placement: z.number().int().min(1).nullable(),
       }),
     )
     .refine((placements) => placements.length > 0),

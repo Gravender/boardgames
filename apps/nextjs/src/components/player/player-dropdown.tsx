@@ -49,7 +49,7 @@ export function PlayerDropDown({
     trpc.player.deletePlayer.mutationOptions({
       onSuccess: async () => {
         await Promise.all([
-          ...invalidateNewPlayerQueries(),
+          invalidateNewPlayerQueries(),
           ...invalidatePlayers(),
           queryClient.invalidateQueries(trpc.match.pathFilter()),
         ]);

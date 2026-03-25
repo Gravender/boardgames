@@ -1,5 +1,5 @@
 import type { TRPCRouterRecord } from "@trpc/server";
-import z from "zod/v4";
+import { z } from "zod/v4";
 
 import { gameEditService } from "../../services/game/game-edit.service";
 import { gameImportService } from "../../services/game/game-import.service";

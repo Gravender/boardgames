@@ -7,8 +7,12 @@ import { prefetch, trpc } from "~/trpc/server";
 
 import type { PlayerInsightsPageInput } from "./player-insights-types";
 import { PlayerInsightsBody } from "./player-insights-body";
+import { PlayerInsightsDataProvider } from "./player-insights-data-context";
 import { PlayerInsightsHeroSection } from "./player-insights-hero-section";
-import { PlayerInsightsHeroSkeleton } from "./player-insights-skeletons";
+import {
+  PlayerInsightsBodySkeleton,
+  PlayerInsightsHeroSkeleton,
+} from "./player-insights-skeletons";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -48,11 +52,19 @@ export function PlayerInsightsShell({
       )}
     >
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-3 py-6 md:px-6 md:py-10">
-        <Suspense fallback={<PlayerInsightsHeroSkeleton />}>
-          <PlayerInsightsHeroSection playerInput={playerInput} />
+        <Suspense
+          fallback={
+            <>
+              <PlayerInsightsHeroSkeleton />
+              <PlayerInsightsBodySkeleton />
+            </>
+          }
+        >
+          <PlayerInsightsDataProvider playerInput={playerInput}>
+            <PlayerInsightsHeroSection playerInput={playerInput} />
+            <PlayerInsightsBody playerInput={playerInput} />
+          </PlayerInsightsDataProvider>
         </Suspense>
-
-        <PlayerInsightsBody playerInput={playerInput} />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import z from "zod/v4";
+import { z } from "zod/v4";
 
 import { selectScoreSheetSchema } from "@board-games/db/zodSchema";
 import { gameImageSchema, playerImageSchema } from "@board-games/shared";
@@ -402,6 +402,11 @@ export const getPlayerPlacementDistributionOutput = z.object({
       placements: z.array(placementRowSchema),
     }),
   ),
+  /**
+   * Pool-wide benchmark: `expectedAvgPlacement` is null when there is not enough
+   * aggregated data across table sizes to derive a meaningful overall expected rank
+   * (per-size values in `byGameSize` still expose `expectedAvgPlacement` when that size has matches).
+   */
   overallPlacementBenchmark: z.object({
     matchCount: z.number(),
     expectedAvgPlacement: z.number().nullable(),
