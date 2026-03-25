@@ -1,6 +1,6 @@
 import { db } from "@board-games/db/client";
 
-import type { GetPlayerPlacementDistributionOutputType } from "../../routers/player/player-insights.output";
+import type { GetPlayerPlacementDistributionOutputType } from "../../routers/player/sub-routers/stats/player-insights.output";
 import { playerInsightsRepository } from "../../repositories/player/player-insights.repository";
 import type { GetPlayerInsightsArgs } from "./player.service.types";
 import { getInsightsTarget } from "./player-insights.read.target";

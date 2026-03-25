@@ -3,7 +3,7 @@ import { db } from "@board-games/db/client";
 import type {
   GetPlayerTopRivalsOutputType,
   GetPlayerTopTeammatesOutputType,
-} from "../../routers/player/player-insights.output";
+} from "../../routers/player/sub-routers/stats/player-insights.output";
 import type { GetPlayerInsightsArgs } from "./player.service.types";
 import { getInsightsTarget } from "./player-insights.read.target";
 import { getSortedInsightRows } from "./player-insights.read.rows";

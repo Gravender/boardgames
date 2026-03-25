@@ -20,7 +20,7 @@ import { usePlayerInsightsHeroData } from "~/hooks/queries/player/player-insight
 
 import type { PlayerInsightsPageInput } from "./player-insights-types";
 
-type PlayerHeader = RouterOutputs["newPlayer"]["getPlayerHeader"];
+type PlayerHeader = RouterOutputs["newPlayer"]["stats"]["getPlayerHeader"];
 
 const headerToEditPlayer = (header: PlayerHeader): EditPlayerDialogPlayer => {
   if (header.type === "original") {

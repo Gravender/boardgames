@@ -11,7 +11,7 @@ import type {
   GetPlayerStreaksOutputType,
   GetPlayerTopRivalsOutputType,
   GetPlayerTopTeammatesOutputType,
-} from "../../routers/player/player-insights.output";
+} from "../../routers/player/sub-routers/stats/player-insights.output";
 import { playerInsightsRepository } from "../../repositories/player/player-insights.repository";
 import type { GetPlayerInsightsArgs } from "./player.service.types";
 import { resolveProfileIdentityForGroups } from "./player-insights.read.identity";

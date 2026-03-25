@@ -5,7 +5,7 @@ import type {
   EditMatchInputType,
   GetMatchInputType,
 } from "../../routers/match/match.input";
-import type { GetPlayerInsightsInputType } from "../../routers/player/player.input";
+import type { GetPlayerInsightsInputType } from "../../routers/player/sub-routers/stats/player-stats.input";
 import type {
   WithOptionalTx,
   WithPosthogUserCtx,

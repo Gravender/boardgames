@@ -25,7 +25,7 @@ describe("Player Insights - getPlayerGameWinRateCharts", () => {
       name: "Empty",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.getPlayerGameWinRateCharts({
+    const result = await receiverCaller.newPlayer.stats.getPlayerGameWinRateCharts({
       type: "original",
       id: player.id,
     });
@@ -35,7 +35,7 @@ describe("Player Insights - getPlayerGameWinRateCharts", () => {
   test("best case: returns populated chart series", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const result = await ownerCaller.newPlayer.getPlayerGameWinRateCharts({
+    const result = await ownerCaller.newPlayer.stats.getPlayerGameWinRateCharts({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
@@ -46,7 +46,7 @@ describe("Player Insights - getPlayerGameWinRateCharts", () => {
   test("worst case: throws for missing player", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.getPlayerGameWinRateCharts({
+      receiverCaller.newPlayer.stats.getPlayerGameWinRateCharts({
         type: "original",
         id: 99999999,
       }),

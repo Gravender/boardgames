@@ -100,17 +100,12 @@ export const updateMatchPlacementsInput = z.object({
   match: matchInputSchema,
   playersPlacement: z
     .array(
-      selectMatchPlayerSchema.pick({
-        id: true,
-        placement: true,
+      z.object({
+        id: z.number(),
+        placement: z.number().min(1).nullable(),
       }),
     )
-    .refine((placements) => placements.length > 0)
-    .refine(
-      (placements) =>
-        placements.every((p) => p.placement != null && p.placement >= 1),
-      { message: "Each placement must be at least 1" },
-    ),
+    .refine((placements) => placements.length > 0),
 });
 
 export type UpdateMatchPlacementsInputType = z.infer<

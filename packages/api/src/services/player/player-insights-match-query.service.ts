@@ -1,7 +1,7 @@
 import type {
   PlayerInsightsGameEntryType,
   PlayerInsightsMatchEntryType,
-} from "../../routers/player/player-insights.output";
+} from "../../routers/player/sub-routers/stats/player-insights.output";
 import type { PlayerInsightsScoresheetWinCondition } from "../../repositories/match/match.repository.types";
 import type { ImageRowWithUsage } from "@board-games/shared";
 import { mapGameImageRowWithLogging } from "../../utils/image";

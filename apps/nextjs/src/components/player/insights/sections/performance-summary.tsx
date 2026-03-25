@@ -11,7 +11,7 @@ import {
 } from "@board-games/ui/card";
 import { cn } from "@board-games/ui/utils";
 
-type Data = RouterOutputs["newPlayer"]["getPlayerPerformanceSummary"];
+type Data = RouterOutputs["newPlayer"]["stats"]["getPlayerPerformanceSummary"];
 
 export function PerformanceSummarySection({ data }: { data: Data }) {
   const { overall, modeBreakdown, recentForm } = data;
@@ -22,7 +22,7 @@ export function PerformanceSummarySection({ data }: { data: Data }) {
         <CardTitle
           className={cn(
             "text-xl font-semibold md:text-2xl",
-            "font-[family-name:var(--font-insights-display)]",
+            "font-(family-name:--font-insights-display)",
           )}
         >
           Performance

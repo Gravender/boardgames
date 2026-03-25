@@ -8,7 +8,7 @@ import {
   permissionsSchema,
   playerIdentitySchema,
   sharedPlayerIdSchema,
-} from "./player.output";
+} from "../../player.output";
 
 const playerInsightsTargetSchema = z.discriminatedUnion("type", [
   z.object({

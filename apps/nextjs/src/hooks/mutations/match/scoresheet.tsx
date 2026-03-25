@@ -8,6 +8,7 @@ import { usePostHog } from "posthog-js/react";
 import { toast } from "@board-games/ui/toast";
 
 import { formatMatchLink } from "~/utils/linkFormatting";
+import { invalidateNewPlayerStatsQueries } from "~/hooks/invalidate/player";
 import { useTRPC } from "~/trpc/react";
 
 type MatchInput =
@@ -166,7 +167,7 @@ export const useUpdateFinalScores = (input: MatchInput) => {
           queryClient.invalidateQueries(
             trpc.match.getMatchPlayersAndTeams.queryOptions(input),
           ),
-          queryClient.invalidateQueries(trpc.newPlayer.pathFilter()),
+          invalidateNewPlayerStatsQueries(queryClient, trpc),
         ]);
       },
       onError: (error) => {
@@ -262,7 +263,7 @@ export const useUpdateMatchManualWinnerMutation = (input: MatchInput) => {
           queryClient.invalidateQueries(
             trpc.match.getMatchSummary.queryOptions(input),
           ),
-          queryClient.invalidateQueries(trpc.newPlayer.pathFilter()),
+          invalidateNewPlayerStatsQueries(queryClient, trpc),
         ]);
       },
       onError: (error) => {
@@ -311,7 +312,7 @@ export const useUpdateMatchPlacementsMutation = (input: MatchInput) => {
                 },
           ),
         );
-        void queryClient.invalidateQueries(trpc.newPlayer.pathFilter());
+        void invalidateNewPlayerStatsQueries(queryClient, trpc);
       },
       onError: (error) => {
         posthog.capture("match finished error", { error });
@@ -447,7 +448,7 @@ export const useUpdateMatchRoundScoreMutation = (input: MatchInput) => {
             queryClient.invalidateQueries(
               trpc.match.getMatchPlayersAndTeams.queryOptions(input),
             ),
-            queryClient.invalidateQueries(trpc.newPlayer.pathFilter()),
+            invalidateNewPlayerStatsQueries(queryClient, trpc),
           ]);
         }
       },
@@ -549,7 +550,7 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
             queryClient.invalidateQueries(
               trpc.match.getMatchPlayersAndTeams.queryOptions(input),
             ),
-            queryClient.invalidateQueries(trpc.newPlayer.pathFilter()),
+            invalidateNewPlayerStatsQueries(queryClient, trpc),
           ]);
         }
       },

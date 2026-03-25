@@ -17,9 +17,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { PlayedWithGroupsSection } from "./played-with-groups";
 import { RivalsTable, TeammatesTable } from "./people-social-tables";
 
-type Rivals = RouterOutputs["newPlayer"]["getPlayerTopRivals"];
-type Teammates = RouterOutputs["newPlayer"]["getPlayerTopTeammates"];
-type Groups = RouterOutputs["newPlayer"]["getPlayerPlayedWithGroups"];
+type Rivals = RouterOutputs["newPlayer"]["stats"]["getPlayerTopRivals"];
+type Teammates = RouterOutputs["newPlayer"]["stats"]["getPlayerTopTeammates"];
+type Groups = RouterOutputs["newPlayer"]["stats"]["getPlayerPlayedWithGroups"];
 
 type PeopleSub = "rivals" | "teammates" | "groups";
 

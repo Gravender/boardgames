@@ -25,7 +25,7 @@ describe("Player Insights - getPlayerTopRivals", () => {
       name: "Empty",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.getPlayerTopRivals({
+    const result = await receiverCaller.newPlayer.stats.getPlayerTopRivals({
       type: "original",
       id: player.id,
     });
@@ -37,7 +37,7 @@ describe("Player Insights - getPlayerTopRivals", () => {
     const seeded = await seedInsightsHistory(ids!, {
       extraCompetitiveMatchCopies: 0,
     });
-    const result = await ownerCaller.newPlayer.getPlayerTopRivals({
+    const result = await ownerCaller.newPlayer.stats.getPlayerTopRivals({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
@@ -47,7 +47,7 @@ describe("Player Insights - getPlayerTopRivals", () => {
   test("invariant: any listed rival has >=5 matches and byGame rows", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const result = await ownerCaller.newPlayer.getPlayerTopRivals({
+    const result = await ownerCaller.newPlayer.stats.getPlayerTopRivals({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
@@ -59,7 +59,7 @@ describe("Player Insights - getPlayerTopRivals", () => {
   test("worst case: throws for missing player", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.getPlayerTopRivals({
+      receiverCaller.newPlayer.stats.getPlayerTopRivals({
         type: "original",
         id: 99999999,
       }),

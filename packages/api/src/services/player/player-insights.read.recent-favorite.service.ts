@@ -3,7 +3,7 @@ import { db } from "@board-games/db/client";
 import type {
   GetPlayerFavoriteGamesOutputType,
   GetPlayerRecentMatchesOutputType,
-} from "../../routers/player/player-insights.output";
+} from "../../routers/player/sub-routers/stats/player-insights.output";
 import { playerInsightsRepository } from "../../repositories/player/player-insights.repository";
 import { matchRepository } from "../../repositories/match/match.repository";
 import { playerRepository } from "../../repositories/player/player.repository";

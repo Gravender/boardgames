@@ -3,9 +3,9 @@ import { compareDesc } from "date-fns";
 import type {
   GetPlayersByGameOutputType,
   GetPlayersOutputType,
-  GetPlayerSummaryOutputType,
 } from "../../routers/player/player.output";
-import type { GetPlayerInputType } from "../../routers/player/player.input";
+import type { GetPlayerInputType } from "../../routers/player/sub-routers/stats/player-stats.input";
+import type { GetPlayerSummaryOutputType } from "../../routers/player/sub-routers/stats/player-stats.output";
 import { playerRepository } from "../../repositories/player/player.repository";
 import type {
   GetPlayersArgs,

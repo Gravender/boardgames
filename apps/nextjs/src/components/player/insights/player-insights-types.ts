@@ -1,4 +1,4 @@
 import type { RouterInputs } from "@board-games/api";
 
 export type PlayerInsightsPageInput =
-  RouterInputs["newPlayer"]["getPlayerHeader"];
+  RouterInputs["newPlayer"]["stats"]["getPlayerHeader"];

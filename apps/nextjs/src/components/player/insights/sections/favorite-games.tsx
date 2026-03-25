@@ -29,7 +29,7 @@ import {
 import { FormattedDate } from "~/components/formatted-date";
 import { GameImage } from "~/components/game-image";
 
-type Data = RouterOutputs["newPlayer"]["getPlayerFavoriteGames"];
+type Data = RouterOutputs["newPlayer"]["stats"]["getPlayerFavoriteGames"];
 
 type SortKey =
   | "name"

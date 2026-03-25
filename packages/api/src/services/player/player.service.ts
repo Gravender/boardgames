@@ -4,11 +4,13 @@ import type { TransactionType } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
 
 import type {
-  GetPlayerHeaderOutputType,
   GetPlayersForMatchOutputType,
-  GetPlayerSummaryOutputType,
   GetRecentMatchWithPlayersOutputType,
 } from "../../routers/player/player.output";
+import type {
+  GetPlayerHeaderOutputType,
+  GetPlayerSummaryOutputType,
+} from "../../routers/player/sub-routers/stats/player-stats.output";
 import type {
   CreatePlayerArgs,
   GetPlayerHeaderArgs,

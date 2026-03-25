@@ -11,7 +11,7 @@ import type {
   EditMatchInputType,
   GetMatchInputType,
 } from "../../routers/match/match.input";
-import type { GetPlayerInputType } from "../../routers/player/player.input";
+import type { GetPlayerInputType } from "../../routers/player/sub-routers/stats/player-stats.input";
 import type {
   WithCreatedByInput,
   WithRepoUserIdInput,

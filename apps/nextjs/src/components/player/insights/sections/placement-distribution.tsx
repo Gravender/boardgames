@@ -33,7 +33,7 @@ import {
 } from "@board-games/ui/chart";
 import { cn } from "@board-games/ui/utils";
 
-type Data = RouterOutputs["newPlayer"]["getPlayerPlacementDistribution"];
+type Data = RouterOutputs["newPlayer"]["stats"]["getPlayerPlacementDistribution"];
 
 const chartConfig = {
   pct: {

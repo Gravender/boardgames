@@ -26,7 +26,7 @@ describe("Player Insights - getPlayerPlacementDistribution", () => {
       imageId: null,
     });
     const result =
-      await receiverCaller.newPlayer.getPlayerPlacementDistribution({
+      await receiverCaller.newPlayer.stats.getPlayerPlacementDistribution({
         type: "original",
         id: player.id,
       });
@@ -42,7 +42,7 @@ describe("Player Insights - getPlayerPlacementDistribution", () => {
   test("best case: returns populated distributions", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const result = await ownerCaller.newPlayer.getPlayerPlacementDistribution({
+    const result = await ownerCaller.newPlayer.stats.getPlayerPlacementDistribution({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
@@ -65,7 +65,7 @@ describe("Player Insights - getPlayerPlacementDistribution", () => {
   test("worst case: throws for missing player", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.getPlayerPlacementDistribution({
+      receiverCaller.newPlayer.stats.getPlayerPlacementDistribution({
         type: "original",
         id: 99999999,
       }),

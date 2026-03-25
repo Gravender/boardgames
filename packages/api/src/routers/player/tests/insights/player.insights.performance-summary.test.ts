@@ -25,7 +25,7 @@ describe("Player Insights - getPlayerPerformanceSummary", () => {
       name: "Empty",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.getPlayerPerformanceSummary({
+    const result = await receiverCaller.newPlayer.stats.getPlayerPerformanceSummary({
       type: "original",
       id: player.id,
     });
@@ -36,11 +36,11 @@ describe("Player Insights - getPlayerPerformanceSummary", () => {
   test("best case: returns populated summary for original and shared", async () => {
     const { ownerCaller, receiverCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const original = await ownerCaller.newPlayer.getPlayerPerformanceSummary({
+    const original = await ownerCaller.newPlayer.stats.getPlayerPerformanceSummary({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
-    const shared = await receiverCaller.newPlayer.getPlayerPerformanceSummary({
+    const shared = await receiverCaller.newPlayer.stats.getPlayerPerformanceSummary({
       type: "shared",
       sharedPlayerId: seeded.receiverSharedTargetPlayerId,
     });
@@ -53,13 +53,13 @@ describe("Player Insights - getPlayerPerformanceSummary", () => {
   test("worst case: throws for missing players", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.getPlayerPerformanceSummary({
+      receiverCaller.newPlayer.stats.getPlayerPerformanceSummary({
         type: "original",
         id: 99999999,
       }),
     ).rejects.toThrow("Player not found.");
     await expect(
-      receiverCaller.newPlayer.getPlayerPerformanceSummary({
+      receiverCaller.newPlayer.stats.getPlayerPerformanceSummary({
         type: "shared",
         sharedPlayerId: 99999999,
       }),

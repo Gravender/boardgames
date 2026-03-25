@@ -1,7 +1,16 @@
 import { useCallback } from "react";
+import type { QueryClient } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useTRPC } from "~/trpc/react";
+
+type TRPCReact = ReturnType<typeof useTRPC>;
+
+/** Profile / insights subtree only (`newPlayer.stats`), not list or match-picker queries. */
+export const invalidateNewPlayerStatsQueries = (
+  queryClient: QueryClient,
+  trpc: TRPCReact,
+) => queryClient.invalidateQueries(trpc.newPlayer.stats.pathFilter());
 
 function buildPlayerInsightsInput(
   playerId: number,
@@ -21,40 +30,40 @@ export function useInvalidatePlayer() {
       const input = buildPlayerInsightsInput(playerId, type);
       return [
         queryClient.invalidateQueries(
-          trpc.newPlayer.getPlayerHeader.queryOptions(input),
+          trpc.newPlayer.stats.getPlayerHeader.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.getPlayerSummary.queryOptions(input),
+          trpc.newPlayer.stats.getPlayerSummary.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.getPlayerPerformanceSummary.queryOptions(input),
+          trpc.newPlayer.stats.getPlayerPerformanceSummary.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.getPlayerFavoriteGames.queryOptions(input),
+          trpc.newPlayer.stats.getPlayerFavoriteGames.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.getPlayerRecentMatches.queryOptions(input),
+          trpc.newPlayer.stats.getPlayerRecentMatches.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.getPlayerGameWinRateCharts.queryOptions(input),
+          trpc.newPlayer.stats.getPlayerGameWinRateCharts.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.getPlayerTopRivals.queryOptions(input),
+          trpc.newPlayer.stats.getPlayerTopRivals.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.getPlayerTopTeammates.queryOptions(input),
+          trpc.newPlayer.stats.getPlayerTopTeammates.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.getPlayerPlayedWithGroups.queryOptions(input),
+          trpc.newPlayer.stats.getPlayerPlayedWithGroups.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.getPlayerStreaks.queryOptions(input),
+          trpc.newPlayer.stats.getPlayerStreaks.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.getPlayerCountStats.queryOptions(input),
+          trpc.newPlayer.stats.getPlayerCountStats.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.getPlayerPlacementDistribution.queryOptions(input),
+          trpc.newPlayer.stats.getPlayerPlacementDistribution.queryOptions(input),
         ),
       ];
     },
@@ -67,7 +76,7 @@ export function useInvalidateAllNewPlayerQueries() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   return useCallback(() => {
-    return [queryClient.invalidateQueries(trpc.newPlayer.pathFilter())];
+    return [invalidateNewPlayerStatsQueries(queryClient, trpc)];
   }, [queryClient, trpc]);
 }
 

@@ -35,7 +35,7 @@ type ByGameTooltipRow = {
   matches: number;
 };
 
-type Data = RouterOutputs["newPlayer"]["getPlayerGameWinRateCharts"];
+type Data = RouterOutputs["newPlayer"]["stats"]["getPlayerGameWinRateCharts"];
 
 const chartConfig = {
   winRate: {

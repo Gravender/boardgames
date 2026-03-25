@@ -14,7 +14,7 @@ import {
   vMatchPlayerCanonicalForUser,
 } from "@board-games/db/views";
 
-import type { GetPlayerInputType } from "../../routers/player/player.input";
+import type { GetPlayerInputType } from "../../routers/player/sub-routers/stats/player-stats.input";
 import type { WithRepoUserIdInput } from "../../utils/shared-args.types";
 import type { ImageRowWithUsage } from "@board-games/shared";
 import { caseWhen } from "drizzle-plus";
@@ -72,10 +72,30 @@ export type PlayerInsightChronologicalMatchOutcomeRow = {
   isWin: boolean;
 };
 
+const mapChronologicalMatchOutcomeRows = (
+  rows: { matchDate: unknown; isWin: boolean }[],
+): PlayerInsightChronologicalMatchOutcomeRow[] =>
+  rows.map((r) => ({
+    matchDate: new Date(r.matchDate as Date),
+    isWin: r.isWin,
+  }));
+
 export type PlayerInsightCompetitiveWinRateWindow = {
   matches: number;
   wins: number;
   winRate: number;
+};
+
+const packCompetitiveWinRateWindow = (
+  row: { matches: number; wins: number } | undefined,
+): PlayerInsightCompetitiveWinRateWindow => {
+  const matches = row?.matches ?? 0;
+  const wins = row?.wins ?? 0;
+  return {
+    matches,
+    wins,
+    winRate: matches > 0 ? wins / matches : 0,
+  };
 };
 
 export type PlayerInsightMonthlyScoreRow = {
@@ -638,21 +658,9 @@ class PlayerInsightsRepository {
       )
       .where(priorDate);
 
-    const pack = (
-      row: { matches: number; wins: number } | undefined,
-    ): PlayerInsightCompetitiveWinRateWindow => {
-      const matches = row?.matches ?? 0;
-      const wins = row?.wins ?? 0;
-      return {
-        matches,
-        wins,
-        winRate: matches > 0 ? wins / matches : 0,
-      };
-    };
-
     return {
-      last12Months: pack(lastRow),
-      prior12Months: pack(priorRow),
+      last12Months: packCompetitiveWinRateWindow(lastRow),
+      prior12Months: packCompetitiveWinRateWindow(priorRow),
     };
   }
 
@@ -697,14 +705,6 @@ class PlayerInsightsRepository {
       lt(vMatchCanonical.matchDate, last12Start),
     );
 
-    const mapRows = (
-      rows: { matchDate: unknown; isWin: boolean }[],
-    ): PlayerInsightChronologicalMatchOutcomeRow[] =>
-      rows.map((r) => ({
-        matchDate: new Date(r.matchDate as Date),
-        isWin: r.isWin,
-      }));
-
     const lastRows = await database
       .with(insightMatchPlayers)
       .select({
@@ -744,8 +744,8 @@ class PlayerInsightsRepository {
       .orderBy(asc(vMatchCanonical.matchDate), asc(vMatchCanonical.matchId));
 
     return {
-      last12Months: mapRows(lastRows),
-      prior12Months: mapRows(priorRows),
+      last12Months: mapChronologicalMatchOutcomeRows(lastRows),
+      prior12Months: mapChronologicalMatchOutcomeRows(priorRows),
     };
   }
 
