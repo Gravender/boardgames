@@ -37,10 +37,7 @@ class PlayerPlacementDistributionReadService {
           .toSorted((a, b) => a.placement - b.placement);
         const actualAvgPlacement =
           total > 0
-            ? rowsForSize.reduce(
-                (s, r) => s + r.placement * r.count,
-                0,
-              ) / total
+            ? rowsForSize.reduce((s, r) => s + r.placement * r.count, 0) / total
             : null;
         return {
           playerCount,
@@ -54,10 +51,8 @@ class PlayerPlacementDistributionReadService {
 
     const overallActual =
       placementTotal > 0
-        ? dist.placements.reduce(
-            (s, p) => s + p.placement * p.count,
-            0,
-          ) / placementTotal
+        ? dist.placements.reduce((s, p) => s + p.placement * p.count, 0) /
+          placementTotal
         : null;
     let expectedWeighted = 0;
     for (const row of byGameSize) {

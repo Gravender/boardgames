@@ -48,13 +48,17 @@ describe("Player Insights - getPlayerPlacementDistribution", () => {
     });
     expect(result.placements.length).toBeGreaterThan(0);
     expect(result.overallPlacementBenchmark.matchCount).toBeGreaterThan(0);
-    expect(result.overallPlacementBenchmark.expectedAvgPlacement).not.toBeNull();
+    expect(
+      result.overallPlacementBenchmark.expectedAvgPlacement,
+    ).not.toBeNull();
     expect(result.overallPlacementBenchmark.actualAvgPlacement).not.toBeNull();
     const firstSize = result.byGameSize[0];
     expect(firstSize).toBeDefined();
     if (firstSize) {
       expect(firstSize.matchCount).toBeGreaterThan(0);
-      expect(firstSize.expectedAvgPlacement).toBe((firstSize.playerCount + 1) / 2);
+      expect(firstSize.expectedAvgPlacement).toBe(
+        (firstSize.playerCount + 1) / 2,
+      );
     }
   });
 

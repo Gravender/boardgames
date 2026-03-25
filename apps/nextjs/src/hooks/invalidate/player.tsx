@@ -67,9 +67,7 @@ export function useInvalidateAllNewPlayerQueries() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   return useCallback(() => {
-    return [
-      queryClient.invalidateQueries(trpc.newPlayer.pathFilter()),
-    ];
+    return [queryClient.invalidateQueries(trpc.newPlayer.pathFilter())];
   }, [queryClient, trpc]);
 }
 

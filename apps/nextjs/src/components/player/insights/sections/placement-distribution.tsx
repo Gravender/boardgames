@@ -44,8 +44,7 @@ const chartConfig = {
 
 const formatMatchCount = (n: number) => `${n} ${n === 1 ? "match" : "matches"}`;
 
-const formatAvg = (n: number | null) =>
-  n === null ? "—" : n.toFixed(2);
+const formatAvg = (n: number | null) => (n === null ? "—" : n.toFixed(2));
 
 const placementTooltip = (
   <ChartTooltipContent

@@ -20,10 +20,7 @@ export default function PlayerInsightsGamesTab({
   return (
     <div className={sectionStackClass}>
       <FavoriteGamesSection data={favoriteGames} />
-      <RecentMatches
-        data={recentMatches}
-        profileName={playerHeader.name}
-      />
+      <RecentMatches data={recentMatches} profileName={playerHeader.name} />
       <WinRateChartsSection data={winRateCharts} />
     </div>
   );

@@ -8,7 +8,9 @@ import { useTRPC } from "~/trpc/react";
 
 import type { PlayerInsightsPageInput } from "~/components/player/insights/player-insights-types";
 
-export const usePlayerInsightsHeroData = (playerInput: PlayerInsightsPageInput) => {
+export const usePlayerInsightsHeroData = (
+  playerInput: PlayerInsightsPageInput,
+) => {
   const trpc = useTRPC();
   const [{ data: header }, { data: summary }] = useSuspenseQueries({
     queries: [
@@ -29,7 +31,9 @@ export const usePlayerInsightsPerformance = (
   return data;
 };
 
-export const usePlayerInsightsGamesTab = (playerInput: PlayerInsightsPageInput) => {
+export const usePlayerInsightsGamesTab = (
+  playerInput: PlayerInsightsPageInput,
+) => {
   const trpc = useTRPC();
   const [favoriteGames, recentMatches, playerHeader, winRateCharts] =
     useSuspenseQueries({
@@ -48,7 +52,9 @@ export const usePlayerInsightsGamesTab = (playerInput: PlayerInsightsPageInput) 
   };
 };
 
-export const usePlayerInsightsPeopleTab = (playerInput: PlayerInsightsPageInput) => {
+export const usePlayerInsightsPeopleTab = (
+  playerInput: PlayerInsightsPageInput,
+) => {
   const trpc = useTRPC();
   const [topRivals, topTeammates, playedWithGroups] = useSuspenseQueries({
     queries: [
@@ -64,7 +70,9 @@ export const usePlayerInsightsPeopleTab = (playerInput: PlayerInsightsPageInput)
   };
 };
 
-export const usePlayerInsightsAdvancedTab = (playerInput: PlayerInsightsPageInput) => {
+export const usePlayerInsightsAdvancedTab = (
+  playerInput: PlayerInsightsPageInput,
+) => {
   const trpc = useTRPC();
   const [streaks, countStats, placementDistribution] = useSuspenseQueries({
     queries: [

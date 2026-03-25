@@ -93,7 +93,11 @@ export function PlayerInsightsOverviewTabSkeleton() {
 
 export function PlayerInsightsGamesTabSkeleton() {
   return (
-    <div className="space-y-10" aria-busy aria-label="Loading games and activity">
+    <div
+      className="space-y-10"
+      aria-busy
+      aria-label="Loading games and activity"
+    >
       <div className="border-border/80 bg-card/70 space-y-4 overflow-hidden rounded-xl border p-6 shadow-sm backdrop-blur-md">
         <ShimmerBlock className="h-8 w-48" />
         <ShimmerBlock className="h-56 w-full rounded-xl" />
@@ -145,7 +149,11 @@ export function PlayerInsightsAdvancedTabSkeleton() {
 /** Full body loading: tab chrome + overview card (e.g. streaming / transitional states) */
 export function PlayerInsightsBodySkeleton() {
   return (
-    <div className="flex w-full flex-col gap-6" aria-busy aria-label="Loading player stats">
+    <div
+      className="flex w-full flex-col gap-6"
+      aria-busy
+      aria-label="Loading player stats"
+    >
       <TabsChromeSkeleton />
       <PlayerInsightsOverviewTabSkeleton />
     </div>
