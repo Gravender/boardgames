@@ -85,7 +85,7 @@ export async function createPlayers(
 ): Promise<{ id: number; name: string }[]> {
   const players: { id: number; name: string }[] = [];
   for (let i = 1; i <= count; i++) {
-    const player = await caller.player.create({
+    const player = await caller.newPlayer.create({
       name: `${prefix} ${i}`,
       imageId: null,
     });

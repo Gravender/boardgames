@@ -1,6 +1,14 @@
 import type { PostHog } from "posthog-node";
 
-import type { GetPlayersByGameInputType } from "../../routers/player/player.input";
+import type { TransactionType } from "@board-games/db/client";
+
+import type {
+  CreatePlayerInputType,
+  DeletePlayerInputType,
+  GetPlayerToShareInputType,
+  GetPlayersByGameInputType,
+  UpdatePlayerInputType,
+} from "../../routers/player/player.input";
 import type {
   GetPlayerInsightsInputType,
   GetPlayerInsightsPerGameInputType,
@@ -21,17 +29,9 @@ export type GetPlayersArgs = WithUserIdCtxOnly;
 
 export type GetPlayersByGameArgs = WithUserIdCtx<GetPlayersByGameInputType>;
 
-export interface CreatePlayerArgs {
-  ctx: {
-    userId: string;
-  };
-  input: {
-    name: string;
-    imageId?: number | null;
-  };
-}
+export type CreatePlayerArgs = WithUserIdCtx<CreatePlayerInputType>;
 
-export interface UpdatePlayerArgs {
+export type UpdatePlayerArgs = {
   ctx: {
     userId: string;
     posthog: PostHog;
@@ -40,38 +40,17 @@ export interface UpdatePlayerArgs {
       readonly deletedCount: number;
     }>;
   };
-  input:
-    | {
-        type: "original";
-        id: number;
-        updateValues:
-          | {
-              type: "name";
-              name: string;
-            }
-          | {
-              type: "imageId";
-              imageId: number;
-            }
-          | {
-              type: "clearImage";
-            }
-          | {
-              type: "nameAndImageId";
-              name: string;
-              imageId: number;
-            }
-          | {
-              type: "nameAndClearImage";
-              name: string;
-            };
-      }
-    | {
-        type: "shared";
-        id: number;
-        name: string;
-      };
-}
+  input: UpdatePlayerInputType;
+};
+
+export type DeletePlayerArgs = {
+  ctx: { userId: string };
+  input: DeletePlayerInputType;
+  /** When set, mutations run on this transaction instead of opening a new one. */
+  tx?: TransactionType;
+};
+
+export type GetPlayerToShareArgs = WithUserIdCtx<GetPlayerToShareInputType>;
 
 export type GetPlayerHeaderArgs = WithPosthogUserCtx<GetPlayerInputType>;
 

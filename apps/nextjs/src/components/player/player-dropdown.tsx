@@ -46,7 +46,7 @@ export function PlayerDropDown({
   const invalidateNewPlayerQueries = useInvalidateAllNewPlayerQueries();
   const invalidatePlayers = useInvalidatePlayers();
   const deletePlayer = useMutation(
-    trpc.player.deletePlayer.mutationOptions({
+    trpc.newPlayer.deletePlayer.mutationOptions({
       onSuccess: async () => {
         await Promise.all([
           invalidateNewPlayerQueries(),
@@ -58,7 +58,11 @@ export function PlayerDropDown({
   );
   const playerId = data.type === "shared" ? data.sharedPlayerId : data.id;
   const onDelete = () => {
-    deletePlayer.mutate({ id: playerId });
+    if (data.type === "shared") {
+      deletePlayer.mutate({ type: "shared", sharedId: data.sharedPlayerId });
+      return;
+    }
+    deletePlayer.mutate({ type: "original", id: data.id });
   };
 
   const canEdit =

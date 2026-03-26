@@ -53,7 +53,7 @@ interface PlayerValues {
   name: string;
   imageUrl: File | string | null;
 }
-type UpdatePlayerInput = RouterInputs["player"]["update"];
+type UpdatePlayerInput = RouterInputs["newPlayer"]["update"];
 
 const buildPlayerSchema = (
   player: EditPlayerDialogPlayer,
@@ -194,7 +194,7 @@ const useUpdateSharedPlayer = ({
     }
     await updatePlayerMutation.mutateAsync({
       type: "shared",
-      id: player.sharedPlayerId,
+      sharedId: player.sharedPlayerId,
       name: values.name,
     });
     handleMutationSuccess();

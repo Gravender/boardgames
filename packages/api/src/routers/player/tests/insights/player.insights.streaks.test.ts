@@ -21,7 +21,7 @@ describe("Player Insights - getPlayerStreaks", () => {
 
   test("normal case: returns zeroed streak payload", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
-    const player = await receiverCaller.player.create({
+    const player = await receiverCaller.newPlayer.create({
       name: "Empty",
       imageId: null,
     });

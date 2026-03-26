@@ -21,7 +21,7 @@ describe("Player - getPlayerSummary", () => {
 
   test("normal case: returns zeroed summary", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
-    const player = await receiverCaller.player.create({
+    const player = await receiverCaller.newPlayer.create({
       name: "Summary",
       imageId: null,
     });

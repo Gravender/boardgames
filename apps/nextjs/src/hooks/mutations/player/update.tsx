@@ -15,10 +15,12 @@ export const useUpdatePlayerMutation = () => {
   const invalidatePlayer = useInvalidatePlayer();
   const invalidatePlayers = useInvalidatePlayers();
   const updatePlayerMutation = useMutation(
-    trpc.player.update.mutationOptions({
+    trpc.newPlayer.update.mutationOptions({
       onSuccess: async (_data, variables) => {
+        const playerEntityId =
+          variables.type === "shared" ? variables.sharedId : variables.id;
         await Promise.all([
-          ...invalidatePlayer(variables.id, variables.type),
+          ...invalidatePlayer(playerEntityId, variables.type),
           ...invalidatePlayers(),
         ]);
         toast.success("Player updated successfully!");
