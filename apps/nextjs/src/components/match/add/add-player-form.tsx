@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Image from "next/image";
+import * as Sentry from "@sentry/nextjs";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { User } from "lucide-react";
@@ -79,7 +80,15 @@ export function AddPlayerForm({
           trpc.newPlayer.getPlayersForMatch.queryOptions().queryKey,
           newData,
         );
-        await queryClient.invalidateQueries();
+        await Promise.all([
+          queryClient.invalidateQueries(
+            trpc.newPlayer.getPlayersForMatch.pathFilter(),
+          ),
+          queryClient.invalidateQueries(trpc.newPlayer.getPlayers.pathFilter()),
+          queryClient.invalidateQueries(
+            trpc.newPlayer.getPlayersByGame.pathFilter(),
+          ),
+        ]);
         toast("Player created successfully!");
         if (onPlayerAdded) {
           onPlayerAdded({
@@ -137,7 +146,10 @@ export function AddPlayerForm({
         form.reset();
         setImagePreview(null); // Clear the image preview
       } catch (error) {
-        console.error("Error uploading Image:", error);
+        Sentry.captureException(error, {
+          tags: { feature: "add-player-form" },
+          extra: { message: "Error uploading image" },
+        });
         toast.error("Error", {
           description: "There was a problem uploading your Image.",
         });

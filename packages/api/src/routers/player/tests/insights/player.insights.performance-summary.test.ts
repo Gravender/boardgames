@@ -21,7 +21,7 @@ describe("Player Insights - getPlayerPerformanceSummary", () => {
 
   test("normal case: returns empty summary for player with no history", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
-    const player = await receiverCaller.player.create({
+    const player = await receiverCaller.newPlayer.create({
       name: "Empty",
       imageId: null,
     });

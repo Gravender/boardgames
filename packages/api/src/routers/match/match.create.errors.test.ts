@@ -40,7 +40,7 @@ describe("Match Create - Error Tests", () => {
       const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId, scoresheetId } = await createGameWithScoresheet(caller);
 
-      const player = await caller.player.create({
+      const player = await caller.newPlayer.create({
         name: "Test Player",
         imageId: null,
       });
@@ -68,7 +68,7 @@ describe("Match Create - Error Tests", () => {
       const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId, scoresheetId } = await createGameWithScoresheet(caller);
 
-      const player = await caller.player.create({
+      const player = await caller.newPlayer.create({
         name: "Test Player",
         imageId: null,
       });
@@ -96,7 +96,7 @@ describe("Match Create - Error Tests", () => {
       const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { scoresheetId } = await createGameWithScoresheet(caller);
 
-      const player = await caller.player.create({
+      const player = await caller.newPlayer.create({
         name: "Test Player",
         imageId: null,
       });
@@ -124,7 +124,7 @@ describe("Match Create - Error Tests", () => {
       const caller = await createAuthenticatedCaller(lifecycle.userId);
       const { gameId } = await createGameWithScoresheet(caller);
 
-      const player = await caller.player.create({
+      const player = await caller.newPlayer.create({
         name: "Test Player",
         imageId: null,
       });

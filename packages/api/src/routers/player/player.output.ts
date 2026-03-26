@@ -167,7 +167,6 @@ export const getPlayerToShareOutput = z.object({
           name: z.string(),
           score: z.number().nullable(),
           isWinner: z.boolean().nullable(),
-          playerId: z.number(),
           team: getPlayerToShareMatchTeamSchema.nullable(),
         }),
       ),

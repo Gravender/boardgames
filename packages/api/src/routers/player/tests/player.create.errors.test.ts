@@ -44,9 +44,9 @@ describe("Player Create - Error Tests", () => {
 
       const input = {
         imageId: null,
-      } as unknown as inferProcedureInput<AppRouter["player"]["create"]>;
+      } as unknown as inferProcedureInput<AppRouter["newPlayer"]["create"]>;
 
-      await expect(caller.player.create(input)).rejects.toThrow();
+      await expect(caller.newPlayer.create(input)).rejects.toThrow();
     });
 
     test("fails with invalid imageId reference (non-existent image ID)", async () => {
@@ -55,12 +55,12 @@ describe("Player Create - Error Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["player"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["newPlayer"]["create"]> = {
         name: "Test Player",
         imageId: 999999, // Non-existent image ID
       };
 
-      await expect(caller.player.create(input)).rejects.toThrow();
+      await expect(caller.newPlayer.create(input)).rejects.toThrow();
     });
 
     test("fails with empty name string", async () => {
@@ -72,9 +72,9 @@ describe("Player Create - Error Tests", () => {
       const input = {
         name: "",
         imageId: null,
-      } as unknown as inferProcedureInput<AppRouter["player"]["create"]>;
+      } as unknown as inferProcedureInput<AppRouter["newPlayer"]["create"]>;
 
-      await expect(caller.player.create(input)).rejects.toThrow();
+      await expect(caller.newPlayer.create(input)).rejects.toThrow();
     });
   });
 });

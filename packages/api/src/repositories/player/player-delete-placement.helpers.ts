@@ -22,6 +22,7 @@ export const recomputeMatchPlayerPlacements = (
       const candidatePlacement = originalPlacements.get(candidate.id);
       const currentPlacement = originalPlacements.get(placement.id);
       if (candidatePlacement == null || currentPlacement == null) return false;
+      if (candidate.score == null || placement.score == null) return false;
       return (
         candidate.score === placement.score &&
         candidatePlacement < currentPlacement

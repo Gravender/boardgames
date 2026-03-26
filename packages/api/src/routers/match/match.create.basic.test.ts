@@ -79,11 +79,11 @@ describe("Match Create - Basic Tests", () => {
       }
 
       // Create players
-      const player1 = await caller.player.create({
+      const player1 = await caller.newPlayer.create({
         name: "Player 1",
         imageId: null,
       });
-      const player2 = await caller.player.create({
+      const player2 = await caller.newPlayer.create({
         name: "Player 2",
         imageId: null,
       });
@@ -179,7 +179,7 @@ describe("Match Create - Basic Tests", () => {
       }
 
       // Create player
-      const player = await caller.player.create({
+      const player = await caller.newPlayer.create({
         name: "Schema Test Player",
         imageId: null,
       });

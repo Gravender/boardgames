@@ -21,7 +21,7 @@ describe("Player Insights - getPlayerPlacementDistribution", () => {
 
   test("normal case: returns empty distributions", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
-    const player = await receiverCaller.player.create({
+    const player = await receiverCaller.newPlayer.create({
       name: "Empty",
       imageId: null,
     });

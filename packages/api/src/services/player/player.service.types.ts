@@ -29,10 +29,7 @@ export type GetPlayersArgs = WithUserIdCtxOnly;
 
 export type GetPlayersByGameArgs = WithUserIdCtx<GetPlayersByGameInputType>;
 
-export type CreatePlayerArgs = {
-  ctx: { userId: string };
-  input: CreatePlayerInputType;
-};
+export type CreatePlayerArgs = WithUserIdCtx<CreatePlayerInputType>;
 
 export type UpdatePlayerArgs = {
   ctx: {
@@ -53,10 +50,7 @@ export type DeletePlayerArgs = {
   tx?: TransactionType;
 };
 
-export type GetPlayerToShareArgs = {
-  ctx: { userId: string };
-  input: GetPlayerToShareInputType;
-};
+export type GetPlayerToShareArgs = WithUserIdCtx<GetPlayerToShareInputType>;
 
 export type GetPlayerHeaderArgs = WithPosthogUserCtx<GetPlayerInputType>;
 

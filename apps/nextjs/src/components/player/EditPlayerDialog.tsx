@@ -53,7 +53,7 @@ interface PlayerValues {
   name: string;
   imageUrl: File | string | null;
 }
-type UpdatePlayerInput = RouterInputs["player"]["update"];
+type UpdatePlayerInput = RouterInputs["newPlayer"]["update"];
 
 const buildPlayerSchema = (
   player: EditPlayerDialogPlayer,

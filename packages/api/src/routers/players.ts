@@ -6,20 +6,7 @@ import { z } from "zod/v4";
 import { groupPlayer } from "@board-games/db/schema";
 import { selectGroupSchema } from "@board-games/db/zodSchema";
 
-import { playerService } from "../services/player/player.service";
 import { protectedUserProcedure } from "../trpc";
-import {
-  createPlayerInput,
-  deletePlayerInput,
-  getPlayerToShareInput,
-  updatePlayerInput,
-} from "./player/player.input";
-import {
-  createPlayerOutput,
-  deletePlayerOutput,
-  getPlayerToShareOutput,
-  updatePlayerOutput,
-} from "./player/player.output";
 
 export const playerRouter = {
   getPlayersByGroup: protectedUserProcedure
@@ -108,47 +95,5 @@ export const playerRouter = {
       });
 
       return mappedGroupResponse;
-    }),
-  getPlayerToShare: protectedUserProcedure
-    .input(getPlayerToShareInput)
-    .output(getPlayerToShareOutput)
-    .query(async ({ ctx, input }) => {
-      return playerService.getPlayerToShare({
-        ctx: { userId: ctx.userId },
-        input,
-      });
-    }),
-  create: protectedUserProcedure
-    .input(createPlayerInput)
-    .output(createPlayerOutput)
-    .mutation(async ({ ctx, input }) => {
-      return playerService.createPlayer({
-        ctx: {
-          userId: ctx.userId,
-        },
-        input,
-      });
-    }),
-  update: protectedUserProcedure
-    .input(updatePlayerInput)
-    .output(updatePlayerOutput)
-    .mutation(async ({ ctx, input }) => {
-      await playerService.updatePlayer({
-        ctx: {
-          userId: ctx.userId,
-          posthog: ctx.posthog,
-          deleteFiles: ctx.deleteFiles,
-        },
-        input,
-      });
-    }),
-  deletePlayer: protectedUserProcedure
-    .input(deletePlayerInput)
-    .output(deletePlayerOutput)
-    .mutation(async ({ ctx, input }) => {
-      await playerService.deletePlayer({
-        ctx: { userId: ctx.userId },
-        input,
-      });
     }),
 } satisfies TRPCRouterRecord;

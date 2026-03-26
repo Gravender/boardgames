@@ -21,7 +21,7 @@ describe("Player Insights - getPlayerCountStats", () => {
 
   test("normal case: returns empty distribution", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
-    const player = await receiverCaller.player.create({
+    const player = await receiverCaller.newPlayer.create({
       name: "Empty",
       imageId: null,
     });

@@ -76,7 +76,12 @@ class PlayerWriteRepository {
     return database
       .update(matchPlayer)
       .set({ deletedAt: new Date() })
-      .where(eq(matchPlayer.playerId, args.playerId))
+      .where(
+        and(
+          eq(matchPlayer.playerId, args.playerId),
+          isNull(matchPlayer.deletedAt),
+        ),
+      )
       .returning();
   }
 

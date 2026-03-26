@@ -42,12 +42,12 @@ describe("Player Create - Basic Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["player"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["newPlayer"]["create"]> = {
         name: "Test Player",
         imageId: null,
       };
 
-      const result = await caller.player.create(input);
+      const result = await caller.newPlayer.create(input);
 
       expect(result).toMatchObject({
         name: "Test Player",
@@ -76,12 +76,12 @@ describe("Player Create - Basic Tests", () => {
       };
       const createdImage = await caller.image.create(imageInput);
 
-      const input: inferProcedureInput<AppRouter["player"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["newPlayer"]["create"]> = {
         name: "Player With Image",
         imageId: createdImage.id,
       };
 
-      const result = await caller.player.create(input);
+      const result = await caller.newPlayer.create(input);
 
       expect(result).toMatchObject({
         name: "Player With Image",
@@ -101,9 +101,9 @@ describe("Player Create - Basic Tests", () => {
       const caller = createCallerFactory(appRouter)(ctx);
 
       const players = await Promise.all([
-        caller.player.create({ name: "Player 1", imageId: null }),
-        caller.player.create({ name: "Player 2", imageId: null }),
-        caller.player.create({ name: "Player 3", imageId: null }),
+        caller.newPlayer.create({ name: "Player 1", imageId: null }),
+        caller.newPlayer.create({ name: "Player 2", imageId: null }),
+        caller.newPlayer.create({ name: "Player 3", imageId: null }),
       ]);
 
       expect(players).toHaveLength(3);
@@ -122,12 +122,12 @@ describe("Player Create - Basic Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["player"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["newPlayer"]["create"]> = {
         name: "Schema Test Player",
         imageId: null,
       };
 
-      const result = await caller.player.create(input);
+      const result = await caller.newPlayer.create(input);
 
       // Verify output structure
       expect(result).toHaveProperty("id");
@@ -150,12 +150,12 @@ describe("Player Create - Basic Tests", () => {
       });
       const caller = createCallerFactory(appRouter)(ctx);
 
-      const input: inferProcedureInput<AppRouter["player"]["create"]> = {
+      const input: inferProcedureInput<AppRouter["newPlayer"]["create"]> = {
         name: "User Association Test",
         imageId: null,
       };
 
-      const result = await caller.player.create(input);
+      const result = await caller.newPlayer.create(input);
 
       // Verify player was created
       expect(result.id).toBeDefined();

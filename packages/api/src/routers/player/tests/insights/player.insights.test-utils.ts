@@ -69,7 +69,7 @@ export const createInsightsCallers = async (
 
 export const createSharedPlayerFixture = async (ids: InsightsUserIds) => {
   const { ownerCaller } = await createInsightsCallers(ids);
-  const ownerPlayer = await ownerCaller.player.create({
+  const ownerPlayer = await ownerCaller.newPlayer.create({
     name: "Shared Owner Player",
     imageId: null,
   });
@@ -107,15 +107,15 @@ export const seedInsightsHistory = async (
 ) => {
   const extraCopies = options?.extraCompetitiveMatchCopies ?? 4;
   const { ownerCaller } = await createInsightsCallers(ids);
-  const ownerTarget = await ownerCaller.player.create({
+  const ownerTarget = await ownerCaller.newPlayer.create({
     name: "Owner Target",
     imageId: null,
   });
-  const ownerRival = await ownerCaller.player.create({
+  const ownerRival = await ownerCaller.newPlayer.create({
     name: "Owner Rival",
     imageId: null,
   });
-  const ownerTeammate = await ownerCaller.player.create({
+  const ownerTeammate = await ownerCaller.newPlayer.create({
     name: "Owner Teammate",
     imageId: null,
   });

@@ -62,12 +62,12 @@ describe("Player Update - updateValues variants", () => {
       fileSize: 2048,
     });
 
-    const createdPlayer = await caller.player.create({
+    const createdPlayer = await caller.newPlayer.create({
       name: "Original Name",
       imageId: initialImage.id,
     });
 
-    const input: inferProcedureInput<AppRouter["player"]["update"]> = {
+    const input: inferProcedureInput<AppRouter["newPlayer"]["update"]> = {
       type: "original",
       id: createdPlayer.id,
       updateValues: {
@@ -75,7 +75,7 @@ describe("Player Update - updateValues variants", () => {
         name: "Updated Name Only",
       },
     };
-    await caller.player.update(input);
+    await caller.newPlayer.update(input);
 
     const [updatedPlayer] = await db
       .select({
@@ -122,12 +122,12 @@ describe("Player Update - updateValues variants", () => {
       fileSize: 1024,
     });
 
-    const createdPlayer = await caller.player.create({
+    const createdPlayer = await caller.newPlayer.create({
       name: "Stable Name",
       imageId: initialImage.id,
     });
 
-    const input: inferProcedureInput<AppRouter["player"]["update"]> = {
+    const input: inferProcedureInput<AppRouter["newPlayer"]["update"]> = {
       type: "original",
       id: createdPlayer.id,
       updateValues: {
@@ -135,7 +135,7 @@ describe("Player Update - updateValues variants", () => {
         imageId: replacementImage.id,
       },
     };
-    await caller.player.update(input);
+    await caller.newPlayer.update(input);
 
     const [updatedPlayer] = await db
       .select({
@@ -183,12 +183,12 @@ describe("Player Update - updateValues variants", () => {
       fileSize: 3072,
     });
 
-    const createdPlayer = await caller.player.create({
+    const createdPlayer = await caller.newPlayer.create({
       name: "Original Name",
       imageId: initialImage.id,
     });
 
-    const input: inferProcedureInput<AppRouter["player"]["update"]> = {
+    const input: inferProcedureInput<AppRouter["newPlayer"]["update"]> = {
       type: "original",
       id: createdPlayer.id,
       updateValues: {
@@ -197,7 +197,7 @@ describe("Player Update - updateValues variants", () => {
         imageId: replacementImage.id,
       },
     };
-    await caller.player.update(input);
+    await caller.newPlayer.update(input);
 
     const [updatedPlayer] = await db
       .select({
@@ -237,12 +237,12 @@ describe("Player Update - updateValues variants", () => {
       fileSize: 4096,
     });
 
-    const createdPlayer = await caller.player.create({
+    const createdPlayer = await caller.newPlayer.create({
       name: "Original Name",
       imageId: initialImage.id,
     });
 
-    const input: inferProcedureInput<AppRouter["player"]["update"]> = {
+    const input: inferProcedureInput<AppRouter["newPlayer"]["update"]> = {
       type: "original",
       id: createdPlayer.id,
       updateValues: {
@@ -250,7 +250,7 @@ describe("Player Update - updateValues variants", () => {
         name: "Updated Name No Image",
       },
     };
-    await caller.player.update(input);
+    await caller.newPlayer.update(input);
 
     const [updatedPlayer] = await db
       .select({
@@ -290,19 +290,19 @@ describe("Player Update - updateValues variants", () => {
       fileSize: 3072,
     });
 
-    const createdPlayer = await caller.player.create({
+    const createdPlayer = await caller.newPlayer.create({
       name: "Name Stays The Same",
       imageId: initialImage.id,
     });
 
-    const input: inferProcedureInput<AppRouter["player"]["update"]> = {
+    const input: inferProcedureInput<AppRouter["newPlayer"]["update"]> = {
       type: "original",
       id: createdPlayer.id,
       updateValues: {
         type: "clearImage",
       },
     };
-    await caller.player.update(input);
+    await caller.newPlayer.update(input);
 
     const [updatedPlayer] = await db
       .select({
@@ -350,13 +350,13 @@ describe("Player Update - updateValues variants", () => {
       fileSize: 2048,
     });
 
-    const createdPlayer = await caller.player.create({
+    const createdPlayer = await caller.newPlayer.create({
       name: "Original Name",
       imageId: initialImage.id,
     });
 
     await expect(
-      caller.player.update({
+      caller.newPlayer.update({
         type: "original",
         id: createdPlayer.id,
         updateValues: {

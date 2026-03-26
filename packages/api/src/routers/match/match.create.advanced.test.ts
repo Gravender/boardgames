@@ -79,15 +79,15 @@ describe("Match Create - Advanced Tests", () => {
       }
 
       // Create players
-      const player1 = await caller.player.create({
+      const player1 = await caller.newPlayer.create({
         name: "Player A",
         imageId: null,
       });
-      const player2 = await caller.player.create({
+      const player2 = await caller.newPlayer.create({
         name: "Player B",
         imageId: null,
       });
-      const player3 = await caller.player.create({
+      const player3 = await caller.newPlayer.create({
         name: "Player C",
         imageId: null,
       });
@@ -216,11 +216,11 @@ describe("Match Create - Advanced Tests", () => {
 
       // Create multiple players
       const players = await Promise.all([
-        caller.player.create({ name: "Player 1", imageId: null }),
-        caller.player.create({ name: "Player 2", imageId: null }),
-        caller.player.create({ name: "Player 3", imageId: null }),
-        caller.player.create({ name: "Player 4", imageId: null }),
-        caller.player.create({ name: "Player 5", imageId: null }),
+        caller.newPlayer.create({ name: "Player 1", imageId: null }),
+        caller.newPlayer.create({ name: "Player 2", imageId: null }),
+        caller.newPlayer.create({ name: "Player 3", imageId: null }),
+        caller.newPlayer.create({ name: "Player 4", imageId: null }),
+        caller.newPlayer.create({ name: "Player 5", imageId: null }),
       ]);
 
       // Create match
@@ -299,19 +299,19 @@ describe("Match Create - Advanced Tests", () => {
       }
 
       // Create players
-      const player1 = await caller.player.create({
+      const player1 = await caller.newPlayer.create({
         name: "Team A Player 1",
         imageId: null,
       });
-      const player2 = await caller.player.create({
+      const player2 = await caller.newPlayer.create({
         name: "Team A Player 2",
         imageId: null,
       });
-      const player3 = await caller.player.create({
+      const player3 = await caller.newPlayer.create({
         name: "Team B Player 1",
         imageId: null,
       });
-      const player4 = await caller.player.create({
+      const player4 = await caller.newPlayer.create({
         name: "Team B Player 2",
         imageId: null,
       });

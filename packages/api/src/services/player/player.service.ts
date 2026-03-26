@@ -476,7 +476,6 @@ class PlayerService {
             name: matchPlayerRow.player.name,
             score: matchPlayerRow.score,
             isWinner: matchPlayerRow.winner,
-            playerId: matchPlayerRow.player.id,
             team: matchPlayerRow.team,
           }))
           .toSorted((a, b) => {

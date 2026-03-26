@@ -4,7 +4,11 @@ import {
   insertPlayerSchema,
   selectGameSchema,
   selectPlayerSchema,
+  selectSharedPlayerSchema,
 } from "@board-games/db/zodSchema";
+
+const sharedPlayerRowIdSchema = selectSharedPlayerSchema.pick({ id: true })
+  .shape.id;
 
 const originalGameIdSchema = selectGameSchema.pick({ id: true }).shape.id;
 const sharedGameIdSchema = originalGameIdSchema;
@@ -53,7 +57,7 @@ export const updatePlayerInput = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("shared"),
-    sharedId: z.number(),
+    sharedId: sharedPlayerRowIdSchema,
     name: z.string().trim().min(1, "Name is required"),
   }),
 ]);
@@ -81,7 +85,7 @@ export const deletePlayerInput = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("shared"),
-    sharedId: z.number(),
+    sharedId: sharedPlayerRowIdSchema,
   }),
 ]);
 
