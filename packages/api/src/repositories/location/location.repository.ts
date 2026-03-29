@@ -396,7 +396,7 @@ class LocationRepository {
           and(
             eq(shareRequest.sharedWithId, userId),
             eq(shareRequest.itemType, "location"),
-            eq(shareRequest.itemId, deletedLocation.id),
+            eq(shareRequest.itemId, deletedLocation.locationId),
             eq(shareRequest.status, "accepted"),
           ),
         );
