@@ -4,17 +4,17 @@ import { CardHeader, CardTitle } from "@board-games/ui/card";
 import { TableCell, TableRow } from "@board-games/ui/table";
 
 import { MatchesList } from "~/components/game/matches";
-import {
-  type LocationDetailInput,
-  useLocationDetailAndMatches,
-} from "~/hooks/queries/location/matches";
+import { useLocationDetailQuery } from "~/hooks/queries/location/detail";
+import { useLocationMatchesQuery } from "~/hooks/queries/location/matches";
+import type { LocationDetailInput } from "~/hooks/queries/location/types";
 
 export function LocationMatchesSection({
   input,
 }: {
   input: LocationDetailInput;
 }) {
-  const { location, matches } = useLocationDetailAndMatches(input);
+  const { location } = useLocationDetailQuery(input);
+  const { matches } = useLocationMatchesQuery(input);
 
   if (location === null) {
     return null;
@@ -24,7 +24,6 @@ export function LocationMatchesSection({
     <div className="relative container mx-auto h-[90vh] max-w-3xl px-4">
       <CardHeader>
         <CardTitle
-          suppressHydrationWarning
         >{`Matches at ${location.name}`}</CardTitle>
       </CardHeader>
       <MatchesList matches={matches} />

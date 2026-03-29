@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import type {
   Filter,
@@ -235,6 +235,9 @@ class LocationRepository {
       where: {
         id: args.sharedLocationId,
         sharedWithId: args.userId,
+        linkedLocationId: {
+          isNull: true,
+        },
       },
       columns: {
         id: true,
@@ -310,25 +313,29 @@ class LocationRepository {
       | { type: "original"; id: number; isDefault: boolean }
       | { type: "shared"; sharedId: number; isDefault: boolean };
     tx: TransactionType;
-  }) {
+  }): Promise<boolean> {
     const { userId, input, tx } = args;
     await this.clearUserLocationDefaults({ userId, tx });
     if (input.type === "original") {
-      await tx
+      const updated = await tx
         .update(location)
         .set({ isDefault: input.isDefault })
-        .where(and(eq(location.id, input.id), eq(location.createdBy, userId)));
-    } else {
-      await tx
-        .update(sharedLocation)
-        .set({ isDefault: input.isDefault })
-        .where(
-          and(
-            eq(sharedLocation.id, input.sharedId),
-            eq(sharedLocation.sharedWithId, userId),
-          ),
-        );
+        .where(and(eq(location.id, input.id), eq(location.createdBy, userId)))
+        .returning({ id: location.id });
+      return updated.length > 0;
     }
+    const updated = await tx
+      .update(sharedLocation)
+      .set({ isDefault: input.isDefault })
+      .where(
+        and(
+          eq(sharedLocation.id, input.sharedId),
+          eq(sharedLocation.sharedWithId, userId),
+          isNull(sharedLocation.linkedLocationId),
+        ),
+      )
+      .returning({ id: sharedLocation.id });
+    return updated.length > 0;
   }
 
   public async softDeleteOriginalLocation(
@@ -407,6 +414,9 @@ class LocationRepository {
       where: {
         id: args.sharedLocationId,
         sharedWithId: args.userId,
+        linkedLocationId: {
+          isNull: true,
+        },
       },
     });
   }

@@ -1,21 +1,13 @@
-import { useSuspenseQueries } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { useTRPC } from "~/trpc/react";
 
-export type LocationDetailInput =
-  | { type: "original"; id: number }
-  | { type: "shared"; sharedId: number };
+import type { LocationDetailInput } from "./types";
 
-export const useLocationDetailAndMatches = (input: LocationDetailInput) => {
+export function useLocationMatchesQuery(input: LocationDetailInput) {
   const trpc = useTRPC();
-  const [locationState, matchesState] = useSuspenseQueries({
-    queries: [
-      { ...trpc.location.getLocation.queryOptions(input) },
-      { ...trpc.location.getLocationMatches.queryOptions(input) },
-    ],
-  });
-  return {
-    location: locationState.data,
-    matches: matchesState.data,
-  };
-};
+  const { data: matches } = useSuspenseQuery(
+    trpc.location.getLocationMatches.queryOptions(input),
+  );
+  return { matches };
+}

@@ -12,6 +12,58 @@ import {
  * Performs type guards (game.type, sharedGameId, sharedMatchId), builds the
  * shared game object, and maps matchPlayers with the correct playerType logic.
  */
+/**
+ * Maps an original match row from the repository into the service output shape.
+ * Validates match/game/player types and builds original game and matchPlayers.
+ */
+export const mapOriginalMatchRowToOutput = (
+  match: GameMatchesRepositoryMatchRow,
+  userMatchPlayer:
+    | GameMatchesRepositoryMatchRow["matchPlayers"][number]
+    | undefined,
+): GetGameMatchesOutputType[number] => {
+  if (match.game.type !== "original") {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Game and Match are not of the same type.",
+    });
+  }
+
+  return {
+    ...match,
+    game: {
+      id: match.game.id,
+      type: "original" as const,
+      name: match.game.name,
+      image: mapImageRowToGameImage(match.game.image),
+    },
+    type: "original",
+    hasUser: userMatchPlayer !== undefined,
+    won: userMatchPlayer?.winner ?? false,
+    matchPlayers: match.matchPlayers.map((mp) => {
+      if (mp.playerType !== "original" || mp.type !== "original") {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Match player and Match are not of the correct type.",
+        });
+      }
+      return {
+        id: mp.id,
+        playerId: mp.playerId,
+        type: "original" as const,
+        isUser: mp.isUser,
+        name: mp.name,
+        score: mp.score,
+        teamId: mp.teamId,
+        placement: mp.placement,
+        winner: mp.winner,
+        playerType: "original" as const,
+        image: mapImageRowToPlayerImage(mp.image),
+      };
+    }),
+  };
+};
+
 export const mapSharedMatchRowToOutput = (
   match: GameMatchesRepositoryMatchRow,
   userMatchPlayer:
@@ -99,46 +151,7 @@ export const mapRepositoryMatchRowsToMatchListOutput = (
     return matches.map((match) => {
       const userMatchPlayer = match.matchPlayers.find((mp) => mp.isUser);
       if (match.type === "original") {
-        if (match.game.type !== "original") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Game and Match are not of the same type.",
-          });
-        }
-
-        return {
-          ...match,
-          game: {
-            id: match.game.id,
-            type: "original" as const,
-            name: match.game.name,
-            image: mapImageRowToGameImage(match.game.image),
-          },
-          type: "original",
-          hasUser: userMatchPlayer !== undefined,
-          won: userMatchPlayer?.winner ?? false,
-          matchPlayers: match.matchPlayers.map((mp) => {
-            if (mp.playerType !== "original" || mp.type !== "original") {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Match player and Match are not of the correct type.",
-              });
-            }
-            return {
-              id: mp.id,
-              playerId: mp.playerId,
-              type: "original" as const,
-              isUser: mp.isUser,
-              name: mp.name,
-              score: mp.score,
-              teamId: mp.teamId,
-              placement: mp.placement,
-              winner: mp.winner,
-              playerType: "original" as const,
-              image: mapImageRowToPlayerImage(mp.image),
-            };
-          }),
-        };
+        return mapOriginalMatchRowToOutput(match, userMatchPlayer);
       }
       return mapSharedMatchRowToOutput(match, userMatchPlayer);
     });

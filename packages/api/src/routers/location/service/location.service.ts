@@ -148,35 +148,46 @@ class LocationService {
     args: EditDefaultLocationArgs,
   ): Promise<void> {
     const { ctx, input } = args;
-    if (input.type === "original") {
-      const loc = await locationRepository.findOriginalLocationForUser({
-        userId: ctx.userId,
-        locationId: input.id,
-      });
-      if (!loc) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Location not found.",
-        });
-      }
-    } else {
-      const sl = await locationRepository.findSharedLocationForUser({
-        userId: ctx.userId,
-        sharedLocationId: input.sharedId,
-      });
-      if (!sl) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Shared location not found.",
-        });
-      }
-    }
     await db.transaction(async (tx) => {
-      await locationRepository.applyDefaultLocationToggle({
+      if (input.type === "original") {
+        const loc = await locationRepository.findOriginalLocationForUser({
+          userId: ctx.userId,
+          locationId: input.id,
+          tx,
+        });
+        if (!loc) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Location not found.",
+          });
+        }
+      } else {
+        const sl = await locationRepository.findSharedLocationForUser({
+          userId: ctx.userId,
+          sharedLocationId: input.sharedId,
+          tx,
+        });
+        if (!sl) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Shared location not found.",
+          });
+        }
+      }
+      const applied = await locationRepository.applyDefaultLocationToggle({
         userId: ctx.userId,
         input,
         tx,
       });
+      if (!applied) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message:
+            input.type === "original"
+              ? "Location not found."
+              : "Shared location not found.",
+        });
+      }
     });
   }
 

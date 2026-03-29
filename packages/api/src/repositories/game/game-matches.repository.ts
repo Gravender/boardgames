@@ -411,6 +411,7 @@ class GameMatchesRepository {
 
 export const gameMatchesRepository = new GameMatchesRepository();
 
+/** Row shape from the shared SQL builder used by both game and location match lists. */
 export type GameMatchesRepositoryMatchRow = Awaited<
-  ReturnType<typeof gameMatchesRepository.getGameMatches>
->["matches"][number];
+  ReturnType<GameMatchesRepository["fetchMatchesForUser"]>
+>[number];

@@ -5,11 +5,11 @@ import { insertLocationSchema } from "@board-games/db/zodSchema";
 export const getLocationInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("original"),
-    id: z.number(),
+    id: z.number().int().positive(),
   }),
   z.object({
     type: z.literal("shared"),
-    sharedId: z.number(),
+    sharedId: z.number().int().positive(),
   }),
 ]);
 

@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod/v4";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -26,7 +24,7 @@ import { Input } from "@board-games/ui/input";
 import { toast } from "@board-games/ui/toast";
 
 import { Spinner } from "~/components/spinner";
-import { useTRPC } from "~/trpc/react";
+import { useUpdateLocationMutation } from "~/hooks/mutations/location/update";
 
 export const EditLocationDialog = ({
   location,
@@ -54,11 +52,15 @@ const LocationContent = ({
   setOpen: (isOpen: boolean) => void;
   location: RouterOutputs["location"]["getLocations"][number];
 }) => {
-  const trpc = useTRPC();
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const queryClient = useQueryClient();
   const router = useRouter();
+
+  const { updateLocationMutation } = useUpdateLocationMutation({
+    onSuccess: async () => {
+      router.refresh();
+      setOpen(false);
+      toast.success("Location updated successfully!");
+    },
+  });
 
   const form = useForm({
     schema: locationSchema,
@@ -66,55 +68,20 @@ const LocationContent = ({
       name: location.name,
     },
   });
-  const mutation = useMutation(
-    trpc.location.update.mutationOptions({
-      onSuccess: async () => {
-        setIsSubmitting(false);
-        await queryClient.invalidateQueries(
-          trpc.location.getLocations.queryOptions(),
-        );
-        if (location.type === "shared") {
-          const input = {
+  function onSubmit(values: z.infer<typeof locationSchema>) {
+    const locationInput =
+      location.type === "original"
+        ? {
+            type: "original" as const,
+            id: location.id,
+            name: values.name,
+          }
+        : {
             type: "shared" as const,
             sharedId: location.sharedId,
+            name: values.name,
           };
-          await queryClient.invalidateQueries(
-            trpc.location.getLocation.queryOptions(input),
-          );
-          await queryClient.invalidateQueries(
-            trpc.location.getLocationMatches.queryOptions(input),
-          );
-        }
-        if (location.type === "original") {
-          const input = { type: "original" as const, id: location.id };
-          await queryClient.invalidateQueries(
-            trpc.location.getLocation.queryOptions(input),
-          );
-          await queryClient.invalidateQueries(
-            trpc.location.getLocationMatches.queryOptions(input),
-          );
-        }
-        router.refresh();
-        setOpen(false);
-        toast.success("Location updated successfully!");
-      },
-    }),
-  );
-  function onSubmit(values: z.infer<typeof locationSchema>) {
-    setIsSubmitting(true);
-    if (location.type === "original") {
-      mutation.mutate({
-        type: "original",
-        id: location.id,
-        name: values.name,
-      });
-    } else {
-      mutation.mutate({
-        type: "shared",
-        sharedId: location.sharedId,
-        name: values.name,
-      });
-    }
+    updateLocationMutation.mutate(locationInput);
   }
   return (
     <>
@@ -144,8 +111,11 @@ const LocationContent = ({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
+            <Button
+              type="submit"
+              disabled={updateLocationMutation.isPending}
+            >
+              {updateLocationMutation.isPending ? (
                 <>
                   <Spinner />
                   <span>Submitting...</span>

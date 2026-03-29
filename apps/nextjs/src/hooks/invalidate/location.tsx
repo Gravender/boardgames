@@ -1,17 +1,14 @@
 import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
+import type { LocationDetailInput } from "~/hooks/queries/location/types";
 import { useTRPC } from "~/trpc/react";
 
 export function useInvalidateLocation() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   return useCallback(
-    (
-      input:
-        | { type: "original"; id: number }
-        | { type: "shared"; sharedId: number },
-    ) => {
+    (input: LocationDetailInput) => {
       return [
         queryClient.invalidateQueries(
           trpc.location.getLocation.queryOptions(input),
