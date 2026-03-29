@@ -26,10 +26,7 @@ class GameMatchesService {
       userId: args.ctx.userId,
     });
     const listScope = args.input.type === "original" ? "original" : "shared";
-    return mapRepositoryMatchRowsToMatchListOutput(
-      response.matches,
-      listScope,
-    );
+    return mapRepositoryMatchRowsToMatchListOutput(response.matches, listScope);
   }
 
   public async getLocationMatches(
@@ -40,10 +37,7 @@ class GameMatchesService {
       userId: args.ctx.userId,
     });
     const listScope = args.input.type === "original" ? "original" : "shared";
-    return mapRepositoryMatchRowsToMatchListOutput(
-      response.matches,
-      listScope,
-    );
+    return mapRepositoryMatchRowsToMatchListOutput(response.matches, listScope);
   }
 
   public async getGameRoles(

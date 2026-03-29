@@ -391,10 +391,7 @@ class GameMatchesRepository {
             .where(
               and(
                 eq(sharedMatch.matchId, vMatchCanonical.matchId),
-                eq(
-                  sharedMatch.sharedLocationId,
-                  returnedSharedLocation.id,
-                ),
+                eq(sharedMatch.sharedLocationId, returnedSharedLocation.id),
                 eq(sharedMatch.sharedWithId, args.userId),
               ),
             ),

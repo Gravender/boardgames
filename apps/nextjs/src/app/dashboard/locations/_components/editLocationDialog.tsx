@@ -111,10 +111,7 @@ const LocationContent = ({
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={updateLocationMutation.isPending}
-            >
+            <Button type="submit" disabled={updateLocationMutation.isPending}>
               {updateLocationMutation.isPending ? (
                 <>
                   <Spinner />

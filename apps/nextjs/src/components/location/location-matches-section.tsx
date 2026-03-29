@@ -23,8 +23,7 @@ export function LocationMatchesSection({
   return (
     <div className="relative container mx-auto h-[90vh] max-w-3xl px-4">
       <CardHeader>
-        <CardTitle
-        >{`Matches at ${location.name}`}</CardTitle>
+        <CardTitle>{`Matches at ${location.name}`}</CardTitle>
       </CardHeader>
       <MatchesList matches={matches} />
     </div>
