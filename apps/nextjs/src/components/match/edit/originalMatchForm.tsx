@@ -410,7 +410,9 @@ export function EditOriginalMatchForm(input: {
                                     if (newLocation.trim().length > 0) {
                                       createLocationMutation.mutate(
                                         {
+                                          type: "original",
                                           name: newLocation,
+                                          isDefault: false,
                                         },
                                         {
                                           onSuccess: (data) => {

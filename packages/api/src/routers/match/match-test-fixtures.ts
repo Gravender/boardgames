@@ -74,6 +74,7 @@ export async function createFullMatch(
   let locationId: number | null = null;
   if (withLocation) {
     const location = await caller.location.create({
+      type: "original",
       name: "Test Location",
       isDefault: false,
     });

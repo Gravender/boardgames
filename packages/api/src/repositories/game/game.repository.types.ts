@@ -6,6 +6,7 @@ import type {
   CreateGameInputType,
   GetGameInputType,
 } from "../../routers/game/game.input";
+import type { GetLocationInputType } from "../../routers/location/location.input";
 import type {
   WithRepoUserIdInput,
   WithRepoUserIdInputRequiredTx,
@@ -13,6 +14,8 @@ import type {
 } from "../../utils/shared-args.types";
 
 export type GetGameArgs = WithRepoUserIdInput<GetGameInputType>;
+
+export type GetLocationMatchesArgs = WithRepoUserIdInput<GetLocationInputType>;
 
 export type CreateGameArgs = WithRepoUserIdInput<
   CreateGameInputType["game"] & { imageId: number | null }

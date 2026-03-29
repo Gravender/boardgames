@@ -12,7 +12,9 @@ export default async function Page({
   const slugs = await params;
   const playerId = slugs.id;
   if (isNaN(Number(playerId))) redirect("/dashboard/games");
-  prefetch(trpc.newPlayer.getPlayerToShare.queryOptions({ id: Number(playerId) }));
+  prefetch(
+    trpc.newPlayer.getPlayerToShare.queryOptions({ id: Number(playerId) }),
+  );
   prefetch(trpc.friend.getFriends.queryOptions());
   return (
     <HydrateClient>

@@ -96,6 +96,7 @@ describe("Match Create - Advanced Tests", () => {
       const locationInput: inferProcedureInput<
         AppRouter["location"]["create"]
       > = {
+        type: "original",
         name: "Test Location",
         isDefault: false,
       };

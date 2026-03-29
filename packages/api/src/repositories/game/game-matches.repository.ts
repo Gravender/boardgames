@@ -1,6 +1,6 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { caseWhen } from "drizzle-plus";
 import { jsonAgg, jsonAggNotNull, jsonBuildObject } from "drizzle-plus/pg";
 
@@ -12,6 +12,7 @@ import {
   match,
   player,
   scoresheet,
+  sharedMatch,
   team,
 } from "@board-games/db/schema";
 import {
@@ -23,7 +24,10 @@ import {
   vMatchCanonicalVisibleToUser,
   vMatchPlayerCanonicalViewerForUser,
 } from "../../utils/drizzle/canonical-clauses";
-import type { GetGameArgs } from "./game.repository.types";
+import type {
+  GetGameArgs,
+  GetLocationMatchesArgs,
+} from "./game.repository.types";
 
 class GameMatchesRepository {
   /**
@@ -313,6 +317,138 @@ class GameMatchesRepository {
       };
     }
   }
+
+  private async ensureUserPlayer(userId: string) {
+    const userPlayer = await db.query.player.findFirst({
+      where: {
+        isUser: true,
+        createdBy: userId,
+      },
+    });
+    if (!userPlayer) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Current user not found.",
+      });
+    }
+    return userPlayer;
+  }
+
+  private async ensureLocationOwnedByUser(locationId: number, userId: string) {
+    const returnedLocation = await db.query.location.findFirst({
+      where: {
+        id: locationId,
+        createdBy: userId,
+        deletedAt: {
+          isNull: true,
+        },
+      },
+      columns: { id: true },
+    });
+    if (!returnedLocation) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Location not found.",
+      });
+    }
+    return returnedLocation;
+  }
+
+  private async ensureSharedLocation(sharedId: number, userId: string) {
+    const returnedSharedLocation = await db.query.sharedLocation.findFirst({
+      where: {
+        id: sharedId,
+        sharedWithId: userId,
+      },
+      columns: { id: true },
+    });
+    if (!returnedSharedLocation) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Shared location not found.",
+      });
+    }
+    return returnedSharedLocation;
+  }
+
+  private buildOriginalLocationMatchesWhere(
+    locationId: number,
+    userId: string,
+  ): SQL {
+    return and(
+      eq(vMatchCanonical.canonicalLocationId, locationId),
+      vMatchCanonicalVisibleToUser(vMatchCanonical, userId),
+    )!;
+  }
+
+  private buildSharedLocationMatchesWhere(
+    sharedLocationId: number,
+    userId: string,
+  ): SQL {
+    const sharedMatchesForLocation = db
+      .select({ id: sharedMatch.id })
+      .from(sharedMatch)
+      .where(
+        and(
+          eq(sharedMatch.sharedLocationId, sharedLocationId),
+          eq(sharedMatch.sharedWithId, userId),
+        ),
+      );
+
+    return and(
+      vMatchCanonicalVisibleToUser(vMatchCanonical, userId),
+      inArray(vMatchCanonical.sharedMatchId, sharedMatchesForLocation),
+    )!;
+  }
+
+  public async getLocationMatches(args: GetLocationMatchesArgs) {
+    const { input } = args;
+
+    const userPlayer = await this.ensureUserPlayer(args.userId);
+
+    if (input.type === "original") {
+      const returnedLocation = await this.ensureLocationOwnedByUser(
+        input.id,
+        args.userId,
+      );
+
+      const matches = await this.fetchMatchesForUser({
+        userId: args.userId,
+        where: this.buildOriginalLocationMatchesWhere(
+          returnedLocation.id,
+          args.userId,
+        ),
+      });
+
+      return {
+        matches,
+        userPlayer,
+      };
+    }
+
+    const returnedSharedLocation = await this.ensureSharedLocation(
+      input.sharedId,
+      args.userId,
+    );
+
+    const matches = await this.fetchMatchesForUser({
+      userId: args.userId,
+      where: this.buildSharedLocationMatchesWhere(
+        returnedSharedLocation.id,
+        args.userId,
+      ),
+    });
+
+    return {
+      matches,
+      userPlayer,
+    };
+  }
 }
 
 export const gameMatchesRepository = new GameMatchesRepository();
+
+/** Row shape from the shared SQL builder used by both game and location match lists. */
+export type GameMatchesRepositoryMatchRow = Awaited<
+  ReturnType<GameMatchesRepository["fetchMatchesForUser"]>
+>[number];

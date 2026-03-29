@@ -35,3 +35,33 @@ export interface LinkedSharedLocationArgs {
   };
   tx?: TransactionType;
 }
+
+export interface ClearUserLocationDefaultsArgs {
+  userId: string;
+  tx: TransactionType;
+}
+
+export interface UpdateOriginalLocationNameArgs {
+  userId: string;
+  locationId: number;
+  name: string;
+  tx: TransactionType;
+}
+
+export interface UpdateLocationNameByIdArgs {
+  locationId: number;
+  name: string;
+  tx: TransactionType;
+}
+
+export interface SoftDeleteOriginalLocationArgs {
+  userId: string;
+  locationId: number;
+  tx: TransactionType;
+}
+
+export interface DeleteSharedLocationRowArgs {
+  userId: string;
+  sharedLocationId: number;
+  tx: TransactionType;
+}

@@ -14,6 +14,7 @@ class SharedLocationService {
 
     const locations = response.locations
       .map((sharedLocation) => ({
+        type: "shared" as const,
         sharedId: sharedLocation.id,
         name: sharedLocation.location.name,
         isDefault: sharedLocation.isDefault,

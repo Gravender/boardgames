@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import type {
   Filter,
@@ -7,13 +7,24 @@ import type {
   TransactionType,
 } from "@board-games/db/client";
 import { db } from "@board-games/db/client";
-import { location, sharedLocation } from "@board-games/db/schema";
+import {
+  location,
+  match,
+  sharedLocation,
+  sharedMatch,
+  shareRequest,
+} from "@board-games/db/schema";
 
 import type {
+  ClearUserLocationDefaultsArgs,
+  DeleteSharedLocationRowArgs,
   GetLocationsArgs,
   InsertLocationInputType,
   InsertSharedLocationInputType,
   LinkedSharedLocationArgs,
+  SoftDeleteOriginalLocationArgs,
+  UpdateLocationNameByIdArgs,
+  UpdateOriginalLocationNameArgs,
 } from "./location.repository.types";
 
 class LocationRepository {
@@ -194,6 +205,255 @@ class LocationRepository {
       .where(eq(sharedLocation.id, input.sharedLocationId))
       .returning();
     return linkedLocation;
+  }
+
+  public async getOriginalLocationSummary(args: {
+    userId: string;
+    locationId: number;
+  }) {
+    return db.query.location.findFirst({
+      where: {
+        id: args.locationId,
+        createdBy: args.userId,
+        deletedAt: {
+          isNull: true,
+        },
+      },
+      columns: {
+        id: true,
+        name: true,
+        isDefault: true,
+      },
+    });
+  }
+
+  public async getSharedLocationSummary(args: {
+    userId: string;
+    sharedLocationId: number;
+  }) {
+    return db.query.sharedLocation.findFirst({
+      where: {
+        id: args.sharedLocationId,
+        sharedWithId: args.userId,
+        linkedLocationId: {
+          isNull: true,
+        },
+      },
+      columns: {
+        id: true,
+        isDefault: true,
+        permission: true,
+      },
+      with: {
+        location: {
+          columns: {
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  public async clearUserLocationDefaults(args: ClearUserLocationDefaultsArgs) {
+    const { userId, tx } = args;
+    await tx
+      .update(location)
+      .set({ isDefault: false })
+      .where(eq(location.createdBy, userId));
+    await tx
+      .update(sharedLocation)
+      .set({ isDefault: false })
+      .where(eq(sharedLocation.sharedWithId, userId));
+  }
+
+  public async createLocationWithDefaultHandling(input: {
+    userId: string;
+    name: string;
+    isDefault: boolean;
+  }) {
+    return db.transaction(async (transaction) => {
+      if (input.isDefault) {
+        await this.clearUserLocationDefaults({
+          userId: input.userId,
+          tx: transaction,
+        });
+      }
+      const [row] = await transaction
+        .insert(location)
+        .values({
+          name: input.name,
+          isDefault: input.isDefault,
+          createdBy: input.userId,
+        })
+        .returning();
+      return row;
+    });
+  }
+
+  public async updateOriginalLocationName(
+    args: UpdateOriginalLocationNameArgs,
+  ) {
+    const { userId, locationId, name, tx } = args;
+    const updated = await tx
+      .update(location)
+      .set({ name })
+      .where(
+        and(
+          eq(location.id, locationId),
+          eq(location.createdBy, userId),
+          isNull(location.deletedAt),
+        ),
+      )
+      .returning({ id: location.id });
+    return updated.length > 0;
+  }
+
+  public async updateLocationNameById(args: UpdateLocationNameByIdArgs) {
+    const { locationId, name, tx } = args;
+    await tx.update(location).set({ name }).where(eq(location.id, locationId));
+  }
+
+  public async applyDefaultLocationToggle(args: {
+    userId: string;
+    input:
+      | { type: "original"; id: number; isDefault: boolean }
+      | { type: "shared"; sharedId: number; isDefault: boolean };
+    tx: TransactionType;
+  }): Promise<boolean> {
+    const { userId, input, tx } = args;
+    if (input.isDefault) {
+      await this.clearUserLocationDefaults({ userId, tx });
+    }
+    if (input.type === "original") {
+      const updated = await tx
+        .update(location)
+        .set({ isDefault: input.isDefault })
+        .where(
+          and(
+            eq(location.id, input.id),
+            eq(location.createdBy, userId),
+            isNull(location.deletedAt),
+          ),
+        )
+        .returning({ id: location.id });
+      return updated.length > 0;
+    }
+    const updated = await tx
+      .update(sharedLocation)
+      .set({ isDefault: input.isDefault })
+      .where(
+        and(
+          eq(sharedLocation.id, input.sharedId),
+          eq(sharedLocation.sharedWithId, userId),
+          isNull(sharedLocation.linkedLocationId),
+        ),
+      )
+      .returning({ id: sharedLocation.id });
+    return updated.length > 0;
+  }
+
+  public async softDeleteOriginalLocation(
+    args: SoftDeleteOriginalLocationArgs,
+  ) {
+    const { userId, locationId, tx } = args;
+    const existing = await tx.query.location.findFirst({
+      where: {
+        id: locationId,
+        createdBy: userId,
+        deletedAt: { isNull: true },
+      },
+      columns: { id: true },
+    });
+    if (!existing) {
+      return null;
+    }
+    await tx
+      .update(sharedLocation)
+      .set({ linkedLocationId: null })
+      .where(eq(sharedLocation.linkedLocationId, locationId));
+    await tx
+      .update(match)
+      .set({ locationId: null })
+      .where(eq(match.locationId, locationId));
+    const [row] = await tx
+      .update(location)
+      .set({ deletedAt: new Date() })
+      .where(and(eq(location.id, locationId), eq(location.createdBy, userId)))
+      .returning({ id: location.id });
+    return row ?? null;
+  }
+
+  public async deleteSharedLocationForRecipient(
+    args: DeleteSharedLocationRowArgs,
+  ) {
+    const { userId, sharedLocationId, tx } = args;
+    await tx
+      .update(sharedMatch)
+      .set({ sharedLocationId: null })
+      .where(
+        and(
+          eq(sharedMatch.sharedLocationId, sharedLocationId),
+          eq(sharedMatch.sharedWithId, userId),
+        ),
+      );
+    const [deletedLocation] = await tx
+      .delete(sharedLocation)
+      .where(
+        and(
+          eq(sharedLocation.id, sharedLocationId),
+          eq(sharedLocation.sharedWithId, userId),
+        ),
+      )
+      .returning();
+    if (deletedLocation) {
+      await tx
+        .update(shareRequest)
+        .set({
+          status: "rejected",
+        })
+        .where(
+          and(
+            eq(shareRequest.sharedWithId, userId),
+            eq(shareRequest.itemType, "location"),
+            eq(shareRequest.itemId, deletedLocation.locationId),
+            eq(shareRequest.status, "accepted"),
+          ),
+        );
+    }
+    return deletedLocation;
+  }
+
+  public async findSharedLocationForUser(args: {
+    userId: string;
+    sharedLocationId: number;
+    tx?: TransactionType;
+  }) {
+    const database = args.tx ?? db;
+    return database.query.sharedLocation.findFirst({
+      where: {
+        id: args.sharedLocationId,
+        sharedWithId: args.userId,
+        linkedLocationId: {
+          isNull: true,
+        },
+      },
+    });
+  }
+
+  public async findOriginalLocationForUser(args: {
+    userId: string;
+    locationId: number;
+    tx?: TransactionType;
+  }) {
+    const database = args.tx ?? db;
+    return database.query.location.findFirst({
+      where: {
+        id: args.locationId,
+        createdBy: args.userId,
+        deletedAt: { isNull: true },
+      },
+      columns: { id: true },
+    });
   }
 }
 

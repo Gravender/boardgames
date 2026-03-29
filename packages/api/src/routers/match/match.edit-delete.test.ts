@@ -141,6 +141,7 @@ describe("Match Edit & Delete", () => {
 
       // Create a location
       const location = await caller.location.create({
+        type: "original",
         name: "New Location",
         isDefault: false,
       });
