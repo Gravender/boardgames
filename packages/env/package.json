@@ -1,0 +1,20 @@
+{
+  "name": "@board-games/env",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./web": "./src/web.ts",
+    "./native": "./src/native.ts"
+  },
+  "dependencies": {
+    "@board-games/auth": "workspace:*",
+    "@t3-oss/env-nextjs": "^0.13.11",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@board-games/config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -24,8 +24,8 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@board-games/tsconfig": "workspace:*",
+    "@board-games/config": "workspace:*",
     "typescript": "catalog:",
-    "vitest": "^3.0.7"
+    "vitest": "^3.2.4"
   }
 }

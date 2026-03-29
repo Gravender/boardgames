@@ -18,7 +18,7 @@
     "format": "oxfmt --check .",
     "lint": "oxlint --report-unused-disable-directives",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
-    "ui-add": "pnpm dlx shadcn@latest add && oxfmt src",
+    "ui-add": "bunx shadcn@latest add && oxfmt src",
     "format:fix": "oxfmt .",
     "lint:fix": "oxlint --fix --report-unused-disable-directives"
   },
@@ -57,14 +57,14 @@
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
-    "@board-games/tsconfig": "workspace:*",
-    "@types/react": "catalog:react19",
-    "react": "catalog:react19",
+    "@board-games/config": "workspace:*",
+    "@types/react": "catalog:",
+    "react": "catalog:",
     "typescript": "catalog:",
     "zod": "catalog:"
   },
   "peerDependencies": {
-    "react": "catalog:react19",
+    "react": "catalog:",
     "zod": "catalog:"
   }
 }

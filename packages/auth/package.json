@@ -13,7 +13,7 @@
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "format": "oxfmt --check .",
     "lint": "oxlint --report-unused-disable-directives",
-    "generate": "dotenv -e ../../.env -- pnpx @better-auth/cli generate --config script/auth-cli.ts --output ../db/src/auth-schema.ts",
+    "generate": "bun --env-file=../../.env x @better-auth/cli generate --config script/auth-cli.ts --output ../db/src/auth-schema.ts",
     "typecheck": "tsc --noEmit",
     "format:fix": "oxfmt .",
     "lint:fix": "oxlint --fix --report-unused-disable-directives"
@@ -24,15 +24,15 @@
     "@react-email/components": "^0.4.0",
     "@t3-oss/env-core": "^0.13.8",
     "better-auth": "catalog:",
-    "react": "catalog:react19",
-    "react-dom": "catalog:react19",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "resend": "^4.8.0",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@better-auth/cli": "catalog:",
-    "@board-games/tsconfig": "workspace:*",
-    "@types/react": "catalog:react19",
+    "@board-games/config": "workspace:*",
+    "@types/react": "catalog:",
     "typescript": "catalog:"
   }
 }

@@ -1,0 +1,31 @@
+{
+  "name": "@board-games/playwright-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "dev": "tsc",
+    "format": "oxfmt --check .",
+    "lint": "oxlint --report-unused-disable-directives",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "e2e": "bunx playwright test",
+    "format:fix": "oxfmt .",
+    "lint:fix": "oxlint --fix --report-unused-disable-directives"
+  },
+  "devDependencies": {
+    "@board-games/api": "workspace:*",
+    "@board-games/auth": "workspace:*",
+    "@board-games/config": "workspace:*",
+    "@board-games/db": "workspace:*",
+    "@playwright/test": "^1.53.1",
+    "@t3-oss/env-core": "^0.13.8",
+    "typescript": "catalog:",
+    "zod": "catalog:"
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "extends": "@board-games/tsconfig/base.json",
+  "extends": "@board-games/config/base.json",
   "compilerOptions": {
     "lib": ["ES2023", "dom", "dom.iterable"],
     "jsx": "preserve",

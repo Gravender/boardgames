@@ -4,8 +4,8 @@
   "rsc": true,
   "tsx": true,
   "tailwind": {
-    "config": "../../tooling/tailwind/theme.css",
-    "css": "../../tooling/tailwind/theme.css",
+    "config": "../tailwind/theme.css",
+    "css": "../tailwind/theme.css",
     "baseColor": "zinc",
     "cssVariables": true
   },

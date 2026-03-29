@@ -1,8 +1,0 @@
-{
-  "extends": "@board-games/tsconfig/compiled-package.json",
-  "compilerOptions": {
-    "jsx": "preserve"
-  },
-  "include": ["*.ts", "src"],
-  "exclude": ["node_modules"]
-}

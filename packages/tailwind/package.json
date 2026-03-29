@@ -1,0 +1,28 @@
+{
+  "name": "@board-games/tailwind-config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./theme": "./theme.css",
+    "./postcss-config": "./postcss-config.js"
+  },
+  "license": "MIT",
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo node_modules",
+    "format": "oxfmt --check .",
+    "lint": "oxlint --report-unused-disable-directives",
+    "typecheck": "tsc --noEmit",
+    "format:fix": "oxfmt .",
+    "lint:fix": "oxlint --fix --report-unused-disable-directives"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "catalog:",
+    "tailwindcss": "catalog:"
+  },
+  "devDependencies": {
+    "@board-games/config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -14,11 +14,6 @@
       "cache": false,
       "persistent": false
     },
-    "dev:next": {
-      "cache": false,
-      "persistent": true,
-      "passThroughEnv": ["NEXT_*", "POSTGRES_URL", "NODE_ENV"]
-    },
     "e2e": {
       "cache": false,
       "inputs": [".env*"],
@@ -68,6 +63,7 @@
   "globalEnv": ["POSTGRES_URL", "PORT", "NEXT_PUBLIC_POSTHOG_KEY"],
   "globalPassThroughEnv": [
     "NODE_ENV",
+    "SKIP_ENV_VALIDATION",
     "CI",
     "VERCEL",
     "VERCEL_ENV",

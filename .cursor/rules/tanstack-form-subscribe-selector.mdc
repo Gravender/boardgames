@@ -8,7 +8,7 @@ alwaysApply: false
 
 When using `form.Subscribe`, prefer selecting only the needed state keys with a concise object selector.
 
-Preferred canonical shape (from `apps/nextjs/src/components/match/players/selector.tsx`):
+Preferred canonical shape (from `apps/web/src/components/match/players/selector.tsx`):
 
 ```tsx
 <form.Subscribe

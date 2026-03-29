@@ -16,9 +16,8 @@
     "dev": "tsc",
     "format": "oxfmt --check .",
     "lint": "oxlint --report-unused-disable-directives",
-    "test": "pnpm with-env vitest",
+    "test": "bun --env-file=../../.env x vitest",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
-    "with-env": "dotenv -e ../../.env --",
     "format:fix": "oxfmt .",
     "lint:fix": "oxlint --fix --report-unused-disable-directives"
   },
@@ -26,17 +25,19 @@
     "@board-games/auth": "workspace:*",
     "@board-games/db": "workspace:*",
     "@board-games/shared": "workspace:*",
+    "@t3-oss/env-nextjs": "^0.13.11",
     "@trpc/server": "catalog:",
+    "dotenv": "^17.2.2",
     "drizzle-plus": "1.0.0-rc.1",
-    "luxon": "^3.7.1",
-    "posthog-node": "^5.1.0",
+    "luxon": "^3.7.2",
+    "posthog-node": "^5.28.8",
     "superjson": "2.2.3",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@board-games/tsconfig": "workspace:*",
-    "@types/luxon": "^3.4.2",
+    "@board-games/config": "workspace:*",
+    "@types/luxon": "^3.7.1",
     "typescript": "catalog:",
-    "vitest": "^3.0.7"
+    "vitest": "^3.2.4"
   }
 }

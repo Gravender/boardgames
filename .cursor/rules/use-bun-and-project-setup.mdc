@@ -1,0 +1,12 @@
+---
+description: Monorepo package manager and layout for board-games
+globs: **/*
+alwaysApply: true
+---
+
+- Use **Bun** (`bun install`, `bun run`, `bunx`) at the repo root. Do not use pnpm or npm for this project.
+- Workspaces: `apps/*` and `packages/*` only. Web app is `apps/web` (package name `web`); Expo app is `apps/native` (package name `native`).
+- Shared TypeScript bases live in `@board-games/config` (`packages/config`). Env validation for Next.js is in `@board-games/env` (`packages/env`, import `@board-games/env/web`).
+- Stack-specific agent guidance also lives under `.agents/skills/` (copied from the next-example pattern).
+
+See [CLAUDE.md](CLAUDE.md) for commands and conventions.
