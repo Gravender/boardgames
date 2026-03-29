@@ -1,4 +1,4 @@
-import "~/styles/globals.css";
+import "../index.css";
 
 import type { Metadata, Viewport } from "next";
 import type { ComponentType } from "react";
