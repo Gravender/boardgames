@@ -1,0 +1,12 @@
+name: "Setup Bun and install"
+description: "Common setup steps for Actions"
+
+runs:
+  using: composite
+  steps:
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: 1.2.22
+
+    - shell: bash
+      run: bun install

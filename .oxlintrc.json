@@ -6,16 +6,17 @@
     "expo-plugins",
     ".turbo",
     ".cache",
+    ".bun",
     ".pnpm-store",
     "coverage",
     "dist",
     "node_modules",
-    "apps/expo/android",
-    "apps/expo/ios",
-    "tooling/playwright-web/playwright",
-    "tooling/playwright-web/playwright-report",
-    "tooling/playwright-web/test-results",
-    "tooling/playwright-web/blob-report"
+    "apps/native/android",
+    "apps/native/ios",
+    "packages/playwright-web/playwright",
+    "packages/playwright-web/playwright-report",
+    "packages/playwright-web/test-results",
+    "packages/playwright-web/blob-report"
   ],
   "plugins": ["eslint", "oxc", "react", "typescript", "unicorn"],
   "categories": {

@@ -8,12 +8,13 @@ This is a monorepo for tracking board games, players, matches, scoresheets, and 
 
 - **Frontend**: Next.js 16, React 19, Expo (React Native)
 - **Backend**: tRPC, Drizzle ORM, PostgreSQL
+- **Package manager**: Bun (root `package.json`); use `bun install`, `bun run`, and `bunx`.
 
 ### Code Style
 
 - **TypeScript**: Strict mode enabled, use type inference where appropriate
 - **File Size**: TypeScript files should have a maximum of 500 lines before being broken up into separate files
-- **Imports**: Use workspace package imports (e.g., `@board-games/ui`, `@board-games/api`)
+- **Imports**: Use workspace package imports (e.g., `@board-games/ui`, `@board-games/api`, `@board-games/env/web`)
 - **File Naming**:
   - Components: PascalCase (e.g., `MatchSummary.tsx`)
   - Utilities/hooks: camelCase (e.g., `useDebounce.ts`)
@@ -42,9 +43,9 @@ This is a monorepo for tracking board games, players, matches, scoresheets, and 
 
 ### Testing
 
-- Playwright e2e tests in `tooling/playwright-web/`
+- Playwright e2e tests in `packages/playwright-web/`
 - Note: E2e tests may be outdated and need updates
-- Run with: `pnpm e2e`
+- Run with: `bun run e2e`
 
 ### Package-Specific Commands
 
@@ -54,12 +55,14 @@ Use Turbo task commands like `turbo run check --filter=<package>` and `turbo run
 ### Important Notes
 
 - Expo app may be behind web app in features
+- Shared env for Next.js: `@board-games/env/web`; repo layout: `apps/web`, `apps/native`, `packages/*`
+- Optional agent skill bundles: `.agents/skills/` (stack patterns, Expo, Turborepo, etc.)
 
 ## When Making Changes
 
 1. **New Features**: Add to appropriate package (api, db, ui, etc.)
-2. **Database Changes**: Update schema in `packages/db/src/schema/`, then `pnpm db:push`
-3. **UI Components**: Add to `packages/ui/src/` if reusable, app-specific in `apps/nextjs/src/components/`
+2. **Database Changes**: Update schema in `packages/db/src/schema/`, then `bun run db:push`
+3. **UI Components**: Add to `packages/ui/src/` if reusable, app-specific in `apps/web/src/components/`
 4. **API Routes**: Add tRPC procedures in `packages/api/src/routers/`
-5. **Dependencies**: Add to root `pnpm-workspace.yaml` catalog if shared, or package-specific `package.json`
+5. **Dependencies**: Add to root `package.json` `workspaces.catalog` if shared, or package-specific `package.json`
 6. **Type Safety**: Leverage TypeScript and Zod for end-to-end type safety

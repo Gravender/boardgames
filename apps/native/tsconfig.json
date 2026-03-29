@@ -1,0 +1,21 @@
+{
+  "extends": ["@board-games/config/base.json"],
+  "compilerOptions": {
+    "jsx": "react-native",
+    "checkJs": false,
+    "moduleSuffixes": [".ios", ".android", ".native", ""],
+    "paths": {
+      "~/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src",
+    "*.ts",
+    "*.tsx",
+    "*.js",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
+  ],
+  "exclude": ["node_modules"]
+}

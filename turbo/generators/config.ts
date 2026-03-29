@@ -77,8 +77,8 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
           // execSync("pnpm dlx sherif@latest --fix", {
           //   stdio: "inherit",
           // });
-          execSync("pnpm i", { stdio: "inherit" });
-          execSync(`pnpm oxfmt packages/${answers.name}`, { stdio: "inherit" });
+          execSync("bun install", { stdio: "inherit" });
+          execSync(`bunx oxfmt packages/${answers.name}`, { stdio: "inherit" });
           return "Package scaffolded";
         }
         return "Package not scaffolded";

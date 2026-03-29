@@ -1,18 +1,24 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "default",
+  "style": "base-lyra",
   "rsc": true,
   "tsx": true,
   "tailwind": {
-    "config": "../../tooling/tailwind/theme.css",
-    "css": "../../tooling/tailwind/theme.css",
-    "baseColor": "zinc",
-    "cssVariables": true
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
   },
+  "iconLibrary": "lucide",
   "aliases": {
-    "components": "src/",
-    "utils": "@board-games/ui/utils",
-    "ui": "src/"
+    "components": "@board-games/ui/components",
+    "utils": "@board-games/ui/lib/utils",
+    "hooks": "@board-games/ui/hooks",
+    "lib": "@board-games/ui/lib",
+    "ui": "@board-games/ui/components"
   },
-  "iconLibrary": "lucide"
+  "menuColor": "default",
+  "menuAccent": "subtle",
+  "registries": {}
 }

@@ -5,11 +5,9 @@
       "name": "Next.js",
       "type": "node-terminal",
       "request": "launch",
-      "command": "pnpm dev",
-      "cwd": "${workspaceFolder}/apps/nextjs",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
+      "command": "bun run dev",
+      "cwd": "${workspaceFolder}/apps/web",
+      "skipFiles": ["<node_internals>/**"],
       "sourceMaps": true,
       "sourceMapPathOverrides": {
         "/turbopack/[project]/*": "${webRoot}/*"
@@ -17,5 +15,5 @@
       "preLaunchTask": "Start Database",
       "postDebugTask": "Stop Database"
     }
-  ],
+  ]
 }

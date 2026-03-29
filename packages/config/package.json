@@ -1,0 +1,12 @@
+{
+  "name": "@board-games/config",
+  "private": true,
+  "version": "0.1.0",
+  "files": [
+    "*.json"
+  ],
+  "exports": {
+    "./base.json": "./base.json",
+    "./compiled-package.json": "./compiled-package.json"
+  }
+}

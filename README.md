@@ -11,13 +11,16 @@ A web and mobile project for logging board games, players, matches, scoresheets,
 
 ## Monorepo layout
 
-- `apps/nextjs` — React 19 / Next.js 16 web app.
-- `apps/expo` — React Native client using Expo Router.
+- `apps/web` — React 19 / Next.js 16 web app (package name `web`).
+- `apps/native` — React Native client using Expo Router (package name `native`).
 - `packages/api` — tRPC procedures, match services, and auth integration.
 - `packages/db` — Drizzle schema, migrations, seeds, and database helpers.
 - `packages/ui` — Shared UI components (Tailwind + Radix).
 - `packages/shared` — Cross-platform utilities and score logic.
 - `packages/auth` — Auth configuration consumed by the apps.
+- `packages/env` — Shared environment validation for the web app (`@board-games/env/web`).
+- `packages/config` — Shared TypeScript config (`@board-games/config`).
+- `.agents/skills/` — Optional stack-specific guidance for agents (Next, Expo, Turborepo, etc.).
 
 ## Current status notes
 
@@ -26,49 +29,52 @@ A web and mobile project for logging board games, players, matches, scoresheets,
 
 ## Prerequisites
 
-- Node.js >= 22.21.0 and pnpm >= 10.15.1.
+- Node.js >= 22.21.0 and [Bun](https://bun.sh) 1.2.x (see root `package.json` `packageManager`).
 - Docker (for the local PostgreSQL container).
 - Optional: Expo tooling for mobile (`npm i -g expo` plus Android/iOS tooling if you plan to run the app).
 
 ## Setup
 
 1. Install dependencies  
-   `pnpm install`
+   `bun install`
 
 2. Create environment file  
-   `cp .env.example .env` then fill in required secrets (UploadThing token, Sentry token). The `POSTGRES_URL` value is used by the database scripts.
+   `cp .env.example .env` then fill in required secrets (UploadThing token, Sentry token). For local Docker, keep `POSTGRES_URL` aligned with [`packages/db/docker-compose.yml`](packages/db/docker-compose.yml) (default: `postgresql://postgres:password@localhost:5432/games`).
 
 3. Start the local database (Docker)  
-   `./start-database.sh`  
-   This script creates/starts a `games-postgres` container using the credentials from `POSTGRES_URL`.
+   `bun run db:start`  
+   This runs Docker Compose in `packages/db` and starts the `games-postgres` container with a named volume for data. If a name conflict appears from an old manual container, run `docker rm -f games-postgres` once, then `bun run db:start` again.
 
 4. Apply schema and seed data
 
-- `pnpm db:push` to sync the Drizzle schema.
-- `pnpm db:seed` to populate sample data (optional but recommended for local exploration).
+- `bun run db:push` to sync the Drizzle schema.
+- `bun run db:seed` to populate sample data (optional but recommended for local exploration).
 
 5. Run the web app
 
-- `pnpm dev` to start Turbo in watch mode.
-- Or scope to the web app: `pnpm turbo run dev --filter=@board-games/nextjs`.
+- `bun run dev` to start Turbo in watch mode.
+- Or scope to the web app: `bun run dev:web` or `bunx turbo watch dev -F web...`.
 
 6. Run the Expo client (optional)  
-   `pnpm turbo run dev --filter=@board-games/expo` then open the Expo bundler for your platform.
+   `bunx turbo watch dev -F native` then open the Expo bundler for your platform.
 
 ## Useful scripts
 
-- `pnpm db:studio` — Open Drizzle Studio against the local database.
-- `pnpm lint` / `pnpm lint:fix` — Run oxlint checks or autofix.
-- `pnpm format` / `pnpm format:fix` — Run oxfmt checks or apply formatting.
-- `pnpm typecheck` — Run TypeScript checks.
-- `pnpm e2e` — Playwright tests for the web client.
-- `./stop-database.sh` — Stop the local PostgreSQL container.
+- `bun run db:studio` — Open Drizzle Studio against the local database.
+- `bun run db:start` / `bun run db:stop` — Start or stop the Compose Postgres service.
+- `bun run db:watch` — Run Compose in the foreground (logs attached).
+- `bun run db:down` — Stop and remove the Compose stack. To drop the persisted volume as well, run `docker compose -f packages/db/docker-compose.yml down -v` from the repo root.
+- `bun run lint` / `bun run lint:fix` — Run oxlint checks or autofix.
+- `bun run format` / `bun run format:fix` — Run oxfmt checks or apply formatting.
+- `bun run typecheck` — Run TypeScript checks.
+- `bun run check` — Run `oxlint` and `oxfmt --write` on the whole tree (like CI-style quick pass).
+- `bun run e2e` — Playwright tests for the web client.
 
 ## Linting and formatting
 
 - `oxlint` and `oxfmt` are the default linting and formatting tools across the monorepo.
-- CI runs `pnpm lint` and `pnpm format` as required checks.
-- ESLint/Prettier workspace config packages have been removed from active tooling.
+- Husky runs `lint-staged` on pre-commit (`oxlint` + `oxfmt --write` on staged files).
+- CI runs `bun run lint` and `bun run format` as required checks.
 
 ## E2E Testing
 
@@ -91,4 +97,4 @@ The userId is automatically retrieved from Better Auth and made available to tes
 
 - Turbo coordinates workspaces; most scripts respect the shared `.env`.
 - Sharing features rely on Better-Auth; ensure test keys are present or requests will fail.
-- Stats and charts depend on seeded data; run `pnpm db:seed` if pages look empty.
+- Stats and charts depend on seeded data; run `bun run db:seed` if pages look empty.

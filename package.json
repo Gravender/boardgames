@@ -1,38 +1,87 @@
 {
   "name": "board-games",
   "private": true,
+  "type": "module",
+  "packageManager": "bun@1.2.22",
   "engines": {
-    "node": ">=22.21.0",
-    "pnpm": ">=10.15.1"
+    "node": ">=22.21.0"
   },
-  "packageManager": "pnpm@10.15.1",
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "@better-auth/cli": "1.4.0-beta.9",
+      "@better-auth/expo": "1.4.0-beta.9",
+      "@tailwindcss/postcss": "^4.1.16",
+      "@tanstack/react-devtools": "^0.7.11",
+      "@tanstack/react-form": "^1.28.5",
+      "@tanstack/react-form-devtools": "^0.1.8",
+      "@tanstack/react-query": "^5.95.2",
+      "@tanstack/react-query-devtools": "^5.95.2",
+      "@trpc/client": "^11.16.0",
+      "@trpc/server": "^11.16.0",
+      "@trpc/tanstack-react-query": "^11.16.0",
+      "@types/node": "^22.19.15",
+      "@types/react": "^19.1.17",
+      "@types/react-dom": "^19.1.11",
+      "better-auth": "1.4.0-beta.9",
+      "oxfmt": "^0.35.0",
+      "oxlint": "^1.57.0",
+      "react": "^19.1.4",
+      "react-dom": "^19.1.4",
+      "tailwindcss": "^4.2.2",
+      "typescript": "^5.9.3",
+      "zod": "4.1.12"
+    }
+  },
   "scripts": {
     "build": "turbo run build",
+    "check": "oxlint && oxfmt --write",
     "clean": "git clean -xdf node_modules",
     "clean:workspaces": "turbo run clean",
     "db:push": "turbo -F @board-games/db push",
     "db:studio": "turbo -F @board-games/db studio",
     "db:seed": "turbo -F @board-games/db seed",
+    "db:start": "turbo -F @board-games/db db:start",
+    "db:watch": "turbo -F @board-games/db db:watch",
+    "db:stop": "turbo -F @board-games/db db:stop",
+    "db:down": "turbo -F @board-games/db db:down",
     "dev": "turbo watch dev --continue",
-    "dev:next": "turbo watch dev -F @board-games/nextjs...",
+    "dev:web": "turbo watch dev dev:spotlight -F web...",
     "fmt": "turbo run format --continue",
     "fmt:fix": "turbo run format:fix --continue",
     "format": "turbo run format --continue",
     "format:fix": "turbo run format:fix --continue",
     "lint": "turbo run lint --continue",
     "lint:fix": "turbo run lint:fix --continue",
-    "lint:ws": "pnpm dlx sherif@latest",
-    "postinstall": "pnpm lint:ws",
-    "typecheck": "turbo run typecheck --filter=!@board-games/expo",
+    "lint:ws": "bunx sherif@latest",
+    "postinstall": "bun run lint:ws",
+    "prepare": "husky",
+    "typecheck": "turbo run typecheck --filter=!native",
     "ui-add": "turbo run ui-add",
     "e2e": "turbo -F @board-games/playwright-web e2e"
   },
   "devDependencies": {
-    "@turbo/gen": "^2.7.3",
-    "dotenv-cli": "^10.0.0",
+    "@board-games/config": "workspace:*",
+    "@turbo/gen": "^2.8.21",
+    "dotenv": "^17.2.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
-    "turbo": "^2.7.3",
-    "typescript": "catalog:"
+    "turbo": "^2.8.21",
+    "typescript": "catalog:",
+    "zod": "catalog:"
+  },
+  "lint-staged": {
+    "*": [
+      "oxlint",
+      "oxfmt --write"
+    ]
+  },
+  "overrides": {
+    "@types/minimatch": "5.1.2"
   }
 }

@@ -14,10 +14,9 @@
       "cache": false,
       "persistent": false
     },
-    "dev:next": {
+    "dev:spotlight": {
       "cache": false,
-      "persistent": true,
-      "passThroughEnv": ["NEXT_*", "POSTGRES_URL", "NODE_ENV"]
+      "persistent": true
     },
     "e2e": {
       "cache": false,
@@ -60,6 +59,19 @@
       "cache": false,
       "persistent": false
     },
+    "db:start": {
+      "cache": false
+    },
+    "db:watch": {
+      "cache": false,
+      "persistent": true
+    },
+    "db:stop": {
+      "cache": false
+    },
+    "db:down": {
+      "cache": false
+    },
     "ui-add": {
       "cache": false,
       "interactive": true
@@ -68,6 +80,7 @@
   "globalEnv": ["POSTGRES_URL", "PORT", "NEXT_PUBLIC_POSTHOG_KEY"],
   "globalPassThroughEnv": [
     "NODE_ENV",
+    "SKIP_ENV_VALIDATION",
     "CI",
     "VERCEL",
     "VERCEL_ENV",
