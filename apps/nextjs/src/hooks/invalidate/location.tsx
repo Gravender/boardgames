@@ -7,12 +7,17 @@ export function useInvalidateLocation() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   return useCallback(
-    (locationId: number) => {
+    (
+      input:
+        | { type: "original"; id: number }
+        | { type: "shared"; sharedId: number },
+    ) => {
       return [
         queryClient.invalidateQueries(
-          trpc.location.getLocation.queryOptions({
-            id: locationId,
-          }),
+          trpc.location.getLocation.queryOptions(input),
+        ),
+        queryClient.invalidateQueries(
+          trpc.location.getLocationMatches.queryOptions(input),
         ),
       ];
     },

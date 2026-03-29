@@ -3,6 +3,7 @@ import z from "zod";
 export const getSharedLocationsFromSharedMatchOutput = z.object({
   locations: z.array(
     z.object({
+      type: z.literal("shared"),
       sharedId: z.number(),
       name: z.string(),
       isDefault: z.boolean(),

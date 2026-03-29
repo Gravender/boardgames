@@ -1,6 +1,6 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, exists, sql } from "drizzle-orm";
 import { caseWhen } from "drizzle-plus";
 import { jsonAgg, jsonAggNotNull, jsonBuildObject } from "drizzle-plus/pg";
 
@@ -12,6 +12,7 @@ import {
   match,
   player,
   scoresheet,
+  sharedMatch,
   team,
 } from "@board-games/db/schema";
 import {
@@ -23,7 +24,10 @@ import {
   vMatchCanonicalVisibleToUser,
   vMatchPlayerCanonicalViewerForUser,
 } from "../../utils/drizzle/canonical-clauses";
-import type { GetGameArgs } from "./game.repository.types";
+import type {
+  GetGameArgs,
+  GetLocationMatchesArgs,
+} from "./game.repository.types";
 
 class GameMatchesRepository {
   /**
@@ -313,6 +317,100 @@ class GameMatchesRepository {
       };
     }
   }
+
+  public async getLocationMatches(args: GetLocationMatchesArgs) {
+    const { input } = args;
+
+    const userPlayer = await db.query.player.findFirst({
+      where: {
+        isUser: true,
+        createdBy: args.userId,
+      },
+    });
+    if (!userPlayer) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Current user not found.",
+      });
+    }
+
+    if (input.type === "original") {
+      const returnedLocation = await db.query.location.findFirst({
+        where: {
+          id: input.id,
+          createdBy: args.userId,
+          deletedAt: {
+            isNull: true,
+          },
+        },
+        columns: { id: true },
+      });
+      if (!returnedLocation) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Location not found.",
+        });
+      }
+
+      const matches = await this.fetchMatchesForUser({
+        userId: args.userId,
+        where: and(
+          eq(vMatchCanonical.canonicalLocationId, returnedLocation.id),
+          vMatchCanonicalVisibleToUser(vMatchCanonical, args.userId),
+        ),
+      });
+
+      return {
+        matches,
+        userPlayer,
+      };
+    }
+
+    const returnedSharedLocation = await db.query.sharedLocation.findFirst({
+      where: {
+        id: input.sharedId,
+        sharedWithId: args.userId,
+      },
+      columns: { id: true },
+    });
+    if (!returnedSharedLocation) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Shared location not found.",
+      });
+    }
+
+    const matches = await this.fetchMatchesForUser({
+      userId: args.userId,
+      where: and(
+        vMatchCanonicalVisibleToUser(vMatchCanonical, args.userId),
+        exists(
+          db
+            .select({ id: sharedMatch.id })
+            .from(sharedMatch)
+            .where(
+              and(
+                eq(sharedMatch.matchId, vMatchCanonical.matchId),
+                eq(
+                  sharedMatch.sharedLocationId,
+                  returnedSharedLocation.id,
+                ),
+                eq(sharedMatch.sharedWithId, args.userId),
+              ),
+            ),
+        ),
+      ),
+    });
+
+    return {
+      matches,
+      userPlayer,
+    };
+  }
 }
 
 export const gameMatchesRepository = new GameMatchesRepository();
+
+export type GameMatchesRepositoryMatchRow = Awaited<
+  ReturnType<typeof gameMatchesRepository.getGameMatches>
+>["matches"][number];

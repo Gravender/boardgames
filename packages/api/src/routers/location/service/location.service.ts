@@ -1,6 +1,21 @@
-import type { GetLocationsOutputType } from "../location.output";
-import type { GetLocationsArgs } from "./location.service.types";
+import { TRPCError } from "@trpc/server";
+
+import { db } from "@board-games/db/client";
+
 import { locationRepository } from "../../../repositories/location/location.repository";
+import type {
+  CreateLocationOutputType,
+  GetLocationOutputType,
+  GetLocationsOutputType,
+} from "../location.output";
+import type {
+  CreateLocationArgs,
+  DeleteLocationArgs,
+  EditDefaultLocationArgs,
+  GetLocationArgs,
+  GetLocationsArgs,
+  UpdateLocationArgs,
+} from "./location.service.types";
 
 class LocationService {
   public async getLocations(
@@ -32,6 +47,170 @@ class LocationService {
     });
 
     return combinedLocations;
+  }
+
+  public async getLocation(
+    args: GetLocationArgs,
+  ): Promise<GetLocationOutputType> {
+    const { ctx, input } = args;
+    if (input.type === "original") {
+      const result = await locationRepository.getOriginalLocationSummary({
+        userId: ctx.userId,
+        locationId: input.id,
+      });
+      if (!result) {
+        return null;
+      }
+      return {
+        type: "original",
+        id: result.id,
+        name: result.name,
+        isDefault: result.isDefault,
+      };
+    }
+
+    const returnedLocation = await locationRepository.getSharedLocationSummary({
+      userId: ctx.userId,
+      sharedLocationId: input.sharedId,
+    });
+    if (!returnedLocation) {
+      return null;
+    }
+    return {
+      type: "shared",
+      sharedId: returnedLocation.id,
+      permission: returnedLocation.permission,
+      name: returnedLocation.location.name,
+      isDefault: returnedLocation.isDefault,
+    };
+  }
+
+  public async create(
+    args: CreateLocationArgs,
+  ): Promise<CreateLocationOutputType> {
+    const result = await locationRepository.createLocationWithDefaultHandling({
+      userId: args.ctx.userId,
+      name: args.input.name,
+      isDefault: args.input.isDefault ?? false,
+    });
+    if (!result) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    }
+    return result;
+  }
+
+  public async update(args: UpdateLocationArgs): Promise<void> {
+    const { ctx, input } = args;
+    await db.transaction(async (tx) => {
+      if (input.type === "original") {
+        const ok = await locationRepository.updateOriginalLocationName({
+          userId: ctx.userId,
+          locationId: input.id,
+          name: input.name,
+          tx,
+        });
+        if (!ok) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Location not found.",
+          });
+        }
+        return;
+      }
+      const sharedLocation = await locationRepository.findSharedLocationForUser(
+        {
+          userId: ctx.userId,
+          sharedLocationId: input.sharedId,
+          tx,
+        },
+      );
+      if (!sharedLocation) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared location not found.",
+        });
+      }
+      if (sharedLocation.permission !== "edit") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to edit this location.",
+        });
+      }
+      await locationRepository.updateLocationNameById({
+        locationId: sharedLocation.locationId,
+        name: input.name,
+        tx,
+      });
+    });
+  }
+
+  public async editDefaultLocation(
+    args: EditDefaultLocationArgs,
+  ): Promise<void> {
+    const { ctx, input } = args;
+    if (input.type === "original") {
+      const loc = await locationRepository.findOriginalLocationForUser({
+        userId: ctx.userId,
+        locationId: input.id,
+      });
+      if (!loc) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Location not found.",
+        });
+      }
+    } else {
+      const sl = await locationRepository.findSharedLocationForUser({
+        userId: ctx.userId,
+        sharedLocationId: input.sharedId,
+      });
+      if (!sl) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared location not found.",
+        });
+      }
+    }
+    await db.transaction(async (tx) => {
+      await locationRepository.applyDefaultLocationToggle({
+        userId: ctx.userId,
+        input,
+        tx,
+      });
+    });
+  }
+
+  public async deleteLocation(args: DeleteLocationArgs): Promise<void> {
+    const { ctx, input } = args;
+    await db.transaction(async (tx) => {
+      if (input.type === "original") {
+        const row = await locationRepository.softDeleteOriginalLocation({
+          userId: ctx.userId,
+          locationId: input.id,
+          tx,
+        });
+        if (!row) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Location not found.",
+          });
+        }
+        return;
+      }
+      const deleted = await locationRepository.deleteSharedLocationForRecipient(
+        {
+          userId: ctx.userId,
+          sharedLocationId: input.sharedId,
+          tx,
+        },
+      );
+      if (!deleted) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shared location not found.",
+        });
+      }
+    });
   }
 }
 

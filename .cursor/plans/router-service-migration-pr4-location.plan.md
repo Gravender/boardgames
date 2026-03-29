@@ -4,28 +4,28 @@ overview: Complete location migration to service/repository router model by movi
 todos:
   - id: lock-pr4-location-contracts
     content: Finalize discriminated input/output contracts for getLocation and verify mutation contracts for update/default/delete paths.
-    status: pending
+    status: completed
   - id: implement-location-repository-queries
     content: Add repository coverage for location detail retrieval, create/update/delete, default toggling, and shared-link behavior.
-    status: pending
+    status: completed
   - id: implement-location-service-flows
     content: Implement service orchestration for permission checks, default consistency, shared/original mapping, and mutation branching.
-    status: pending
+    status: completed
   - id: wire-location-router-procedures
     content: Migrate getLocation, create, update, editDefaultLocation, and deleteLocation to service/repository-backed location router procedures.
-    status: pending
+    status: completed
   - id: align-location-shared-subrouter
     content: Ensure shared location sub-router contracts and mapping are consistent with primary location discriminated contracts.
-    status: pending
+    status: completed
   - id: migrate-location-callers
     content: Update dashboard location pages/hooks/mutations to the finalized migrated contracts.
-    status: pending
+    status: completed
   - id: add-pr4-tests
     content: Add API tests for original/shared location detail and mutation branches including permission and default-location edge cases.
-    status: pending
+    status: completed
   - id: run-pr4-validation
     content: Run package checks and smoke test locations list/detail/add/edit/default/delete flows.
-    status: pending
+    status: completed
 isProject: false
 ---
 

@@ -4,8 +4,11 @@ import { redirect } from "next/navigation";
 
 import { Table, TableBody } from "@board-games/ui/table";
 
+import {
+  LocationMatchesSection,
+  LocationMatchesSkeleton,
+} from "~/components/location/location-matches-section";
 import { caller, HydrateClient, prefetch, trpc } from "~/trpc/server";
-import { Matches, MatchSkeleton } from "./_components/Matches";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -16,8 +19,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/locations");
-  const location = await caller.location.getLocation({ id: Number(id) });
-  if (location === null) redirect("/dashboard/locations");
+  const location = await caller.location.getLocation({
+    type: "original",
+    id: Number(id),
+  });
+  if (location === null || location.type !== "original") {
+    redirect("/dashboard/locations");
+  }
   return {
     title: location.name,
     description: `${location.name} Match Tracker`,
@@ -29,7 +37,9 @@ export default async function Page({ params }: Props) {
   const id = (await params).id;
 
   if (isNaN(Number(id))) redirect("/dashboard/locations");
-  void prefetch(trpc.location.getLocation.queryOptions({ id: Number(id) }));
+  const locationInput = { type: "original" as const, id: Number(id) };
+  void prefetch(trpc.location.getLocation.queryOptions(locationInput));
+  void prefetch(trpc.location.getLocationMatches.queryOptions(locationInput));
   return (
     <HydrateClient>
       <div className="flex w-full items-center justify-center">
@@ -45,14 +55,14 @@ export default async function Page({ params }: Props) {
                     "location-match-4",
                     "location-match-5",
                   ].map((itemKey) => (
-                    <MatchSkeleton key={itemKey} />
+                    <LocationMatchesSkeleton key={itemKey} />
                   ))}
                 </TableBody>
               </Table>
             </div>
           }
         >
-          <Matches locationId={Number(id)} />
+          <LocationMatchesSection input={locationInput} />
         </Suspense>
       </div>
     </HydrateClient>

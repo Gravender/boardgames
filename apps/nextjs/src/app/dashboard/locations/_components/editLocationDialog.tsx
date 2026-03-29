@@ -74,15 +74,24 @@ const LocationContent = ({
           trpc.location.getLocations.queryOptions(),
         );
         if (location.type === "shared") {
+          const input = {
+            type: "shared" as const,
+            sharedId: location.sharedId,
+          };
           await queryClient.invalidateQueries(
-            trpc.sharing.getSharedLocation.queryOptions({
-              id: location.sharedId,
-            }),
+            trpc.location.getLocation.queryOptions(input),
+          );
+          await queryClient.invalidateQueries(
+            trpc.location.getLocationMatches.queryOptions(input),
           );
         }
         if (location.type === "original") {
+          const input = { type: "original" as const, id: location.id };
           await queryClient.invalidateQueries(
-            trpc.location.getLocation.queryOptions({ id: location.id }),
+            trpc.location.getLocation.queryOptions(input),
+          );
+          await queryClient.invalidateQueries(
+            trpc.location.getLocationMatches.queryOptions(input),
           );
         }
         router.refresh();
@@ -95,14 +104,14 @@ const LocationContent = ({
     setIsSubmitting(true);
     if (location.type === "original") {
       mutation.mutate({
-        id: location.id,
         type: "original",
+        id: location.id,
         name: values.name,
       });
     } else {
       mutation.mutate({
-        id: location.sharedId,
         type: "shared",
+        sharedId: location.sharedId,
         name: values.name,
       });
     }
