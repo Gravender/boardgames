@@ -39,11 +39,11 @@ A web and mobile project for logging board games, players, matches, scoresheets,
    `bun install`
 
 2. Create environment file  
-   `cp .env.example .env` then fill in required secrets (UploadThing token, Sentry token). The `POSTGRES_URL` value is used by the database scripts.
+   `cp .env.example .env` then fill in required secrets (UploadThing token, Sentry token). For local Docker, keep `POSTGRES_URL` aligned with [`packages/db/docker-compose.yml`](packages/db/docker-compose.yml) (default: `postgresql://postgres:password@localhost:5432/games`).
 
 3. Start the local database (Docker)  
-   `./start-database.sh`  
-   This script creates/starts a `games-postgres` container using the credentials from `POSTGRES_URL`.
+   `bun run db:start`  
+   This runs Docker Compose in `packages/db` and starts the `games-postgres` container with a named volume for data. If a name conflict appears from an old manual container, run `docker rm -f games-postgres` once, then `bun run db:start` again.
 
 4. Apply schema and seed data
 
@@ -61,12 +61,14 @@ A web and mobile project for logging board games, players, matches, scoresheets,
 ## Useful scripts
 
 - `bun run db:studio` — Open Drizzle Studio against the local database.
+- `bun run db:start` / `bun run db:stop` — Start or stop the Compose Postgres service.
+- `bun run db:watch` — Run Compose in the foreground (logs attached).
+- `bun run db:down` — Stop and remove the Compose stack. To drop the persisted volume as well, run `docker compose -f packages/db/docker-compose.yml down -v` from the repo root.
 - `bun run lint` / `bun run lint:fix` — Run oxlint checks or autofix.
 - `bun run format` / `bun run format:fix` — Run oxfmt checks or apply formatting.
 - `bun run typecheck` — Run TypeScript checks.
 - `bun run check` — Run `oxlint` and `oxfmt --write` on the whole tree (like CI-style quick pass).
 - `bun run e2e` — Playwright tests for the web client.
-- `./stop-database.sh` — Stop the local PostgreSQL container.
 
 ## Linting and formatting
 

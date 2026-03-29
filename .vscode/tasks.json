@@ -1,22 +1,23 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"label": "Start Database",
-			"type": "shell",
-			"command": "./start-database.sh",
-			"problemMatcher": [],
-			"detail": "./start-database.sh"
-		},
-		{
-			"label": "Stop Database",
-			"type": "shell",
-			"command": "./stop-database.sh",
-			"problemMatcher": [],
-			"group": {
-				"kind": "build",
-				"isDefault": false
-			}
-		}
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Database",
+      "type": "shell",
+      "command": "bun run db:start",
+      "problemMatcher": [],
+      "detail": "bun run db:start"
+    },
+    {
+      "label": "Stop Database",
+      "type": "shell",
+      "command": "bun run db:stop",
+      "problemMatcher": [],
+      "detail": "bun run db:stop",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    }
+  ]
 }
