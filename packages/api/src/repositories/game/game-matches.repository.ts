@@ -1,6 +1,6 @@
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, exists, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { caseWhen } from "drizzle-plus";
 import { jsonAgg, jsonAggNotNull, jsonBuildObject } from "drizzle-plus/pg";
 
@@ -318,13 +318,11 @@ class GameMatchesRepository {
     }
   }
 
-  public async getLocationMatches(args: GetLocationMatchesArgs) {
-    const { input } = args;
-
+  private async ensureUserPlayer(userId: string) {
     const userPlayer = await db.query.player.findFirst({
       where: {
         isUser: true,
-        createdBy: args.userId,
+        createdBy: userId,
       },
     });
     if (!userPlayer) {
@@ -333,43 +331,34 @@ class GameMatchesRepository {
         message: "Current user not found.",
       });
     }
+    return userPlayer;
+  }
 
-    if (input.type === "original") {
-      const returnedLocation = await db.query.location.findFirst({
-        where: {
-          id: input.id,
-          createdBy: args.userId,
-          deletedAt: {
-            isNull: true,
-          },
+  private async ensureLocationOwnedByUser(locationId: number, userId: string) {
+    const returnedLocation = await db.query.location.findFirst({
+      where: {
+        id: locationId,
+        createdBy: userId,
+        deletedAt: {
+          isNull: true,
         },
-        columns: { id: true },
+      },
+      columns: { id: true },
+    });
+    if (!returnedLocation) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Location not found.",
       });
-      if (!returnedLocation) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Location not found.",
-        });
-      }
-
-      const matches = await this.fetchMatchesForUser({
-        userId: args.userId,
-        where: and(
-          eq(vMatchCanonical.canonicalLocationId, returnedLocation.id),
-          vMatchCanonicalVisibleToUser(vMatchCanonical, args.userId),
-        ),
-      });
-
-      return {
-        matches,
-        userPlayer,
-      };
     }
+    return returnedLocation;
+  }
 
+  private async ensureSharedLocation(sharedId: number, userId: string) {
     const returnedSharedLocation = await db.query.sharedLocation.findFirst({
       where: {
-        id: input.sharedId,
-        sharedWithId: args.userId,
+        id: sharedId,
+        sharedWithId: userId,
       },
       columns: { id: true },
     });
@@ -379,23 +368,74 @@ class GameMatchesRepository {
         message: "Shared location not found.",
       });
     }
+    return returnedSharedLocation;
+  }
+
+  private buildOriginalLocationMatchesWhere(
+    locationId: number,
+    userId: string,
+  ): SQL {
+    return and(
+      eq(vMatchCanonical.canonicalLocationId, locationId),
+      vMatchCanonicalVisibleToUser(vMatchCanonical, userId),
+    )!;
+  }
+
+  private buildSharedLocationMatchesWhere(
+    sharedLocationId: number,
+    userId: string,
+  ): SQL {
+    const sharedMatchesForLocation = db
+      .select({ id: sharedMatch.id })
+      .from(sharedMatch)
+      .where(
+        and(
+          eq(sharedMatch.sharedLocationId, sharedLocationId),
+          eq(sharedMatch.sharedWithId, userId),
+        ),
+      );
+
+    return and(
+      vMatchCanonicalVisibleToUser(vMatchCanonical, userId),
+      inArray(vMatchCanonical.sharedMatchId, sharedMatchesForLocation),
+    )!;
+  }
+
+  public async getLocationMatches(args: GetLocationMatchesArgs) {
+    const { input } = args;
+
+    const userPlayer = await this.ensureUserPlayer(args.userId);
+
+    if (input.type === "original") {
+      const returnedLocation = await this.ensureLocationOwnedByUser(
+        input.id,
+        args.userId,
+      );
+
+      const matches = await this.fetchMatchesForUser({
+        userId: args.userId,
+        where: this.buildOriginalLocationMatchesWhere(
+          returnedLocation.id,
+          args.userId,
+        ),
+      });
+
+      return {
+        matches,
+        userPlayer,
+      };
+    }
+
+    const returnedSharedLocation = await this.ensureSharedLocation(
+      input.sharedId,
+      args.userId,
+    );
 
     const matches = await this.fetchMatchesForUser({
       userId: args.userId,
-      where: and(
-        vMatchCanonicalVisibleToUser(vMatchCanonical, args.userId),
-        exists(
-          db
-            .select({ id: sharedMatch.id })
-            .from(sharedMatch)
-            .where(
-              and(
-                eq(sharedMatch.matchId, vMatchCanonical.matchId),
-                eq(sharedMatch.sharedLocationId, returnedSharedLocation.id),
-                eq(sharedMatch.sharedWithId, args.userId),
-              ),
-            ),
-        ),
+      where: this.buildSharedLocationMatchesWhere(
+        returnedSharedLocation.id,
+        args.userId,
       ),
     });
 

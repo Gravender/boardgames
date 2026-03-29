@@ -297,7 +297,13 @@ class LocationRepository {
     const updated = await tx
       .update(location)
       .set({ name })
-      .where(and(eq(location.id, locationId), eq(location.createdBy, userId)))
+      .where(
+        and(
+          eq(location.id, locationId),
+          eq(location.createdBy, userId),
+          isNull(location.deletedAt),
+        ),
+      )
       .returning({ id: location.id });
     return updated.length > 0;
   }
@@ -315,12 +321,20 @@ class LocationRepository {
     tx: TransactionType;
   }): Promise<boolean> {
     const { userId, input, tx } = args;
-    await this.clearUserLocationDefaults({ userId, tx });
+    if (input.isDefault) {
+      await this.clearUserLocationDefaults({ userId, tx });
+    }
     if (input.type === "original") {
       const updated = await tx
         .update(location)
         .set({ isDefault: input.isDefault })
-        .where(and(eq(location.id, input.id), eq(location.createdBy, userId)))
+        .where(
+          and(
+            eq(location.id, input.id),
+            eq(location.createdBy, userId),
+            isNull(location.deletedAt),
+          ),
+        )
         .returning({ id: location.id });
       return updated.length > 0;
     }
@@ -376,7 +390,12 @@ class LocationRepository {
     await tx
       .update(sharedMatch)
       .set({ sharedLocationId: null })
-      .where(eq(sharedMatch.sharedLocationId, sharedLocationId));
+      .where(
+        and(
+          eq(sharedMatch.sharedLocationId, sharedLocationId),
+          eq(sharedMatch.sharedWithId, userId),
+        ),
+      );
     const [deletedLocation] = await tx
       .delete(sharedLocation)
       .where(
