@@ -78,6 +78,7 @@ import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
 import { GameImage } from "~/components/game-image";
+import { viewEditPermissionSelectItems } from "@board-games/ui/lib/select-items";
 import { useTRPC } from "~/trpc/react";
 
 const formSchema = z
@@ -719,6 +720,9 @@ export default function SharePlayerPage({ playerId }: { playerId: number }) {
                                         }) => (
                                           <Select
                                             value={permissionField.value}
+                                            items={
+                                              viewEditPermissionSelectItems
+                                            }
                                             onValueChange={(value) => {
                                               const permission =
                                                 value === "view"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { z } from "zod/v4";
 
@@ -183,6 +183,13 @@ function Content({
     }, []);
   };
   const filteredRoles = useFilteredRoles(roles, roleSearchTerm);
+  const teamSelectItems = useMemo(() => {
+    const m: Record<string, string> = { "no-team": "No team" };
+    for (const t of teams) {
+      m[String(t.id)] = t.name;
+    }
+    return m;
+  }, [teams]);
 
   return (
     <>
@@ -228,6 +235,7 @@ function Content({
                                 ? field.state.value.toString()
                                 : "no-team"
                             }
+                            items={teamSelectItems}
                             onValueChange={(value) => {
                               if (value === "no-team") {
                                 const previousTeamPlayers = players.filter(
@@ -277,17 +285,7 @@ function Content({
                             }}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a team">
-                                {(selected) => {
-                                  if (selected === "no-team") {
-                                    return "No team";
-                                  }
-                                  const team = teams.find(
-                                    (t) => t.id.toString() === String(selected),
-                                  );
-                                  return team?.name ?? String(selected);
-                                }}
-                              </SelectValue>
+                              <SelectValue placeholder="Select a team" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="no-team">No team</SelectItem>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
 
 import type { RouterOutputs } from "@board-games/api";
@@ -74,6 +74,17 @@ export const MatchForm = withForm({
     const [showAddLocation, setShowAddLocation] = useState(false);
     const [newLocation, setNewLocation] = useState("");
     const { createLocationMutation } = useAddLocationMutation();
+    const scoresheetSelectItems = useMemo(() => {
+      const m: Record<string, string> = {};
+      for (const sheet of scoresheets) {
+        const key =
+          sheet.type === "original"
+            ? `original-${sheet.id}`
+            : `shared-${sheet.sharedId}`;
+        m[key] = sheet.name;
+      }
+      return m;
+    }, [scoresheets]);
     return (
       <>
         <DialogHeader>
@@ -315,6 +326,7 @@ export const MatchForm = withForm({
                   <Select
                     name={field.name}
                     value={selectValue}
+                    items={scoresheetSelectItems}
                     onValueChange={(e) => {
                       if (e === null) {
                         return;
@@ -342,7 +354,7 @@ export const MatchForm = withForm({
                       aria-invalid={isInvalid}
                       className="min-w-[120px]"
                     >
-                      <SelectValue />
+                      <SelectValue placeholder="Select a scoresheet" />
                     </SelectTrigger>
                     <SelectContent>
                       {scoresheets.map((sheet) => {

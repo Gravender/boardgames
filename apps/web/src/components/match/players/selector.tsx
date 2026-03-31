@@ -44,6 +44,16 @@ import { ManagePlayerRoles } from "./player-role";
 import { ManageTeamContent } from "./team-selector";
 import { updatePlayersForTeams } from "./update-players-for-teams";
 
+const teamAssignmentSelectItems = (
+  teams: ReadonlyArray<{ id: number; name: string }>,
+): Record<string, string> => {
+  const m: Record<string, string> = { "no-team": "No team" };
+  for (const t of teams) {
+    m[String(t.id)] = t.name;
+  }
+  return m;
+};
+
 const AddPlayersFormSchema = z.object({
   players: addMatchPlayersSchema,
   teams: z.array(
@@ -486,6 +496,9 @@ export const AddPlayersDialogForm = ({
                                                   ? foundPlayer.teamId.toString()
                                                   : "no-team"
                                               }
+                                              items={teamAssignmentSelectItems(
+                                                teams,
+                                              )}
                                               onValueChange={(value) => {
                                                 if (value === "no-team") {
                                                   form.setFieldValue(

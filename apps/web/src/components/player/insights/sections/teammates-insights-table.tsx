@@ -31,6 +31,7 @@ import {
 import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
+import { selectItemsFromPairs } from "@board-games/ui/lib/select-items";
 import { PlayerImage } from "~/components/player-image";
 
 import { insightPlayerProfileHref } from "../player-insights-match-links";
@@ -80,6 +81,17 @@ export function TeammatesTable({ data }: { data: Teammates }) {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const sortPresetValue = `${sortKey}:${sortDir}`;
+
+  const teammateSortPresetItems = useMemo(
+    () =>
+      selectItemsFromPairs(
+        TEAMMATE_SORT_PRESETS.map((p) => ({
+          value: `${p.key}:${p.dir}`,
+          label: p.label,
+        })),
+      ),
+    [],
+  );
 
   const handleSortPresetChange = (v: string | null) => {
     if (v === null) {
@@ -205,6 +217,7 @@ export function TeammatesTable({ data }: { data: Teammates }) {
             </Label>
             <Select
               value={sortPresetValue}
+              items={teammateSortPresetItems}
               onValueChange={handleSortPresetChange}
             >
               <SelectTrigger id="teammates-sort" className="w-full">

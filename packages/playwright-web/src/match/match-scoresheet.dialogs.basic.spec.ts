@@ -25,11 +25,17 @@ async function fillAndSaveComment(page: Page, text: string) {
   await expect(
     page.getByRole("heading", { name: "Match Comment" }),
   ).toBeVisible();
-  await page.getByRole("textbox").fill(text);
+  await page.getByRole("textbox", { name: "Comment" }).fill(text);
   await page.getByRole("button", { name: "Ok" }).click();
   await page.reload();
+  // Wait until refetched match data shows the saved comment before reopening the dialog;
+  // otherwise the form can mount with empty defaultValues while the query is still loading.
+  await expect(commentCard).toContainText(text, { timeout: 15000 });
   await commentTrigger.click();
-  await expect(page.getByRole("textbox")).toHaveValue(text, { timeout: 7000 });
+  await expect(page.getByRole("textbox", { name: "Comment" })).toHaveValue(
+    text,
+    { timeout: 7000 },
+  );
   await page.getByRole("button", { name: "Cancel" }).click();
 }
 

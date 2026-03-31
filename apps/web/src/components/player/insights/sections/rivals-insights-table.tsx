@@ -34,6 +34,7 @@ import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
 import { PlayerImage } from "~/components/player-image";
+import { selectItemsFromPairs } from "@board-games/ui/lib/select-items";
 
 import { insightPlayerProfileHref } from "../player-insights-match-links";
 import {
@@ -99,6 +100,17 @@ export function RivalsTable({ data }: { data: Rivals }) {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const sortPresetValue = `${sortKey}:${sortDir}`;
+
+  const rivalSortPresetItems = useMemo(
+    () =>
+      selectItemsFromPairs(
+        RIVAL_SORT_PRESETS.map((p) => ({
+          value: `${p.key}:${p.dir}`,
+          label: p.label,
+        })),
+      ),
+    [],
+  );
 
   const handleSortPresetChange = (v: string | null) => {
     if (v === null) {
@@ -259,6 +271,7 @@ export function RivalsTable({ data }: { data: Rivals }) {
             </Label>
             <Select
               value={sortPresetValue}
+              items={rivalSortPresetItems}
               onValueChange={handleSortPresetChange}
             >
               <SelectTrigger id="rivals-sort" className="w-full">

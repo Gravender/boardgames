@@ -58,7 +58,7 @@ export function AddMatchDialog({
     <Dialog open={showAddMatchDialog} onOpenChange={setShowAddMatchDialog}>
       <DialogTrigger
         render={
-          <Button aria-label="add match">
+          <Button aria-label="add match" data-testid="game-add-match">
             <Plus className="mr-2 h-4 w-4" />
             Add Match
           </Button>

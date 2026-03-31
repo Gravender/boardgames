@@ -243,6 +243,14 @@ const OpposingTeamsView = ({
     );
   }, [configurations, shapeFilter]);
 
+  const shapeFilterItems = useMemo(() => {
+    const m: Record<string, string> = { all: "All Shapes" };
+    for (const shape of availableShapes) {
+      m[shape] = shape;
+    }
+    return m;
+  }, [availableShapes]);
+
   const handleShapeFilterChange = (value: string | null) => {
     if (value === null) {
       return;
@@ -255,7 +263,11 @@ const OpposingTeamsView = ({
       {/* Shape filter */}
       {availableShapes.length > 1 && (
         <div className="flex items-center gap-2">
-          <Select value={shapeFilter} onValueChange={handleShapeFilterChange}>
+          <Select
+            value={shapeFilter}
+            items={shapeFilterItems}
+            onValueChange={handleShapeFilterChange}
+          >
             <SelectTrigger
               className="w-[130px]"
               aria-label="Filter by team shape"

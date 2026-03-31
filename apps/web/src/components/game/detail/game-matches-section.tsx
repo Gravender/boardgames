@@ -26,7 +26,12 @@ export function GameMatchesSection({
   return (
     <div className="relative">
       <div className="mb-3 flex items-center justify-between md:mb-4">
-        <h2 className="text-xl font-semibold md:text-2xl">Match History</h2>
+        <h2
+          className="text-xl font-semibold md:text-2xl"
+          data-testid="game-match-history-heading"
+        >
+          Match History
+        </h2>
         <AddMatchDialog
           game={gameInput}
           gameName={game.name}

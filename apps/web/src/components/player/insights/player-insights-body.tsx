@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { BarChart3, Gamepad2, LayoutDashboard, Users } from "lucide-react";
 
 import { Label } from "@board-games/ui/label";
@@ -13,6 +13,8 @@ import {
 } from "@board-games/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 import { cn } from "@board-games/ui/utils";
+
+import { selectItemsFromPairs } from "@board-games/ui/lib/select-items";
 
 import type { PlayerInsightsPageInput } from "./player-insights-types";
 import {
@@ -68,6 +70,16 @@ export function PlayerInsightsBody({
   playerInput: PlayerInsightsPageInput;
 }) {
   const [activeTab, setActiveTab] = useState<TabValue>("overview");
+  const insightTabItems = useMemo(
+    () =>
+      selectItemsFromPairs(
+        INSIGHT_TABS.map((tab) => ({
+          value: tab.value,
+          label: tab.label,
+        })),
+      ),
+    [],
+  );
 
   return (
     <Tabs
@@ -85,6 +97,7 @@ export function PlayerInsightsBody({
           </Label>
           <Select
             value={activeTab}
+            items={insightTabItems}
             onValueChange={(v) => setActiveTab(v as TabValue)}
           >
             <SelectTrigger

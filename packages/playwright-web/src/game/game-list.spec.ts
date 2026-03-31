@@ -44,7 +44,7 @@ test.describe("Game List", () => {
     await page.getByRole("button", { name: "Create New" }).click();
     await page.getByRole("textbox", { name: "Sheet Name" }).fill("Default");
     await page.locator('button[name="winCondition"]').click();
-    await page.getByLabel("Highest Score").getByText("Highest Score").click();
+    await page.getByRole("option", { name: "Highest Score" }).click();
     await page.locator('button[name="roundsScore"]').click();
     await page.getByRole("option", { name: "Aggregate" }).click();
     await page.getByRole("button", { name: "Submit" }).click();

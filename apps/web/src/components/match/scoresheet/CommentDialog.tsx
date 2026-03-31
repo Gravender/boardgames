@@ -65,8 +65,7 @@ function Content({
   setIsOpen: (isOpen: boolean) => void;
   comment: string;
 }) {
-  const { updateMatchCommentMutation } =
-    useUpdateMatchCommentMutation(matchInput);
+  const { updateMatchCommentMutation } = useUpdateMatchCommentMutation();
   const form = useAppForm({
     defaultValues: { comment },
     validators: {

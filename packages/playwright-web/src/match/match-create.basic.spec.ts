@@ -56,9 +56,9 @@ test.describe("Match Create - Basic", () => {
       { timeout: 15000 },
     );
 
-    // 4. Open the Add Match dialog
+    // 4. Open the Add Match dialog (button mounts after scoresheets + locations load)
     const addMatchButton = page.getByRole("button", { name: "add match" });
-    await expect(addMatchButton).toBeVisible({ timeout: 5000 });
+    await expect(addMatchButton).toBeVisible({ timeout: 15000 });
     await addMatchButton.click();
 
     // 5. Verify the match form is visible

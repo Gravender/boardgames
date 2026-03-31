@@ -14,6 +14,8 @@ import {
 } from "@board-games/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@board-games/ui/tabs";
 
+import { selectItemsFromPairs } from "@board-games/ui/lib/select-items";
+
 import { PlayedWithGroupsSection } from "./played-with-groups";
 import { RivalsTable, TeammatesTable } from "./people-social-tables";
 
@@ -43,6 +45,13 @@ export function PeopleInsightsSection({
   groups: Groups;
 }) {
   const [sub, setSub] = useState<PeopleSub>("rivals");
+  const peopleSubTabItems = useMemo(
+    () =>
+      selectItemsFromPairs(
+        PEOPLE_SUB_TABS.map((t) => ({ value: t.value, label: t.label })),
+      ),
+    [],
+  );
 
   const summary = useMemo(
     () => ({
@@ -99,7 +108,11 @@ export function PeopleInsightsSection({
             >
               View
             </Label>
-            <Select value={sub} onValueChange={(v) => setSub(v as PeopleSub)}>
+            <Select
+              value={sub}
+              items={peopleSubTabItems}
+              onValueChange={(v) => setSub(v as PeopleSub)}
+            >
               <SelectTrigger id="people-sub-mobile" className="w-full">
                 <SelectValue placeholder="Choose view" />
               </SelectTrigger>
