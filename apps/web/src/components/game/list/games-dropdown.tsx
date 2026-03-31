@@ -70,7 +70,7 @@ export function GamesDropDown({
                   href={`/dashboard/games/${data.type === "shared" ? "shared/" : ""}${data.id}/edit`}
                   className="flex items-center gap-2"
                 >
-                  <PencilIcon className="mr-2 h-4 w-4" />
+                  <PencilIcon className="h-4 w-4" />
                   Edit
                 </Link>
               }
@@ -87,7 +87,7 @@ export function GamesDropDown({
                   }
                   className="flex items-center gap-2"
                 >
-                  <BarChart2Icon className="mr-2 h-4 w-4" />
+                  <BarChart2Icon className="h-4 w-4" />
                   View Stats
                 </Link>
               }
@@ -107,7 +107,7 @@ export function GamesDropDown({
                       href={`/dashboard/games/${data.id}/share`}
                       className="flex items-center gap-2"
                     >
-                      <Link2Icon className="mr-2 h-4 w-4" />
+                      <Link2Icon className="h-4 w-4" />
                       Share
                     </Link>
                   }
@@ -118,7 +118,7 @@ export function GamesDropDown({
                   onClick={() => setIsDeleteGameDialogOpen(true)}
                 >
                   <div className="flex items-center gap-2">
-                    <Trash2Icon className="mr-2 h-4 w-4" />
+                    <Trash2Icon className="h-4 w-4" />
                     <span>Delete Game</span>
                   </div>
                 </DropdownMenuItem>

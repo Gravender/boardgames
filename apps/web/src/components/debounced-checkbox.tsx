@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 
 import { Checkbox } from "@board-games/ui/checkbox";

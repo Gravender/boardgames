@@ -205,7 +205,7 @@ export const PlayerPerformanceSection = ({
               }
             />
             <PopoverContent
-              className="max-h-[300px] w-[--radix-popover-trigger-width] p-0"
+              className="max-h-[300px] w-(--anchor-width) p-0"
               align="start"
             >
               <Command>

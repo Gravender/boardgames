@@ -48,6 +48,7 @@ export const AddGroupDialog = () => {
                 className="rounded-full"
                 size="icon"
                 type="button"
+                aria-label="Create group"
               >
                 <PlusIcon />
               </Button>

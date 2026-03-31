@@ -267,7 +267,10 @@ function Content({
                               <Popover>
                                 <PopoverTrigger
                                   render={
-                                    <button className="flex w-full items-center justify-between gap-2 text-sm font-normal">
+                                    <button
+                                      type="button"
+                                      className="flex w-full items-center justify-between gap-2 text-sm font-normal"
+                                    >
                                       <div className="flex items-center gap-2">
                                         <div className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-10 w-10 items-center justify-center rounded-md text-sm font-medium">
                                           {player.placement}

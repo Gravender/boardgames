@@ -425,6 +425,7 @@ export default function PlayerRequestPage({
                                         <PopoverTrigger
                                           render={
                                             <Button
+                                              type="button"
                                               variant="outline"
                                               role="combobox"
                                               aria-expanded={playerSearchOpen}
@@ -866,6 +867,7 @@ function RequestShareGame({
                         <PopoverTrigger
                           render={
                             <Button
+                              type="button"
                               variant="outline"
                               role="combobox"
                               aria-expanded={gameSearchOpen}

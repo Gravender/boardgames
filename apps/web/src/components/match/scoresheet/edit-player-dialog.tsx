@@ -323,6 +323,7 @@ function Content({
                   <ScrollArea>
                     <div className="flex max-h-[20vh] flex-col gap-2">
                       {filteredRoles.map((role) => {
+                        const roleRowId = `edit-player-role-${role.type}-${role.type === "original" ? role.id : role.sharedId}`;
                         const roleIndex = formRoles.findIndex((r) =>
                           isSameRole(r, role),
                         );
@@ -342,6 +343,7 @@ function Content({
                                 <div className="flex flex-col gap-1">
                                   <div className="flex items-center gap-2">
                                     <Checkbox
+                                      id={roleRowId}
                                       checked={roleIndex > -1}
                                       onCheckedChange={(checked) => {
                                         if (checked) {
@@ -361,7 +363,10 @@ function Content({
                                       }}
                                       disabled={isTeamRole}
                                     />
-                                    <Label className="flex w-full flex-col gap-2">
+                                    <Label
+                                      htmlFor={roleRowId}
+                                      className="flex w-full flex-col gap-2"
+                                    >
                                       <div className="flex items-center gap-2">
                                         <span>{role.name}</span>
                                         {isTeamRole && (

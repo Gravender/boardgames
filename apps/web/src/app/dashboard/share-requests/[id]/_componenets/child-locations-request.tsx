@@ -205,7 +205,7 @@ function LocationRequest({
     return temp;
   }, [foundLocation?.id, userLocations]);
   return (
-    <Accordion multiple className="w-full">
+    <Accordion className="w-full">
       <AccordionItem value={`location-${location.item.id}`}>
         <div className="flex w-full items-center justify-between pr-4">
           <AccordionTrigger className="hover:no-underline">

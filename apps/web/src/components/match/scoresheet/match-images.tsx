@@ -107,7 +107,13 @@ export function MatchImages({
                     <TooltipTrigger
                       render={
                         <button
+                          type="button"
                           className="w-full"
+                          aria-label={
+                            image.caption?.trim()
+                              ? image.caption
+                              : "Open match image"
+                          }
                           onClick={() => {
                             setSelectedImage(image);
                             setIsDialogOpen(true);
@@ -117,7 +123,7 @@ export function MatchImages({
                             {image.url ? (
                               <Image
                                 src={image.url}
-                                alt={image.caption}
+                                alt={image.caption?.trim() || "Match image"}
                                 fill
                                 className="aspect-square size-full rounded-md object-cover"
                               />

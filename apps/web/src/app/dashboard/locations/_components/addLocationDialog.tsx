@@ -47,6 +47,7 @@ export const AddLocationDialog = () => {
                 className="rounded-full"
                 size="icon"
                 type="button"
+                aria-label="Add location"
               >
                 <PlusIcon />
               </Button>

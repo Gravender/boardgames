@@ -142,7 +142,7 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
                         <DropdownMenuItem
                           render={
                             <Link
-                              href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.id}/roles`}
+                              href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/roles`}
                             >
                               <UserCog className="mr-2 h-4 w-4" />
                               Edit Roles

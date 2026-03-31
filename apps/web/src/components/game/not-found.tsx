@@ -36,7 +36,10 @@ export function GameNotFound({
 
         {/* Action Buttons */}
         <div className="flex flex-col items-center justify-center gap-4 pt-8 sm:flex-row">
-          <Link href="/dashboard" className={buttonVariants()}>
+          <Link
+            href="/dashboard"
+            className={buttonVariants({ variant: "default", size: "lg" })}
+          >
             <Home className="mr-2 h-5 w-5" />
             Return Home
           </Link>
