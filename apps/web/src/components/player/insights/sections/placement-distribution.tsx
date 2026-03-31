@@ -223,7 +223,9 @@ export function PlacementDistributionSection({ data }: { data: Data }) {
                     position="top"
                     className="fill-muted-foreground"
                     fontSize={11}
-                    formatter={(value: number) => formatMatchCount(value)}
+                    formatter={(value) =>
+                      formatMatchCount(typeof value === "number" ? value : 0)
+                    }
                   />
                 </Bar>
               </BarChart>
@@ -241,7 +243,12 @@ export function PlacementDistributionSection({ data }: { data: Data }) {
                 </Label>
                 <Select
                   value={String(selectedPlayerCount)}
-                  onValueChange={(v) => setSelectedPlayerCount(Number(v))}
+                  onValueChange={(v) => {
+                    if (v === null) {
+                      return;
+                    }
+                    setSelectedPlayerCount(Number(v));
+                  }}
                 >
                   <SelectTrigger
                     id="placements-table-size"
@@ -296,7 +303,9 @@ export function PlacementDistributionSection({ data }: { data: Data }) {
                       position="top"
                       className="fill-muted-foreground"
                       fontSize={11}
-                      formatter={(value: number) => formatMatchCount(value)}
+                      formatter={(value) =>
+                        formatMatchCount(typeof value === "number" ? value : 0)
+                      }
                     />
                   </Bar>
                 </BarChart>

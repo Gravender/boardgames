@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { Calendar, Clock, Gamepad2, Info, Users } from "lucide-react";
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
-import { Button } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
 import {
   Card,
   CardContent,
@@ -370,11 +370,16 @@ export function RecentMatches({
                               })}
                           </div>
                           {href ? (
-                            <Button variant="ghost" size="sm" asChild>
-                              <Link href={href} aria-label={ariaLabel}>
-                                Open match
-                              </Link>
-                            </Button>
+                            <Link
+                              href={href}
+                              aria-label={ariaLabel}
+                              className={buttonVariants({
+                                variant: "ghost",
+                                size: "sm",
+                              })}
+                            >
+                              Open match
+                            </Link>
                           ) : null}
                         </div>
                       </div>

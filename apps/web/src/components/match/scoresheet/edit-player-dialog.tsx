@@ -277,7 +277,17 @@ function Content({
                             }}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a team" />
+                              <SelectValue placeholder="Select a team">
+                                {(selected) => {
+                                  if (selected === "no-team") {
+                                    return "No team";
+                                  }
+                                  const team = teams.find(
+                                    (t) => t.id.toString() === String(selected),
+                                  );
+                                  return team?.name ?? String(selected);
+                                }}
+                              </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="no-team">No team</SelectItem>
@@ -331,52 +341,51 @@ function Content({
                                 field.state.meta.isTouched &&
                                 !field.state.meta.isValid;
                               return (
-                                <Field
-                                  data-invalid={isInvalid}
-                                  className="flex items-center gap-2"
-                                >
-                                  <Checkbox
-                                    checked={roleIndex > -1}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        field.handleChange([
-                                          ...formRoles,
-                                          {
-                                            ...role,
-                                          },
-                                        ]);
-                                      } else {
-                                        field.handleChange(
-                                          formRoles.filter(
-                                            (r) => !isSameRole(r, role),
-                                          ),
-                                        );
-                                      }
-                                    }}
-                                    disabled={isTeamRole}
-                                  />
-                                  <FieldLabel className="flex w-full flex-col gap-2">
-                                    <div className="flex items-center gap-2">
-                                      <span>{role.name}</span>
-                                      {isTeamRole && (
-                                        <Badge
-                                          variant="outline"
-                                          className="ml-2 text-xs"
-                                        >
-                                          Team Role
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <p className="text-muted-foreground text-xs">
-                                      {role.description}
-                                    </p>
-                                  </FieldLabel>
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox
+                                      checked={roleIndex > -1}
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          field.handleChange([
+                                            ...formRoles,
+                                            {
+                                              ...role,
+                                            },
+                                          ]);
+                                        } else {
+                                          field.handleChange(
+                                            formRoles.filter(
+                                              (r) => !isSameRole(r, role),
+                                            ),
+                                          );
+                                        }
+                                      }}
+                                      disabled={isTeamRole}
+                                    />
+                                    <Label className="flex w-full flex-col gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <span>{role.name}</span>
+                                        {isTeamRole && (
+                                          <Badge
+                                            variant="outline"
+                                            className="ml-2 text-xs"
+                                          >
+                                            Team Role
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-muted-foreground text-xs">
+                                        {role.description}
+                                      </p>
+                                    </Label>
+                                  </div>
                                   {isInvalid && (
                                     <FieldError
                                       errors={field.state.meta.errors}
                                     />
                                   )}
-                                </Field>
+                                </div>
                               );
                             }}
                           </form.Field>

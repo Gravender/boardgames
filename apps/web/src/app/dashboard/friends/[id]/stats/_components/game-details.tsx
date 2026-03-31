@@ -49,7 +49,7 @@ export function GameDetails({ data }: { data: Games }) {
   return (
     <ScrollArea className="w-full">
       <Table
-        containerClassname="rounded-lg h-72 md:h-120 w-full"
+        containerClassName="rounded-lg h-72 md:h-120 w-full"
         className="w-full"
       >
         <TableHeader className="bg-card text-card-foreground sticky top-0 z-20">

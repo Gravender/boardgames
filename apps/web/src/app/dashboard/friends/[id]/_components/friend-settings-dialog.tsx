@@ -27,12 +27,14 @@ export function FriendSettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size={"icon"}>
-          <Settings className="h-4 w-4" />
-          <span className="sr-only">Settings</span>
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button variant="ghost" size={"icon"}>
+            <Settings className="h-4 w-4" />
+            <span className="sr-only">Settings</span>
+          </Button>
+        }
+      />
       <DialogContent className="h-[750px] sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Friend Settings</DialogTitle>

@@ -56,12 +56,14 @@ export function AddMatchDialog({
   if (!locations) return null;
   return (
     <Dialog open={showAddMatchDialog} onOpenChange={setShowAddMatchDialog}>
-      <DialogTrigger asChild>
-        <Button aria-label="add match">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Match
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button aria-label="add match">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Match
+          </Button>
+        }
+      />
       <DialogContent className="max-w-4xl">
         <AddMatchContent
           game={game}

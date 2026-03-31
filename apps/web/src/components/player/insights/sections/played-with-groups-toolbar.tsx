@@ -91,6 +91,9 @@ export const PlayedWithGroupsToolbar = ({
         <Select
           value={sizeFilter}
           onValueChange={(v) => {
+            if (v === null) {
+              return;
+            }
             const opt = SIZE_OPTIONS.find((o) => o.value === v);
             if (opt) {
               onSizeFilterChange(opt.value);
@@ -116,7 +119,15 @@ export const PlayedWithGroupsToolbar = ({
         >
           Sort
         </Label>
-        <Select value={presetValue} onValueChange={onPresetChange}>
+        <Select
+          value={presetValue}
+          onValueChange={(v) => {
+            if (v === null) {
+              return;
+            }
+            onPresetChange(v);
+          }}
+        >
           <SelectTrigger id="groups-sort" className="bg-background/80 w-full">
             <SelectValue placeholder="Sort by…" />
           </SelectTrigger>

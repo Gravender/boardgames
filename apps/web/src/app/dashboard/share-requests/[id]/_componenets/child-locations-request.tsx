@@ -205,7 +205,7 @@ function LocationRequest({
     return temp;
   }, [foundLocation?.id, userLocations]);
   return (
-    <Accordion type="multiple" className="w-full">
+    <Accordion multiple className="w-full">
       <AccordionItem value={`location-${location.item.id}`}>
         <div className="flex w-full items-center justify-between pr-4">
           <AccordionTrigger className="hover:no-underline">
@@ -307,23 +307,25 @@ function LocationRequest({
                           open={locationSearchOpen}
                           onOpenChange={setLocationSearchOpen}
                         >
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={locationSearchOpen}
-                              className="justify-between"
-                            >
-                              {locationState.linkedId
-                                ? userLocations.find(
-                                    (existingLocation) =>
-                                      existingLocation.id ===
-                                      locationState.linkedId,
-                                  )?.name
-                                : "Select a location..."}
-                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
+                          <PopoverTrigger
+                            render={
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={locationSearchOpen}
+                                className="justify-between"
+                              >
+                                {locationState.linkedId
+                                  ? userLocations.find(
+                                      (existingLocation) =>
+                                        existingLocation.id ===
+                                        locationState.linkedId,
+                                    )?.name
+                                  : "Select a location..."}
+                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            }
+                          />
                           <PopoverContent className="w-[300px] p-0">
                             <Command>
                               <CommandInput

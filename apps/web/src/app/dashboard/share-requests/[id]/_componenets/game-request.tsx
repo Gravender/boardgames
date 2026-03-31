@@ -352,22 +352,24 @@ export default function GameRequestPage({
                                         open={gameSearchOpen}
                                         onOpenChange={setGameSearchOpen}
                                       >
-                                        <PopoverTrigger asChild>
-                                          <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            aria-expanded={gameSearchOpen}
-                                            className="justify-between"
-                                          >
-                                            {field.value
-                                              ? usersGames.find(
-                                                  (game) =>
-                                                    game.id === field.value,
-                                                )?.name
-                                              : "Select a game..."}
-                                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                          </Button>
-                                        </PopoverTrigger>
+                                        <PopoverTrigger
+                                          render={
+                                            <Button
+                                              variant="outline"
+                                              role="combobox"
+                                              aria-expanded={gameSearchOpen}
+                                              className="justify-between"
+                                            >
+                                              {field.value
+                                                ? usersGames.find(
+                                                    (game) =>
+                                                      game.id === field.value,
+                                                  )?.name
+                                                : "Select a game..."}
+                                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                          }
+                                        />
                                         <PopoverContent className="w-[300px] p-0">
                                           <Command>
                                             <CommandInput

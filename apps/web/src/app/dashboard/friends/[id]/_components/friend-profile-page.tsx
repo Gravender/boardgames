@@ -5,7 +5,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { BarChart2, Share2, UserX } from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
-import { Button } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 
 import { PlayerImage } from "~/components/player-image";
@@ -47,32 +47,34 @@ export default function FriendProfilePage({ friendId }: { friendId: string }) {
       <Card>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Button
-              asChild
-              className="flex h-auto flex-col items-center justify-center py-6"
+            <Link
+              href={`/dashboard/friends/${friendId}/shared`}
+              className={buttonVariants({
+                className:
+                  "flex h-auto flex-col items-center justify-center py-6",
+              })}
             >
-              <Link href={`/dashboard/friends/${friendId}/shared`}>
-                <Share2 className="mb-2 h-8 w-8" />
-                <span className="text-lg font-medium">Shared Items</span>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  View items shared between you and your friend
-                </p>
-              </Link>
-            </Button>
+              <Share2 className="mb-2 h-8 w-8" />
+              <span className="text-lg font-medium">Shared Items</span>
+              <p className="text-muted-foreground mt-1 text-sm">
+                View items shared between you and your friend
+              </p>
+            </Link>
 
             {hasLinkedPlayer ? (
-              <Button
-                asChild
-                className="flex h-auto flex-col items-center justify-center py-6"
+              <Link
+                href={`/dashboard/friends/${friendId}/stats`}
+                className={buttonVariants({
+                  className:
+                    "flex h-auto flex-col items-center justify-center py-6",
+                })}
               >
-                <Link href={`/dashboard/friends/${friendId}/stats`}>
-                  <BarChart2 className="mb-2 h-8 w-8" />
-                  <span className="text-lg font-medium">Player Stats</span>
-                  <p className="text-muted-foreground mt-1 text-sm">
-                    View game statistics for this player
-                  </p>
-                </Link>
-              </Button>
+                <BarChart2 className="mb-2 h-8 w-8" />
+                <span className="text-lg font-medium">Player Stats</span>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  View game statistics for this player
+                </p>
+              </Link>
             ) : (
               <div className="bg-muted/50 flex h-auto flex-col items-center justify-center rounded-md border py-6">
                 <UserX className="text-muted-foreground mb-2 h-8 w-8" />

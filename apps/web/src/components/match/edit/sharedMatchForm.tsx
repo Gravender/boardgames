@@ -121,15 +121,15 @@ export function EditSharedMatchForm(input: {
                 field.state.meta.isTouched && !field.state.meta.isValid;
               const selectValue =
                 field.state.value === null
-                  ? "null"
+                  ? null
                   : `shared-${field.state.value.sharedId}`;
-              const foundLocation = sharedLocations.find((location) => {
-                return location.sharedId === Number(selectValue.split("-")[1]);
-              });
-              if (!foundLocation && field.state.value !== null) {
-                console.error("Location not found.");
-                return null;
-              }
+              const foundLocation =
+                field.state.value === null
+                  ? null
+                  : (sharedLocations.find(
+                      (location) =>
+                        location.sharedId === field.state.value?.sharedId,
+                    ) ?? null);
               return (
                 <Field data-invalid={isInvalid} className="flex w-full">
                   <FieldLabel className="sr-only" htmlFor={field.name}>
@@ -141,7 +141,7 @@ export function EditSharedMatchForm(input: {
                       name={field.name}
                       value={selectValue}
                       onValueChange={(value) => {
-                        if (value === "null") {
+                        if (value === null) {
                           field.handleChange(null);
                           return;
                         }
@@ -173,10 +173,7 @@ export function EditSharedMatchForm(input: {
                           )}
                         </SelectValue>
                       </SelectTrigger>
-                      <SelectContent position="item-aligned">
-                        <SelectItem value="null" className="sr-only">
-                          No location
-                        </SelectItem>
+                      <SelectContent>
                         {sharedLocations.map((location) => {
                           const locationValue = `shared-${location.sharedId}`;
                           return (

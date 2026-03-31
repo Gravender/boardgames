@@ -100,7 +100,10 @@ export function RivalsTable({ data }: { data: Rivals }) {
 
   const sortPresetValue = `${sortKey}:${sortDir}`;
 
-  const handleSortPresetChange = (v: string) => {
+  const handleSortPresetChange = (v: string | null) => {
+    if (v === null) {
+      return;
+    }
     const parts = v.split(":");
     if (parts.length !== 2) {
       return;

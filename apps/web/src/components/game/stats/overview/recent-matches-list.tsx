@@ -276,17 +276,19 @@ function MatchInfoDialog({ match }: { match: Match }) {
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 shrink-0"
-          type="button"
-        >
-          <Info className="h-4 w-4" />
-          <span className="sr-only">Match details</span>
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0"
+            type="button"
+          >
+            <Info className="h-4 w-4" />
+            <span className="sr-only">Match details</span>
+          </Button>
+        }
+      />
       <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{match.name}</DialogTitle>

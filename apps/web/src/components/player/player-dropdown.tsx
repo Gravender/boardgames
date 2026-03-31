@@ -16,7 +16,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
-import { Button, buttonVariants } from "@board-games/ui/button";
+import { Button } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
 import { Dialog } from "@board-games/ui/dialog";
 import {
   DropdownMenu,
@@ -72,25 +73,29 @@ export function PlayerDropDown({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          }
+        />
         <DropdownMenuContent align="end">
           {canEdit && (
             <DropdownMenuItem onClick={() => setIsEditPlayerOpen(true)}>
               Edit
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem asChild>
-            <Link
-              href={`/dashboard/players${data.type === "original" ? "/" : "/shared/"}${playerId}/stats`}
-            >
-              Stats
-            </Link>
-          </DropdownMenuItem>
+          <DropdownMenuItem
+            render={
+              <Link
+                href={`/dashboard/players${data.type === "original" ? "/" : "/shared/"}${playerId}/stats`}
+              >
+                Stats
+              </Link>
+            }
+          />
           {data.type === "original" && (
             <DropdownMenuItem
               className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"

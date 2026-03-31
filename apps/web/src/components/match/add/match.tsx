@@ -116,22 +116,28 @@ export const MatchForm = withForm({
             {(field) => {
               const isInvalid =
                 field.state.meta.isTouched && !field.state.meta.isValid;
+              const selectedLocation = field.state.value;
               const selectValue =
-                field.state.value === null
-                  ? "null"
-                  : field.state.value.type === "original"
-                    ? `original-${field.state.value.id}`
-                    : `shared-${field.state.value.sharedId}`;
-              const foundLocation = locations.find((location) => {
-                if (location.type === "original") {
-                  return location.id === Number(selectValue.split("-")[1]);
-                }
-                return location.sharedId === Number(selectValue.split("-")[1]);
-              });
-              if (!foundLocation && field.state.value !== null) {
-                console.error("Location not found.");
-                return null;
-              }
+                selectedLocation === null
+                  ? null
+                  : selectedLocation.type === "original"
+                    ? `original-${selectedLocation.id}`
+                    : `shared-${selectedLocation.sharedId}`;
+              const foundLocation =
+                selectedLocation === null
+                  ? null
+                  : (locations.find((location) => {
+                      if (selectedLocation.type === "original") {
+                        return (
+                          location.type === "original" &&
+                          location.id === selectedLocation.id
+                        );
+                      }
+                      return (
+                        location.type === "shared" &&
+                        location.sharedId === selectedLocation.sharedId
+                      );
+                    }) ?? null);
               return (
                 <Field data-invalid={isInvalid} className="flex w-full">
                   <FieldLabel className="sr-only" htmlFor={field.name}>
@@ -144,13 +150,13 @@ export const MatchForm = withForm({
                         name={field.name}
                         value={selectValue}
                         onValueChange={(value) => {
+                          if (value === null) {
+                            field.handleChange(null);
+                            return;
+                          }
                           if (value === "add-new") {
                             field.handleChange(null);
                             setShowAddLocation(true);
-                            return;
-                          }
-                          if (value === "null") {
-                            field.handleChange(null);
                             return;
                           }
                           const [type, id] = value.split("-");
@@ -197,10 +203,7 @@ export const MatchForm = withForm({
                             )}
                           </SelectValue>
                         </SelectTrigger>
-                        <SelectContent position="item-aligned">
-                          <SelectItem value="null" className="sr-only">
-                            No location
-                          </SelectItem>
+                        <SelectContent>
                           {locations.map((location) => {
                             const locationValue =
                               location.type === "original"
@@ -313,6 +316,9 @@ export const MatchForm = withForm({
                     name={field.name}
                     value={selectValue}
                     onValueChange={(e) => {
+                      if (e === null) {
+                        return;
+                      }
                       const [type, id] = e.split("-");
                       const idToNumber = Number(id);
                       if (isNaN(idToNumber)) {
@@ -338,7 +344,7 @@ export const MatchForm = withForm({
                     >
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent position="item-aligned">
+                    <SelectContent>
                       {scoresheets.map((sheet) => {
                         const sheetId =
                           sheet.type === "original"

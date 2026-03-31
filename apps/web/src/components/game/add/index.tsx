@@ -17,12 +17,14 @@ export function AddGameDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen} modal={true}>
-      <DialogTrigger asChild>
-        <Button aria-label="add game">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Game
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button aria-label="add game">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Game
+          </Button>
+        }
+      />
       <DialogContent className="p-2 sm:max-w-md sm:p-6">
         <AddGameForm setIsOpen={setIsOpen} />
       </DialogContent>

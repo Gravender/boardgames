@@ -81,7 +81,10 @@ export function TeammatesTable({ data }: { data: Teammates }) {
 
   const sortPresetValue = `${sortKey}:${sortDir}`;
 
-  const handleSortPresetChange = (v: string) => {
+  const handleSortPresetChange = (v: string | null) => {
+    if (v === null) {
+      return;
+    }
     const [key, dir] = v.split(":") as [MateSortKey, "asc" | "desc"];
     setSortKey(key);
     setSortDir(dir);

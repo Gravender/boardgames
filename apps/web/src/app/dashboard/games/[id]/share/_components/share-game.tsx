@@ -387,24 +387,27 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
                               <Label>Share with Friends</Label>
 
                               <Popover>
-                                <PopoverTrigger asChild>
-                                  <FormControl>
-                                    <Button
-                                      variant="outline"
-                                      role="combobox"
-                                      className={cn(
-                                        "justify-between",
-                                        !field.value && "text-muted-foreground",
-                                      )}
-                                    >
-                                      {selectedFriends.length > 0
-                                        ? `${selectedFriends.length} friend${selectedFriends.length > 1 ? "s" : ""} selected`
-                                        : "Select friends..."}
+                                <PopoverTrigger
+                                  render={
+                                    <FormControl>
+                                      <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        className={cn(
+                                          "justify-between",
+                                          !field.value &&
+                                            "text-muted-foreground",
+                                        )}
+                                      >
+                                        {selectedFriends.length > 0
+                                          ? `${selectedFriends.length} friend${selectedFriends.length > 1 ? "s" : ""} selected`
+                                          : "Select friends..."}
 
-                                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                  </FormControl>
-                                </PopoverTrigger>
+                                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                      </Button>
+                                    </FormControl>
+                                  }
+                                />
                                 <PopoverContent className="w-[300px] p-0">
                                   <Command>
                                     <CommandInput placeholder="Search friends..." />
@@ -780,7 +783,7 @@ export default function ShareGamePage({ gameId }: { gameId: number }) {
                                       </div>
                                     )}
                                   </div>
-                                  <Accordion type="single" collapsible>
+                                  <Accordion>
                                     <AccordionItem
                                       value="item-1"
                                       className="border-none"

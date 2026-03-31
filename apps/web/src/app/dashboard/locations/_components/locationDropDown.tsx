@@ -15,7 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
-import { Button, buttonVariants } from "@board-games/ui/button";
+import { Button } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
 import { Dialog } from "@board-games/ui/dialog";
 import {
   DropdownMenu,
@@ -80,12 +81,14 @@ export function LocationDropDown({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          }
+        />
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={onEditDefault}>
             {data.isDefault ? "Unset Default" : "Set Default"}

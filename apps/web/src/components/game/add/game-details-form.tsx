@@ -92,11 +92,13 @@ export const GameDetailsForm = withForm({
                           userImageClassName="object-cover"
                         />
                         <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" type="button">
-                              Icons
-                            </Button>
-                          </PopoverTrigger>
+                          <PopoverTrigger
+                            render={
+                              <Button variant="outline" type="button">
+                                Icons
+                              </Button>
+                            }
+                          />
                           <PopoverContent className="w-80">
                             <h4 className="mb-2 font-medium">Select an Icon</h4>
                             <div className="grid grid-cols-4 gap-2">
@@ -174,21 +176,23 @@ export const GameDetailsForm = withForm({
                 open={moreOptions}
                 onOpenChange={(open) => form.setFieldValue("moreOptions", open)}
               >
-                <CollapsibleTrigger asChild>
-                  <Button
-                    className="pl-0"
-                    variant="ghost"
-                    size="sm"
-                    type="button"
-                  >
-                    <span>More options</span>
-                    {moreOptions ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
+                <CollapsibleTrigger
+                  render={
+                    <Button
+                      className="pl-0"
+                      variant="ghost"
+                      size="sm"
+                      type="button"
+                    >
+                      <span>More options</span>
+                      {moreOptions ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  }
+                />
                 <CollapsibleContent className="space-y-4">
                   <div className="space-y-4">
                     <div className="grid grid-cols-3 items-center gap-4">

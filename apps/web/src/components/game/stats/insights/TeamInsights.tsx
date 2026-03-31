@@ -243,7 +243,10 @@ const OpposingTeamsView = ({
     );
   }, [configurations, shapeFilter]);
 
-  const handleShapeFilterChange = (value: string) => {
+  const handleShapeFilterChange = (value: string | null) => {
+    if (value === null) {
+      return;
+    }
     setShapeFilter(value);
   };
 
@@ -367,9 +370,10 @@ export function TeamInsights({ teams }: TeamInsightsProps) {
     teams.cores.quartets.length > 0;
   const hasConfigs = teams.configurations.length > 0;
 
-  const handleViewModeChange = (value: string) => {
-    if (value === "same-team" || value === "opposing") {
-      setViewMode(value);
+  const handleViewModeChange = (value: string[]) => {
+    const v = value[0];
+    if (v === "same-team" || v === "opposing") {
+      setViewMode(v);
     }
   };
 
@@ -392,8 +396,7 @@ export function TeamInsights({ teams }: TeamInsightsProps) {
       {hasCores && hasConfigs && (
         <div className="flex items-center gap-3">
           <ToggleGroup
-            type="single"
-            value={viewMode}
+            value={[viewMode]}
             onValueChange={handleViewModeChange}
             variant="outline"
             aria-label="Toggle between Same Team and Opposing Teams view"

@@ -265,46 +265,48 @@ function Content({
                               )}
                             >
                               <Popover>
-                                <PopoverTrigger asChild>
-                                  <button className="flex w-full items-center justify-between gap-2 text-sm font-normal">
-                                    <div className="flex items-center gap-2">
-                                      <div className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-10 w-10 items-center justify-center rounded-md text-sm font-medium">
-                                        {player.placement}
-                                      </div>
-                                      {player.teamId === null ? (
-                                        <>
-                                          <PlayerImage
-                                            image={player.image}
-                                            alt={player.name}
-                                          />
-                                          <span className="text-lg font-semibold">
-                                            {player.name}
-                                          </span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full">
-                                            <div className="flex h-full w-full items-center justify-center rounded-full bg-slate-300">
-                                              <Users />
+                                <PopoverTrigger
+                                  render={
+                                    <button className="flex w-full items-center justify-between gap-2 text-sm font-normal">
+                                      <div className="flex items-center gap-2">
+                                        <div className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-10 w-10 items-center justify-center rounded-md text-sm font-medium">
+                                          {player.placement}
+                                        </div>
+                                        {player.teamId === null ? (
+                                          <>
+                                            <PlayerImage
+                                              image={player.image}
+                                              alt={player.name}
+                                            />
+                                            <span className="text-lg font-semibold">
+                                              {player.name}
+                                            </span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full">
+                                              <div className="flex h-full w-full items-center justify-center rounded-full bg-slate-300">
+                                                <Users />
+                                              </div>
                                             </div>
-                                          </div>
-                                          <span className="text-lg font-semibold">
-                                            {`Team: ${
-                                              teams.find(
-                                                (team) =>
-                                                  team.id === player.teamId,
-                                              )?.name
-                                            }`}
-                                          </span>
-                                        </>
-                                      )}
-                                    </div>
+                                            <span className="text-lg font-semibold">
+                                              {`Team: ${
+                                                teams.find(
+                                                  (team) =>
+                                                    team.id === player.teamId,
+                                                )?.name
+                                              }`}
+                                            </span>
+                                          </>
+                                        )}
+                                      </div>
 
-                                    <div className="flex w-20 items-center justify-start font-semibold">
-                                      {player.score ?? ""}
-                                    </div>
-                                  </button>
-                                </PopoverTrigger>
+                                      <div className="flex w-20 items-center justify-start font-semibold">
+                                        {player.score ?? ""}
+                                      </div>
+                                    </button>
+                                  }
+                                />
                                 <PopoverContent>
                                   <Field>
                                     <FieldLabel>Placement</FieldLabel>

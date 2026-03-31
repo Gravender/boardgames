@@ -111,11 +111,17 @@ const TopCoresSection = ({ cores }: { cores: Cores }) => {
 
   if (allCores.length === 0) return null;
 
-  const handleCoreSizeChange = (value: string) => {
+  const handleCoreSizeChange = (value: string | null) => {
+    if (value === null) {
+      return;
+    }
     setCoreSizeFilter(value as CoreSizeFilter);
   };
 
-  const handleMinMatchesChange = (value: string) => {
+  const handleMinMatchesChange = (value: string | null) => {
+    if (value === null) {
+      return;
+    }
     setMinMatchesFilter(value as MinMatchesFilter);
   };
 

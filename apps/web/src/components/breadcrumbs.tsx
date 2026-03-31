@@ -76,11 +76,13 @@ const RenderBreadCrumbs = ({
                 {index + 1 === pathItems.length ? (
                   <BreadcrumbPage>{item.name}</BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink asChild>
-                    <Link prefetch={true} href={`/${item.path}`}>
-                      {item.name}
-                    </Link>
-                  </BreadcrumbLink>
+                  <BreadcrumbLink
+                    render={
+                      <Link prefetch={true} href={`/${item.path}`}>
+                        {item.name}
+                      </Link>
+                    }
+                  />
                 )}
               </BreadcrumbItem>
             </Fragment>

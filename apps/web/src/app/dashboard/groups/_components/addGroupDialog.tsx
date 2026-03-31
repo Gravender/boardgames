@@ -41,16 +41,18 @@ export const AddGroupDialog = () => {
       </DialogContent>
       <div className="flex h-full w-full flex-col justify-end">
         <div className="flex justify-end">
-          <DialogTrigger asChild>
-            <Button
-              variant="default"
-              className="rounded-full"
-              size="icon"
-              type="button"
-            >
-              <PlusIcon />
-            </Button>
-          </DialogTrigger>
+          <DialogTrigger
+            render={
+              <Button
+                variant="default"
+                className="rounded-full"
+                size="icon"
+                type="button"
+              >
+                <PlusIcon />
+              </Button>
+            }
+          />
         </div>
       </div>
     </Dialog>

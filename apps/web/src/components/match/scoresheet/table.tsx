@@ -51,7 +51,7 @@ export function ScoreSheetTable(input: { match: MatchInput }) {
   const [player, setPlayer] = useState<Player | null>(null);
   return (
     <>
-      <Table containerClassname="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
+      <Table containerClassName="max-h-[65vh] h-fit w-screen sm:w-auto rounded-lg">
         <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20 shadow-lg">
           <HeaderRow
             match={input.match}

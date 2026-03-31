@@ -202,7 +202,7 @@ function PlayerRequest({
     return temp;
   }, [foundPlayer?.id, usersPlayers]);
   return (
-    <Accordion type="multiple" className="w-full">
+    <Accordion multiple className="w-full">
       <AccordionItem value={`player-${player.item.id}`}>
         <div className="flex w-full items-center justify-between pr-4">
           <AccordionTrigger className="hover:no-underline">
@@ -310,23 +310,25 @@ function PlayerRequest({
                           open={playerSearchOpen}
                           onOpenChange={setPlayerSearchOpen}
                         >
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={playerSearchOpen}
-                              className="justify-between"
-                            >
-                              {playerState.linkedId
-                                ? usersPlayers.find(
-                                    (existingPlayer) =>
-                                      existingPlayer.id ===
-                                      playerState.linkedId,
-                                  )?.name
-                                : "Select a player..."}
-                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
+                          <PopoverTrigger
+                            render={
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={playerSearchOpen}
+                                className="justify-between"
+                              >
+                                {playerState.linkedId
+                                  ? usersPlayers.find(
+                                      (existingPlayer) =>
+                                        existingPlayer.id ===
+                                        playerState.linkedId,
+                                    )?.name
+                                  : "Select a player..."}
+                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            }
+                          />
                           <PopoverContent className="w-[300px] p-0">
                             <Command>
                               <CommandInput

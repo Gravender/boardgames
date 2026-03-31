@@ -7,6 +7,7 @@ import type { RouterOutputs } from "@board-games/api";
 import { formatDuration } from "@board-games/shared";
 import { Badge } from "@board-games/ui/badge";
 import { Button } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
 import { Card, CardContent } from "@board-games/ui/card";
 import { Dialog } from "@board-games/ui/dialog";
 import { cn } from "@board-games/ui/utils";
@@ -152,11 +153,17 @@ export function PlayerInsightsHeroSection({
               </Button>
             )}
             {shareHref !== null && (
-              <Button variant="ghost" size="icon" className="size-9" asChild>
-                <Link href={shareHref} aria-label="Share player profile">
-                  <Share2 className="h-4 w-4" />
-                </Link>
-              </Button>
+              <Link
+                href={shareHref}
+                aria-label="Share player profile"
+                className={buttonVariants({
+                  variant: "ghost",
+                  size: "icon",
+                  className: "size-9",
+                })}
+              >
+                <Share2 className="h-4 w-4" />
+              </Link>
             )}
           </div>
         </div>

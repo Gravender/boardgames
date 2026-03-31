@@ -33,28 +33,34 @@ export function NavSecondary({
             onOpenChange={setOpenProfile}
             className="w-full"
           >
-            <CollapsibleTrigger asChild>
-              <SidebarMenuButton size="sm">
-                <UserRound />
-                <span>Profile</span>
-                <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
-              </SidebarMenuButton>
-            </CollapsibleTrigger>
+            <CollapsibleTrigger
+              render={
+                <SidebarMenuButton size="sm">
+                  <UserRound />
+                  <span>Profile</span>
+                  <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                </SidebarMenuButton>
+              }
+            />
             <CollapsibleContent>
               <SidebarMenuSub>
                 <SidebarMenuSubItem>
-                  <SidebarMenuSubButton asChild>
-                    <Link prefetch={true} href="/dashboard/friends">
-                      Friends
-                    </Link>
-                  </SidebarMenuSubButton>
+                  <SidebarMenuSubButton
+                    render={
+                      <Link prefetch={true} href="/dashboard/friends">
+                        Friends
+                      </Link>
+                    }
+                  />
                 </SidebarMenuSubItem>
                 <SidebarMenuSubItem>
-                  <SidebarMenuSubButton asChild>
-                    <Link prefetch={true} href="/dashboard/share-requests">
-                      Share Requests
-                    </Link>
-                  </SidebarMenuSubButton>
+                  <SidebarMenuSubButton
+                    render={
+                      <Link prefetch={true} href="/dashboard/share-requests">
+                        Share Requests
+                      </Link>
+                    }
+                  />
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
             </CollapsibleContent>
@@ -68,21 +74,25 @@ export function NavSecondary({
             onOpenChange={setOpenSettings}
             className="w-full"
           >
-            <CollapsibleTrigger asChild>
-              <SidebarMenuButton size="sm">
-                <Settings />
-                <span>Settings</span>
-                <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
-              </SidebarMenuButton>
-            </CollapsibleTrigger>
+            <CollapsibleTrigger
+              render={
+                <SidebarMenuButton size="sm">
+                  <Settings />
+                  <span>Settings</span>
+                  <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                </SidebarMenuButton>
+              }
+            />
             <CollapsibleContent>
               <SidebarMenuSub>
                 <SidebarMenuSubItem>
-                  <SidebarMenuSubButton asChild>
-                    <Link prefetch={true} href="/dashboard/settings/profile">
-                      Profile
-                    </Link>
-                  </SidebarMenuSubButton>
+                  <SidebarMenuSubButton
+                    render={
+                      <Link prefetch={true} href="/dashboard/settings/profile">
+                        Profile
+                      </Link>
+                    }
+                  />
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
             </CollapsibleContent>

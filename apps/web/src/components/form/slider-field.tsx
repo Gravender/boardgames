@@ -43,7 +43,10 @@ export const SliderField = ({
         min={min}
         max={max}
         step={step}
-        onValueChange={field.handleChange}
+        onValueChange={(next) => {
+          const v = Array.isArray(next) ? [...next] : [next];
+          field.handleChange(v);
+        }}
         onBlur={field.handleBlur}
         aria-invalid={isInvalid}
         disabled={disabled}

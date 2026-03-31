@@ -39,7 +39,12 @@ export const SelectField = ({
       <Select
         name={field.name}
         value={field.state.value}
-        onValueChange={(value) => field.handleChange(value)}
+        onValueChange={(value) => {
+          if (value === null) {
+            return;
+          }
+          field.handleChange(value);
+        }}
         disabled={disabled}
       >
         <SelectTrigger

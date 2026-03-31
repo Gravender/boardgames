@@ -63,23 +63,25 @@ export function GroupQuickMatchSelection({
               }
               return (
                 <Tooltip key={group.id}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const groupPlayers = players.filter((p) =>
-                          group.players.find((gP) => isSamePlayer(p, gP)),
-                        );
-                        setPlayers(groupPlayers);
-                      }}
-                      className="max-w-32 overflow-ellipsis"
-                    >
-                      <span className="truncate">{group.name}</span>
-                      <Badge variant="secondary">{group.matches}</Badge>
-                    </Button>
-                  </TooltipTrigger>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const groupPlayers = players.filter((p) =>
+                            group.players.find((gP) => isSamePlayer(p, gP)),
+                          );
+                          setPlayers(groupPlayers);
+                        }}
+                        className="max-w-32 overflow-ellipsis"
+                      >
+                        <span className="truncate">{group.name}</span>
+                        <Badge variant="secondary">{group.matches}</Badge>
+                      </Button>
+                    }
+                  />
                   <TooltipContent className="max-w-48 gap-2">
                     <p className="text-xs font-medium">{group.name}</p>
                     <p className="text-xs font-medium">
@@ -127,51 +129,53 @@ export function GroupQuickMatchSelection({
                 return null;
               }
               return (
-                <Item key={group.id} asChild variant="outline">
-                  <button
-                    onClick={() => {
-                      setPlayers(groupPlayers);
-                      setShowGroupBrowser(false);
-                    }}
-                  >
-                    <ItemContent>
-                      <ItemTitle>
-                        <span>{group.name}</span>
-                        <Badge variant="secondary">
-                          Played {group.matches} matches
-                        </Badge>
-                      </ItemTitle>
-                      <ItemDescription className="text-left">
-                        {groupPlayers.length} players
-                      </ItemDescription>
-                      <div className="flex gap-2">
-                        {groupPlayers.map((p) => {
-                          const key =
-                            p.type === "original"
-                              ? `player-${p.id}`
-                              : `player-${p.sharedId}`;
-                          return (
-                            <div key={key} className="flex gap-2">
-                              <PlayerImage
-                                className="size-4"
-                                image={p.image}
-                                alt={p.name}
-                              />
-                              <span>{p.name}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </ItemContent>
-                  </button>
-                </Item>
+                <Item
+                  key={group.id}
+                  variant="outline"
+                  render={
+                    <button
+                      onClick={() => {
+                        setPlayers(groupPlayers);
+                        setShowGroupBrowser(false);
+                      }}
+                    >
+                      <ItemContent>
+                        <ItemTitle>
+                          <span>{group.name}</span>
+                          <Badge variant="secondary">
+                            Played {group.matches} matches
+                          </Badge>
+                        </ItemTitle>
+                        <ItemDescription className="text-left">
+                          {groupPlayers.length} players
+                        </ItemDescription>
+                        <div className="flex gap-2">
+                          {groupPlayers.map((p) => {
+                            const key =
+                              p.type === "original"
+                                ? `player-${p.id}`
+                                : `player-${p.sharedId}`;
+                            return (
+                              <div key={key} className="flex gap-2">
+                                <PlayerImage
+                                  className="size-4"
+                                  image={p.image}
+                                  alt={p.name}
+                                />
+                                <span>{p.name}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </ItemContent>
+                    </button>
+                  }
+                />
               );
             })}
           </ItemGroup>
           <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
+            <DialogClose render={<Button variant="outline">Cancel</Button>} />
           </DialogFooter>
         </DialogContent>
       </Dialog>

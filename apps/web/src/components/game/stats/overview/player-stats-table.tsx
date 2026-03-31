@@ -47,7 +47,7 @@ export function PlayerStatsTableSkeleton() {
       </CardHeader>
       <CardContent className="p-2">
         <div className="flex">
-          <Table containerClassname="overflow-y-scroll max-h-[40vh] rounded-lg">
+          <Table containerClassName="overflow-y-scroll max-h-[40vh] rounded-lg">
             <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20">
               <TableRow>
                 <TableHead className="w-16 px-2 sm:w-full sm:px-4">
@@ -213,13 +213,11 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
           <CardAction>
             <span className="text-muted-foreground text-sm">Show:</span>
             <ToggleGroup
-              type="single"
-              value={coopOrCompetitive}
+              value={[coopOrCompetitive]}
               onValueChange={(value) => {
-                if (value) {
-                  setCoopOrCompetitive(
-                    value as "coop" | "competitive" | "overall",
-                  );
+                const v = value[0];
+                if (v) {
+                  setCoopOrCompetitive(v as "coop" | "competitive" | "overall");
                 }
               }}
             >
@@ -240,7 +238,7 @@ export function PlayerStatsTable({ players }: { players: Player[] }) {
       </CardHeader>
       <CardContent className="p-2">
         <div className="flex">
-          <Table containerClassname=" overflow-y-scroll max-h-[40vh] rounded-lg">
+          <Table containerClassName="overflow-y-scroll max-h-[40vh] rounded-lg">
             <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20">
               <TableRow>
                 <TableHead className="w-16 px-2 sm:w-full sm:px-4">

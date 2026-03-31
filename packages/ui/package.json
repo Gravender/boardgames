@@ -6,12 +6,9 @@
   "exports": {
     "./globals.css": "./src/styles/globals.css",
     "./*": "./src/components/*.tsx",
-    "./components/*": "./src/components/*.tsx",
     "./utils": "./src/lib/utils.ts",
-    "./lib/utils": "./src/lib/utils.ts",
     "./lib/*": "./src/lib/*",
-    "./hooks/*": "./src/hooks/*",
-    "./hooks/use-mobile": "./src/hooks/use-mobile.tsx"
+    "./hooks/*": "./src/hooks/*"
   },
   "license": "MIT",
   "scripts": {

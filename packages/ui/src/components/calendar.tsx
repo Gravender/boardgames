@@ -9,7 +9,8 @@ import {
 } from "react-day-picker";
 
 import { cn } from "@board-games/ui/utils";
-import { Button, buttonVariants } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
+import { Button } from "@board-games/ui/button";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,

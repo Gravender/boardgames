@@ -243,7 +243,15 @@ export const SocialGameFilterSelect = ({
       <Label htmlFor={id} className="text-sm font-medium">
         {label}
       </Label>
-      <Select value={value} onValueChange={onValueChange}>
+      <Select
+        value={value}
+        onValueChange={(v) => {
+          if (v === null) {
+            return;
+          }
+          onValueChange(v);
+        }}
+      >
         <SelectTrigger id={id} className="w-full">
           <SelectValue placeholder="All games" />
         </SelectTrigger>
