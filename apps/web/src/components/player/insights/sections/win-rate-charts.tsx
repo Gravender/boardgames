@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { TooltipProps } from "recharts";
+import type { TooltipContentProps, TooltipPayload } from "recharts";
 
 import type { RouterOutputs } from "@board-games/api";
 import {
@@ -98,7 +98,9 @@ const tooltipMonthForSeries = (
   return monthSlotLabels[slot - 1];
 };
 
-type OverTimeChartTooltipProps = TooltipProps<number, string> & {
+type OverTimeChartTooltipProps = {
+  active?: boolean;
+  payload?: TooltipPayload;
   monthSlotLabels: readonly string[];
   priorMonthSlotLabels: readonly string[];
 };
@@ -278,7 +280,7 @@ export function WinRateChartsSection({ data }: { data: Data }) {
                 />
                 <YAxis
                   domain={[0, 100]}
-                  tickFormatter={(v) => `${v}%`}
+                  tickFormatter={(v: number | string) => `${v}%`}
                   tickLine={false}
                   axisLine={false}
                 />
@@ -305,7 +307,7 @@ export function WinRateChartsSection({ data }: { data: Data }) {
                 <XAxis dataKey="name" tickLine={false} axisLine={false} />
                 <YAxis
                   domain={[0, 100]}
-                  tickFormatter={(v) => `${v}%`}
+                  tickFormatter={(v: number | string) => `${v}%`}
                   tickLine={false}
                   axisLine={false}
                 />
@@ -350,7 +352,7 @@ export function WinRateChartsSection({ data }: { data: Data }) {
                   tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 10 }}
-                  tickFormatter={(v) =>
+                  tickFormatter={(v: number | string) =>
                     typeof v === "number" && v >= 1 && v <= 12
                       ? (monthSlotLabels[v - 1] ?? String(v))
                       : ""
@@ -365,14 +367,15 @@ export function WinRateChartsSection({ data }: { data: Data }) {
                 />
                 <YAxis
                   domain={[0, 100]}
-                  tickFormatter={(v) => `${v}%`}
+                  tickFormatter={(v: number | string) => `${v}%`}
                   tickLine={false}
                   axisLine={false}
                 />
                 <ChartTooltip
-                  content={(props: TooltipProps<number, string>) => (
+                  content={(props: TooltipContentProps) => (
                     <OverTimeChartTooltip
-                      {...props}
+                      active={props.active}
+                      payload={props.payload}
                       monthSlotLabels={monthSlotLabels}
                       priorMonthSlotLabels={priorMonthSlotLabels}
                     />

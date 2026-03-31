@@ -33,6 +33,8 @@ import {
 } from "@board-games/ui/chart";
 import { cn } from "@board-games/ui/utils";
 
+import { selectItemsFromPairs } from "@board-games/ui/lib/select-items";
+
 type Data =
   RouterOutputs["newPlayer"]["stats"]["getPlayerPlacementDistribution"];
 
@@ -124,6 +126,15 @@ export function PlacementDistributionSection({ data }: { data: Data }) {
       }))
       .toSorted((a, b) => a.playerCount - b.playerCount);
   }, [data.byGameSize]);
+
+  const tableSizeSelectItems = useMemo(() => {
+    return selectItemsFromPairs(
+      tableSizeOptions.map((opt) => ({
+        value: String(opt.playerCount),
+        label: `${opt.playerCount} ${opt.playerCount === 1 ? "player" : "players"} · ${formatMatchCount(opt.matchCount)}`,
+      })),
+    );
+  }, [tableSizeOptions]);
 
   const [selectedPlayerCount, setSelectedPlayerCount] = useState<number | null>(
     null,
@@ -223,7 +234,9 @@ export function PlacementDistributionSection({ data }: { data: Data }) {
                     position="top"
                     className="fill-muted-foreground"
                     fontSize={11}
-                    formatter={(value: number) => formatMatchCount(value)}
+                    formatter={(value) =>
+                      formatMatchCount(typeof value === "number" ? value : 0)
+                    }
                   />
                 </Bar>
               </BarChart>
@@ -241,7 +254,13 @@ export function PlacementDistributionSection({ data }: { data: Data }) {
                 </Label>
                 <Select
                   value={String(selectedPlayerCount)}
-                  onValueChange={(v) => setSelectedPlayerCount(Number(v))}
+                  items={tableSizeSelectItems}
+                  onValueChange={(v) => {
+                    if (v === null) {
+                      return;
+                    }
+                    setSelectedPlayerCount(Number(v));
+                  }}
                 >
                   <SelectTrigger
                     id="placements-table-size"
@@ -296,7 +315,9 @@ export function PlacementDistributionSection({ data }: { data: Data }) {
                       position="top"
                       className="fill-muted-foreground"
                       fontSize={11}
-                      formatter={(value: number) => formatMatchCount(value)}
+                      formatter={(value) =>
+                        formatMatchCount(typeof value === "number" ? value : 0)
+                      }
                     />
                   </Bar>
                 </BarChart>

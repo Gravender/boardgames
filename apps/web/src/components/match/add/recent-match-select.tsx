@@ -61,17 +61,19 @@ export function RecentMatchSelection({
                 : firstThreeNames;
             return (
               <Tooltip key={match.id}>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPlayers(matchPlayers)}
-                    className="max-w-32 overflow-ellipsis"
-                  >
-                    <span className="truncate">{match.name}</span>
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPlayers(matchPlayers)}
+                      className="max-w-32 overflow-ellipsis"
+                    >
+                      <span className="truncate">{match.name}</span>
+                    </Button>
+                  }
+                />
                 <TooltipContent>
                   <h4 className="font-semibold">{match.name}</h4>
                   <p className="text-xs">

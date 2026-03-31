@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import {
   Field,
   FieldDescription,
@@ -15,6 +17,7 @@ import {
 } from "@board-games/ui/select";
 
 import { useFieldContext } from "~/hooks/form";
+import { selectItemsFromPairs } from "@board-games/ui/lib/select-items";
 
 export const SelectField = ({
   label,
@@ -31,6 +34,7 @@ export const SelectField = ({
 }) => {
   const field = useFieldContext<string>();
   const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+  const selectItems = useMemo(() => selectItemsFromPairs(values), [values]);
 
   return (
     <Field data-invalid={isInvalid}>
@@ -39,7 +43,13 @@ export const SelectField = ({
       <Select
         name={field.name}
         value={field.state.value}
-        onValueChange={(value) => field.handleChange(value)}
+        items={selectItems}
+        onValueChange={(value) => {
+          if (value === null) {
+            return;
+          }
+          field.handleChange(value);
+        }}
         disabled={disabled}
       >
         <SelectTrigger

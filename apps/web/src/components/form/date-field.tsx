@@ -30,26 +30,28 @@ export const DateField = ({
         {label}
       </FieldLabel>
       <Popover modal={true}>
-        <PopoverTrigger asChild>
-          <Button
-            id={field.name}
-            variant="outline"
-            className="text-muted-foreground w-full pl-3 text-left font-normal"
-            type="button"
-          >
-            {field.state.value instanceof Date &&
-            !isNaN(field.state.value.getTime()) ? (
-              isSameDay(field.state.value, new Date()) ? (
-                <span>Today</span>
+        <PopoverTrigger
+          render={
+            <Button
+              id={field.name}
+              variant="outline"
+              className="text-muted-foreground w-full pl-3 text-left font-normal"
+              type="button"
+            >
+              {field.state.value instanceof Date &&
+              !isNaN(field.state.value.getTime()) ? (
+                isSameDay(field.state.value, new Date()) ? (
+                  <span>Today</span>
+                ) : (
+                  format(field.state.value, "PPP")
+                )
               ) : (
-                format(field.state.value, "PPP")
-              )
-            ) : (
-              <span>Select date</span>
-            )}
-            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-          </Button>
-        </PopoverTrigger>
+                <span>Select date</span>
+              )}
+              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+            </Button>
+          }
+        />
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
             mode="single"

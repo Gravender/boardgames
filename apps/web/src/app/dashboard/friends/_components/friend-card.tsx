@@ -93,18 +93,22 @@ export function FriendCard({ friend }: FriendCardProps) {
 
           <div className="flex gap-2">
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-4 w-4" />
-                  <span className="sr-only">More options</span>
-                </Button>
-              </DropdownMenuTrigger>
+              <DropdownMenuTrigger
+                render={
+                  <Button variant="ghost" size="icon">
+                    <MoreVertical className="h-4 w-4" />
+                    <span className="sr-only">More options</span>
+                  </Button>
+                }
+              />
               <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/friends/${friend.id}`}>
-                    View Profile
-                  </Link>
-                </DropdownMenuItem>
+                <DropdownMenuItem
+                  render={
+                    <Link href={`/dashboard/friends/${friend.id}`}>
+                      View Profile
+                    </Link>
+                  }
+                />
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="text-red-500 focus:bg-red-50 focus:text-red-500"

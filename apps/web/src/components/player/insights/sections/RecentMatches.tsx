@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { Calendar, Clock, Gamepad2, Info, Users } from "lucide-react";
 import type { RouterOutputs } from "@board-games/api";
 import { Badge } from "@board-games/ui/badge";
-import { Button } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
 import {
   Card,
   CardContent,
@@ -143,6 +143,16 @@ export function RecentMatches({
       !m.viewerParticipation.isSameAsProfilePlayer,
   );
 
+  const recentMatchSortKeyItems = useMemo(
+    () =>
+      ({
+        date: "Date",
+        game: "Game name",
+        result: "Result",
+      }) satisfies Record<SortKey, string>,
+    [],
+  );
+
   return (
     <Card className="border-border/80 bg-card/70 border shadow-sm backdrop-blur-md">
       <CardHeader className="pb-2">
@@ -174,6 +184,7 @@ export function RecentMatches({
                   <Label htmlFor="recent-matches-sort">Sort by</Label>
                   <Select
                     value={sortKey}
+                    items={recentMatchSortKeyItems}
                     onValueChange={(v) => setSortKey(v as SortKey)}
                   >
                     <SelectTrigger id="recent-matches-sort" className="w-44">
@@ -190,6 +201,23 @@ export function RecentMatches({
                   <Label htmlFor="recent-matches-order">Order</Label>
                   <Select
                     value={sortDir}
+                    itemToStringLabel={(v) => {
+                      if (v === "desc") {
+                        return sortKey === "date"
+                          ? "Newest first"
+                          : sortKey === "game"
+                            ? "Z to A"
+                            : "Best first";
+                      }
+                      if (v === "asc") {
+                        return sortKey === "date"
+                          ? "Oldest first"
+                          : sortKey === "game"
+                            ? "A to Z"
+                            : "Worst first";
+                      }
+                      return String(v);
+                    }}
                     onValueChange={(v) => setSortDir(v as SortDir)}
                   >
                     <SelectTrigger id="recent-matches-order" className="w-44">
@@ -370,11 +398,16 @@ export function RecentMatches({
                               })}
                           </div>
                           {href ? (
-                            <Button variant="ghost" size="sm" asChild>
-                              <Link href={href} aria-label={ariaLabel}>
-                                Open match
-                              </Link>
-                            </Button>
+                            <Link
+                              href={href}
+                              aria-label={ariaLabel}
+                              className={buttonVariants({
+                                variant: "ghost",
+                                size: "sm",
+                              })}
+                            >
+                              Open match
+                            </Link>
                           ) : null}
                         </div>
                       </div>

@@ -12,6 +12,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -172,17 +173,19 @@ export function MatchesList({ matches }: MatchListProps) {
 
         <div className="flex gap-2">
           <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="shrink-0 bg-transparent">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                Date
-                {(filters.dateFrom ?? filters.dateTo) && (
-                  <Badge variant="secondary" className="ml-2 h-5 px-1.5">
-                    1
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
+            <PopoverTrigger
+              render={
+                <Button variant="outline" className="shrink-0 bg-transparent">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  Date
+                  {(filters.dateFrom ?? filters.dateTo) && (
+                    <Badge variant="secondary" className="ml-2 h-5 px-1.5">
+                      1
+                    </Badge>
+                  )}
+                </Button>
+              }
+            />
             <PopoverContent align="end" className="w-80">
               <div className="space-y-4">
                 <div>
@@ -193,20 +196,22 @@ export function MatchesList({ matches }: MatchListProps) {
                     Date From
                   </label>
                   <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !filters.dateFrom && "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {filters.dateFrom
-                          ? format(filters.dateFrom, "PPP")
-                          : "Select date"}
-                      </Button>
-                    </PopoverTrigger>
+                    <PopoverTrigger
+                      render={
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !filters.dateFrom && "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {filters.dateFrom
+                            ? format(filters.dateFrom, "PPP")
+                            : "Select date"}
+                        </Button>
+                      }
+                    />
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
@@ -226,20 +231,22 @@ export function MatchesList({ matches }: MatchListProps) {
                     Date To
                   </label>
                   <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !filters.dateTo && "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {filters.dateTo
-                          ? format(filters.dateTo, "PPP")
-                          : "Select date"}
-                      </Button>
-                    </PopoverTrigger>
+                    <PopoverTrigger
+                      render={
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !filters.dateTo && "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {filters.dateTo
+                            ? format(filters.dateTo, "PPP")
+                            : "Select date"}
+                        </Button>
+                      }
+                    />
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
@@ -272,110 +279,122 @@ export function MatchesList({ matches }: MatchListProps) {
           </Popover>
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="shrink-0 bg-transparent">
-                <ArrowUpDown className="mr-2 h-4 w-4" />
-                Sort
-              </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="outline" className="shrink-0 bg-transparent">
+                  <ArrowUpDown className="mr-2 h-4 w-4" />
+                  Sort
+                </Button>
+              }
+            />
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup
-                value={sortBy}
-                onValueChange={(value) => setSortBy(value as SortOption)}
-              >
-                <DropdownMenuRadioItem value="date-desc">
-                  Date (Newest)
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="date-asc">
-                  Date (Oldest)
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="duration-desc">
-                  Duration (Longest)
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="duration-asc">
-                  Duration (Shortest)
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="name-asc">
-                  Name (A-Z)
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="name-desc">
-                  Name (Z-A)
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                  value={sortBy}
+                  onValueChange={(value) => setSortBy(value as SortOption)}
+                >
+                  <DropdownMenuRadioItem value="date-desc">
+                    Date (Newest)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="date-asc">
+                    Date (Oldest)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="duration-desc">
+                    Duration (Longest)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="duration-asc">
+                    Duration (Shortest)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="name-asc">
+                    Name (A-Z)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="name-desc">
+                    Name (Z-A)
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="shrink-0 bg-transparent">
-                <Filter className="mr-2 h-4 w-4" />
-                Filter
-                {activeFilterCount > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-2 flex h-5 w-5 items-center justify-center p-0"
-                  >
-                    {activeFilterCount}
-                  </Badge>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="outline" className="shrink-0 bg-transparent">
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filter
+                  {activeFilterCount > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 flex h-5 w-5 items-center justify-center p-0"
+                    >
+                      {activeFilterCount}
+                    </Badge>
+                  )}
+                </Button>
+              }
+            />
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel>Result</DropdownMenuLabel>
-              <DropdownMenuCheckboxItem
-                checked={filters.showWon}
-                onCheckedChange={(checked) =>
-                  setFilters({ ...filters, showWon: checked })
-                }
-              >
-                Won
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={filters.showLost}
-                onCheckedChange={(checked) =>
-                  setFilters({ ...filters, showLost: checked })
-                }
-              >
-                Lost
-              </DropdownMenuCheckboxItem>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Result</DropdownMenuLabel>
+                <DropdownMenuCheckboxItem
+                  checked={filters.showWon}
+                  onCheckedChange={(checked) =>
+                    setFilters({ ...filters, showWon: checked })
+                  }
+                >
+                  Won
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={filters.showLost}
+                  onCheckedChange={(checked) =>
+                    setFilters({ ...filters, showLost: checked })
+                  }
+                >
+                  Lost
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>Status</DropdownMenuLabel>
-              <DropdownMenuCheckboxItem
-                checked={filters.showFinished}
-                onCheckedChange={(checked) =>
-                  setFilters({ ...filters, showFinished: checked })
-                }
-              >
-                Finished
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={filters.showInProgress}
-                onCheckedChange={(checked) =>
-                  setFilters({ ...filters, showInProgress: checked })
-                }
-              >
-                In Progress
-              </DropdownMenuCheckboxItem>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Status</DropdownMenuLabel>
+                <DropdownMenuCheckboxItem
+                  checked={filters.showFinished}
+                  onCheckedChange={(checked) =>
+                    setFilters({ ...filters, showFinished: checked })
+                  }
+                >
+                  Finished
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={filters.showInProgress}
+                  onCheckedChange={(checked) =>
+                    setFilters({ ...filters, showInProgress: checked })
+                  }
+                >
+                  In Progress
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>Type</DropdownMenuLabel>
-              <DropdownMenuCheckboxItem
-                checked={filters.showOriginal}
-                onCheckedChange={(checked) =>
-                  setFilters({ ...filters, showOriginal: checked })
-                }
-              >
-                Original
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={filters.showShared}
-                onCheckedChange={(checked) =>
-                  setFilters({ ...filters, showShared: checked })
-                }
-              >
-                Shared
-              </DropdownMenuCheckboxItem>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Type</DropdownMenuLabel>
+                <DropdownMenuCheckboxItem
+                  checked={filters.showOriginal}
+                  onCheckedChange={(checked) =>
+                    setFilters({ ...filters, showOriginal: checked })
+                  }
+                >
+                  Original
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={filters.showShared}
+                  onCheckedChange={(checked) =>
+                    setFilters({ ...filters, showShared: checked })
+                  }
+                >
+                  Shared
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

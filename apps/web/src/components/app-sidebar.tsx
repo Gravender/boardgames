@@ -51,22 +51,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild size="sm">
-              <Link
-                prefetch={true}
-                href="/dashboard"
-                className="flex items-center justify-center p-2"
-              >
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <Dices className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">
-                    Board Games Tracker
-                  </span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
+            <SidebarMenuButton
+              size="sm"
+              render={
+                <Link
+                  prefetch={true}
+                  href="/dashboard"
+                  className="flex items-center justify-center p-2"
+                >
+                  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                    <Dices className="size-4" />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">
+                      Board Games Tracker
+                    </span>
+                  </div>
+                </Link>
+              }
+            />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>

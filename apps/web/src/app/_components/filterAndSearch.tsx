@@ -129,11 +129,13 @@ function SortingOptions<T>({
 }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size={"icon"} aria-label="Sorting options">
-          <AlignLeft />
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="ghost" size={"icon"} aria-label="Sorting options">
+            <AlignLeft />
+          </Button>
+        }
+      />
       <DropdownMenuContent align="end">
         {sortFields.map((field) => (
           <DropdownMenuCheckboxItem

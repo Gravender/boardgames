@@ -29,6 +29,19 @@ import {
   TableRow,
 } from "@board-games/ui/table";
 
+const LINEUP_CORE_SIZE_FILTER_ITEMS: Record<string, string> = {
+  all: "All Sizes",
+  trios: "Trios",
+  quartets: "Quartets",
+};
+
+const LINEUP_MIN_MATCHES_FILTER_ITEMS: Record<string, string> = {
+  "2": "2+ matches",
+  "3": "3+ matches",
+  "5": "5+ matches",
+  "10": "10+ matches",
+};
+
 import { PlayerImage } from "~/components/player-image";
 
 type Insights = RouterOutputs["game"]["getGameInsights"];
@@ -111,11 +124,17 @@ const TopCoresSection = ({ cores }: { cores: Cores }) => {
 
   if (allCores.length === 0) return null;
 
-  const handleCoreSizeChange = (value: string) => {
+  const handleCoreSizeChange = (value: string | null) => {
+    if (value === null) {
+      return;
+    }
     setCoreSizeFilter(value as CoreSizeFilter);
   };
 
-  const handleMinMatchesChange = (value: string) => {
+  const handleMinMatchesChange = (value: string | null) => {
+    if (value === null) {
+      return;
+    }
     setMinMatchesFilter(value as MinMatchesFilter);
   };
 
@@ -127,7 +146,11 @@ const TopCoresSection = ({ cores }: { cores: Cores }) => {
       <CardContent className="space-y-3">
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
-          <Select value={coreSizeFilter} onValueChange={handleCoreSizeChange}>
+          <Select
+            value={coreSizeFilter}
+            items={LINEUP_CORE_SIZE_FILTER_ITEMS}
+            onValueChange={handleCoreSizeChange}
+          >
             <SelectTrigger
               className="w-[120px]"
               aria-label="Filter by core size"
@@ -142,6 +165,7 @@ const TopCoresSection = ({ cores }: { cores: Cores }) => {
           </Select>
           <Select
             value={minMatchesFilter}
+            items={LINEUP_MIN_MATCHES_FILTER_ITEMS}
             onValueChange={handleMinMatchesChange}
           >
             <SelectTrigger

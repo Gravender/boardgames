@@ -625,7 +625,7 @@ function ScoresheetFooter(input: { match: MatchInput }) {
             <CardTitle className="text-xl">Comment:</CardTitle>
           </CardHeader>
           <CardContent className="px-4">
-            <CommentDialog match={match} comment={match.comment} />
+            <CommentDialog matchInput={input.match} comment={match.comment} />
           </CardContent>
         </Card>
         <Suspense fallback={null}>

@@ -60,7 +60,7 @@ export function WinLoseRatioChart({
                   fill="#8884d8"
                   dataKey="value"
                   label={({ name, percent }) =>
-                    `${name}: ${(percent * 100).toFixed(0)}%`
+                    `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`
                   }
                 >
                   <Cell key="won" fill="var(--color-won)" />

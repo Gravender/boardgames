@@ -180,30 +180,32 @@ export const PlayerPerformanceSection = ({
             Player Performance by Role
           </CardTitle>
           <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={comboboxOpen}
-                aria-label="Select player"
-                className="w-full justify-between bg-transparent sm:w-[220px]"
-              >
-                {selectedPerformance ? (
-                  <div className="flex items-center gap-2">
-                    <PlayerAvatar
-                      player={selectedPerformance.player}
-                      className="h-5 w-5"
-                    />
-                    <span>{selectedPerformance.player.playerName}</span>
-                  </div>
-                ) : (
-                  "Select a player..."
-                )}
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
+            <PopoverTrigger
+              render={
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={comboboxOpen}
+                  aria-label="Select player"
+                  className="w-full justify-between bg-transparent sm:w-[220px]"
+                >
+                  {selectedPerformance ? (
+                    <div className="flex items-center gap-2">
+                      <PlayerAvatar
+                        player={selectedPerformance.player}
+                        className="h-5 w-5"
+                      />
+                      <span>{selectedPerformance.player.playerName}</span>
+                    </div>
+                  ) : (
+                    "Select a player..."
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              }
+            />
             <PopoverContent
-              className="max-h-[300px] w-[--radix-popover-trigger-width] p-0"
+              className="max-h-[300px] w-(--anchor-width) p-0"
               align="start"
             >
               <Command>

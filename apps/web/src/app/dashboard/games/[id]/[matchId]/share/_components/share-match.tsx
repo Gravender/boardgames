@@ -311,8 +311,7 @@ export default function ShareMatchPage() {
   //                               <Label>Share with Friends</Label>
 
   //                               <Popover>
-  //                                 <PopoverTrigger asChild>
-  //                                   <FormControl>
+  //                                 <PopoverTrigger render={ //                                   <FormControl>
   //                                     <Button
   //                                       variant="outline"
   //                                       role="combobox"
@@ -328,7 +327,7 @@ export default function ShareMatchPage() {
   //                                       <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
   //                                     </Button>
   //                                   </FormControl>
-  //                                 </PopoverTrigger>
+  // } />
   //                                 <PopoverContent className="w-[300px] p-0">
   //                                   <Command>
   //                                     <CommandInput placeholder="Search friends..." />

@@ -1,6 +1,7 @@
+"use client";
+
 import { useState } from "react";
 
-import type { CheckboxPrimitive } from "@board-games/ui/checkbox";
 import { Checkbox } from "@board-games/ui/checkbox";
 
 import { useDebounce } from "~/hooks/use-debounce";
@@ -9,7 +10,7 @@ export function DebouncedCheckbox({
   onDebouncedChange,
   debounceDelay = 700,
   ...props
-}: React.ComponentProps<typeof CheckboxPrimitive.Root> & {
+}: React.ComponentProps<typeof Checkbox> & {
   onDebouncedChange?: (checked: boolean) => void;
   debounceDelay?: number;
 }) {

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 import { Badge } from "@board-games/ui/badge";
-import { Button } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
 import { Card, CardContent } from "@board-games/ui/card";
 import {
   DropdownMenu,
@@ -100,52 +100,68 @@ export function GameHeaderSection({ game: gameInput }: GameHeaderSectionProps) {
               </div>
 
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link
-                    href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/stats`}
-                  >
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    Stats
-                  </Link>
-                </Button>
+                <Link
+                  href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/stats`}
+                  className={buttonVariants({
+                    variant: "outline",
+                    size: "sm",
+                  })}
+                >
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Stats
+                </Link>
 
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-5 w-5" />
-                      <span className="sr-only">Game options</span>
-                    </Button>
-                  </DropdownMenuTrigger>
+                  <DropdownMenuTrigger
+                    render={
+                      <button
+                        type="button"
+                        className={buttonVariants({
+                          variant: "ghost",
+                          size: "icon",
+                        })}
+                      >
+                        <MoreHorizontal className="h-5 w-5" />
+                        <span className="sr-only">Game options</span>
+                      </button>
+                    }
+                  />
                   <DropdownMenuContent align="end">
                     {canEdit && (
                       <>
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/edit`}
-                          >
-                            <PencilIcon className="mr-2 h-4 w-4" />
-                            Edit Game
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.id}/roles`}
-                          >
-                            <UserCog className="mr-2 h-4 w-4" />
-                            Edit Roles
-                          </Link>
-                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          render={
+                            <Link
+                              href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/edit`}
+                            >
+                              <PencilIcon className="mr-2 h-4 w-4" />
+                              Edit Game
+                            </Link>
+                          }
+                        />
+                        <DropdownMenuItem
+                          render={
+                            <Link
+                              href={`/dashboard/games/${game.type === "original" ? "" : "shared/"}${game.type === "original" ? game.id : game.sharedGameId}/roles`}
+                            >
+                              <UserCog className="mr-2 h-4 w-4" />
+                              Edit Roles
+                            </Link>
+                          }
+                        />
                       </>
                     )}
                     {!isShared && (
                       <>
                         {canEdit && <DropdownMenuSeparator />}
-                        <DropdownMenuItem asChild>
-                          <Link href={`/dashboard/games/${game.id}/share`}>
-                            <Share2 className="mr-2 h-4 w-4" />
-                            Share Game
-                          </Link>
-                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          render={
+                            <Link href={`/dashboard/games/${game.id}/share`}>
+                              <Share2 className="mr-2 h-4 w-4" />
+                              Share Game
+                            </Link>
+                          }
+                        />
                       </>
                     )}
                   </DropdownMenuContent>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { Button } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
 
 export default function SharedGameNotFound() {
   return (
@@ -10,9 +10,9 @@ export default function SharedGameNotFound() {
         The match you're looking for doesn't exist or you don't have access to
         it.
       </p>
-      <Button asChild>
-        <Link href="/dashboard/games">Back to Games</Link>
-      </Button>
+      <Link href="/dashboard/games" className={buttonVariants()}>
+        Back to Games
+      </Link>
     </div>
   );
 }

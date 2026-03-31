@@ -44,19 +44,7 @@ export const AddPlayerDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent
-        className="min-h-80 sm:max-w-[465px]"
-        onInteractOutside={(event) => {
-          if (isSubmitting) {
-            event.preventDefault();
-          }
-        }}
-        onEscapeKeyDown={(event) => {
-          if (isSubmitting) {
-            event.preventDefault();
-          }
-        }}
-      >
+      <DialogContent className="min-h-80 sm:max-w-[465px]">
         <PlayerContent
           setOpen={setIsOpen}
           isSubmitting={isSubmitting}
@@ -65,17 +53,19 @@ export const AddPlayerDialog = ({
       </DialogContent>
       <div className="flex h-full w-full flex-col justify-end">
         <div className="flex justify-end">
-          <DialogTrigger asChild>
-            <Button
-              variant="default"
-              className="rounded-full"
-              size="icon"
-              type="button"
-              aria-label="add player"
-            >
-              <PlusIcon />
-            </Button>
-          </DialogTrigger>
+          <DialogTrigger
+            render={
+              <Button
+                variant="default"
+                className="rounded-full"
+                size="icon"
+                type="button"
+                aria-label="add player"
+              >
+                <PlusIcon />
+              </Button>
+            }
+          />
         </div>
       </div>
     </Dialog>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { z } from "zod/v4";
 
@@ -183,6 +183,13 @@ function Content({
     }, []);
   };
   const filteredRoles = useFilteredRoles(roles, roleSearchTerm);
+  const teamSelectItems = useMemo(() => {
+    const m: Record<string, string> = { "no-team": "No team" };
+    for (const t of teams) {
+      m[String(t.id)] = t.name;
+    }
+    return m;
+  }, [teams]);
 
   return (
     <>
@@ -228,6 +235,7 @@ function Content({
                                 ? field.state.value.toString()
                                 : "no-team"
                             }
+                            items={teamSelectItems}
                             onValueChange={(value) => {
                               if (value === "no-team") {
                                 const previousTeamPlayers = players.filter(
@@ -315,6 +323,7 @@ function Content({
                   <ScrollArea>
                     <div className="flex max-h-[20vh] flex-col gap-2">
                       {filteredRoles.map((role) => {
+                        const roleRowId = `edit-player-role-${role.type}-${role.type === "original" ? role.id : role.sharedId}`;
                         const roleIndex = formRoles.findIndex((r) =>
                           isSameRole(r, role),
                         );
@@ -331,52 +340,55 @@ function Content({
                                 field.state.meta.isTouched &&
                                 !field.state.meta.isValid;
                               return (
-                                <Field
-                                  data-invalid={isInvalid}
-                                  className="flex items-center gap-2"
-                                >
-                                  <Checkbox
-                                    checked={roleIndex > -1}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        field.handleChange([
-                                          ...formRoles,
-                                          {
-                                            ...role,
-                                          },
-                                        ]);
-                                      } else {
-                                        field.handleChange(
-                                          formRoles.filter(
-                                            (r) => !isSameRole(r, role),
-                                          ),
-                                        );
-                                      }
-                                    }}
-                                    disabled={isTeamRole}
-                                  />
-                                  <FieldLabel className="flex w-full flex-col gap-2">
-                                    <div className="flex items-center gap-2">
-                                      <span>{role.name}</span>
-                                      {isTeamRole && (
-                                        <Badge
-                                          variant="outline"
-                                          className="ml-2 text-xs"
-                                        >
-                                          Team Role
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <p className="text-muted-foreground text-xs">
-                                      {role.description}
-                                    </p>
-                                  </FieldLabel>
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox
+                                      id={roleRowId}
+                                      checked={roleIndex > -1}
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          field.handleChange([
+                                            ...formRoles,
+                                            {
+                                              ...role,
+                                            },
+                                          ]);
+                                        } else {
+                                          field.handleChange(
+                                            formRoles.filter(
+                                              (r) => !isSameRole(r, role),
+                                            ),
+                                          );
+                                        }
+                                      }}
+                                      disabled={isTeamRole}
+                                    />
+                                    <Label
+                                      htmlFor={roleRowId}
+                                      className="flex w-full flex-col gap-2"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <span>{role.name}</span>
+                                        {isTeamRole && (
+                                          <Badge
+                                            variant="outline"
+                                            className="ml-2 text-xs"
+                                          >
+                                            Team Role
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-muted-foreground text-xs">
+                                        {role.description}
+                                      </p>
+                                    </Label>
+                                  </div>
                                   {isInvalid && (
                                     <FieldError
                                       errors={field.state.meta.errors}
                                     />
                                   )}
-                                </Field>
+                                </div>
                               );
                             }}
                           </form.Field>

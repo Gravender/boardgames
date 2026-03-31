@@ -14,6 +14,8 @@ import {
 } from "@board-games/ui/select";
 import { cn } from "@board-games/ui/utils";
 
+import { selectItemsFromPairs } from "@board-games/ui/lib/select-items";
+
 export type RivalsData =
   RouterOutputs["newPlayer"]["stats"]["getPlayerTopRivals"];
 export type TeammatesData =
@@ -234,6 +236,19 @@ export const SocialGameFilterSelect = ({
   options,
   className,
 }: SocialGameFilterSelectProps): ReactElement | null => {
+  const selectItems = useMemo(() => {
+    if (options.length === 0) {
+      return {};
+    }
+    return selectItemsFromPairs([
+      { value: ALL_GAMES_VALUE, label: "All games (totals)" },
+      ...options.map(([gameIdKey, gameName]) => ({
+        value: gameIdKey,
+        label: gameName,
+      })),
+    ]);
+  }, [options]);
+
   if (options.length === 0) {
     return null;
   }
@@ -243,7 +258,16 @@ export const SocialGameFilterSelect = ({
       <Label htmlFor={id} className="text-sm font-medium">
         {label}
       </Label>
-      <Select value={value} onValueChange={onValueChange}>
+      <Select
+        value={value}
+        items={selectItems}
+        onValueChange={(v) => {
+          if (v === null) {
+            return;
+          }
+          onValueChange(v);
+        }}
+      >
         <SelectTrigger id={id} className="w-full">
           <SelectValue placeholder="All games" />
         </SelectTrigger>

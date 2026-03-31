@@ -422,22 +422,25 @@ export default function PlayerRequestPage({
                                         open={playerSearchOpen}
                                         onOpenChange={setPlayerSearchOpen}
                                       >
-                                        <PopoverTrigger asChild>
-                                          <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            aria-expanded={playerSearchOpen}
-                                            className="justify-between"
-                                          >
-                                            {field.value
-                                              ? usersPlayers.find(
-                                                  (player) =>
-                                                    player.id === field.value,
-                                                )?.name
-                                              : "Select a player..."}
-                                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                          </Button>
-                                        </PopoverTrigger>
+                                        <PopoverTrigger
+                                          render={
+                                            <Button
+                                              type="button"
+                                              variant="outline"
+                                              role="combobox"
+                                              aria-expanded={playerSearchOpen}
+                                              className="justify-between"
+                                            >
+                                              {field.value
+                                                ? usersPlayers.find(
+                                                    (player) =>
+                                                      player.id === field.value,
+                                                  )?.name
+                                                : "Select a player..."}
+                                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                          }
+                                        />
                                         <PopoverContent className="w-[300px] p-0">
                                           <Command>
                                             <CommandInput
@@ -672,7 +675,7 @@ function ChildGamesRequest({
       </div>
 
       <ScrollArea className="p-2">
-        <Accordion type="single" collapsible className="max-h-[45rem] gap-2">
+        <Accordion className="max-h-[45rem] gap-2">
           {games.map((game) => {
             const gameIndex = gameDecisions.findIndex(
               (g) => g.shareId === game.shareId,
@@ -861,23 +864,26 @@ function RequestShareGame({
                         open={gameSearchOpen}
                         onOpenChange={setGameSearchOpen}
                       >
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={gameSearchOpen}
-                            className="justify-between"
-                          >
-                            {gameState.existingGameId
-                              ? games.find(
-                                  (existingGame) =>
-                                    existingGame.id ===
-                                    gameState.existingGameId,
-                                )?.name
-                              : "Select a game..."}
-                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
+                        <PopoverTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={gameSearchOpen}
+                              className="justify-between"
+                            >
+                              {gameState.existingGameId
+                                ? games.find(
+                                    (existingGame) =>
+                                      existingGame.id ===
+                                      gameState.existingGameId,
+                                  )?.name
+                                : "Select a game..."}
+                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          }
+                        />
                         <PopoverContent className="w-[300px] p-0">
                           <Command>
                             <CommandInput
@@ -1244,11 +1250,7 @@ function MatchRequests({
             );
             if (!matchState) return null;
             return (
-              <Accordion
-                key={matchItem.item.id}
-                type="multiple"
-                className="w-full"
-              >
+              <Accordion key={matchItem.item.id} multiple className="w-full">
                 <AccordionItem value={`match-${matchItem.item.id}`}>
                   <div className="flex w-full items-center justify-between pr-4">
                     <AccordionTrigger className="flex w-full items-center justify-between pr-4 hover:no-underline">

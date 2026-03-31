@@ -84,11 +84,16 @@ test.describe("Game Detail Page", () => {
       page.getByRole("link", { name: browserGameName }),
     ).toBeVisible();
     await page.getByRole("link", { name: browserGameName }).click();
+    await expect(page).toHaveURL(/\/dashboard\/games\/\d+/);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      browserGameName,
+      { timeout: 15000 },
+    );
 
-    // Verify match history section exists
-    await expect(
-      page.getByRole("heading", { name: /Match History/i }),
-    ).toBeVisible();
+    // Match History renders after the matches Suspense boundary (skeleton has no h2)
+    await expect(page.getByTestId("game-match-history-heading")).toBeVisible({
+      timeout: 15000,
+    });
   });
 
   test("Verify add match button", async ({ page, browserName }) => {
@@ -101,11 +106,15 @@ test.describe("Game Detail Page", () => {
       page.getByRole("link", { name: browserGameName }),
     ).toBeVisible();
     await page.getByRole("link", { name: browserGameName }).click();
+    await expect(page).toHaveURL(/\/dashboard\/games\/\d+/);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      browserGameName,
+      { timeout: 15000 },
+    );
 
-    // Verify add match button exists (it's a floating button)
-    const addMatchButton = page.getByRole("button", {
-      name: "add match",
+    // Button only mounts after scoresheets + locations queries resolve
+    await expect(page.getByTestId("game-add-match")).toBeVisible({
+      timeout: 15000,
     });
-    await expect(addMatchButton).toBeVisible();
   });
 });

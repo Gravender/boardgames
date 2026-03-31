@@ -22,12 +22,15 @@ export function NavMain({
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.title}>
-            <SidebarMenuButton asChild size="sm">
-              <Link prefetch={true} href={item.url}>
-                <item.icon />
-                <span>{item.title}</span>
-              </Link>
-            </SidebarMenuButton>
+            <SidebarMenuButton
+              size="sm"
+              render={
+                <Link prefetch={true} href={item.url}>
+                  <item.icon />
+                  <span>{item.title}</span>
+                </Link>
+              }
+            />
           </SidebarMenuItem>
         ))}
       </SidebarMenu>

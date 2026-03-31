@@ -599,24 +599,26 @@ export default function ShareRequestsPage() {
                               />
                               <TooltipProvider>
                                 <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="outline"
-                                      size="icon"
-                                      onClick={() =>
-                                        copyShareLink(
-                                          request.id,
-                                          shareUrl(request.token),
-                                        )
-                                      }
-                                    >
-                                      {copiedLinks[request.id] ? (
-                                        <Check className="h-4 w-4" />
-                                      ) : (
-                                        <Copy className="h-4 w-4" />
-                                      )}
-                                    </Button>
-                                  </TooltipTrigger>
+                                  <TooltipTrigger
+                                    render={
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() =>
+                                          copyShareLink(
+                                            request.id,
+                                            shareUrl(request.token),
+                                          )
+                                        }
+                                      >
+                                        {copiedLinks[request.id] ? (
+                                          <Check className="h-4 w-4" />
+                                        ) : (
+                                          <Copy className="h-4 w-4" />
+                                        )}
+                                      </Button>
+                                    }
+                                  />
                                   <TooltipContent>
                                     <p>
                                       {copiedLinks[request.id]

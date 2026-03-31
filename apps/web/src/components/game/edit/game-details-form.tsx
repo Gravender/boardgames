@@ -84,11 +84,13 @@ export const GameDetailsForm = withForm({
                           userImageClassName="object-cover"
                         />
                         <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" type="button">
-                              Icons
-                            </Button>
-                          </PopoverTrigger>
+                          <PopoverTrigger
+                            render={
+                              <Button variant="outline" type="button">
+                                Icons
+                              </Button>
+                            }
+                          />
                           <PopoverContent className="w-80">
                             <h4 className="mb-2 font-medium">Select an Icon</h4>
                             <div className="grid grid-cols-4 gap-2">

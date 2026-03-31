@@ -19,29 +19,36 @@ import { useUpdateMatchCommentMutation } from "~/hooks/mutations/match/scoreshee
 import { useAppForm } from "~/hooks/form";
 
 export function CommentDialog({
-  match,
+  matchInput,
   comment,
 }: {
-  match: MatchInput;
+  /** Canonical match key — must match `useMatch` / `getMatch` input so cache updates apply. */
+  matchInput: MatchInput;
   comment: string | null;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          className="h-fit w-full items-start justify-start p-0"
-        >
-          <ScrollArea>
-            <p className="max-h-[5vh] w-full text-start text-wrap">
-              {comment ?? "No comment"}
-            </p>
-          </ScrollArea>
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button
+            variant="ghost"
+            className="h-fit w-full items-start justify-start p-0"
+          >
+            <ScrollArea>
+              <p className="max-h-[5vh] w-full text-start text-wrap">
+                {comment ?? "No comment"}
+              </p>
+            </ScrollArea>
+          </Button>
+        }
+      />
       <DialogContent>
-        <Content setIsOpen={setIsOpen} match={match} comment={comment ?? ""} />
+        <Content
+          setIsOpen={setIsOpen}
+          matchInput={matchInput}
+          comment={comment ?? ""}
+        />
       </DialogContent>
     </Dialog>
   );
@@ -50,15 +57,15 @@ const FormSchema = z.object({
   comment: z.string(),
 });
 function Content({
-  match,
+  matchInput,
   comment,
   setIsOpen,
 }: {
-  match: MatchInput;
+  matchInput: MatchInput;
   setIsOpen: (isOpen: boolean) => void;
   comment: string;
 }) {
-  const { updateMatchCommentMutation } = useUpdateMatchCommentMutation(match);
+  const { updateMatchCommentMutation } = useUpdateMatchCommentMutation();
   const form = useAppForm({
     defaultValues: { comment },
     validators: {
@@ -68,7 +75,7 @@ function Content({
       const trimmedComment = value.comment.trim();
       updateMatchCommentMutation.mutate(
         {
-          match,
+          match: matchInput,
           comment: trimmedComment === "" ? null : trimmedComment,
         },
         {

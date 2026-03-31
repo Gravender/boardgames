@@ -45,24 +45,26 @@ export function GradientPicker({
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant={"outline"}
-          className={cn(
-            "justify-start p-0 text-left font-normal",
-            !color && "text-muted-foreground",
-            className,
-          )}
-          disabled={disabled}
-        >
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded"
-            style={{ background: color ?? "none" }}
+      <PopoverTrigger
+        render={
+          <Button
+            variant={"outline"}
+            className={cn(
+              "justify-start p-0 text-left font-normal",
+              !color && "text-muted-foreground",
+              className,
+            )}
+            disabled={disabled}
           >
-            {!color && <Paintbrush className="h-8 w-8" />}
-          </div>
-        </Button>
-      </PopoverTrigger>
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded"
+              style={{ background: color ?? "none" }}
+            >
+              {!color && <Paintbrush className="h-8 w-8" />}
+            </div>
+          </Button>
+        }
+      />
       <PopoverContent className="w-64">
         <div className="mt-0 flex w-full flex-wrap gap-1">
           {solids.map((s) => (

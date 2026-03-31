@@ -552,33 +552,33 @@ export const CustomPlayerSelect = withFieldGroup({
                                               size="sm"
                                               role="listitem"
                                               className="hover:bg-accent py-1"
-                                              asChild
-                                            >
-                                              <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
+                                              render={
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
 
-                                                  assignPlayerToTeam(
-                                                    team.id,
-                                                    player,
-                                                  );
-                                                }}
-                                              >
-                                                <ItemMedia>
-                                                  <PlayerImage
-                                                    className="size-5"
-                                                    image={player.image}
-                                                    alt={player.name}
-                                                  />
-                                                </ItemMedia>
-                                                <ItemContent>
-                                                  <ItemTitle>
-                                                    {player.name}
-                                                  </ItemTitle>
-                                                </ItemContent>
-                                              </button>
-                                            </Item>
+                                                    assignPlayerToTeam(
+                                                      team.id,
+                                                      player,
+                                                    );
+                                                  }}
+                                                >
+                                                  <ItemMedia>
+                                                    <PlayerImage
+                                                      className="size-5"
+                                                      image={player.image}
+                                                      alt={player.name}
+                                                    />
+                                                  </ItemMedia>
+                                                  <ItemContent>
+                                                    <ItemTitle>
+                                                      {player.name}
+                                                    </ItemTitle>
+                                                  </ItemContent>
+                                                </button>
+                                              }
+                                            />
                                           );
                                         })}
                                       </ItemGroup>

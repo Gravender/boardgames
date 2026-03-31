@@ -19,7 +19,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
-import { Button, buttonVariants } from "@board-games/ui/button";
+import { Button } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
 import { Card, CardContent, CardHeader, CardTitle } from "@board-games/ui/card";
 import {
   Carousel,
@@ -103,28 +104,36 @@ export function MatchImages({
                   className="xs:basis-1/6 basis-1/4 pl-2"
                 >
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        className="w-full"
-                        onClick={() => {
-                          setSelectedImage(image);
-                          setIsDialogOpen(true);
-                        }}
-                      >
-                        <div className="relative flex aspect-square size-full shrink-0 overflow-hidden rounded-md border p-0">
-                          {image.url ? (
-                            <Image
-                              src={image.url}
-                              alt={image.caption}
-                              fill
-                              className="aspect-square size-full rounded-md object-cover"
-                            />
-                          ) : (
-                            <Dices className="bg-muted size-full items-center justify-center rounded-md p-2" />
-                          )}
-                        </div>
-                      </button>
-                    </TooltipTrigger>
+                    <TooltipTrigger
+                      render={
+                        <button
+                          type="button"
+                          className="w-full"
+                          aria-label={
+                            image.caption?.trim()
+                              ? image.caption
+                              : "Open match image"
+                          }
+                          onClick={() => {
+                            setSelectedImage(image);
+                            setIsDialogOpen(true);
+                          }}
+                        >
+                          <div className="relative flex aspect-square size-full shrink-0 overflow-hidden rounded-md border p-0">
+                            {image.url ? (
+                              <Image
+                                src={image.url}
+                                alt={image.caption?.trim() || "Match image"}
+                                fill
+                                className="aspect-square size-full rounded-md object-cover"
+                              />
+                            ) : (
+                              <Dices className="bg-muted size-full items-center justify-center rounded-md p-2" />
+                            )}
+                          </div>
+                        </button>
+                      }
+                    />
                     <TooltipContent className="max-w-xs">
                       <div className="space-y-1">
                         <p className="text-sm font-medium">{image.caption}</p>

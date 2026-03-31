@@ -152,9 +152,10 @@ export function useScoresheetStats({
     if (!userScore) return [];
     return userScore.scores
       .toSorted((a, b) => compareAsc(a.date, b.date))
-      .map((score) =>
-        Object.assign(score, { date: format(score.date, `MMMM d, yyyy`) }),
-      );
+      .map((score) => ({
+        ...score,
+        date: format(score.date, `MMMM d, yyyy`),
+      }));
   }, [userScore]);
 
   const winRateOverTime = useMemo(() => {

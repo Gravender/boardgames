@@ -38,7 +38,8 @@ import {
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
 import { Badge } from "@board-games/ui/badge";
-import { Button, buttonVariants } from "@board-games/ui/button";
+import { Button } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
 import {
   Card,
   CardContent,
@@ -335,7 +336,7 @@ export default function MatchRequestPage({
           </CardHeader>
           <CardContent className="space-y-6">
             {potentialMatches.length > 0 && (
-              <Accordion type="multiple" className="w-full">
+              <Accordion multiple className="w-full">
                 <AccordionItem value={`match-${match.item.id}`}>
                   <AccordionTrigger className="hover:no-underline">
                     <div className="flex w-full">
@@ -738,23 +739,28 @@ export default function MatchRequestPage({
                                               open={gameSearchOpen}
                                               onOpenChange={setGameSearchOpen}
                                             >
-                                              <PopoverTrigger asChild>
-                                                <Button
-                                                  variant="outline"
-                                                  role="combobox"
-                                                  aria-expanded={gameSearchOpen}
-                                                  className="justify-between"
-                                                >
-                                                  {field.value
-                                                    ? usersGames.find(
-                                                        (game) =>
-                                                          game.id ===
-                                                          field.value,
-                                                      )?.name
-                                                    : "Select a game..."}
-                                                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                </Button>
-                                              </PopoverTrigger>
+                                              <PopoverTrigger
+                                                render={
+                                                  <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    aria-expanded={
+                                                      gameSearchOpen
+                                                    }
+                                                    className="justify-between"
+                                                  >
+                                                    {field.value
+                                                      ? usersGames.find(
+                                                          (game) =>
+                                                            game.id ===
+                                                            field.value,
+                                                        )?.name
+                                                      : "Select a game..."}
+                                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                  </Button>
+                                                }
+                                              />
                                               <PopoverContent className="w-[300px] p-0">
                                                 <Command>
                                                   <CommandInput
@@ -842,7 +848,7 @@ export default function MatchRequestPage({
                   </div>
                 </div>
                 {filteredMatches.length > 0 && (
-                  <Accordion type="multiple" className="w-full">
+                  <Accordion multiple className="w-full">
                     <AccordionItem value={`match-${match.item.id}`}>
                       <AccordionTrigger className="hover:no-underline">
                         <div className="flex w-full">

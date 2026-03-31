@@ -243,7 +243,18 @@ const OpposingTeamsView = ({
     );
   }, [configurations, shapeFilter]);
 
-  const handleShapeFilterChange = (value: string) => {
+  const shapeFilterItems = useMemo(() => {
+    const m: Record<string, string> = { all: "All Shapes" };
+    for (const shape of availableShapes) {
+      m[shape] = shape;
+    }
+    return m;
+  }, [availableShapes]);
+
+  const handleShapeFilterChange = (value: string | null) => {
+    if (value === null) {
+      return;
+    }
     setShapeFilter(value);
   };
 
@@ -252,7 +263,11 @@ const OpposingTeamsView = ({
       {/* Shape filter */}
       {availableShapes.length > 1 && (
         <div className="flex items-center gap-2">
-          <Select value={shapeFilter} onValueChange={handleShapeFilterChange}>
+          <Select
+            value={shapeFilter}
+            items={shapeFilterItems}
+            onValueChange={handleShapeFilterChange}
+          >
             <SelectTrigger
               className="w-[130px]"
               aria-label="Filter by team shape"
@@ -367,9 +382,10 @@ export function TeamInsights({ teams }: TeamInsightsProps) {
     teams.cores.quartets.length > 0;
   const hasConfigs = teams.configurations.length > 0;
 
-  const handleViewModeChange = (value: string) => {
-    if (value === "same-team" || value === "opposing") {
-      setViewMode(value);
+  const handleViewModeChange = (value: string[]) => {
+    const v = value[0];
+    if (v === "same-team" || v === "opposing") {
+      setViewMode(v);
     }
   };
 
@@ -392,8 +408,7 @@ export function TeamInsights({ teams }: TeamInsightsProps) {
       {hasCores && hasConfigs && (
         <div className="flex items-center gap-3">
           <ToggleGroup
-            type="single"
-            value={viewMode}
+            value={[viewMode]}
             onValueChange={handleViewModeChange}
             variant="outline"
             aria-label="Toggle between Same Team and Opposing Teams view"

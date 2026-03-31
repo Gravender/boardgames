@@ -11,13 +11,14 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@board-games/ui/dropdown-menu";
-import { DualRangeSlider } from "@board-games/ui/dual-range-slider";
+import { Slider } from "@board-games/ui/slider";
 import {
   InputGroup,
   InputGroupAddon,
@@ -221,118 +222,128 @@ function GamesListContent({ games, defaultIsOpen }: GamesListContentProps) {
 
           <div className="flex gap-2">
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="shrink-0 bg-transparent">
-                  <ArrowUpDown className="mr-2 h-4 w-4" />
-                  Sort
-                </Button>
-              </DropdownMenuTrigger>
+              <DropdownMenuTrigger
+                render={
+                  <Button variant="outline" className="shrink-0 bg-transparent">
+                    <ArrowUpDown className="mr-2 h-4 w-4" />
+                    Sort
+                  </Button>
+                }
+              />
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup
-                  value={sortBy}
-                  onValueChange={(value) => setSortBy(value as SortOption)}
-                >
-                  <DropdownMenuRadioItem value="name-asc">
-                    Name (A-Z)
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="name-desc">
-                    Name (Z-A)
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="yearPublished-asc">
-                    Year (Oldest)
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="yearPublished-desc">
-                    Year (Newest)
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="lastPlayed-asc">
-                    Last Played (Oldest)
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="lastPlayed-desc">
-                    Last Played (Recent)
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="matches-desc">
-                    Matches (Most)
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="matches-asc">
-                    Matches (Least)
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup
+                    value={sortBy}
+                    onValueChange={(value) => setSortBy(value as SortOption)}
+                  >
+                    <DropdownMenuRadioItem value="name-asc">
+                      Name (A-Z)
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="name-desc">
+                      Name (Z-A)
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="yearPublished-asc">
+                      Year (Oldest)
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="yearPublished-desc">
+                      Year (Newest)
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="lastPlayed-asc">
+                      Last Played (Oldest)
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="lastPlayed-desc">
+                      Last Played (Recent)
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="matches-desc">
+                      Matches (Most)
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="matches-asc">
+                      Matches (Least)
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
 
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="shrink-0 bg-transparent">
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filter
-                  {activeFilterCount > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 flex h-5 w-5 items-center justify-center p-0"
-                    >
-                      {activeFilterCount}
-                    </Badge>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
+              <DropdownMenuTrigger
+                render={
+                  <Button variant="outline" className="shrink-0 bg-transparent">
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filter
+                    {activeFilterCount > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-2 flex h-5 w-5 items-center justify-center p-0"
+                      >
+                        {activeFilterCount}
+                      </Badge>
+                    )}
+                  </Button>
+                }
+              />
               <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel>Type</DropdownMenuLabel>
-                <DropdownMenuCheckboxItem
-                  checked={filters.showOriginal}
-                  onCheckedChange={(checked) =>
-                    setFilters({ ...filters, showOriginal: checked })
-                  }
-                >
-                  Original
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={filters.showShared}
-                  onCheckedChange={(checked) =>
-                    setFilters({ ...filters, showShared: checked })
-                  }
-                >
-                  Shared
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Player Count</DropdownMenuLabel>
-                <div className="px-3 pt-5 pb-3">
-                  <DualRangeSlider
-                    value={[filters.minPlayers, filters.maxPlayers]}
-                    min={0}
-                    max={maxPlayers}
-                    step={1}
-                    onValueChange={(values) =>
-                      setFilters({
-                        ...filters,
-                        minPlayers: values[0] ?? 0,
-                        maxPlayers: values[1] ?? maxPlayers,
-                      })
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Type</DropdownMenuLabel>
+                  <DropdownMenuCheckboxItem
+                    checked={filters.showOriginal}
+                    onCheckedChange={(checked) =>
+                      setFilters({ ...filters, showOriginal: checked })
                     }
-                    label={(value) => value?.toString() ?? ""}
-                    labelPosition="top"
-                  />
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Playtime</DropdownMenuLabel>
-                <div className="px-3 pt-5 pb-3">
-                  <DualRangeSlider
-                    value={[filters.minPlaytime, filters.maxPlaytime]}
-                    min={0}
-                    max={maxPlaytime}
-                    step={5}
-                    onValueChange={(values) =>
-                      setFilters({
-                        ...filters,
-                        minPlaytime: values[0] ?? 0,
-                        maxPlaytime: values[1] ?? maxPlaytime,
-                      })
+                  >
+                    Original
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={filters.showShared}
+                    onCheckedChange={(checked) =>
+                      setFilters({ ...filters, showShared: checked })
                     }
-                    label={(value) => value?.toString() ?? ""}
-                    labelPosition="top"
-                  />
-                </div>
+                  >
+                    Shared
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Player Count</DropdownMenuLabel>
+                  <div className="px-3 pt-5 pb-3">
+                    <Slider
+                      value={[filters.minPlayers, filters.maxPlayers]}
+                      min={0}
+                      max={maxPlayers}
+                      step={1}
+                      onValueChange={(values) => {
+                        if (!Array.isArray(values)) {
+                          return;
+                        }
+                        setFilters({
+                          ...filters,
+                          minPlayers: values[0] ?? 0,
+                          maxPlayers: values[1] ?? maxPlayers,
+                        });
+                      }}
+                    />
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Playtime</DropdownMenuLabel>
+                  <div className="px-3 pt-5 pb-3">
+                    <Slider
+                      value={[filters.minPlaytime, filters.maxPlaytime]}
+                      min={0}
+                      max={maxPlaytime}
+                      step={5}
+                      onValueChange={(values) => {
+                        if (!Array.isArray(values)) {
+                          return;
+                        }
+                        setFilters({
+                          ...filters,
+                          minPlaytime: values[0] ?? 0,
+                          maxPlaytime: values[1] ?? maxPlaytime,
+                        });
+                      }}
+                    />
+                  </div>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

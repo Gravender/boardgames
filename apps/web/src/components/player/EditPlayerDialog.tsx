@@ -380,19 +380,7 @@ export const EditPlayerDialog = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   return (
-    <DialogContent
-      className="sm:max-w-[465px]"
-      onInteractOutside={(event) => {
-        if (isSubmitting) {
-          event.preventDefault();
-        }
-      }}
-      onEscapeKeyDown={(event) => {
-        if (isSubmitting) {
-          event.preventDefault();
-        }
-      }}
-    >
+    <DialogContent className="sm:max-w-[465px]">
       <PlayerContent
         setOpen={setOpen}
         player={player}

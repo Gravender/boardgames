@@ -21,10 +21,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
-import { Button, buttonVariants } from "@board-games/ui/button";
+import { Button } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -48,71 +50,81 @@ export function GamesDropDown({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <span className="sr-only">Open menu</span>
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="icon">
+              <span className="sr-only">Open menu</span>
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          }
+        />
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Game Actions</DropdownMenuLabel>
-          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Game Actions</DropdownMenuLabel>
+            <DropdownMenuSeparator />
 
-          <DropdownMenuItem asChild>
-            <Link
-              prefetch={true}
-              href={`/dashboard/games/${data.type === "shared" ? "shared/" : ""}${data.id}/edit`}
-              className="flex items-center gap-2"
-            >
-              <PencilIcon className="mr-2 h-4 w-4" />
-              Edit
-            </Link>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem asChild>
-            <Link
-              prefetch={true}
-              href={
-                data.type === "shared"
-                  ? `/dashboard/games/shared/${data.id}/stats`
-                  : `/dashboard/games/${data.id}/stats`
+            <DropdownMenuItem
+              render={
+                <Link
+                  prefetch={true}
+                  href={`/dashboard/games/${data.type === "shared" ? "shared/" : ""}${data.id}/edit`}
+                  className="flex items-center gap-2"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                  Edit
+                </Link>
               }
-              className="flex items-center gap-2"
-            >
-              <BarChart2Icon className="mr-2 h-4 w-4" />
-              View Stats
-            </Link>
-          </DropdownMenuItem>
-          {/* <DropdownMenuItem>
+            />
+
+            <DropdownMenuItem
+              render={
+                <Link
+                  prefetch={true}
+                  href={
+                    data.type === "shared"
+                      ? `/dashboard/games/shared/${data.id}/stats`
+                      : `/dashboard/games/${data.id}/stats`
+                  }
+                  className="flex items-center gap-2"
+                >
+                  <BarChart2Icon className="h-4 w-4" />
+                  View Stats
+                </Link>
+              }
+            />
+            {/* <DropdownMenuItem>
           <div className="flex items-center justify-between gap-2">
             <BookOpenIcon className="mr-2 h-4 w-4" />
             <span>View Rules</span>
           </div>
         </DropdownMenuItem> */}
-          {data.type === "original" && (
-            <>
-              <DropdownMenuItem asChild>
-                <Link
-                  prefetch={true}
-                  href={`/dashboard/games/${data.id}/share`}
-                  className="flex items-center gap-2"
+            {data.type === "original" && (
+              <>
+                <DropdownMenuItem
+                  render={
+                    <Link
+                      prefetch={true}
+                      href={`/dashboard/games/${data.id}/share`}
+                      className="flex items-center gap-2"
+                    >
+                      <Link2Icon className="h-4 w-4" />
+                      Share
+                    </Link>
+                  }
+                />
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
+                  onClick={() => setIsDeleteGameDialogOpen(true)}
                 >
-                  <Link2Icon className="mr-2 h-4 w-4" />
-                  Share
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
-                onClick={() => setIsDeleteGameDialogOpen(true)}
-              >
-                <div className="flex items-center gap-2">
-                  <Trash2Icon className="mr-2 h-4 w-4" />
-                  <span>Delete Game</span>
-                </div>
-              </DropdownMenuItem>
-            </>
-          )}
+                  <div className="flex items-center gap-2">
+                    <Trash2Icon className="h-4 w-4" />
+                    <span>Delete Game</span>
+                  </div>
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialog

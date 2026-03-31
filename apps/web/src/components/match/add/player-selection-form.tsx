@@ -108,40 +108,41 @@ export const PlayerSelectorField = withFieldGroup({
                         <Item
                           key={`${player.type}-${player.type === "original" ? player.id : player.sharedId}`}
                           variant="outline"
-                          asChild
                           role="listitem"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (playerIndex > -1) {
-                                field.removeValue(playerIndex);
-                              } else {
-                                field.pushValue({
-                                  ...player,
-                                  roles: [],
-                                });
-                              }
-                            }}
-                            className={cn(
-                              playerIndex > -1 && "border-primary bg-primary/5",
-                            )}
-                          >
-                            <ItemMedia>
-                              <PlayerImage
-                                className="size-8"
-                                image={player.image}
-                                alt={player.name}
-                              />
-                            </ItemMedia>
-                            <ItemContent>
-                              <ItemTitle>{player.name}</ItemTitle>
-                              <ItemDescription className="text-left">
-                                {`${player.matches} matches played`}
-                              </ItemDescription>
-                            </ItemContent>
-                          </button>
-                        </Item>
+                          render={
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (playerIndex > -1) {
+                                  field.removeValue(playerIndex);
+                                } else {
+                                  field.pushValue({
+                                    ...player,
+                                    roles: [],
+                                  });
+                                }
+                              }}
+                              className={cn(
+                                playerIndex > -1 &&
+                                  "border-primary bg-primary/5",
+                              )}
+                            >
+                              <ItemMedia>
+                                <PlayerImage
+                                  className="size-8"
+                                  image={player.image}
+                                  alt={player.name}
+                                />
+                              </ItemMedia>
+                              <ItemContent>
+                                <ItemTitle>{player.name}</ItemTitle>
+                                <ItemDescription className="text-left">
+                                  {`${player.matches} matches played`}
+                                </ItemDescription>
+                              </ItemContent>
+                            </button>
+                          }
+                        />
                       );
                     })}
                   </ItemGroup>

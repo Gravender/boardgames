@@ -110,11 +110,7 @@ export default function ChildMatchesRequest({
               if (!matchState) return null;
 
               return (
-                <Accordion
-                  key={matchItem.item.id}
-                  type="multiple"
-                  className="w-full"
-                >
+                <Accordion key={matchItem.item.id} className="w-full">
                   <AccordionItem value={`match-${matchItem.item.id}`}>
                     <div className="flex w-full items-center justify-between pr-4">
                       <AccordionTrigger className="hover:no-underline">

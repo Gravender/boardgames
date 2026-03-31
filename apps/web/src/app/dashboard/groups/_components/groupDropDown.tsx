@@ -40,16 +40,16 @@ export function GroupDropDown({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          }
+        />
         <DropdownMenuContent align="end">
-          <DialogTrigger asChild>
-            <DropdownMenuItem>Edit</DropdownMenuItem>
-          </DialogTrigger>
+          <DialogTrigger render={<DropdownMenuItem>Edit</DropdownMenuItem>} />
           <DropdownMenuItem
             className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground"
             onClick={onDelete}

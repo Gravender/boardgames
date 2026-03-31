@@ -561,52 +561,52 @@ export const useUpdateMatchPlayerOrTeamScoreMutation = (input: MatchInput) => {
   };
 };
 
-export const useUpdateMatchCommentMutation = (input: MatchInput) => {
+export const useUpdateMatchCommentMutation = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const updateMatchCommentMutation = useMutation(
     trpc.match.update.updateMatchComment.mutationOptions({
-      onMutate: async (newComment) => {
+      onMutate: async (variables) => {
+        const matchInput = variables.match;
         await queryClient.cancelQueries(
-          trpc.match.getMatch.queryOptions(input),
+          trpc.match.getMatch.queryOptions(matchInput),
         );
         const prevData = queryClient.getQueryData(
-          trpc.match.getMatch.queryOptions(input).queryKey,
+          trpc.match.getMatch.queryOptions(matchInput).queryKey,
         );
         if (prevData) {
-          const newData = {
-            ...prevData,
-            comment: newComment.comment,
-          };
           queryClient.setQueryData(
-            trpc.match.getMatch.queryOptions(input).queryKey,
-            newData,
+            trpc.match.getMatch.queryOptions(matchInput).queryKey,
+            {
+              ...prevData,
+              comment: variables.comment,
+            },
           );
         }
-        return { newComment, previousData: prevData };
+        return { previousData: prevData, matchInput };
       },
-      onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.match.getMatch.queryOptions(input),
-        );
-      },
-      onError: (error, newComment, context) => {
-        console.error(
-          `Error updating comment for match ${context?.previousData?.name}:`,
-          error,
-        );
+      onError: (error, _variables, onMutateResult) => {
         toast.error(
-          `Error updating comment for match ${context?.previousData?.name}`,
+          `Error updating comment for match ${onMutateResult?.previousData?.name}`,
           {
             description: "There was a problem updating the comment.",
           },
         );
-        if (context?.previousData) {
+        if (
+          onMutateResult?.previousData !== undefined &&
+          onMutateResult.matchInput
+        ) {
           queryClient.setQueryData(
-            trpc.match.getMatch.queryOptions(input).queryKey,
-            context.previousData,
+            trpc.match.getMatch.queryOptions(onMutateResult.matchInput)
+              .queryKey,
+            onMutateResult.previousData,
           );
         }
+      },
+      onSettled: (_data, _error, variables) => {
+        void queryClient.invalidateQueries(
+          trpc.match.getMatch.queryOptions(variables.match),
+        );
       },
     }),
   );

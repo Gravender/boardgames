@@ -40,16 +40,18 @@ export const RoundPopOver = withFieldGroup({
 
     return (
       <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            disabled={disabled}
-          >
-            <Settings />
-          </Button>
-        </PopoverTrigger>
+        <PopoverTrigger
+          render={
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              disabled={disabled}
+            >
+              <Settings />
+            </Button>
+          }
+        />
         <PopoverContent className="w-80" side="top">
           <div className="grid gap-4">
             <group.Subscribe

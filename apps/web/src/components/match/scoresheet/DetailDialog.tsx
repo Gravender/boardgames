@@ -35,25 +35,27 @@ export function DetailDialog({
   const [isOpen, setIsOpen] = useState(false);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          className="w-full min-w-20 items-start justify-start p-0 px-1"
-        >
-          <ScrollArea>
-            <div className="max-h-10 w-full">
-              {data.details && data.details !== "" ? (
-                <p className="text-start text-wrap wrap-break-word whitespace-normal">
-                  {data.details}
-                </p>
-              ) : (
-                <p>{placeholder ?? ""}</p>
-              )}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button
+            variant="ghost"
+            className="w-full min-w-20 items-start justify-start p-0 px-1"
+          >
+            <ScrollArea>
+              <div className="max-h-10 w-full">
+                {data.details && data.details !== "" ? (
+                  <p className="text-start text-wrap wrap-break-word whitespace-normal">
+                    {data.details}
+                  </p>
+                ) : (
+                  <p>{placeholder ?? ""}</p>
+                )}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </Button>
+        }
+      />
       <DialogContent>
         <Content setIsOpen={setIsOpen} match={match} data={data} />
       </DialogContent>

@@ -23,7 +23,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@board-games/ui/alert-dialog";
-import { Button, buttonVariants } from "@board-games/ui/button";
+import { Button } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,79 +55,91 @@ export function MatchDropdown({ match }: { match: Matches[number] }) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <MoreVertical className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreVertical className="h-4 w-4" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          }
+        />
         <DropdownMenuContent align="end">
           {match.type === "original" && (
-            <DropdownMenuItem asChild>
-              <Link
-                prefetch={true}
-                href={`/dashboard/games/${match.game.id}/${match.id}/edit`}
-                className="flex items-center gap-2"
-              >
-                <PencilIcon className="mr-2 h-4 w-4" />
-                Edit
-              </Link>
-            </DropdownMenuItem>
+            <DropdownMenuItem
+              render={
+                <Link
+                  prefetch={true}
+                  href={`/dashboard/games/${match.game.id}/${match.id}/edit`}
+                  className="flex items-center gap-2"
+                >
+                  <PencilIcon className="mr-2 h-4 w-4" />
+                  Edit
+                </Link>
+              }
+            />
           )}
           {match.type === "shared" && match.permissions === "edit" && (
-            <DropdownMenuItem asChild>
-              <Link
-                prefetch={true}
-                href={`/dashboard/games/shared/${match.game.sharedGameId}/${match.id}/edit`}
-                className="flex items-center gap-2"
-              >
-                <PencilIcon className="mr-2 h-4 w-4" />
-                Edit
-              </Link>
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuItem asChild>
-            <Link
-              prefetch={true}
-              href={
-                match.type === "shared"
-                  ? `/dashboard/games/shared/${match.game.sharedGameId}/${match.id}`
-                  : `/dashboard/games/${match.game.id}/${match.id}`
+            <DropdownMenuItem
+              render={
+                <Link
+                  prefetch={true}
+                  href={`/dashboard/games/shared/${match.game.sharedGameId}/${match.id}/edit`}
+                  className="flex items-center gap-2"
+                >
+                  <PencilIcon className="mr-2 h-4 w-4" />
+                  Edit
+                </Link>
               }
-              className="flex items-center gap-2"
-            >
-              <Table className="mr-2 h-4 w-4" />
-              ScoreSheet
-            </Link>
-          </DropdownMenuItem>
-          {match.finished && (
-            <DropdownMenuItem asChild>
+            />
+          )}
+          <DropdownMenuItem
+            render={
               <Link
                 prefetch={true}
                 href={
                   match.type === "shared"
-                    ? `/dashboard/games/shared/${match.game.sharedGameId}/${match.id}/summary`
-                    : `/dashboard/games/${match.game.id}/${match.id}/summary`
+                    ? `/dashboard/games/shared/${match.game.sharedGameId}/${match.id}`
+                    : `/dashboard/games/${match.game.id}/${match.id}`
                 }
                 className="flex items-center gap-2"
               >
-                <BookText className="mr-2 h-4 w-4" />
-                Summary
+                <Table className="mr-2 h-4 w-4" />
+                ScoreSheet
               </Link>
-            </DropdownMenuItem>
+            }
+          />
+          {match.finished && (
+            <DropdownMenuItem
+              render={
+                <Link
+                  prefetch={true}
+                  href={
+                    match.type === "shared"
+                      ? `/dashboard/games/shared/${match.game.sharedGameId}/${match.id}/summary`
+                      : `/dashboard/games/${match.game.id}/${match.id}/summary`
+                  }
+                  className="flex items-center gap-2"
+                >
+                  <BookText className="mr-2 h-4 w-4" />
+                  Summary
+                </Link>
+              }
+            />
           )}
           {match.type === "original" && (
             <>
-              <DropdownMenuItem asChild>
-                <Link
-                  prefetch={true}
-                  href={`/dashboard/games/${match.game.id}/${match.id}/share`}
-                  className="flex items-center gap-2"
-                >
-                  <Link2Icon className="mr-2 h-4 w-4" />
-                  Share
-                </Link>
-              </DropdownMenuItem>
+              <DropdownMenuItem
+                render={
+                  <Link
+                    prefetch={true}
+                    href={`/dashboard/games/${match.game.id}/${match.id}/share`}
+                    className="flex items-center gap-2"
+                  >
+                    <Link2Icon className="mr-2 h-4 w-4" />
+                    Share
+                  </Link>
+                }
+              />
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:bg-destructive/80 focus:text-destructive-foreground flex items-center gap-2"

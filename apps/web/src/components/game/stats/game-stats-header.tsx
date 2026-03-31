@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Clock, Gamepad2, Share2, Trophy } from "lucide-react";
 
 import { formatDuration } from "@board-games/shared";
-import { Button } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
 import { Card, CardContent } from "@board-games/ui/card";
 import { Skeleton } from "@board-games/ui/skeleton";
 
@@ -56,12 +56,15 @@ function GameStatsHeaderContent({ gameInput }: GameStatsHeaderProps) {
                 )}
               </div>
               {gameInput.type === "original" && (
-                <Button className="gap-2" asChild>
-                  <Link href={`/dashboard/games/${gameInput.id}/share`}>
-                    <Share2 className="h-4 w-4" />
-                    Share
-                  </Link>
-                </Button>
+                <Link
+                  href={`/dashboard/games/${gameInput.id}/share`}
+                  className={buttonVariants({
+                    className: "gap-2",
+                  })}
+                >
+                  <Share2 className="h-4 w-4" />
+                  Share
+                </Link>
               )}
             </div>
           </div>

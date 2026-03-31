@@ -33,7 +33,7 @@ export default function MatchSummaryPlayerStats({
       <CardContent className="p-2 md:p-6">
         <Table
           className="min-w-full"
-          containerClassname="max-h-[65vh] h-fit w-full rounded-lg"
+          containerClassName="max-h-[65vh] h-fit w-full rounded-lg"
         >
           <TableHeader className="bg-sidebar text-card-foreground sticky top-0 z-20 shadow-lg">
             <TableRow>
