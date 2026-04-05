@@ -1,15 +1,63 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
 import { protectedUserProcedure } from "../../trpc";
-import { getGroupWithPlayers } from "./group.output";
+import {
+  createGroupInput,
+  deleteGroupInput,
+  updateGroupInput,
+  updateGroupPlayersInput,
+} from "./group.input";
+import {
+  getGroupsOutput,
+  getGroupWithPlayersOutput,
+  updateGroupOutput,
+} from "./group.output";
 import { groupService } from "./service/group.service";
 
 export const groupRouter = {
+  getGroups: protectedUserProcedure
+    .output(getGroupsOutput)
+    .query(async ({ ctx }) => groupService.getGroups({ ctx })),
+
   getGroupsWithPlayers: protectedUserProcedure
-    .output(getGroupWithPlayers)
-    .query(async ({ ctx }) => {
-      return groupService.getGroupsWithPlayers({
+    .output(getGroupWithPlayersOutput)
+    .query(async ({ ctx }) => groupService.getGroupsWithPlayers({ ctx })),
+
+  create: protectedUserProcedure
+    .input(createGroupInput)
+    .mutation(async ({ ctx, input }) => {
+      await groupService.createGroup({
         ctx,
+        name: input.name,
+        players: input.players,
       });
+    }),
+
+  update: protectedUserProcedure
+    .input(updateGroupInput)
+    .output(updateGroupOutput)
+    .mutation(async ({ ctx, input }) =>
+      groupService.updateGroup({
+        ctx,
+        id: input.id,
+        name: input.name,
+      }),
+    ),
+
+  updatePlayers: protectedUserProcedure
+    .input(updateGroupPlayersInput)
+    .mutation(async ({ ctx, input }) => {
+      await groupService.updateGroupPlayers({
+        ctx,
+        groupId: input.group.id,
+        playersToAdd: input.playersToAdd,
+        playersToRemove: input.playersToRemove,
+      });
+    }),
+
+  deleteGroup: protectedUserProcedure
+    .input(deleteGroupInput)
+    .mutation(async ({ ctx, input }) => {
+      await groupService.deleteGroup({ ctx, id: input.id });
     }),
 } satisfies TRPCRouterRecord;

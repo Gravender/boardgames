@@ -37,6 +37,7 @@ import type { GameInput } from "../types/input";
 import { PlayerImage } from "~/components/player-image";
 import { useAppForm } from "~/hooks/form";
 import { useGameRoles } from "~/hooks/queries/game/roles";
+import { useGroupsQuery } from "~/hooks/queries/group/groups";
 import { useTRPC } from "~/trpc/react";
 import { AddPlayerForm } from "./AddPlayerForm";
 import { PlayerGroupSelector } from "./group-selector";
@@ -119,7 +120,7 @@ export const AddPlayersDialogForm = ({
     type: "original" | "shared" | "linked";
   } | null>(null);
 
-  const { data: groups } = useQuery(trpc.group.getGroups.queryOptions());
+  const { data: groups } = useGroupsQuery();
   const { data: gamePlayers } = useQuery(
     trpc.newPlayer.getPlayersByGame.queryOptions(
       game.type === "shared"

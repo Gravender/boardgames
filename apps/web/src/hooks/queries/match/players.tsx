@@ -4,6 +4,8 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 import { useTRPC } from "~/trpc/react";
 
+export { useGroupsWithPlayers } from "~/hooks/queries/group/groups";
+
 export const usePlayers = () => {
   const trpc = useTRPC();
   const { data: playersForMatch, isLoading } = useQuery(
@@ -21,17 +23,6 @@ export const useSuspensePlayers = () => {
   );
   return {
     playersForMatch,
-  };
-};
-
-export const useGroupsWithPlayers = () => {
-  const trpc = useTRPC();
-  const { data, isLoading } = useQuery(
-    trpc.newGroup.getGroupsWithPlayers.queryOptions(),
-  );
-  return {
-    groups: data?.groups,
-    isLoading,
   };
 };
 
