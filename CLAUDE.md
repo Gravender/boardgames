@@ -46,6 +46,7 @@ This is a monorepo for tracking board games, players, matches, scoresheets, and 
 - Playwright e2e tests in `packages/playwright-web/`
 - Note: E2e tests may be outdated and need updates
 - Run with: `bun run e2e`
+- Vitest: `apps/web` (jsdom + React), `packages/api` (tRPC integration tests; **requires root `.env` and usually Postgres**), `packages/shared` (pure TS; no DB). From root: `bun run test:web`, `bun run test:api`, `bun run test:shared`, or `turbo run test` for all packages that define a `test` script.
 
 ### Package-Specific Commands
 

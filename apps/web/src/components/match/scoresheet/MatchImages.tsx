@@ -154,7 +154,9 @@ export function MatchImages({
               ))}
               <CarouselItem className="xs:basis-1/6 basis-1/4 pl-2">
                 <button
+                  type="button"
                   className="w-full"
+                  aria-label="Add match image"
                   onClick={() => setIsAddImageDialogOpen(true)}
                 >
                   <div className="relative flex aspect-square size-full shrink-0 overflow-hidden rounded-md border p-0">
@@ -199,6 +201,7 @@ export function MatchImages({
             </div>
             <Button
               variant="destructive"
+              aria-label="Delete match image"
               onClick={() => {
                 setIsDeleteImageDialogOpen(true);
                 setIsDialogOpen(false);

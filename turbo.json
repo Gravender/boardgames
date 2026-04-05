@@ -40,6 +40,11 @@
       "dependsOn": ["^topo", "^build"],
       "outputs": [".cache/tsbuildinfo.json"]
     },
+    "test": {
+      "dependsOn": ["^topo", "^build"],
+      "outputs": [],
+      "passThroughEnv": ["POSTGRES_URL", "NODE_ENV", "AUTH_SECRET"]
+    },
     "clean": {
       "cache": false
     },
