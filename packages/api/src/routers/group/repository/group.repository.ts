@@ -11,6 +11,9 @@ class GroupRepository {
       with: {
         players: {
           columns: { id: true, name: true, deletedAt: true },
+          with: {
+            image: true,
+          },
         },
       },
     });
@@ -23,6 +26,9 @@ class GroupRepository {
       with: {
         players: {
           columns: { id: true, name: true, deletedAt: true },
+          with: {
+            image: true,
+          },
         },
       },
     });

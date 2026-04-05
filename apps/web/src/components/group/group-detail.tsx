@@ -162,7 +162,7 @@ export const GroupDetail = ({ groupId }: { groupId: number }) => {
                 >
                   <PlayerImage
                     className="size-11 shrink-0"
-                    image={null}
+                    image={p.image}
                     alt={p.name}
                   />
                   <span className="min-w-0 flex-1 font-medium">{p.name}</span>

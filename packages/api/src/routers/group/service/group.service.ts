@@ -12,6 +12,7 @@ import type {
   GetGroupWithPlayersOutputType,
   UpdateGroupOutputType,
 } from "../group.output";
+import { mapImageRowToPlayerImage } from "../../../utils/image";
 import { groupRepository } from "../repository/group.repository";
 import type {
   CreateGroupArgs,
@@ -58,6 +59,7 @@ class GroupService {
           id: p.id,
           name: p.name,
           type: "original" as const,
+          image: mapImageRowToPlayerImage(p.image ?? null),
         })),
     }));
   }
@@ -77,6 +79,7 @@ class GroupService {
         id: number;
         name: string;
         type: "original";
+        image: ReturnType<typeof mapImageRowToPlayerImage>;
       }>;
       matches: number;
     }> = [];
@@ -95,6 +98,7 @@ class GroupService {
           id: p.id,
           name: p.name,
           type: "original" as const,
+          image: mapImageRowToPlayerImage(p.image ?? null),
         })),
         matches: matchIds.length,
       });
@@ -137,6 +141,7 @@ class GroupService {
         id: p.id,
         name: p.name,
         type: "original" as const,
+        image: mapImageRowToPlayerImage(p.image ?? null),
       })),
       matches,
     };

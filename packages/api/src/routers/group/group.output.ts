@@ -1,12 +1,16 @@
 import { z } from "zod/v4";
 
-import { matchWithGameAndPlayersSchema } from "@board-games/shared";
+import {
+  matchWithGameAndPlayersSchema,
+  playerImageSchema,
+} from "@board-games/shared";
 
 /** Group list/detail player row (owner players only in this milestone). */
 export const groupPlayerRowSchema = z.object({
   id: z.number(),
   name: z.string(),
   type: z.literal("original"),
+  image: playerImageSchema.nullable(),
 });
 
 export const getGroupsOutput = z.array(
