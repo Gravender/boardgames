@@ -33,6 +33,7 @@ export const AddRoundDialog = ({ match }: { match: MatchInput }) => {
         variant="ghost"
         size="icon"
         type="button"
+        aria-label="Add round"
         onClick={() => setIsOpen(true)}
       >
         <ListPlus className="text-secondary-foreground" />

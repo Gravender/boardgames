@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -31,6 +31,8 @@ describe("FeatureInfoModal", () => {
     const closeBtn = footer?.querySelector('[data-slot="button"]');
     expect(closeBtn).toBeInstanceOf(HTMLButtonElement);
     await user.click(closeBtn!);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
   });
 });
