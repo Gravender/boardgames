@@ -3,7 +3,7 @@ import { friendsRouter } from "./routers/friends";
 import { gameRouter } from "./routers/game/game.router";
 import { groupRouter } from "./routers/group/group.router";
 import { imageRouter } from "./routers/image";
-import { locationRouter } from "./routers/location";
+import { locationRouter } from "./routers/location/location.router";
 import { matchRouter } from "./routers/match/match.router";
 import { playerRouter as newPlayerRouter } from "./routers/player/player.router";
 import { playerRouter } from "./routers/players";
