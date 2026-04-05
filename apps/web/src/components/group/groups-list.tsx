@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Search, Sparkles, Users } from "lucide-react";
+import { Search, Sparkles, Users } from "lucide-react";
 
 import { Badge } from "@board-games/ui/badge";
-import { Button } from "@board-games/ui/button";
+import { buttonVariants } from "@board-games/ui/components/button-variants";
 import { Input } from "@board-games/ui/input";
+import { cn } from "@board-games/ui/utils";
 import {
   Item,
   ItemActions,
@@ -109,15 +110,19 @@ export const GroupsList = () => {
                   </ItemContent>
                 </Link>
                 <ItemActions>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="pointer-events-none h-9 min-w-10 font-mono text-xs tabular-nums"
-                    type="button"
+                  <span
+                    className={cn(
+                      buttonVariants({
+                        variant: "secondary",
+                        size: "sm",
+                      }),
+                      "pointer-events-none h-9 min-w-10 font-mono text-xs tabular-nums",
+                    )}
+                    role="status"
                     aria-label={`${group.matches} matches`}
                   >
                     {group.matches}
-                  </Button>
+                  </span>
                   <GroupDropdown group={group} />
                 </ItemActions>
               </Item>

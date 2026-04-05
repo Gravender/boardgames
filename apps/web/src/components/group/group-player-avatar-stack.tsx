@@ -1,12 +1,26 @@
 "use client";
 
+import type { ImageWithUsage } from "@board-games/shared";
+
 import { cn } from "@board-games/ui/utils";
 
 import { PlayerImage } from "~/components/player-image";
 
 const MAX_VISIBLE = 3;
 
-type PlayerRef = { id: number; name: string };
+type PlayerRef = { id: number; name: string; image?: ImageWithUsage | null };
+
+const playerAvatarInitials = (name: string): string => {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return "";
+  }
+  const parts = trimmed.split(/\s+/);
+  if (parts.length === 1) {
+    return parts[0]!.slice(0, 2).toUpperCase();
+  }
+  return `${parts[0]![0]!}${parts[parts.length - 1]![0]!}`.toUpperCase();
+};
 
 const zForIndex = (i: number) => (i === 0 ? "z-10" : i === 1 ? "z-20" : "z-30");
 
@@ -57,18 +71,33 @@ export const GroupPlayerAvatarStack = ({
       aria-hidden={false}
       aria-label={`${players.length} member${players.length === 1 ? "" : "s"}`}
     >
-      {visible.map((player, index) => (
-        <span
-          key={player.id}
-          className={cn("relative shrink-0", zForIndex(index))}
-        >
-          <PlayerImage
-            image={null}
-            alt=""
-            className={cn("ring-background ring-2", cfg.avatar)}
-          />
-        </span>
-      ))}
+      {visible.map((player, index) => {
+        const displayName = player.name.trim();
+        const initials = playerAvatarInitials(player.name);
+        return (
+          <span
+            key={player.id}
+            className={cn("relative shrink-0", zForIndex(index))}
+          >
+            <PlayerImage
+              image={player.image ?? null}
+              alt={displayName ? `Avatar of ${displayName}` : ""}
+              className={cn("ring-background ring-2", cfg.avatar)}
+              fallBackClassName={cn(
+                "font-semibold leading-none",
+                size === "sm" ? "text-[10px]" : "text-xs",
+              )}
+              fallBackChildren={
+                initials ? (
+                  <span aria-hidden className="uppercase">
+                    {initials}
+                  </span>
+                ) : undefined
+              }
+            />
+          </span>
+        );
+      })}
       {overflow > 0 ? (
         <div
           className={cn(

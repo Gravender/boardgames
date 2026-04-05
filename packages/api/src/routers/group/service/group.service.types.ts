@@ -20,13 +20,7 @@ export interface UpdateGroupArgs {
   ctx: ServiceCtx;
   id: number;
   name: string;
-}
-
-export interface UpdateGroupPlayersArgs {
-  ctx: ServiceCtx;
-  groupId: number;
-  playersToAdd: { id: number }[];
-  playersToRemove: { id: number }[];
+  players: { id: number }[];
 }
 
 export interface DeleteGroupArgs {

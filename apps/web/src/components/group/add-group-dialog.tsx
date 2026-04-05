@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from "@board-games/ui/dialog";
 
+import { GroupPlayerSelectorField } from "~/components/group/group-player-selector-field";
 import { Spinner } from "~/components/spinner";
 import { useAppForm } from "~/hooks/form";
 import { useCreateGroupMutation } from "~/hooks/mutations/group/create";
@@ -78,7 +79,6 @@ const AddGroupFormContent = ({
     trpc.newPlayer.getPlayers.queryOptions(),
   );
   const originalPlayers = players.filter((p) => p.type === "original");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createMutation = useCreateGroupMutation({
     onSuccess: async () => {
@@ -95,16 +95,11 @@ const AddGroupFormContent = ({
       onSubmit: addGroupFormSchema,
     },
     onSubmit: async ({ value }) => {
-      setIsSubmitting(true);
-      try {
-        await createMutation.mutateAsync({
-          name: value.name,
-          players: value.playerIds.map((id) => ({ id })),
-        });
-        form.reset();
-      } finally {
-        setIsSubmitting(false);
-      }
+      await createMutation.mutateAsync({
+        name: value.name,
+        players: value.playerIds.map((id) => ({ id })),
+      });
+      form.reset();
     },
   });
 
@@ -122,40 +117,44 @@ const AddGroupFormContent = ({
         )}
       </form.AppField>
 
-      <form.AppField name="playerIds" mode="array">
-        {(field) => (
-          <field.GroupPlayerIdsField
-            players={originalPlayers}
-            label="Players"
-            aria-label="Players to include in this group"
-          />
-        )}
-      </form.AppField>
+      <GroupPlayerSelectorField
+        form={form}
+        fields={{ playerIds: "playerIds" }}
+        players={originalPlayers}
+        label="Players"
+        ariaLabel="Players to include in this group"
+      />
 
-      <DialogFooter className="gap-2 border-border/60 border-t pt-4 sm:justify-end">
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => {
-            if (!isSubmitting) {
-              setOpen(false);
-            }
-          }}
-          disabled={isSubmitting}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <Spinner />
-              <span>Creating…</span>
-            </>
-          ) : (
-            "Create group"
+      <form.AppForm>
+        <form.Subscribe selector={(state) => state.isSubmitting}>
+          {(isSubmitting) => (
+            <DialogFooter className="gap-2 border-border/60 border-t pt-4 sm:justify-end">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  if (!isSubmitting) {
+                    setOpen(false);
+                  }
+                }}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Spinner />
+                    <span>Creating…</span>
+                  </>
+                ) : (
+                  "Create group"
+                )}
+              </Button>
+            </DialogFooter>
           )}
-        </Button>
-      </DialogFooter>
+        </form.Subscribe>
+      </form.AppForm>
     </form>
   );
 };

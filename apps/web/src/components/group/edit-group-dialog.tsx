@@ -14,10 +14,10 @@ import {
   DialogTitle,
 } from "@board-games/ui/dialog";
 
+import { GroupPlayerSelectorField } from "~/components/group/group-player-selector-field";
 import { Spinner } from "~/components/spinner";
 import { useAppForm } from "~/hooks/form";
 import { useUpdateGroupMutation } from "~/hooks/mutations/group/update";
-import { useUpdateGroupPlayersMutation } from "~/hooks/mutations/group/update-players";
 import { useTRPC } from "~/trpc/react";
 
 const editGroupFormSchema = z.object({
@@ -48,7 +48,6 @@ export const EditGroupDialog = ({
   const initialIdsRef = useRef<number[]>([]);
 
   const updateMutation = useUpdateGroupMutation();
-  const updatePlayersMutation = useUpdateGroupPlayersMutation();
 
   const form = useAppForm({
     defaultValues: {
@@ -74,25 +73,11 @@ export const EditGroupDialog = ({
 
       setIsSubmitting(true);
       try {
-        if (nameChanged) {
-          await updateMutation.mutateAsync({
-            id: group.id,
-            name: value.name.trim(),
-          });
-        }
-        if (playersChanged) {
-          const playersToAdd = [...next]
-            .filter((id) => !initial.has(id))
-            .map((id) => ({ id }));
-          const playersToRemove = [...initial]
-            .filter((id) => !next.has(id))
-            .map((id) => ({ id }));
-          await updatePlayersMutation.mutateAsync({
-            group: { id: group.id },
-            playersToAdd,
-            playersToRemove,
-          });
-        }
+        await updateMutation.mutateAsync({
+          id: group.id,
+          name: value.name.trim(),
+          players: value.playerIds.map((pid) => ({ id: pid })),
+        });
         form.reset();
         onOpenChange(false);
       } finally {
@@ -117,7 +102,7 @@ export const EditGroupDialog = ({
       name: group.name,
       playerIds: ids,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when dialog opens or group data changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `form` from useAppForm is a stable instance for this dialog; listing `form` would satisfy exhaustive-deps but adds noise since `reset` identity is tied to that stable form. Effect intentionally reruns only when the dialog opens or group identity/membership changes.
   }, [open, group.id, group.name, memberKey]);
 
   return (
@@ -146,15 +131,13 @@ export const EditGroupDialog = ({
             )}
           </form.AppField>
 
-          <form.AppField name="playerIds" mode="array">
-            {(field) => (
-              <field.GroupPlayerIdsField
-                players={originalPlayers}
-                label="Members"
-                aria-label="Players in this group"
-              />
-            )}
-          </form.AppField>
+          <GroupPlayerSelectorField
+            form={form}
+            fields={{ playerIds: "playerIds" }}
+            players={originalPlayers}
+            label="Members"
+            ariaLabel="Players in this group"
+          />
 
           <DialogFooter className="gap-2 border-border/60 border-t px-0 pt-4 sm:justify-end">
             <Button

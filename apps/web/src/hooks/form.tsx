@@ -3,7 +3,6 @@ import { createFormHook } from "@tanstack/react-form";
 import { CheckboxField } from "~/components/form/checkbox-field";
 import { DateField } from "~/components/form/date-field";
 import { FileField } from "~/components/form/file-field";
-import { GroupPlayerIdsField } from "~/components/form/group-player-ids-field";
 import {
   NullableNumberField,
   NumberField,
@@ -33,7 +32,6 @@ const formHook = createFormHook({
     NullableNumberField,
     DateField,
     FileField,
-    GroupPlayerIdsField,
   },
   formComponents: {
     SubscribeButton,

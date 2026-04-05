@@ -116,14 +116,18 @@ describe("group router — CRUD and authorization", () => {
     const id = before[0]?.id;
     if (id === undefined) throw new Error("Expected group id");
 
-    const updated = await caller.group.update({ id, name: "After" });
+    const updated = await caller.group.update({
+      id,
+      name: "After",
+      players: [{ id: p1.id }],
+    });
     expect(updated.name).toBe("After");
 
     const after = await caller.group.getGroups();
     expect(after[0]?.name).toBe("After");
   });
 
-  test("updatePlayers adds and removes members", async () => {
+  test("update adds and removes members in one call", async () => {
     const caller = await createAuthenticatedCaller(lifecycle.userId);
 
     const [p1] = await db
@@ -149,10 +153,10 @@ describe("group router — CRUD and authorization", () => {
     const gid = groups[0]?.id;
     if (gid === undefined) throw new Error("Expected group id");
 
-    await caller.group.updatePlayers({
-      group: { id: gid },
-      playersToAdd: [{ id: p2.id }],
-      playersToRemove: [],
+    await caller.group.update({
+      id: gid,
+      name: "Members",
+      players: [{ id: p1.id }, { id: p2.id }],
     });
 
     let g = (await caller.group.getGroups()).find((x) => x.id === gid);
@@ -160,19 +164,19 @@ describe("group router — CRUD and authorization", () => {
       [p1.id, p2.id].toSorted((a, b) => a - b),
     );
 
-    await caller.group.updatePlayers({
-      group: { id: gid },
-      playersToAdd: [],
-      playersToRemove: [{ id: p1.id }],
+    await caller.group.update({
+      id: gid,
+      name: "Members",
+      players: [{ id: p2.id }],
     });
 
     g = (await caller.group.getGroups()).find((x) => x.id === gid);
     expect(g?.players.map((p) => p.id)).toEqual([p2.id]);
 
-    await caller.group.updatePlayers({
-      group: { id: gid },
-      playersToAdd: [{ id: p3.id }],
-      playersToRemove: [],
+    await caller.group.update({
+      id: gid,
+      name: "Members",
+      players: [{ id: p2.id }, { id: p3.id }],
     });
 
     g = (await caller.group.getGroups()).find((x) => x.id === gid);

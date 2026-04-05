@@ -23,7 +23,7 @@ type OriginalPlayer = Extract<
 type GroupPlayerPickerProps = {
   players: readonly OriginalPlayer[];
   selected: readonly number[];
-  onToggle: (playerId: number, index: number, isChecked: boolean) => void;
+  onToggle: (playerId: number, index: number, newChecked: boolean) => void;
   "aria-label"?: string;
 };
 
@@ -56,8 +56,8 @@ export const GroupPlayerPicker = ({
                     <Checkbox
                       id={checkboxId}
                       checked={isChecked}
-                      onCheckedChange={() => {
-                        onToggle(player.id, idx, isChecked);
+                      onCheckedChange={(newChecked) => {
+                        onToggle(player.id, idx, newChecked);
                       }}
                     />
                     <ItemMedia variant="image">

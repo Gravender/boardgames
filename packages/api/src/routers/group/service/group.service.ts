@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 
 import { db } from "@board-games/db/client";
-import { player } from "@board-games/db/schema";
+import { group, groupPlayer, player } from "@board-games/db/schema";
 
 import { gameMatchesRepository } from "../../../repositories/game/game-matches.repository";
 import { mapRepositoryMatchRowsToMatchListOutput } from "../../../services/game/game-matches-list-mapping";
@@ -20,7 +20,6 @@ import type {
   GetGroupsArgs,
   GetGroupsWithPlayersArgs,
   UpdateGroupArgs,
-  UpdateGroupPlayersArgs,
 } from "./group.service.types";
 
 /**
@@ -168,48 +167,73 @@ class GroupService {
   public async updateGroup(
     args: UpdateGroupArgs,
   ): Promise<UpdateGroupOutputType> {
-    const row = await groupRepository.updateGroupName(
-      args.id,
-      args.ctx.userId,
-      args.name,
-    );
-    if (!row) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
-    }
-    return row;
-  }
-
-  public async updateGroupPlayers(args: UpdateGroupPlayersArgs): Promise<void> {
     const userId = args.ctx.userId;
-    const groupId = args.groupId;
+    const id = args.id;
+    const trimmedName = args.name.trim();
+    const desiredIds = [...new Set(args.players.map((p) => p.id))];
 
-    const existing = await groupRepository.findGroupOwnedBy(groupId, userId);
-    if (!existing) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+    const owned = await queryPlayerIdsOwnedByUser(userId, desiredIds);
+    if (owned.length !== desiredIds.length) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "One or more players are invalid or not owned by you",
+      });
     }
 
-    const addIds = [...new Set(args.playersToAdd.map((p) => p.id))];
-    const removeIds = [...new Set(args.playersToRemove.map((p) => p.id))];
+    return await db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(group)
+        .set({ name: trimmedName })
+        .where(and(eq(group.id, id), eq(group.createdBy, userId)))
+        .returning({ id: group.id, name: group.name });
 
-    if (addIds.length > 0) {
-      const owned = await queryPlayerIdsOwnedByUser(userId, addIds);
-      if (owned.length !== addIds.length) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "One or more players are invalid or not owned by you",
-        });
+      if (!updated) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
       }
-      await groupRepository.insertGroupPlayerLinks(groupId, addIds);
-    }
 
-    if (removeIds.length > 0) {
-      await groupRepository.deleteGroupPlayerLinks(groupId, removeIds);
-    }
+      const existingRows = await tx
+        .select({ playerId: groupPlayer.playerId })
+        .from(groupPlayer)
+        .where(eq(groupPlayer.groupId, id));
+
+      const currentSet = new Set(existingRows.map((r) => r.playerId));
+      const desiredSet = new Set(desiredIds);
+
+      const toRemove = [...currentSet].filter((pid) => !desiredSet.has(pid));
+      const toAdd = desiredIds.filter((pid) => !currentSet.has(pid));
+
+      if (toRemove.length > 0) {
+        await tx
+          .delete(groupPlayer)
+          .where(
+            and(
+              eq(groupPlayer.groupId, id),
+              inArray(groupPlayer.playerId, toRemove),
+            ),
+          );
+      }
+
+      if (toAdd.length > 0) {
+        await tx.insert(groupPlayer).values(
+          toAdd.map((playerId) => ({
+            groupId: id,
+            playerId,
+          })),
+        );
+      }
+
+      return updated;
+    });
   }
 
   public async deleteGroup(args: DeleteGroupArgs): Promise<void> {
     const userId = args.ctx.userId;
     const id = args.id;
+
+    const existing = await groupRepository.findGroupOwnedBy(id, userId);
+    if (!existing) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+    }
 
     await groupRepository.deleteAllGroupPlayers(id);
     const deleted = await groupRepository.deleteGroupIfOwned(id, userId);

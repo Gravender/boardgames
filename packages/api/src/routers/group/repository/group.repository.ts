@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { db } from "@board-games/db/client";
 import { group, groupPlayer } from "@board-games/db/schema";
@@ -46,33 +46,12 @@ class GroupRepository {
     );
   }
 
-  public async updateGroupName(id: number, createdBy: string, name: string) {
-    const [row] = await db
-      .update(group)
-      .set({ name })
-      .where(and(eq(group.id, id), eq(group.createdBy, createdBy)))
-      .returning({ id: group.id, name: group.name });
-    return row;
-  }
-
   public async findGroupOwnedBy(groupId: number, createdBy: string) {
     const row = await db.query.group.findFirst({
       where: { id: groupId, createdBy },
       columns: { id: true },
     });
     return row;
-  }
-
-  public async deleteGroupPlayerLinks(groupId: number, playerIds: number[]) {
-    if (playerIds.length === 0) return;
-    await db
-      .delete(groupPlayer)
-      .where(
-        and(
-          eq(groupPlayer.groupId, groupId),
-          inArray(groupPlayer.playerId, playerIds),
-        ),
-      );
   }
 
   public async deleteAllGroupPlayers(groupId: number) {

@@ -6,7 +6,6 @@ import {
   deleteGroupInput,
   getGroupInput,
   updateGroupInput,
-  updateGroupPlayersInput,
 } from "./group.input";
 import {
   getGroupOutput,
@@ -50,19 +49,9 @@ export const groupRouter = {
         ctx,
         id: input.id,
         name: input.name,
+        players: input.players,
       }),
     ),
-
-  updatePlayers: protectedUserProcedure
-    .input(updateGroupPlayersInput)
-    .mutation(async ({ ctx, input }) => {
-      await groupService.updateGroupPlayers({
-        ctx,
-        groupId: input.group.id,
-        playersToAdd: input.playersToAdd,
-        playersToRemove: input.playersToRemove,
-      });
-    }),
 
   deleteGroup: protectedUserProcedure
     .input(deleteGroupInput)
