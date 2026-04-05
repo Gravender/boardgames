@@ -242,3 +242,109 @@ describe("group router — getGroupsWithPlayers match counts", () => {
     expect(g3Result?.matches).toBe(0);
   });
 });
+
+describe("group router — getGroup", () => {
+  const lifecycle = testLifecycle();
+
+  beforeAll(async () => {
+    await lifecycle.deleteTestUser();
+  });
+
+  afterAll(async () => {
+    await lifecycle.deleteTestUser();
+  });
+
+  beforeEach(async () => {
+    await lifecycle.createTestUser();
+  });
+
+  afterEach(async () => {
+    await lifecycle.deleteTestUser();
+  });
+
+  test("returns NOT_FOUND for missing group id", async () => {
+    const caller = await createAuthenticatedCaller(lifecycle.userId);
+    await expect(
+      caller.group.getGroup({ id: 9_999_999 }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  test("returns players and full match payloads for all-member finished matches", async () => {
+    const caller = await createAuthenticatedCaller(lifecycle.userId);
+
+    const [p1] = await db
+      .insert(player)
+      .values({ name: "GG P1", createdBy: lifecycle.userId, isUser: false })
+      .returning();
+    const [p2] = await db
+      .insert(player)
+      .values({ name: "GG P2", createdBy: lifecycle.userId, isUser: false })
+      .returning();
+    if (!p1 || !p2) throw new Error("Failed to insert players");
+
+    const [g] = await db
+      .insert(groupTable)
+      .values({ name: "GetGroup Test", createdBy: lifecycle.userId })
+      .returning();
+    if (!g) throw new Error("Failed to insert group");
+
+    await db.insert(groupPlayer).values([
+      { groupId: g.id, playerId: p1.id },
+      { groupId: g.id, playerId: p2.id },
+    ]);
+
+    const [gameRow] = await db
+      .insert(game)
+      .values({ name: "GetGroup Game", createdBy: lifecycle.userId })
+      .returning();
+    if (!gameRow) throw new Error("Failed to insert game");
+
+    const [scoresheetRow] = await db
+      .insert(scoresheet)
+      .values({
+        name: "GetGroup Scoresheet",
+        gameId: gameRow.id,
+        createdBy: lifecycle.userId,
+        isCoop: false,
+        winCondition: "Highest Score",
+        roundsScore: "Aggregate",
+        targetScore: 0,
+        type: "Default",
+      })
+      .returning();
+    if (!scoresheetRow) throw new Error("Failed to insert scoresheet");
+
+    const [matchBoth] = await db
+      .insert(match)
+      .values({
+        createdBy: lifecycle.userId,
+        gameId: gameRow.id,
+        scoresheetId: scoresheetRow.id,
+        finished: true,
+        date: new Date("2024-06-15T12:00:00.000Z"),
+        name: "Group outing",
+      })
+      .returning();
+    if (!matchBoth) throw new Error("Failed to insert match");
+
+    await db.insert(matchPlayer).values([
+      { matchId: matchBoth.id, playerId: p1.id },
+      { matchId: matchBoth.id, playerId: p2.id },
+    ]);
+
+    const detail = await caller.group.getGroup({ id: g.id });
+
+    expect(detail.id).toBe(g.id);
+    expect(detail.name).toBe("GetGroup Test");
+    expect(detail.players.map((x) => x.id).toSorted((a, b) => a - b)).toEqual(
+      [p1.id, p2.id].toSorted((a, b) => a - b),
+    );
+    expect(detail.matches.length).toBe(1);
+    const m = detail.matches[0];
+    expect(m?.id).toBe(matchBoth.id);
+    expect(m?.name).toBe("Group outing");
+    expect(m?.finished).toBe(true);
+    expect(m?.type).toBe("original");
+    expect(m?.game.id).toBe(gameRow.id);
+  });
+});

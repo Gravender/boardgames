@@ -4,8 +4,10 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@board-games/db/client";
 import { player } from "@board-games/db/schema";
 
-import { groupMatchesRepository } from "../../../repositories/group/group-matches.repository";
+import { gameMatchesRepository } from "../../../repositories/game/game-matches.repository";
+import { mapRepositoryMatchRowsToMatchListOutput } from "../../../services/game/game-matches-list-mapping";
 import type {
+  GetGroupOutputType,
   GetGroupsOutputType,
   GetGroupWithPlayersOutputType,
   UpdateGroupOutputType,
@@ -14,6 +16,7 @@ import { groupRepository } from "../repository/group.repository";
 import type {
   CreateGroupArgs,
   DeleteGroupArgs,
+  GetGroupArgs,
   GetGroupsArgs,
   GetGroupsWithPlayersArgs,
   UpdateGroupArgs,
@@ -82,7 +85,7 @@ class GroupService {
     for (const g of raw) {
       const activePlayers = g.players.filter((p) => p.deletedAt === null);
       const playerIds = activePlayers.map((p) => p.id);
-      const matchIds = await groupMatchesRepository.getGroupMatchesForUser({
+      const matchIds = await gameMatchesRepository.getGroupMatchIdsForUser({
         userId,
         playerIds,
       });
@@ -105,6 +108,38 @@ class GroupService {
 
     return {
       groups: withCounts.filter((g) => g.players.length > 0),
+    };
+  }
+
+  public async getGroup(args: GetGroupArgs): Promise<GetGroupOutputType> {
+    const row = await groupRepository.findGroupWithPlayersOwnedBy(
+      args.id,
+      args.ctx.userId,
+    );
+    if (!row) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+    }
+
+    const activePlayers = row.players.filter((p) => p.deletedAt === null);
+    const playerIds = activePlayers.map((p) => p.id);
+    const matchRows = await gameMatchesRepository.getGroupMatchesForUser({
+      userId: args.ctx.userId,
+      playerIds,
+    });
+    const matches = mapRepositoryMatchRowsToMatchListOutput(
+      matchRows,
+      "original",
+    );
+
+    return {
+      id: row.id,
+      name: row.name,
+      players: activePlayers.map((p) => ({
+        id: p.id,
+        name: p.name,
+        type: "original" as const,
+      })),
+      matches,
     };
   }
 

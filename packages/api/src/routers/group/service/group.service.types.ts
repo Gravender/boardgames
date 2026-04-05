@@ -33,3 +33,8 @@ export interface DeleteGroupArgs {
   ctx: ServiceCtx;
   id: number;
 }
+
+export interface GetGroupArgs {
+  ctx: ServiceCtx;
+  id: number;
+}

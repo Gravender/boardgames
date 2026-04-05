@@ -16,6 +16,18 @@ class GroupRepository {
     });
   }
 
+  public async findGroupWithPlayersOwnedBy(groupId: number, createdBy: string) {
+    return db.query.group.findFirst({
+      where: { id: groupId, createdBy },
+      columns: { id: true, name: true },
+      with: {
+        players: {
+          columns: { id: true, name: true, deletedAt: true },
+        },
+      },
+    });
+  }
+
   public async insertGroup(createdBy: string, name: string) {
     const [row] = await db
       .insert(group)

@@ -33,3 +33,6 @@ export type UpdateGroupPlayersInput = z.infer<typeof updateGroupPlayersInput>;
 
 export const deleteGroupInput = selectGroupSchema.pick({ id: true });
 export type DeleteGroupInput = z.infer<typeof deleteGroupInput>;
+
+export const getGroupInput = selectGroupSchema.pick({ id: true });
+export type GetGroupInput = z.infer<typeof getGroupInput>;

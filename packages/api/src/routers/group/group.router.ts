@@ -4,10 +4,12 @@ import { protectedUserProcedure } from "../../trpc";
 import {
   createGroupInput,
   deleteGroupInput,
+  getGroupInput,
   updateGroupInput,
   updateGroupPlayersInput,
 } from "./group.input";
 import {
+  getGroupOutput,
   getGroupsOutput,
   getGroupWithPlayersOutput,
   updateGroupOutput,
@@ -22,6 +24,13 @@ export const groupRouter = {
   getGroupsWithPlayers: protectedUserProcedure
     .output(getGroupWithPlayersOutput)
     .query(async ({ ctx }) => groupService.getGroupsWithPlayers({ ctx })),
+
+  getGroup: protectedUserProcedure
+    .input(getGroupInput)
+    .output(getGroupOutput)
+    .query(async ({ ctx, input }) =>
+      groupService.getGroup({ ctx, id: input.id }),
+    ),
 
   create: protectedUserProcedure
     .input(createGroupInput)

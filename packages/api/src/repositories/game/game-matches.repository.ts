@@ -241,6 +241,71 @@ class GameMatchesRepository {
       .orderBy(vMatchCanonical.matchDate);
   }
 
+  /**
+   * Finished matches visible to `userId` where every member of `playerIds`
+   * appears as a canonical participant. Same filter as game/location match
+   * lists, with the group-specific “full roster” constraint.
+   */
+  public async getGroupMatchIdsForUser(args: {
+    userId: string;
+    playerIds: number[];
+  }): Promise<number[]> {
+    const { userId, playerIds } = args;
+    if (playerIds.length === 0) {
+      return [];
+    }
+
+    const rows = await db
+      .select({ matchId: vMatchCanonical.matchId })
+      .from(vMatchPlayerCanonicalForUser)
+      .innerJoin(
+        vMatchCanonical,
+        eq(
+          vMatchCanonical.matchId,
+          vMatchPlayerCanonicalForUser.canonicalMatchId,
+        ),
+      )
+      .where(
+        and(
+          vMatchPlayerCanonicalViewerForUser(
+            vMatchPlayerCanonicalForUser,
+            userId,
+          ),
+          inArray(vMatchPlayerCanonicalForUser.canonicalPlayerId, playerIds),
+          vMatchCanonicalVisibleToUser(vMatchCanonical, userId),
+          eq(vMatchCanonical.finished, true),
+        ),
+      )
+      .groupBy(vMatchCanonical.matchId)
+      .having(
+        eq(
+          sql<number>`count(distinct ${vMatchPlayerCanonicalForUser.canonicalPlayerId})`,
+          playerIds.length,
+        ),
+      );
+
+    return rows.map((r) => r.matchId);
+  }
+
+  /**
+   * Same projection as {@link getGameMatches} / {@link getLocationMatches}
+   * (game, location, teams, matchPlayers); only the match filter differs.
+   */
+  public async getGroupMatchesForUser(args: {
+    userId: string;
+    playerIds: number[];
+  }): Promise<GameMatchesRepositoryMatchRow[]> {
+    const matchIds = await this.getGroupMatchIdsForUser(args);
+    if (matchIds.length === 0) {
+      return [];
+    }
+    const rows = await this.fetchMatchesForUser({
+      userId: args.userId,
+      where: inArray(vMatchCanonical.matchId, matchIds),
+    });
+    return rows.toSorted((a, b) => b.date.getTime() - a.date.getTime());
+  }
+
   public async getGameMatches(args: GetGameArgs) {
     const { input } = args;
 

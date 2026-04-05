@@ -14,9 +14,15 @@ export const useCreateGroupMutation = (options?: {
   return useMutation(
     trpc.group.create.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.group.getGroups.queryOptions(),
-        );
+        await Promise.all([
+          queryClient.invalidateQueries(trpc.group.getGroups.queryOptions()),
+          queryClient.invalidateQueries(
+            trpc.group.getGroupsWithPlayers.queryOptions(),
+          ),
+          queryClient.invalidateQueries(
+            trpc.dashboard.getGroups.queryOptions(),
+          ),
+        ]);
         toast.success("Group created successfully!");
         await options?.onSuccess?.();
       },
