@@ -11,3 +11,4 @@ export {
   type RenderWithProvidersOptions,
   renderWithProviders,
 } from "./render-with-providers";
+export { mockTrpcQueryOptions } from "./trpc-mock";

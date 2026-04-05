@@ -1,3 +1,8 @@
+/**
+ * Vitest for `apps/web`: jsdom + React. Aliases `~` / `@` match tsconfig; the
+ * `@board-games/ui/components/button-variants` entry points at the `.ts` file because
+ * `@board-games/ui` package exports only map `*.tsx` subpaths.
+ */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 

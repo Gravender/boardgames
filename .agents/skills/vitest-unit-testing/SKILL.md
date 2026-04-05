@@ -1,7 +1,7 @@
 ---
 name: vitest-unit-testing
 description: Write fast unit tests with Vitest, React Testing Library, mocking, and snapshots. Use when adding or debugging tests in packages/api, packages/shared, or apps/web; configuring Vitest; or building test coverage for utilities, components, or services.
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Vitest unit testing
@@ -10,13 +10,17 @@ Systematic unit testing with Vitest: fast feedback, colocated tests, and clear m
 
 ## Where tests live in this monorepo
 
-| Package           | Role                                     | Typical command                                                  |
-| ----------------- | ---------------------------------------- | ---------------------------------------------------------------- |
-| `apps/web`        | Next.js app: components (jsdom), helpers | `cd apps/web && bun run test` / `bun run test:run`               |
-| `packages/api`    | tRPC routers, services (Node)            | `bun --env-file=../../.env x vitest` (see package `test` script) |
-| `packages/shared` | Pure TS utilities                        | `vitest`                                                         |
+| Package           | Role                                     | Typical command                                                                                        |
+| ----------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `apps/web`        | Next.js app: components (jsdom), helpers | `cd apps/web && bun run test` / `bun run test:run`                                                     |
+| `packages/api`    | tRPC routers, services (Node)            | `cd packages/api && bun run test` (loads root `.env` via script); `bun run test:run` for CI-style once |
+| `packages/shared` | Pure TS utilities                        | `cd packages/shared && bun run test` / `bun run test:run`                                              |
 
-Root convenience: `bun run test:web` runs Turbo `test` for the `web` app.
+**Environment:** `@board-games/api` tests often hit PostgreSQL and auth-related env — use a populated **root `.env`** and a running DB when running them locally. **`packages/shared`** tests do not require Postgres.
+
+`packages/api/vitest.config.ts` loads the repo root `.env` via `dotenv` so Vitest workers receive `POSTGRES_URL` (the `bun --env-file=../../.env` script alone is not always enough for worker processes).
+
+Root convenience (Turbo `test` task): `bun run test:web`, `bun run test:api`, `bun run test:shared`, or `turbo run test` for every workspace that defines `test`.
 
 **Colocate** tests: `*.test.ts` / `*.test.tsx` next to the module under test (e.g. `src/**/*.test.{ts,tsx}` in web).
 
@@ -28,7 +32,32 @@ Root convenience: `bun run test:web` runs Turbo `test` for the `web` app.
 
 Import helpers in specs: `import { renderWithProviders, mockRouter } from '~/test'`.
 
-**tRPC in components:** `renderWithProviders` does not wrap `TRPCProvider`. For `useTRPC()`, use `vi.mock('~/trpc/react', …)` with a partial mock, rely on Playwright e2e (`bun run e2e`), or add MSW later.
+**tRPC in components:** `renderWithProviders` does not wrap `TRPCProvider`. For `useTRPC()`, see **Advanced tRPC and network testing** below.
+
+### Advanced tRPC and network testing
+
+Use one of these patterns depending on maintenance cost and how close to the wire you need to be.
+
+#### Option A — `vi.mock('~/trpc/react')` (preferred for unit tests)
+
+- Mock only the procedures your SUT calls (e.g. `group.getGroups.queryOptions`).
+- Use `mockTrpcQueryOptions` from `~/test/trpc-mock` (re-exported from `~/test`) to build `{ queryKey, queryFn }` that matches `useQuery(...)` expectations.
+- Put shared mock data in **`vi.hoisted(() => ({ ... }))`** so it exists when the mock factory runs (Vitest hoists `vi.mock` above normal `const` initializers).
+- Reference example: `apps/web/src/hooks/queries/group/groups.test.tsx`.
+- To assert UI that reads **prefetched cache**, use `renderWithProviders` with an explicit `queryClient` and `queryClient.setQueryData(...)` before render.
+
+**Trade-off:** Fast and stable; mocks can drift from `AppRouter` unless you type payloads with `RouterOutputs` / procedure outputs.
+
+#### Option B — MSW + HTTP (`POST /api/trpc/*`)
+
+- Intercept `POST` to `/api/trpc` (or `*/api/trpc/*`) and return bodies in the **SuperJSON** wire shape tRPC expects.
+- **Pros:** Exercises the HTTP batch link path. **Cons:** High setup cost and breaks more easily when inputs or batch encoding change.
+
+Add `msw` (and optionally `@mswjs/http`) as devDependencies in `apps/web`, register `setupServer` in a Vitest `setupFiles` fragment or conditional import, and keep handlers next to the specs that need them. Do **not** replace `@board-games/api` integration tests with client MSW tests — server tests remain the source of truth for procedures.
+
+#### Option C — Playwright e2e (`bun run e2e`)
+
+- Use for **critical user journeys** (auth, navigation, real API). Complements Vitest; see project `CLAUDE.md` Testing section.
 
 ## Install / scripts (reference)
 

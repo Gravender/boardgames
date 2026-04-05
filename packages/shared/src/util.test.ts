@@ -46,6 +46,6 @@ describe("formatDuration", () => {
   });
 
   it("should handle large durations", () => {
-    expect(formatDuration(86400)).toBe("24h 0m"); // 24 hours
+    expect(formatDuration(86400)).toBe("1d 0h 0m"); // 24 hours
   });
 });

@@ -1,3 +1,6 @@
+/**
+ * Global test setup: jest-dom matchers and `vi.mock` stubs for Next.js modules used in specs.
+ */
 import "@testing-library/jest-dom/vitest";
 import React from "react";
 import { vi } from "vitest";

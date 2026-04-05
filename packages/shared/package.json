@@ -12,6 +12,7 @@
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "dev": "tsc",
     "test": "vitest",
+    "test:run": "vitest run",
     "format": "oxfmt --check .",
     "lint": "oxlint --report-unused-disable-directives",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",

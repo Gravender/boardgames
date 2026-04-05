@@ -17,6 +17,7 @@
     "format": "oxfmt --check .",
     "lint": "oxlint --report-unused-disable-directives",
     "test": "bun --env-file=../../.env x vitest",
+    "test:run": "bun --env-file=../../.env x vitest run",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "format:fix": "oxfmt .",
     "lint:fix": "oxlint --fix --report-unused-disable-directives"

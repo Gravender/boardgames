@@ -60,6 +60,8 @@
     "postinstall": "bun run lint:ws",
     "prepare": "husky",
     "typecheck": "turbo run typecheck --filter=!native",
+    "test:api": "turbo run test --filter=@board-games/api",
+    "test:shared": "turbo run test --filter=@board-games/shared",
     "test:web": "turbo run test --filter=web",
     "ui-add": "turbo run ui-add",
     "e2e": "turbo -F @board-games/playwright-web e2e"

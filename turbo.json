@@ -42,7 +42,8 @@
     },
     "test": {
       "dependsOn": ["^topo", "^build"],
-      "outputs": []
+      "outputs": [],
+      "passThroughEnv": ["POSTGRES_URL", "NODE_ENV", "AUTH_SECRET"]
     },
     "clean": {
       "cache": false
