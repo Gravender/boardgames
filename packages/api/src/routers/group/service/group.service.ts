@@ -144,6 +144,14 @@ class GroupService {
 
   public async createGroup(args: CreateGroupArgs): Promise<void> {
     const userId = args.ctx.userId;
+    const trimmedName = args.name.trim();
+    if (!trimmedName) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Group name cannot be empty",
+      });
+    }
+
     const uniqueIds = [...new Set(args.players.map((p) => p.id))];
 
     if (uniqueIds.length > 0) {
@@ -156,12 +164,25 @@ class GroupService {
       }
     }
 
-    const inserted = await groupRepository.insertGroup(userId, args.name);
-    if (!inserted) {
-      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-    }
+    await db.transaction(async (tx) => {
+      const [inserted] = await tx
+        .insert(group)
+        .values({ createdBy: userId, name: trimmedName })
+        .returning({ id: group.id });
 
-    await groupRepository.insertGroupPlayerLinks(inserted.id, uniqueIds);
+      if (!inserted) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      }
+
+      if (uniqueIds.length > 0) {
+        await tx.insert(groupPlayer).values(
+          uniqueIds.map((playerId) => ({
+            groupId: inserted.id,
+            playerId,
+          })),
+        );
+      }
+    });
   }
 
   public async updateGroup(
@@ -170,6 +191,13 @@ class GroupService {
     const userId = args.ctx.userId;
     const id = args.id;
     const trimmedName = args.name.trim();
+    if (!trimmedName) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Group name cannot be empty",
+      });
+    }
+
     const desiredIds = [...new Set(args.players.map((p) => p.id))];
 
     const owned = await queryPlayerIdsOwnedByUser(userId, desiredIds);
