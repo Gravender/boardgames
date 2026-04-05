@@ -1,3 +1,4 @@
+import type { RouterOutputs } from "@board-games/api";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,36 +12,41 @@ import {
   scoresheetFixtureCoop,
 } from "./scoresheet-test-fixtures";
 
+type MatchPlayersAndTeams = NonNullable<
+  RouterOutputs["match"]["getMatchPlayersAndTeams"]
+>;
+type PatPlayer = MatchPlayersAndTeams["players"][number];
+
 const mutateMock = vi.fn();
 
-const patState = vi.hoisted(() => ({
-  teams: [] as { id: number; name: string; details: null }[],
-  players: [
-    {
-      type: "original" as const,
-      baseMatchPlayerId: 1,
-      id: 1,
-      playerId: 1,
-      playerType: "original" as const,
-      name: "Alice",
-      image: null,
-      teamId: null,
-      order: 0,
-      placement: null,
-      winner: false,
-      score: 0,
-      details: null,
-      isUser: false,
-      permissions: "edit" as const,
-      rounds: [{ id: 1, score: 3, roundId: 1 }],
-      roles: [],
+const { patState, soloAlicePlayer } = vi.hoisted(() => {
+  const soloAlicePlayer: PatPlayer = {
+    type: "original",
+    baseMatchPlayerId: 1,
+    id: 1,
+    playerId: 1,
+    playerType: "original",
+    name: "Alice",
+    image: null,
+    teamId: null,
+    order: 0,
+    placement: null,
+    winner: false,
+    score: 0,
+    details: null,
+    isUser: false,
+    permissions: "edit",
+    rounds: [{ id: 1, score: 3, roundId: 1 }],
+    roles: [],
+  };
+  return {
+    patState: {
+      teams: [] as MatchPlayersAndTeams["teams"],
+      players: [soloAlicePlayer] as PatPlayer[],
     },
-  ],
-}));
-
-type PatPlayer = (typeof patState.players)[number];
-
-const soloAlicePlayer: PatPlayer = patState.players[0]!;
+    soloAlicePlayer,
+  };
+});
 
 vi.mock("~/hooks/queries/match/match", () => ({
   usePlayersAndTeams: () => ({

@@ -1,15 +1,17 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderWithProviders } from "~/test";
 
 import { DetailDialog } from "./DetailDialog";
 import { matchInputOriginal } from "./scoresheet-test-fixtures";
 
+let lastMutateOptions: { onSuccess?: () => void } | undefined;
+
 const mutateMock = vi.fn(
   (_vars: unknown, opts?: { onSuccess?: () => void }) => {
-    opts?.onSuccess?.();
+    lastMutateOptions = opts;
   },
 );
 
@@ -23,9 +25,13 @@ vi.mock("~/hooks/mutations/match/scoresheet", () => ({
 }));
 
 describe("DetailDialog", () => {
+  beforeEach(() => {
+    lastMutateOptions = undefined;
+    mutateMock.mockClear();
+  });
+
   it("updates player details on submit", async () => {
     const user = userEvent.setup();
-    mutateMock.mockClear();
 
     renderWithProviders(
       <DetailDialog
@@ -56,8 +62,13 @@ describe("DetailDialog", () => {
         id: 5,
         details: "new bio",
       },
-      expect.any(Object),
+      expect.objectContaining({
+        onSuccess: expect.any(Function),
+      }),
     );
+
+    expect(lastMutateOptions?.onSuccess).toBeDefined();
+    lastMutateOptions?.onSuccess?.();
 
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -66,7 +77,6 @@ describe("DetailDialog", () => {
 
   it("updates team details on submit", async () => {
     const user = userEvent.setup();
-    mutateMock.mockClear();
 
     renderWithProviders(
       <DetailDialog
@@ -97,13 +107,17 @@ describe("DetailDialog", () => {
         teamId: 9,
         details: "team notes",
       },
-      expect.any(Object),
+      expect.objectContaining({
+        onSuccess: expect.any(Function),
+      }),
     );
+
+    expect(lastMutateOptions?.onSuccess).toBeDefined();
+    lastMutateOptions?.onSuccess?.();
   });
 
   it("closes on Cancel without calling the mutation", async () => {
     const user = userEvent.setup();
-    mutateMock.mockClear();
 
     renderWithProviders(
       <DetailDialog
@@ -123,6 +137,7 @@ describe("DetailDialog", () => {
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(mutateMock).not.toHaveBeenCalled();
+    expect(lastMutateOptions).toBeUndefined();
     await waitFor(() => {
       expect(
         screen.queryByRole("heading", { name: "Alice" }),

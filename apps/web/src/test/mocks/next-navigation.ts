@@ -12,10 +12,11 @@ export const mockRouter = {
 
 export const mockPathname = "/";
 
-export const mockSearchParams = new URLSearchParams();
+/** Fresh params per `useSearchParams()` call to avoid cross-test mutation leakage. */
+export const createMockSearchParams = () => new URLSearchParams();
 
 export const mockUsePathname = vi.fn(() => mockPathname);
 
-export const mockUseSearchParams = vi.fn(() => mockSearchParams);
+export const mockUseSearchParams = vi.fn(() => createMockSearchParams());
 
 export const mockUseParams = vi.fn(() => ({}));

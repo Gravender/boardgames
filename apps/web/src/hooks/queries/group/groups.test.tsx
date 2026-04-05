@@ -31,7 +31,7 @@ vi.mock("~/trpc/react", async () => {
 });
 
 describe("useGroupsQuery", () => {
-  it("resolves data from a narrow vi.mock of ~/trpc/react (Option A)", async () => {
+  it("resolves data from mocked ~/trpc/react", async () => {
     const queryClient = createTestQueryClient();
     const { result } = renderHook(() => useGroupsQuery(), {
       wrapper: ({ children }) => (

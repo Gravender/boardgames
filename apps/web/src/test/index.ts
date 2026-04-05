@@ -1,8 +1,8 @@
 export { createTestQueryClient } from "./create-test-query-client";
 export {
+  createMockSearchParams,
   mockPathname,
   mockRouter,
-  mockSearchParams,
   mockUseParams,
   mockUsePathname,
   mockUseSearchParams,

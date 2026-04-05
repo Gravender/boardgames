@@ -3,6 +3,15 @@
  */
 import { cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
+import React from "react";
+import { afterEach, vi } from "vitest";
+
+import {
+  mockRouter,
+  mockUseParams,
+  mockUsePathname,
+  mockUseSearchParams,
+} from "./mocks/next-navigation";
 
 /** Base UI checkbox uses `PointerEvent` (not provided by jsdom). */
 if (typeof globalThis.PointerEvent === "undefined") {
@@ -50,19 +59,10 @@ if (
 ) {
   Element.prototype.getAnimations = () => [];
 }
-import React from "react";
-import { afterEach, vi } from "vitest";
 
 afterEach(() => {
   cleanup();
 });
-
-import {
-  mockRouter,
-  mockUseParams,
-  mockUsePathname,
-  mockUseSearchParams,
-} from "./mocks/next-navigation";
 
 vi.mock("next/image", () => ({
   default: (props: Record<string, unknown>) =>

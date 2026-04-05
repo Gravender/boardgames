@@ -30,7 +30,7 @@ import { cn } from "@board-games/ui/utils";
 import type { MatchInput } from "./types/input";
 import { CommentDialog } from "~/components/match/scoresheet/CommentDialog";
 import { ManualWinnerDialog } from "~/components/match/scoresheet/ManualWinnerDialog";
-import { MatchImages } from "~/components/match/scoresheet/match-images";
+import { MatchImages } from "~/components/match/scoresheet/MatchImages";
 import { ScoreSheetTable } from "~/components/match/scoresheet/table";
 import { TieBreakerDialog } from "~/components/match/scoresheet/TieBreakerDialog";
 import { Spinner } from "~/components/spinner";

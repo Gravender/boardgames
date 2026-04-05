@@ -2,7 +2,7 @@
  * Component tests for `ScoreSheetTable` use mocked hooks. End-to-end scoresheet flows
  * (auth, real tRPC, full match pages) belong in Playwright under `packages/playwright-web`.
  */
-import { within, screen, waitFor } from "@testing-library/react";
+import { fireEvent, within, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { RouterOutputs } from "@board-games/api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -221,92 +221,92 @@ describe("ScoreSheetTable", () => {
     });
   });
 
-  it("calls updateMatchRoundScore when toggling a checkbox round after debounce", async () => {
-    const user = userEvent.setup();
-    mockState.scoresheet = scoresheetFixtureCheckbox;
-    mockState.playersAndTeams = {
-      players: [
-        {
-          ...playerAliceCheckboxRound,
-          rounds: [{ id: 1, score: 0, roundId: 1 }],
-        },
-        {
-          ...playerOriginalBob,
-          rounds: [{ id: 2, score: 0, roundId: 1 }],
-        },
-      ],
-      teams: [],
-    };
+  it("calls updateMatchRoundScore when toggling a checkbox round after debounce", () => {
+    vi.useFakeTimers();
+    try {
+      mockState.scoresheet = scoresheetFixtureCheckbox;
+      mockState.playersAndTeams = {
+        players: [
+          {
+            ...playerAliceCheckboxRound,
+            rounds: [{ id: 1, score: 0, roundId: 1 }],
+          },
+          {
+            ...playerOriginalBob,
+            rounds: [{ id: 2, score: 0, roundId: 1 }],
+          },
+        ],
+        teams: [],
+      };
 
-    renderWithProviders(<ScoreSheetTable match={matchInputOriginal} />);
+      renderWithProviders(<ScoreSheetTable match={matchInputOriginal} />);
 
-    const tbody = getScoresheetTable().querySelector("tbody");
-    expect(tbody).toBeTruthy();
-    const roundRow = [...tbody!.querySelectorAll("tr")].find((tr) =>
-      tr.textContent?.includes("Win round"),
-    );
-    expect(roundRow).toBeTruthy();
-    const checkbox = within(roundRow as HTMLElement).getAllByRole(
-      "checkbox",
-    )[0]!;
+      const tbody = getScoresheetTable().querySelector("tbody");
+      expect(tbody).toBeTruthy();
+      const roundRow = [...tbody!.querySelectorAll("tr")].find((tr) =>
+        tr.textContent?.includes("Win round"),
+      );
+      expect(roundRow).toBeTruthy();
+      const checkbox = within(roundRow as HTMLElement).getAllByRole(
+        "checkbox",
+      )[0]!;
 
-    await user.click(checkbox);
+      fireEvent.click(checkbox);
+      vi.advanceTimersByTime(700);
 
-    await waitFor(
-      () => {
-        expect(mutateSpies.updateMatchRoundScore).toHaveBeenCalledWith({
-          match: matchOriginalFixture,
-          type: "player",
-          matchPlayerId: playerOriginalAlice.baseMatchPlayerId,
-          round: { id: 1, score: 10 },
-        });
-      },
-      { timeout: 2000 },
-    );
+      expect(mutateSpies.updateMatchRoundScore).toHaveBeenCalledWith({
+        match: matchOriginalFixture,
+        type: "player",
+        matchPlayerId: playerOriginalAlice.baseMatchPlayerId,
+        round: { id: 1, score: 10 },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
-  it("calls updateMatchRoundScore with null when unchecking a checkbox round after debounce", async () => {
-    const user = userEvent.setup();
-    mockState.scoresheet = scoresheetFixtureCheckbox;
-    mockState.playersAndTeams = {
-      players: [
-        {
-          ...playerAliceCheckboxRound,
-          rounds: [{ id: 1, score: 10, roundId: 1 }],
-        },
-        {
-          ...playerOriginalBob,
-          rounds: [{ id: 2, score: 0, roundId: 1 }],
-        },
-      ],
-      teams: [],
-    };
+  it("calls updateMatchRoundScore with null when unchecking a checkbox round after debounce", () => {
+    vi.useFakeTimers();
+    try {
+      mockState.scoresheet = scoresheetFixtureCheckbox;
+      mockState.playersAndTeams = {
+        players: [
+          {
+            ...playerAliceCheckboxRound,
+            rounds: [{ id: 1, score: 10, roundId: 1 }],
+          },
+          {
+            ...playerOriginalBob,
+            rounds: [{ id: 2, score: 0, roundId: 1 }],
+          },
+        ],
+        teams: [],
+      };
 
-    renderWithProviders(<ScoreSheetTable match={matchInputOriginal} />);
+      renderWithProviders(<ScoreSheetTable match={matchInputOriginal} />);
 
-    const tbody = getScoresheetTable().querySelector("tbody");
-    expect(tbody).toBeTruthy();
-    const roundRow = [...tbody!.querySelectorAll("tr")].find((tr) =>
-      tr.textContent?.includes("Win round"),
-    );
-    expect(roundRow).toBeTruthy();
-    const checkbox = within(roundRow as HTMLElement).getAllByRole(
-      "checkbox",
-    )[0]!;
+      const tbody = getScoresheetTable().querySelector("tbody");
+      expect(tbody).toBeTruthy();
+      const roundRow = [...tbody!.querySelectorAll("tr")].find((tr) =>
+        tr.textContent?.includes("Win round"),
+      );
+      expect(roundRow).toBeTruthy();
+      const checkbox = within(roundRow as HTMLElement).getAllByRole(
+        "checkbox",
+      )[0]!;
 
-    await user.click(checkbox);
+      fireEvent.click(checkbox);
+      vi.advanceTimersByTime(700);
 
-    await waitFor(
-      () => {
-        expect(mutateSpies.updateMatchRoundScore).toHaveBeenCalledWith({
-          match: matchOriginalFixture,
-          type: "player",
-          matchPlayerId: playerOriginalAlice.baseMatchPlayerId,
-          round: { id: 1, score: null },
-        });
-      },
-      { timeout: 2000 },
-    );
+      expect(mutateSpies.updateMatchRoundScore).toHaveBeenCalledWith({
+        match: matchOriginalFixture,
+        type: "player",
+        matchPlayerId: playerOriginalAlice.baseMatchPlayerId,
+        round: { id: 1, score: null },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("shows Details(optional) for solo layout and Details when teams exist", () => {

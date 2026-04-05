@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderWithProviders } from "~/test";
 
-import { MatchImages } from "./match-images";
+import { MatchImages } from "./MatchImages";
 
 const deleteMutate = vi.fn();
 

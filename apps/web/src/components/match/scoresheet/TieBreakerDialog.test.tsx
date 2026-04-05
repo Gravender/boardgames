@@ -1,3 +1,4 @@
+import type { RouterOutputs } from "@board-games/api";
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,16 +11,19 @@ import {
   scoresheetFixture,
 } from "./scoresheet-test-fixtures";
 
-const mutateMock = vi.fn();
+type PatPlayer = NonNullable<
+  RouterOutputs["match"]["getMatchPlayersAndTeams"]
+>["players"][number];
 
-const tieBreakerState = vi.hoisted(() => {
-  const playersSolo = [
+const { tieBreakerState, mutateMock } = vi.hoisted(() => {
+  const mutateMock = vi.fn();
+  const playersSolo: PatPlayer[] = [
     {
-      type: "original" as const,
+      type: "original",
       baseMatchPlayerId: 1,
       id: 1,
       playerId: 1,
-      playerType: "original" as const,
+      playerType: "original",
       name: "Alice",
       image: null,
       teamId: null,
@@ -29,16 +33,16 @@ const tieBreakerState = vi.hoisted(() => {
       score: 0,
       details: null,
       isUser: false,
-      permissions: "edit" as const,
+      permissions: "edit",
       rounds: [{ id: 1, score: 7, roundId: 1 }],
       roles: [],
     },
     {
-      type: "original" as const,
+      type: "original",
       baseMatchPlayerId: 2,
       id: 2,
       playerId: 2,
-      playerType: "original" as const,
+      playerType: "original",
       name: "Bob",
       image: null,
       teamId: null,
@@ -48,16 +52,17 @@ const tieBreakerState = vi.hoisted(() => {
       score: 0,
       details: null,
       isUser: false,
-      permissions: "edit" as const,
+      permissions: "edit",
       rounds: [{ id: 2, score: 7, roundId: 1 }],
       roles: [],
     },
   ];
-  return {
+  const tieBreakerState = {
     teams: [] as { id: number; name: string; details: null }[],
     players: playersSolo,
     playersSolo,
   };
+  return { tieBreakerState, mutateMock };
 });
 
 vi.mock("~/hooks/queries/match/match", () => ({

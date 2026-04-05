@@ -1,3 +1,4 @@
+import type { RouterOutputs } from "@board-games/api";
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,31 +13,16 @@ import {
   playerOriginalAlice,
 } from "./scoresheet-test-fixtures";
 
+type MatchPlayersAndTeams = NonNullable<
+  RouterOutputs["match"]["getMatchPlayersAndTeams"]
+>;
+type PatPlayer = MatchPlayersAndTeams["players"][number];
+
 const mutateMock = vi.fn();
 
 const patState = vi.hoisted(() => ({
-  teams: [] as { id: number; name: string; details: null }[],
-  players: [
-    {
-      type: "original" as const,
-      baseMatchPlayerId: 1,
-      id: 1,
-      playerId: 1,
-      playerType: "original",
-      score: 0,
-      details: null,
-      teamId: null,
-      order: 0,
-      placement: null,
-      winner: false,
-      name: "Alice",
-      image: null,
-      isUser: false,
-      permissions: "edit" as const,
-      rounds: [{ id: 1, score: 0, roundId: 1 }],
-      roles: [],
-    },
-  ],
+  teams: [] as MatchPlayersAndTeams["teams"],
+  players: [] as PatPlayer[],
 }));
 
 vi.mock("~/hooks/queries/match/match", () => ({

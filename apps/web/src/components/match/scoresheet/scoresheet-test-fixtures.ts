@@ -123,6 +123,7 @@ export const playerOriginalBob: Extract<
   id: 2,
   playerId: 2,
   name: "Bob",
+  rounds: [...playerOriginalAlice.rounds],
 };
 
 /** Third solo player — team + solo mixed header layout. */
@@ -135,6 +136,7 @@ export const playerOriginalCharlie: Extract<
   id: 3,
   playerId: 3,
   name: "Charlie",
+  rounds: [...playerOriginalAlice.rounds],
 };
 
 export const playersAndTeamsSoloPlayers: RouterOutputs["match"]["getMatchPlayersAndTeams"] =
