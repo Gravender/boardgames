@@ -35,7 +35,7 @@ export function EditMatch(input: EditMatchType) {
     prefetch(trpc.location.getLocations.queryOptions());
     prefetch(trpc.newPlayer.getRecentMatchWithPlayers.queryOptions());
     prefetch(trpc.newPlayer.getPlayersForMatch.queryOptions());
-    prefetch(trpc.newGroup.getGroupsWithPlayers.queryOptions());
+    prefetch(trpc.group.getGroupsWithPlayers.queryOptions());
     prefetch(
       trpc.game.gameRoles.queryOptions({
         id:

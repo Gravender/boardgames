@@ -1,4 +1,4 @@
-import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
+import { createFormHook } from "@tanstack/react-form";
 
 import { CheckboxField } from "~/components/form/checkbox-field";
 import { DateField } from "~/components/form/date-field";
@@ -17,8 +17,7 @@ import {
 } from "~/components/form/text-area-field";
 import { TextField } from "~/components/form/text-field";
 
-export const { fieldContext, useFieldContext, formContext, useFormContext } =
-  createFormHookContexts();
+import { fieldContext, formContext } from "./form-context";
 
 const formHook = createFormHook({
   fieldComponents: {
@@ -42,3 +41,10 @@ const formHook = createFormHook({
 });
 
 export const { useAppForm, withForm, withFieldGroup } = formHook;
+
+export {
+  fieldContext,
+  formContext,
+  useFieldContext,
+  useFormContext,
+} from "./form-context";

@@ -18,15 +18,21 @@ Use this skill when building or migrating a domain to the `repository -> service
 
 ## Required Architecture
 
-1. **Repository** (`repositories/<domain>/...repository.ts`)
-   - Owns DB access only.
-   - Returns normalized raw models for service mapping.
-   - Split methods by use case and branch when needed (`getOriginal...`, `getShared...`).
+1. **Repository** (`repositories/<domain>/...repository.ts` or `routers/<domain>/repository/`)
+   - **Persistence only**: `select` / `insert` / `update` / `delete`, and straightforward relational reads (e.g. `findMany` with `with`).
+   - **No exported DTO / return types** for the repository layer: do not define shared `Raw` / `Row` types for repo outputs; let TypeScript infer from Drizzle, or keep shapes anonymous inside the repo file.
+   - **No redundant mapping**: return query results directly when the shape already matches the ORM (avoid `.map()` that only copies the same fields).
+   - **No business orchestration**: do not call other domain repos for derived metrics (e.g. group **match counts** belong in **service**, which calls `groupMatchesRepository` after loading group members).
+   - **No `TRPCError`**: return `null`, `[]`, or booleans when a row set is empty; **service** decides `NOT_FOUND` / `FORBIDDEN`.
+   - **No authorization rules as narrative logic** — express scope as **query filters** (`where: { createdBy: userId }`). Returning raw columns (e.g. `deletedAt`) is fine; **service** filters and maps to API output.
 
-2. **Service** (`services/<domain>/...service.ts`)
-   - Owns business rules, branch orchestration, and response shaping.
-   - Calls repository methods and maps to output contract shape.
+2. **Service** (`services/<domain>/...service.ts` or `routers/<domain>/service/`)
+   - **All business rules**: dedupe, validation, ownership checks, sorting, filtering, composing multiple repositories.
+   - **Ownership and policy-heavy reads** (e.g. “which of these player ids belong to this user?”) live in the **service** layer: implement as private helpers next to the service (or a dedicated `*.queries.ts` colocated with the service), not on the domain repository, when the check is a business rule rather than a simple scoped entity load.
+   - Maps raw rows to **output** contract shapes.
+   - **Throws `TRPCError`** for client-facing failures (`NOT_FOUND`, `FORBIDDEN`, etc.).
    - Keeps compatibility fields expected by clients.
+   - **Never `Promise.all` a dynamic list of independent DB round-trips** (e.g. per-row / per-entity queries in a loop mapped to `Promise.all`). Prefer a **single** batched query, a SQL CTE, or **sequential** `await` when you must issue multiple statements and want predictable load (avoid hammering the pool with unbounded concurrency).
 
 3. **Router** (`routers/<domain>/<domain>.router.ts`)
    - Thin tRPC layer.
@@ -133,12 +139,12 @@ getEntity: protectedUserProcedure
 ## Quality Gate Before Finish
 
 1. Router has no direct DB reads.
-2. Every router procedure has `.output(...)`.
-3. Input/output files export infer types for all public contracts.
-4. Original/shared parity is covered in tests.
-5. Existing frontend contract fields are preserved.
-6. Run:
-   - `turbo run check --filter=@board-games/api`
+2. Repository has no `TRPCError`, no cross-repo orchestration for domain rules, and no exported repository-layer DTO types.
+3. No `Promise.all` over an unbounded set of per-row / per-entity DB calls unless replaced by a batched query or intentional sequential `await`.
+4. Every router procedure has `.output(...)`.
+5. Input/output files export infer types for all public contracts.
+6. Original/shared parity is covered in tests.
+7. Existing frontend contract fields are preserved.
 
 ## When To Use A Legacy Wrapper
 
