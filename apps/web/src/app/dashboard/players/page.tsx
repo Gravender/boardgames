@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 
-import { prefetch, trpc } from "~/trpc/server";
-import { PlayersTable } from "./_components/players";
+import PlayersList from "~/components/player/list";
+import { PlayersListSkeleton } from "~/components/player/skeleton/players-list-skeleton";
+import { HydrateClient, prefetch, trpc } from "~/trpc/server";
 
 export function generateMetadata() {
   return {
@@ -18,10 +19,14 @@ export default async function Page({
   void prefetch(trpc.newPlayer.getPlayers.queryOptions());
   const addPlayer = (await searchParams).add === "true";
   return (
-    <div className="flex w-full items-center justify-center">
-      <Suspense>
-        <PlayersTable defaultIsOpen={addPlayer} />
-      </Suspense>
-    </div>
+    <HydrateClient>
+      <div className="container flex items-center justify-center px-4 md:px-6">
+        <div className="relative h-[90vh] w-full max-w-3xl px-1 sm:px-4">
+          <Suspense fallback={<PlayersListSkeleton />}>
+            <PlayersList defaultAddOpen={addPlayer} />
+          </Suspense>
+        </div>
+      </div>
+    </HydrateClient>
   );
 }
