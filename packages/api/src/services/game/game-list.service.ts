@@ -179,42 +179,64 @@ class GameListService {
 
     assertFound(result, { userId: ctx.userId, value: input }, "Game not found");
 
-    const filteredMatches = result.matches
-      .filter((rMatch) => rMatch.finished)
-      .map((rMatch) => ({
-        id: rMatch.id,
-        name: rMatch.name,
-        date: rMatch.date,
-        duration: rMatch.duration,
-        locationName: rMatch.location?.name,
-        players: rMatch.matchPlayers
-          .map((mp) => ({
-            id: mp.player.id,
-            name: mp.player.name,
-            score: mp.score,
-            isWinner: mp.winner,
-            playerId: mp.player.id,
-            team: mp.team,
-          }))
-          .toSorted((a, b) => {
-            if (a.team === null || b.team === null) {
-              if (a.score === b.score) {
-                return a.name.localeCompare(b.name);
-              }
-              if (a.score === null) return 1;
-              if (b.score === null) return -1;
-              return b.score - a.score;
-            }
-            if (a.team.id === b.team.id) return 0;
+    const mapMatchRow = (rMatch: (typeof result.matches)[number]) => ({
+      id: rMatch.id,
+      name: rMatch.name,
+      date: rMatch.date,
+      duration: rMatch.duration,
+      finished: rMatch.finished,
+      locationName: rMatch.location?.name,
+      players: rMatch.matchPlayers
+        .map((mp) => ({
+          id: mp.player.id,
+          name: mp.player.name,
+          score: mp.score,
+          isWinner: mp.winner,
+          playerId: mp.player.id,
+          team: mp.team,
+        }))
+        .toSorted((a, b) => {
+          if (a.team === null || b.team === null) {
             if (a.score === b.score) {
               return a.name.localeCompare(b.name);
             }
             if (a.score === null) return 1;
             if (b.score === null) return -1;
             return b.score - a.score;
-          }),
-        teams: rMatch.teams,
-      }));
+          }
+          if (a.team.id === b.team.id) return 0;
+          if (a.score === b.score) {
+            return a.name.localeCompare(b.name);
+          }
+          if (a.score === null) return 1;
+          if (b.score === null) return -1;
+          return b.score - a.score;
+        }),
+      teams: rMatch.teams,
+    });
+
+    const finishedMatches = result.matches
+      .filter((rMatch) => rMatch.finished)
+      .map(mapMatchRow);
+    const unfinishedMatches = result.matches
+      .filter((rMatch) => !rMatch.finished)
+      .map(mapMatchRow);
+
+    const locationMap = new Map<number, { id: number; name: string }>();
+    for (const rMatch of result.matches) {
+      if (rMatch.location?.id) {
+        locationMap.set(rMatch.location.id, {
+          id: rMatch.location.id,
+          name: rMatch.location.name,
+        });
+      }
+    }
+
+    const gameRoles = (result.roles ?? []).map((role) => ({
+      id: role.id,
+      name: role.name,
+      description: role.description,
+    }));
 
     return {
       id: result.id,
@@ -229,7 +251,11 @@ class GameListService {
         max: result.playtimeMax,
       },
       yearPublished: result.yearPublished,
-      matches: filteredMatches,
+      finishedMatches,
+      unfinishedMatches,
+      matches: finishedMatches,
+      gameRoles,
+      locationsReferenced: [...locationMap.values()],
       scoresheets: result.scoresheets,
     };
   }

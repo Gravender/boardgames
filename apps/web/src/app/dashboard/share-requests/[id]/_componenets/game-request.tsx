@@ -73,6 +73,13 @@ const formSchema = z
         accept: z.boolean(),
       }),
     ),
+    gameRoles: z.array(
+      z.object({
+        sharedId: z.number(),
+        accept: z.boolean(),
+        linkedGameRoleId: z.number().optional(),
+      }),
+    ),
   })
   .check((ctx) => {
     if (
@@ -149,6 +156,10 @@ export default function GameRequestPage({
     return game.childItems.filter((item) => item.itemType === "scoresheet");
   }, [game.childItems]);
 
+  const childGameRoles = useMemo(() => {
+    return game.childItems.filter((item) => item.itemType === "game_role");
+  }, [game.childItems]);
+
   const filteredGames = useMemo(() => {
     return usersGames.filter((game) =>
       game.name.toLowerCase().includes(gameSearchQuery.toLowerCase()),
@@ -162,6 +173,10 @@ export default function GameRequestPage({
       existingGameId: null,
       scoresheets: childScoresheets.map((scoresheet) => ({
         sharedId: scoresheet.shareId,
+        accept: true,
+      })),
+      gameRoles: childGameRoles.map((role) => ({
+        sharedId: role.shareId,
         accept: true,
       })),
     },
@@ -191,6 +206,11 @@ export default function GameRequestPage({
         sharedId: player.sharedId,
         accept: player.accept,
         linkedId: player.linkedId ?? undefined,
+      })),
+      gameRoles: data.gameRoles.map((role) => ({
+        sharedId: role.sharedId,
+        accept: role.accept,
+        linkedGameRoleId: role.linkedGameRoleId,
       })),
     });
   };

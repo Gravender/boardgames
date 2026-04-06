@@ -7,6 +7,7 @@ import type { selectSharedLocationSchema } from "@board-games/db/zodSchema";
 import {
   game,
   sharedGame,
+  sharedGameRole,
   sharedLocation,
   sharedMatch,
   sharedMatchPlayer,
@@ -51,6 +52,16 @@ export const shareAcceptanceRouter = {
             linkedId: z.number().optional(),
           }),
         ),
+        gameRoles: z
+          .array(
+            z.object({
+              sharedId: z.number(),
+              accept: z.boolean(),
+              linkedGameRoleId: z.number().optional(),
+            }),
+          )
+          .optional()
+          .default([]),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -169,6 +180,53 @@ export const shareAcceptanceRouter = {
                 sharedGameExists.id,
                 "game",
               );
+            }
+          }
+        }
+        for (const gameRoleShareRequest of input.gameRoles ?? []) {
+          const returnedRoleRequest = await tx.query.shareRequest.findFirst({
+            where: {
+              ownerId: existingRequest.ownerId,
+              sharedWithId: ctx.userId,
+              id: gameRoleShareRequest.sharedId,
+            },
+          });
+          if (!returnedRoleRequest) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Game role share request not found.",
+            });
+          }
+          if (returnedRoleRequest.itemType !== "game_role") {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Invalid game role share request.",
+            });
+          }
+          await tx
+            .update(shareRequest)
+            .set({
+              status: gameRoleShareRequest.accept ? "accepted" : "rejected",
+            })
+            .where(eq(shareRequest.id, returnedRoleRequest.id));
+          if (gameRoleShareRequest.accept) {
+            const existingSharedRole = await tx.query.sharedGameRole.findFirst({
+              where: {
+                ownerId: returnedRoleRequest.ownerId,
+                sharedWithId: ctx.userId,
+                gameRoleId: returnedRoleRequest.itemId,
+                sharedGameId: sharedGameExists.id,
+              },
+            });
+            if (!existingSharedRole) {
+              await tx.insert(sharedGameRole).values({
+                ownerId: returnedRoleRequest.ownerId,
+                sharedWithId: ctx.userId,
+                gameRoleId: returnedRoleRequest.itemId,
+                sharedGameId: sharedGameExists.id,
+                permission: returnedRoleRequest.permission,
+                linkedGameRoleId: gameRoleShareRequest.linkedGameRoleId,
+              });
             }
           }
         }

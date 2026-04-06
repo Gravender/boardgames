@@ -34,6 +34,7 @@ const shareRequest = createTable(
         "scoresheet",
         "location",
         "matchPlayer",
+        "game_role",
       ],
     }).notNull(),
     itemId: integer("item_id").notNull(),

@@ -145,3 +145,51 @@ export const createGameWithFinishedMatch = async (
 
   return { gameId, scoresheetId, matchId: match.id, players };
 };
+
+/**
+ * Creates a game with a match that is not finished (no winner set).
+ */
+export const createGameWithUnfinishedMatch = async (
+  caller: TestCaller,
+  options?: {
+    gameName?: string;
+    matchName?: string;
+    playerCount?: number;
+  },
+): Promise<{
+  gameId: number;
+  scoresheetId: number;
+  matchId: number;
+  players: { id: number; name: string }[];
+}> => {
+  const {
+    gameName = "Test Game",
+    matchName = "Test Match",
+    playerCount = 2,
+  } = options ?? {};
+
+  const { gameId, scoresheetId } = await createGameWithScoresheet(
+    caller,
+    gameName,
+  );
+  const players = await createPlayers(caller, playerCount);
+
+  const matchInput: inferProcedureInput<AppRouter["match"]["createMatch"]> = {
+    name: matchName,
+    date: new Date(),
+    game: { type: "original", id: gameId },
+    scoresheet: { type: "original", id: scoresheetId },
+    players: players.map((player) => ({
+      type: "original" as const,
+      id: player.id,
+      roles: [],
+      teamId: null,
+    })),
+    teams: [],
+    location: null,
+  };
+
+  const match = await caller.match.createMatch(matchInput);
+
+  return { gameId, scoresheetId, matchId: match.id, players };
+};

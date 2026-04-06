@@ -263,6 +263,13 @@ class GameRepository {
           },
           orderBy: (matches, { desc }) => [desc(matches.date)],
         },
+        roles: {
+          where: {
+            deletedAt: {
+              isNull: true,
+            },
+          },
+        },
         scoresheets: true,
         image: true,
       },
