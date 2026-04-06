@@ -12,7 +12,7 @@ import { cn } from "@board-games/ui/utils";
 
 import { FormattedDate } from "~/components/formatted-date";
 
-type Data = RouterOutputs["newPlayer"]["stats"]["getPlayerStreaks"];
+type Data = RouterOutputs["player"]["stats"]["getPlayerStreaks"];
 
 export function StreaksSection({ data }: { data: Data }) {
   const { streaks } = data;

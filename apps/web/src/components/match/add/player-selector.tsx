@@ -59,7 +59,7 @@ import { PlayerSelectorField } from "./player-selection-form";
 import { RecentMatchSelection } from "./recent-match-select";
 import { PlayerRoleSelectorField, TeamRoleSelectorField } from "./role-form";
 
-type Players = RouterOutputs["newPlayer"]["getPlayersForMatch"]["players"];
+type Players = RouterOutputs["player"]["getPlayersForMatch"]["players"];
 
 export const QuickPlayerSelect = withForm({
   defaultValues: {
@@ -187,7 +187,7 @@ export const CustomPlayerSelect = withFieldGroup({
     gameRoles: [] as RouterOutputs["game"]["gameRoles"],
     playersForMatch: {
       players: [],
-    } as RouterOutputs["newPlayer"]["getPlayersForMatch"],
+    } as RouterOutputs["player"]["getPlayersForMatch"],
     onCancel: () => {
       /* empty */
     },

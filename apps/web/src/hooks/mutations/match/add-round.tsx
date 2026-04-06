@@ -5,7 +5,7 @@ import { usePostHog } from "posthog-js/react";
 
 import { toast } from "@board-games/ui/toast";
 
-import { invalidateNewPlayerStatsQueries } from "~/hooks/invalidate/player";
+import { invalidatePlayerStatsQueries } from "~/hooks/invalidate/player";
 import { useTRPC } from "~/trpc/react";
 
 type MatchInput =
@@ -32,7 +32,7 @@ export const useAddRoundMutation = (input: MatchInput) => {
           queryClient.invalidateQueries(
             trpc.match.getMatchSummary.queryOptions(input),
           ),
-          invalidateNewPlayerStatsQueries(queryClient, trpc),
+          invalidatePlayerStatsQueries(queryClient, trpc),
         ]);
         posthog.capture("round added to match", {
           input,

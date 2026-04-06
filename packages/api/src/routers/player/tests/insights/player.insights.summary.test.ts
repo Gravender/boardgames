@@ -21,11 +21,11 @@ describe("Player - getPlayerSummary", () => {
 
   test("normal case: returns zeroed summary", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
-    const player = await receiverCaller.newPlayer.create({
+    const player = await receiverCaller.player.create({
       name: "Summary",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.stats.getPlayerSummary({
+    const result = await receiverCaller.player.stats.getPlayerSummary({
       type: "original",
       id: player.id,
     });
@@ -35,7 +35,7 @@ describe("Player - getPlayerSummary", () => {
   test("best case: returns populated summary", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const result = await ownerCaller.newPlayer.stats.getPlayerSummary({
+    const result = await ownerCaller.player.stats.getPlayerSummary({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
@@ -46,7 +46,7 @@ describe("Player - getPlayerSummary", () => {
   test("worst case: throws for missing player", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.stats.getPlayerSummary({
+      receiverCaller.player.stats.getPlayerSummary({
         type: "original",
         id: 99999999,
       }),

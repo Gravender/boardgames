@@ -1,7 +1,7 @@
 import type { RouterOutputs } from "@board-games/api";
 
 export type PlayedWithGroupsData =
-  RouterOutputs["newPlayer"]["stats"]["getPlayerPlayedWithGroups"];
+  RouterOutputs["player"]["stats"]["getPlayerPlayedWithGroups"];
 export type GroupRow = PlayedWithGroupsData["playedWithGroups"][number];
 
 export type SortKey =

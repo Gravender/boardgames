@@ -122,7 +122,7 @@ export const AddPlayersDialogForm = ({
 
   const { data: groups } = useGroupsQuery();
   const { data: gamePlayers } = useQuery(
-    trpc.newPlayer.getPlayersByGame.queryOptions(
+    trpc.player.getPlayersByGame.queryOptions(
       game.type === "shared"
         ? {
             type: "shared",

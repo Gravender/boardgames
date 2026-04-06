@@ -8,7 +8,7 @@ import { withFieldGroup } from "~/hooks/form";
 import { GroupPlayerPicker } from "./group-player-picker";
 
 type OriginalPlayer = Extract<
-  RouterOutputs["newPlayer"]["getPlayers"][number],
+  RouterOutputs["player"]["getPlayers"][number],
   { type: "original" }
 >;
 

@@ -11,7 +11,7 @@ import {
 } from "@board-games/ui/card";
 import { cn } from "@board-games/ui/utils";
 
-type Data = RouterOutputs["newPlayer"]["stats"]["getPlayerPerformanceSummary"];
+type Data = RouterOutputs["player"]["stats"]["getPlayerPerformanceSummary"];
 
 export function PerformanceSummarySection({ data }: { data: Data }) {
   const { overall, modeBreakdown, recentForm } = data;

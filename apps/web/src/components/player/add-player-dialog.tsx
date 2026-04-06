@@ -25,12 +25,15 @@ import { useUploadThing } from "~/utils/uploadthing";
 /**
  * Renders a dialog for creating a new player.
  * @param defaultIsOpen When true, the dialog starts open (default: false).
+ * @param triggerLayout FAB icon vs inline header button (e.g. list pages).
  * @returns The add-player dialog element with trigger and form content.
  */
 export const AddPlayerDialog = ({
   defaultIsOpen = false,
+  triggerLayout = "fab",
 }: {
   defaultIsOpen?: boolean;
+  triggerLayout?: "fab" | "header";
 }) => {
   const [isOpen, setIsOpen] = useState(defaultIsOpen);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,6 +47,16 @@ export const AddPlayerDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      {triggerLayout === "header" ? (
+        <DialogTrigger
+          render={
+            <Button type="button" aria-label="Add player">
+              <PlusIcon className="mr-2 h-4 w-4" />
+              Add Player
+            </Button>
+          }
+        />
+      ) : null}
       <DialogContent className="min-h-80 sm:max-w-[465px]">
         <PlayerContent
           setOpen={setIsOpen}
@@ -51,23 +64,25 @@ export const AddPlayerDialog = ({
           setIsSubmitting={setIsSubmitting}
         />
       </DialogContent>
-      <div className="flex h-full w-full flex-col justify-end">
-        <div className="flex justify-end">
-          <DialogTrigger
-            render={
-              <Button
-                variant="default"
-                className="rounded-full"
-                size="icon"
-                type="button"
-                aria-label="add player"
-              >
-                <PlusIcon />
-              </Button>
-            }
-          />
+      {triggerLayout === "fab" ? (
+        <div className="flex h-full w-full flex-col justify-end">
+          <div className="flex justify-end">
+            <DialogTrigger
+              render={
+                <Button
+                  variant="default"
+                  className="rounded-full"
+                  size="icon"
+                  type="button"
+                  aria-label="add player"
+                >
+                  <PlusIcon />
+                </Button>
+              }
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
     </Dialog>
   );
 };

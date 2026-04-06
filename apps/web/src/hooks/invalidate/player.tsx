@@ -6,11 +6,11 @@ import { useTRPC } from "~/trpc/react";
 
 type TRPCReact = ReturnType<typeof useTRPC>;
 
-/** Profile / insights subtree only (`newPlayer.stats`), not list or match-picker queries. */
-export const invalidateNewPlayerStatsQueries = (
+/** Profile / insights subtree only (`player.stats`), not list or match-picker queries. */
+export const invalidatePlayerStatsQueries = (
   queryClient: QueryClient,
   trpc: TRPCReact,
-) => queryClient.invalidateQueries(trpc.newPlayer.stats.pathFilter());
+) => queryClient.invalidateQueries(trpc.player.stats.pathFilter());
 
 function buildPlayerInsightsInput(
   playerId: number,
@@ -21,7 +21,7 @@ function buildPlayerInsightsInput(
     : { type: "original" as const, id: playerId };
 }
 
-/** All newPlayer reads for one player (header, summary, insights tabs). */
+/** All `player` router reads for one player (header, summary, insights tabs). */
 export function useInvalidatePlayer() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -30,42 +30,40 @@ export function useInvalidatePlayer() {
       const input = buildPlayerInsightsInput(playerId, type);
       return [
         queryClient.invalidateQueries(
-          trpc.newPlayer.stats.getPlayerHeader.queryOptions(input),
+          trpc.player.stats.getPlayerHeader.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.stats.getPlayerSummary.queryOptions(input),
+          trpc.player.stats.getPlayerSummary.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.stats.getPlayerPerformanceSummary.queryOptions(input),
+          trpc.player.stats.getPlayerPerformanceSummary.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.stats.getPlayerFavoriteGames.queryOptions(input),
+          trpc.player.stats.getPlayerFavoriteGames.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.stats.getPlayerRecentMatches.queryOptions(input),
+          trpc.player.stats.getPlayerRecentMatches.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.stats.getPlayerGameWinRateCharts.queryOptions(input),
+          trpc.player.stats.getPlayerGameWinRateCharts.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.stats.getPlayerTopRivals.queryOptions(input),
+          trpc.player.stats.getPlayerTopRivals.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.stats.getPlayerTopTeammates.queryOptions(input),
+          trpc.player.stats.getPlayerTopTeammates.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.stats.getPlayerPlayedWithGroups.queryOptions(input),
+          trpc.player.stats.getPlayerPlayedWithGroups.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.stats.getPlayerStreaks.queryOptions(input),
+          trpc.player.stats.getPlayerStreaks.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.stats.getPlayerCountStats.queryOptions(input),
+          trpc.player.stats.getPlayerCountStats.queryOptions(input),
         ),
         queryClient.invalidateQueries(
-          trpc.newPlayer.stats.getPlayerPlacementDistribution.queryOptions(
-            input,
-          ),
+          trpc.player.stats.getPlayerPlacementDistribution.queryOptions(input),
         ),
       ];
     },
@@ -74,11 +72,11 @@ export function useInvalidatePlayer() {
 }
 
 /** After match create/update/scoresheet changes: any player stats may shift. */
-export function useInvalidateAllNewPlayerQueries() {
+export function useInvalidateAllPlayerStatsQueries() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   return useCallback(() => {
-    return invalidateNewPlayerStatsQueries(queryClient, trpc);
+    return invalidatePlayerStatsQueries(queryClient, trpc);
   }, [queryClient, trpc]);
 }
 
@@ -87,10 +85,8 @@ export function useInvalidatePlayers() {
   const queryClient = useQueryClient();
   return useCallback(() => {
     return [
-      queryClient.invalidateQueries(trpc.newPlayer.getPlayers.pathFilter()),
-      queryClient.invalidateQueries(
-        trpc.newPlayer.getPlayersByGame.pathFilter(),
-      ),
+      queryClient.invalidateQueries(trpc.player.getPlayers.pathFilter()),
+      queryClient.invalidateQueries(trpc.player.getPlayersByGame.pathFilter()),
     ];
   }, [queryClient, trpc]);
 }

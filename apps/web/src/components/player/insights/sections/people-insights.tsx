@@ -19,9 +19,9 @@ import { selectItemsFromPairs } from "@board-games/ui/lib/select-items";
 import { PlayedWithGroupsSection } from "./played-with-groups";
 import { RivalsTable, TeammatesTable } from "./people-social-tables";
 
-type Rivals = RouterOutputs["newPlayer"]["stats"]["getPlayerTopRivals"];
-type Teammates = RouterOutputs["newPlayer"]["stats"]["getPlayerTopTeammates"];
-type Groups = RouterOutputs["newPlayer"]["stats"]["getPlayerPlayedWithGroups"];
+type Rivals = RouterOutputs["player"]["stats"]["getPlayerTopRivals"];
+type Teammates = RouterOutputs["player"]["stats"]["getPlayerTopTeammates"];
+type Groups = RouterOutputs["player"]["stats"]["getPlayerPlayedWithGroups"];
 
 type PeopleSub = "rivals" | "teammates" | "groups";
 

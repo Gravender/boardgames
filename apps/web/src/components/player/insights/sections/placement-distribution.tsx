@@ -35,8 +35,7 @@ import { cn } from "@board-games/ui/utils";
 
 import { selectItemsFromPairs } from "@board-games/ui/lib/select-items";
 
-type Data =
-  RouterOutputs["newPlayer"]["stats"]["getPlayerPlacementDistribution"];
+type Data = RouterOutputs["player"]["stats"]["getPlayerPlacementDistribution"];
 
 const chartConfig = {
   pct: {

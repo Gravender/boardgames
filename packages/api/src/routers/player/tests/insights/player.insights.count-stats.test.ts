@@ -21,11 +21,11 @@ describe("Player Insights - getPlayerCountStats", () => {
 
   test("normal case: returns empty distribution", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
-    const player = await receiverCaller.newPlayer.create({
+    const player = await receiverCaller.player.create({
       name: "Empty",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.stats.getPlayerCountStats({
+    const result = await receiverCaller.player.stats.getPlayerCountStats({
       type: "original",
       id: player.id,
     });
@@ -35,7 +35,7 @@ describe("Player Insights - getPlayerCountStats", () => {
   test("best case: returns populated distribution", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const result = await ownerCaller.newPlayer.stats.getPlayerCountStats({
+    const result = await ownerCaller.player.stats.getPlayerCountStats({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
@@ -45,7 +45,7 @@ describe("Player Insights - getPlayerCountStats", () => {
   test("worst case: throws for missing player", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.stats.getPlayerCountStats({
+      receiverCaller.player.stats.getPlayerCountStats({
         type: "original",
         id: 99999999,
       }),

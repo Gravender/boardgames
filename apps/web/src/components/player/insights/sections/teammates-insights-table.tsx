@@ -44,7 +44,7 @@ import {
 } from "./PeopleSocialInsightsHelpers";
 import { TeammatePerGameBreakdown } from "./social-by-game-breakdown";
 
-type Teammates = RouterOutputs["newPlayer"]["stats"]["getPlayerTopTeammates"];
+type Teammates = RouterOutputs["player"]["stats"]["getPlayerTopTeammates"];
 
 type MateSortKey =
   | "name"

@@ -21,11 +21,11 @@ describe("Player Insights - getPlayerTopTeammates", () => {
 
   test("normal case: returns empty teammates", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
-    const player = await receiverCaller.newPlayer.create({
+    const player = await receiverCaller.player.create({
       name: "Empty",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.stats.getPlayerTopTeammates({
+    const result = await receiverCaller.player.stats.getPlayerTopTeammates({
       type: "original",
       id: player.id,
     });
@@ -35,7 +35,7 @@ describe("Player Insights - getPlayerTopTeammates", () => {
   test("fixture under five co-op games together: no teammates listed", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const result = await ownerCaller.newPlayer.stats.getPlayerTopTeammates({
+    const result = await ownerCaller.player.stats.getPlayerTopTeammates({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
@@ -45,7 +45,7 @@ describe("Player Insights - getPlayerTopTeammates", () => {
   test("invariant: any listed teammate has >=5 matches and byGame rows", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const result = await ownerCaller.newPlayer.stats.getPlayerTopTeammates({
+    const result = await ownerCaller.player.stats.getPlayerTopTeammates({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
@@ -59,7 +59,7 @@ describe("Player Insights - getPlayerTopTeammates", () => {
   test("worst case: throws for missing player", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.stats.getPlayerTopTeammates({
+      receiverCaller.player.stats.getPlayerTopTeammates({
         type: "original",
         id: 99999999,
       }),

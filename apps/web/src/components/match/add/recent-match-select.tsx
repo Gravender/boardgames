@@ -13,7 +13,7 @@ import {
 
 import { useRecentMatchWithPlayers } from "~/hooks/queries/match/players";
 
-type Players = RouterOutputs["newPlayer"]["getPlayersForMatch"]["players"];
+type Players = RouterOutputs["player"]["getPlayersForMatch"]["players"];
 export function RecentMatchSelection({
   players,
   setPlayers,

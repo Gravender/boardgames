@@ -16,10 +16,9 @@ import { cn } from "@board-games/ui/utils";
 
 import { selectItemsFromPairs } from "@board-games/ui/lib/select-items";
 
-export type RivalsData =
-  RouterOutputs["newPlayer"]["stats"]["getPlayerTopRivals"];
+export type RivalsData = RouterOutputs["player"]["stats"]["getPlayerTopRivals"];
 export type TeammatesData =
-  RouterOutputs["newPlayer"]["stats"]["getPlayerTopTeammates"];
+  RouterOutputs["player"]["stats"]["getPlayerTopTeammates"];
 
 export type RivalRow = RivalsData["rivals"][number];
 export type TeammateRow = TeammatesData["teammates"][number];

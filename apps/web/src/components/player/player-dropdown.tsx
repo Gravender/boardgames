@@ -28,7 +28,7 @@ import {
 
 import { EditPlayerDialog } from "~/components/player/EditPlayerDialog";
 import {
-  useInvalidateAllNewPlayerQueries,
+  useInvalidateAllPlayerStatsQueries,
   useInvalidatePlayers,
 } from "~/hooks/invalidate/player";
 import { useTRPC } from "~/trpc/react";
@@ -36,7 +36,7 @@ import { useTRPC } from "~/trpc/react";
 export function PlayerDropDown({
   data,
 }: {
-  data: RouterOutputs["newPlayer"]["getPlayers"][number];
+  data: RouterOutputs["player"]["getPlayers"][number];
 }) {
   const [isDeletePlayerDialogOpen, setIsDeletePlayerDialogOpen] =
     useState(false);
@@ -44,13 +44,13 @@ export function PlayerDropDown({
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const invalidateNewPlayerQueries = useInvalidateAllNewPlayerQueries();
+  const invalidatePlayerStatsQueriesHook = useInvalidateAllPlayerStatsQueries();
   const invalidatePlayers = useInvalidatePlayers();
   const deletePlayer = useMutation(
-    trpc.newPlayer.deletePlayer.mutationOptions({
+    trpc.player.deletePlayer.mutationOptions({
       onSuccess: async () => {
         await Promise.all([
-          invalidateNewPlayerQueries(),
+          invalidatePlayerStatsQueriesHook(),
           ...invalidatePlayers(),
           queryClient.invalidateQueries(trpc.match.pathFilter()),
         ]);

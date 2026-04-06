@@ -55,13 +55,13 @@ export function AddPlayerForm({
   const [isUploading, setIsUploading] = useState(false);
   const { startUpload } = useUploadThing("imageUploader");
   const createPlayer = useMutation(
-    trpc.newPlayer.create.mutationOptions({
+    trpc.player.create.mutationOptions({
       onSuccess: async (player) => {
         await queryClient.cancelQueries(
-          trpc.newPlayer.getPlayersForMatch.queryOptions(),
+          trpc.player.getPlayersForMatch.queryOptions(),
         );
         const prePlayerData = queryClient.getQueryData(
-          trpc.newPlayer.getPlayersForMatch.queryOptions().queryKey,
+          trpc.player.getPlayersForMatch.queryOptions().queryKey,
         );
         const newData = {
           players: [
@@ -77,16 +77,16 @@ export function AddPlayerForm({
           ],
         };
         queryClient.setQueryData(
-          trpc.newPlayer.getPlayersForMatch.queryOptions().queryKey,
+          trpc.player.getPlayersForMatch.queryOptions().queryKey,
           newData,
         );
         await Promise.all([
           queryClient.invalidateQueries(
-            trpc.newPlayer.getPlayersForMatch.pathFilter(),
+            trpc.player.getPlayersForMatch.pathFilter(),
           ),
-          queryClient.invalidateQueries(trpc.newPlayer.getPlayers.pathFilter()),
+          queryClient.invalidateQueries(trpc.player.getPlayers.pathFilter()),
           queryClient.invalidateQueries(
-            trpc.newPlayer.getPlayersByGame.pathFilter(),
+            trpc.player.getPlayersByGame.pathFilter(),
           ),
         ]);
         toast("Player created successfully!");
