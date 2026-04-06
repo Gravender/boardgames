@@ -31,7 +31,7 @@ import {
 import { PlayerImage } from "~/components/player-image";
 import { useGroupsWithPlayers } from "~/hooks/queries/match/players";
 
-type Players = RouterOutputs["newPlayer"]["getPlayersForMatch"]["players"];
+type Players = RouterOutputs["player"]["getPlayersForMatch"]["players"];
 export function GroupQuickMatchSelection({
   players,
   setPlayers,

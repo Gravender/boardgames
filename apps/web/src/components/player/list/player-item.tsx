@@ -15,7 +15,7 @@ import {
 import { PlayerImage } from "~/components/player-image";
 import { PlayerDropDown } from "~/components/player/player-dropdown";
 
-type ListPlayer = RouterOutputs["newPlayer"]["getPlayers"][number];
+type ListPlayer = RouterOutputs["player"]["getPlayers"][number];
 
 interface PlayerItemProps {
   player: ListPlayer;

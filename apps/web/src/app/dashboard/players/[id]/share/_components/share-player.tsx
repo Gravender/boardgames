@@ -122,7 +122,7 @@ export default function SharePlayerPage({ playerId }: { playerId: number }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { data: playerToShare } = useSuspenseQuery(
-    trpc.newPlayer.getPlayerToShare.queryOptions({ id: playerId }),
+    trpc.player.getPlayerToShare.queryOptions({ id: playerId }),
   );
   const { data: friends } = useSuspenseQuery(
     trpc.friend.getFriends.queryOptions(),

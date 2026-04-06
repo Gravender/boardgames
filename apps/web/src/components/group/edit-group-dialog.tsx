@@ -40,7 +40,7 @@ export const EditGroupDialog = ({
 }) => {
   const trpc = useTRPC();
   const { data: players = [] } = useQuery(
-    trpc.newPlayer.getPlayers.queryOptions(),
+    trpc.player.getPlayers.queryOptions(),
   );
   const originalPlayers = players.filter((p) => p.type === "original");
   const [isSubmitting, setIsSubmitting] = useState(false);

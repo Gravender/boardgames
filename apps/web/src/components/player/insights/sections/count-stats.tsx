@@ -17,7 +17,7 @@ import {
 } from "@board-games/ui/chart";
 import { cn } from "@board-games/ui/utils";
 
-type Data = RouterOutputs["newPlayer"]["stats"]["getPlayerCountStats"];
+type Data = RouterOutputs["player"]["stats"]["getPlayerCountStats"];
 
 const chartConfig = {
   winRate: {

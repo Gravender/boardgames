@@ -23,7 +23,7 @@ export const appRouter = createTRPCRouter({
   image: imageRouter,
   scoresheet: scoresheetRouter,
   match: matchRouter,
-  newPlayer: playerRouter,
+  player: playerRouter,
   round: roundRouter,
   dashboard: dashboardRouter,
   group: groupRouter,

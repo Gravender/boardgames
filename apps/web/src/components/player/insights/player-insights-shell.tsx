@@ -26,12 +26,10 @@ const dmSans = DM_Sans({
 
 /** First paint: hero + overview only; other tabs fetch on demand. */
 const prefetchPlayerInsights = (playerInput: PlayerInsightsPageInput) => {
-  void prefetch(trpc.newPlayer.stats.getPlayerHeader.queryOptions(playerInput));
+  void prefetch(trpc.player.stats.getPlayerHeader.queryOptions(playerInput));
+  void prefetch(trpc.player.stats.getPlayerSummary.queryOptions(playerInput));
   void prefetch(
-    trpc.newPlayer.stats.getPlayerSummary.queryOptions(playerInput),
-  );
-  void prefetch(
-    trpc.newPlayer.stats.getPlayerPerformanceSummary.queryOptions(playerInput),
+    trpc.player.stats.getPlayerPerformanceSummary.queryOptions(playerInput),
   );
 };
 

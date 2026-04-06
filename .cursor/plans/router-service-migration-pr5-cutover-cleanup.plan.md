@@ -4,28 +4,28 @@ overview: Complete router migration cutover by removing old/new dual namespaces,
 todos:
   - id: inventory-remaining-legacy-usage
     content: Confirm all frontend/API callers using legacy player/group/location namespaces and identify final compatibility dependencies.
-    status: pending
+    status: completed
   - id: finalize-canonical-router-namespaces
     content: Choose and enforce final canonical router paths for player, group, and location domains in root router exports.
-    status: pending
+    status: completed
   - id: remove-legacy-router-wrappers
     content: Delete legacy wrapper procedures/files and remove duplicate registrations from appRouter.
-    status: pending
+    status: completed
   - id: migrate-final-callers
     content: Update any remaining web hooks/components/tests to canonical procedure paths and remove transitional aliases.
-    status: pending
+    status: completed
   - id: add-contract-regression-tests
     content: Add tests to lock discriminated original/shared contracts and ensure no regressions in migrated endpoints.
-    status: pending
+    status: completed
   - id: run-e2e-parity-checks
     content: Run focused Playwright flows for players/groups/locations covering both shared and original item paths.
-    status: pending
+    status: completed
   - id: document-final-contract-conventions
     content: Add migration notes for discriminator policy, canonical procedure naming, and future endpoint design standards.
-    status: pending
+    status: completed
   - id: run-final-validation
     content: Run package checks for changed workspaces and ensure CI-ready state for merge.
-    status: pending
+    status: completed
 isProject: false
 ---
 

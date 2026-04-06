@@ -19,9 +19,9 @@ test.describe("Players Page", () => {
       .getByRole("textbox", { name: "Player Name" })
       .fill(browserPlayerName);
     await page.getByRole("button", { name: "Submit" }).click();
-    await page.getByRole("textbox", { name: "Search players..." }).click();
+    await page.getByRole("textbox", { name: "Search players" }).click();
     await page
-      .getByRole("textbox", { name: "Search players..." })
+      .getByRole("textbox", { name: "Search players" })
       .fill(browserPlayerName);
     await expect(
       page.getByRole("link", { name: browserPlayerName }).first(),
@@ -32,9 +32,9 @@ test.describe("Players Page", () => {
     const browserPlayerName = browserName + "_" + PLAYER_NAME;
     const editedBrowserPlayerName = browserName + "_" + EDITED_PLAYER_NAME;
     await page.goto("/dashboard/players");
-    await page.getByRole("textbox", { name: "Search players..." }).click();
+    await page.getByRole("textbox", { name: "Search players" }).click();
     await page
-      .getByRole("textbox", { name: "Search players..." })
+      .getByRole("textbox", { name: "Search players" })
       .fill(browserPlayerName);
     await expect(
       page.getByRole("link", { name: browserPlayerName }).first(),
@@ -45,9 +45,9 @@ test.describe("Players Page", () => {
       .getByRole("textbox", { name: "Player Name" })
       .fill(editedBrowserPlayerName);
     await page.getByRole("button", { name: "Submit" }).click();
-    await page.getByRole("textbox", { name: "Search players..." }).click();
+    await page.getByRole("textbox", { name: "Search players" }).click();
     await page
-      .getByRole("textbox", { name: "Search players..." })
+      .getByRole("textbox", { name: "Search players" })
       .fill(editedBrowserPlayerName);
     await expect(
       page.getByRole("link", { name: editedBrowserPlayerName }).first(),

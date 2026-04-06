@@ -30,7 +30,7 @@ const defaultValues: {
 } = {
   players: [],
 };
-type Players = RouterOutputs["newPlayer"]["getPlayersForMatch"]["players"];
+type Players = RouterOutputs["player"]["getPlayersForMatch"]["players"];
 export const PlayerSelectorField = withFieldGroup({
   defaultValues,
   props: {

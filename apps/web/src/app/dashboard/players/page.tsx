@@ -16,7 +16,7 @@ export default async function Page({
 }: {
   searchParams: Promise<{ add?: string }>;
 }) {
-  void prefetch(trpc.newPlayer.getPlayers.queryOptions());
+  void prefetch(trpc.player.getPlayers.queryOptions());
   const addPlayer = (await searchParams).add === "true";
   return (
     <HydrateClient>

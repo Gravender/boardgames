@@ -9,7 +9,7 @@ export { useGroupsWithPlayers } from "~/hooks/queries/group/groups";
 export const usePlayers = () => {
   const trpc = useTRPC();
   const { data: playersForMatch, isLoading } = useQuery(
-    trpc.newPlayer.getPlayersForMatch.queryOptions(),
+    trpc.player.getPlayersForMatch.queryOptions(),
   );
   return {
     playersForMatch,
@@ -19,7 +19,7 @@ export const usePlayers = () => {
 export const useSuspensePlayers = () => {
   const trpc = useTRPC();
   const { data: playersForMatch } = useSuspenseQuery(
-    trpc.newPlayer.getPlayersForMatch.queryOptions(),
+    trpc.player.getPlayersForMatch.queryOptions(),
   );
   return {
     playersForMatch,
@@ -29,7 +29,7 @@ export const useSuspensePlayers = () => {
 export const useRecentMatchWithPlayers = () => {
   const trpc = useTRPC();
   const { data, isLoading } = useQuery(
-    trpc.newPlayer.getRecentMatchWithPlayers.queryOptions(),
+    trpc.player.getRecentMatchWithPlayers.queryOptions(),
   );
   return {
     recentMatches: data?.recentMatches,

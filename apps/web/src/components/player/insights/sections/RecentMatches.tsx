@@ -35,7 +35,7 @@ import {
   isScoreOnlyWinCondition,
 } from "../insight-outcome";
 import { insightMatchHref } from "../player-insights-match-links";
-type Data = RouterOutputs["newPlayer"]["stats"]["getPlayerRecentMatches"];
+type Data = RouterOutputs["player"]["stats"]["getPlayerRecentMatches"];
 type MatchRow = Data["matches"][number];
 type Outcome = MatchRow["outcome"];
 

@@ -11,7 +11,7 @@ export const useCreatePlayerMutation = () => {
   const trpc = useTRPC();
   const invalidatePlayers = useInvalidatePlayers();
   const createPlayerMutation = useMutation(
-    trpc.newPlayer.create.mutationOptions({
+    trpc.player.create.mutationOptions({
       onSuccess: async () => {
         await Promise.all(invalidatePlayers());
         toast.success("Player created successfully!");

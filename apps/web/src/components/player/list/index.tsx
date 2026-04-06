@@ -31,7 +31,7 @@ import { useGetPlayers } from "~/hooks/queries/player/get-players";
 
 import { PlayerItem } from "./player-item";
 
-type ListPlayer = RouterOutputs["newPlayer"]["getPlayers"][number];
+type ListPlayer = RouterOutputs["player"]["getPlayers"][number];
 
 export default function PlayersList({
   defaultAddOpen = false,

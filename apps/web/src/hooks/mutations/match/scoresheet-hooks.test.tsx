@@ -81,7 +81,7 @@ vi.mock("~/trpc/react", () => ({
 }));
 
 vi.mock("~/hooks/invalidate/player", () => ({
-  invalidateNewPlayerStatsQueries: vi.fn().mockResolvedValue(undefined),
+  invalidatePlayerStatsQueries: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("@board-games/ui/toast", () => ({

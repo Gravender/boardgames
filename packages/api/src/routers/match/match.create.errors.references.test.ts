@@ -76,7 +76,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         throw new Error("No scoresheet found");
       }
 
-      const player = await caller.newPlayer.create({
+      const player = await caller.player.create({
         name: "Test Player",
         imageId: null,
       });
@@ -133,7 +133,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
 
       const createdGame = await caller.game.create(gameInput);
 
-      const player = await caller.newPlayer.create({
+      const player = await caller.player.create({
         name: "Test Player",
         imageId: null,
       });
@@ -270,7 +270,7 @@ describe("Match Create - Invalid Reference Error Tests", () => {
         throw new Error("No scoresheet found");
       }
 
-      const player = await caller.newPlayer.create({
+      const player = await caller.player.create({
         name: "Test Player",
         imageId: null,
       });

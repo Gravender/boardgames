@@ -20,7 +20,7 @@ export const useGetPlayersByGame = (
           id,
         };
   const { data: gamePlayers } = useSuspenseQuery(
-    trpc.newPlayer.getPlayersByGame.queryOptions(input),
+    trpc.player.getPlayersByGame.queryOptions(input),
   );
   return {
     gamePlayers,

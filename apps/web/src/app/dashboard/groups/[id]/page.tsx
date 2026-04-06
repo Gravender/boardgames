@@ -37,7 +37,7 @@ export default async function Page({ params }: Props) {
     redirect("/dashboard/groups");
   }
   void prefetch(trpc.group.getGroup.queryOptions({ id: numericId }));
-  void prefetch(trpc.newPlayer.getPlayers.queryOptions());
+  void prefetch(trpc.player.getPlayers.queryOptions());
   return (
     <HydrateClient>
       <div className="flex w-full items-center justify-center">

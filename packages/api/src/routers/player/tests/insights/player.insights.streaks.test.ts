@@ -21,11 +21,11 @@ describe("Player Insights - getPlayerStreaks", () => {
 
   test("normal case: returns zeroed streak payload", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
-    const player = await receiverCaller.newPlayer.create({
+    const player = await receiverCaller.player.create({
       name: "Empty",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.stats.getPlayerStreaks({
+    const result = await receiverCaller.player.stats.getPlayerStreaks({
       type: "original",
       id: player.id,
     });
@@ -36,7 +36,7 @@ describe("Player Insights - getPlayerStreaks", () => {
   test("best case: returns populated streak payload", async () => {
     const { ownerCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const result = await ownerCaller.newPlayer.stats.getPlayerStreaks({
+    const result = await ownerCaller.player.stats.getPlayerStreaks({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
@@ -46,7 +46,7 @@ describe("Player Insights - getPlayerStreaks", () => {
   test("worst case: throws for missing player", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.stats.getPlayerStreaks({
+      receiverCaller.player.stats.getPlayerStreaks({
         type: "original",
         id: 99999999,
       }),

@@ -7,7 +7,7 @@ import { useTRPC } from "~/trpc/react";
 export const useGetPlayers = () => {
   const trpc = useTRPC();
   const { data: players } = useSuspenseQuery(
-    trpc.newPlayer.getPlayers.queryOptions(),
+    trpc.player.getPlayers.queryOptions(),
   );
 
   return { players };

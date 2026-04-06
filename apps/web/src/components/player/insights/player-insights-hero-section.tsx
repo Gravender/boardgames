@@ -21,7 +21,7 @@ import { usePlayerInsightsPageData } from "./player-insights-data-context";
 
 import type { PlayerInsightsPageInput } from "./player-insights-types";
 
-type PlayerHeader = RouterOutputs["newPlayer"]["stats"]["getPlayerHeader"];
+type PlayerHeader = RouterOutputs["player"]["stats"]["getPlayerHeader"];
 
 const headerToEditPlayer = (header: PlayerHeader): EditPlayerDialogPlayer => {
   if (header.type === "original") {

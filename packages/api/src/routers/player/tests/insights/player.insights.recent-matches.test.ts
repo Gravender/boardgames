@@ -21,11 +21,11 @@ describe("Player Insights - getPlayerRecentMatches", () => {
 
   test("normal case: returns empty matches", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
-    const player = await receiverCaller.newPlayer.create({
+    const player = await receiverCaller.player.create({
       name: "Empty",
       imageId: null,
     });
-    const result = await receiverCaller.newPlayer.stats.getPlayerRecentMatches({
+    const result = await receiverCaller.player.stats.getPlayerRecentMatches({
       type: "original",
       id: player.id,
     });
@@ -35,11 +35,11 @@ describe("Player Insights - getPlayerRecentMatches", () => {
   test("best case: returns discriminated match entries", async () => {
     const { ownerCaller, receiverCaller } = await createInsightsCallers(ids!);
     const seeded = await seedInsightsHistory(ids!);
-    const original = await ownerCaller.newPlayer.stats.getPlayerRecentMatches({
+    const original = await ownerCaller.player.stats.getPlayerRecentMatches({
       type: "original",
       id: seeded.ownerTargetPlayerId,
     });
-    const shared = await receiverCaller.newPlayer.stats.getPlayerRecentMatches({
+    const shared = await receiverCaller.player.stats.getPlayerRecentMatches({
       type: "shared",
       sharedPlayerId: seeded.receiverSharedTargetPlayerId,
     });
@@ -64,13 +64,13 @@ describe("Player Insights - getPlayerRecentMatches", () => {
   test("worst case: throws for missing players", async () => {
     const { receiverCaller } = await createInsightsCallers(ids!);
     await expect(
-      receiverCaller.newPlayer.stats.getPlayerRecentMatches({
+      receiverCaller.player.stats.getPlayerRecentMatches({
         type: "original",
         id: 99999999,
       }),
     ).rejects.toThrow("Player not found.");
     await expect(
-      receiverCaller.newPlayer.stats.getPlayerRecentMatches({
+      receiverCaller.player.stats.getPlayerRecentMatches({
         type: "shared",
         sharedPlayerId: 99999999,
       }),

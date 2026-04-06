@@ -34,7 +34,7 @@ const sharedPlayerSchema = insertPlayerSchema
     imageUrl: fileSchema.or(z.string().nullable()),
   });
 
-type ListPlayer = RouterOutputs["newPlayer"]["getPlayers"][number];
+type ListPlayer = RouterOutputs["player"]["getPlayers"][number];
 
 /** Minimal player shape for edit (list row or stats header). */
 export type EditPlayerDialogPlayer =
@@ -53,7 +53,7 @@ interface PlayerValues {
   name: string;
   imageUrl: File | string | null;
 }
-type UpdatePlayerInput = RouterInputs["newPlayer"]["update"];
+type UpdatePlayerInput = RouterInputs["player"]["update"];
 
 const buildPlayerSchema = (
   player: EditPlayerDialogPlayer,

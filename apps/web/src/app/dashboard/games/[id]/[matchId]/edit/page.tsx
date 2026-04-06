@@ -31,7 +31,7 @@ export default async function Page({
     }),
   );
   prefetch(
-    trpc.newPlayer.getPlayersByGame.queryOptions({
+    trpc.player.getPlayersByGame.queryOptions({
       id: Number(gameId),
       type: "original",
     }),

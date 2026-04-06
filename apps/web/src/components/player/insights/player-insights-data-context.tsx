@@ -9,8 +9,8 @@ import { usePlayerInsightsHeroData } from "~/hooks/queries/player/player-insight
 import type { PlayerInsightsPageInput } from "./player-insights-types";
 
 type PlayerInsightsPageData = {
-  header: RouterOutputs["newPlayer"]["stats"]["getPlayerHeader"];
-  summary: RouterOutputs["newPlayer"]["stats"]["getPlayerSummary"];
+  header: RouterOutputs["player"]["stats"]["getPlayerHeader"];
+  summary: RouterOutputs["player"]["stats"]["getPlayerSummary"];
 };
 
 const PlayerInsightsDataContext = createContext<PlayerInsightsPageData | null>(

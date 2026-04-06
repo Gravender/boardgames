@@ -14,8 +14,8 @@ export const usePlayerInsightsHeroData = (
   const trpc = useTRPC();
   const [{ data: header }, { data: summary }] = useSuspenseQueries({
     queries: [
-      trpc.newPlayer.stats.getPlayerHeader.queryOptions(playerInput),
-      trpc.newPlayer.stats.getPlayerSummary.queryOptions(playerInput),
+      trpc.player.stats.getPlayerHeader.queryOptions(playerInput),
+      trpc.player.stats.getPlayerSummary.queryOptions(playerInput),
     ],
   });
   return { header, summary };
@@ -23,10 +23,10 @@ export const usePlayerInsightsHeroData = (
 
 export const usePlayerInsightsPerformance = (
   playerInput: PlayerInsightsPageInput,
-): RouterOutputs["newPlayer"]["stats"]["getPlayerPerformanceSummary"] => {
+): RouterOutputs["player"]["stats"]["getPlayerPerformanceSummary"] => {
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(
-    trpc.newPlayer.stats.getPlayerPerformanceSummary.queryOptions(playerInput),
+    trpc.player.stats.getPlayerPerformanceSummary.queryOptions(playerInput),
   );
   return data;
 };
@@ -37,9 +37,9 @@ export const usePlayerInsightsGamesTab = (
   const trpc = useTRPC();
   const [favoriteGames, recentMatches, winRateCharts] = useSuspenseQueries({
     queries: [
-      trpc.newPlayer.stats.getPlayerFavoriteGames.queryOptions(playerInput),
-      trpc.newPlayer.stats.getPlayerRecentMatches.queryOptions(playerInput),
-      trpc.newPlayer.stats.getPlayerGameWinRateCharts.queryOptions(playerInput),
+      trpc.player.stats.getPlayerFavoriteGames.queryOptions(playerInput),
+      trpc.player.stats.getPlayerRecentMatches.queryOptions(playerInput),
+      trpc.player.stats.getPlayerGameWinRateCharts.queryOptions(playerInput),
     ],
   });
   return {
@@ -55,9 +55,9 @@ export const usePlayerInsightsPeopleTab = (
   const trpc = useTRPC();
   const [topRivals, topTeammates, playedWithGroups] = useSuspenseQueries({
     queries: [
-      trpc.newPlayer.stats.getPlayerTopRivals.queryOptions(playerInput),
-      trpc.newPlayer.stats.getPlayerTopTeammates.queryOptions(playerInput),
-      trpc.newPlayer.stats.getPlayerPlayedWithGroups.queryOptions(playerInput),
+      trpc.player.stats.getPlayerTopRivals.queryOptions(playerInput),
+      trpc.player.stats.getPlayerTopTeammates.queryOptions(playerInput),
+      trpc.player.stats.getPlayerPlayedWithGroups.queryOptions(playerInput),
     ],
   });
   return {
@@ -73,9 +73,9 @@ export const usePlayerInsightsAdvancedTab = (
   const trpc = useTRPC();
   const [streaks, countStats, placementDistribution] = useSuspenseQueries({
     queries: [
-      trpc.newPlayer.stats.getPlayerStreaks.queryOptions(playerInput),
-      trpc.newPlayer.stats.getPlayerCountStats.queryOptions(playerInput),
-      trpc.newPlayer.stats.getPlayerPlacementDistribution.queryOptions(
+      trpc.player.stats.getPlayerStreaks.queryOptions(playerInput),
+      trpc.player.stats.getPlayerCountStats.queryOptions(playerInput),
+      trpc.player.stats.getPlayerPlacementDistribution.queryOptions(
         playerInput,
       ),
     ],

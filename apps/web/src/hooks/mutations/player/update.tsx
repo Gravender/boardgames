@@ -15,7 +15,7 @@ export const useUpdatePlayerMutation = () => {
   const invalidatePlayer = useInvalidatePlayer();
   const invalidatePlayers = useInvalidatePlayers();
   const updatePlayerMutation = useMutation(
-    trpc.newPlayer.update.mutationOptions({
+    trpc.player.update.mutationOptions({
       onSuccess: async (_data, variables) => {
         const playerEntityId =
           variables.type === "shared" ? variables.sharedId : variables.id;

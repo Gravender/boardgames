@@ -16,7 +16,7 @@ import type { RouterOutputs } from "@board-games/api";
 import { PlayerImage } from "~/components/player-image";
 
 type OriginalPlayer = Extract<
-  RouterOutputs["newPlayer"]["getPlayers"][number],
+  RouterOutputs["player"]["getPlayers"][number],
   { type: "original" }
 >;
 

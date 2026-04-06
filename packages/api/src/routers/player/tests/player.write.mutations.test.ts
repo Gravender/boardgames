@@ -25,7 +25,7 @@ import {
   teardownInsightsUsers,
 } from "./insights/player.insights.test-utils";
 
-describe("Player write mutations (newPlayer router)", () => {
+describe("Player write mutations (player router)", () => {
   const lifecycle = testLifecycle();
 
   beforeAll(async () => {
@@ -50,12 +50,12 @@ describe("Player write mutations (newPlayer router)", () => {
     });
     const caller = createCallerFactory(appRouter)(ctx);
 
-    const created = await caller.newPlayer.create({
+    const created = await caller.player.create({
       name: "To Delete",
       imageId: null,
     });
 
-    await caller.newPlayer.deletePlayer({
+    await caller.player.deletePlayer({
       type: "original",
       id: created.id,
     });
@@ -75,7 +75,7 @@ describe("Player write mutations (newPlayer router)", () => {
     const caller = createCallerFactory(appRouter)(ctx);
 
     await expect(
-      caller.newPlayer.deletePlayer({ type: "original", id: 999_999_999 }),
+      caller.player.deletePlayer({ type: "original", id: 999_999_999 }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -85,7 +85,7 @@ describe("Player write mutations (newPlayer router)", () => {
       const { receiverCaller } = await createInsightsCallers(ids);
       const fixture = await createSharedPlayerFixture(ids);
 
-      await receiverCaller.newPlayer.deletePlayer({
+      await receiverCaller.player.deletePlayer({
         type: "shared",
         sharedId: fixture.sharedPlayerId,
       });
@@ -106,7 +106,7 @@ describe("Player write mutations (newPlayer router)", () => {
     const caller = createCallerFactory(appRouter)(ctx);
 
     await expect(
-      caller.newPlayer.deletePlayer({ type: "shared", sharedId: 999_999_999 }),
+      caller.player.deletePlayer({ type: "shared", sharedId: 999_999_999 }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -117,7 +117,7 @@ describe("Player write mutations (newPlayer router)", () => {
       const fixture = await createSharedPlayerFixture(ids);
 
       await expect(
-        receiverCaller.newPlayer.update({
+        receiverCaller.player.update({
           type: "shared",
           sharedId: fixture.sharedPlayerId,
           name: "Renamed By Recipient",
@@ -150,12 +150,12 @@ describe("Player write mutations (newPlayer router)", () => {
       fileSize: 1024,
     });
 
-    const created = await caller.newPlayer.create({
+    const created = await caller.player.create({
       name: "Has Image",
       imageId: image.id,
     });
 
-    await caller.newPlayer.update({
+    await caller.player.update({
       type: "original",
       id: created.id,
       updateValues: { type: "clearImage" },
@@ -176,12 +176,12 @@ describe("Player write mutations (newPlayer router)", () => {
     });
     const caller = createCallerFactory(appRouter)(ctx);
 
-    const created = await caller.newPlayer.create({
+    const created = await caller.player.create({
       name: "Share Me",
       imageId: null,
     });
 
-    const payload = await caller.newPlayer.getPlayerToShare({
+    const payload = await caller.player.getPlayerToShare({
       id: created.id,
     });
 

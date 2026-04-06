@@ -146,7 +146,7 @@ export async function createPlayersViaTrpc(
   const caller = createTrpcCaller(browserName);
   const players: { id: number; name: string }[] = [];
   for (let i = 1; i <= count; i++) {
-    const player = await caller.newPlayer.create({
+    const player = await caller.player.create({
       name: `${prefix} ${i}`,
       imageId: null,
     });
