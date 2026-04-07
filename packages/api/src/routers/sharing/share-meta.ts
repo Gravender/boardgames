@@ -580,6 +580,11 @@ export const shareMetaRouter = {
             sharedWithId: ctx.userId,
           },
         },
+        roles: {
+          where: {
+            deletedAt: { isNull: true },
+          },
+        },
         image: true,
       },
     });
@@ -601,6 +606,7 @@ export const shareMetaRouter = {
         playtimeMin: game.playtimeMin,
         description: game.description,
         matches: [...linkedMatches, ...game.matches],
+        roles: game.roles,
       };
     });
     return mappedGames;

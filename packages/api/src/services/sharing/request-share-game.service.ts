@@ -30,15 +30,14 @@ export async function executeRequestShareGame(args: {
       });
     }
 
-    await assertShareGamePayloadValid(tx, {
-      userId,
-      gameId: input.gameId,
-      sharedMatches: input.sharedMatches,
-      scoresheetIds: input.scoresheetsToShare.map((s) => s.scoresheetId),
-      gameRolesToShare: input.gameRolesToShare ?? [],
-    });
-
     if (input.type === "link") {
+      await assertShareGamePayloadValid(tx, {
+        userId,
+        gameId: input.gameId,
+        sharedMatches: input.sharedMatches,
+        scoresheetIds: input.scoresheetsToShare.map((s) => s.scoresheetId),
+        gameRolesToShare: input.gameRolesToShare ?? [],
+      });
       const [newShare] = await tx
         .insert(shareRequest)
         .values({
@@ -159,13 +158,32 @@ export async function executeRequestShareGame(args: {
       success: boolean;
       message: string;
     }[] = [];
+
+    for (const friendRow of input.friends) {
+      await assertShareGamePayloadValid(tx, {
+        userId,
+        gameId: input.gameId,
+        sharedMatches: friendRow.sharedMatches,
+        scoresheetIds: friendRow.scoresheetsToShare.map((s) => s.scoresheetId),
+        gameRolesToShare: friendRow.gameRolesToShare ?? [],
+      });
+    }
+
     for (const friendToShareTo of input.friends) {
+      const { id: friendId, ...recipientPayload } = friendToShareTo;
       const result2 = await requestShareGameToFriend(
         tx,
-        friendToShareTo,
+        { id: friendId },
         shareMessages,
         userId,
-        input,
+        {
+          gameId: input.gameId,
+          expiresAt: input.expiresAt,
+          permission: recipientPayload.permission,
+          sharedMatches: recipientPayload.sharedMatches,
+          scoresheetsToShare: recipientPayload.scoresheetsToShare,
+          gameRolesToShare: recipientPayload.gameRolesToShare ?? [],
+        },
         returnedGame,
       );
       if (!result2) {
@@ -173,7 +191,7 @@ export async function executeRequestShareGame(args: {
       }
       shareMessages.push({
         success: true,
-        message: `Shared ${returnedGame.name} with ${friendToShareTo.id}`,
+        message: `Shared ${returnedGame.name} with ${friendId}`,
       });
     }
     return {

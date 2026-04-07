@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, Medal, Trophy, Users } from "lucide-react";
+import { Users } from "lucide-react";
 
 import type { OriginalRole, SharedRole } from "@board-games/shared";
 import { getOrdinalSuffix, isSameRole } from "@board-games/shared";
@@ -11,6 +11,10 @@ import { Separator } from "@board-games/ui/separator";
 import { Skeleton } from "@board-games/ui/skeleton";
 import { cn } from "@board-games/ui/utils";
 
+import {
+  MatchOutcomePlacementIcons,
+  matchResultWinnerSurfaceClass,
+} from "~/components/match/match-result-outcome";
 import type { MatchInput } from "../types/input";
 import { PlayerImage } from "~/components/player-image";
 import {
@@ -139,9 +143,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                 aria-label={`Team: ${data.name}, ${data.winner ? "Winner" : "Loser"}${data.placement ? `, ${data.placement}${getOrdinalSuffix(data.placement)} place` : ""}`}
                 className={cn(
                   "rounded-lg border p-4",
-                  data.winner
-                    ? "border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20"
-                    : "",
+                  matchResultWinnerSurfaceClass(data.winner),
                 )}
               >
                 <div className="flex items-center justify-between gap-2 pb-4">
@@ -174,15 +176,11 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                   </div>
                   <div className="flex items-center gap-3">
                     {scoresheet.winCondition === "Manual" ? (
-                      data.winner ? (
-                        <span aria-label="Winner" role="img">
-                          ✔️
-                        </span>
-                      ) : (
-                        <span aria-label="Not winner" role="img">
-                          ❌
-                        </span>
-                      )
+                      <MatchOutcomePlacementIcons
+                        placement={data.placement}
+                        isManual
+                        isWinner={data.winner}
+                      />
                     ) : (
                       <>
                         <div
@@ -191,33 +189,12 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                         >
                           {data.score} pts
                         </div>
-                        {data.placement === 1 && (
-                          <Trophy
-                            className="ml-auto h-5 w-5 text-yellow-500"
-                            aria-label="1st place"
-                          />
-                        )}
-                        {data.placement === 2 && (
-                          <Medal
-                            className="ml-auto h-5 w-5 text-gray-400"
-                            aria-label="2nd place"
-                          />
-                        )}
-                        {data.placement === 3 && (
-                          <Award
-                            className="ml-auto h-5 w-5 text-amber-700"
-                            aria-label="3rd place"
-                          />
-                        )}
-                        {data.placement && data.placement > 3 && (
-                          <div
-                            className="flex h-6 w-6 items-center justify-center p-1 font-semibold"
-                            aria-label={`${data.placement}${getOrdinalSuffix(data.placement)} place`}
-                          >
-                            {data.placement}
-                            {getOrdinalSuffix(data.placement)}
-                          </div>
-                        )}
+                        <MatchOutcomePlacementIcons
+                          placement={data.placement}
+                          isManual={false}
+                          isWinner={data.winner}
+                          className="ml-auto"
+                        />
                       </>
                     )}
                   </div>
@@ -287,9 +264,7 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                 aria-label={`${data.name}, ${data.winner ? "Winner" : "Loser"}${data.placement ? `, ${data.placement}${getOrdinalSuffix(data.placement)} place` : ""}${data.score !== null ? `, ${data.score} points` : ""}`}
                 className={cn(
                   "flex items-center rounded-lg border p-3",
-                  data.winner
-                    ? "border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20"
-                    : "",
+                  matchResultWinnerSurfaceClass(data.winner === true),
                 )}
               >
                 <PlayerImage
@@ -324,47 +299,11 @@ export function ShareMatchResults(input: { match: MatchInput }) {
                       {data.score} pts
                     </div>
                   )}
-                  {scoresheet.winCondition === "Manual" ? (
-                    data.winner ? (
-                      <span aria-label="Winner" role="img">
-                        ✔️
-                      </span>
-                    ) : (
-                      <span aria-label="Not winner" role="img">
-                        ❌
-                      </span>
-                    )
-                  ) : (
-                    <>
-                      {data.placement === 1 && (
-                        <Trophy
-                          className="h-5 w-5 text-yellow-500"
-                          aria-label="1st place"
-                        />
-                      )}
-                      {data.placement === 2 && (
-                        <Medal
-                          className="h-5 w-5 text-gray-400"
-                          aria-label="2nd place"
-                        />
-                      )}
-                      {data.placement === 3 && (
-                        <Award
-                          className="h-5 w-5 text-amber-700"
-                          aria-label="3rd place"
-                        />
-                      )}
-                      {data.placement && data.placement > 3 && (
-                        <div
-                          className="flex h-6 w-6 items-center justify-center p-1 font-semibold"
-                          aria-label={`${data.placement}${getOrdinalSuffix(data.placement)} place`}
-                        >
-                          {data.placement}
-                          {getOrdinalSuffix(data.placement)}
-                        </div>
-                      )}
-                    </>
-                  )}
+                  <MatchOutcomePlacementIcons
+                    placement={data.placement}
+                    isManual={scoresheet.winCondition === "Manual"}
+                    isWinner={data.winner === true}
+                  />
                 </div>
               </div>
             );

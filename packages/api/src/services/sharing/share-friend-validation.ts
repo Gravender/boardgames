@@ -1,7 +1,4 @@
-import { subDays } from "date-fns";
-
 import type { TransactionType } from "@board-games/db/client";
-import { shareRequest } from "@board-games/db/schema";
 
 export const validateFriendSharingPermissions = async (
   transaction: TransactionType,
@@ -44,7 +41,13 @@ export const hasExistingShare = async (
   transaction: TransactionType,
   userId: string,
   friendId: string,
-  itemType: "game" | "match" | "player" | "location" | "scoresheet",
+  itemType:
+    | "game"
+    | "match"
+    | "player"
+    | "location"
+    | "scoresheet"
+    | "game_role",
   itemId: number,
 ) => {
   const existingShare = await transaction.query.shareRequest.findFirst({
@@ -57,12 +60,10 @@ export const hasExistingShare = async (
         { status: "accepted" },
         {
           status: "pending",
-          createdAt: {
-            gt: subDays(new Date(), 7),
-          },
-          parentShareId: {
-            isNull: true,
-          },
+          OR: [
+            { expiresAt: { isNull: true } },
+            { expiresAt: { gt: new Date() } },
+          ],
         },
       ],
     },

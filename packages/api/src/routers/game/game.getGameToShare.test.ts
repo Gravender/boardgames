@@ -67,6 +67,7 @@ describe("Game getGameToShare Tests", () => {
       if (match) {
         expect(match.name).toBe("Shared Match");
         expect(match.date).toBeDefined();
+        expect(match.scoresheetId).toBeGreaterThan(0);
         expect(Array.isArray(match.players)).toBe(true);
         expect(match.players.length).toBeGreaterThan(0);
       }

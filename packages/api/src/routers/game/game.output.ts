@@ -49,8 +49,15 @@ const getGameToShareMatchRow = z.object({
   name: z.string(),
   date: z.date(),
   duration: z.number(),
+  /** Scoresheet used for this session (shared when the match is shared). */
+  scoresheetId: z.number(),
   finished: z.boolean(),
-  locationName: z.string().optional(),
+  location: z
+    .object({
+      id: z.number(),
+      name: z.string(),
+    })
+    .optional(),
   players: z.array(
     z.object({
       id: z.number(),
@@ -125,6 +132,16 @@ export const getGameToShareOutput = z.object({
       roundsScore: z.enum(["Aggregate", "Best Of", "Manual", "None"]),
       gameId: z.number(),
       createdBy: z.string(),
+      rounds: z.array(
+        z.object({
+          id: z.number(),
+          name: z.string(),
+          order: z.number(),
+          type: z.enum(["Numeric", "Checkbox"]),
+          color: z.string().nullable(),
+          score: z.number(),
+        }),
+      ),
     }),
   ),
 });

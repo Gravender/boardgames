@@ -184,8 +184,12 @@ class GameListService {
       name: rMatch.name,
       date: rMatch.date,
       duration: rMatch.duration,
+      scoresheetId: rMatch.scoresheetId,
       finished: rMatch.finished,
-      locationName: rMatch.location?.name,
+      location:
+        rMatch.location != null
+          ? { id: rMatch.location.id, name: rMatch.location.name }
+          : undefined,
       players: rMatch.matchPlayers
         .map((mp) => ({
           id: mp.player.id,
@@ -238,6 +242,26 @@ class GameListService {
       description: role.description,
     }));
 
+    const scoresheets = result.scoresheets.map((s) => ({
+      id: s.id,
+      name: s.name,
+      type: s.type,
+      isCoop: s.isCoop,
+      winCondition: s.winCondition,
+      targetScore: s.targetScore,
+      roundsScore: s.roundsScore,
+      gameId: s.gameId,
+      createdBy: s.createdBy,
+      rounds: (s.rounds ?? []).map((r) => ({
+        id: r.id,
+        name: r.name,
+        order: r.order,
+        type: r.type,
+        color: r.color,
+        score: r.score,
+      })),
+    }));
+
     return {
       id: result.id,
       name: result.name,
@@ -256,7 +280,7 @@ class GameListService {
       matches: finishedMatches,
       gameRoles,
       locationsReferenced: [...locationMap.values()],
-      scoresheets: result.scoresheets,
+      scoresheets,
     };
   }
 }

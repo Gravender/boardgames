@@ -40,7 +40,8 @@ const formHook = createFormHook({
   formContext,
 });
 
-export const { useAppForm, withForm, withFieldGroup } = formHook;
+export const { useAppForm, withForm, withFieldGroup, useTypedAppFormContext } =
+  formHook;
 
 export {
   fieldContext,
