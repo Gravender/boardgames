@@ -1,0 +1,11 @@
+---
+description: UI primitives use Base UI via @board-games/ui — not Radix
+globs: packages/ui/**/*.{tsx,ts},apps/web/**/*.{tsx,ts}
+alwaysApply: false
+---
+
+- **`@board-games/ui`** wraps [**Base UI** (`@base-ui/react`)](https://base-ui.com/react) for dialogs, popovers, selects, tabs, etc. This project does **not** use Radix UI for those primitives.
+- Prefer **existing components** under `packages/ui/src/components/` over importing `@base-ui/react` directly in app code unless you are extending the design system.
+- **Avoid** Radix-specific assumptions: `--radix-*` CSS variables, Radix package imports, and Radix-only docs/snippets unless you translate them to Base UI + our wrappers.
+- **Command** (`cmdk`) is used for command palettes via `@board-games/ui/command`; that layer is independent of Base UI primitives.
+- See [CLAUDE.md](CLAUDE.md) (UI primitives section) for the full convention.

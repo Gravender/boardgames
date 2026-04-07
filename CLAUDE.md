@@ -10,6 +10,12 @@ This is a monorepo for tracking board games, players, matches, scoresheets, and 
 - **Backend**: tRPC, Drizzle ORM, PostgreSQL
 - **Package manager**: Bun (root `package.json`); use `bun install`, `bun run`, and `bunx`.
 
+### UI primitives (Base UI, not Radix)
+
+- Interactive primitives in **`packages/ui`** are built on [**Base UI** (`@base-ui/react`)](https://base-ui.com/react), not Radix UI.
+- Import from **`@board-games/ui/...`** (wrappers in `packages/ui/src/components/`) rather than adding Radix packages or following Radix-only APIs.
+- **Do not** assume Radix variable names (e.g. `--radix-*`), component names, or docs when styling or debugging popovers, dialogs, selects, etc.; verify against this repo’s components and [Base UI documentation](https://base-ui.com/react).
+
 ### Code Style
 
 - **TypeScript**: Strict mode enabled, use type inference where appropriate

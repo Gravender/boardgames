@@ -50,6 +50,13 @@ import {
   PopoverTrigger,
 } from "@board-games/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@board-games/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@board-games/ui/select";
 import { Separator } from "@board-games/ui/separator";
 
 import { GameImage } from "~/components/game-image";
@@ -62,6 +69,12 @@ type Game = Extract<
   RouterOutputs["sharing"]["getShareRequest"],
   { itemType: "game" }
 >;
+
+type UserGameForLinking =
+  RouterOutputs["sharing"]["getUserGamesForLinking"][number];
+type UserGameForLinkingWithRoles = UserGameForLinking & {
+  roles: { id: number; name: string }[];
+};
 const formSchema = z
   .object({
     gameOption: z.enum(["new", "existing"]),
@@ -71,6 +84,13 @@ const formSchema = z
       z.object({
         sharedId: z.number(),
         accept: z.boolean(),
+      }),
+    ),
+    gameRoles: z.array(
+      z.object({
+        sharedId: z.number(),
+        accept: z.boolean(),
+        linkedGameRoleId: z.number().optional(),
       }),
     ),
   })
@@ -149,6 +169,10 @@ export default function GameRequestPage({
     return game.childItems.filter((item) => item.itemType === "scoresheet");
   }, [game.childItems]);
 
+  const childGameRoles = useMemo(() => {
+    return game.childItems.filter((item) => item.itemType === "game_role");
+  }, [game.childItems]);
+
   const filteredGames = useMemo(() => {
     return usersGames.filter((game) =>
       game.name.toLowerCase().includes(gameSearchQuery.toLowerCase()),
@@ -164,8 +188,35 @@ export default function GameRequestPage({
         sharedId: scoresheet.shareId,
         accept: true,
       })),
+      gameRoles: childGameRoles.map((role) => ({
+        sharedId: role.shareId,
+        accept: true,
+        linkedGameRoleId: undefined,
+      })),
     },
   });
+
+  const [gameOption, existingGameId] = form.watch([
+    "gameOption",
+    "existingGameId",
+  ]);
+  const gameRolesWatched = form.watch("gameRoles");
+
+  const selectedGameRoles = useMemo((): { id: number; name: string }[] => {
+    if (!existingGameId) {
+      return [];
+    }
+    const g = usersGames.find((game) => game.id === existingGameId) as
+      | UserGameForLinkingWithRoles
+      | undefined;
+    return g?.roles ?? [];
+  }, [usersGames, existingGameId]);
+
+  const acceptedGameRoles = useMemo(
+    () => gameRolesWatched.filter((r) => r.accept).length,
+    [gameRolesWatched],
+  );
+
   const onSubmit = (data: FormValues) => {
     setSubmitting(true);
     acceptGameRequestMutation.mutate({
@@ -191,6 +242,13 @@ export default function GameRequestPage({
         sharedId: player.sharedId,
         accept: player.accept,
         linkedId: player.linkedId ?? undefined,
+      })),
+      gameRoles: data.gameRoles.map((role) => ({
+        sharedId: role.sharedId,
+        accept: role.accept,
+        ...(role.linkedGameRoleId !== undefined
+          ? { linkedGameRoleId: role.linkedGameRoleId }
+          : {}),
       })),
     });
   };
@@ -597,6 +655,162 @@ export default function GameRequestPage({
               </>
             )}
 
+            {childGameRoles.length > 0 && (
+              <>
+                <Separator />
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">Game roles</h3>
+                    <p className="text-muted-foreground text-sm">
+                      {acceptedGameRoles} of {childGameRoles.length} accepted
+                    </p>
+                  </div>
+                  <div className="space-y-4">
+                    {childGameRoles.map((roleItem) => {
+                      const roleIdx = form
+                        .getValues("gameRoles")
+                        .findIndex((r) => r.sharedId === roleItem.shareId);
+                      if (roleIdx < 0) {
+                        return null;
+                      }
+                      const sharedRole = roleItem.item;
+
+                      return (
+                        <div
+                          key={sharedRole.id}
+                          className="flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div>
+                            <p className="font-medium">{sharedRole.name}</p>
+                            {sharedRole.description ? (
+                              <p className="text-muted-foreground text-sm">
+                                {sharedRole.description}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="flex flex-col gap-3 sm:items-end">
+                            <Badge
+                              variant={
+                                roleItem.permission === "edit"
+                                  ? "default"
+                                  : "secondary"
+                              }
+                            >
+                              {roleItem.permission === "edit"
+                                ? "Edit Access"
+                                : "View Only"}
+                            </Badge>
+                            <FormField
+                              control={form.control}
+                              name={`gameRoles.${roleIdx}.accept`}
+                              render={({ field }) => (
+                                <FormItem className="flex items-center space-x-2">
+                                  <FormControl>
+                                    <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
+                                      <Button
+                                        type="button"
+                                        variant={
+                                          field.value ? "default" : "outline"
+                                        }
+                                        size="sm"
+                                        className="w-24"
+                                        onClick={() => field.onChange(true)}
+                                      >
+                                        <ThumbsUp className="mr-2 h-4 w-4" />
+                                        Accept
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant={
+                                          field.value ? "outline" : "default"
+                                        }
+                                        size="sm"
+                                        className="w-24"
+                                        onClick={() => field.onChange(false)}
+                                      >
+                                        <ThumbsDown className="mr-2 h-4 w-4" />
+                                        Reject
+                                      </Button>
+                                    </div>
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`gameRoles.${roleIdx}.linkedGameRoleId`}
+                              render={({ field }) => (
+                                <FormItem className="w-full max-w-xs space-y-1">
+                                  <Label
+                                    htmlFor={`game-role-link-${sharedRole.id}`}
+                                    className="text-muted-foreground text-xs"
+                                  >
+                                    Link to your role (when linking game)
+                                  </Label>
+                                  <FormControl>
+                                    <Select
+                                      disabled={
+                                        gameOption !== "existing" ||
+                                        !existingGameId ||
+                                        !gameRolesWatched[roleIdx]?.accept
+                                      }
+                                      value={
+                                        field.value != null
+                                          ? String(field.value)
+                                          : "__none__"
+                                      }
+                                      onValueChange={(v) =>
+                                        field.onChange(
+                                          v === "__none__"
+                                            ? undefined
+                                            : Number(v),
+                                        )
+                                      }
+                                    >
+                                      <SelectTrigger
+                                        id={`game-role-link-${sharedRole.id}`}
+                                        className="w-full"
+                                        aria-label={`Link shared role ${sharedRole.name} to one of your roles`}
+                                      >
+                                        <SelectValue placeholder="No link" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="__none__">
+                                          No link
+                                        </SelectItem>
+                                        {selectedGameRoles.map((r) => (
+                                          <SelectItem
+                                            key={r.id}
+                                            value={String(r.id)}
+                                          >
+                                            {r.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </FormControl>
+                                  {gameOption === "existing" &&
+                                    existingGameId &&
+                                    selectedGameRoles.length === 0 && (
+                                      <p className="text-muted-foreground text-xs">
+                                        This game has no roles yet. Add roles to
+                                        your game or pick another game to link.
+                                      </p>
+                                    )}
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+
             <div className="rounded-md bg-blue-50 p-4">
               <h4 className="mb-2 text-sm font-medium text-blue-700">
                 Summary of items to be added:
@@ -666,6 +880,12 @@ export default function GameRequestPage({
                   <li>
                     {acceptedLocations} Location
                     {acceptedLocations !== 1 ? "s" : ""}
+                  </li>
+                )}
+                {childGameRoles.length > 0 && acceptedGameRoles > 0 && (
+                  <li>
+                    {acceptedGameRoles} Game role
+                    {acceptedGameRoles !== 1 ? "s" : ""}
                   </li>
                 )}
               </ul>

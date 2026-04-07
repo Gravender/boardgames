@@ -11,8 +11,6 @@ await jiti.import("@board-games/env/web");
 
 /** @type {import("next").NextConfig} */
 let nextConfig = {
-  typedRoutes: true,
-  reactCompiler: true,
   images: {
     remotePatterns: [
       { hostname: "utfs.io" },

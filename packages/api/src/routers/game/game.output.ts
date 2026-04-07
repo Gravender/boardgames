@@ -44,6 +44,45 @@ export const getGamesOutput = z.array(
 export type GetGamesOutputType = z.infer<typeof getGamesOutput>;
 
 // ─── getGameToShare ──────────────────────────────────────────
+const getGameToShareMatchRow = z.object({
+  id: z.number(),
+  name: z.string(),
+  date: z.date(),
+  duration: z.number(),
+  /** Scoresheet used for this session (shared when the match is shared). */
+  scoresheetId: z.number(),
+  finished: z.boolean(),
+  location: z
+    .object({
+      id: z.number(),
+      name: z.string(),
+    })
+    .optional(),
+  players: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      score: z.number().nullable(),
+      isWinner: z.boolean().nullable(),
+      playerId: z.number(),
+      team: z
+        .object({
+          id: z.number(),
+          name: z.string(),
+          matchId: z.number(),
+        })
+        .nullable(),
+    }),
+  ),
+  teams: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      matchId: z.number(),
+    }),
+  ),
+});
+
 export const getGameToShareOutput = z.object({
   id: z.number(),
   name: z.string(),
@@ -57,36 +96,23 @@ export const getGameToShareOutput = z.object({
     max: z.number().nullable(),
   }),
   yearPublished: z.number().nullable(),
-  matches: z.array(
+  /** Finished matches (same as legacy `matches`) */
+  finishedMatches: z.array(getGameToShareMatchRow),
+  /** In-progress / not finished matches */
+  unfinishedMatches: z.array(getGameToShareMatchRow),
+  /** @deprecated Use finishedMatches — kept for older clients */
+  matches: z.array(getGameToShareMatchRow),
+  gameRoles: z.array(
     z.object({
       id: z.number(),
       name: z.string(),
-      date: z.date(),
-      duration: z.number(),
-      locationName: z.string().optional(),
-      players: z.array(
-        z.object({
-          id: z.number(),
-          name: z.string(),
-          score: z.number().nullable(),
-          isWinner: z.boolean().nullable(),
-          playerId: z.number(),
-          team: z
-            .object({
-              id: z.number(),
-              name: z.string(),
-              matchId: z.number(),
-            })
-            .nullable(),
-        }),
-      ),
-      teams: z.array(
-        z.object({
-          id: z.number(),
-          name: z.string(),
-          matchId: z.number(),
-        }),
-      ),
+      description: z.string().nullable(),
+    }),
+  ),
+  locationsReferenced: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
     }),
   ),
   scoresheets: z.array(
@@ -106,6 +132,16 @@ export const getGameToShareOutput = z.object({
       roundsScore: z.enum(["Aggregate", "Best Of", "Manual", "None"]),
       gameId: z.number(),
       createdBy: z.string(),
+      rounds: z.array(
+        z.object({
+          id: z.number(),
+          name: z.string(),
+          order: z.number(),
+          type: z.enum(["Numeric", "Checkbox"]),
+          color: z.string().nullable(),
+          score: z.number(),
+        }),
+      ),
     }),
   ),
 });

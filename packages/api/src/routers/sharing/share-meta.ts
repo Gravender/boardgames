@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod/v4";
 
 import type {
+  selectGameRoleSchema,
   selectGameSchema,
   selectImageSchema,
   selectLocationSchema,
@@ -77,6 +78,12 @@ export const shareMetaRouter = {
             itemType: "location";
             shareId: number;
             item: z.infer<typeof selectLocationSchema>;
+            permission: "view" | "edit";
+          }
+        | {
+            itemType: "game_role";
+            shareId: number;
+            item: z.infer<typeof selectGameRoleSchema>;
             permission: "view" | "edit";
           }
       )[] = [];
@@ -197,6 +204,27 @@ export const shareMetaRouter = {
               itemType: "location",
               shareId: childShareRequest.id,
               item: returnedLocation,
+              permission: childShareRequest.permission,
+            });
+          }
+          if (childShareRequest.itemType === "game_role") {
+            const returnedGameRole = await ctx.db.query.gameRole.findFirst({
+              where: {
+                id: childShareRequest.itemId,
+                createdBy: sharedItem.ownerId,
+                deletedAt: { isNull: true },
+              },
+            });
+            if (!returnedGameRole) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Game role not found",
+              });
+            }
+            childItems.push({
+              itemType: "game_role",
+              shareId: childShareRequest.id,
+              item: returnedGameRole,
               permission: childShareRequest.permission,
             });
           }
@@ -552,6 +580,11 @@ export const shareMetaRouter = {
             sharedWithId: ctx.userId,
           },
         },
+        roles: {
+          where: {
+            deletedAt: { isNull: true },
+          },
+        },
         image: true,
       },
     });
@@ -573,6 +606,7 @@ export const shareMetaRouter = {
         playtimeMin: game.playtimeMin,
         description: game.description,
         matches: [...linkedMatches, ...game.matches],
+        roles: game.roles,
       };
     });
     return mappedGames;

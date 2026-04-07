@@ -15,6 +15,7 @@ import {
 } from "@board-games/db/schema";
 
 import { protectedUserProcedure } from "../../trpc";
+import { acceptGameRoleShare } from "../../services/sharing/accept-game-role-share";
 import { createSharedScoresheetWithRounds } from "../../utils/sharing";
 
 export const shareAcceptanceRouter = {
@@ -51,6 +52,16 @@ export const shareAcceptanceRouter = {
             linkedId: z.number().optional(),
           }),
         ),
+        gameRoles: z
+          .array(
+            z.object({
+              sharedId: z.number(),
+              accept: z.boolean(),
+              linkedGameRoleId: z.number().optional(),
+            }),
+          )
+          .optional()
+          .default([]),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -171,6 +182,19 @@ export const shareAcceptanceRouter = {
               );
             }
           }
+        }
+        for (const gameRoleShareRequest of input.gameRoles ?? []) {
+          await acceptGameRoleShare(tx, {
+            userId: ctx.userId,
+            parentGameRequest: {
+              id: existingRequest.id,
+              ownerId: existingRequest.ownerId,
+              itemId: existingRequest.itemId,
+            },
+            gameRoleShareRequest,
+            sharedGameExists,
+            linkedGameId: input.linkedGameId,
+          });
         }
         for (const locationShareRequest of input.locations) {
           const returnedLocationRequest = await tx.query.shareRequest.findFirst(

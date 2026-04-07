@@ -60,6 +60,16 @@ if (
   Element.prototype.getAnimations = () => [];
 }
 
+/** cmdk / Command calls `scrollIntoView` on list items (not in jsdom). */
+if (
+  typeof Element !== "undefined" &&
+  typeof Element.prototype.scrollIntoView !== "function"
+) {
+  Element.prototype.scrollIntoView = function scrollIntoView() {
+    return undefined;
+  };
+}
+
 afterEach(() => {
   cleanup();
 });

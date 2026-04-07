@@ -241,7 +241,7 @@ class GameRepository {
   }
 
   public async getGameForSharing(args: { gameId: number; userId: string }) {
-    return db.query.game.findFirst({
+    const result = await db.query.game.findFirst({
       where: {
         id: args.gameId,
         createdBy: args.userId,
@@ -251,6 +251,14 @@ class GameRepository {
       },
       with: {
         matches: {
+          where: {
+            deletedAt: {
+              isNull: true,
+            },
+          },
+          orderBy: {
+            date: "desc",
+          },
           with: {
             matchPlayers: {
               with: {
@@ -261,12 +269,35 @@ class GameRepository {
             location: true,
             teams: true,
           },
-          orderBy: (matches, { desc }) => [desc(matches.date)],
         },
-        scoresheets: true,
+        roles: {
+          where: {
+            deletedAt: {
+              isNull: true,
+            },
+          },
+        },
+        scoresheets: {
+          where: {
+            deletedAt: {
+              isNull: true,
+            },
+          },
+          with: {
+            rounds: {
+              orderBy: { order: "asc" },
+              where: {
+                deletedAt: {
+                  isNull: true,
+                },
+              },
+            },
+          },
+        },
         image: true,
       },
     });
+    return result;
   }
 
   public async softDeleteGame(args: { gameId: number; userId: string }) {

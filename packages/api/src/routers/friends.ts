@@ -11,6 +11,7 @@ import { mapMatches } from "../utils/game";
 import { collectShares } from "../utils/sharing";
 import {
   friendSettingsSchema,
+  friendSharingDefaultsSchema,
   getFriendSettingsOutput,
 } from "./friend/friend.output";
 
@@ -267,6 +268,7 @@ export const friendsRouter = {
       with: {
         friend: true,
         friendPlayer: true,
+        friendSetting: true,
       },
     });
     const mappedFriends: {
@@ -282,7 +284,18 @@ export const friendsRouter = {
       } | null;
       createdAt: Date;
       linkedPlayerFound: boolean;
+      sharingDefaults: z.infer<typeof friendSharingDefaultsSchema> | null;
     }[] = returnedFriends.map((returnedFriend) => {
+      const fs = returnedFriend.friendSetting;
+      const sharingDefaults =
+        fs != null
+          ? friendSharingDefaultsSchema.parse({
+              game: fs.defaultPermissionForGame,
+              matches: fs.defaultPermissionForMatches,
+              scoresheetPlayers: fs.defaultPermissionForPlayers,
+              location: fs.defaultPermissionForLocation,
+            })
+          : null;
       return {
         id: returnedFriend.friend.id,
         name: returnedFriend.friend.name,
@@ -299,6 +312,7 @@ export const friendsRouter = {
             : null,
         createdAt: returnedFriend.createdAt,
         linkedPlayerFound: returnedFriend.friendPlayer !== null,
+        sharingDefaults,
       };
     });
     return mappedFriends;

@@ -9,4 +9,4 @@ alwaysApply: true
 - Shared TypeScript bases live in `@board-games/config` (`packages/config`). Env validation for Next.js is in `@board-games/env` (`packages/env`, import `@board-games/env/web`).
 - Stack-specific agent guidance also lives under `.agents/skills/` (copied from the next-example pattern).
 
-See [CLAUDE.md](CLAUDE.md) for commands and conventions.
+See [CLAUDE.md](CLAUDE.md) for commands and conventions. UI primitives use Base UI via `@board-games/ui` (not Radix); see `.cursor/rules/base-ui-primitives.mdc` and `.agents/skills/base-ui-primitives/SKILL.md`.
