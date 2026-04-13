@@ -50,7 +50,7 @@ test.describe("Match Create - Basic", () => {
     await createPlayersViaTrpc(browserName, 2, browserName + "_MCPlayer");
 
     // 3. Navigate to game detail page
-    await page.goto(`/dashboard/games/${createdGame.id}`);
+    await page.goto(`/games/${createdGame.id}`);
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
       browserGameName,
       { timeout: 15000 },
@@ -116,7 +116,7 @@ test.describe("Match Create - Basic", () => {
 
     // 12. Wait for navigation to the match scoresheet page
     await expect(page).toHaveURL(
-      new RegExp(`\\/dashboard\\/games\\/${createdGame.id}\\/\\d+$`),
+      new RegExp(`\\/games\\/${createdGame.id}\\/\\d+$`),
       { timeout: 20000 },
     );
 

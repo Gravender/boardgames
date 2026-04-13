@@ -90,7 +90,7 @@ export function PlayerDropDown({
           <DropdownMenuItem
             render={
               <Link
-                href={`/dashboard/players${data.type === "original" ? "/" : "/shared/"}${playerId}/stats`}
+                href={`/players${data.type === "original" ? "/" : "/shared/"}${playerId}/stats`}
               >
                 Stats
               </Link>

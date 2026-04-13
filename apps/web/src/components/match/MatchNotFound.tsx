@@ -44,7 +44,7 @@ export function MatchNotFound({
           </Link>
 
           <Link
-            href="/dashboard/games"
+            href="/games"
             className={buttonVariants({ variant: "outline", size: "lg" })}
           >
             <Search className="mr-2 h-5 w-5" />

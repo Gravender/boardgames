@@ -50,9 +50,7 @@ export function PlayerInsightsHeroSection({
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   const shareHref =
-    playerInput.type === "original"
-      ? `/dashboard/players/${playerInput.id}/share`
-      : null;
+    playerInput.type === "original" ? `/players/${playerInput.id}/share` : null;
 
   const canEdit =
     header.type === "original" ||

@@ -43,10 +43,10 @@ const gameStatsHref = (
   game: Data["games"][number],
 ): { href: string; label: string } => {
   if (game.type === "original") {
-    return { href: `/dashboard/games/${game.id}/stats`, label: game.name };
+    return { href: `/games/${game.id}/stats`, label: game.name };
   }
   return {
-    href: `/dashboard/games/shared/${game.sharedGameId}/stats`,
+    href: `/games/shared/${game.sharedGameId}/stats`,
     label: game.name,
   };
 };

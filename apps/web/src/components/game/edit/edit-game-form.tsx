@@ -172,7 +172,7 @@ export function EditGameForm({
           onSuccess: () => {
             form.reset();
             setImagePreview(null);
-            router.push(`/dashboard/games`);
+            router.push(`/games`);
           },
           onSettled: () => {
             setIsUploading(false);

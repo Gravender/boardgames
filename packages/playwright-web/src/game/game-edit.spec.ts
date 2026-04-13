@@ -33,7 +33,7 @@ test.describe("Game Edit Page", () => {
   }) => {
     const browserGameName = browserName + "_" + GAME_NAME;
     // Navigate back to games list page to access the menu
-    await page.goto("/dashboard/games");
+    await page.goto("/games");
     await page
       .getByRole("textbox", { name: "Search games..." })
       .fill(browserGameName);
@@ -42,12 +42,12 @@ test.describe("Game Edit Page", () => {
     await menuButton.click();
     await page.getByRole("menuitem", { name: "Edit" }).click();
     // Wait for navigation to edit page
-    await page.waitForURL(/\/dashboard\/games\/\d+\/edit/, {
+    await page.waitForURL(/\/games\/\d+\/edit/, {
       timeout: 5000,
     });
 
     // Verify we're on edit page
-    await expect(page).toHaveURL(`/dashboard/games/${gameId}/edit`);
+    await expect(page).toHaveURL(`/games/${gameId}/edit`);
     await expect(page.getByRole("textbox", { name: "Game Name" })).toHaveValue(
       browserGameName,
     );
@@ -58,7 +58,7 @@ test.describe("Game Edit Page", () => {
     const editedName = browserGameName + " Edited";
 
     // Navigate to edit page
-    await page.goto(`/dashboard/games/${gameId}/edit`);
+    await page.goto(`/games/${gameId}/edit`);
 
     // Edit game name
     const nameInput = page.getByRole("textbox", { name: "Game Name" });
@@ -69,7 +69,7 @@ test.describe("Game Edit Page", () => {
     await page.getByRole("button", { name: "Submit" }).click();
 
     // Verify change persisted
-    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await page.waitForURL(/\/games/, { timeout: 5000 });
 
     await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
       timeout: 10000,
@@ -85,7 +85,7 @@ test.describe("Game Edit Page", () => {
 
   test("Form validation", async ({ page }) => {
     // Navigate to edit page
-    await page.goto(`/dashboard/games/${gameId}/edit`);
+    await page.goto(`/games/${gameId}/edit`);
 
     // Clear required field
     const nameInput = page.getByRole("textbox", { name: "Game Name" });
@@ -100,7 +100,7 @@ test.describe("Game Edit Page", () => {
 
   test("Change game image to different SVG icon", async ({ page }) => {
     // Navigate to edit page
-    await page.goto(`/dashboard/games/${gameId}/edit`);
+    await page.goto(`/games/${gameId}/edit`);
 
     // Open icon selector (assuming there's a button or popover to change icon)
     // Look for icon selector - it might be in a popover or button
@@ -114,7 +114,7 @@ test.describe("Game Edit Page", () => {
     await page.getByRole("button", { name: "Submit" }).click();
 
     // Verify change persisted
-    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await page.waitForURL(/\/games/, { timeout: 5000 });
     await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
       timeout: 10000,
     });
@@ -148,7 +148,7 @@ test.describe("Game Edit Page", () => {
     gameId = createdGame.id;
 
     // Navigate to edit page
-    await page.goto(`/dashboard/games/${gameId}/edit`);
+    await page.goto(`/games/${gameId}/edit`);
 
     // Find the scoresheet section and switch to the alternative scoresheet
     // Look for scoresheet tabs or buttons
@@ -168,13 +168,13 @@ test.describe("Game Edit Page", () => {
     await page.getByRole("button", { name: "Submit" }).click();
     await page.getByRole("button", { name: "Submit" }).click();
     // Verify change persisted
-    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await page.waitForURL(/\/games/, { timeout: 5000 });
     await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
       timeout: 10000,
     });
 
     // Verify default changed by navigating back
-    await page.goto(`/dashboard/games/${gameId}/edit`);
+    await page.goto(`/games/${gameId}/edit`);
 
     // Check that Alternative Scoresheet is now default
     const altScoresheetButton = page.getByText("Alternative Scoresheet");
@@ -208,7 +208,7 @@ test.describe("Game Edit Page", () => {
     gameId = createdGame.id;
 
     // Navigate to edit page
-    await page.goto(`/dashboard/games/${gameId}/edit`);
+    await page.goto(`/games/${gameId}/edit`);
 
     // Navigate to scoresheet section
     const scoresheetButton = page.getByText("Test Scoresheet");
@@ -227,13 +227,13 @@ test.describe("Game Edit Page", () => {
     await page.getByRole("button", { name: "Submit" }).click();
 
     // Verify change persisted
-    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await page.waitForURL(/\/games/, { timeout: 5000 });
     await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
       timeout: 10000,
     });
 
     // Verify rounds count changed
-    await page.goto(`/dashboard/games/${gameId}/edit`);
+    await page.goto(`/games/${gameId}/edit`);
 
     const editedScoresheetButton = page.getByText("Test Scoresheet");
     await editedScoresheetButton.click();
@@ -245,7 +245,7 @@ test.describe("Game Edit Page", () => {
 
   test("Add scoresheet", async ({ page }) => {
     // Navigate to edit page
-    await page.goto(`/dashboard/games/${gameId}/edit`);
+    await page.goto(`/games/${gameId}/edit`);
 
     // Click "Create New" button in scoresheet section
     const createButton = page.getByRole("button", { name: "Create New" });
@@ -282,13 +282,13 @@ test.describe("Game Edit Page", () => {
     await page.getByRole("button", { name: "Submit" }).click();
 
     // Verify change persisted
-    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await page.waitForURL(/\/games/, { timeout: 5000 });
     await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
       timeout: 10000,
     });
 
     // Verify scoresheet was added
-    await page.goto(`/dashboard/games/${gameId}/edit`);
+    await page.goto(`/games/${gameId}/edit`);
 
     // Check that the new scoresheet is visible
     await expect(page.getByText("New Scoresheet")).toBeVisible();
@@ -317,7 +317,7 @@ test.describe("Game Edit Page", () => {
     gameId = createdGame.id;
 
     // Navigate to edit page
-    await page.goto(`/dashboard/games/${gameId}/edit`);
+    await page.goto(`/games/${gameId}/edit`);
 
     await page.locator('button[name="removeScoresheet-Scoresheet 2"]').click();
 
@@ -325,13 +325,13 @@ test.describe("Game Edit Page", () => {
     await page.getByRole("button", { name: "Submit" }).click();
 
     // Verify change persisted
-    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await page.waitForURL(/\/games/, { timeout: 5000 });
     await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
       timeout: 10000,
     });
 
     // Verify scoresheet was deleted
-    await page.goto(`/dashboard/games/${gameId}/edit`);
+    await page.goto(`/games/${gameId}/edit`);
 
     // Check that Scoresheet 2 is no longer visible
     await expect(page.getByText("Scoresheet 2")).not.toBeVisible();

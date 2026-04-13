@@ -20,16 +20,11 @@ export function BreadCrumbs() {
   const trpc = useTRPC();
   const paths = usePathname();
 
-  const segments = paths.split("/").slice(2);
+  const parts = paths.split("/").filter(Boolean);
 
   const { data } = useQuery(
     trpc.dashboard.getBreadCrumbs.queryOptions({
-      rootHref: paths
-        .split("/")
-        .filter((path) => path)
-        .slice(0, 1)
-        .join("/"),
-      segments: segments,
+      segments: parts,
     }),
   );
 
@@ -37,21 +32,14 @@ export function BreadCrumbs() {
     <RenderBreadCrumbs
       pathItems={
         data ??
-        paths
-          .split("/")
-          .filter((path) => path)
-          .slice(1)
-          .map((path, i) => {
-            if (Number(path)) return null;
+        parts
+          .map((segment, i) => {
+            if (Number(segment)) return null;
             return {
-              name: path
+              name: segment
                 .replace(/-/g, " ")
                 .replace(/\b\w/g, (c) => c.toUpperCase()),
-              path: paths
-                .split("/")
-                .filter((path) => path)
-                .slice(0, i + 1)
-                .join("/"),
+              path: parts.slice(0, i + 1).join("/"),
             };
           })
           .filter((pathItem) => pathItem !== null)

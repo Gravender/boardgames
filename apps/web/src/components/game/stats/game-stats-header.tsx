@@ -57,7 +57,7 @@ function GameStatsHeaderContent({ gameInput }: GameStatsHeaderProps) {
               </div>
               {gameInput.type === "original" && (
                 <Link
-                  href={`/dashboard/games/${gameInput.id}/share`}
+                  href={`/games/${gameInput.id}/share`}
                   className={buttonVariants({
                     className: "gap-2",
                   })}

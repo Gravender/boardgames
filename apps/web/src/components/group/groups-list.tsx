@@ -93,7 +93,7 @@ export const GroupsList = () => {
               >
                 <Link
                   prefetch={true}
-                  href={`/dashboard/groups/${group.id}`}
+                  href={`/groups/${group.id}`}
                   className="flex min-w-0 flex-1 items-center gap-3 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <ItemMedia variant="icon" className="max-w-22 justify-start">

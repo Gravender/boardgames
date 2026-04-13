@@ -216,7 +216,7 @@ export function gameAriaText(
 }
 
 export async function navigateToGameEdit(page: Page, gameId: number) {
-  await page.goto(`/dashboard/games/${gameId}/edit`);
+  await page.goto(`/games/${gameId}/edit`);
 }
 
 export async function findGameLink(page: Page, gameName: string) {
