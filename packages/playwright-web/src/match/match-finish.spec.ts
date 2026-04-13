@@ -75,7 +75,7 @@ test.describe("Match Finish", () => {
     await finishButton.click();
 
     // With distinct scores (50 vs 30), placements are unique → auto-navigate
-    await expect(page).toHaveURL(/\/dashboard\/games\/\d+\/\d+\/summary/, {
+    await expect(page).toHaveURL(/\/games\/\d+\/\d+\/summary/, {
       timeout: 20000,
     });
 
@@ -174,7 +174,7 @@ test.describe("Match Finish", () => {
     await okButton.click();
 
     // Should navigate to summary
-    await expect(page).toHaveURL(/\/dashboard\/games\/\d+\/\d+\/summary/, {
+    await expect(page).toHaveURL(/\/games\/\d+\/\d+\/summary/, {
       timeout: 20000,
     });
 

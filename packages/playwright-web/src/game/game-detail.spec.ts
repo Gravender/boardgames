@@ -28,7 +28,7 @@ test.describe("Game Detail Page", () => {
     await page.getByRole("link", { name: browserGameName }).click();
 
     // Verify we're on the game detail page
-    await expect(page).toHaveURL(/\/dashboard\/games\/\d+/);
+    await expect(page).toHaveURL(/\/games\/\d+/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
       browserGameName,
     );
@@ -71,7 +71,7 @@ test.describe("Game Detail Page", () => {
     // Verify statistics link exists
     await expect(page.getByRole("link", { name: "Stats" })).toBeVisible();
     await page.getByRole("link", { name: "Stats" }).click();
-    await expect(page).toHaveURL(/\/dashboard\/games\/\d+\/stats/);
+    await expect(page).toHaveURL(/\/games\/\d+\/stats/);
   });
 
   test("Verify match history display", async ({ page, browserName }) => {
@@ -84,7 +84,7 @@ test.describe("Game Detail Page", () => {
       page.getByRole("link", { name: browserGameName }),
     ).toBeVisible();
     await page.getByRole("link", { name: browserGameName }).click();
-    await expect(page).toHaveURL(/\/dashboard\/games\/\d+/);
+    await expect(page).toHaveURL(/\/games\/\d+/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
       browserGameName,
       { timeout: 15000 },
@@ -106,7 +106,7 @@ test.describe("Game Detail Page", () => {
       page.getByRole("link", { name: browserGameName }),
     ).toBeVisible();
     await page.getByRole("link", { name: browserGameName }).click();
-    await expect(page).toHaveURL(/\/dashboard\/games\/\d+/);
+    await expect(page).toHaveURL(/\/games\/\d+/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
       browserGameName,
       { timeout: 15000 },

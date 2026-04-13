@@ -116,7 +116,7 @@ test.describe("Match Create - Basic", () => {
 
     // 12. Wait for navigation to the match scoresheet page
     await expect(page).toHaveURL(
-      new RegExp(`\\/dashboard\\/games\\/${createdGame.id}\\/\\d+$`),
+      new RegExp(`\\/games\\/${createdGame.id}\\/\\d+$`),
       { timeout: 20000 },
     );
 

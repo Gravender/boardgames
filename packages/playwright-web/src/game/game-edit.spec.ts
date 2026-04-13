@@ -42,7 +42,7 @@ test.describe("Game Edit Page", () => {
     await menuButton.click();
     await page.getByRole("menuitem", { name: "Edit" }).click();
     // Wait for navigation to edit page
-    await page.waitForURL(/\/dashboard\/games\/\d+\/edit/, {
+    await page.waitForURL(/\/games\/\d+\/edit/, {
       timeout: 5000,
     });
 
@@ -69,7 +69,7 @@ test.describe("Game Edit Page", () => {
     await page.getByRole("button", { name: "Submit" }).click();
 
     // Verify change persisted
-    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await page.waitForURL(/\/games/, { timeout: 5000 });
 
     await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
       timeout: 10000,
@@ -114,7 +114,7 @@ test.describe("Game Edit Page", () => {
     await page.getByRole("button", { name: "Submit" }).click();
 
     // Verify change persisted
-    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await page.waitForURL(/\/games/, { timeout: 5000 });
     await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
       timeout: 10000,
     });
@@ -168,7 +168,7 @@ test.describe("Game Edit Page", () => {
     await page.getByRole("button", { name: "Submit" }).click();
     await page.getByRole("button", { name: "Submit" }).click();
     // Verify change persisted
-    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await page.waitForURL(/\/games/, { timeout: 5000 });
     await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
       timeout: 10000,
     });
@@ -227,7 +227,7 @@ test.describe("Game Edit Page", () => {
     await page.getByRole("button", { name: "Submit" }).click();
 
     // Verify change persisted
-    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await page.waitForURL(/\/games/, { timeout: 5000 });
     await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
       timeout: 10000,
     });
@@ -282,7 +282,7 @@ test.describe("Game Edit Page", () => {
     await page.getByRole("button", { name: "Submit" }).click();
 
     // Verify change persisted
-    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await page.waitForURL(/\/games/, { timeout: 5000 });
     await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
       timeout: 10000,
     });
@@ -325,7 +325,7 @@ test.describe("Game Edit Page", () => {
     await page.getByRole("button", { name: "Submit" }).click();
 
     // Verify change persisted
-    await page.waitForURL(/\/dashboard\/games/, { timeout: 5000 });
+    await page.waitForURL(/\/games/, { timeout: 5000 });
     await expect(page.getByText(/Game .* updated successfully!/i)).toBeVisible({
       timeout: 10000,
     });
