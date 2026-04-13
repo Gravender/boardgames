@@ -15,7 +15,7 @@ export default async function Page({ params }: Props) {
   if (isNaN(Number(matchId)) || isNaN(Number(gameId))) {
     if (isNaN(Number(gameId))) redirect("/games");
     else {
-      redirect(`/games/${gameId}`);
+      redirect(`/games/shared/${gameId}`);
     }
   }
   return (

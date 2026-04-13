@@ -11,7 +11,7 @@ export default async function Page({
 }) {
   const slugs = await params;
   const playerId = slugs.id;
-  if (isNaN(Number(playerId))) redirect("/games");
+  if (isNaN(Number(playerId))) redirect("/players");
   prefetch(trpc.player.getPlayerToShare.queryOptions({ id: Number(playerId) }));
   prefetch(trpc.friend.getFriends.queryOptions());
   return (

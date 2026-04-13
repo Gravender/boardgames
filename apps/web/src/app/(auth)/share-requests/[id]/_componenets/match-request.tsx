@@ -133,6 +133,7 @@ export default function MatchRequestPage({
         ]);
         if (response !== undefined) {
           router.push(`/games/shared/${response.gameId}/${response.matchId}`);
+          return;
         }
         router.push(`/share-requests`);
       },

@@ -16,9 +16,5 @@ export function formatMatchLink(input: formatMatchLinkType) {
   if (input.type === "original") {
     return `/games/${input.gameId}/${input.matchId}${input.finished ? "/summary" : ""}`;
   }
-  if (input.type === "shared") {
-    return `/games/shared/${input.sharedGameId}/${input.sharedMatchId}${input.finished ? "/summary" : ""}`;
-  } else {
-    return `/games/shared/${input.sharedGameId}/${input.sharedMatchId}${input.finished ? "/summary" : ""}`;
-  }
+  return `/games/shared/${input.sharedGameId}/${input.sharedMatchId}${input.finished ? "/summary" : ""}`;
 }

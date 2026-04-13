@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -6,5 +6,6 @@ interface Props {
 
 export default async function Page({ params }: Props) {
   const id = (await params).id;
+  if (isNaN(Number(id))) notFound();
   redirect(`/players/${id}/stats`);
 }
