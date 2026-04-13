@@ -1,16 +1,21 @@
 // This file configures the initialization of Sentry on the client.
 // The added config here will be used whenever a users loads a page in their browser.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
+// Spotlight (local dev): https://spotlightjs.com/docs/quickstart/nextjs/
 import * as Sentry from "@sentry/nextjs";
-import * as Spotlight from "@spotlightjs/spotlight";
+
+const isDev = process.env.NODE_ENV === "development";
 
 Sentry.init({
   dsn: "https://b6f4da42f81203b0c981bf0629659e45@o4507891927220224.ingest.us.sentry.io/4507891931021312",
+
+  spotlight: isDev,
 
   // Add optional integrations for additional features
   integrations: [
     Sentry.replayIntegration(),
     Sentry.consoleLoggingIntegration(),
+    ...(isDev ? [Sentry.spotlightBrowserIntegration()] : []),
   ],
 
   // Adds request headers and IP for users, for more info visit
@@ -33,9 +38,5 @@ Sentry.init({
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
 });
-
-if (process.env.NODE_ENV === "development") {
-  Spotlight.init();
-}
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
